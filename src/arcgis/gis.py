@@ -1,7 +1,7 @@
 ﻿"""
 The **gis** module provides an information model for GIS hosted 
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage 
-(create, read, update and delete) GIS users, groups, content and projects. This module
+(create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.
 """
 
