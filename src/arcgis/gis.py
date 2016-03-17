@@ -253,7 +253,73 @@ class UserManager(object):
     def __init__(self, portal):
         self._portal = portal
 
-    def create(self, username, password, fullname, email):
+
+    
+    def create(self, username, password, firstname, lastname, email, description=None, role='org_user', 
+               provider='arcgis', idpUsername=None):
+        """ This operation is used to pre-create built-in or enterprise accounts within the portal. 
+        The provider parameter is used to indicate the type of user account. Only an administrator
+        can call this method.
+
+        .. note:
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website. 
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        username          required string, must be unique in the Portal,
+                          >=6 characters, =<24 characters
+        ----------------  -------------------------------------------------------------------------------
+        password          required string, must be >= 8 characters. This is a required parameter only if 
+                          the provider is arcgis; otherwise, the password parameter is ignored.
+        ----------------  -------------------------------------------------------------------------------
+        firstname         required string, the first name for the user
+        ----------------  -------------------------------------------------------------------------------
+        lastname          required string, the last name for the user
+        ----------------  -------------------------------------------------------------------------------
+        email             required string, must be an email address
+        ----------------  -------------------------------------------------------------------------------
+        description       An optional description string for the user account.
+        ----------------  -------------------------------------------------------------------------------
+        role              The role for the user account. The default value is org_user.
+                          Values: org_user | org_publisher | org_admin
+        ----------------  -------------------------------------------------------------------------------
+        provider          The provider for the account. The default value is arcgis.
+                          Values: arcgis | enterprise
+        ----------------  -------------------------------------------------------------------------------
+        idpUsername       The name of the user as stored by the enterprise user store. This parameter is 
+                          only required if the provider parameter is enterprise.
+        ================  ===============================================================================
+
+        :return:
+            the user, if created, else None
+
+        """
+        createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
+        print(createuser_url)
+        params = {
+            'f': 'json',
+            'username' : username,
+            'password' : password,
+            'firstname' : firstname,
+            'lastname' : lastname,
+            'email' : email,
+            'description' : description,
+            'role' : role,
+            'provider' : provider,
+            'idpUsername' : idpUsername
+        }
+        
+        self._portal.con.post(createuser_url, params)
+        return self.get(username)
+
+
+    def signup(self, username, password, fullname, email):
         """ Signs up users to an instance of Portal for ArcGIS.
 
         .. note:
