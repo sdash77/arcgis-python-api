@@ -118,9 +118,9 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    def usage(self, startTime, endTime, period, vars, etype, stype, groupby, appId=None):
-        """Usage statistics for the GIS"""
-        return self._portal.usage(startTime, endTime, period, vars, etype, stype, groupby, appId)
+    #def usage(self, startTime, endTime, period, vars, etype, stype, groupby, appId=None):
+    #    """Usage statistics for the GIS"""
+    #    return self._portal.usage(startTime, endTime, period, vars, etype, stype, groupby, appId)
 
     def map(self, location=None, zoomlevel=None):
         """Creates a map widget centered at the location (Address or (lat, long) tuple) with the specified zoom-level(integer)"""
