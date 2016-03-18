@@ -301,7 +301,7 @@ class UserManager(object):
 
         """
         createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
-        print(createuser_url)
+        #print(createuser_url)
         params = {
             'f': 'json',
             'username' : username,
@@ -1649,8 +1649,33 @@ class User(dict):
             thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
-    
 
+    def content(self):
+        """Returns a dict of user items. The keys of the dict being the users folders, '/' being the root folder,
+        and the values being a list of items in that folder."""
+        retval = {}
+        postdata = {
+            "f": "json"
+        }
+        resp = self._portal.con.post('content/users/' + self.username, postdata)
+        root_items = []
+        for item in resp['items']:
+            root_items.append(Item(self._portal, item['id'], item))
+        
+        retval['/'] = root_items
+
+        folders = []
+        for folder in resp['folders']:
+            resp = self._portal.con.post('content/users/' + self.username + '/'  + folder['id'], postdata)
+            folder_items = []
+            for item in resp['items']:
+                folder_items.append(Item(self._portal, item['id'], item))
+        
+            retval[folder['title']] = folder_items
+
+        return retval
+    
+            
 class Item(dict):
     """
     An item (a unit of content) in the GIS. Each item has a unique identifier and a well
