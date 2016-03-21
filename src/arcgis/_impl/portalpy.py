@@ -18,9 +18,9 @@ import re
 import tempfile
 import unicodedata
 import cgi
-import urllib.request, urllib.parse, urllib.error
+#import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
-import urllib.parse
+#import urllib.parse
 from io import StringIO
 from collections import OrderedDict
 
@@ -277,8 +277,10 @@ class Portal(object):
 
         # Setup the item path, including the folder, and post to it
         path = 'content/users/' + owner
-        if folder:
-            path += '/' + folder
+        if folder and folder != '/':
+            folder_id = self.get_folder_id(owner, folder)
+            path += '/' + folder_id
+
         path += '/addItem'
         resp = self.con.post(path, postdata, files)
         if resp and resp.get('success'):
@@ -993,8 +995,11 @@ class Portal(object):
         """
         return self.con.post('content/items/' + itemid, self._postdata())
 
-    def get_item_data(self, itemid):
-        return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
+    def get_item_data(self, itemid, try_json=True):
+        #print('content/items/' + itemid + '/data')
+        return self.con.get('content/items/' + itemid + '/data', try_json=try_json)
+        #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
+        #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
     def usage(self, startTime, endTime, period, vars, etype, stype, groupby, appId=None):
         postdata = self._postdata()
@@ -1992,7 +1997,7 @@ class Portal(object):
 
 
 
-    def delete_folder(self, owner, folder_id):
+    def delete_folder(self, owner, folder):
         """ Creates a folder for the given user with the given title.
 
         ================  ========================================================
@@ -2000,13 +2005,14 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
-        folder_id         required string, the id of the folder
+        folder            required string, the id of the folder name
         ================  ========================================================
 
         :return:
             a boolean if succeeded.
         """
         postdata = self._postdata()
+        folder_id = self.get_folder_id(owner, folder_id)
         resp = self.con.post('content/users/' + owner + '/' + folder_id + '/delete', postdata)
         if resp:
             return resp.get('success')
@@ -2033,8 +2039,7 @@ class Portal(object):
             for fldr in resp['folders']:
                 if fldr['title'].upper() == folder_name.upper():  # Force both strings to upper case for comparison
                     return fldr['id']
-
- 
+        return None # no such folder found for this owner 
 
     def _is_searching_public(self, scope):
         if scope == 'public':
