@@ -80,3 +80,6 @@ from arcgis.gis import *
 gis = GIS()
 gis.map()
 ```
+
+# Want to contribute?
+See the wiki at https://github.com/ArcGIS/geosaurus/wiki for the project vision and guiding principles, areas needing help, and how to contribute.
