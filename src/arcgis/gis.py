@@ -1006,6 +1006,9 @@ class Group(dict):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         return '\n'.join(state)
 
+    def __repr__(self):
+        return '<%s title:"%s" owner:%s>' % (type(self).__name__, self.title, self.owner)
+
     def get_thumbnail_link(self):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
@@ -1355,6 +1358,10 @@ class User(dict):
     def __str__(self):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         return '\n'.join(state)
+
+    
+    def __repr__(self):
+        return '<%s username:%s>' % (type(self).__name__, self.username)
 
     def get_thumbnail_link(self):
         """ URL to the thumbnail image """
@@ -1885,6 +1892,9 @@ class Item(dict):
     def __str__(self):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         return '\n'.join(state)
+    
+    def __repr__(self):
+        return '<%s title:"%s" owner:%s>' % (type(self).__name__, self.title, self.owner)
 
     def reassign_to(self, target_owner, target_folder=None):
         """ Allows the administrator to reassign a single item from one user to another.
