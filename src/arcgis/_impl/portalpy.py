@@ -144,7 +144,7 @@ class Portal(object):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        user_names    required string, comma-separated users
+        user_names    list of usernames
         ------------  --------------------------------------
         group_id      required string, specifying group id
         ============  ======================================
@@ -160,10 +160,10 @@ class Portal(object):
                          + 'pre-2.0 portals')
             return
 
-        user_names = _unpack(user_names, 'username')
+        #user_names = _unpack(user_names, 'username')
 
         postdata = self._postdata()
-        postdata['users'] = ','.join(user_names)
+        postdata['users'] = ','.join(usernames)
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
                                  postdata)
         return resp
@@ -574,7 +574,7 @@ class Portal(object):
         """
         path = '/content/users/' + owner
         if folder :
-            path += '/folder'
+            path += '/' + folder
         path += '/items/' + item_id + '/share'
         #print(path)
         postdata = self._postdata()
@@ -610,7 +610,7 @@ class Portal(object):
         """
         path = '/content/users/' + owner
         if folder :
-            path += '/folder'
+            path += '/' + folder
         path += 'items/' + item_id + '/unshare'
 
         postdata = self._postdata()

@@ -350,12 +350,6 @@ class UserManager(object):
             the user, if created, else None
 
         """
-# TODO: implementation note:
-#            There is another method called createUser that
-#            requires administrator access that can always
-#            be used against 10.2.1 portals or later that
-#            can create users whether they are builtin or
-#            enterprise accounts.
         success = self._portal.signup(username, password, fullname, email)
         if success:
             return User(self._portal, username)
@@ -495,7 +489,7 @@ class GroupManager(object):
             'snippet' : snippet, 'access' : access, 'sortField' : sort_field,
             'sortOrder' : sort_order, 'isViewOnly' : is_view_only,
             'isinvitationOnly' : is_invitation_only}, thumbnail)
-        print(groupid)
+        #print(groupid)
         if groupid is not None:
             return Group(self._portal, groupid)
         else:
@@ -530,15 +524,15 @@ class GroupManager(object):
             return Group(self._portal, groupid)
         return None
 
-#    def list(self, max_groups=1000):
-#        """ Return the list of groups in your organization
-#         Arguments
-#            max_groups : optional int, the maximum number of groups to return.
-#
-#        :return: The list of groups in your org
-#        """
-#        return self.search("", max_groups=max_groups, add_org=True)
-#        #https://portalpy.esri.com/arcgis/sharing/rest/community/groups?q=orgid%3A0123456789ABCDEF&sortField=&sortOrder=
+    def list(self, max_groups=1000):
+        """ Return the list of groups in your organization
+         Arguments
+            max_groups : optional int, the maximum number of groups to return.
+
+        :return: The list of groups in your org
+        """
+        return self.search("", max_groups=max_groups, add_org=True)
+        #https://portalpy.esri.com/arcgis/sharing/rest/community/groups?q=orgid%3A0123456789ABCDEF&sortField=&sortOrder=
 
     def search(self, query='', sort_field='title', sort_order='asc',
                max_groups=1000, add_org=True):
@@ -695,7 +689,11 @@ class ContentManager(object):
             if not 'title' in item_properties:
                 item_properties['title'] = title
 
-        itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner, folder)
+        owner_name = owner
+        if isinstance(owner, arcgis.gis.User):
+            owner_name = owner.username
+
+        itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner_name, folder)
 
         if itemid is not None:
             return Item(self._portal, itemid)
@@ -779,7 +777,7 @@ class ContentManager(object):
         ----------------  -----------------------------------------------------------------------------------
         sort_order        optional string, valid values are asc or desc
         ----------------  -----------------------------------------------------------------------------------
-        max_items         optional int, maximum number of items returned, default is 6
+        max_items         optional int, maximum number of items returned, default is 10
         ----------------  -----------------------------------------------------------------------------------
         add_org           optional boolean, controls whether to search within your org (default is False)
         ================  ===================================================================================
@@ -817,7 +815,8 @@ class ContentManager(object):
     # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
     def create_folder(self, owner, folder):
-        """ Creates a folder for the given user with the given title.
+        """ Creates a folder for the given user with the given title. Does nothing if the
+        folder already exists.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -832,8 +831,11 @@ class ContentManager(object):
             {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"}
         """
         if folder != '/': # we don't create root folder
-            if self._portal.get_folder_id(owner, folder) is None:
-                self._portal.create_folder(owner, folder)
+            owner_name = owner
+            if isinstance(owner, arcgis.gis.User):
+                owner_name = owner.username
+            if self._portal.get_folder_id(owner_name, folder) is None:
+                self._portal.create_folder(owner_name, folder)
 
     def delete_folder(self, owner, folder):
         """ Deletes a folder for the given user with the given folder name.
@@ -1072,67 +1074,14 @@ class Group(dict):
                 </div>
                 """
 
-    def _repr_html2_(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+    def content(self, max_items=1000):
+        """Returns a list of items shared with this group."""
+        itemlist = []
+        items = self._portal.search('group:' + self.groupid, max_results=max_items)
+        for item in items:
+            itemlist.append(Item(self._portal, item['id'], item))
+        return itemlist
         
-        if self.thumbnail is None:
-            return ("<table><tr><td>"
-                     "<img src='https://cdn.arcgis.com/cdn/7000/images/group-no-image.png' class='align-left frame' /></a></td><td width='90%'><b>" +
-                    self.title + '</b><p>' + self.snippet + "<br/>owned by " + self.owner + "</td></tr></table>")
-        else:
-            b64 = base64.b64encode(self.get_thumbnail())
-            #return "<div class='frame'><a href='http://developers.arcgis.com/javascript/samples/mobile_arcgis/?webmap=" + self.itemid + "' target='_blank'><img src='data:image/png;base64," + str(b64,"utf-8") + "' class='align-left frame' />" + self.title + '</a><p>' + self.snippet + "</div>"
-            return ("<table><tr><td>"
-                    "<img src='data:image/png;base64," + str(b64,"utf-8") + "' class='align-left frame' /></a></td><td width='90%'><b>" +
-                    self.title + '</b><p>' + self.snippet + "<p>owned by "+ self.owner + "<p>" + "</td></tr></table>")
-        
-
-    """ Returns information for this group
-    def get_attributes(self):
-                   
-        Arguments                 
-            None.
-            
-        :return:
-            a dictionary object with this group's information.  The keys in
-            the dictionary object will often include:
-
-            ================  ========================================================
-            **Key**           **Value**
-            ----------------  --------------------------------------------------------
-            title:            The name of the group
-            ----------------  --------------------------------------------------------
-            isInvitationOnly  If set to true, users can't apply to join the group.
-            ----------------  --------------------------------------------------------
-            owner:            The owner username of the group
-            ----------------  --------------------------------------------------------
-            description:      Explains the group
-            ----------------  --------------------------------------------------------
-            snippet:          A short summary of the group
-            ----------------  --------------------------------------------------------
-            tags:             User-defined tags that describe the group
-            ----------------  --------------------------------------------------------
-            phone:            Contact information for group.
-            ----------------  --------------------------------------------------------
-            thumbnail:        File name relative to
-                                       http://<community-url>/groups/<groupId>/info
-            ----------------  --------------------------------------------------------
-            created:          When group created, ms since 1 Jan 1970
-            ----------------  --------------------------------------------------------
-            modified:         When group last modified. ms since 1 Jan 1970
-            ----------------  --------------------------------------------------------
-            access:           Can be private, org, or public.
-            ----------------  --------------------------------------------------------
-            userMembership:   A dict with keys username and memberType.
-            ----------------  --------------------------------------------------------
-            memberType:       provides the calling user's access
-                              (owner, admin, member, none).
-            ================  ========================================================
-            
-        
-        return self._portal.get_group(self.groupid)
-    """
-
     def delete(self):
         """ Deletes this group.
 
@@ -1161,6 +1110,26 @@ class Group(dict):
         """
         return self._portal.get_group_thumbnail(self.groupid)
 
+    def download_thumbnail(self, dir=None, thumbnail_file=None):
+        """ Downloads the group thumbnail for this group, returns file path. """
+        if not thumbnail_file:
+            thumbnail_file = self.thumbnail
+
+        # Only proceed if a thumbnail exists
+        if thumbnail_file:
+            thumbnail_url_path = 'community/groups/' + self.groupid + '/info/' + thumbnail_file
+            if thumbnail_url_path:
+                if not dir:
+                    dir = self._workdir
+                file_name = os.path.split(thumbnail_file)[1]
+                if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
+                    file_name = file_name[-30:]
+                file_path = os.path.join(dir, file_name)
+                self._portal.con.download(thumbnail_url_path, file_path)
+                return file_path
+        else:
+            return None
+
     def add_users(self, usernames):
         """ Adds users to this group.
         .. note::
@@ -1171,7 +1140,7 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     required string, comma-separated users
+        usernames     list of usernames
         ============  ======================================
 
         :return:
@@ -1662,6 +1631,26 @@ class User(dict):
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
 
+    def download_thumbnail(self, dir=None, thumbnail_file=None):
+        """ Downloads the item thumbnail for this user, returns file path. """
+        if not thumbnail_file:
+            thumbnail_file = self.thumbnail
+
+        # Only proceed if a thumbnail exists
+        if thumbnail_file:
+            thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
+            if thumbnail_url_path:
+                if not dir:
+                    dir = self._workdir
+                file_name = os.path.split(thumbnail_file)[1]
+                if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
+                    file_name = file_name[-30:]
+                file_path = os.path.join(dir, file_name)
+                self._portal.con.download(thumbnail_url_path, file_path)
+                return file_path
+        else:
+            return None
+
     def content(self):
         """Returns a dict of user items. The keys of the dict being the users folders, '/' being the root folder,
         and the values being a list of items in that folder."""
@@ -1696,6 +1685,7 @@ class Item(dict):
     For example, an item of type Map Package returns the actual bits corresponding to the 
     map package via the item data resource.
     """
+
     def __init__(self, portal, itemid, itemdict=None):
         dict.__init__(self)
         self._portal = portal
@@ -1724,10 +1714,12 @@ class Item(dict):
             self.__dict__.update(itemdict)
             return dict.__getitem__(self, k)
 
-    def download(self, dir_name):
+    def download(self, dir):
         data_path = 'content/items/' + self.itemid + '/data'
+        if not dir:
+            dir = self._workdir
         if data_path:
-            return self._portal.con.download_to_folder(data_path, dir_name)
+            return self._portal.con.download_to_folder(data_path, dir)
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
@@ -1894,7 +1886,7 @@ class Item(dict):
         return '\n'.join(state)
     
     def __repr__(self):
-        return '<%s title:"%s" owner:%s>' % (type(self).__name__, self.title, self.owner)
+        return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self.type, self.owner)
 
     def reassign_to(self, target_owner, target_folder=None):
         """ Allows the administrator to reassign a single item from one user to another.
@@ -2065,22 +2057,87 @@ class Item(dict):
         as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
     
-    """
-    def move(self, folder):
-        pass
-
-    def get_dependent_items(self):
-        pass
-
-    def get_referencing_items(self):
-        pass
-    """
-
-    def get_item_dependencies(self):
+    def dependent_upon(self):
+        """ Returns items and urls, etc that this items depends upon  """
         return self._portal.get_item_dependencies(self.itemid)
 
-    def get_item_dependents_to(self):
+    def dependent_to(self):
+        """ Returns items and urls, etc dependend upon this item. """
         return self._portal.get_item_dependents_to(self.itemid)
+
+    _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
+                                'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
+                                'Service2Service'])
+
+    _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
+
+    def related_items(self, rel_type, direction="forward"):
+        """ Returns items related to this item. Relationsships can be added and deleted using item.add_relationship() and item.delete_relationship() respectively.
+        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']
+        direction is one of ['forward', 'reverse'] """
+        if not rel_type in self._RELATIONSHIP_TYPES:
+            raise Error('Unsupported relationship type: ' + rel_type)
+        if not direction in self._RELATIONSHIP_DIRECTIONS:
+            raise Error('Unsupported direction: ' + direction)
+
+        related_items = []
+        
+        postdata = { 'f' : 'json' }
+        postdata['relationshipType'] = rel_type
+        postdata['direction'] = direction
+        resp = self._portal.con.post('content/items/' + self.itemid + '/relatedItems', postdata)
+        for related_item in resp['relatedItems']:
+            related_items.append(Item(self._portal, related_item['id'], related_item))
+        return related_items
+
+    def add_relationship(self, rel_item, rel_type):
+        """ Adds a relationship from this item to rel_item.
+        Relationships are not tied to an item. They are directional links from an origin item 
+        to a destination item and have a type. The type defines the valid origin and destination
+        item types as well as some rules. See Relationship types in REST API help for more information.
+        Users don't have to own the items they relate unless so defined by the rules of the 
+        relationship type.
+        Users can only delete relationships they create.
+        Relationships are deleted automatically if one of the two items is deleted.
+        
+        rel_item is the related item
+        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']. See Relationship types in REST API help for more information on this parameter
+        Returns True if the relationship was added
+        """
+        if not rel_type in self._RELATIONSHIP_TYPES:
+            raise Error('Unsupported relationship type: ' + rel_type)
+
+        postdata = { 'f' : 'json' }
+        postdata['originItemId'] = self.itemid
+        postdata['destinationItemId'] = rel_item.itemid
+        postdata['relationshipType'] = rel_type
+        path = 'content/users/' + self.owner
+
+        path += '/addRelationship'
+        print
+        resp = self._portal.con.post(path, postdata)
+        if resp:
+            return resp.get('success')
+
+    def delete_relationship(self, rel_item, rel_type):
+        """ Deletes a relationship between this item and the rel_item. 
+        rel_item is the related item
+        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']
+        Returns True if the relationship was deleted
+        """
+        if not rel_type in self._RELATIONSHIP_TYPES:
+            raise Error('Unsupported relationship type: ' + rel_type)
+        postdata = { 'f' : 'json' }
+        postdata['originItemId'] =  self.itemid
+        postdata['destinationItemId'] = rel_item.itemid
+        postdata['relationshipType'] = rel_type
+        path = 'content/users/' + self.owner
+        
+        
+        path += '/deleteRelationship'
+        resp = self._portal.con.post(path, postdata)
+        if resp:
+            return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False):
         """
