@@ -920,58 +920,6 @@ class ContentManager(object):
         return fc
 
 
-#class ProjectManager(object):
-#    """
-#    Manager class for manipulating ArcGIS Pro projects. This class is not created by users directly.
-#    An instance of this class, called 'projects', is available as a property of the GIS object.
-#    Users call methods on this 'projects' object to manipulate (create, get, search...) projects.
-#    """
-#    def __init__(self, portal):
-#        self._portal = portal
-#        self.ArcGISProject = locate('arcgis.prj.ArcGISProject')
-
-#    def create(self, project_path):
-#        """ Creates a new ArcGIS Pro project and saves it at the specified file system path
-
-#        ================  ========================================================
-#        **Argument**      **Description**
-#        ----------------  --------------------------------------------------------
-#        project_path      required string, filesystem path of the project
-#        ================  ========================================================
-
-#        :return:
-#            the project, if created, else None
-
-#        """
-#        #TODO
-#        pass
-
-#    def open(self, project_path, project_item=None):
-#        """ Loads the ArcGIS Pro Project at the specified filesystem path or
-#            from a project package item
-
-#        Arguments
-#            project_path        required string, the filesystem path of the ArcGIS Pro project
-#                                If a project_item is provided, this is a directory path
-#            project_item        optional item (type = project package) from the GIS
-#                                If a project package item is provided, it is downloaded, unpacked
-#                                and saved at the specified project_path
-#        :return:
-#            the ArcGIS Pro project object
-#        """
-#        if self.ArcGISProject is None:
-#            raise ImportError("arcgis.map module is not installed. Please install the arcgis pro package")
-            
-#        return self.ArcGISProject(self._portal, project_path, project_item)
- 
-#    def search(self, project_name, search_path=None):
-#        """ Searches for project_name in the GIS or in filesystem search path, if specified
-#        :return:
-#            A list of projects with the specified project name:
-#        """
-#        #TODO
-#        pass
-
 
 class Group(dict):
     """
