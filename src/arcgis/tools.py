@@ -43,7 +43,16 @@ def _get_hosted_server_admin_url(servers):
     return None
 
 class Geocoder(collections.OrderedDict):
-    "represents a geocode (locator) service"
+    """Geocoder represents a geocode service resource exposed by the GIS. 
+    It can find point locations of addresses, business names, and so on. 
+    The output points can be visualized on a map, inserted as stops for a route,
+    or loaded as input for spatial analysis. It is also used to generate 
+    batch results for a set of addresses, as well as for reverse geocoding,
+    i.e. determining the address at a particular x/y location. 
+    
+    An instance of the Geocoder is available through the gis.tools.geocoder 
+    property, accessible from the GIS object.
+    """
     def __init__(self, item, url=None, gis=None):
         """
         Constructs a Geocoder object given a geocoding service item from ArcGIS Online or Portal.
@@ -63,139 +72,42 @@ class Geocoder(collections.OrderedDict):
         #print(self.url)
         svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
         collections.OrderedDict.__init__(self, svcprops)
-
-
+        try:
+            self._address_field = svcprops['singleLineAddressField']['name']
+        except:
+            print("Geocoder does not support single line address input")
 
     def __str__(self):
         # return "Geocode service at " + self.url
         return json.dumps(self)
 
-    def reverse_geocode(self, location):
-        """
-        The reverseGeocode operation determines the address at a particular
-        x/y location. You pass the coordinates of a point location to the
-        geocoding service, and the service returns the address that is
-        closest to the location.
-        Input:
-           location - a list defined as [X,Y]
-        """
-        params = {
-            "f" : "json"
-        }
-        url = self.url + "/reverseGeocode"
-        if isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
-        else:
-            raise Exception("Invalid location")
-        resp = self._portal.con.post(url, params)
-        return resp
-    
-    def geocode_addresses(self,
-                         addresses,
-                         outSR=None,
-                         sourceCountry=None,
-                         category=None):
-        """
-        The geocodeAddresses operation is performed on a Geocode Service
-        resource. The result of this operation is a resource representing
-        the list of geocoded addresses. This resource provides information
-        about the addresses including the address, location, score, and
-        other geocode service-specific attributes.You can provide arguments
-        to the geocodeAddresses operation as query parameters defined in
-        the following parameters table.
-
-        See https://developers.arcgis.com/rest/geocode/api-reference/geocoding-geocode-addresses.htm
-
-        Inputs:
-           addresses - A record set representing the addresses to be
-            geocoded. Each record must include an OBJECTID attribute with a
-            unique value, as well as various address fields accepted by the
-            corresponding geocode service. The field names that should be
-            used can be found in the JSON representation of the geocode
-            service resource under the addressFields property, for multiple
-            input field geocoding, or the singleLineAddressField property,
-            for single input field geocoding. The OBJECTID specified in the
-            request is reflected as ResultID in the response.
-            The maximum number of addresses that can be geocoded in a
-            single request is limited to the SuggestedBatchSize property of
-            the locator.
-            Syntax:
-             {
-                "records"  : [
-                {
-                   "attributes" : {"<OBJECTID>" : "<OID11>",
-                                   "<field1>" : "<value11>",
-                                   "<field2>" : "<value12>",
-                                   "<field3>" : "<value13>"
-                                   }
-                },
-                {
-                   "attributes" : {"<OBJECTID>" : "<OID12>",
-                                   "<field1>" : "<value11>",
-                                   "<field2>" : "<value12>",
-                                   "<field3>" : "<value13>"
-                                   }
-                }
-                ]
-             }
-           outSR - The well-known ID of the spatial reference, or a spatial
-            reference json object for the returned addresses. For a list of
-            valid WKID values, see Projected coordinate systems and
-            Geographic coordinate systems.
-           sourceCountry - The sourceCountry parameter is only supported by
-            geocode services published using StreetMap Premium locators.
-            Added at 10.3 and only supported by geocode services published
-            with ArcGIS 10.3 for Server and later versions.
-           category - The category parameter is only supported by geocode
-            services published using StreetMap Premium locators.
-        """
-        params = {
-            "f" : "json"
-        }
-        url = self.url + "/geocodeAddresses"
-        if outSR is not None:
-            params['outSR'] = outSR
-        if sourceCountry is not None:
-            params['sourceCountry'] = sourceCountry
-        if category is not None:
-            params['category'] = category
-
-        params['addresses'] = addresses
-        
-        resp = self._portal.con.post(url, params)
-        return resp
-    
-    def find(self,
-             text,
-             magicKey=None,
-             sourceCountry=None,
-             bbox=None,
+    def geocode(self,
+             address,
+             searchExtent=None,
              location=None,
              distance=None,
              outSR=None,
              category=None,
              outFields="*",
              maxLocations=20,
+             magicKey=None,
              forStorage=False):
         """
-        The find operation geocodes one location per request; the input
-        address is specified in a single parameter. This operation is
-        only supported with the ArcGIS World Geocoding Service.
+        The geocode method geocodes one location per request.
 
         Inputs:
-           text - Specifies the location to be geocoded. This can be a
-            street address, place name, postal code, or POI.
-           magicKey - The find operation retrieves results quicker when you
-            pass in valid text and magicKey values than when you don't pass
-            in magicKey. However, to get these advantages, you need to make
-            a prior request to suggest, which provides a magicKey. This may
-            or may not be relevant to your workflow.
-           sourceCountry - A value representing the country. Providing this
-            value increases geocoding speed. Acceptable values include the
-            full country name in English or the official language of the
-            country, the ISO 3166-1 2-digit country code, or the
-            ISO 3166-1 3-digit country code.
-           bbox - A set of bounding box coordinates that limit the search
+           address - Specifies the location to be geocoded. This can be a string 
+           containing the street address, place name, postal code, or POI. 
+            
+            Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding geocode service. These fields are listed in the addressFields property of the associated geocode service resource. For example, if the addressFields of a geocode service resource includes fields with the following names: Street, City, State and Zone, then the address argument is of the form:
+            {
+              Street: "1234 W Main St",
+              City: "Small Town",
+              State: "WA",
+              Zone: "99027"
+            }
+           
+           searchExtent - A set of bounding box coordinates that limit the search
             area to a specific region. This is especially useful for
             applications in which a user will search for places and
             addresses only within the current map extent.
@@ -222,6 +134,13 @@ class Geocoder(collections.OrderedDict):
            maxLocation - The maximum number of locations to be returned by
             a search, up to the maximum number allowed by the service. If
             not specified, then one location will be returned.
+            
+           magicKey - The find operation retrieves results quicker when you
+            pass in valid text and magicKey values than when you don't pass
+            in magicKey. However, to get these advantages, you need to make
+            a prior request to suggest, which provides a magicKey. This may
+            or may not be relevant to your workflow.
+
            forStorage - Specifies whether the results of the operation will
             be persisted. The default value is false, which indicates the
             results of the operation can't be stored, but they can be
@@ -230,24 +149,31 @@ class Geocoder(collections.OrderedDict):
             parameter to true.
         """
         #self.url + 
-        url = self.url + "/find" # "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/find"
+        url = self.url + "/findAddressCandidates"
+
         params = {
             "f" : "json",
         }
-        params['text'] = text
+        
+        if address is not None:
+            if isinstance(address, str):
+                params[self._address_field] = address
+            elif isinstance(address, dict):
+                params.update(address)
+            else:
+                print("address should be a string (single line address) or dictionary (with address fields as keys)")
+
+        #params['text'] = text
 
         if not magicKey is None:
             params['magicKey'] = magicKey
-        if not sourceCountry is None:
-            params['sourceCountry'] = sourceCountry
-        if not bbox is None:
-            params['bbox'] = bbox
+        if not searchExtent is None:
+            params['searchExtent'] = searchExtent
         if not location is None and \
-            isinstance(location, Point):
-            params['location'] = location.asDictionary
-        elif not location is None and \
                 isinstance(location, list):
             params['location'] = "%s,%s" % (location[0], location[1])
+        elif location is not None:
+            params['location'] = location
         if not distance is None:
             params['distance'] = distance
         if not outSR is None:
@@ -264,22 +190,149 @@ class Geocoder(collections.OrderedDict):
             params['forStorage'] = forStorage
 
         resp = self._portal.con.post(url, params)
-        return resp['locations']
+        if resp is not None:
+            return resp['candidates']
+        else:
+            return []
 
+    def reverse_geocode(self, location, distance=None, outSR=None, langCode=None, returnIntersection=False, forStorage=False):
+        """
+        The reverseGeocode operation determines the address at a particular
+        x/y location. You pass the coordinates of a point location to the
+        geocoding service, and the service returns the address that is
+        closest to the location.
+        Input:
+           location - a list defined as [X,Y] or a JSON Point 
+        """
+        params = {
+            "f" : "json"
+        }
+        url = self.url + "/reverseGeocode"
+        if isinstance(location, list):
+            params['location'] = "%s,%s" % (location[0], location[1])
+        elif isinstance(location, dict):
+            params['location'] = location
+        else:
+            raise Exception("Invalid location")
+        
+        if distance is not None:
+            params['distance'] = distance
+        if outSR is not None:
+            params['outSR'] = outSR
+        if langCode is not None:
+            params['langCode'] = langCode
+        if returnIntersection:
+            params['returnIntersection'] = returnIntersection
+        if forStorage:
+            params['forStorage'] = forStorage
+
+        resp = self._portal.con.post(url, params)
+        return resp
+    
+    def batch_geocode(self,
+                         addresses,
+                         sourceCountry=None,
+                         category=None,
+                         outSR=None):
+        """
+        The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.
+        
+
+        Inputs:
+           addresses - A list of addresses to be geocoded.
+           For passing in the location name as a single line of text —
+           single field batch geocoding — use a string.
+           For passing in the location name as multiple lines of text 
+           multifield batch geocoding — use the address fields described 
+           in the Geocoder documentation.
+            The maximum number of addresses that can be geocoded in a
+            single request is limited to the SuggestedBatchSize property of
+            the locator.
+            Syntax:
+             addresses = ["380 New York St, Redlands, CA", 
+             "1 World Way, Los Angeles, CA",
+             "1200 Getty Center Drive, Los Angeles, CA", 
+             "5905 Wilshire Boulevard, Los Angeles, CA",
+             "100 Universal City Plaza, Universal City, CA 91608",
+             "4800 Oak Grove Dr, Pasadena, CA 91109"]
+
+             OR
+
+             addresses= [{
+                "Address": "380 New York St.",
+                "City": "Redlands",
+                "Region": "CA",
+                "Postal": "92373"
+            },{
+                "Address": "1 World Way",
+                "City": "Los Angeles",
+                "Region": "CA",
+                "Postal": "90045"
+            }]
+
+           sourceCountry - The sourceCountry parameter is only supported by
+            geocode services published using StreetMap Premium locators.
+            Added at 10.3 and only supported by geocode services published
+            with ArcGIS 10.3 for Server and later versions.
+           category - The category parameter is only supported by geocode
+            services published using StreetMap Premium locators.
+           outSR - The well-known ID of the spatial reference, or a spatial
+            reference json object for the returned addresses. For a list of
+            valid WKID values, see Projected coordinate systems and
+            Geographic coordinate systems.
+        """
+        params = {
+            "f" : "json"
+        }
+        url = self.url + "/geocodeAddresses"
+        if outSR is not None:
+            params['outSR'] = outSR
+        if sourceCountry is not None:
+            params['sourceCountry'] = sourceCountry
+        if category is not None:
+            params['category'] = category
+
+
+
+        addr_recordset = []
+        n = len(addresses)
+
+        for index in range(len(addresses)):
+            address = addresses[index]
+
+            attributes = { "OBJECTID" : index }
+            if isinstance(address, str):
+                attributes[self._address_field] = address
+            elif isinstance(address, dict):
+                attributes.update(address)
+            else:
+                print("Unsupported address: " + str(address))
+                print("address should be a string (single line address) or dictionary (with address fields as keys)")
+
+            addr_rec = { "attributes" : attributes }
+            addr_recordset.append(addr_rec)
+
+        params['addresses'] = { "records" : addr_recordset }
+        
+        resp = self._portal.con.post(url, params)
+        if resp is not None:
+            return resp['locations']
+        else:
+            return []
+    
     def find_best_match(self,
-             text,
-             magicKey=None,
-             sourceCountry=None,
-             bbox=None,
+             address,
+             searchExtent=None,
              location=None,
              distance=None,
              outSR=None,
              category=None,
-             outFields="*",
+             outFields="*",magicKey=None,
              forStorage=False):
-        location = self.find(text, magicKey, sourceCountry, bbox, location, distance, 
-                         outSR, category, outFields, 1, 
-                         forStorage)[0]['feature']['geometry']
+        """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
+        location = self.geocode(address,  sourceCountry, searchExtent, location, distance, 
+                         outSR, category, outFields, 1, magicKey,
+                         forStorage)[0]['location']
         return location['y'], location['x']
 
     def suggest(self,
@@ -360,6 +413,7 @@ class Geocoder(collections.OrderedDict):
             params['distance'] = distance
         resp = self._portal.con.post(url, params)
         return resp
+    
 
 class Geometry(collections.OrderedDict):
     "represents a geometry service"
