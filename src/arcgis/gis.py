@@ -46,7 +46,7 @@ class GIS(object):
     * users
     * groups
     * content
-    * datastore
+    * datastores
     * tools - including geometry, geocoder, analysis, rasters, geoanalytics 
 
     Additionally, the GIS object has properties and methods to query it's state:
@@ -69,7 +69,7 @@ class GIS(object):
         self._username = username
         self._password = password
         self._portal = None
-        self.datastore = BigDataManager(self)
+        self.datastores = DatastoreManager(self)
         self.tools = Tools(self)
         self.__enter__()
 
@@ -141,11 +141,11 @@ class GIS(object):
         return mapwidget
 
 
-class BigDataManager(object):
+class DatastoreManager(object):
     """
-    Manager class for managing Big Data file shares. This class is not created by users directly.
-    An instance of this class, called 'bigdata', is available as a property of the GIS object.
-    Users call methods on this 'bigdata' object to manage big data fileshares
+    Manager class for managing the GIS data stores. This class is not created by users directly.
+    An instance of this class, called 'datastores', is available as a property of the GIS object.
+    Users call methods on this 'datastores' object to manage the data stores.
     """
     def __init__(self, gis):
         self.gis = gis
@@ -1001,15 +1001,14 @@ class Group(dict):
             owner = 'Not available'
 
         url = self._portal.url  + "/home/group.html?id=" + self.groupid
-
-        return """<div class="item_container">
-                    <div class="item_left">
+        return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
+                    <div class="item_left" style="width: 210px; float: left;">
                        <a href='""" + str(url) + """' target='_blank'>
                         <img src='""" + str(thumbnail) + """' class="itemThumbnail">
                        </a>
                     </div>
         
-                    <div class="item_right">
+                    <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(title) + """</b>
                         </a>
                         <br>
@@ -1324,14 +1323,14 @@ class User(dict):
 
         url = self._portal.url  + "/home/user.html?user=" + self.username
 
-        return """<div class="item_container">
-                    <div class="item_left">
+        return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
+                    <div class="item_left" style="width: 210px; float: left;">
                        <a href='""" + str(url) + """' target='_blank'>
                         <img src='""" + str(thumbnail) + """' class="itemThumbnail">
                        </a>
                     </div>
         
-                    <div class="item_right">
+                    <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(fullName) + """</b>
                         </a>
                         <br><br><b>Bio</b>: """ + str(description) + """
@@ -1812,14 +1811,14 @@ class Item(dict):
 
         locale.setlocale(locale.LC_ALL, '')
         numViews = locale.format("%d", self.numViews, grouping=True)
-        return """<div class="item_container">
-                    <div class="item_left">
+        return """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
+                    <div class="item_left" style="width: 210px; float: left;">
                        <a href='""" + portalurl + """' target='_blank'>
                         <img src='""" + thumbnail + """' class="itemThumbnail">
                        </a>
                     </div>
         
-                    <div class="item_right">
+                    <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
                         <br>""" + snippet + """<img src='http://www.arcgis.com/home/js/jsapi/esri/css/images/item_type_icons/""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
