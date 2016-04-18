@@ -330,7 +330,7 @@ class Geocoder(collections.OrderedDict):
              outFields="*",magicKey=None,
              forStorage=False):
         """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
-        location = self.geocode(address,  sourceCountry, searchExtent, location, distance, 
+        location = self.geocode(address, searchExtent, location, distance, 
                          outSR, category, outFields, 1, magicKey,
                          forStorage)[0]['location']
         return location['y'], location['x']
