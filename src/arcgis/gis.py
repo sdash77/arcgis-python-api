@@ -56,11 +56,15 @@ class GIS(object):
 
     _version = '0.1'
 
-    def __init__(self, url=None, username=None, password=None):
+    def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online 
-        or an ArcGIS Portal. If no url is provided, ArcGIS Online is used. If username
-        and password are not provided, anonymous access is used.
+        or an ArcGIS Portal. User credentials can be passed in using username/password
+        pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
+        PKI and Anonymous access.
+
+        If no url is provided, ArcGIS Online is used. If username/password
+        or key/cert files are not provided, anonymous access is used.
         """
         if url is None:
             url = "http://www.arcgis.com"
@@ -68,13 +72,15 @@ class GIS(object):
         self._url = url
         self._username = username
         self._password = password
+        self._key_file = key_file
+        self._cert_file = cert_file
         self._portal = None
         self.datastores = DatastoreManager(self)
         self.tools = Tools(self)
         self.__enter__()
 
     def __enter__(self):
-        self._portal = portalpy.Portal(self._url, self._username, self._password)
+        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
         
     @_lazy_property
     def users(self):

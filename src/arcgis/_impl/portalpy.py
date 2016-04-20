@@ -18,9 +18,8 @@ import re
 import tempfile
 import unicodedata
 import cgi
-#import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
-#import urllib.parse
+import http.cookiejar
 from io import StringIO
 from collections import OrderedDict
 
@@ -104,7 +103,6 @@ class Portal(object):
         self._basepostdata = { 'f': 'json' }
         self._version = None
         self._properties = None
-        self._logged_in_user = None
         self._resources = None
         self._languages = None
         self._regions = None
@@ -124,9 +122,6 @@ class Portal(object):
                                         key_file, cert_file, expiration, True,
                                         referer, proxy_host, proxy_port)
 
-        # Store the logged in user information. It's useful.
-        if self.is_logged_in():
-            self._logged_in_user = self.get_user(username)
 
         self.get_version(True)
         self.get_properties(True)
@@ -1142,8 +1137,6 @@ class Portal(object):
         """
 
         newtoken = self.con.login(username, password, expiration)
-        if newtoken:
-            self._logged_in_user = self.get_user(username)
         return newtoken
 
     def logout(self):
@@ -1191,10 +1184,11 @@ class Portal(object):
             ================  ========================================================
          
          """
-        if self._logged_in_user:
-            # Return a defensive copy
-            return copy.deepcopy(self._logged_in_user)
-        return None
+        try :
+            username = self._properties['user']['username']
+            return self.get_user(username)
+        except:
+            return None
 
 
     def reassign_user(self, username, target_username):
@@ -2117,6 +2111,22 @@ class Portal(object):
             newresults.append(newresult)
         return newresults
 
+class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
+        def __init__(self, key, cert):
+            urllib.request.HTTPSHandler.__init__(self)
+            self.key = key
+            self.cert = cert
+        def https_open(self, req):
+            #Rather than pass in a reference to a connection class, we pass in
+            # a reference to a function which, for all intents and purposes,
+            # will behave as a constructor
+            return self.do_open(self.getConnection, req)
+        def getConnection(self, host, timeout=300):
+            return  http.client.HTTPSConnection(host,
+                                                 key_file=self.key,
+                                                 cert_file=self.cert,
+                                                 timeout=timeout)
+
 class _ArcGISConnection(object):
     """ A class users to manage connection to ArcGIS services (Portal and Server). """
 
@@ -2144,13 +2154,27 @@ class _ArcGISConnection(object):
             ip = socket.gethostbyname(socket.gethostname())
             referer = socket.gethostbyaddr(ip)[0]
         self._referer = referer
-        self._useragent = 'PortalPy/' + __version__
+        self._useragent = 'geosaurus/' + __version__
+
+        parsed_url = urllib.parse.urlparse(self.baseurl)
+        self._parsed_org_url = urllib.parse.urlunparse((parsed_url[0], parsed_url[1], "", "", "", "")) 
+
+        self._username = username
+        self._password = password
+
+        if cert_file is not None and key_file is not None:
+            self._auth = "PKI"
+        elif username is not None and password is not None:
+            self._auth = "BUILTIN" # or "BASICAUTH" (LDAP) or NTLM or Kerberos (login sets this up)
+        else:
+            self._auth = "ANON"
 
         # Login if credentials were provided
         if username and password:
             self.login(username, password, expiration)
         elif username or password:
             _log.warning('Both username and password required for login')
+
 
     def generate_token(self, username, password, expiration=60):
         """ Generates and returns a new token, but doesn't re-login. """
@@ -2163,13 +2187,20 @@ class _ArcGISConnection(object):
 
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
-        newtoken = self.generate_token(username, password, expiration)
-        if newtoken:
-            self.token = newtoken
-            self._username = username
-            self._password = password
-            self._expiration = expiration
-        return newtoken
+        try:
+            newtoken = self.generate_token(username, password, expiration)
+            if newtoken:
+                self.token = newtoken
+                self._username = username
+                self._password = password
+                self._expiration = expiration
+                self._auth = "BUILTIN"
+            return newtoken
+        except urllib.error.HTTPError as err:
+            if err.code == 401: # using basic authentication
+                self._auth = "BASICAUTH"
+            else:
+                raise
 
     def relogin(self, expiration=None):
         """ Re-authenticates with the portal using the same username/password. """
@@ -2205,7 +2236,10 @@ class _ArcGISConnection(object):
                        ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            opener = urllib.request.build_opener()
+
+            handlers = self.get_handlers()
+            opener = urllib.request.build_opener(*handlers)
+
             opener.addheaders = headers
             resp = opener.open(url)
             if resp.info().get('Content-Encoding') == 'gzip':
@@ -2295,8 +2329,9 @@ class _ArcGISConnection(object):
             headers = [('Referer', self._referer),
                        ('User-Agent', self._useragent)]
             
+            handlers = self.get_handlers()
+            opener = urllib.request.build_opener(*handlers)
 
-            opener = urllib.request.build_opener()
             opener.addheaders = headers
             resp = opener.open(url)
             resp_data = resp.read()
@@ -2389,6 +2424,24 @@ class _ArcGISConnection(object):
                                     urllib.parse.urlencode(new_qs_list),
                                     urlparts.fragment))
 
+    def get_handlers(self):
+        handlers = []
+
+        if self._auth == "BASICAUTH": # used by LDAP
+            passman = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None,
+                                    self._parsed_org_url,
+                                    self._username,
+                                    self._password)
+            handlers.append(urllib.request.HTTPBasicAuthHandler(passman))
+            
+        elif self._auth == "PKI":
+            handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
+
+        cj = http.cookiejar.CookieJar()
+        handlers.append(urllib.request.HTTPCookieProcessor(cj))
+        return handlers
+
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
@@ -2428,7 +2481,10 @@ class _ArcGISConnection(object):
                        ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            opener = urllib.request.build_opener()
+
+            handlers = self.get_handlers()
+            opener = urllib.request.build_opener(*handlers)
+            
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
