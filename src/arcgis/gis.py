@@ -175,7 +175,7 @@ class GIS(object):
     
 class DatastoreItem(dict):
     """
-    Represents a datastore item within the GIS's data store
+    Represents a datastore item (folder, database or bigdata fileshare) within the GIS's data store
     """
     def __init__(self, datastore, path):
         dict.__init__(self)
@@ -217,6 +217,131 @@ class DatastoreItem(dict):
     def __repr__(self):
         return '<%s title:"%s" type:"%s">' % (type(self).__name__, self.path, self.type)
 
+    @property
+    def manifest(self):
+        """
+        The manifest resource for bigdata fileshares, 
+        """
+        data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
+
+        params = {
+            'f': 'json',
+        }
+        res = self._portal.con.post(data_item_manifest_url, params)
+        return res
+
+    @manifest.setter
+    def manifest(self, value):
+        """
+        Updates the manifest resource for bigdata fileshares, 
+        """
+        manifest_upload_url =  self._admin_url + '/data/items' + self.datapath + '/manifest/update'
+
+        with _tempinput(json.dumps(value)) as tempfilename:
+            # Build the files list (tuples)
+            files = []
+            files.append(('manifest', tempfilename, os.path.basename(tempfilename)))
+                
+            postdata = {
+                'f' : 'pjson'
+            }
+                
+            resp = self._portal.con.post(manifest_upload_url, postdata, files)
+    
+            if resp['status'] == 'success':
+                return True
+            else:
+                print(str(resp))
+                return False
+
+    @property
+    def ref_count(self):
+        """
+        The total number of references to this data item that exist on the server. You can use this property to determine if this data item can be safely deleted (or taken down for maintenance).
+        """
+        data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
+
+        params = {
+            'f': 'json',
+            'itemPath': self.datapath
+        }
+        res = self._portal.con.post(data_item_manifest_url, params)
+        return res["totalRefCount"]
+
+    def delete(self):
+        """
+        Unregisters this data item from the data store
+        """
+        params = { 
+            "f" : "json" ,
+            "itempath" : self.datapath,
+            "force": True
+            }
+        path = self._admin_url + "/data/unregisterItem"
+
+        resp = self._portal.con.post(path, params)
+        if resp:
+            return resp.get('success')
+        else:
+            return False
+
+    def update(self, item):
+        """
+        Edits this data item to update its connection information.
+        
+        Input
+            item - the dict representation of the updated item
+        Output:
+              True if successful
+        """
+        params = { 
+            "f" : "json" ,
+            "item" : item
+            }
+        path = self._admin_url +  "/data/items" + self.datapath +  "/edit"
+
+        resp = self._portal.con.post(path, params)
+        if resp ['status'] == 'success':
+            return True
+        else:
+            return False
+
+    def validate(self):
+        """
+        Validates that this data item's path (for file shares) or connection string (for databases) 
+        is accessible to every server node in the site
+        
+        Output:
+              True if successful
+        """
+        params = { "f" : "json" }
+        path = self._admin_url + "/data/items" + self.datapath
+
+        datadict = self._portal.con.post(path, params)
+
+        params = {
+            "f" : "json",
+            "item": datadict
+            }
+        path = self._admin_url + "/data/validateDataItem"
+
+        res = self._portal.con.post(path, params)
+        return res['status'] == 'success'
+
+    def list_datasets(self):
+        """
+        Lists the datasets in a big data file share.
+        """
+        data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
+
+        params = {
+            'f': 'json',
+        }
+        res = self._portal.con.post(data_item_manifest_url, params)
+        
+        for dataset in res['datasets']:
+            print("/server/datastores" + self.datapath + '/' + dataset['path'] + ' ('+ dataset['type'] + ')')
+
 class DatastoreManager(object):
     """
     Manager class for managing the GIS data stores in on-premises ArcGIS Portals.
@@ -225,11 +350,11 @@ class DatastoreManager(object):
     Users call methods on this 'datastores' object to manage the data stores.
     """
     def __init__(self, gis, admin_url=None):
-        self.gis = gis
+        self._gis = gis
         self._portal = gis._portal
         if admin_url is None:
-            fedservers_url = self.gis._url + "portaladmin/federation/servers?f=json"
-            res = self.gis._portal.con.get(fedservers_url)
+            fedservers_url = self._gis._url + "portaladmin/federation/servers?f=json"
+            res = self._gis._portal.con.get(fedservers_url)
             servers = res['servers']
 
             self._admin_url = None
@@ -271,22 +396,6 @@ class DatastoreManager(object):
         path = self._admin_url + "/data/config/update"
         res = self._portal.con.post(path, params)
         return res
-
-    def list_bigdata_datasets(self, server_path):
-        fedservers_url = self.gis._url + "portaladmin/federation/servers?f=json"
-        res = self.gis._portal.con.get(fedservers_url)
-        servers = res['servers']
-        admin_url = _get_hosted_server_admin_url(servers)
-        data_item_manifest_url = admin_url + '/data/items/bigDataFileShares/' + server_path + "/manifest"
-
-        params = {
-            'f': 'json',
-        }
-        res = self.gis._portal.con.post(data_item_manifest_url, params)
-        
-        for dataset in res['datasets']:
-            print("/server/datastores/bigDataFileShares/" + server_path + '/' + dataset['path'] + 
-                  ' ('+ dataset['type'] + ')')
            
     def add_folder(self,
             name,
@@ -385,7 +494,7 @@ class DatastoreManager(object):
             print("Big Data file share exists for " + name)
 
         if generate_manifest:
-            manifest = self.gis.tools.geoanalytics.generate_manifest(local_path)
+            manifest = self._gis.tools.geoanalytics.generate_manifest(local_path)
             manifest_upload_url =  self._admin_url + '/data/items/bigDataFileShares/' + name + '/manifest/update'
 
             with _tempinput(json.dumps(manifest)) as tempfilename:
@@ -498,10 +607,10 @@ class DatastoreManager(object):
            You can use this operation to search through the various data
            items registered in the server's data store.
            Inputs:
-              parentPath - The path of the parent under which to find items
+              parentPath - The path of the parent under which to find items. To get the root data items, pass '/'
               ancestorPath - The path of the ancestor under which to find
                              items.
-              types - A comma separated filter for the type of the items
+              types - A comma separated filter for the type of the items. Types include folder, egdb, bigDataFileShare, datadir
               id - A filter to search by the ID of the item
            
             :return:
@@ -540,7 +649,12 @@ class DatastoreManager(object):
 
     def validate(self):
         """ 
-        Validates all items in the datastore and returns True if validated
+        Validates all items in the datastore and returns True if validated.
+
+        In order for a data item to be registered and used successfully within the GIS's data store,
+        you need to make sure that the path (for file shares) or connection string (for databases)
+        is accessible to every server node in the site. To validate all registered data items all
+        at once, you can invoke this operation.
         """
         params = {"f" : "json"}
         path = self._admin_url + "/data/validateAllDataItems"

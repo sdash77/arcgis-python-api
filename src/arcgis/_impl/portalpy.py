@@ -2435,7 +2435,7 @@ class _ArcGISConnection(object):
                                     self._password)
             handlers.append(urllib.request.HTTPBasicAuthHandler(passman))
             
-        elif self._auth == "PKI":
+        if self._auth == "PKI":
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
         cj = http.cookiejar.CookieJar()
@@ -2498,7 +2498,7 @@ class _ArcGISConnection(object):
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
-#        print(resp_data);
+        #print(resp_data);
         if use_ordered_dict:
             resp_json = json.loads(resp_data.decode("utf-8"), object_pairs_hook=OrderedDict)
         else:
@@ -2539,6 +2539,7 @@ class _ArcGISConnection(object):
         'Referer': self._referer,
         'Content-Type': 'multipart/form-data; boundary=%s' % boundary
         }
+
         if self.proxy_host:
             if ssl:
                 h = http.client.HTTPSConnection(self.proxy_host, self.proxy_port,
