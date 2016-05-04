@@ -2597,7 +2597,6 @@ class Item(dict):
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
-        Use the Analyze operation to generate the default publishing parameters for CSVs.
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" } 
 
         """
