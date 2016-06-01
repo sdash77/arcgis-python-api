@@ -441,36 +441,17 @@ class DatastoreManager(object):
 
     def add_bigdata(self,
             name,
-            server_path=None,
-            local_path=None,
-            generate_manifest=True):
+            server_path=None):
         """
         Registers a bigdata fileshare with the data store.
         Input
             name - unique bigdata fileshare name on the server
             server_path - the path to the folder from the server 
-            generate_manifest - generate and set the manifest for the bigdata fileshare?
         Output:
               the data item if registered successfully, None otherwise
         """
         output = None
-
-        params = {
-            'f': 'json',
-            'item' : {
-              "path": "/bigDataFileShares",
-              "type": "datadir",
-              "id": "",
-              "clientPath": None
-            }
-        }
-
         path = self._admin_url + "/data/registerItem"
-        res = self._portal.con.post(path, params)
-        if res['status'] == 'success' or res['status'] == 'exists':
-            print("Created Big Data file shares data directory")
-        else:
-            print(str(res))
 
         params = {
             'f': 'json',
@@ -492,24 +473,6 @@ class DatastoreManager(object):
             print("Created Big Data file share for " + name)
         elif res['status'] == 'exists':
             print("Big Data file share exists for " + name)
-
-        if generate_manifest:
-            manifest = self._gis.tools.geoanalytics.generate_manifest(local_path)
-            manifest_upload_url =  self._admin_url + '/data/items/bigDataFileShares/' + name + '/manifest/update'
-
-            with _tempinput(json.dumps(manifest)) as tempfilename:
-                # Build the files list (tuples)
-                files = []
-                files.append(('manifest', tempfilename, os.path.basename(tempfilename)))
-                
-                postdata = {
-                    'f' : 'pjson'
-                }
-                
-                resp = self._portal.con.post(manifest_upload_url, postdata, files)
-    
-                if resp['status'] == 'success':
-                    print("Uploaded/updated manifest")
 
         return output
 
@@ -718,15 +681,17 @@ class Tools(object):
             return None
         
     @property
-    def geoanalytics(self):
-        """the portal's geoanalytics tools, if available and configured"""
+    def bigdata(self):
+        """the portal's bigdata analytics tools, if available and configured"""
         if self._geoanalytics is not None:
             return self._geoanalytics
         try:
             try:
-                svcurl = self._gis.properties['helperServices']['geoAnalytics']['url']
+                svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
             except:
-                svcurl = 'https://dev06999.esri.com/server/rest/services/GeoAnalyticsTools/GPServer'
+                print("This GIS does not support geoanalytics")
+                return None
+            
             self._geoanalytics = GeoAnalyticsTools(svcurl, self._gis) 
             return self._geoanalytics
         except KeyError:
@@ -1431,6 +1396,7 @@ class Group(dict):
         dict.__init__(self)
         self._portal = portal
         self.groupid = groupid
+        self._workdir = tempfile.gettempdir()
         groupdict = self._portal.get_group(self.groupid)
         if groupdict:
             self.__dict__.update(groupdict)
@@ -1559,10 +1525,9 @@ class Group(dict):
         """
         return self._portal.get_group_thumbnail(self.groupid)
 
-    def download_thumbnail(self, dir=None, thumbnail_file=None):
+    def download_thumbnail(self, dir=None):
         """ Downloads the group thumbnail for this group, returns file path. """
-        if not thumbnail_file:
-            thumbnail_file = self.thumbnail
+        thumbnail_file = self.thumbnail
 
         # Only proceed if a thumbnail exists
         if thumbnail_file:
@@ -1748,6 +1713,7 @@ class User(dict):
         dict.__init__(self)
         self._portal = portal
         self.username = username
+        self._workdir = tempfile.gettempdir()
         userdict = self._portal.get_user(self.username)
         if userdict:
             self.__dict__.update(userdict)
@@ -2080,11 +2046,10 @@ class User(dict):
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
 
-    def download_thumbnail(self, dir=None, thumbnail_file=None):
+    def download_thumbnail(self, dir=None):
         """ Downloads the item thumbnail for this user, returns file path. """
-        if not thumbnail_file:
-            thumbnail_file = self.thumbnail
-
+        thumbnail_file = self.thumbnail
+        
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
@@ -2139,7 +2104,7 @@ class Item(dict):
         dict.__init__(self)
         self._portal = portal
         self.itemid = itemid
-        self._workdir=tempfile.gettempdir()
+        self._workdir = tempfile.gettempdir()
         itemdict = self._portal.get_item(self.itemid)
         if itemdict:
             self.__dict__.update(itemdict)
@@ -2194,10 +2159,9 @@ class Item(dict):
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
     
-    def download_thumbnail(self, dir=None, thumbnail_file=None):
+    def download_thumbnail(self, dir=None):
         """ Downloads the item thumbnail for this item, returns file path. """
-        if not thumbnail_file:
-            thumbnail_file = self.thumbnail
+        thumbnail_file = self.thumbnail
 
         # Only proceed if a thumbnail exists
         if thumbnail_file:
