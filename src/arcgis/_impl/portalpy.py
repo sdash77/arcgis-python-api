@@ -2443,7 +2443,7 @@ class _ArcGISConnection(object):
         return handlers
 
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
-             is_retry=False, use_ordered_dict=False):
+             is_retry=False, use_ordered_dict=False, add_token=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = urllib.parse.quote(path, ':/')
 
@@ -2454,8 +2454,9 @@ class _ArcGISConnection(object):
             url = url.replace('http://', 'https://')
 
         # Add the token if logged in
-        if self.is_logged_in():
-            postdata['token'] = self.token
+        if add_token:
+            if self.is_logged_in():
+                postdata['token'] = self.token
 
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)

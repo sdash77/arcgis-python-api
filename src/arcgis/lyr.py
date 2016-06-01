@@ -37,10 +37,16 @@ class ImageLayer(collections.OrderedDict):
             "f" : "json"
         }
         properties = {}
-        try:
-            properties = self.item._portal.con.post(self.url, params)
-        except:
-            pass
+        add_token = False
+        if self.item['access'] != 'public':
+            add_token = True
+
+        properties = self.item._portal.con.post(self.url, params, add_token=add_token)
+
+        #try:
+        #    properties = self.item._portal.con.post(self.url, params)
+        #except:
+        #    pass
             #TODO - why does token not work for public access?
         #if self.item['access'] != 'public':
         #properties.update({"url" : self.url + "?token=" + self.item._portal.con.token })
