@@ -158,7 +158,7 @@ class Portal(object):
         #user_names = _unpack(user_names, 'username')
 
         postdata = self._postdata()
-        postdata['users'] = ','.join(usernames)
+        postdata['users'] = ','.join(user_names)
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
                                  postdata)
         return resp
