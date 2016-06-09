@@ -103,17 +103,21 @@ class WebScene(collections.OrderedDict):
             self.item.update(data=tempfilename)
 
 class MapView(widgets.DOMWidget):
-    _view_name = Unicode('MapView', sync=True)
-    basemap = Unicode('topo', sync=True)
-    width = Unicode('100%', sync=True)
-    zoom = Int(12, sync=True)
-    id = Unicode('', sync=True)
-    center = List([28.7124568, 77.1175102], sync=True)
-    mode = Unicode('navigate', sync=True)
-    addlayer = Unicode('', sync=True)
-    start_time = Unicode('', sync = True) #Unicode('1/1/1989 UTC', sync = True)
-    end_time = Unicode('', sync = True) #Unicode('1/1/1991 UTC', sync = True)
-    _swipe_div = Unicode('', sync = True)
+    _view_name = Unicode('MapView').tag(sync=True)
+    _view_module = Unicode('mapview').tag(sync=True)
+    
+    value = Unicode('Hello World!').tag(sync=True)
+    
+    basemap = Unicode('topo').tag(sync=True)
+    width = Unicode('100%').tag(sync=True)
+    zoom = Int(12).tag(sync=True)
+    id = Unicode('').tag(sync=True)
+    center = List([28.7124568, 77.1175102]).tag(sync=True)
+    mode = Unicode('navigate').tag(sync=True)
+    addlayer = Unicode('').tag(sync=True)
+    start_time = Unicode('').tag(sync=True)
+    end_time = Unicode('').tag(sync=True)
+    _swipe_div = Unicode('').tag(sync=True)
 
     def __init__(self, **kwargs):
         """Constructor"""
@@ -320,8 +324,8 @@ class MapView(widgets.DOMWidget):
             Set to true to remove the callback from the list of callbacks."""
         self._draw_end_handlers.register_callback(callback, remove=remove)
         
-    def _handle_map_msg(self, _, content):
-    #def _handle_map_msg(self, _, content, buffers):
+    #def _handle_map_msg(self, _, content):
+    def _handle_map_msg(self, _, content, buffers):
         """Handle a msg from the front-end.
 
         Parameters

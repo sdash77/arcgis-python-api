@@ -152,11 +152,15 @@ require.config({
       } 
     });
 
-require([
+//require([
     //"widgets/js/widget", 
     //"widgets/js/manager",
-    "nbextensions/widgets/widgets/js/widget",
-    "nbextensions/widgets/widgets/js/manager",
+    //"nbextensions/widgets/widgets/js/widget",
+    //"nbextensions/widgets/widgets/js/manager",
+require.undef('mapview');
+
+define('mapview', [ 
+     "jupyter-js-widgets",
      "esri/map",
      "esri/dijit/LayerSwipe",
      "esri/graphic",
@@ -181,7 +185,9 @@ require([
      "esri/geometry/webMercatorUtils",
      "esri/arcgis/utils",
      "dojo/domReady!"
-   ], function(widget, manager, Map, LayerSwipe, Graphic, TimeExtent, Extent, InfoTemplate,
+   ], function( //widget, manager, 
+		widgets,
+		Map, LayerSwipe, Graphic, TimeExtent, Extent, InfoTemplate,
                 Draw, KMLLayer, RasterFunction, ArcGISImageServiceLayer, 
                 ImageServiceParameters,
                 Polyline, Polygon, Point, Multipoint, FeatureLayer, 
@@ -189,7 +195,7 @@ require([
                 PictureMarkerSymbol, webMercatorUtils, arcgisUtils){
     
     var map, toolbar;
-    var MapView = widget.DOMWidgetView.extend({
+    var MapView = widgets.DOMWidgetView.extend({
         
         // Render the view.
         render: function(){ 
@@ -590,8 +596,12 @@ require([
         },
         
     });
-    
-    manager.WidgetManager.register_widget_view('MapView', MapView);
+
+    return {
+        MapView : MapView
+    };
+
+    //manager.WidgetManager.register_widget_view('MapView', MapView);
 });
 
 
