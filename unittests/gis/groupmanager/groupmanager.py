@@ -27,7 +27,7 @@ batManThumb = os.path.join(sys.path[0], "batman.png")
 ### No user adding, or more 'workflow' type tests are done. These to be done else where
 ## TO-DO :  find a better directory than c:\temp for intermediate data
 
-class TestGISGroupManager_Create(unittest.TestCase):
+class TestGISGroupManager(unittest.TestCase):
     __owner__ = "Kevin"
 
     @classmethod
@@ -40,7 +40,7 @@ class TestGISGroupManager_Create(unittest.TestCase):
         self.local = False if self.arcgiscom else True
         self.gis = GIS(self.host, self.username, self.password)
 
-        self.g = self.gis.groups
+        self.g = self.gis.groups       
 
         # Quick search, clean up of existing groups so tests dont fall down if a previous cleanup failed.
         searchG = self.g.search(title)
@@ -48,6 +48,7 @@ class TestGISGroupManager_Create(unittest.TestCase):
             foundG.delete()
 
         self.newGroup = self.g.create(title, tags, description, snippet, access, thumb, inviteOnly, sortField, sortOrder, isViewOnly)
+        self.startList = self.g.list()
 
     @classmethod
     def tearDownClass(self):
@@ -58,6 +59,10 @@ class TestGISGroupManager_Create(unittest.TestCase):
             os.remove(os.path.join(r'c:\temp', "batman.png"))
         except:
             pass
+        
+    def test_groupList(self):
+        currentGroupList = self.g.list()
+        self.assertAlmostEquals(len(currentGroupList), len(self.intialList))        
 
     def test_groupProperties(self):
 
@@ -111,8 +116,18 @@ class TestGISGroupManager_Create(unittest.TestCase):
         self.assertEqual(group2.description, description)
         self.assertEqual(group2.snippet, snippet)
         self.assertEqual(group2.owner, self.username)
+        
+        # Make sure the list has incremented by 1
+        self.assertEqual(len(self.g.list()), len(self.startList)+1)
 
-        group2.delete()
+        # Make sure the group can be deleted
+        self.assertTrue(group2.delete())
+
+    def test_groupSearchJunk(self):
+        
+        searchResult = self.g.search("jibberish123456789")
+        # Should return an empty list
+        self.assertEqual(searchResult, [])
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ Test directory structure follows the code: `/src/arcgis/*` with subdirectories f
   - [ ] content manager
   - [ ] group
   - [ ] group manager
+    - [ ] ![Progress](http://progressed.io/bar/90)
   - [ ] item
   - [ ] tools
   - [ ] user
