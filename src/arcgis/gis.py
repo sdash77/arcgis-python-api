@@ -1397,27 +1397,31 @@ class Group(dict):
         self._portal = portal
         self.groupid = groupid
         self._workdir = tempfile.gettempdir()
-        groupdict = self._portal.get_group(self.groupid)
+        # groupdict = self._portal.get_group(self.groupid)
+        self._hydrated = False
         if groupdict:
             self.__dict__.update(groupdict)
             dict.update(groupdict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
+        # return dict.__getitem__(self, name)
+        if not self._hydrated:
+            groupdict = self._portal.get_group(self.groupid)
+            self._hydrated = True
+            super().update(groupdict)
+            self.__dict__.update(groupdict)
         return dict.__getitem__(self, name)
-        """
-        groupdict = self._portal.get_group(self.groupid)
-        super().update(groupdict)
-        self.__dict__.update(groupdict)
-        return groupdict[name]
-        """
+        
 
     def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            groupdict = self._portal.get_group(self.groupid)
-            super().update(groupdict)
-            self.__dict__.update(groupdict)
+            if not self._hydrated:
+                groupdict = self._portal.get_group(self.groupid)
+                self._hydrated = True
+                super().update(groupdict)
+                self.__dict__.update(groupdict)
             return dict.__getitem__(self, k)
 
     def __str__(self):
@@ -1705,7 +1709,7 @@ class Group(dict):
         return self._portal.leave_group(self.groupid)
 
 
-class User(dict):
+class User(dict): 
     """
     Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
     """
@@ -1714,7 +1718,8 @@ class User(dict):
         self._portal = portal
         self.username = username
         self._workdir = tempfile.gettempdir()
-        userdict = self._portal.get_user(self.username)
+        # userdict = self._portal.get_user(self.username)
+        self._hydrated = False
         if userdict:
             self.__dict__.update(userdict)
             dict.update(userdict)
@@ -1722,22 +1727,25 @@ class User(dict):
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
     def __getattr__(self, name): # support user attributes as user.access, user.email, user.role etc
+        # return dict.__getitem__(self, name)
+        if not self._hydrated:
+            userdict = self._portal.get_user(self.username)
+            self._hydrated = True
+            super().update(userdict)
+            self.__dict__.update(userdict)
         return dict.__getitem__(self, name)
-        """
-        userdict = self._portal.get_user(self.username)
-        super().update(userdict)
-        self.__dict__.update(userdict)
-        return userdict[name]
-        """
+        
 
     def __getitem__(self, k): # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            userdict = self._portal.get_user(self.username)
-            super().update(userdict)
-            self.__dict__.update(userdict)
-            return dict.__getitem__(self, k) #userdict[k]
+            if not self._hydrated:
+                userdict = self._portal.get_user(self.username)
+                self._hydrated = True
+                super().update(userdict)
+                self.__dict__.update(userdict)
+            return dict.__getitem__(self, k)
 
     def __str__(self):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
@@ -2105,27 +2113,30 @@ class Item(dict):
         self._portal = portal
         self.itemid = itemid
         self._workdir = tempfile.gettempdir()
-        itemdict = self._portal.get_item(self.itemid)
+        # itemdict = self._portal.get_item(self.itemid)
+        self._hydrated = False
         if itemdict:
             self.__dict__.update(itemdict)
             dict.update(itemdict)
 
     def __getattr__(self, name): # support item attributes
+        # return dict.__getitem__(self, name)
+        if not self._hydrated:
+            itemdict = self._portal.get_item(self.itemid)
+            self._hydrated = True
+            super().update(itemdict)
+            self.__dict__.update(itemdict)
         return dict.__getitem__(self, name)
-        """
-        itemdict = self._portal.get_item(self.itemid)
-        super().update(itemdict)
-        self.__dict__.update(itemdict)
-        return itemdict[name]
-        """
+
     def __getitem__(self, k): # support item attributes as dictionary keys on this object
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            #print("KeyError:" + k)
-            itemdict = self._portal.get_item(self.itemid)
-            super().update(itemdict)
-            self.__dict__.update(itemdict)
+            if not self._hydrated:
+                itemdict = self._portal.get_item(self.itemid)
+                self._hydrated = True
+                super().update(itemdict)
+                self.__dict__.update(itemdict)
             return dict.__getitem__(self, k)
 
     def download(self, dir):
