@@ -1992,21 +1992,21 @@ class Portal(object):
 
 
     def delete_folder(self, owner, folder):
-        """ Creates a folder for the given user with the given title.
+        """ Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
-        folder            required string, the id of the folder name
+        folder            required string, the folder name
         ================  ========================================================
 
         :return:
             a boolean if succeeded.
         """
         postdata = self._postdata()
-        folder_id = self.get_folder_id(owner, folder_id)
+        folder_id = self.get_folder_id(owner, folder)
         resp = self.con.post('content/users/' + owner + '/' + folder_id + '/delete', postdata)
         if resp:
             return resp.get('success')
