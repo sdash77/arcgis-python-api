@@ -1295,14 +1295,15 @@ class ContentManager(object):
 
         :return:
             a json object like the following:
-            {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"}
+            {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"} if the folder was created, None otherwise.
         """
         if folder != '/': # we don't create root folder
             owner_name = owner
             if isinstance(owner, arcgis.gis.User):
                 owner_name = owner.username
             if self._portal.get_folder_id(owner_name, folder) is None:
-                self._portal.create_folder(owner_name, folder)
+                return self._portal.create_folder(owner_name, folder)
+        return None
 
     def delete_folder(self, owner, folder):
         """ Deletes a folder for the given user with the given folder name.
@@ -1312,11 +1313,11 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
-        folder            required string, the name of the folder
+        folder            required string, the name of the folder to delete
         ================  ========================================================
 
         :return:
-            a boolean if succeeded.
+            True if succeeded, False otherwise
         """
         if folder != '/':
             return self._portal.delete_folder(owner, folder)
