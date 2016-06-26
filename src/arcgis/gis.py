@@ -1397,6 +1397,7 @@ class Group(dict):
         dict.__init__(self)
         self._portal = portal
         self.groupid = groupid
+        self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         # groupdict = self._portal.get_group(self.groupid)
         self._hydrated = False
@@ -1718,6 +1719,7 @@ class User(dict):
         dict.__init__(self)
         self._portal = portal
         self.username = username
+        self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         # userdict = self._portal.get_user(self.username)
         self._hydrated = False
@@ -2113,6 +2115,7 @@ class Item(dict):
         dict.__init__(self)
         self._portal = portal
         self.itemid = itemid
+        self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         # itemdict = self._portal.get_item(self.itemid)
         self._hydrated = False
