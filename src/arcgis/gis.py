@@ -568,7 +568,7 @@ class DatastoreManager(object):
                       types=None, id=None):
         """
            You can use this operation to search through the various data
-           items registered in the server's data store.
+           items registered in the server's data store. Searching without specifying the parent_path and other parameters returns a lists of all registered data items
            Inputs:
               parentPath - The path of the parent under which to find items. To get the root data items, pass '/'
               ancestorPath - The path of the ancestor under which to find
@@ -603,12 +603,6 @@ class DatastoreManager(object):
         for item in res['items']:
             dataitems.append(DatastoreItem(self, item['path']))
         return dataitems
-
-    def list(self):
-        """
-           Returns a list of all registered data items
-        """
-        return self.search()
 
     def validate(self):
         """ 
@@ -836,23 +830,7 @@ class UserManager(object):
             return User(self._portal, user['username'], user)
         return None
 
-    def list(self, max_users=1000):
-        """ Return the list of users in your organization. This method does not work with 
-        ArcGIS Online, only with Portal for ArcGIS.
-         Arguments
-            max_users : optional int, the maximum number of users to return.
-
-        :return: The list of users in your org
-        """
-        # userlist = []
-        users = self._portal.get_org_users(max_users)
-        # for user in users:
-        #     userlist.append(User(self._portal, user['username'], user))
-        # return userlist
-        return [User(self._portal, u['username'], u) for u in users]
-        #https://portalpy.esri.com/arcgis/sharing/rest/portals/self/users?start=2&num=2&sortField=fullname&sortOrder=asc&f=pjson
-
-    def search(self, query, sort_field='username', sort_order='asc', max_users=100, add_org=True):
+    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, add_org=True):
         """ Searches portal users.
 
         Returns a list of users matching the specified query
@@ -865,7 +843,10 @@ class UserManager(object):
                available in ArcGIS help.  A short version of that URL
                is http://bitly.com/1fJ8q31.
 
-            2. Most of the time when searching groups you want to
+            2. Searching without specifying a query parameter returns 
+               a list of all users in your organization. 
+
+            3. Most of the time when searching groups you want to
                search within your organization in ArcGIS Online
                or within your Portal.  As a convenience, the method
                automatically appends your organization id to the query by
@@ -877,7 +858,8 @@ class UserManager(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        query             required string, query string.  See notes.
+        query             optional string, query string.  See notes. pass None
+                          to get list of all users in the org
         ----------------  --------------------------------------------------------
         sort_field        optional string, valid values can be username or created
         ----------------  --------------------------------------------------------
@@ -892,11 +874,16 @@ class UserManager(object):
         :return:
             A list of users:
         """
-        userlist = []
-        users = self._portal.search_users(query, sort_field, sort_order, max_users, add_org)
-        for user in users:
-            userlist.append(User(self._portal, user['username'], user))
-        return userlist
+        if query is None:        
+            users = self._portal.get_org_users(max_users)
+            return [User(self._portal, u['username'], u) for u in users]    
+        else:
+            userlist = []
+
+            users = self._portal.search_users(query, sort_field, sort_order, max_users, add_org)
+            for user in users:
+                userlist.append(User(self._portal, user['username'], user))
+            return userlist
 
         #TODO: remove org users, invite users
 
@@ -994,16 +981,6 @@ class GroupManager(object):
             return Group(self._portal, groupid)
         return None
 
-    def list(self, max_groups=1000):
-        """ Return the list of groups in your organization
-         Arguments
-            max_groups : optional int, the maximum number of groups to return.
-
-        :return: The list of groups in your org
-        """
-        return self.search("", max_groups=max_groups, add_org=True)
-        #https://portalpy.esri.com/arcgis/sharing/rest/community/groups?q=orgid%3A0123456789ABCDEF&sortField=&sortOrder=
-
     def search(self, query='', sort_field='title', sort_order='asc',
                max_groups=1000, add_org=True):
         """ Searches for portal groups.
@@ -1015,6 +992,9 @@ class GroupManager(object):
                 be adequately described here.  The query syntax is
                 available in ArcGIS help.  A short version of that URL
                 is http://bitly.com/1fJ8q31.
+
+            2. Searching without specifying a query parameter returns 
+               a list of all groups in your organization. 
 
             2. Most of the time when searching groups you want to
                 search within your organization in ArcGIS Online
