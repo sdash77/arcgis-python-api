@@ -900,12 +900,15 @@ class UserManager(object):
 
         #TODO: remove org users, invite users
 
-    def logged_in_user(self):
+    @property
+    def me(self):
         """ Returns the logged in user
         """
-        imemyself = self._portal.logged_in_user()
-        return User(self._portal, imemyself['username'], imemyself)
-
+        me = self._portal.logged_in_user()
+        if me is not None:
+            return User(self._portal, me['username'], me)
+        else:
+            return None
 
 class GroupManager(object):
     """
