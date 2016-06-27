@@ -14,19 +14,19 @@ from arcgis.lyr import *
 #from IPython.html import widgets
 #from IPython.utils.traitlets import Unicode, Int, List
 try:
-        from ipywidgets import widgets
+    from ipywidgets import widgets
 except:
-        from IPython.html import widgets
+    from IPython.html import widgets
 #from IPython.html import widgets
 try:
-        from traitlets import Unicode, Int, List
+    from traitlets import Unicode, Int, List
 except:
-        from IPython.utils.traitlets import Unicode, Int, List
+    from IPython.utils.traitlets import Unicode, Int, List
 
 
 """
 The arcgis.viz module provides components for visualizing GIS data and analysis.
-This module includes components such as MapView - an IPython Notebook widget for 
+This module includes components such as MapView - an IPython Notebook widget for
 working with maps, as well as WebMap and WebScene components that enable 2D and 3D
 mapping and visualization in ArcGIS Online and on ArcGIS Portals.
 """
@@ -55,8 +55,8 @@ class WebMap(collections.OrderedDict):
         self.item = webmapitem
         webmapdict = self.item.get_data()
         collections.OrderedDict.__init__(self, webmapdict)
-        #dict.update(webmapdict) 
-                
+        #dict.update(webmapdict)
+
     def _repr_html_(self):
         #return '<iframe width=810 height=600 src="'+"http://developers.arcgis.com/javascript/samples/mobile_arcgis/?webmap="+self.item.itemid+'"/>'
         return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
@@ -105,9 +105,9 @@ class WebScene(collections.OrderedDict):
 class MapView(widgets.DOMWidget):
     _view_name = Unicode('MapView').tag(sync=True)
     _view_module = Unicode('mapview').tag(sync=True)
-    
+
     value = Unicode('Hello World!').tag(sync=True)
-    
+
     basemap = Unicode('topo').tag(sync=True)
     width = Unicode('100%').tag(sync=True)
     zoom = Int(12).tag(sync=True)
@@ -126,7 +126,7 @@ class MapView(widgets.DOMWidget):
         self._draw_end_handlers = widgets.CallbackDispatcher()
 
         self.on_msg(self._handle_map_msg)
-        
+
         self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic", "terrain", "osm"]
         self._swipe_div = 'swipeDiv' +''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         self.item = kwargs.pop('item', None)
@@ -134,25 +134,25 @@ class MapView(widgets.DOMWidget):
             if self.item.type.lower() != 'web map':
                 raise TypeError("item type must be web map")
             self.id = self.item.id
-    
+
     def draw(self, shape, popup=None, symbol=None, attributes=None):
         """
-        Draws a shape. 
-        
+        Draws a shape.
+
         Arguments:
-        shape is one of ["circle", "downarrow", "ellipse", "extent", "freehandpolygon", 
-        "freehandpolyline", "leftarrow", "line", "multipoint", "point", "polygon", "polyline", 
+        shape is one of ["circle", "downarrow", "ellipse", "extent", "freehandpolygon",
+        "freehandpolyline", "leftarrow", "line", "multipoint", "point", "polygon", "polyline",
         "rectangle", "rightarrow", "triangle", "uparrow", or geometry dict object]
-        
+
         popup is a dict containing "title" and "content" as keys that will be displayed
         when the shape is clicked
 
         symbol is a symbol specified in json format as described at http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000
         a default symbol is used is one is not specified
 
-        attributes is a dict containing name value pairs of fields and field values 
+        attributes is a dict containing name value pairs of fields and field values
         associated with the graphic.
-         
+
         """
         if isinstance(shape, list) and len(shape) == 2: # [lat, long] pair
             shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
@@ -160,12 +160,12 @@ class MapView(widgets.DOMWidget):
             shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
 
         if isinstance(shape, dict):
-            graphic = { 
-                "geometry" : shape, 
+            graphic = {
+                "geometry" : shape,
                 "infoTemplate" : popup,
                 "symbol" : symbol,
                 "attributes" : attributes
-                }
+            }
             self.mode = json.dumps(graphic)
             #print(json.dumps(graphic))
         else:
@@ -187,16 +187,16 @@ class MapView(widgets.DOMWidget):
                             lyr_url = layer['url'] + "?token=" + item._portal.con.token
                     except:
                         pass
-                    
+
                     js_layer = {
                         "type" : "FeatureLayer",
                         "url" : lyr_url
-                        }
+                    }
                     if options is not None:
                         js_layer.update({ "options" : json.dumps(options) })
 
                     self.addlayer = json.dumps(js_layer)
-            
+
             elif item.type.lower() == 'feature collection':
                 fcdict = item.get_data()
                 fc = FeatureCollection(fcdict['layers'][0])
@@ -215,11 +215,11 @@ class MapView(widgets.DOMWidget):
                         lyr_url = layer['url'] + "?token=" + item._portal.con.token
                 except:
                     pass
-                
+
                 js_layer = {
                     "type" : "ImageLayer",
                     "url" : lyr_url
-                    }
+                }
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
 
@@ -236,11 +236,11 @@ class MapView(widgets.DOMWidget):
                         lyr_url = layer['url'] + "?token=" + item.item._portal.con.token
                 except:
                     pass
-                
+
                 js_layer = {
                     "type" : "FeatureLayer",
                     "url" : lyr_url
-                    }
+                }
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
 
@@ -256,23 +256,23 @@ class MapView(widgets.DOMWidget):
             layer = {
                 "type" : "FeatureLayer",
                 "url" : item['url'] + "?token=" + item._portal.con.token
-                }
+            }
             if options is not None:
                 layer.update({ "options" : json.dumps(options) })
 
             self.addlayer = json.dumps(layer)
-            #json.dumps(item) 
-        
+            #json.dumps(item)
+
         elif isinstance(item, ImageLayer):
             layer = {
                 "type" : "ImageLayer",
                 "url" : item['url']
-                }
+            }
             if options is not None:
                 layer.update({ "options" : json.dumps(options) })
 
             self.addlayer = json.dumps(layer)
-            #json.dumps(item) 
+            #json.dumps(item)
         else:
             if options is not None:
                 item.update({ "options" : json.dumps(options) })
@@ -280,26 +280,26 @@ class MapView(widgets.DOMWidget):
             self.addlayer = json.dumps(item)
 
             #layer = item
-            ''' { 
-                "type" : item['type'], 
+            ''' {
+                "type" : item['type'],
                 "url" : item['url'],
                 "definition_expression" : item['definition_expression']
                 "opacity" : 0.75
                 }
             '''
             #self.addlayer = json.dumps(layer)
- 
+
     def clear_graphics(self):
         self.mode = "###clear_graphics"
-    
+
     def set_time_extent(self, start_time, end_time):
         self.start_time = start_time
         self.end_time = end_time
 
     def remove_layers(self):
         self.mode = "###remove_layers"
-    
-    
+
+
     def on_click(self, callback, remove=False):
         """Register a callback to execute when the map is clicked.
 
@@ -323,7 +323,7 @@ class MapView(widgets.DOMWidget):
         remove : bool (optional)
             Set to true to remove the callback from the list of callbacks."""
         self._draw_end_handlers.register_callback(callback, remove=remove)
-        
+
     #def _handle_map_msg(self, _, content):
     def _handle_map_msg(self, _, content, buffers):
         """Handle a msg from the front-end.
@@ -332,7 +332,7 @@ class MapView(widgets.DOMWidget):
         ----------
         content: dict
             Content of the msg."""
-        
+
         if content.get('event', '') == 'mouseclick':
             self._click_handlers(self, content.get('message', None))
         if content.get('event', '') == 'draw-end':
