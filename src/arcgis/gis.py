@@ -1,6 +1,6 @@
 ﻿"""
-The **gis** module provides an information model for GIS hosted 
-within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage 
+The **gis** module provides an information model for GIS hosted
+within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.
 """
@@ -17,9 +17,11 @@ import locale
 
 import zipfile
 import tempfile
-import urllib.error
+from six.moves.urllib.error import HTTPError
 # pylint: disable=fixme, line-too-long
 
+
+class Error(Exception): pass
 
 @contextmanager
 def _tempinput(data):
@@ -55,7 +57,7 @@ class GIS(object):
     * groups
     * content
     * datastore
-    * tools - including geometry, geocoder, analysis, rasters, geoanalytics 
+    * tools - including geometry, geocoder, analysis, rasters, geoanalytics
 
     Additionally, the GIS object has properties and methods to query it's state:
     * properties
@@ -66,7 +68,7 @@ class GIS(object):
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None):
         """
-        Constructs a GIS object given a url and user credentials to ArcGIS Online 
+        Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
         pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
         PKI and Anonymous access.
@@ -88,7 +90,7 @@ class GIS(object):
 
     def __enter__(self):
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
-        
+
     @_lazy_property
     def users(self):
         """
@@ -123,7 +125,7 @@ class GIS(object):
         admin_url = None
 
         for server in servers:
-            if server['isHosted']: 
+            if server['isHosted']:
                 admin_url = server['adminUrl'] + '/admin'
                 return DatastoreManager(self, admin_url)
 
@@ -138,7 +140,7 @@ class GIS(object):
 
     def __exit__(self, typ, value, traceback):
         self._portal.logout()
-        
+
     def __str__(self):
         return 'GIS @ ' + self._url
 
@@ -172,7 +174,7 @@ class GIS(object):
 
         return mapwidget
 
-    
+
 class DatastoreItem(dict):
     """
     Represents a datastore item (folder, database or bigdata fileshare) within the GIS's data store
@@ -185,12 +187,12 @@ class DatastoreItem(dict):
 
         self.datapath = path
 
-        
+
         params = { "f" : "json" }
         path = self._admin_url + "/data/items" + self.datapath
 
         datadict = self._portal.con.post(path, params)
- 
+
         if datadict:
             self.__dict__.update(datadict)
             dict.update(datadict)
@@ -220,7 +222,7 @@ class DatastoreItem(dict):
     @property
     def manifest(self):
         """
-        The manifest resource for bigdata fileshares, 
+        The manifest resource for bigdata fileshares,
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -233,7 +235,7 @@ class DatastoreItem(dict):
     @manifest.setter
     def manifest(self, value):
         """
-        Updates the manifest resource for bigdata fileshares, 
+        Updates the manifest resource for bigdata fileshares,
         """
         manifest_upload_url =  self._admin_url + '/data/items' + self.datapath + '/manifest/update'
 
@@ -241,13 +243,13 @@ class DatastoreItem(dict):
             # Build the files list (tuples)
             files = []
             files.append(('manifest', tempfilename, os.path.basename(tempfilename)))
-                
+
             postdata = {
                 'f' : 'pjson'
             }
-                
+
             resp = self._portal.con.post(manifest_upload_url, postdata, files)
-    
+
             if resp['status'] == 'success':
                 return True
             else:
@@ -272,7 +274,7 @@ class DatastoreItem(dict):
         """
         Unregisters this data item from the data store
         """
-        params = { 
+        params = {
             "f" : "json" ,
             "itempath" : self.datapath,
             "force": True
@@ -288,13 +290,13 @@ class DatastoreItem(dict):
     def update(self, item):
         """
         Edits this data item to update its connection information.
-        
+
         Input
             item - the dict representation of the updated item
         Output:
               True if successful
         """
-        params = { 
+        params = {
             "f" : "json" ,
             "item" : item
             }
@@ -308,9 +310,9 @@ class DatastoreItem(dict):
 
     def validate(self):
         """
-        Validates that this data item's path (for file shares) or connection string (for databases) 
+        Validates that this data item's path (for file shares) or connection string (for databases)
         is accessible to every server node in the site
-        
+
         Output:
               True if successful
         """
@@ -338,7 +340,7 @@ class DatastoreItem(dict):
             'f': 'json',
         }
         res = self._portal.con.post(data_item_manifest_url, params)
-        
+
         for dataset in res['datasets']:
             print("/server/datastores" + self.datapath + '/' + dataset['path'] + ' ('+ dataset['type'] + ')')
 
@@ -360,11 +362,11 @@ class DatastoreManager(object):
             self._admin_url = None
 
             for server in servers:
-                if server['isHosted']: 
+                if server['isHosted']:
                     self._admin_url = server['adminUrl'] + '/admin'
         else:
             self._admin_url = admin_url
-           
+
     def __str__(self):
         return json.dumps(self)
 
@@ -372,7 +374,7 @@ class DatastoreManager(object):
     def config(self):
         """
         The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior. 
+        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
         When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
         Note:
         If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
@@ -386,7 +388,7 @@ class DatastoreManager(object):
     def config(self, value):
         """
         The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior. 
+        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
         When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
         Note:
         If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
@@ -396,7 +398,7 @@ class DatastoreManager(object):
         path = self._admin_url + "/data/config/update"
         res = self._portal.con.post(path, params)
         return res
-           
+
     def add_folder(self,
             name,
             server_path,
@@ -426,7 +428,7 @@ class DatastoreManager(object):
 
         if client_path is not None:
             item['clientPath'] = client_path
-            
+
         params = {
             "f" : "json",
             "item" : item
@@ -446,7 +448,7 @@ class DatastoreManager(object):
         Registers a bigdata fileshare with the data store.
         Input
             name - unique bigdata fileshare name on the server
-            server_path - the path to the folder from the server 
+            server_path - the path to the folder from the server
         Output:
               the data item if registered successfully, None otherwise
         """
@@ -509,7 +511,7 @@ class DatastoreManager(object):
             is_managed = True
 
         item['info']['isManaged'] = is_managed
-            
+
         params = {
             "f" : "json",
             "item" : item
@@ -523,11 +525,12 @@ class DatastoreManager(object):
             return None
 
     def add(self,
+            name,
             item):
-        """ 
+        """
         Registers a new data item with the data store.
         Input
-            item - The disct representing the data item.                    
+            item - The disct representing the data item.
             See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
         Output:
               True if the data item is registered successfully, False otherwise
@@ -545,7 +548,7 @@ class DatastoreManager(object):
         else:
             print(str(res))
             return None
-    
+
     def get(self, path):
         """ Returns the data item object at the given path
 
@@ -575,7 +578,7 @@ class DatastoreManager(object):
                              items.
               types - A comma separated filter for the type of the items. Types include folder, egdb, bigDataFileShare, datadir
               id - A filter to search by the ID of the item
-           
+
             :return:
             Returns a list of data items matching the specified query
         """
@@ -592,7 +595,7 @@ class DatastoreManager(object):
             params['types'] = types
         if id is not None:
             params['id'] = id
-        
+
 
         path = self._admin_url + "/data/findItems"
 
@@ -605,7 +608,7 @@ class DatastoreManager(object):
         return dataitems
 
     def validate(self):
-        """ 
+        """
         Validates all items in the datastore and returns True if validated.
 
         In order for a data item to be registered and used successfully within the GIS's data store,
@@ -620,10 +623,10 @@ class DatastoreManager(object):
 
 class Tools(object):
     """
-    Collection of GIS tools. This class holds references to the helper services and tools available 
+    Collection of GIS tools. This class holds references to the helper services and tools available
     in the GIS. This class is not created by users directly.
     An instance of this class, called 'tools', is available as a property of the GIS object.
-    Users access the GIS tools, such as the geocoder, spatial analysis tools, geoanalytics, raster 
+    Users access the GIS tools, such as the geocoder, spatial analysis tools, geoanalytics, raster
     geoanalysis tools, etc through the gis.tools object
     """
     def __init__(self, gis):
@@ -669,11 +672,11 @@ class Tools(object):
             except:
                 svcurl = 'https://rdvmags01.esri.com/arcgis/rest/services/System/RasterAnalysisTools/GPServer'
 
-            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis) 
+            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
             return self._raster_analysis
         except KeyError:
             return None
-        
+
     @property
     def bigdata(self):
         """the portal's bigdata analytics tools, if available and configured"""
@@ -685,8 +688,8 @@ class Tools(object):
             except:
                 print("This GIS does not support geoanalytics")
                 return None
-            
-            self._geoanalytics = GeoAnalyticsTools(svcurl, self._gis) 
+
+            self._geoanalytics = GeoAnalyticsTools(svcurl, self._gis)
             return self._geoanalytics
         except KeyError:
             return None
@@ -697,7 +700,7 @@ class Tools(object):
         if self._analysis is not None:
             return self._analysis
         try:
-            try: 
+            try:
                 svcurl = self._gis.properties['helperServices']['analysis']['url']
             except:
                 svcurl = 'https://analysis6.arcgis.com/arcgis/rest/services/tasks/GPServer'
@@ -706,7 +709,7 @@ class Tools(object):
         except KeyError:
             return None
 
-    
+
 class UserManager(object):
     """
     Manager class for managing GIS users. This class is not created by users directly.
@@ -717,10 +720,10 @@ class UserManager(object):
         self._portal = portal
 
 
-    
-    def create(self, username, password, firstname, lastname, email, description=None, role='org_user', 
+
+    def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
                provider='arcgis', idpUsername=None):
-        """ This operation is used to pre-create built-in or enterprise accounts within the portal. 
+        """ This operation is used to pre-create built-in or enterprise accounts within the portal.
         The provider parameter is used to indicate the type of user account. Only an administrator
         can call this method.
 
@@ -730,7 +733,7 @@ class UserManager(object):
             ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
-            the user connects to the website. 
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -738,7 +741,7 @@ class UserManager(object):
         username          required string, must be unique in the Portal,
                           >=6 characters, =<24 characters
         ----------------  -------------------------------------------------------------------------------
-        password          required string, must be >= 8 characters. This is a required parameter only if 
+        password          required string, must be >= 8 characters. This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
         ----------------  -------------------------------------------------------------------------------
         firstname         required string, the first name for the user
@@ -755,7 +758,7 @@ class UserManager(object):
         provider          The provider for the account. The default value is arcgis.
                           Values: arcgis | enterprise
         ----------------  -------------------------------------------------------------------------------
-        idpUsername       The name of the user as stored by the enterprise user store. This parameter is 
+        idpUsername       The name of the user as stored by the enterprise user store. This parameter is
                           only required if the provider parameter is enterprise.
         ================  ===============================================================================
 
@@ -777,7 +780,7 @@ class UserManager(object):
             'provider' : provider,
             'idpUsername' : idpUsername
         }
-        
+
         self._portal.con.post(createuser_url, params)
         return self.get(username)
 
@@ -843,8 +846,8 @@ class UserManager(object):
                available in ArcGIS help.  A short version of that URL
                is http://bitly.com/1fJ8q31.
 
-            2. Searching without specifying a query parameter returns 
-               a list of all users in your organization. 
+            2. Searching without specifying a query parameter returns
+               a list of all users in your organization.
 
             3. Most of the time when searching groups you want to
                search within your organization in ArcGIS Online
@@ -874,9 +877,9 @@ class UserManager(object):
         :return:
             A list of users:
         """
-        if query is None:        
+        if query is None:
             users = self._portal.get_org_users(max_users)
-            return [User(self._portal, u['username'], u) for u in users]    
+            return [User(self._portal, u['username'], u) for u in users]
         else:
             userlist = []
 
@@ -960,7 +963,7 @@ class GroupManager(object):
             the group, if created, or None
         """
         thumbnail = dict.pop("thumbnail", None)
-        
+
         groupid = self._portal.create_group_from_dict(dict, thumbnail)
         print(groupid)
         if groupid is not None:
@@ -993,8 +996,8 @@ class GroupManager(object):
                 available in ArcGIS help.  A short version of that URL
                 is http://bitly.com/1fJ8q31.
 
-            2. Searching without specifying a query parameter returns 
-               a list of all groups in your organization. 
+            2. Searching without specifying a query parameter returns
+               a list of all groups in your organization.
 
             2. Most of the time when searching groups you want to
                 search within your organization in ArcGIS Online
@@ -1007,7 +1010,7 @@ class GroupManager(object):
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         query             optional query string on Portal, required for Online.
-                          If not specified, all groups will be searched. See notes 
+                          If not specified, all groups will be searched. See notes
         ----------------  --------------------------------------------------------
         sort_field        optional string, valid values can be title, owner,
                           created
@@ -1124,7 +1127,7 @@ class ContentManager(object):
                  The item if successfully added, None if unsuccessful.
             """
 
-        if data is not None:    
+        if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
             if (extn == '.CSV'):
@@ -1133,7 +1136,7 @@ class ContentManager(object):
                 filetype = 'Service Definition'
             if _is_shapefile(data):
                 filetype = 'Shapefile'
-            
+
             if not 'type' in item_properties:
                 item_properties['type'] = filetype
             if not 'title' in item_properties:
@@ -1150,9 +1153,9 @@ class ContentManager(object):
         else:
             return None
 
-    def create_service(self, name, 
-                       service_description="", 
-                       has_static_data=False, 
+    def create_service(self, name,
+                       service_description="",
+                       has_static_data=False,
                        max_record_count = 1000,
                        supported_query_formats = "JSON",
                        capabilities = "Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads",
@@ -1168,9 +1171,9 @@ class ContentManager(object):
                  The item for the service, if successfully added, None if unsuccessful.
             """
 
-        itemid = self._portal.create_service(name, 
-                       service_description, 
-                       has_static_data, 
+        itemid = self._portal.create_service(name,
+                       service_description,
+                       has_static_data,
                        max_record_count,
                        supported_query_formats,
                        capabilities,
@@ -1222,7 +1225,7 @@ class ContentManager(object):
         item_type         optional string, set type of item to search
                           http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
         ----------------  -----------------------------------------------------------------------------------
-        sort_field        optional string, valid values can be title, uploaded, type, owner, modified, 
+        sort_field        optional string, valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
         ----------------  -----------------------------------------------------------------------------------
         sort_order        optional string, valid values are asc or desc
@@ -1238,7 +1241,7 @@ class ContentManager(object):
         itemlist = []
         if query is not None and query != '' and item_type is not None:
             query += ' AND '
-        
+
         if item_type is not None:
             item_type = item_type.lower()
             if item_type == "web map":
@@ -1257,7 +1260,7 @@ class ContentManager(object):
                 query += ' (type:"desktop application" NOT type:"desktop application template")'
             else:
                 query += ' (type:"' + item_type +'")'
- 
+
         items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, add_org=add_org)
         for item in items:
             itemlist.append(Item(self._portal, item['id'], item))
@@ -1328,7 +1331,7 @@ class ContentManager(object):
 
 
         df : pandas dataframe
-        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" } 
+        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
 
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
@@ -1396,7 +1399,7 @@ class Group(dict):
             super().update(groupdict)
             self.__dict__.update(groupdict)
         return dict.__getitem__(self, name)
-        
+
 
     def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
         try:
@@ -1432,7 +1435,7 @@ class Group(dict):
         else:
             b64 = base64.b64encode(self.get_thumbnail())
             thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' "
-        
+
         title = 'Not Provided'
         snippet = 'Not Provided'
         description = 'Not Provided'
@@ -1441,7 +1444,7 @@ class Group(dict):
             title = self.title
         except:
             title = 'Not Provided'
-            
+
         try:
             description = self.description
         except:
@@ -1464,7 +1467,7 @@ class Group(dict):
                         <img src='""" + str(thumbnail) + """' class="itemThumbnail">
                        </a>
                     </div>
-        
+
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(title) + """</b>
                         </a>
@@ -1473,7 +1476,7 @@ class Group(dict):
                         <br><b>Description</b>: """ + str(description)  + """
                         <br><b>Owner</b>: """ + str(owner)  + """
                         <br><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
-                        
+
                     </div>
                 </div>
                 """
@@ -1485,7 +1488,7 @@ class Group(dict):
         for item in items:
             itemlist.append(Item(self._portal, item['id'], item))
         return itemlist
-        
+
     def delete(self):
         """ Deletes this group.
 
@@ -1694,7 +1697,7 @@ class Group(dict):
         return self._portal.leave_group(self.groupid)
 
 
-class User(dict): 
+class User(dict):
     """
     Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
     """
@@ -1720,7 +1723,7 @@ class User(dict):
             super().update(userdict)
             self.__dict__.update(userdict)
         return dict.__getitem__(self, name)
-        
+
 
     def __getitem__(self, k): # support user attributes as dictionary keys on this object, eg. user['role']
         try:
@@ -1737,7 +1740,7 @@ class User(dict):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         return '\n'.join(state)
 
-    
+
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
 
@@ -1757,7 +1760,7 @@ class User(dict):
         else:
             b64 = base64.b64encode(self.get_thumbnail())
             thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
-        
+
         firstName = 'Not Provided'
         lastName = 'Not Provided'
         fullName = 'Not Provided'
@@ -1791,7 +1794,7 @@ class User(dict):
                         <img src='""" + str(thumbnail) + """' class="itemThumbnail">
                        </a>
                     </div>
-        
+
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(fullName) + """</b>
                         </a>
@@ -1800,11 +1803,11 @@ class User(dict):
                         <br><b>Last Name</b>: """ + str(lastName)  + """
                         <br><b>Username</b>: """ + str(self.username)  + """
                         <br><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
-                        
+
                     </div>
                 </div>
                 """
-                
+
     """
     def get_attributes(self):
        Returns information for this user.
@@ -2018,21 +2021,21 @@ class User(dict):
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this user.
-        
+
         Arguments
             None.
-            
-        Returns 
+
+        Returns
             bytes that represent the image.
-            
+
         Example
 
         .. code-block:: python
-        
+
             response = user.get_thumbnail()
             f = open(filename, 'wb')
             f.write(response)
-        
+
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file:
@@ -2043,7 +2046,7 @@ class User(dict):
     def download_thumbnail(self, dir=None):
         """ Downloads the item thumbnail for this user, returns file path. """
         thumbnail_file = self.thumbnail
-        
+
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
@@ -2070,7 +2073,7 @@ class User(dict):
         root_items = []
         for item in resp['items']:
             root_items.append(Item(self._portal, item['id'], item))
-        
+
         retval['/'] = root_items
 
         folders = []
@@ -2079,18 +2082,18 @@ class User(dict):
             folder_items = []
             for item in resp['items']:
                 folder_items.append(Item(self._portal, item['id'], item))
-        
+
             retval[folder['title']] = folder_items
 
         return retval
-    
-            
+
+
 class Item(dict):
     """
     An item (a unit of content) in the GIS. Each item has a unique identifier and a well
     known URL that is independent of the user owning the item.
     An item can have associated binary or textual data that's available via the item data resource.
-    For example, an item of type Map Package returns the actual bits corresponding to the 
+    For example, an item of type Map Package returns the actual bits corresponding to the
     map package via the item data resource.
     """
 
@@ -2135,28 +2138,28 @@ class Item(dict):
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
-        
+
         Arguments
             None.
-            
-        Returns 
+
+        Returns
             bytes that represent the item.
-            
+
         Example
 
         .. code-block:: python
-        
+
             response = item.get_thumbnail()
             f = open(filename, 'wb')
             f.write(response)
-        
+
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file:
             thumbnail_url_path = 'content/items/' + self.itemid + '/info/' + thumbnail_file
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
-    
+
     def download_thumbnail(self, dir=None):
         """ Downloads the item thumbnail for this item, returns file path. """
         thumbnail_file = self.thumbnail
@@ -2184,7 +2187,7 @@ class Item(dict):
         else:
             thumbnail_url_path = self._portal.con.baseurl + 'content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
-    
+
     def get_metadata(self):
         """ Returns the item metadata for the specified item id. """
         metadataurlpath = 'content/items/' + self.itemid  + '/info/metadata/metadata.xml'
@@ -2193,7 +2196,7 @@ class Item(dict):
 
         # If the get operation returns a 400 HTTP Error then the metadata simply
         # doesn't exist, let's just return None in this case
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             if e.code == 400 or e.code == 500:
                 return None
             else:
@@ -2211,7 +2214,7 @@ class Item(dict):
 
         # If the get operation returns a 400 HTTP/IO Error then the metadata
         # simply doesn't exist, let's just return None in this case
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             if e.code == 400 or e.code == 500:
                 return None
             else:
@@ -2266,7 +2269,7 @@ class Item(dict):
         else:
             b64 = base64.b64encode(self.get_thumbnail())
             thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
-        
+
         snippet = self.snippet
         if snippet is None:
             snippet = ""
@@ -2281,7 +2284,7 @@ class Item(dict):
                         <img src='""" + thumbnail + """' class="itemThumbnail">
                        </a>
                     </div>
-        
+
                     <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
@@ -2295,7 +2298,7 @@ class Item(dict):
     def __str__(self):
         state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         return '\n'.join(state)
-    
+
     def __repr__(self):
         return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self.type, self.owner)
 
@@ -2325,10 +2328,10 @@ class Item(dict):
         except:
             current_folder = None
         return self._portal.reassign_item(self.itemid, self.owner, target_owner, current_folder, target_folder)
-    
+
     def share(self, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -2336,10 +2339,10 @@ class Item(dict):
         ----------------  --------------------------------------------------------
         org               optional boolean, share with the organization
         ----------------  --------------------------------------------------------
-        groups            optional string, 
+        groups            optional string,
                           comma-separated list of group IDs with which the item will be shared.
         ================  ========================================================
-            
+
         :return:
             dict with key "notSharedWith" containing array of groups with which the item could not be shared.
 
@@ -2352,19 +2355,19 @@ class Item(dict):
 
     def unshare(self, groups):
         """ Stops sharing the item with the specified list of groups
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        groups            optional string, 
+        groups            optional string,
                           comma-separated list of group IDs with which the item will be unshared.
         ================  ========================================================
-            
+
         :return:
             dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
 
 
-        
+
         """
         try:
             folder = self.ownerFolder
@@ -2374,10 +2377,10 @@ class Item(dict):
 
     def delete(self):
         """ Deletes an item.
-            
+
         :return:
             a boolean, indicating success
-        
+
         """
         try:
             folder = self.ownerFolder
@@ -2386,10 +2389,10 @@ class Item(dict):
         return self._portal.delete_item(self.itemid, self.owner, folder)
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
-        """ Updates an item in a Portal.  
-	
-        
-        .. note:: 
+        """ Updates an item in a Portal.
+
+
+        .. note::
             That content can be a file (such as a layer package, geoprocessing package,
             map package) or it can be a URL (to an ArcGIS Server service, WMS service,
             or an application).
@@ -2398,11 +2401,11 @@ class Item(dict):
             to the file in the data argument.
 
             Only pass in arguments for properties you want to update.
-            All other properties will be left as they are.  If you 
+            All other properties will be left as they are.  If you
             want to update description, then only provide
             the description argument in item_properties.
 
-        
+
         ============     ====================================================
         **Argument**     **Description**
         ------------     ----------------------------------------------------
@@ -2425,7 +2428,7 @@ class Item(dict):
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.  
+        title             optional string.  Name of the item.
         ----------------  ----------------------------------------------------------------------------
         url               optional string.  URL to item that are based on URLs.
         ----------------  ----------------------------------------------------------------------------
@@ -2450,7 +2453,7 @@ class Item(dict):
         culture           optional string.  Language and country information.
         ================  ============================================================================
 
-            
+
 	URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
         :return:
@@ -2463,11 +2466,11 @@ class Item(dict):
         return self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
 
     def get_data(self, try_json=True):
-        """Returns the data for the item. Returns a dict if try_json is True. To convert this 
+        """Returns the data for the item. Returns a dict if try_json is True. To convert this
         dict to string using json.dumps(data). Else, returns the data
         as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
-    
+
     def dependent_upon(self):
         """ Returns items and urls, etc that this items depends upon  """
         return self._portal.get_item_dependencies(self.itemid)
@@ -2492,7 +2495,7 @@ class Item(dict):
             raise Error('Unsupported direction: ' + direction)
 
         related_items = []
-        
+
         postdata = { 'f' : 'json' }
         postdata['relationshipType'] = rel_type
         postdata['direction'] = direction
@@ -2503,14 +2506,14 @@ class Item(dict):
 
     def add_relationship(self, rel_item, rel_type):
         """ Adds a relationship from this item to rel_item.
-        Relationships are not tied to an item. They are directional links from an origin item 
+        Relationships are not tied to an item. They are directional links from an origin item
         to a destination item and have a type. The type defines the valid origin and destination
         item types as well as some rules. See Relationship types in REST API help for more information.
-        Users don't have to own the items they relate unless so defined by the rules of the 
+        Users don't have to own the items they relate unless so defined by the rules of the
         relationship type.
         Users can only delete relationships they create.
         Relationships are deleted automatically if one of the two items is deleted.
-        
+
         rel_item is the related item
         rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']. See Relationship types in REST API help for more information on this parameter
         Returns True if the relationship was added
@@ -2531,7 +2534,7 @@ class Item(dict):
             return resp.get('success')
 
     def delete_relationship(self, rel_item, rel_type):
-        """ Deletes a relationship between this item and the rel_item. 
+        """ Deletes a relationship between this item and the rel_item.
         rel_item is the related item
         rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']
         Returns True if the relationship was deleted
@@ -2543,8 +2546,8 @@ class Item(dict):
         postdata['destinationItemId'] = rel_item.itemid
         postdata['relationshipType'] = rel_type
         path = 'content/users/' + self.owner
-        
-        
+
+
         path += '/deleteRelationship'
         resp = self._portal.con.post(path, postdata)
         if resp:
@@ -2559,11 +2562,11 @@ class Item(dict):
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
-        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" } 
+        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
 
         """
-        
-       
+
+
         params = {
             "f" : "json"
         }
@@ -2582,7 +2585,7 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        
+
         if publish_parameters is None:
             if fileType == 'shapefile':
                 publish_parameters =  {"hasStaticData":True, "name":os.path.splitext(self['name'])[0], "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
@@ -2611,12 +2614,12 @@ class Item(dict):
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
                 publish_parameters = json.dumps(publish_parameters)
-                
+
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
-        
+
         #svc_id = ret[0]['serviceItemId']
         #return Item(self._portal, svc_id)
-        
+
         job_id = ret[0]['jobId']
         serviceitem_id = ret[0]['serviceItemId']
         path = 'content/users/' + self.owner
@@ -2625,7 +2628,7 @@ class Item(dict):
 
         path = path + '/items/' + serviceitem_id + '/status'
         #print(path)
-        params = { 
+        params = {
             "f" : "json",
             "jobid" : job_id
                   }
@@ -2640,7 +2643,7 @@ class Item(dict):
                 time.sleep(5)
 
                 job_response = self._portal.con.post(path, params)
-                
+
                 #print(str(job_response))
                 if job_response.get("status") == "esriJobFailed":
                     raise Exception("Job failed.")
@@ -2651,7 +2654,7 @@ class Item(dict):
 
         else:
             raise Exception("No job results.")
-        
+
         return Item(self._portal, serviceitem_id)
         return ret
 
