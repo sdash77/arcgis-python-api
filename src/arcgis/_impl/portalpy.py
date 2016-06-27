@@ -5,12 +5,9 @@ __version__ = '1.0'
 import collections
 import copy
 import gzip
-import http.client
 import imghdr
 import json
 import logging
-#import mimetools
-import email.generator
 import mimetypes
 import io
 import os
@@ -18,28 +15,37 @@ import re
 import tempfile
 import unicodedata
 import cgi
-import urllib.request, urllib.error, urllib.parse
-import http.cookiejar
+#import urllib.request, urllib.error, urllib.parse
+#import http.cookiejar
 from io import StringIO
 from collections import OrderedDict
 
+import uuid
+import six
+from six.moves.urllib_parse import urlparse, urlunparse, parse_qsl
+from six.moves.urllib_parse import quote, unquote, urlunsplit
+from six.moves.urllib_parse import urlencode, urlsplit
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib import request
+from six.moves import http_cookiejar as cookiejar
+from six.moves import http_client
 
 _log = logging.getLogger(__name__)
 
 class Portal(object):
     """ An object representing a connection to a single portal (via URL).
-    
-    .. note:: To instantiate a Portal object execute code like this: 
-                
+
+    .. note:: To instantiate a Portal object execute code like this:
+
             PortalPy.Portal(portalUrl, user, password)
-            
+
         There are a few things you should know as you use the methods below.
-        
+
         Group IDs - Many of the group functions require a group id.  This id is
         different than the group's name or title.  To determine
         a group id, use the search_groups function using the title
         to get the group id.
-                
+
         Time - Many of the methods return a time field.  All time is
         returned as millseconds since 1 January 1970.  Python
         expects time in seconds since 1 January 1970 so make sure
@@ -48,39 +54,39 @@ class Portal(object):
         to Python time.
 
     Example - converting time
-    
+
     .. code-block:: python
-    
+
         import time
         .
         .
         .
         group = portalAdmin.get_group('67e1761068b7453693a0c68c92a62e2e')
         pythontime = time.ctime(group['created']/1000)
-    
+
     Example - list users in group
-    
+
     .. code-block:: python
-    
+
         portal = PortalPy.Portal(portalUrl, user, password)
         resp = portal.get_group_members('67e1761068b7453693a0c68c92a62e2e')
         for user in resp['users']:
             print user
-                
+
     Example - create a group
-    
+
     .. code-block:: python
-    
+
         portal= PortalPy.Portal(portalUrl, user, password)
         group_id = portalAdmin.create_group('my group', 'test tag', 'a group to share travel maps')
 
     Example - delete a user named amy and assign her content to bob
-    
+
     .. code-block:: python
-    
+
         portal = PortalPy.Portal(portalUrl, user, password)
         portal.delete_user('amy.user', True, 'bob.user')
-    
+
     """
 
 
@@ -88,7 +94,7 @@ class Portal(object):
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir()):
         """ The Portal constructor. Requires URL and optionally username/password."""
-        
+
         self.url = url
         if url:
             normalized_url = self.url
@@ -119,8 +125,8 @@ class Portal(object):
             _log.debug('Connecting to portal: ' + self.hostname)
 
             self.con = _ArcGISConnection(self.resturl, username, password,
-                                        key_file, cert_file, expiration, True,
-                                        referer, proxy_host, proxy_port)
+                                         key_file, cert_file, expiration, True,
+                                         referer, proxy_host, proxy_port)
 
 
         self.get_version(True)
@@ -129,13 +135,13 @@ class Portal(object):
 
 
     def add_group_users(self, user_names, group_id):
-        """ Adds users to the group specified.    
-        
-        .. note:: 
+        """ Adds users to the group specified.
+
+        .. note::
             This method will only work if the user for the
             Portal object is either an administrator for the entire
             Portal or the owner of the group.
-        
+
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
@@ -143,10 +149,10 @@ class Portal(object):
         ------------  --------------------------------------
         group_id      required string, specifying group id
         ============  ======================================
-            
+
         :return:
-             A dictionary with a key of "not_added" which contains the users that were not 
-             added to the group. 
+             A dictionary with a key of "not_added" which contains the users that were not
+             added to the group.
         """
 
 
@@ -160,15 +166,15 @@ class Portal(object):
         postdata = self._postdata()
         postdata['users'] = ','.join(user_names)
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
-                                 postdata)
+                             postdata)
         return resp
-    
+
 
     def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
-        """ Adds content to a Portal.  
-	
-        
-        .. note:: 
+        """ Adds content to a Portal.
+
+
+        .. note::
             That content can be a file (such as a layer package, geoprocessing package,
             map package) or it can be a URL (to an ArcGIS Server service, WMS service,
             or an application).
@@ -180,7 +186,7 @@ class Portal(object):
             it is strongly recommended that title, type, typeKeywords, tags, snippet, and description
             be provided.
 
-        
+
         ============     ====================================================
         **Argument**     **Description**
         ------------     ----------------------------------------------------
@@ -207,7 +213,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.  
+        title             optional string.  Name of the item.
         ----------------  ----------------------------------------------------------------------------
         url               optional string.  URL to item that are based on URLs.
         ----------------  ----------------------------------------------------------------------------
@@ -232,8 +238,8 @@ class Portal(object):
         culture           optional string.  Language and country information.
         ================  ============================================================================
 
-            
-	URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
         :return:
              The item id of the uploaded item if successful, None if unsuccessful.
@@ -248,15 +254,15 @@ class Portal(object):
         files = []
         if data:
             if _is_http_url(data):
-                data = urllib.request.urlretrieve(data)[0]
+                data =request.urlretrieve(data)[0]
             files.append(('file', data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
-                metadata = urllib.request.urlretrieve(metadata)[0]
+                metadata = request.urlretrieve(metadata)[0]
             files.append(('metadata', metadata, 'metadata.xml'))
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urllib.request.urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -280,7 +286,7 @@ class Portal(object):
         resp = self.con.post(path, postdata, files)
         if resp and resp.get('success'):
             return resp['id']
-    
+
     def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None, outputType=None, overwrite=False, owner=None, folder=None):
         """
         Publishes a hosted service based on an existing source item.
@@ -295,28 +301,28 @@ class Portal(object):
         """
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
-        
+
         postdata['itemid'] = itemid
         if text is not None:
             postdata['test'] = text
-        
+
         postdata['fileType'] = fileType
 
         if publishParameters is not None:
             postdata['publishParameters'] = publishParameters
-        
+
         if outputType is not None:
             postdata['outputType'] = outputType
 
         postdata['overwrite'] = overwrite
-        
+
         postdata['buildInitialCache'] = False
-        
+
         # Build the files list (tuples)
         files = []
         if data:
             if _is_http_url(data):
-                data = urllib.request.urlretrieve(data)[0]
+                data = request.urlretrieve(data)[0]
             files.append(('file', data, os.path.basename(data)))
 
         # If owner isn't specified, use the logged in user
@@ -332,13 +338,13 @@ class Portal(object):
         if resp:
             return resp['services']
 
-        
-         
 
-    def create_service(self, 
-                       name, 
-                       service_description="", 
-                       has_static_data=False, 
+
+
+    def create_service(self,
+                       name,
+                       service_description="",
+                       has_static_data=False,
                        max_record_count = 1000,
                        supported_query_formats = "JSON",
                        capabilities = "Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads",
@@ -346,7 +352,7 @@ class Portal(object):
                        copyright_text = "",
                        wkid=102100,
                        service_type="imageService", owner=None, folder=None):
-        """ Creates service.  
+        """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
              The item id of the created service item if successful, None if unsuccessful.
@@ -355,7 +361,7 @@ class Portal(object):
 
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
-        
+
         # If owner isn't specified, use the logged in user
         if not owner:
             owner = self.logged_in_user()['username']
@@ -368,36 +374,36 @@ class Portal(object):
 
 
         createParameters = {
-               "name" : name,
-               "serviceDescription" : service_description,
-               "hasStaticData" : has_static_data,
-               "maxRecordCount" : max_record_count,
-               "supportedQueryFormats" : supported_query_formats,
-               "capabilities" :capabilities,
-               "description" : description,
-               "copyrightText" : copyright_text,
-               "spatialReference" : {
-                  "wkid" : wkid
-                  },
-               "initialExtent" : {
-                  "xmin" : -20037507.0671618,
-                  "ymin" : -30240971.9583862,
-                  "xmax" : 20037507.0671618,
-                  "ymax" : 18398924.324645,
-                  "spatialReference" : {
-                     "wkid" : 102100,
-                     "latestWkid" : 3857
-                     }
-                  },
-               "allowGeometryUpdates" : True,
-               "units" : "esriMeters",
-               "xssPreventionInfo" : {
-                  "xssPreventionEnabled" : True,
-                  "xssPreventionRule" : "InputOnly",
-                  "xssInputRule" : "rejectInvalid"
-                  }
+            "name" : name,
+            "serviceDescription" : service_description,
+            "hasStaticData" : has_static_data,
+            "maxRecordCount" : max_record_count,
+            "supportedQueryFormats" : supported_query_formats,
+            "capabilities" :capabilities,
+            "description" : description,
+            "copyrightText" : copyright_text,
+            "spatialReference" : {
+                "wkid" : wkid
+                },
+            "initialExtent" : {
+                "xmin" : -20037507.0671618,
+                "ymin" : -30240971.9583862,
+                "xmax" : 20037507.0671618,
+                "ymax" : 18398924.324645,
+                "spatialReference" : {
+                    "wkid" : 102100,
+                    "latestWkid" : 3857
+                }
+                },
+            "allowGeometryUpdates" : True,
+            "units" : "esriMeters",
+            "xssPreventionInfo" : {
+                "xssPreventionEnabled" : True,
+                "xssPreventionRule" : "InputOnly",
+                "xssInputRule" : "rejectInvalid"
             }
-        
+        }
+
         postdata['createParameters'] = createParameters
         postdata['outputType'] = service_type
 
@@ -405,15 +411,15 @@ class Portal(object):
         if resp and resp.get('success'):
             return resp['itemId']
 
-    
+
     def create_group_from_dict(self, group, thumbnail=None):
-        
+
         """ Creates a group and returns a group id if successful.
-        
-        .. note:: 
+
+        .. note::
            Use create_group in most cases.  This method is useful for taking a group
            dict returned from another PortalPy call and copying it.
-        
+
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
@@ -421,14 +427,14 @@ class Portal(object):
         ------------  --------------------------------------
         thumbnail     url to image
         ============  ======================================
-        
+
         Example
 
         .. code-block:: python
-        
-             create_group({'title': 'Test', 'access':'public'})                
+
+             create_group({'title': 'Test', 'access':'public'})
         """
-        
+
         postdata = self._postdata()
         postdata.update(_unicode_to_ascii(group))
 
@@ -436,7 +442,7 @@ class Portal(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urllib.request.urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -452,11 +458,11 @@ class Portal(object):
             return resp['group']['id']
 
     def create_group(self, title, tags, description=None,
-                     snippet=None, access='public', thumbnail=None, 
-                     is_invitation_only=False, sort_field='avgRating', 
+                     snippet=None, access='public', thumbnail=None,
+                     is_invitation_only=False, sort_field='avgRating',
                      sort_order='desc', is_view_only=False, ):
-        """ Creates a group and returns a group id if successful.  
-  
+        """ Creates a group and returns a group id if successful.
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -486,27 +492,27 @@ class Portal(object):
         """
 
         return self.create_group_from_dict({'title' : title, 'tags' : tags,
-                    'snippet' : snippet, 'access' : access, 
-                    'sortField' : sort_field, 'sortOrder' : sort_order,
-                    'isViewOnly' : is_view_only, 
-                    'isinvitationOnly' : is_invitation_only}, thumbnail)
-              
-        
+                                            'snippet' : snippet, 'access' : access,
+                                            'sortField' : sort_field, 'sortOrder' : sort_order,
+                                            'isViewOnly' : is_view_only,
+                                            'isinvitationOnly' : is_invitation_only}, thumbnail)
 
-    
+
+
+
 
     def delete_group(self, group_id):
-        """ Deletes a group. 
-        
+        """ Deletes a group.
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         group_id          string containing the id for the group to be deleted.
         ================  ========================================================
-        
-        Returns 
+
+        Returns
             a boolean indicating whether it was successful.
-        
+
         """
         resp = self.con.post('community/groups/' + group_id + '/delete',
                              self._postdata())
@@ -516,7 +522,7 @@ class Portal(object):
 
     def delete_item(self, item_id, owner, folder=None):
         """ Deletes an item.
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -526,10 +532,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         folder            optional string, folder containing the item.  Defaults to the root folder.
         ================  ========================================================
-            
+
         :return:
             a boolean, indicating success
-        
+
         """
         path = '/content/users/' + owner
         if folder :
@@ -537,13 +543,13 @@ class Portal(object):
         path += '/items/' + item_id + '/delete'
         #print(path)
         resp = self.con.post(path, self._postdata())
-        
+
         if resp:
             return resp.get('success')
-    
+
     def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -557,15 +563,15 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         org               optional boolean, share with the organization
         ----------------  --------------------------------------------------------
-        groups            optional string, 
+        groups            optional string,
                           comma-separated list of group IDs with which the item will be shared.
         ================  ========================================================
-            
+
         :return:
             dict with key "notSharedWith" containing array of groups with which the item could not be shared.
 
 
-        
+
         """
         path = '/content/users/' + owner
         if folder :
@@ -583,7 +589,7 @@ class Portal(object):
 
     def unshare_item(self, item_id, owner, folder=None, groups=""):
         """ Stops sharing the item with the specified list of groups
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -593,15 +599,15 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         folder            optional string, folder containing the item.  Defaults to the root folder.
         ----------------  --------------------------------------------------------
-        groups            optional string, 
+        groups            optional string,
                           comma-separated list of group IDs with which the item will be unshared.
         ================  ========================================================
-            
+
         :return:
             dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
 
 
-        
+
         """
         path = '/content/users/' + owner
         if folder :
@@ -618,13 +624,13 @@ class Portal(object):
     def delete_user(self, username, reassign_to=None):
         """ Deletes a user from the portal, optionally deleting or reassigning groups and items.
 
-        .. note:: 
-            You can not delete a user in Portal if that user owns groups or items.  If you 
+        .. note::
+            You can not delete a user in Portal if that user owns groups or items.  If you
             specify someone in the reassign_to argument then items and groups will be
             transferred to that user.  If that argument is not set then the method
             will fail if the user has items or groups that need to be reassigned.
-                
-           
+
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -635,7 +641,7 @@ class Portal(object):
 
         :return:
             a boolean indicating whether the operation succeeded or failed.
-        
+
         """
 
 
@@ -648,18 +654,18 @@ class Portal(object):
             return False
 
     def generate_token(self, username, password, expiration=60):
-        """ Generates and returns a new token, but doesn't re-login. 
-        
-        .. note:: 
+        """ Generates and returns a new token, but doesn't re-login.
+
+        .. note::
             This method is not needed when using the Portal class
             to make calls into Portal.  It's provided for the benefit
             of making calls into Portal outside of the Portal class.
-            
+
             Portal uses a token-based authentication mechanism where
             a user provides their credentials and a short-term token
             is used for calls.  Most calls made to the Portal REST API
             require a token and this can be appended to those requests.
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -669,21 +675,21 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         expiration        optional integer, number of minutes until the token expires
         ================  ========================================================
-            
+
         :return:
             a string with the token
-        
+
         """
 
         return self.con.generate_token(username, password, expiration)
 
 
     def get_group(self, group_id):
-        """ Returns group information for the specified group group_id. 
-                   
-        Arguments                 
+        """ Returns group information for the specified group group_id.
+
+        Arguments
             group_id : required string, indicating group.
-            
+
         :return:
             a dictionary object with the group's information.  The keys in
             the dictionary object will often include:
@@ -717,7 +723,7 @@ class Portal(object):
             ----------------  --------------------------------------------------------
             memberType:       provides the calling user's access (owner, admin, member, none).
             ================  ========================================================
-            
+
         """
         return self.con.post('community/groups/' + group_id, self._postdata())
 
@@ -725,21 +731,21 @@ class Portal(object):
 
     def get_group_thumbnail(self, group_id):
         """ Returns the bytes that make up the thumbnail for the specified group group_id.
-        
+
         Arguments
             group_id:     required string, specifies the group's thumbnail
-            
-        Returns 
+
+        Returns
             bytes that representt he image.
-            
+
         Example
 
         .. code-block:: python
-        
+
             response = portal.get_group_thumbnail("67e1761068b7453693a0c68c92a62e2e")
             f = open(filename, 'wb')
             f.write(response)
-        
+
         """
         thumbnail_file = self.get_group(group_id).get('thumbnail')
         if thumbnail_file:
@@ -750,13 +756,13 @@ class Portal(object):
 
     def get_group_members(self, group_id):
         """ Returns members of the specified group.
-        
+
         Arguments
             group_id:    required string, specifies the group
-            
-        Returns 
+
+        Returns
             a dictionary with keys: owner, admins, and users.
-            
+
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
@@ -766,15 +772,15 @@ class Portal(object):
             ----------------  --------------------------------------------------------
             users             list of strings, the members of the group
             ================  ========================================================
-                
+
         Example (to print users in a group)
 
         .. code-block:: python
-        
+
             response = portal.get_group_members("67e1761068b7453693a0c68c92a62e2e")
             for user in response['users'] :
                 print user
-        
+
         """
 
         return self.con.post('community/groups/' + group_id + '/users',
@@ -782,14 +788,14 @@ class Portal(object):
 
 
     def get_org_users(self, max_users=1000):
-        """ Returns all users within the portal organization. 
-             
+        """ Returns all users within the portal organization.
+
         Arguments
             max_users : optional int, the maximum number of users to return.
-            
+
         :return:
             a list of dicts.  Each dict has the following keys:
-            
+
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
@@ -818,7 +824,7 @@ class Portal(object):
             preferredView:    string
             ----------------  --------------------------------------------------------
             groups:           list of strings
-            ----------------  --------------------------------------------------------            
+            ----------------  --------------------------------------------------------
             role:             string (org_user, org_publisher, org_admin)
             ----------------  --------------------------------------------------------
             fullName:         string
@@ -827,15 +833,15 @@ class Portal(object):
             ----------------  --------------------------------------------------------
             idpUsername:      string
             ================  ========================================================
-       
+
         Example (print all usernames in portal):
 
         .. code-block:: python
-           
+
            resp = portalAdmin.get_org_users()
            for user in resp:
                print user['username']
-       
+
         """
 
         # Execute the search and get back the results
@@ -851,7 +857,7 @@ class Portal(object):
             results.extend(resp_users)
             count += int(resp['num'])
             nextstart = int(resp['nextStart'])
- 
+
         return results
 
 
@@ -872,11 +878,11 @@ class Portal(object):
         return copy.deepcopy(self._properties)
 
     def get_user(self, username):
-        """ Returns the user information for the specified username. 
-        
+        """ Returns the user information for the specified username.
+
         Arguments
             username        required string, the username whose information you want.
-            
+
         :return:
             None if the user is not found and returns a dictionary object if the user is found
             the dictionary has the following keys:
@@ -925,11 +931,11 @@ class Portal(object):
 
 
     def get_item(self, itemid):
-        """ Returns the item information for the specified item. 
-        
+        """ Returns the item information for the specified item.
+
         Arguments
             itemid            required string, the item-id whose information you want.
-            
+
         :return:
             None if the item is not found and returns a dictionary object if the item is found
             the dictionary has the following keys:
@@ -937,55 +943,55 @@ class Portal(object):
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
-            id                string, the unique ID for this item. 
+            id                string, the unique ID for this item.
             ----------------  --------------------------------------------------------
-            owner             string, the username of the user who owns this item. 
+            owner             string, the username of the user who owns this item.
             ----------------  --------------------------------------------------------
-            created           time (int) the date the item was created. Shown in UNIX time in milliseconds. 
+            created           time (int) the date the item was created. Shown in UNIX time in milliseconds.
             ----------------  --------------------------------------------------------
-            modified          time (int) the date the item was last modified. Shown in UNIX time in milliseconds. 
+            modified          time (int) the date the item was last modified. Shown in UNIX time in milliseconds.
             ----------------  --------------------------------------------------------
-            name              string, the file name of the item for file types. Read-only. 
+            name              string, the file name of the item for file types. Read-only.
             ----------------  --------------------------------------------------------
-            title             string, the title of the item. This is the name that's displayed to users 
+            title             string, the title of the item. This is the name that's displayed to users
             ----------------  --------------------------------------------------------
-            url               string, the URL for the resource represented by the item. Applies only to items that represent web-accessible resources such as map services. 
+            url               string, the URL for the resource represented by the item. Applies only to items that represent web-accessible resources such as map services.
             ----------------  --------------------------------------------------------
-            type              string, the GIS content type of this item. Example types include Web Map, Map Service, Shapefile, and Web Mapping Application. 
+            type              string, the GIS content type of this item. Example types include Web Map, Map Service, Shapefile, and Web Mapping Application.
             ----------------  --------------------------------------------------------
-            typeKeywords      string, a set of keywords that further describes the type of this item. Each item is tagged with a set of type keywords that are derived based on its primary type. 
+            typeKeywords      string, a set of keywords that further describes the type of this item. Each item is tagged with a set of type keywords that are derived based on its primary type.
             ----------------  --------------------------------------------------------
-            description       string, item description. 
+            description       string, item description.
             ----------------  --------------------------------------------------------
-            tags              string, user defined tags that describe the item. 
+            tags              string, user defined tags that describe the item.
             ----------------  --------------------------------------------------------
-            snippet           string, a short summary description of the item. 
+            snippet           string, a short summary description of the item.
             ----------------  --------------------------------------------------------
-            thumbnail         string, the URL to the thumbnail used for the item. 
+            thumbnail         string, the URL to the thumbnail used for the item.
             ----------------  --------------------------------------------------------
-            extent            string, the bounding rectangle of the item. Should always be in WGS84.  
+            extent            string, the bounding rectangle of the item. Should always be in WGS84.
             ----------------  --------------------------------------------------------
-            spatialReference  string, the coordinate system of the item. 
+            spatialReference  string, the coordinate system of the item.
             ----------------  --------------------------------------------------------
-            accessInformation string, information on the source of the item. 
+            accessInformation string, information on the source of the item.
             ----------------  --------------------------------------------------------
-            licenseInfo       string, any license information or restrictions. 
+            licenseInfo       string, any license information or restrictions.
             ----------------  --------------------------------------------------------
-            culture           string, the item locale information (language and country). 
+            culture           string, the item locale information (language and country).
             ----------------  --------------------------------------------------------
             access            string, ndicates the level of access to this item: private, shared, org, or public.
             ----------------  --------------------------------------------------------
-            size              string, the size of the item. 
+            size              string, the size of the item.
             ----------------  --------------------------------------------------------
             commentsEnabled   indicates if comments are allowed on the item.
             ----------------  --------------------------------------------------------
-            numComments       number of comments on the item. 
+            numComments       number of comments on the item.
             ----------------  --------------------------------------------------------
-            numRatings        number of ratings on the item. 
+            numRatings        number of ratings on the item.
             ----------------  --------------------------------------------------------
             avgRating         average rating. Uses a weighted average called "Bayesian average."
             ----------------  --------------------------------------------------------
-            numViews          number of views of the item. 
+            numViews          number of views of the item.
             ================  ========================================================
         """
         return self.con.post('content/items/' + itemid, self._postdata())
@@ -1019,19 +1025,19 @@ class Portal(object):
     def get_item_dependents_to(self, itemid):
         return self.con.post('content/items/' + itemid + '/dependencies/listDependentsTo', self._postdata())
 
-    
+
     def invite_group_users(self, user_names, group_id,
                            role='group_member', expiration=10080):
         """ Invites users to a group.
-        
+
         .. note::
             A user who is invited to a group will see a list of invitations
             in the "Groups" tab of portal listing invitations.  The user
             can either accept or reject the invitation.
-        
+
         Requires
             The user executing the command must be group owner
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1043,10 +1049,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         expiration:       an optional int, specifies how long the invitation is valid for in minutes.
         ================  ========================================================
-        
+
         :return:
             a boolean that indicates whether the call succeeded.
-        
+
         """
 
         user_names = _unpack(user_names, 'username')
@@ -1061,7 +1067,7 @@ class Portal(object):
 
         if resp:
             return resp.get('success')
-        
+
 
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
@@ -1085,7 +1091,7 @@ class Portal(object):
     def is_arcgisonline(self):
         """ Returns true if this portal is ArcGIS Online. """
         return self._properties['portalName'] == 'ArcGIS Online' \
-            and self.is_multitenant()
+               and self.is_multitenant()
 
     def is_subscription(self):
         """ Returns true if this portal is an ArcGIS Online subscription. """
@@ -1097,14 +1103,14 @@ class Portal(object):
 
 
     def leave_group(self, group_id):
-        """ Removes the logged in user from the specified group. 
-            
-        Requires: 
+        """ Removes the logged in user from the specified group.
+
+        Requires:
             User must be logged in.
-        
+
         Arguments:
              group_id:   required string, specifies the group id
-        
+
         :return:
              a boolean indicating whether the operation was successful.
         """
@@ -1114,13 +1120,13 @@ class Portal(object):
             return resp.get('success')
 
     def login(self, username, password, expiration=60):
-        """ Logs into the portal using username/password. 
-        
-        .. note:: 
+        """ Logs into the portal using username/password.
+
+        .. note::
              You can log into a portal when you construct a portal
-             object or you can login later.  This function is 
+             object or you can login later.  This function is
              for the situation when you need to log in later.
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1130,37 +1136,37 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         expiration        optional int, how long the token generated should last.
         ================  ========================================================
-                
+
         :return:
             a string, the token
-        
+
         """
 
         newtoken = self.con.login(username, password, expiration)
         return newtoken
 
     def logout(self):
-        """ Logs out of the portal. 
-        
-        .. note:: 
-             The portal will forget any existing tokens it was using, all 
+        """ Logs out of the portal.
+
+        .. note::
+             The portal will forget any existing tokens it was using, all
              subsequent portal calls will be anonymous until another login
              call occurs.
-        
+
         :return:
              No return value.
-        
-        """        
+
+        """
 
         self.con.logout()
 
 
     def logged_in_user(self):
         """ Returns information about the logged in user.
-        
+
         :return:
             a dict with the following keys:
-            
+
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
@@ -1182,7 +1188,7 @@ class Portal(object):
             ----------------  --------------------------------------------------------
             idpUsername       string, name of the user in their identity provider
             ================  ========================================================
-         
+
          """
         try :
             username = self._properties['user']['username']
@@ -1193,15 +1199,15 @@ class Portal(object):
 
     def reassign_user(self, username, target_username):
         """ Reassigns all of a user's items and groups to another user.
-        
+
         Items are transferred to the target user into a folder named
         <user>_<folder> where user corresponds to the user whose items were
         moved and folder corresponds to the folder that was moved.
-    
-        .. note:: 
-            This method must be executed as an administrator.  This method also 
+
+        .. note::
+            This method must be executed as an administrator.  This method also
             can not be undone.  The changes are immediately made and permanent.
-    
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1209,10 +1215,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         target_username   required string, user who will own items/groups after this.
         ================  ========================================================
-            
+
         :return:
             a boolean indicating success
-        
+
         """
 
         postdata = self._postdata()
@@ -1221,13 +1227,13 @@ class Portal(object):
         if resp:
             return resp.get('success')
 
-        
+
 
     def reassign_group(self, group_id, target_owner):
-        """ Reassigns a group to another owner. 
+        """ Reassigns a group to another owner.
 
-        
-        
+
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1235,10 +1241,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         target_owner      required string, username of new group owner
         ================  ========================================================
-            
+
         :return:
             a boolean, indicating success
-        
+
         """
         postdata = self._postdata()
         postdata['targetUsername'] = target_owner
@@ -1248,12 +1254,12 @@ class Portal(object):
 
 
     def reassign_item(self, item_id, current_owner, target_owner, current_folder=None, target_folder=None):
-        """ Allows the administrator to reassign a single item from one user to another.  
+        """ Allows the administrator to reassign a single item from one user to another.
 
-	    .. note:: 
+        .. note::
              	If you wish to move all of a user's items (and groups) to another user then use the
                 reassign_user method.  This method only moves one item at a time.
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1267,10 +1273,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         target_folder     optional string, folder to move the item to.
         ================  ========================================================
-            
+
         :return:
             a boolean, indicating success
-        
+
         """
         path = '/content/users/' + current_owner
         if current_folder :
@@ -1285,15 +1291,15 @@ class Portal(object):
     def reset_user(self, username, password, new_password=None,
                    new_security_question=None, new_security_answer=None):
         """ Resets a user's password, security question, and/or security answer.
-        
-        .. note:: 
+
+        .. note::
             This function does not apply to those using enterprise accounts
             that come from an enterprise such as ActiveDirectory, LDAP, or SAML.
             It only has an effect on built-in users.
-            
+
             If a new security question is specified, a new security answer should
             be provided.
-            
+
         =====================  ========================================================
         **Argument**           **Description**
         ---------------------   --------------------------------------------------------
@@ -1307,10 +1313,10 @@ class Portal(object):
         ---------------------   --------------------------------------------------------
         new_security_answer    optional string, new security question answer if desired
         =====================  ========================================================
-    
+
         :return:
             a boolean, indicating success
-        
+
         """
         postdata = self._postdata()
         postdata['password'] = password
@@ -1329,7 +1335,7 @@ class Portal(object):
 
     def remove_group_users(self, user_names, group_id):
         """ Remove users from a group.
-        
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1337,23 +1343,23 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         group_id          required string, the id for a group.
         ================  ========================================================
-   
+
         :return:
             a dictionary with a key notRemoved that is a list of users not removed.
 
         """
 
         user_names = _unpack(user_names, 'username')
-        
+
         # Remove the users from the group
         postdata = self._postdata()
         postdata['users'] = ','.join(user_names)
         resp = self.con.post('community/groups/' + group_id + '/removeUsers',
-                                 postdata)
+                             postdata)
         return resp
 
 
-    def search(self, q, bbox=None, sort_field='title', sort_order='asc', 
+    def search(self, q, bbox=None, sort_field='title', sort_order='asc',
                max_results=1000, add_org=True):
 
 
@@ -1363,7 +1369,7 @@ class Portal(object):
                 q += ' accountid:' + accountid
             elif accountid:
                 q = 'accountid:' + accountid
- 
+
         count = 0
         resp = self._search_page(q, bbox, 1, min(max_results, 100), sort_field, sort_order)
         results = resp.get('results')
@@ -1371,33 +1377,33 @@ class Portal(object):
         nextstart = int(resp['nextStart'])
         while count < max_results and nextstart > 0:
             resp = self._search_page(q, bbox, nextstart, min(max_results - count, 100),
-                               sort_field, sort_order)
+                                     sort_field, sort_order)
             results.extend(resp['results'])
             count += int(resp['num'])
             nextstart = int(resp['nextStart'])
-   
+
         return results
 
 
-    def search_groups(self, q, sort_field='title',sort_order='asc', 
+    def search_groups(self, q, sort_field='title',sort_order='asc',
                       max_groups=1000, add_org=True):
         """ Searches for portal groups.
-        
-        .. note:: 
+
+        .. note::
             A few things that will be helpful to know.
-            
-            1. The query syntax has quite a few features that can't 
-               be adequately described here.  The query syntax is 
+
+            1. The query syntax has quite a few features that can't
+               be adequately described here.  The query syntax is
                available in ArcGIS help.  A short version of that URL
                is http://bitly.com/1fJ8q31.
-               
-            2. Most of the time when searching groups you want to 
+
+            2. Most of the time when searching groups you want to
                search within your organization in ArcGIS Online
                or within your Portal.  As a convenience, the method
-               automatically appends your organization id to the query by 
+               automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set add_org to false.  
-               
+               set add_org to false.
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1449,22 +1455,22 @@ class Portal(object):
             title             string, name of group as shown to users
             ================  ========================================================
         """
-        
+
         if add_org:
             accountid = self._properties.get('id')
             if accountid and q:
                 q += ' accountid:' + accountid
             elif accountid:
                 q = 'accountid:' + accountid
-        
+
         # Execute the search and get back the results
         count = 0
-        resp = self._groups_page(q, 1, min(max_groups,100), sort_field, sort_order) 
+        resp = self._groups_page(q, 1, min(max_groups,100), sort_field, sort_order)
         results = resp.get('results')
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_groups and nextstart > 0:
-            resp = self._groups_page(q, 1, min(max_groups - count,100), 
+            resp = self._groups_page(q, 1, min(max_groups - count,100),
                                      sort_field, sort_order)
             resp_users = resp.get('results')
             results.extend(resp_users)
@@ -1472,39 +1478,39 @@ class Portal(object):
             nextstart = int(resp['nextStart'])
 
         return results
-        
-       
- 
+
+
+
     def search_users(self, q, sort_field='username',
-              sort_order='asc', max_users=1000, add_org=True):
-        """ Searches portal users. 
-        
+                     sort_order='asc', max_users=1000, add_org=True):
+        """ Searches portal users.
+
         This gives you a list of users and some basic information
-        about those users.  To get more detailed information (such as role), you 
+        about those users.  To get more detailed information (such as role), you
         may need to call get_user on each user.
-    
-        .. note:: 
+
+        .. note::
             A few things that will be helpful to know.
-            
-            1. The query syntax has quite a few features that can't 
-               be adequately described here.  The query syntax is 
+
+            1. The query syntax has quite a few features that can't
+               be adequately described here.  The query syntax is
                available in ArcGIS help.  A short version of that URL
                is http://bitly.com/1fJ8q31.
-               
-            2. Most of the time when searching groups you want to 
+
+            2. Most of the time when searching groups you want to
                search within your organization in ArcGIS Online
                or within your Portal.  As a convenience, the method
-               automatically appends your organization id to the query by 
+               automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set add_org to false.  If you use this feature with an 
+               set add_org to false.  If you use this feature with an
                OR clause such as field=x or field=y you should put this
                into parenthesis when using add_org.
-               
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
-        ----------------  --------------------------------------------------------        
+        ----------------  --------------------------------------------------------
         sort_field        optional string, valid values can be username or created
         ----------------  --------------------------------------------------------
         sort_order        optional string, valid values are asc or desc
@@ -1567,23 +1573,23 @@ class Portal(object):
 
     # Used to signup a new user to an on-premises portal.
     def signup(self, username, password, fullname, email):
-        """ Signs up users to an instance of Portal for ArcGIS. 
-        
-        .. note:: 
+        """ Signs up users to an instance of Portal for ArcGIS.
+
+        .. note::
             This method only applies to Portal and not ArcGIS
             Online.  This method can be called anonymously, but
-            keep in mind that self-signup can also be disabled 
+            keep in mind that self-signup can also be disabled
             in a Portal.  It also only creates built-in
             accounts, it does not work with enterprise
             accounts coming from ActiveDirectory or your
-            LDAP.  
-            
-            There is another method called createUser that 
+            LDAP.
+
+            There is another method called createUser that
             requires administrator access that can always
             be used against 10.2.1 portals or later that
             can create users whether they are builtin or
             enterprise accounts.
-            
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1595,10 +1601,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         email             required string, must be an email address
         ================  ========================================================
-            
+
         :return:
             a boolean indicating success
-        
+
         """
         if self.is_arcgisonline():
             raise ValueError('Signup is not supported on ArcGIS Online')
@@ -1611,7 +1617,7 @@ class Portal(object):
         resp = self.con.post('community/signUp', postdata, ssl=True)
         if resp:
             return resp.get('success')
-        
+
         # TODO: Also check https://portalpy.esri.com/arcgis/portaladmin/security/users/createUser
 
     def update_user(self, username, access=None, preferred_view=None,
@@ -1619,13 +1625,13 @@ class Portal(object):
                     fullname=None, email=None, culture=None,
                     region=None):
         """ Updates a user's properties.
-        
-        .. note:: 
+
+        .. note::
             Only pass in arguments for properties you want to update.
-            All other properties will be left as they are.  If you 
+            All other properties will be left as they are.  If you
             want to update description, then only provide
             the description argument.
-            
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1639,7 +1645,7 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         tags              optional string, comma-separated tags for searching
         ----------------  --------------------------------------------------------
-        thumbnail         optional string, path or url to a file.  can be PNG, GIF, 
+        thumbnail         optional string, path or url to a file.  can be PNG, GIF,
                                   JPEG, max size 1 MB
         ----------------  --------------------------------------------------------
         fullname          optional string, name of the user, only for built-in users
@@ -1650,10 +1656,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         region            optional string, two-letter country code, FR for example
         ================  ========================================================
-    
+
         :return:
             a boolean indicating success
-        
+
         """
         properties = dict()
         postdata = self._postdata()
@@ -1677,7 +1683,7 @@ class Portal(object):
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urllib.request.urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -1691,7 +1697,7 @@ class Portal(object):
 
         # Send the POST request, and return the id from the response
         resp = self.con.post('community/users/' + username + '/update', postdata, files, ssl=True)
-            
+
 
         if resp:
             return resp.get('success')
@@ -1700,13 +1706,13 @@ class Portal(object):
 
     def update_user_role(self, username, role):
         """ Updates a user's role.
-        
-        .. note:: 
+
+        .. note::
             There are three types of roles in Portal - user, publisher, and administrator.
-            A user can share items, create maps, create groups, etc.  A publisher can 
-            do everything a user can do and create hosted services.  An administrator can 
+            A user can share items, create maps, create groups, etc.  A publisher can
+            do everything a user can do and create hosted services.  An administrator can
             do everything that is possible in Portal.
-            
+
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
@@ -1714,10 +1720,10 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         role              required string, one of these values org_user, org_publisher, org_admin
         ================  ========================================================
-    
+
         :return:
             a boolean, that indicates success
-        
+
         """
         postdata = self._postdata()
         postdata.update({'user': username, 'role': role})
@@ -1727,14 +1733,14 @@ class Portal(object):
 
 
     def update_group(self, group_id, title=None, tags=None, description=None,
-                     snippet=None, access=None, is_invitation_only=None, 
+                     snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                      thumbnail=None):
+                     thumbnail=None):
         """ Updates a group.
-        
-        .. note:: 
+
+        .. note::
             Only provide the values for the arguments you wish to update.
-            
+
         ==================  ========================================================
         **Argument**        **Description**
         ------------------  --------------------------------------------------------
@@ -1760,13 +1766,13 @@ class Portal(object):
         ------------------  --------------------------------------------------------
         is_view_only          optional boolean, defines whether the group is searchable
         ==================  ========================================================
-    
+
         :return:
             a boolean indicating success
         """
 
-        
-        
+
+
         properties = dict()
         postdata = self._postdata()
         if title:
@@ -1787,13 +1793,13 @@ class Portal(object):
             properties['sortOrder'] = sort_order
         if is_view_only:
             properties['isViewOnly'] = is_view_only
-                    
+
         postdata.update(properties)
 
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urllib.request.urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -1809,10 +1815,10 @@ class Portal(object):
 
 
     def update_item(self, itemid, item_properties=None, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
-        """ Updates an item in a Portal.  
-	
-        
-        .. note:: 
+        """ Updates an item in a Portal.
+
+
+        .. note::
             That content can be a file (such as a layer package, geoprocessing package,
             map package) or it can be a URL (to an ArcGIS Server service, WMS service,
             or an application).
@@ -1821,11 +1827,11 @@ class Portal(object):
             to the file in the data argument.
 
             Only pass in arguments for properties you want to update.
-            All other properties will be left as they are.  If you 
+            All other properties will be left as they are.  If you
             want to update description, then only provide
             the description argument in item_properties.
 
-        
+
         ============     ====================================================
         **Argument**     **Description**
         ------------     ----------------------------------------------------
@@ -1852,7 +1858,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.  
+        title             optional string.  Name of the item.
         ----------------  ----------------------------------------------------------------------------
         url               optional string.  URL to item that are based on URLs.
         ----------------  ----------------------------------------------------------------------------
@@ -1877,8 +1883,8 @@ class Portal(object):
         culture           optional string.  Language and country information.
         ================  ============================================================================
 
-            
-	URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
         :return:
              a boolean, that indicates success.
@@ -1893,15 +1899,15 @@ class Portal(object):
         files = []
         if data:
             if _is_http_url(data):
-                data = urllib.request.urlretrieve(data)[0]
+                data = request.urlretrieve(data)[0]
             files.append(('file', data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
-                metadata = urllib.request.urlretrieve(metadata)[0]
+                metadata = request.urlretrieve(metadata)[0]
             files.append(('metadata', metadata, 'metadata.xml'))
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urllib.request.urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -1925,23 +1931,23 @@ class Portal(object):
             return resp.get('success')
 
     def get_version(self, force=False):
-        """ Returns the portal version (using cache unless force=True). 
-        
-        .. note:: 
+        """ Returns the portal version (using cache unless force=True).
+
+        .. note::
             The version information is retrieved when you create the
             Portal object and then cached for future requests.  If you
             want to make a request to the Portal and not rely on the
             cache then you can set the force argument to True.
-            
+
         Arguments:
             force        boolean, true=make a request, false=use cache
-            
+
         :return:
             a string with the version.  The version is an internal number
             that may not match the version of the product purchased.  So
             2.3 is returned from Portal 10.2.1 for instance.
-        
-        
+
+
         """
 
         # If we've never retrieved the version before, or the caller is
@@ -1952,7 +1958,7 @@ class Portal(object):
                 old_resturl = _normalize_url(self.url) + 'sharing/'
                 resp = self.con.post(old_resturl, self._postdata(), ssl=True)
                 if resp:
-                    _log.warn('Portal is pre-1.6.2; some things may not work')
+                    _log.warning('Portal is pre-1.6.2; some things may not work')
                     self._is_pre_162 = True
                     self._is_pre_21 = True
                     self.resturl = old_resturl
@@ -1960,7 +1966,7 @@ class Portal(object):
             else:
                 version = resp.get('currentVersion')
                 if version == '1.6.2' or version == '2.0':
-                    _log.warn('Portal is pre-2.1; some features not supported')
+                    _log.warning('Portal is pre-2.1; some features not supported')
                     self._is_pre_21 = True
             if resp:
                 self._version = resp.get('currentVersion')
@@ -2033,7 +2039,7 @@ class Portal(object):
             for fldr in resp['folders']:
                 if fldr['title'].upper() == folder_name.upper():  # Force both strings to upper case for comparison
                     return fldr['id']
-        return None # no such folder found for this owner 
+        return None # no such folder found for this owner
 
     def _is_searching_public(self, scope):
         if scope == 'public':
@@ -2045,7 +2051,7 @@ class Portal(object):
             return False if self.is_org() else True
         else:
             raise ValueError('Unknown scope "' + scope + '". Supported ' \
-                              + 'values are "public", "org", and "default"')
+                             + 'values are "public", "org", and "default"')
 
 
     def _invitations_page(self, start, num):
@@ -2054,7 +2060,7 @@ class Portal(object):
         return self.con.post('portals/self/invitations', postdata)
 
 
-  
+
     def _postdata(self):
         if self._basepostdata:
             # Return a defensive copy
@@ -2111,25 +2117,39 @@ class Portal(object):
             newresults.append(newresult)
         return newresults
 
-class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
-        def __init__(self, key, cert):
-            urllib.request.HTTPSHandler.__init__(self)
-            self.key = key
-            self.cert = cert
-        def https_open(self, req):
-            #Rather than pass in a reference to a connection class, we pass in
-            # a reference to a function which, for all intents and purposes,
-            # will behave as a constructor
-            return self.do_open(self.getConnection, req)
-        def getConnection(self, host, timeout=300):
-            return  http.client.HTTPSConnection(host,
-                                                 key_file=self.key,
-                                                 cert_file=self.cert,
-                                                 timeout=timeout)
+class HTTPSClientAuthHandler(request.HTTPSHandler):
+    def __init__(self, key, cert):
+        request.HTTPSHandler.__init__(self)
+        self.key = key
+        self.cert = cert
+    def https_open(self, req):
+        #Rather than pass in a reference to a connection class, we pass in
+        # a reference to a function which, for all intents and purposes,
+        # will behave as a constructor
+        return self.do_open(self.getConnection, req)
+    def getConnection(self, host, timeout=300):
+        return  http_client.HTTPSConnection(host,
+                                            key_file=self.key,
+                                            cert_file=self.cert,
+                                            timeout=timeout)
 
 class _ArcGISConnection(object):
     """ A class users to manage connection to ArcGIS services (Portal and Server). """
-
+    baseurl = None
+    key_file = None
+    cert_file = None
+    all_ssl = None
+    proxy_host = None
+    proxy_port = None
+    token = None
+    ensure_ascii = None
+    _referer = None
+    _useragent = None
+    _parsed_org_url = None
+    _username = None
+    _password = None
+    _auth = None
+    #----------------------------------------------------------------------
     def __init__(self, baseurl, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, all_ssl=False, referer=None,
                  proxy_host=None, proxy_port=None, ensure_ascii=True):
@@ -2146,18 +2166,13 @@ class _ArcGISConnection(object):
         self.token = None
 
         # Setup the referer and user agent
-        #TODO: fixme
-        import socket
-        referer = socket.gethostname()
         if not referer:
-            #import socket
-            ip = socket.gethostbyname(socket.gethostname())
-            referer = socket.gethostbyaddr(ip)[0]
+            referer = urlparse(baseurl).netloc
         self._referer = referer
         self._useragent = 'geosaurus/' + __version__
 
-        parsed_url = urllib.parse.urlparse(self.baseurl)
-        self._parsed_org_url = urllib.parse.urlunparse((parsed_url[0], parsed_url[1], "", "", "", "")) 
+        parsed_url = urlparse(self.baseurl)
+        self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))
 
         self._username = username
         self._password = password
@@ -2174,8 +2189,7 @@ class _ArcGISConnection(object):
             self.login(username, password, expiration)
         elif username or password:
             _log.warning('Both username and password required for login')
-
-
+    #----------------------------------------------------------------------
     def generate_token(self, username, password, expiration=60):
         """ Generates and returns a new token, but doesn't re-login. """
         postdata = { 'username': username, 'password': password,
@@ -2184,7 +2198,20 @@ class _ArcGISConnection(object):
         resp = self.post('generateToken', postdata, ssl=True)
         if resp:
             return resp.get('token')
-
+    #----------------------------------------------------------------------
+    def _make_boundary(self):
+        """ creates a boundary for multipart post (form post)"""
+        if six.PY2:
+            return '-===============%s==' % uuid.uuid4().get_hex()
+        elif six.PY3:
+            return '-===============%s==' % uuid.uuid4().hex
+        else:
+            from random import choice
+            digits = "0123456789"
+            letters = "abcdefghijklmnopqrstuvwxyz"
+            return '-===============%s==' % ''.join(choice(letters + digits) \
+                                                   for i in range(15))
+    #----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
         try:
@@ -2196,30 +2223,31 @@ class _ArcGISConnection(object):
                 self._expiration = expiration
                 self._auth = "BUILTIN"
             return newtoken
-        except urllib.error.HTTPError as err:
+        except HTTPError as err:
             if err.code == 401: # using basic authentication
                 self._auth = "BASICAUTH"
             else:
                 raise
-
+    #----------------------------------------------------------------------
     def relogin(self, expiration=None):
         """ Re-authenticates with the portal using the same username/password. """
         if not expiration:
             expiration = self._expiration
         return self.login(self._username, self._password, expiration)
-
+    #----------------------------------------------------------------------
     def logout(self):
         """ Logs out of the portal. """
         self.token = None
-
+    #----------------------------------------------------------------------
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
         return self.token is not None
-
+    #----------------------------------------------------------------------
     def get(self, path, ssl=False, compress=True, try_json=True, is_retry=False, use_ordered_dict=False):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
-        if not path.startswith('http://') and not path.startswith('https://'):
+        if not path.startswith('http://') and \
+           not path.startswith('https://'):
             url = self.baseurl + path
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
@@ -2238,13 +2266,18 @@ class _ArcGISConnection(object):
                 headers.append(('Accept-encoding', 'gzip'))
 
             handlers = self.get_handlers()
-            opener = urllib.request.build_opener(*handlers)
+            opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
             resp = opener.open(url)
-            if resp.info().get('Content-Encoding') == 'gzip':
-                #buf = StringIO(resp.read())
+            if resp.info().get('Content-Encoding') == 'gzip' and \
+               six.PY3:
                 buf = io.BytesIO(resp.read())
+                f = gzip.GzipFile(fileobj=buf)
+                resp_data = f.read()
+            elif resp.info().get('Content-Encoding') == 'gzip' and \
+                 six.PY2:
+                buf = StringIO(resp.read())
                 f = gzip.GzipFile(fileobj=buf)
                 resp_data = f.read()
             else:
@@ -2293,7 +2326,7 @@ class _ArcGISConnection(object):
 
         # If we got an HTTPError when making the request check to see if it's
         # related to token timeout, in which case, regenerate a token
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             if e.code == 498 and not is_retry:
                 _log.info('Token expired during get request, fetching a new ' \
                           + 'token and retrying')
@@ -2305,11 +2338,11 @@ class _ArcGISConnection(object):
                 raise RuntimeError('Invalid token')
             else:
                 raise e
-
+    #----------------------------------------------------------------------
     def _ensure_dir(self, f):
         if not os.path.exists(f):
             os.makedirs(f)
-
+    #----------------------------------------------------------------------
     def download_to_folder(self, path, dir_name, ssl=False, is_retry=False):
         """ Downloads file to specified directory. Handles token timeout and all SSL mode."""
         url = path
@@ -2328,9 +2361,9 @@ class _ArcGISConnection(object):
             # Send the request and read the response
             headers = [('Referer', self._referer),
                        ('User-Agent', self._useragent)]
-            
+
             handlers = self.get_handlers()
-            opener = urllib.request.build_opener(*handlers)
+            opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
             resp = opener.open(url)
@@ -2354,7 +2387,7 @@ class _ArcGISConnection(object):
 
         # If we got an HTTPError when making the request check to see if it's
         # related to token timeout, in which case, regenerate a token
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             if e.code == 498 and not is_retry:
                 _log.info('Token expired during get request, fetching a new ' \
                           + 'token and retrying')
@@ -2366,7 +2399,7 @@ class _ArcGISConnection(object):
                 raise RuntimeError('Invalid token')
             else:
                 raise e
-
+    #----------------------------------------------------------------------
     def download(self, path, filepath, ssl=False, is_retry=False):
         """ Downloads result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
@@ -2388,7 +2421,7 @@ class _ArcGISConnection(object):
             opener.addheaders = [('Referer', self._referer),
                                  ('User-Agent', self._useragent)]
             opener.retrieve(url, filepath)
-        except urllib.error.HTTPError as e:
+        except HTTPError as e:
             if e.code == 498 and not is_retry:
                 _log.info('Token expired during download request, fetching a ' \
                           + 'new token and retrying')
@@ -2400,12 +2433,12 @@ class _ArcGISConnection(object):
                 raise RuntimeError('Invalid token')
             else:
                 raise e
-
+    #----------------------------------------------------------------------
     def _url_add_token(self, url, token):
 
         # Parse the URL and query string
-        urlparts = urllib.parse.urlparse(url)
-        qs_list = urllib.parse.parse_qsl(urlparts.query)
+        urlparts = urlparse(url)
+        qs_list = parse_qsl(urlparts.query)
 
         # Update the token query string parameter
         replaced_token = False
@@ -2419,33 +2452,33 @@ class _ArcGISConnection(object):
             new_qs_list.append(('token', token))
 
         # Rebuild the URL from parts and return it
-        return urllib.parse.urlunparse((urlparts.scheme, urlparts.netloc,
-                                    urlparts.path, urlparts.params,
-                                    urllib.parse.urlencode(new_qs_list),
-                                    urlparts.fragment))
-
+        return urlunparse((urlparts.scheme, urlparts.netloc,
+                           urlparts.path, urlparts.params,
+                           urlencode(new_qs_list),
+                           urlparts.fragment))
+    #----------------------------------------------------------------------
     def get_handlers(self):
         handlers = []
 
         if self._auth == "BASICAUTH": # used by LDAP
-            passman = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+            passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
-                                    self._parsed_org_url,
-                                    self._username,
-                                    self._password)
-            handlers.append(urllib.request.HTTPBasicAuthHandler(passman))
-            
+                                 self._parsed_org_url,
+                                 self._username,
+                                 self._password)
+            handlers.append(request.HTTPBasicAuthHandler(passman))
+
         if self._auth == "PKI":
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
-        cj = http.cookiejar.CookieJar()
-        handlers.append(urllib.request.HTTPCookieProcessor(cj))
+        cj = cookiejar.CookieJar()
+        handlers.append(request.HTTPCookieProcessor(cj))
         return handlers
-
+    #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False, add_token=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
-        path = urllib.parse.quote(path, ':/')
+        path = quote(path, ':/')
 
         url = path
         if not path.startswith('http://') and not path.startswith('https://'):
@@ -2466,7 +2499,7 @@ class _ArcGISConnection(object):
 
         # If there are files present, send a multipart request
         if files:
-            parsed_url = urllib.parse.urlparse(url)
+            parsed_url = urlparse(url)
             resp_data = self._postmultipart(parsed_url.netloc,
                                             str(parsed_url.path),
                                             postdata,
@@ -2477,15 +2510,15 @@ class _ArcGISConnection(object):
         else:
             encoded_postdata = None
             if postdata:
-                encoded_postdata = urllib.parse.urlencode(postdata)
+                encoded_postdata = urlencode(postdata)
             headers = [('Referer', self._referer),
                        ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 
             handlers = self.get_handlers()
-            opener = urllib.request.build_opener(*handlers)
-            
+            opener = request.build_opener(*handlers)
+
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
@@ -2530,39 +2563,38 @@ class _ArcGISConnection(object):
         except AttributeError:
             # Top-level JSON object isnt a dict, so can't have an error
             pass
-        
-        return resp_json
 
+        return resp_json
+    #----------------------------------------------------------------------
     def _postmultipart(self, host, selector, fields, files, ssl):
         boundary, body = self._encode_multipart_formdata(fields, files)
         headers = {
-        'User-Agent': self._useragent,
-        'Referer': self._referer,
-        'Content-Type': 'multipart/form-data; boundary=%s' % boundary
+            'User-Agent': self._useragent,
+            'Referer': self._referer,
+            'Content-Type': 'multipart/form-data; boundary=%s' % boundary
         }
 
         if self.proxy_host:
             if ssl:
-                h = http.client.HTTPSConnection(self.proxy_host, self.proxy_port,
-                                            key_file=self.key_file,
-                                            cert_file=self.cert_file)
+                h = http_client.HTTPSConnection(self.proxy_host, self.proxy_port,
+                                                key_file=self.key_file,
+                                                cert_file=self.cert_file)
                 h.request('POST', 'https://' + host + selector, body, headers)
             else:
-                h = http.client.HTTPConnection(self.proxy_host, self.proxy_port)
+                h = http_client.HTTPConnection(self.proxy_host, self.proxy_port)
                 h.request('POST', 'http://' + host + selector, body, headers)
         else:
             if ssl:
-                h = http.client.HTTPSConnection(host, key_file=self.key_file,
-                                            cert_file=self.cert_file)
+                h = http_client.HTTPSConnection(host, key_file=self.key_file,
+                                                cert_file=self.cert_file)
                 h.request('POST', selector, body, headers)
             else:
-                h = http.client.HTTPConnection(host)
+                h = http_client.HTTPConnection(host)
                 h.request('POST', selector, body, headers)
         return h.getresponse().read()
-
+    #----------------------------------------------------------------------
     def _encode_multipart_formdata(self, fields, files):
-        #boundary = mimetools.choose_boundary()
-        boundary = email.generator._make_boundary()
+        boundary = self._make_boundary()
         buf = StringIO()
         for (key, value) in fields.items():
             buf.write('--%s\r\n' % boundary)
@@ -2580,38 +2612,38 @@ class _ArcGISConnection(object):
         buf.write('--' + boundary + '--\r\n\r\n')
         buf = buf.getvalue()
         return boundary, buf
-
+    #----------------------------------------------------------------------
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
+    #----------------------------------------------------------------------
     def _handle_json_error(self, error):
         _log.error(error.get('message', 'Unknown Error'))
         for errordetail in error['details']:
             _log.error(errordetail)
 
 
-class _StrictURLopener(urllib.request.FancyURLopener):
+class _StrictURLopener(request.FancyURLopener):
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         if errcode != 200:
-            raise urllib.error.HTTPError(url, errcode, errmsg, headers, fp)
+            raise HTTPError(url, errcode, errmsg, headers, fp)
 
 def _normalize_url(url, charset='utf-8'):
     """ Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
     def _clean(string):
-        string = str(urllib.parse.unquote(string), 'utf-8', 'replace')
+        string = str(unquote(string), 'utf-8', 'replace')
         return unicodedata.normalize('NFC', string).encode('utf-8')
 
     default_port = {
-    'ftp': 21,
-    'telnet': 23,
-    'http': 80,
-    'gopher': 70,
-    'news': 119,
-    'nntp': 119,
-    'prospero': 191,
-    'https': 443,
-    'snews': 563,
-    'snntp': 563,
+        'ftp': 21,
+        'telnet': 23,
+        'http': 80,
+        'gopher': 70,
+        'news': 119,
+        'nntp': 119,
+        'prospero': 191,
+        'https': 443,
+        'snews': 563,
+        'snntp': 563,
     }
     '''if isinstance(url, str):
         url = url.encode(charset, 'ignore')
@@ -2620,13 +2652,13 @@ def _normalize_url(url, charset='utf-8'):
     # if there is no scheme use http as default scheme
     if url[0] not in ['/', '-'] and ':' not in url[:7]:
         url = 'http://' + url
-    
+
 
     # shebang urls support
     url = url.replace('#!', '?_escaped_fragment_=')
 
     # splitting url to useful parts
-    scheme, auth, path, query, fragment = urllib.parse.urlsplit(url.strip())
+    scheme, auth, path, query, fragment = urlsplit(url.strip())
     (userinfo, host, port) = re.search('([^@]*@)?([^:]*):?(.*)', auth).groups()
 
     # Always provide the URI scheme in lowercase characters.
@@ -2642,11 +2674,11 @@ def _normalize_url(url, charset='utf-8'):
     # Only perform percent-encoding where it is essential.
     # Always use uppercase A-through-F characters when percent-encoding.
     # All portions of the URI must be utf-8 encoded NFC from Unicode strings
-    path = urllib.parse.quote(_clean(path), "~:/?#[]@!$&'()*+,;=")
-    fragment = urllib.parse.quote(_clean(fragment), "~")
+    path = quote(_clean(path), "~:/?#[]@!$&'()*+,;=")
+    fragment = quote(_clean(fragment), "~")
 
     # note care must be taken to only encode & and = characters as values
-    query = "&".join(["=".join([urllib.parse.quote(_clean(t), "~:/?#[]@!$'()*+,;=") \
+    query = "&".join(["=".join([quote(_clean(t), "~:/?#[]@!$'()*+,;=") \
                                 for t in q.split("=", 1)]) for q in query.split("&")])
 
     # Prevent dot-segments appearing in non-relative URI paths.
@@ -2691,17 +2723,17 @@ def _normalize_url(url, charset='utf-8'):
         auth += ":" + port
     if url.endswith("#") and query == "" and fragment == "":
         path += "#"
-    return urllib.parse.urlunsplit((scheme, auth, path, query, fragment))
+    return urlunsplit((scheme, auth, path, query, fragment))
 
 def _parse_hostname(url, include_port=False):
     """ Parses the hostname out of a URL."""
     if url:
-        parsed_url = urllib.parse.urlparse((url))
+        parsed_url = urlparse((url))
         return parsed_url.netloc if include_port else parsed_url.hostname
 
 def _is_http_url(url):
     if url:
-        return urllib.parse.urlparse(url).scheme in ['http', 'https']
+        return urlparse(url).scheme in ['http', 'https']
 
 def _unpack(obj_or_seq, key=None, flatten=False):
     """ Turns a list of single item dicts in a list of the dict's values."""
@@ -2768,8 +2800,8 @@ def _patch_http_response_read(func):
     def inner(*args):
         try:
             return func(*args)
-        except http.client.IncompleteRead as e:
+        except http_client.IncompleteRead as e:
             return e.partial
 
     return inner
-http.client.HTTPResponse.read = _patch_http_response_read(http.client.HTTPResponse.read)
+http_client.HTTPResponse.read = _patch_http_response_read(http_client.HTTPResponse.read)
