@@ -21,6 +21,7 @@ from io import StringIO
 from collections import OrderedDict
 
 import uuid
+import zlib
 import six
 from six.moves.urllib_parse import urlparse, urlunparse, parse_qsl
 from six.moves.urllib_parse import quote, unquote, urlunsplit
@@ -2195,7 +2196,10 @@ class _ArcGISConnection(object):
         postdata = { 'username': username, 'password': password,
                      'client': 'referer', 'referer': self._referer,
                      'expiration': expiration, 'f': 'json' }
-        resp = self.post('generateToken', postdata, ssl=True)
+        if self.baseurl.endswith('/'):
+            resp = self.post('generateToken', postdata, ssl=True)
+        else:
+            resp = self.post('/generateToken', postdata, ssl=True)
         if resp:
             return resp.get('token')
     #----------------------------------------------------------------------
@@ -2243,12 +2247,50 @@ class _ArcGISConnection(object):
         """ Returns true if logged into the portal. """
         return self.token is not None
     #----------------------------------------------------------------------
+    def _process_repsonse(self, resp):
+        """handles the web responses for both Python version 2 and 3"""
+        read = ""
+        for data in self._chunk(response=resp, size=4096):
+            if six.PY3 == True:
+                read += data.decode('utf-8')
+            else:
+                read += data
+
+            del data
+        try:
+            return read.strip()
+        except:
+            return read
+    #----------------------------------------------------------------------
+    def _chunk(self, response, size=4096):
+        """
+        downloads a web response in pieces to ensure there are no
+        memory issues.
+        """
+        method = response.headers.get("content-encoding")
+        if method == "gzip":
+            d = zlib.decompressobj(16+zlib.MAX_WBITS)
+            b = response.read(size)
+            while b:
+                data = d.decompress(b)
+                yield data
+                b = response.read(size)
+                del data
+        else:
+            while True:
+                chunk = response.read(size)
+                if not chunk: break
+                yield chunk
+    #----------------------------------------------------------------------
     def get(self, path, ssl=False, compress=True, try_json=True, is_retry=False, use_ordered_dict=False):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
+        if (len(url) > 0 and url[0] == '/' ) == False and \
+            self.baseurl.endswith('/') == False:
+            url = "/{path}".format(path=url)
         if not path.startswith('http://') and \
            not path.startswith('https://'):
-            url = self.baseurl + path
+            url = self.baseurl + url
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
 
@@ -2270,18 +2312,7 @@ class _ArcGISConnection(object):
 
             opener.addheaders = headers
             resp = opener.open(url)
-            if resp.info().get('Content-Encoding') == 'gzip' and \
-               six.PY3:
-                buf = io.BytesIO(resp.read())
-                f = gzip.GzipFile(fileobj=buf)
-                resp_data = f.read()
-            elif resp.info().get('Content-Encoding') == 'gzip' and \
-                 six.PY2:
-                buf = StringIO(resp.read())
-                f = gzip.GzipFile(fileobj=buf)
-                resp_data = f.read()
-            else:
-                resp_data = resp.read()
+            resp_data = self._process_repsonse(resp)
 
             # If we're not trying to parse to JSON, return response as is
             if not try_json:
@@ -2479,10 +2510,13 @@ class _ArcGISConnection(object):
              is_retry=False, use_ordered_dict=False, add_token=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
-
         url = path
-        if not path.startswith('http://') and not path.startswith('https://'):
-            url = self.baseurl + path
+        if (len(url) > 0 and url[0] == '/' ) == False and \
+            self.baseurl.endswith('/') == False:
+            url = "/{path}".format(path=url)
+        if not path.startswith('http://') and \
+           not path.startswith('https://'):
+            url = self.baseurl + url
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
 
@@ -2522,12 +2556,7 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
-            if resp.info().get('Content-Encoding') == 'gzip':
-                buf = io.BytesIO(resp.read())
-                f = gzip.GzipFile(fileobj=buf)
-                resp_data = f.read()
-            else:
-                resp_data = resp.read()
+            resp_data = self._process_repsonse(resp)
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
