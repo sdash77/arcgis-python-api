@@ -2357,8 +2357,7 @@ class _ArcGISConnection(object):
             opener = request.build_opener(*handlers)
             opener.addheaders = headers
             request.install_opener(opener)
-            req = request.Request(url,
-                                  headers=headers)
+            req = request.Request(url)
             resp = request.urlopen(req)
             resp_data = self._process_response(resp)
 
