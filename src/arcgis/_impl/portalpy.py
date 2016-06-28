@@ -2290,13 +2290,19 @@ class _ArcGISConnection(object):
             return raw
         else:
             read = ""
-            for data in self._chunk(response=resp, size=4096):
+            for data in self._chunk(response=resp, size=CHUNK):
                 if six.PY3 == True:
-                    read += data.decode('utf-8')
+                    if read == "":
+                        read = data
+                    else:
+                        read += data
+
                 else:
                     read += data
 
                 del data
+            if six.PY3:
+                read = read.decode("utf-8").strip()
             try:
                 return read.strip()
             except:
@@ -2352,7 +2358,11 @@ class _ArcGISConnection(object):
             opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
-            resp = opener.open(url)
+            request.install_opener(opener)
+            req = request.Request(url,
+                                  headers=headers)
+            resp = request.urlopen(req)
+            #resp = opener.open(url)
             resp_data = self._process_response(resp)
 
             # If we're not trying to parse to JSON, return response as is
