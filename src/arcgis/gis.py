@@ -4,14 +4,13 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.
 """
-
+from __future__ import absolute_import
 import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
 
 import base64
 
-from pydoc import locate
 import datetime
 import locale
 
@@ -278,7 +277,7 @@ class DatastoreItem(dict):
             "f" : "json" ,
             "itempath" : self.datapath,
             "force": True
-            }
+        }
         path = self._admin_url + "/data/unregisterItem"
 
         resp = self._portal.con.post(path, params)
@@ -299,7 +298,7 @@ class DatastoreItem(dict):
         params = {
             "f" : "json" ,
             "item" : item
-            }
+        }
         path = self._admin_url +  "/data/items" + self.datapath +  "/edit"
 
         resp = self._portal.con.post(path, params)
@@ -324,7 +323,7 @@ class DatastoreItem(dict):
         params = {
             "f" : "json",
             "item": datadict
-            }
+        }
         path = self._admin_url + "/data/validateDataItem"
 
         res = self._portal.con.post(path, params)
@@ -400,9 +399,9 @@ class DatastoreManager(object):
         return res
 
     def add_folder(self,
-            name,
-            server_path,
-            client_path=None):
+                   name,
+                   server_path,
+                   client_path=None):
         """
         Registers a folder with the data store.
         Input
@@ -418,13 +417,13 @@ class DatastoreManager(object):
             conn_type = "replicated"
 
         item = {
-                "type" : "folder",
-                "path" : "/fileShares/" + name,
-                "info" : {
-                    "path" : server_path,
-                    "dataStoreConnectionType" : conn_type
-                    }
-                }
+            "type" : "folder",
+            "path" : "/fileShares/" + name,
+            "info" : {
+                "path" : server_path,
+                "dataStoreConnectionType" : conn_type
+            }
+        }
 
         if client_path is not None:
             item['clientPath'] = client_path
@@ -442,8 +441,8 @@ class DatastoreManager(object):
             return None
 
     def add_bigdata(self,
-            name,
-            server_path=None):
+                    name,
+                    server_path=None):
         """
         Registers a bigdata fileshare with the data store.
         Input
@@ -458,12 +457,12 @@ class DatastoreManager(object):
         params = {
             'f': 'json',
             'item' : {
-              "path": "/bigDataFileShares/" + name,
-              "type": "bigDataFileShare",
-              "id": "",
-              "info": {
+                "path": "/bigDataFileShares/" + name,
+                "type": "bigDataFileShare",
+                "id": "",
+                "info": {
                     "path" : server_path
-               }
+                }
             }
         }
         res = self._portal.con.post(path, params)
@@ -479,10 +478,10 @@ class DatastoreManager(object):
         return output
 
     def add_database(self,
-            name,
-            conn_str,
-            client_conn_str=None,
-            conn_type="shared"):
+                     name,
+                     conn_str,
+                     client_conn_str=None,
+                     conn_type="shared"):
         """
         Registers a database with the data store.
         Input
@@ -495,13 +494,13 @@ class DatastoreManager(object):
         """
 
         item = {
-                "type" : "egdb",
-                "path" : "/enterpriseDatabases/" + name,
-                "info" : {
-                    "connectionString" : conn_str,
-                    "dataStoreConnectionType" : conn_type
-                    }
-                }
+            "type" : "egdb",
+            "path" : "/enterpriseDatabases/" + name,
+            "info" : {
+                "connectionString" : conn_str,
+                "dataStoreConnectionType" : conn_type
+            }
+        }
 
         if client_conn_str is not None:
             item['info']['clientConnectionString'] = client_conn_str
@@ -568,7 +567,7 @@ class DatastoreManager(object):
             return None
 
     def search(self, parent_path=None, ancestor_path=None,
-                      types=None, id=None):
+               types=None, id=None):
         """
            You can use this operation to search through the various data
            items registered in the server's data store. Searching without specifying the parent_path and other parameters returns a lists of all registered data items
@@ -1121,7 +1120,7 @@ class ContentManager(object):
             =================  ============================================================================
 
 
-	    URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
             :return:
                  The item if successfully added, None if unsuccessful.
@@ -1172,15 +1171,15 @@ class ContentManager(object):
             """
 
         itemid = self._portal.create_service(name,
-                       service_description,
-                       has_static_data,
-                       max_record_count,
-                       supported_query_formats,
-                       capabilities,
-                       description,
-                       copyright_text,
-                       wkid,
-                       service_type, owner, folder)
+                                             service_description,
+                                             has_static_data,
+                                             max_record_count,
+                                             supported_query_formats,
+                                             capabilities,
+                                             description,
+                                             copyright_text,
+                                             wkid,
+                                             service_type, owner, folder)
         if itemid is not None:
             return Item(self._portal, itemid)
         else:
@@ -2305,7 +2304,7 @@ class Item(dict):
     def reassign_to(self, target_owner, target_folder=None):
         """ Allows the administrator to reassign a single item from one user to another.
 
-	    .. note::
+        .. note::
              	If you wish to move all of a user's items (and groups) to another user then use the
                 user.reassign_to() method.  This method only moves one item at a time.
 
@@ -2454,7 +2453,7 @@ class Item(dict):
         ================  ============================================================================
 
 
-	URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
         :return:
              a boolean, that indicates success.
@@ -2480,8 +2479,8 @@ class Item(dict):
         return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
-                                'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                'Service2Service'])
+                                     'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
+                                     'Service2Service'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
@@ -2571,15 +2570,15 @@ class Item(dict):
             "f" : "json"
         }
         if self['type'] == 'Service Definition':
-           fileType = 'serviceDefinition'
+            fileType = 'serviceDefinition'
         elif self['type'] == 'Feature Collection':
-           fileType = 'featureCollection'
+            fileType = 'featureCollection'
         elif self['type'] == 'CSV':
-           fileType = 'CSV'
+            fileType = 'CSV'
         elif self['type'] == 'Shapefile':
-           fileType = 'shapefile'
+            fileType = 'shapefile'
         elif self['type'] == 'File Geodatabase':
-           fileType = 'fileGeodatabase'
+            fileType = 'fileGeodatabase'
 
         try:
             folder = self.ownerFolder
@@ -2631,7 +2630,7 @@ class Item(dict):
         params = {
             "f" : "json",
             "jobid" : job_id
-                  }
+        }
         job_response = self._portal.con.post(path, params)
 
         # Query and report the Analysis job status.

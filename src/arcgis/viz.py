@@ -1,6 +1,6 @@
-﻿import arcgis.gis
+﻿from __future__ import absolute_import
+import arcgis.gis
 import json
-import time
 import os
 import tempfile
 import collections
