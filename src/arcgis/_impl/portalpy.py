@@ -2296,7 +2296,6 @@ class _ArcGISConnection(object):
                         read = data
                     else:
                         read += data
-
                 else:
                     read += data
 
@@ -2356,13 +2355,11 @@ class _ArcGISConnection(object):
 
             handlers = self.get_handlers()
             opener = request.build_opener(*handlers)
-
             opener.addheaders = headers
             request.install_opener(opener)
             req = request.Request(url,
                                   headers=headers)
             resp = request.urlopen(req)
-            #resp = opener.open(url)
             resp_data = self._process_response(resp)
 
             # If we're not trying to parse to JSON, return response as is
@@ -2371,7 +2368,8 @@ class _ArcGISConnection(object):
 
             try:
                 if use_ordered_dict:
-                    resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
+                    resp_json = json.loads(resp_data,
+                                           object_pairs_hook=OrderedDict)
                 else:
                     resp_json = json.loads(resp_data)
 
