@@ -1,5 +1,5 @@
 """
-The arcgis.lyr module is used for accessing layers exposed from ArcGIS Online 
+The arcgis.lyr module is used for accessing layers exposed from ArcGIS Online
 or Portal.
 """
 import re
@@ -10,7 +10,6 @@ import json
 from pandas.io.json import json_normalize
 from contextlib import contextmanager
 
-import urllib.parse
 import inspect
 import datetime
 import collections
@@ -52,7 +51,7 @@ class ImageLayer(collections.OrderedDict):
         #properties.update({"url" : self.url + "?token=" + self.item._portal.con.token })
         #else:
         properties.update({"url" : self.url})
-            
+
         collections.OrderedDict.__init__(self, properties)
 
     def __str__(self):
@@ -68,7 +67,7 @@ class FeatureService(object):
             raise TypeError("item type must be feature service")
         self.url = item.url
         self.item = item
-        
+
 
         layers = []
 
@@ -113,7 +112,7 @@ class Layer(collections.OrderedDict):
             lyr_url = svcurl
         else:
             lyr_url = svcurl + '/' + str(dictdata['id'])
-            
+
         self.url = lyr_url #.replace(' ', '%20')
 
         if item is not None:
@@ -127,7 +126,7 @@ class Layer(collections.OrderedDict):
         data.update({ "url" : self.url })
         #print(self.url)
         collections.OrderedDict.__init__(self, data)
-                
+
     def __str__(self):
         return json.dumps(self)
 
@@ -213,7 +212,7 @@ class Layer(collections.OrderedDict):
         fURL = self.url + "/query"
         #print(fURL)
         results = self._portal.con.post(fURL, params)
-        
+
         if 'error' in results:
             raise ValueError (results)
         if not returnCountOnly and not returnIDsOnly:
@@ -246,7 +245,7 @@ class FeatureCollection(collections.OrderedDict):
         else:
             fcdict = dictdata
             collections.OrderedDict.__init__(self, fcdict)
-                
+
     def __str__(self):
         return json.dumps(self)
 

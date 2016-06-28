@@ -100,9 +100,18 @@ class Portal(object):
         if url:
             normalized_url = self.url
             '''_normalize_url(self.url)'''
+            print (normalized_url)
             if not normalized_url[-1] == '/':
                 normalized_url += '/'
-            self.resturl = normalized_url + 'sharing/rest/'
+            if normalized_url.lower().find("www.arcgis.com") > -1:
+                urlscheme = urlparse(normalized_url).scheme
+                self.resturl = "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
+            elif normalized_url.lower().endswith("sharing/"):
+                self.resturl = normalized_url + 'rest/'
+            elif normalized_url.lower().endswith("sharing/rest/"):
+                self.resturl = normalized_url
+            else:
+                self.resturl = normalized_url + 'sharing/rest/'
             self.hostname = _parse_hostname(url)
         self.workdir = workdir
 
@@ -2247,20 +2256,50 @@ class _ArcGISConnection(object):
         """ Returns true if logged into the portal. """
         return self.token is not None
     #----------------------------------------------------------------------
-    def _process_repsonse(self, resp):
-        """handles the web responses for both Python version 2 and 3"""
-        read = ""
-        for data in self._chunk(response=resp, size=4096):
-            if six.PY3 == True:
-                read += data.decode('utf-8')
-            else:
-                read += data
+    def _mainType(self, resp):
+        """ gets the main type from the response object"""
+        if six.PY2:
+            return resp.headers.maintype
+        elif six.PY3:
+            return resp.headers.get_content_maintype()
+        else:
+            return None
+    #----------------------------------------------------------------------
+    def _process_response(self, resp):
+        """ processes the response object"""
+        CHUNK = 4056
+        maintype = self._mainType(resp)
+        contentDisposition = resp.headers.get('content-disposition')
+        contentType = resp.headers.get('content-type')
+        contentLength = resp.headers.get('content-length')
+        if maintype.lower() in ('image',
+                                'application/x-zip-compressed') or \
+           contentType == 'application/x-zip-compressed' or \
+           (contentDisposition is not None and \
+            contentDisposition.lower().find('attachment;') > -1):
+            if contentLength is not None:
+                max_length = int(contentLength)
+                if max_length < CHUNK:
+                    CHUNK = max_length
+            raw = None
+            for data in self._chunk(response=resp):
+                if raw is None:
+                    raw = data
+                else:
+                    raw += data
+                del data
+            return raw
+        else:
+            read = ""
+            for data in self._chunk(response=resp, size=4096):
+                if six.PY3 == True:
+                    read += data.decode('utf-8')
+                else:
+                    read += data
 
-            del data
-        try:
-            return read.strip()
-        except:
+                del data
             return read
+        return ""
     #----------------------------------------------------------------------
     def _chunk(self, response, size=4096):
         """
@@ -2312,7 +2351,7 @@ class _ArcGISConnection(object):
 
             opener.addheaders = headers
             resp = opener.open(url)
-            resp_data = self._process_repsonse(resp)
+            resp_data = self._process_response(resp)
 
             # If we're not trying to parse to JSON, return response as is
             if not try_json:
@@ -2320,9 +2359,9 @@ class _ArcGISConnection(object):
 
             try:
                 if use_ordered_dict:
-                    resp_json = json.loads(resp_data.decode("utf-8"), object_pairs_hook=OrderedDict)
+                    resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
                 else:
-                    resp_json = json.loads(resp_data.decode("utf-8"))
+                    resp_json = json.loads(resp_data)
 
                 # Convert to ascii if directed to do so
                 if self.ensure_ascii and not use_ordered_dict:
@@ -2556,16 +2595,16 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data = self._process_repsonse(resp)
+            resp_data = self._process_response(resp)
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
         #print(resp_data);
         if use_ordered_dict:
-            resp_json = json.loads(resp_data.decode("utf-8"), object_pairs_hook=OrderedDict)
+            resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
         else:
-            resp_json = json.loads(resp_data.decode("utf-8"))
+            resp_json = json.loads(resp_data)
 
         # Convert to ascii if directed to do so
         if self.ensure_ascii and not use_ordered_dict:
