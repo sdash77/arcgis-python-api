@@ -1,8 +1,8 @@
 ﻿"""
-The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online 
+The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online
 or Portal web services. It has implementations for Spatial Analysis tools, GeoAnalytics tools,
-Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services. 
-These tools primarily operate on items and layers from the GIS. 
+Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
+These tools primarily operate on items and layers from the GIS.
 """
 import re
 import sys
@@ -13,7 +13,6 @@ from pandas.io.json import json_normalize
 from contextlib import contextmanager
 from arcgis.lyr import *
 
-import urllib.parse
 import inspect
 import datetime
 import collections
@@ -38,19 +37,19 @@ def _tempinput(data):
 
 def _get_hosted_server_admin_url(servers):
     for server in servers:
-        if server['isHosted']: 
+        if server['isHosted']:
             return server['adminUrl'] + '/admin'
     return None
 
 class Geocoder(collections.OrderedDict):
-    """Geocoder represents a geocode service resource exposed by the GIS. 
-    It can find point locations of addresses, business names, and so on. 
+    """Geocoder represents a geocode service resource exposed by the GIS.
+    It can find point locations of addresses, business names, and so on.
     The output points can be visualized on a map, inserted as stops for a route,
-    or loaded as input for spatial analysis. It is also used to generate 
+    or loaded as input for spatial analysis. It is also used to generate
     batch results for a set of addresses, as well as for reverse geocoding,
-    i.e. determining the address at a particular x/y location. 
-    
-    An instance of the Geocoder is available through the gis.tools.geocoder 
+    i.e. determining the address at a particular x/y location.
+
+    An instance of the Geocoder is available through the gis.tools.geocoder
     property, accessible from the GIS object.
     """
     def __init__(self, item, url=None, gis=None):
@@ -65,7 +64,7 @@ class Geocoder(collections.OrderedDict):
                 raise TypeError("item type must be geocoding service")
             self._portal = item._portal
             self.url = item.url
-        
+
         params = {
             "f" : "json"
         }
@@ -96,9 +95,9 @@ class Geocoder(collections.OrderedDict):
         The geocode method geocodes one location per request.
 
         Inputs:
-           address - Specifies the location to be geocoded. This can be a string 
-           containing the street address, place name, postal code, or POI. 
-            
+           address - Specifies the location to be geocoded. This can be a string
+           containing the street address, place name, postal code, or POI.
+
             Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding geocode service. These fields are listed in the addressFields property of the associated geocode service resource. For example, if the addressFields of a geocode service resource includes fields with the following names: Street, City, State and Zone, then the address argument is of the form:
             {
               Street: "1234 W Main St",
@@ -106,7 +105,7 @@ class Geocoder(collections.OrderedDict):
               State: "WA",
               Zone: "99027"
             }
-           
+
            searchExtent - A set of bounding box coordinates that limit the search
             area to a specific region. This is especially useful for
             applications in which a user will search for places and
@@ -134,7 +133,7 @@ class Geocoder(collections.OrderedDict):
            maxLocation - The maximum number of locations to be returned by
             a search, up to the maximum number allowed by the service. If
             not specified, then one location will be returned.
-            
+
            magicKey - The find operation retrieves results quicker when you
             pass in valid text and magicKey values than when you don't pass
             in magicKey. However, to get these advantages, you need to make
@@ -148,13 +147,13 @@ class Geocoder(collections.OrderedDict):
             results, in a database for example, you need to set this
             parameter to true.
         """
-        #self.url + 
+        #self.url +
         url = self.url + "/findAddressCandidates"
 
         params = {
             "f" : "json",
         }
-        
+
         if address is not None:
             if isinstance(address, str):
                 params[self._address_field] = address
@@ -202,7 +201,7 @@ class Geocoder(collections.OrderedDict):
         geocoding service, and the service returns the address that is
         closest to the location.
         Input:
-           location - a list defined as [X,Y] or a JSON Point 
+           location - a list defined as [X,Y] or a JSON Point
         """
         params = {
             "f" : "json"
@@ -214,7 +213,7 @@ class Geocoder(collections.OrderedDict):
             params['location'] = location
         else:
             raise Exception("Invalid location")
-        
+
         if distance is not None:
             params['distance'] = distance
         if outSR is not None:
@@ -228,7 +227,7 @@ class Geocoder(collections.OrderedDict):
 
         resp = self._portal.con.post(url, params)
         return resp
-    
+
     def batch_geocode(self,
                          addresses,
                          sourceCountry=None,
@@ -236,22 +235,22 @@ class Geocoder(collections.OrderedDict):
                          outSR=None):
         """
         The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.
-        
+
 
         Inputs:
            addresses - A list of addresses to be geocoded.
            For passing in the location name as a single line of text —
            single field batch geocoding — use a string.
-           For passing in the location name as multiple lines of text 
-           multifield batch geocoding — use the address fields described 
+           For passing in the location name as multiple lines of text
+           multifield batch geocoding — use the address fields described
            in the Geocoder documentation.
             The maximum number of addresses that can be geocoded in a
             single request is limited to the SuggestedBatchSize property of
             the locator.
             Syntax:
-             addresses = ["380 New York St, Redlands, CA", 
+             addresses = ["380 New York St, Redlands, CA",
              "1 World Way, Los Angeles, CA",
-             "1200 Getty Center Drive, Los Angeles, CA", 
+             "1200 Getty Center Drive, Los Angeles, CA",
              "5905 Wilshire Boulevard, Los Angeles, CA",
              "100 Universal City Plaza, Universal City, CA 91608",
              "4800 Oak Grove Dr, Pasadena, CA 91109"]
@@ -313,13 +312,13 @@ class Geocoder(collections.OrderedDict):
             addr_recordset.append(addr_rec)
 
         params['addresses'] = { "records" : addr_recordset }
-        
+
         resp = self._portal.con.post(url, params)
         if resp is not None:
             return resp['locations']
         else:
             return []
-    
+
     def find_best_match(self,
              address,
              searchExtent=None,
@@ -330,7 +329,7 @@ class Geocoder(collections.OrderedDict):
              outFields="*",magicKey=None,
              forStorage=False):
         """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
-        location = self.geocode(address, searchExtent, location, distance, 
+        location = self.geocode(address, searchExtent, location, distance,
                          outSR, category, outFields, 1, magicKey,
                          forStorage)[0]['location']
         return location['y'], location['x']
@@ -401,7 +400,7 @@ class Geocoder(collections.OrderedDict):
             "text" : text
         }
         url = self.url + "/suggest"
-        
+
         if isinstance(location, list):
             params['location'] = "%s,%s" % (location[0], location[1])
         else:
@@ -413,7 +412,7 @@ class Geocoder(collections.OrderedDict):
             params['distance'] = distance
         resp = self._portal.con.post(url, params)
         return resp
-    
+
 
 class Geometry(collections.OrderedDict):
     "represents a geometry service"
@@ -429,7 +428,7 @@ class Geometry(collections.OrderedDict):
                 raise TypeError("item type must be geometry service")
             self._portal = item._portal
             self.url = item.url
-        
+
         params = {
             "f" : "json"
         }
@@ -524,9 +523,9 @@ class Geometry(collections.OrderedDict):
             del p
         else:
             return "No polygons provided, please submit a list of polygon geometries"
-        
+
         resp = self._portal.con.post(url, params)
-        
+
         return resp
 
     def simplify(self,
@@ -541,9 +540,9 @@ class Geometry(collections.OrderedDict):
             "geometries" : geometries
         }
         resp = self._portal.con.post(url, params)
-        
+
         return resp
-    
+
     def lengths(self,
                 sr,
                 polylines,
@@ -563,7 +562,7 @@ class Geometry(collections.OrderedDict):
             "calculationType" : calculationType
         }
         resp = self._portal.con.post(url, params)
-        
+
         return resp['lengths']
 
 class _AsyncService(object):
@@ -576,17 +575,17 @@ class _AsyncService(object):
     def _analysis_job(self, task, params):
         """ Submits an Analysis job and returns the job URL for monitoring the job
             status in addition to the json response data for the submitted job."""
-    
+
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
         # HTTP POST request. Headers are also added as a dictionary to be included
         # with the POST.
         #
         #print("Submitting analysis job...")
-        
+
         task_url = "{}/{}".format(self.url, task)
         submit_url = "{}/submitJob".format(task_url)
-        
+
         params["f"] = "json"
 
         resp = self._portal.con.post(submit_url, params)
@@ -611,7 +610,7 @@ class _AsyncService(object):
             if "jobStatus" in job_response:
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(5)
-            
+
                     job_response = self._portal.con.post(job_url, params)
                     #print(job_response)
                     messages = job_response['messages'] if 'messages' in job_response else []
@@ -622,7 +621,7 @@ class _AsyncService(object):
                             if msg['type'] == 'esriJobMessageTypeInformative':
                                 print(msg['description'])
                             else:
-                                print(msg['description'],file = sys.stderr)
+                                print(msg['description'])#,file = sys.stderr)
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
@@ -631,7 +630,7 @@ class _AsyncService(object):
                         raise Exception("Job cancelled.")
                     elif job_response.get("jobStatus") == "esriJobTimedOut":
                         raise Exception("Job timed out.")
-                
+
                 if "results" in job_response:
                     return job_response
             else:
@@ -654,8 +653,8 @@ class _AsyncService(object):
                     param_value = results[key]
                     if "paramUrl" in param_value:
                         param_url = param_value.get("paramUrl")
-                        result_url = "{}/jobs/{}/{}".format(task_url, 
-                                                                            job_id, 
+                        result_url = "{}/jobs/{}/{}".format(task_url,
+                                                                            job_id,
                                                                             param_url)
 
                         params = { "f" : "json" }
@@ -671,12 +670,12 @@ class _AsyncService(object):
 
     def _feature_input(self, input_layer):
 
-        point_fs = {  
-           "layerDefinition":{  
+        point_fs = {
+           "layerDefinition":{
               "currentVersion":10.11,
               "copyrightText":"",
               "defaultVisibility":True,
-              "relationships":[  
+              "relationships":[
 
               ],
               "isDataVersioned":False,
@@ -687,7 +686,7 @@ class _AsyncService(object):
               "minScale":0,
               "maxScale":0,
               "objectIdField":"OBJECTID",
-              "templates":[  
+              "templates":[
 
               ],
               "type":"Feature Layer",
@@ -705,40 +704,40 @@ class _AsyncService(object):
               "supportedQueryFormats":"JSON",
               "hasStaticData":False,
               "maxRecordCount":-1,
-              "indexes":[  
+              "indexes":[
 
               ],
-              "types":[  
+              "types":[
 
               ],
-              "fields":[  
-                 {  
+              "fields":[
+                 {
                     "alias":"OBJECTID",
                     "name":"OBJECTID",
                     "type":"esriFieldTypeOID",
                     "editable":False
                  },
-                 {  
+                 {
                     "alias":"Title",
                     "name":"TITLE",
                     "length":50,
                     "type":"esriFieldTypeString",
                     "editable":True
                  },
-                 {  
+                 {
                     "alias":"Visible",
                     "name":"VISIBLE",
                     "type":"esriFieldTypeInteger",
                     "editable":True
                  },
-                 {  
+                 {
                     "alias":"Description",
                     "name":"DESCRIPTION",
                     "length":1073741822,
                     "type":"esriFieldTypeString",
                     "editable":True
                  },
-                 {  
+                 {
                     "alias":"Type ID",
                     "name":"TYPEID",
                     "type":"esriFieldTypeInteger",
@@ -746,24 +745,24 @@ class _AsyncService(object):
                  }
               ]
            },
-           "featureSet":{  
-              "features":[  
-                 {  
-                    "geometry":{  
+           "featureSet":{
+              "features":[
+                 {
+                    "geometry":{
                        "x":80.27032792000051,
                        "y":13.085227147000467,
-                       "spatialReference":{  
+                       "spatialReference":{
                           "wkid": 4326,
                           "latestWkid":4326
                        }
                     },
-                  "attributes":{  
+                  "attributes":{
                        "description":"blayer desc",
                        "title":"blayer",
                        "OBJECTID":0,
                        "VISIBLE":1
                     },
-                    "symbol":{  
+                    "symbol":{
                        "angle":0,
                        "xoffset":0,
                        "yoffset":8.15625,
@@ -825,7 +824,7 @@ class _AsyncService(object):
                                 "spatialReference":{"wkid":102100,"latestWkid":3857}
                             },
                             "attributes":{"description":"blayer desc","title":"blayer","OBJECTID":0,"VISIBLE":1},
-                
+
                         }
                     ],
                     "geometryType":"esriGeometryPoint"
@@ -838,7 +837,7 @@ class _AsyncService(object):
             input_param =  {"url": input_layer_url }
         else:
             raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
-        
+
         return input_param
 
     def _raster_input(self, input_raster):
@@ -853,7 +852,7 @@ class _AsyncService(object):
             input_param =  input_raster
         else:
             raise Exception("Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported")
-        
+
         return input_param
 
 def _call_generator(fnname, spec):
@@ -869,7 +868,7 @@ def _call_generator(fnname, spec):
         kwargs = locals()
         kwargs.pop('self')
         self.__dict__.update(kwargs)
-        
+
         # args, posargs = self.arguments()
 
         #print("My args: ")
@@ -877,7 +876,7 @@ def _call_generator(fnname, spec):
         #    print(k + " => " + str(v))
 
         return self._execute(kwargs)
-    
+
     code = call.__code__
     new_code = types.CodeType(len(spec) + 1,
                               0,
@@ -894,29 +893,29 @@ def _call_generator(fnname, spec):
                               code.co_lnotab,
                               code.co_freevars,
                               code.co_cellvars)
-    """    
-     * co_name gives the function name 
-     * co_argcount is the number of positional arguments (including 
-    arguments with default values) 
-     * co_nlocals is the number of local variables used by the function 
-    (including arguments) 
-     * co_varnames is a tuple containing the names of the local 
-    variables (starting with the argument names) 
-     * co_cellvars is a tuple containing the names of local variables 
-    that are referenced by nested functions 
-     * co_freevars is a tuple containing the names of free variables 
-     * co_code is a string representing the sequence of bytecode 
-    instructions 
-     * co_consts is a tuple containing the literals used by the bytecode 
-     * co_names is a tuple containing the names used by the bytecode 
-     * co_filename is the filename from which the code was compiled 
-     * co_firstlineno is the first line number of the function 
-     * co_lnotab is a string encoding the mapping from byte code offsets 
-    to line numbers (for details see the source code of the interpreter) 
-     * co_stacksize is the required stack size (including local 
-    variables) 
-     * co_flags is an integer encoding a number of flags for the 
-    interpreter. 
+    """
+     * co_name gives the function name
+     * co_argcount is the number of positional arguments (including
+    arguments with default values)
+     * co_nlocals is the number of local variables used by the function
+    (including arguments)
+     * co_varnames is a tuple containing the names of the local
+    variables (starting with the argument names)
+     * co_cellvars is a tuple containing the names of local variables
+    that are referenced by nested functions
+     * co_freevars is a tuple containing the names of free variables
+     * co_code is a string representing the sequence of bytecode
+    instructions
+     * co_consts is a tuple containing the literals used by the bytecode
+     * co_names is a tuple containing the names used by the bytecode
+     * co_filename is the filename from which the code was compiled
+     * co_firstlineno is the first line number of the function
+     * co_lnotab is a string encoding the mapping from byte code offsets
+    to line numbers (for details see the source code of the interpreter)
+     * co_stacksize is the required stack size (including local
+    variables)
+     * co_flags is an integer encoding a number of flags for the
+    interpreter.
     """
 
 
@@ -926,7 +925,7 @@ def _call_generator(fnname, spec):
                               {"__builtins__": __builtins__},
                               argdefs=defaults)
 
-# GP Data types: http://resources.arcgis.com/en/help/main/10.1/index.html#//005700000070000000    
+# GP Data types: http://resources.arcgis.com/en/help/main/10.1/index.html#//005700000070000000
 class GeoprocessingTool(collections.OrderedDict):
     "represents a geoprocessing service"
     def __init__(self, item):
@@ -951,7 +950,7 @@ class GeoprocessingTool(collections.OrderedDict):
             fnname = self._camelCase_to_underscore(task)
 
             taskurl = self.url + "/" + task
-            
+
             self._taskurls[fnname] = taskurl + "/execute"
 
             taskprops = self.item._portal.con.post(taskurl, params)
@@ -966,15 +965,15 @@ class GeoprocessingTool(collections.OrderedDict):
             spec = []
             name_type = {}
             for param in task_params:
-                
+
                 param_name = param['name']
-                
+
                 param_type = param['dataType']
                 param_dval = param['defaultValue']
                 param_drtn = param['direction']
-                
+
                 param_rqrd = param['parameterType']
-                
+
                 if param_type == 'GPFeatureRecordSetLayer':
                     param_dval = None
 
@@ -1000,7 +999,7 @@ class GeoprocessingTool(collections.OrderedDict):
                 GPRasterData	RasterData
                 GPRasterLayer	RasterData
                 GPRecordSet	FeatureSet
-                """ 
+                """
 
                 if param_drtn == 'esriGPParameterDirectionInput':
                     name_type[param_name] = py_param_type_
@@ -1023,14 +1022,14 @@ class GeoprocessingTool(collections.OrderedDict):
 
                 elif param_drtn == 'esriGPParameterDirectionOutput':
                     name_type['return'] = py_param_type_
-                    
+
                     helpstring = helpstring + "\nReturns " + param['displayName'] + "(" + str(py_param_type_) + ")"
-                
+
                 helpstring = helpstring + "\n"
 
             if 'helpUrl' in taskprops:
                 helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
-            
+
             generatedfn = _call_generator(task, spec)
             generatedfn.__annotations__ = name_type
             generatedfn.__doc__ = helpstring
@@ -1049,7 +1048,7 @@ class GeoprocessingTool(collections.OrderedDict):
         caller_fnname = inspect.stack()[1][3]
         url = self.url + "/" + caller_fnname + "/execute"
         #print("Will call " + url +  " with these parameters:")
-        
+
         name_type = self._method_params[caller_fnname]
 
         params.update({ "f" : "json" })
@@ -1094,14 +1093,14 @@ class GeoprocessingTool(collections.OrderedDict):
         except:
             print("Error: " + str(resp))
             return resp
-        
-            
+
+
     def execute(self, task, input,
                 outSR=None,
                 processSR=None,
                 returnZ=False,
                 returnM=False):
-        
+
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_Currents_World/GPServer/MessageInABottle/execute? Input_Point={"features":[{"geometry":{"x":0,"y":0}}]}& Days=50
         url = self.url + "/" + task + "/execute"
         params = {
@@ -1154,11 +1153,11 @@ class GeoAnalyticsTools(_AsyncService):
             'f': 'json',
         }
         res = self.gis._portal.con.post(data_item_manifest_url, params)
-        
+
         for dataset in res['datasets']:
-            print("/server/datastores/bigDataFileShares/" + server_path + '/' + dataset['path'] + 
+            print("/server/datastores/bigDataFileShares/" + server_path + '/' + dataset['path'] +
                   ' ('+ dataset['type'] + ')')
-            
+
 
     def register_bigdata_fileshare(self, server_path, fileshare_path, local_path, admin_url=None):
         #server_path = "gae3"
@@ -1232,12 +1231,12 @@ class GeoAnalyticsTools(_AsyncService):
             # Build the files list (tuples)
             files = []
             files.append(('manifest', tempfilename, os.path.basename(tempfilename)))
-    
+
             postdata = {
                 'f' : 'pjson'
             }
             resp = self.gis._portal.con.post(manifest_upload_url, postdata, files)
-    
+
             if resp['status'] == 'success':
                 print("Uploaded/updated manifest")
 
@@ -1253,31 +1252,31 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_points : Optional string
-            
+
         in_points_layer : Optional FeatureSet
-            
+
         in_distance_interval : Optional LinearUnit
-            
+
         in_timestep_interval : Optional string
-            
+
         in_timestep_repeat : Optional string
-            
+
         in_timestep_reference_time : Optional datetime.date
-            
+
         in_summary_stats : Optional string
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1323,19 +1322,19 @@ class GeoAnalyticsTools(_AsyncService):
                        in_dataset_layer=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_dataset : Optional string
-            
+
         in_dataset_layer : Optional FeatureSet
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         output_json : layer (FeatureCollection)
         """
 
@@ -1376,33 +1375,33 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_points : Optional string
-            
+
         in_points_layer : Optional FeatureSet
-            
+
         in_polygons : Optional string
-            
+
         in_polygons_layer : Optional FeatureSet
-            
+
         in_timestep_interval : Optional string
-            
+
         in_timestep_repeat : Optional string
-            
+
         in_timestep_reference_time : Optional datetime.date
-            
+
         in_summary_stats : Optional string
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1460,40 +1459,40 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=3857):
         """
-        
+
 
         Parameters
         ----------
         in_target_features : Optional string
-            
+
         in_target_features_layer : Optional FeatureSet
-            
+
         in_join_features : Optional string
-            
+
         in_join_features_layer : Optional FeatureSet
-            
+
         in_join_operation : Optional string
-            
+
         in_summary_stats : Optional string
-            
+
         in_spatial_relationship : Optional string
-            
+
         in_spatial_distance : Optional LinearUnit
-            
+
         in_temporal_relationship : Optional string
-            
+
         in_temporal_distance : Optional string
-            
+
         in_attribute_relationship : Optional string
-            
+
         out_features_name : Optional string
-            
+
         out_sr : Optional wkid
-        
-        
+
+
         Returns
         -------
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1557,33 +1556,33 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_features : Optional string
-            
+
         in_features_layer : Optional FeatureSet
-            
+
         in_buffer_distance : Optional LinearUnit
-            
+
         in_buffer_distance_field : Optional string
-            
+
         in_method : Optional string
-            
+
         in_dissolve_type : Optional string
-            
+
         in_dissolve_fields : Optional string
-            
+
         in_summary_stats : Optional string
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1636,29 +1635,29 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_points : Optional string
-            
+
         in_points_layer : Optional FeatureSet
-            
+
         in_population_field : Optional string
-            
+
         in_cell_size : Optional LinearUnit
-            
+
         in_neighborhood : Optional string
-            
+
         in_neighborhood_size : Optional string
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1703,21 +1702,21 @@ class GeoAnalyticsTools(_AsyncService):
                        in_cell_size=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_features : Optional string
-            
+
         in_features_layer : Optional FeatureSet
-            
+
         in_cell_size : Optional LinearUnit
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_crf : layer (FeatureCollection)
         """
 
@@ -1756,25 +1755,25 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_features : Optional string
-            
+
         in_features_layer : Optional FeatureSet
-            
+
         in_start_date : Optional datetime.date
-            
+
         in_end_date : Optional datetime.date
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -1821,33 +1820,33 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_features : Optional string
-            
+
         in_features_layer : Optional FeatureSet
-            
+
         in_track_fields : Optional string
-            
+
         in_method : Optional string
-            
+
         in_buffer_distance_field : Optional string
-            
+
         in_summary_stats : Optional string
-            
+
         in_distance_split : Optional LinearUnit
-            
+
         in_duration_split : Optional string
-            
+
         out_features : Optional string
-            
+
         out_sr : Optional wkid
 
         Returns
         -------
-            
+
         out_features : layer
         """
 
@@ -1888,7 +1887,7 @@ class GeoAnalyticsTools(_AsyncService):
         else:
             # Feature Collection
             lyr = job_values['out_features']
-            
+
             lyr["type"] = "FeatureLayer"
             #lyr["url"] = lyr["url"] + "?token=" + self.gis._portal.con.token
 
@@ -1901,7 +1900,7 @@ class GeoAnalyticsTools(_AsyncService):
             }
 
             layerdata = self.gis._portal.con.post(flurl, params)
-            
+
             layer = Layer(fsurl, layerdata, None, self.gis)
             return layer
 
@@ -1913,23 +1912,23 @@ class GeoAnalyticsTools(_AsyncService):
                        in_slice_size=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_features : Optional string
-            
+
         in_features_layer : Optional FeatureSet
-            
+
         in_bin_size : Optional LinearUnit
-            
+
         in_slice_size : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_cube : layer (FeatureCollection)
         """
 
@@ -1967,16 +1966,16 @@ class GeoAnalyticsTools(_AsyncService):
                        arg=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         command : Optional string
-            
+
         arg : Optional string
-            
+
         out_sr : Optional string
-            
+
         """
 
         task ="Sandbox"
@@ -2007,39 +2006,39 @@ class GeoAnalyticsTools(_AsyncService):
                        out_features_name=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_target_features : Optional string
-            
+
         in_target_features_layer : Optional FeatureSet
-            
+
         in_join_features : Optional string
-            
+
         in_join_features_layer : Optional FeatureSet
-            
+
         in_summary_stats : Optional string
-            
+
         in_spatial_relationship : Optional string
-            
+
         in_spatial_distance : Optional LinearUnit
-            
+
         in_attribute_relationship : Optional string
-            
+
         in_panel_timestep_interval : Optional string
-            
+
         in_panel_timestep_repeat : Optional string
-            
+
         in_panel_reference_time : Optional datetime.date
-            
+
         out_features_name : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_features : layer (FeatureCollection)
         """
 
@@ -2092,17 +2091,17 @@ class GeoAnalyticsTools(_AsyncService):
                        in_datastore_folder=None,
                        out_sr=None):
         """
-        
+
 
         Parameters
         ----------
         in_datastore_folder : Optional string
-            
+
 
         Returns
         -------
         out_sr : Optional string
-            
+
         out_manifest_json : layer (FeatureCollection)
         """
 
@@ -2119,9 +2118,9 @@ class GeoAnalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info)
-        
+
         res = job_values['out_manifest_json']
-        
+
         manifest_url = res['url']
         manifest = self.gis._portal.con.get(manifest_url)
         #print("FETCHED" + json.dumps(manifest))
@@ -2135,7 +2134,7 @@ class SpatialAnalysisTools(_AsyncService):
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
         super().__init__(url, gis)
-        
+
         params = {
             "f" : "json"
         }
@@ -2143,7 +2142,7 @@ class SpatialAnalysisTools(_AsyncService):
     def __str__(self):
         return json.dumps(self)
 
-    
+
 
 
     def aggregate_points(self,
@@ -2157,7 +2156,7 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points. 
+        Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
 
         Parameters
         ----------
@@ -2219,7 +2218,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             aggregated_layer = FeatureCollection(job_values['aggregatedLayer'])
 
             group_summary = FeatureCollection(job_values['groupSummary'])
@@ -2242,9 +2241,9 @@ class SpatialAnalysisTools(_AsyncService):
         analysis_layer : Required layer (see Feature Input in documentation)
             The point or polygon feature layer for which hot spots will be calculated.
         analysis_field : Optional string
-            The numeric field in the AnalysisLayer that will be analyzed. 
+            The numeric field in the AnalysisLayer that will be analyzed.
         divided_by_field : Optional string
-            
+
         bounding_polygon_layer : Optional layer (see Feature Input in documentation)
             When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
         aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
@@ -2290,7 +2289,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             hot_spots_result_layer = FeatureCollection(job_values['hotSpotsResultLayer'])
 
             process_info = job_values['processInfo']
@@ -2388,24 +2387,24 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         break_values : Optional list of floats
-            
+
         break_units : Optional string
-            
+
         travel_mode : Optional string
-            
+
         overlap_policy : Optional string
-            
+
         time_of_day : Optional datetime.date
-            
+
         time_zone_for_time_of_day : Optional string
-            
+
         output_name : Optional string
             Additional properties such as output feature service name.
         context : Optional string
@@ -2590,7 +2589,7 @@ class SpatialAnalysisTools(_AsyncService):
         group_by_field : Optional string
             Specify a field from the summaryLayer features to calculate statistics separately for each unique attribute value.
         minority_majority : Optional bool
-            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated. 
+            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
         percent_shape : Optional bool
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
         output_name : Optional string
@@ -2639,7 +2638,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             result_layer = FeatureCollection(job_values['resultLayer'])
 
             group_by_summary = FeatureCollection(job_values['groupBySummary'])
@@ -2657,7 +2656,7 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections. 
+        The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
         Parameters
         ----------
@@ -2746,7 +2745,7 @@ class SpatialAnalysisTools(_AsyncService):
         output_type : Optional string
             The type of intersection (INPUT, LINE, POINT).
         tolerance : Optional float
-            The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both). 
+            The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both).
         output_name : Optional string
             Additional properties such as output feature service name.
         context : Optional string
@@ -2798,14 +2797,14 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package. 
+        Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
 
         Parameters
         ----------
         input_layers : Required list of strings
-            The layers from which you can extract features. 
+            The layers from which you can extract features.
         extent : Optional string
-            The area that defines which features will be included in the output zip file or layer package.   
+            The area that defines which features will be included in the output zip file or layer package.
         clip : Optional bool
             Select features that intersect the extent or clip features within the extent.
         data_format : Optional string
@@ -2959,13 +2958,13 @@ class SpatialAnalysisTools(_AsyncService):
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         expressions : Required string
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3010,7 +3009,7 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values. 
+        The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
 
         Parameters
         ----------
@@ -3031,7 +3030,7 @@ class SpatialAnalysisTools(_AsyncService):
         bounding_polygon_layer : Optional layer (see Feature Input in documentation)
             A layer specifying the polygon(s) where you want values to be interpolated.
         predict_at_point_layer : Optional layer (see Feature Input in documentation)
-            An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest. 
+            An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest.
         output_name : Optional string
             Additional properties such as output feature service name.
         context : Optional string
@@ -3081,7 +3080,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             result_layer = FeatureCollection(job_values['resultLayer'])
 
             prediction_error = FeatureCollection(job_values['predictionError'])
@@ -3119,7 +3118,7 @@ class SpatialAnalysisTools(_AsyncService):
         radius : Optional float
             A distance specifying how far to search to find point or line features when calculating density values.
         radius_units : Optional string
-            The units of the radius parameter. 
+            The units of the radius parameter.
         bounding_polygon_layer : Optional layer (see Feature Input in documentation)
             A layer specifying the polygon(s) where you want densities to be calculated.
         area_units : Optional string
@@ -3207,7 +3206,7 @@ class SpatialAnalysisTools(_AsyncService):
         summary_layer : Required layer (see Feature Input in documentation)
             Point, line, or polygon features. Features in this layer that are within the specified distance to features in the sumNearbyLayer will be summarized.
         near_type : Optional string
-            Defines what kind of distance measurement you want to use to create areas around the nearbyLayer features. 
+            Defines what kind of distance measurement you want to use to create areas around the nearbyLayer features.
         distances : Required list of floats
             An array of double values that defines the search distance for creating areas mentioned above
         units : Optional string
@@ -3215,9 +3214,9 @@ class SpatialAnalysisTools(_AsyncService):
         time_of_day : Optional datetime.date
             For timeOfDay, set the time and day according to the number of milliseconds elapsed since the Unix epoc (January 1, 1970 UTC). When specified and if relevant for the nearType parameter, the traffic conditions during the time of the day will be considered.
         time_zone_for_time_of_day : Optional string
-            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins. 
+            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
         return_boundaries : Optional bool
-            If true, will return a result layer of areas that contain the requested summary information.  The resulting areas are defined by the specified nearType.  For example, if using a StraightLine of 5 miles, your result will contain areas with a 5 mile radius around the input features and specified summary information.If false, the resulting layer will return the same features as the input analysis layer with requested summary information. 
+            If true, will return a result layer of areas that contain the requested summary information.  The resulting areas are defined by the specified nearType.  For example, if using a StraightLine of 5 miles, your result will contain areas with a 5 mile radius around the input features and specified summary information.If false, the resulting layer will return the same features as the input analysis layer with requested summary information.
         sum_shape : Optional bool
             A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of the summaryLayer within each polygon in sumWithinLayer.
         shape_units : Optional string
@@ -3287,7 +3286,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             result_layer = FeatureCollection(job_values['resultLayer'])
 
             group_by_summary = FeatureCollection(job_values['groupBySummary'])
@@ -3307,32 +3306,32 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         dem_resolution : Optional string
-            
+
         maximum_distance : Optional float
-            
+
         max_distance_units : Optional string
-            
+
         observer_height : Optional float
-            
+
         observer_height_units : Optional string
-            
+
         target_height : Optional float
-            
+
         target_height_units : Optional string
-            
+
         generalize : Optional bool
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3388,24 +3387,24 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         search_layer : Required layer (see Feature Input in documentation)
-            
+
         analysis_fields : Required list of strings
-            
+
         input_query : Optional string
-            
+
         number_of_results : Optional int
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3441,7 +3440,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             similar_result_layer = FeatureCollection(job_values['similarResultLayer'])
 
             process_info = FeatureCollection(job_values['processInfo'])
@@ -3457,24 +3456,24 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         search_distance : Optional float
-            
+
         search_units : Optional string
-            
+
         source_database : Optional string
-            
+
         generalize : Optional bool
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3512,7 +3511,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             snap_pour_pts_layer = FeatureCollection(job_values['snapPourPtsLayer'])
 
             watershed_layer = FeatureCollection(job_values['watershedLayer'])
@@ -3550,7 +3549,7 @@ class SpatialAnalysisTools(_AsyncService):
         time_of_day : Optional datetime.date
             When measurementType is DrivingTime, this value specifies the time of day to be used for driving time calculations based on traffic.
         time_zone_for_time_of_day : Optional string
-            
+
         output_name : Optional string
             Additional properties such as output feature service name
         context : Optional string
@@ -3596,7 +3595,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             nearest_layer = FeatureCollection(job_values['nearestLayer'])
 
             connecting_lines_layer = FeatureCollection(job_values['connectingLinesLayer'])
@@ -3619,38 +3618,38 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         stops_layer : Required layer (see Feature Input in documentation)
-            
+
         route_count : Required int
-            
+
         max_stops_per_route : Required int
-            
+
         route_start_time : Required datetime.date
-            
+
         start_layer : Required layer (see Feature Input in documentation)
-            
+
         start_layer_route_id_field : Optional string
-            
+
         return_to_start : Optional bool
-            
+
         end_layer : Optional layer (see Feature Input in documentation)
-            
+
         end_layer_route_id_field : Optional string
-            
+
         travel_mode : Optional string
-            
+
         stop_service_time : Optional float
-            
+
         max_route_time : Optional float
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3699,7 +3698,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             routes_layer = FeatureCollection(job_values['routesLayer'])
 
             assigned_stops_layer = FeatureCollection(job_values['assignedStopsLayer'])
@@ -3720,30 +3719,30 @@ class SpatialAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required layer (see Feature Input in documentation)
-            
+
         split_distance : Optional float
-            
+
         split_units : Optional string
-            
+
         max_distance : Optional float
-            
+
         max_distance_units : Optional string
-            
+
         bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-            
+
         source_database : Optional string
-            
+
         generalize : Optional bool
-            
+
         output_name : Optional string
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3808,7 +3807,7 @@ class SpatialAnalysisTools(_AsyncService):
         destinations_layer : Required layer (see Feature Input in documentation)
             The routes end at points in the destinations layer.
         measurement_type : Required string
-            The routes can be determined by measuring travel distance or travel time along street network using different travel modes or by measuring straight line distance. 
+            The routes can be determined by measuring travel distance or travel time along street network using different travel modes or by measuring straight line distance.
         origins_layer_route_id_field : Optional string
             The field in the origins layer containing the IDs that are used to match an origin with a destination.
         destinations_layer_route_id_field : Optional string
@@ -3861,7 +3860,7 @@ class SpatialAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            
+
             routes_layer = FeatureCollection(job_values['routesLayer'])
 
             unassigned_origins_layer = FeatureCollection(job_values['unassignedOriginsLayer'])
@@ -3885,7 +3884,7 @@ class RasterAnalysisTools(_AsyncService):
     def __str__(self):
         return json.dumps(self)
 
-    
+
 
 
     def generate(self,
@@ -3896,22 +3895,22 @@ class RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         raster_function : Required, see http://resources.arcgis.com/en/help/rest/apiref/israsterfunctions.html
-            
+
         output_raster : Required string (output service + item name), or preexisting portal item
-            
+
         raster_arguments : Optional string, for specifying input Raster alone, portal Item can be passed
-            
-        raster_properties : Optional 
-            
-        context : Optional 
-            
-        num_instances : Optional 
-            
+
+        raster_properties : Optional
+
+        context : Optional
+
+        num_instances : Optional
+
 
         Returns
         -------
@@ -3980,22 +3979,22 @@ class RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_table : Required string
-            
+
         output_raster : Required string
-            
+
         raster_info : Required string
-            
+
         value_field : Optional string
-            
+
         context : Optional string
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
@@ -4040,26 +4039,26 @@ class RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_table : Required string
-            
+
         output_raster : Required string
-            
+
         raster_info : Required string
-            
+
         value_field : Optional string
-            
+
         interpolation_method : Optional string
-            
+
         radius : Optional float
-            
+
         context : Optional string
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
@@ -4107,26 +4106,26 @@ class RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_raster : Required string
-            
-        output_raster : Required string or image service item from portal. If string, specify name of the image service that will be created as output.
-            
-        output_cellsize : Optional dict, {"x": <numeric number>, "y": <numeric number>}
-            
-        resampling_method : Optional string, Values: Nearest | Bilinear | Cubic | Majority
-            
-        clipping_geometry : Optional dict, the JSON geometry object that is used to clip the input image. 
-                            The clipping geometry object may contain the shape description, extent and the clip type. 
 
-            
+        output_raster : Required string or image service item from portal. If string, specify name of the image service that will be created as output.
+
+        output_cellsize : Optional dict, {"x": <numeric number>, "y": <numeric number>}
+
+        resampling_method : Optional string, Values: Nearest | Bilinear | Cubic | Majority
+
+        clipping_geometry : Optional dict, the JSON geometry object that is used to clip the input image.
+                            The clipping geometry object may contain the shape description, extent and the clip type.
+
+
         context : Optional dict, eg { "outSR" : {spatial reference} }
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
@@ -4134,7 +4133,7 @@ class RasterAnalysisTools(_AsyncService):
         """
 
         task ="CopyRaster"
-        
+
         if output_raster is None:
             output_name = input_raster['title'].replace (" ", "_") + '_' + 'Copy' + '_' + _id_generator()
             output_raster = self._gis.content.create_service(output_name, "Service created by Copy Raster tool")
@@ -4169,9 +4168,9 @@ class RasterAnalysisTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info)
-        
+
         #print(job_values)
-        
+
         itemid = job_values['outRaster']['itemId']
         item = arcgis.gis.Item(self._portal, itemid)
         item.share(True)
