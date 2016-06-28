@@ -85,6 +85,12 @@
 var esriCDN =  location.protocol + "//js.arcgis.com/3.14amd/"
 var proxyUrl = "/proxy/proxy.jsp" ;
     
+var nbextensionPath = "/nbextensions/arcgis";
+ if (location.href.search("user") > 0){
+    nbextensionPath = location.pathname.split("/").slice(0,3).join("/") + "/nbextensions/arcgis";	
+ }
+ 
+    
 require.config({
       // Define path mappings for modules
       paths: {
@@ -101,7 +107,7 @@ require.config({
         // "location" is specified as path relative to web server root.
         // "requirejs":  "/research/js/requirejs", - already loaded
         //"text":       "/static/custom/requirejs/text"
-        "text":       "/nbextensions/arcgis/requirejs/text"
+        "text":       nbextensionPath + "/requirejs/text"
       },
       
       // Use RequireJS text plugin instead of dojo/text plugin.
@@ -199,7 +205,7 @@ define('mapview', [
         
         // Render the view.
         render: function(){ 
-            $('head').append( $('<link rel="stylesheet" type="text/css" />').attr('href', '/nbextensions/arcgis/custom.css') );
+            $('head').append( $('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath+'/custom.css') );
             
             var that = this;
     
