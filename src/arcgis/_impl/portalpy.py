@@ -100,7 +100,6 @@ class Portal(object):
         if url:
             normalized_url = self.url
             '''_normalize_url(self.url)'''
-            print (normalized_url)
             if not normalized_url[-1] == '/':
                 normalized_url += '/'
             if normalized_url.lower().find("www.arcgis.com") > -1:
