@@ -2298,7 +2298,10 @@ class _ArcGISConnection(object):
                     read += data
 
                 del data
-            return read
+            try:
+                return read.strip()
+            except:
+                return read
         return ""
     #----------------------------------------------------------------------
     def _chunk(self, response, size=4096):
