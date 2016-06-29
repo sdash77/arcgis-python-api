@@ -964,7 +964,6 @@ class GroupManager(object):
         thumbnail = dict.pop("thumbnail", None)
 
         groupid = self._portal.create_group_from_dict(dict, thumbnail)
-        print(groupid)
         if groupid is not None:
             return Group(self._portal, groupid)
         else:

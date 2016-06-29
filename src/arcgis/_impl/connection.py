@@ -7,10 +7,19 @@ import json
 import logging
 import mimetypes
 import os
+import sys
 import re
 import unicodedata
 import cgi
-from io import StringIO
+import shutil
+import io
+from io import BytesIO
+try:
+    #PY2
+    from cStringIO import StringIO
+except ImportError:
+    #PY3
+    from io import StringIO
 from collections import OrderedDict
 
 import uuid
@@ -25,7 +34,139 @@ from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
 
 _log = logging.getLogger(__name__)
+########################################################################
+class MultiPartForm(object):
+    """Accumulate the data to be used when posting a form."""
+    PY2 = sys.version_info[0] == 2
+    PY3 = sys.version_info[0] == 3
+    files = []
+    form_fields = []
+    boundary = None
+    form_data = ""
+    #----------------------------------------------------------------------
+    def __init__(self, param_dict=None, files=None):
+        if param_dict is None:
+            param_dict = {}
+        if files is None:
+            files = {}
+        self.boundary = None
+        self.files = []
+        self.form_data = ""
+        if len(self.form_fields) > 0:
+            self.form_fields = []
 
+        if len(param_dict) == 0:
+            self.form_fields = []
+        else:
+            for k,v in param_dict.items():
+                self.form_fields.append((k,v))
+                del k,v
+        if len(files) == 0:
+            self.files = []
+        else:
+            for key, filePath, fileName in files:
+                self.add_file(fieldname=key,
+                              filename=fileName,
+                              filePath=filePath,
+                              mimetype=None)
+        self.boundary = "-%s" % self._make_boundary()
+    #----------------------------------------------------------------------
+    def get_content_type(self):
+        return 'multipart/form-data; boundary=%s' % self.boundary
+    #----------------------------------------------------------------------
+    def add_field(self, name, value):
+        """Add a simple field to the form data."""
+        self.form_fields.append((name, value))
+    #----------------------------------------------------------------------
+    def _make_boundary(self):
+        """ creates a boundary for multipart post (form post)"""
+        if six.PY2:
+            return '-===============%s==' % uuid.uuid4().get_hex()
+        elif six.PY3:
+            return '-===============%s==' % uuid.uuid4().hex
+        else:
+            from random import choice
+            digits = "0123456789"
+            letters = "abcdefghijklmnopqrstuvwxyz"
+            return '-===============%s==' % ''.join(choice(letters + digits) \
+                                                    for i in range(15))
+    #----------------------------------------------------------------------
+    def add_file(self, fieldname, filename, filePath, mimetype=None):
+        """Add a file to be uploaded.
+        Inputs:
+           fieldname - name of the POST value
+           fieldname - name of the file to pass to the server
+           filePath - path to the local file on disk
+           mimetype - MIME stands for Multipurpose Internet Mail Extensions.
+             It's a way of identifying files on the Internet according to
+             their nature and format. Default is None.
+        """
+        body = filePath
+        if mimetype is None:
+            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        self.files.append((fieldname, filename, mimetype, body))
+    #----------------------------------------------------------------------
+    @property
+    def make_result(self):
+        if self.PY2:
+            self._2()
+        elif self.PY3:
+            self._3()
+        return self.form_data
+    #----------------------------------------------------------------------
+    def _2(self):
+        """python 2.x version of formatting body data"""
+        boundary = self.boundary
+        buf = StringIO()
+        for (key, value) in self.form_fields:
+            buf.write('--%s\r\n' % boundary)
+            buf.write('Content-Disposition: form-data; name="%s"' % key)
+            buf.write('\r\n\r\n%s\r\n' % value)
+        for (key, filename, mimetype, filepath) in self.files:
+            if os.path.isfile(filepath):
+                buf.write('--{boundary}\r\n'
+                          'Content-Disposition: form-data; name="{key}"; '
+                          'filename="{filename}"\r\n'
+                          'Content-Type: {content_type}\r\n\r\n'.format(
+                              boundary=boundary,
+                              key=key,
+                              filename=filename,
+                              content_type=mimetype))
+                with open(filepath, "rb") as f:
+                    shutil.copyfileobj(f, buf)
+                buf.write('\r\n')
+        buf.write('--' + boundary + '--\r\n\r\n')
+        buf = buf.getvalue()
+        self.form_data = buf
+    #----------------------------------------------------------------------
+    def _3(self):
+        """ python 3 method"""
+        boundary = self.boundary
+        buf = BytesIO()
+        textwriter = io.TextIOWrapper(
+            buf, 'utf8', newline='', write_through=True)
+
+        for (key, value) in self.form_fields:
+            textwriter.write(
+                '--{boundary}\r\n'
+                'Content-Disposition: form-data; name="{key}"\r\n\r\n'
+                '{value}\r\n'.format(
+                    boundary=boundary, key=key, value=value))
+        for(key, filename, mimetype, filepath) in self.files:
+            if os.path.isfile(filepath):
+                textwriter.write(
+                    '--{boundary}\r\n'
+                    'Content-Disposition: form-data; name="{key}"; '
+                    'filename="{filename}"\r\n'
+                    'Content-Type: {content_type}\r\n\r\n'.format(
+                        boundary=boundary, key=key, filename=filename,
+                        content_type=mimetype))
+                with open(filepath, "rb") as f:
+                    shutil.copyfileobj(f, buf)
+                textwriter.write('\r\n')
+        textwriter.write('--{}--\r\n\r\n'.format(boundary))
+        self.form_data = buf.getvalue()
+########################################################################
 class HTTPSClientAuthHandler(request.HTTPSHandler):
     def __init__(self, key, cert):
         request.HTTPSHandler.__init__(self)
@@ -122,7 +263,7 @@ class _ArcGISConnection(object):
             digits = "0123456789"
             letters = "abcdefghijklmnopqrstuvwxyz"
             return '-===============%s==' % ''.join(choice(letters + digits) \
-                                                   for i in range(15))
+                                                    for i in range(15))
     #----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
@@ -232,7 +373,7 @@ class _ArcGISConnection(object):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if (len(url) > 0 and url[0] == '/' ) == False and \
-            self.baseurl.endswith('/') == False:
+           self.baseurl.endswith('/') == False:
             url = "/{path}".format(path=url)
         if not path.startswith('http://') and \
            not path.startswith('https://'):
@@ -455,12 +596,122 @@ class _ArcGISConnection(object):
         return handlers
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
-             is_retry=False, use_ordered_dict=False, add_token=True):
+             is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path
         if (len(url) > 0 and url[0] == '/' ) == False and \
-            self.baseurl.endswith('/') == False:
+           self.baseurl.endswith('/') == False:
+            url = "/{path}".format(path=url)
+        if not path.startswith('http://') and \
+           not path.startswith('https://'):
+            url = self.baseurl + url
+        if ssl or self.all_ssl:
+            url = url.replace('http://', 'https://')
+        if verify_cert == False:
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+        # Add the token if logged in
+        if add_token:
+            if self.is_logged_in():
+                postdata['token'] = self.token
+        if _log.isEnabledFor(logging.DEBUG):
+            msg = 'REQUEST: ' + url + ', ' + str(postdata)
+            if files:
+                msg += ', files=' + str(files)
+            _log.debug(msg)
+
+        # If there are files present, send a multipart request
+        if files:
+            #parsed_url = urlparse(url)
+            mpf = MultiPartForm(param_dict=postdata, files=files)
+            #mpf = MultiPartForm(param_dict=param_dict,
+            #                    files=files)
+            req = request.Request(url)#,
+                                  #headers=self._headers)
+            body = mpf.make_result
+            req.add_header('User-agent', self._useragent)
+            req.add_header('Content-type', mpf.get_content_type())
+            req.add_header('Content-length', len(body))
+            req.data = body
+            headers = [('Referer', self._referer),
+                       ('User-Agent', self._useragent),
+                       ('Content-type', mpf.get_content_type()),
+                       ('Content-length', len(body))]
+            if compress:
+                headers.append(('Accept-encoding', 'gzip'))
+
+            handlers = self.get_handlers()
+            opener = request.build_opener(*handlers)
+
+            opener.addheaders = headers
+            #print("***"+url)
+            resp = opener.open(req)#, #data=encoded_postdata.encode())
+            resp_data = self._process_response(resp)
+            print ('stop')
+        # Otherwise send a normal HTTP POST request
+        else:
+            encoded_postdata = None
+            if postdata:
+                encoded_postdata = urlencode(postdata)
+            headers = [('Referer', self._referer),
+                       ('User-Agent', self._useragent)]
+            if compress:
+                headers.append(('Accept-encoding', 'gzip'))
+
+            handlers = self.get_handlers()
+            opener = request.build_opener(*handlers)
+
+            opener.addheaders = headers
+            #print("***"+url)
+            resp = opener.open(url, data=encoded_postdata.encode())
+            resp_data = self._process_response(resp)
+
+        # Parse the response into JSON
+        if _log.isEnabledFor(logging.DEBUG):
+            _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
+        #print(resp_data);
+        if use_ordered_dict:
+            resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
+        else:
+            resp_json = json.loads(resp_data)
+
+        # Convert to ascii if directed to do so
+        if self.ensure_ascii and not use_ordered_dict:
+            resp_json = _unicode_to_ascii(resp_json)
+
+        # Check for errors, and handle the case where the token timed out
+        # during use (and simply needs to be re-generated)
+        try:
+            if resp_json.get('error', None):
+
+                errorcode = resp_json['error']['code'] if 'code' in resp_json['error'] else 0
+                if errorcode == 498 and not is_retry:
+                    _log.info('Token expired during post request, fetching a new '
+                              + 'token and retrying')
+                    self.logout()
+                    newtoken = self.relogin()
+                    postdata['token'] = newtoken
+                    return self.post(path, postdata, files, ssl, compress,
+                                     is_retry=True)
+                elif errorcode == 498:
+                    raise RuntimeError('Invalid token')
+                self._handle_json_error(resp_json['error'])
+                return None
+        except AttributeError:
+            # Top-level JSON object isnt a dict, so can't have an error
+            pass
+
+        return resp_json
+
+    #----------------------------------------------------------------------
+    def _post(self, path, postdata=None, files=None, ssl=False, compress=True,
+              is_retry=False, use_ordered_dict=False, add_token=True):
+        """ Returns result of an HTTP POST. Supports Multipart requests."""
+        path = quote(path, ':/')
+        url = path
+        if (len(url) > 0 and url[0] == '/' ) == False and \
+           self.baseurl.endswith('/') == False:
             url = "/{path}".format(path=url)
         if not path.startswith('http://') and \
            not path.startswith('https://'):
