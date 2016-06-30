@@ -1428,7 +1428,7 @@ class Group(dict):
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
-        if self.thumbnail is None or not self._portal.is_logged_in():
+        if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
         else:
             b64 = base64.b64encode(self.get_thumbnail())
@@ -1753,7 +1753,7 @@ class User(dict):
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
-        if self.thumbnail is None or not self._portal.is_logged_in():
+        if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
         else:
             b64 = base64.b64encode(self.get_thumbnail())
@@ -2183,7 +2183,7 @@ class Item(dict):
         if thumbnail_file is None:
             return 'http://static.arcgis.com/images/desktopapp.png'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'content/items/' + self.itemid + '/info/' + thumbnail_file
+            thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     def get_metadata(self):
@@ -2262,7 +2262,7 @@ class Item(dict):
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
-        if self.thumbnail is None or not self._portal.is_logged_in():
+        if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
         else:
             b64 = base64.b64encode(self.get_thumbnail())

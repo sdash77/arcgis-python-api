@@ -8,7 +8,7 @@ import imghdr
 import logging
 import os
 import tempfile
-
+import logging
 from .connection import _ArcGISConnection, _normalize_url
 from .connection import _is_http_url, _unicode_to_ascii
 from .connection import _parse_hostname, _unpack
@@ -17,6 +17,7 @@ from six.moves.urllib_parse import urlparse
 
 
 __version__ = '1.0'
+
 _log = logging.getLogger(__name__)
 
 class Portal(object):
@@ -867,7 +868,7 @@ class Portal(object):
             resp = self.con.post(path, self._postdata(), ssl=True)
             if resp:
                 self._properties = resp
-                self.con.all_ssl = self.is_all_ssl()
+                self.con.all_ssl = self.is_all_ssl
 
         # Return a defensive copy
         return copy.deepcopy(self._properties)
@@ -1063,11 +1064,11 @@ class Portal(object):
         if resp:
             return resp.get('success')
 
-
+    @property
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
-        return self.con.is_logged_in()
-
+        return self.con.is_logged_in
+    @property
     def is_all_ssl(self):
         """ Returns true if this portal requires SSL. """
 
@@ -1078,20 +1079,20 @@ class Portal(object):
 
         # If access property doesnt exist, will correctly return false
         return self._properties.get('allSSL')
-
+    @property
     def is_multitenant(self):
         """ Returns true if this portal is multitenant. """
         return self._properties['portalMode'] == 'multitenant'
-
+    @property
     def is_arcgisonline(self):
         """ Returns true if this portal is ArcGIS Online. """
         return self._properties['portalName'] == 'ArcGIS Online' \
-               and self.is_multitenant()
-
+               and self.is_multitenant
+    @property
     def is_subscription(self):
         """ Returns true if this portal is an ArcGIS Online subscription. """
         return bool(self._properties.get('urlKey'))
-
+    @property
     def is_org(self):
         """ Returns true if this portal is an organization. """
         return bool(self._properties.get('id'))
@@ -1601,7 +1602,7 @@ class Portal(object):
             a boolean indicating success
 
         """
-        if self.is_arcgisonline():
+        if self.is_arcgisonline:
             raise ValueError('Signup is not supported on ArcGIS Online')
 
         postdata = self._postdata()
@@ -2043,7 +2044,7 @@ class Portal(object):
             return False
         elif scope == 'default' or scope is None:
             # By default orgs won't search public
-            return False if self.is_org() else True
+            return False if self.is_org else True
         else:
             raise ValueError('Unknown scope "' + scope + '". Supported ' \
                              + 'values are "public", "org", and "default"')

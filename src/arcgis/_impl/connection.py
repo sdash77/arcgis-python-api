@@ -1,29 +1,27 @@
 """ The portalpy module for working with the ArcGIS Online and Portal APIs."""
 from __future__ import absolute_import
-__version__ = '1.0'
-
-import collections
+import io
+import os
+import re
+import cgi
+import sys
 import json
+import uuid
+import zlib
+import shutil
 import logging
 import mimetypes
-import os
-import sys
-import re
+import collections
 import unicodedata
-import cgi
-import shutil
-import io
-from io import BytesIO
 try:
     #PY2
     from cStringIO import StringIO
 except ImportError:
     #PY3
     from io import StringIO
+from io import BytesIO
 from collections import OrderedDict
 
-import uuid
-import zlib
 import six
 from six.moves.urllib_parse import urlparse, urlunparse, parse_qsl
 from six.moves.urllib_parse import quote, unquote, urlunsplit
@@ -32,7 +30,7 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
-
+__version__ = '1.0'
 _log = logging.getLogger(__name__)
 ########################################################################
 class MultiPartForm(object):
@@ -292,6 +290,7 @@ class _ArcGISConnection(object):
         """ Logs out of the portal. """
         self.token = None
     #----------------------------------------------------------------------
+    @property
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
         return self.token is not None
@@ -372,17 +371,23 @@ class _ArcGISConnection(object):
     def get(self, path, ssl=False, compress=True, try_json=True, is_retry=False, use_ordered_dict=False):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
-        if (len(url) > 0 and url[0] == '/' ) == False and \
+        if url.lower().find("https://") > -1 or\
+           url.lower().find("http://") > -1:
+            url = path
+        elif len(url) == 0:
+            url = self.baseurl
+        elif (len(url) > 0 and url[0] == '/' ) == False and \
            self.baseurl.endswith('/') == False:
             url = "/{path}".format(path=url)
-        if not path.startswith('http://') and \
-           not path.startswith('https://'):
+
+        if not url.startswith('http://') and \
+           not url.startswith('https://'):
             url = self.baseurl + url
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
 
         # Add the token if logged in
-        if self.is_logged_in():
+        if self.is_logged_in:
             url = self._url_add_token(url, self.token)
 
         _log.debug('REQUEST (get): ' + url)
@@ -472,7 +477,7 @@ class _ArcGISConnection(object):
             url = url.replace('http://', 'https://')
 
         # Add the token if logged in
-        if self.is_logged_in():
+        if self.is_logged_in:
             url = self._url_add_token(url, self.token)
 
         _log.debug('REQUEST (get): ' + url)
@@ -529,7 +534,7 @@ class _ArcGISConnection(object):
             url = url.replace('http://', 'https://')
 
         # Add the token if logged in
-        if self.is_logged_in():
+        if self.is_logged_in:
             url = self._url_add_token(url, self.token)
 
         _log.debug('REQUEST (download): ' + url + ', to ' + filepath)
@@ -600,12 +605,19 @@ class _ArcGISConnection(object):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path
-        if (len(url) > 0 and url[0] == '/' ) == False and \
+        if url.lower().find("https://") > -1 or\
+           url.lower().find("http://") > -1:
+            url = path
+        elif len(url) == 0:
+            url = self.baseurl
+        elif (len(url) > 0 and url[0] == '/' ) == False and \
            self.baseurl.endswith('/') == False:
             url = "/{path}".format(path=url)
-        if not path.startswith('http://') and \
-           not path.startswith('https://'):
+
+        if not url.startswith('http://') and \
+           not url.startswith('https://'):
             url = self.baseurl + url
+
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
         if verify_cert == False:
@@ -613,7 +625,7 @@ class _ArcGISConnection(object):
             ssl._create_default_https_context = ssl._create_unverified_context
         # Add the token if logged in
         if add_token:
-            if self.is_logged_in():
+            if self.is_logged_in:
                 postdata['token'] = self.token
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)
@@ -625,10 +637,7 @@ class _ArcGISConnection(object):
         if files:
             #parsed_url = urlparse(url)
             mpf = MultiPartForm(param_dict=postdata, files=files)
-            #mpf = MultiPartForm(param_dict=param_dict,
-            #                    files=files)
-            req = request.Request(url)#,
-                                  #headers=self._headers)
+            req = request.Request(url)
             body = mpf.make_result
             req.add_header('User-agent', self._useragent)
             req.add_header('Content-type', mpf.get_content_type())
@@ -645,10 +654,9 @@ class _ArcGISConnection(object):
             opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
-            #print("***"+url)
-            resp = opener.open(req)#, #data=encoded_postdata.encode())
+
+            resp = opener.open(req)
             resp_data = self._process_response(resp)
-            print ('stop')
         # Otherwise send a normal HTTP POST request
         else:
             encoded_postdata = None
@@ -703,143 +711,6 @@ class _ArcGISConnection(object):
             pass
 
         return resp_json
-
-    #----------------------------------------------------------------------
-    def _post(self, path, postdata=None, files=None, ssl=False, compress=True,
-              is_retry=False, use_ordered_dict=False, add_token=True):
-        """ Returns result of an HTTP POST. Supports Multipart requests."""
-        path = quote(path, ':/')
-        url = path
-        if (len(url) > 0 and url[0] == '/' ) == False and \
-           self.baseurl.endswith('/') == False:
-            url = "/{path}".format(path=url)
-        if not path.startswith('http://') and \
-           not path.startswith('https://'):
-            url = self.baseurl + url
-        if ssl or self.all_ssl:
-            url = url.replace('http://', 'https://')
-
-        # Add the token if logged in
-        if add_token:
-            if self.is_logged_in():
-                postdata['token'] = self.token
-
-        if _log.isEnabledFor(logging.DEBUG):
-            msg = 'REQUEST: ' + url + ', ' + str(postdata)
-            if files:
-                msg += ', files=' + str(files)
-            _log.debug(msg)
-
-        # If there are files present, send a multipart request
-        if files:
-            parsed_url = urlparse(url)
-            resp_data = self._postmultipart(parsed_url.netloc,
-                                            str(parsed_url.path),
-                                            postdata,
-                                            files,
-                                            parsed_url.scheme == 'https')
-
-        # Otherwise send a normal HTTP POST request
-        else:
-            encoded_postdata = None
-            if postdata:
-                encoded_postdata = urlencode(postdata)
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
-            if compress:
-                headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
-
-            opener.addheaders = headers
-            #print("***"+url)
-            resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data = self._process_response(resp)
-
-        # Parse the response into JSON
-        if _log.isEnabledFor(logging.DEBUG):
-            _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
-        #print(resp_data);
-        if use_ordered_dict:
-            resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
-        else:
-            resp_json = json.loads(resp_data)
-
-        # Convert to ascii if directed to do so
-        if self.ensure_ascii and not use_ordered_dict:
-            resp_json = _unicode_to_ascii(resp_json)
-
-        # Check for errors, and handle the case where the token timed out
-        # during use (and simply needs to be re-generated)
-        try:
-            if resp_json.get('error', None):
-
-                errorcode = resp_json['error']['code'] if 'code' in resp_json['error'] else 0
-                if errorcode == 498 and not is_retry:
-                    _log.info('Token expired during post request, fetching a new '
-                              + 'token and retrying')
-                    self.logout()
-                    newtoken = self.relogin()
-                    postdata['token'] = newtoken
-                    return self.post(path, postdata, files, ssl, compress,
-                                     is_retry=True)
-                elif errorcode == 498:
-                    raise RuntimeError('Invalid token')
-                self._handle_json_error(resp_json['error'])
-                return None
-        except AttributeError:
-            # Top-level JSON object isnt a dict, so can't have an error
-            pass
-
-        return resp_json
-    #----------------------------------------------------------------------
-    def _postmultipart(self, host, selector, fields, files, ssl):
-        boundary, body = self._encode_multipart_formdata(fields, files)
-        headers = {
-            'User-Agent': self._useragent,
-            'Referer': self._referer,
-            'Content-Type': 'multipart/form-data; boundary=%s' % boundary
-        }
-
-        if self.proxy_host:
-            if ssl:
-                h = http_client.HTTPSConnection(self.proxy_host, self.proxy_port,
-                                                key_file=self.key_file,
-                                                cert_file=self.cert_file)
-                h.request('POST', 'https://' + host + selector, body, headers)
-            else:
-                h = http_client.HTTPConnection(self.proxy_host, self.proxy_port)
-                h.request('POST', 'http://' + host + selector, body, headers)
-        else:
-            if ssl:
-                h = http_client.HTTPSConnection(host, key_file=self.key_file,
-                                                cert_file=self.cert_file)
-                h.request('POST', selector, body, headers)
-            else:
-                h = http_client.HTTPConnection(host)
-                h.request('POST', selector, body, headers)
-        return h.getresponse().read()
-    #----------------------------------------------------------------------
-    def _encode_multipart_formdata(self, fields, files):
-        boundary = self._make_boundary()
-        buf = StringIO()
-        for (key, value) in fields.items():
-            buf.write('--%s\r\n' % boundary)
-            buf.write('Content-Disposition: form-data; name="%s"' % key)
-            buf.write('\r\n\r\n' + _tostr(value) + '\r\n')
-        for (key, filepath, filename) in files:
-            buf.write('--%s\r\n' % boundary)
-            buf.write('Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (key, filename))
-            buf.write('Content-Type: %s\r\n' % (self._get_content_type(filename)))
-            f = open(filepath, "rb")
-            try:
-                buf.write('\r\n' + f.read().decode('ISO-8859-1') + '\r\n')
-            finally:
-                f.close()
-        buf.write('--' + boundary + '--\r\n\r\n')
-        buf = buf.getvalue()
-        return boundary, buf
     #----------------------------------------------------------------------
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
@@ -992,14 +863,17 @@ def _unpack_obj(obj, key=None, flatten=False):
 
 def _unicode_to_ascii(data):
     """ Converts strings and collections of strings from unicode to ascii. """
-    if isinstance(data, str):
-        return _remove_non_ascii(data)
-    if isinstance(data, str):
-        return _remove_non_ascii(str(data.encode('utf8')))
-    elif isinstance(data, collections.Mapping):
-        return dict(list(map(_unicode_to_ascii, iter(data.items()))))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(list(map(_unicode_to_ascii, data)))
+    if isinstance(data, dict):
+        return {_unicode_to_ascii(key): _unicode_to_ascii(value) \
+                for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_unicode_to_ascii(element) for element in data]
+    elif isinstance(data, str):
+        return data
+    elif isinstance(data, six.text_type):
+        return data.encode('utf-8')
+    elif isinstance(data, six.integer_types):
+        return data
     else:
         return data
 
