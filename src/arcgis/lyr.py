@@ -2,24 +2,11 @@
 The arcgis.lyr module is used for accessing layers exposed from ArcGIS Online
 or Portal.
 """
-import re
-import sys
-import json
-import types
+from __future__ import absolute_import
 import json
 from pandas.io.json import json_normalize
-from contextlib import contextmanager
-
-import inspect
-import datetime
 import collections
 import arcgis.gis
-import time
-
-import tempfile
-import os
-import string
-import random
 
 class ImageLayer(collections.OrderedDict):
     "represents an image service layer"
