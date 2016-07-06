@@ -1,49 +1,25 @@
 # Vision
-_**Python API to your Web GIS.**_
+[_**Python API to your GIS.**_](https://developers.arcgis.com/python/)
 
-Web GIS is growing to include more out of the box analytical tools that work against data  items (feature layers, tables, images)  in your Web GIS. Having a powerful python api that helps publish data to my Web GIS, analyze it and visualize the results is of great interest.  Also managing my Web GIS as well as understanding whats going on with it (usage, etc).  Managing includes understanding dependencies between items, fixing up items, replication of items between portals, management of users, ... This project aims to provide this in a modern and easy to use Python API.
+Geosaurus is not a client library for a separate web GIS.
 
-# Introduction
-
-## Video demos
-
-**A quick 10 minute demo of spatial analysis:**
-* 01 Abridged Chennai Analysis 
-* 02 Abridged Chennai Analysis  (at  https://esri.app.box.com/files/0/f/5801226685/ChennaiFloods)
-
-**A longer version, with raster and vector geoanalytics included:**
-* 01 Intro to Chennai Floods Analysis
-* 02 What really caused the flooding
-* 03 Creating a Raster product for analyzing Chennai Floods
-* 04 The human impact and how GIS can help in relief efforts (at https://esri.app.box.com/files/0/f/5801226685/ChennaiFloods)
-
-A series of smaller demos introducing the project and how it works (intro, gis administration, portal content management, visualization, geoprocessing, geometry, analysis):
-
-* (01-09)*  at https://esri.app.box.com/files/0/f/5174399913/videos
-
-## Documentation:
-
-**Sample IPython notebooks:**
-* http://dev04875.esri.com:8888/tree/
-
-**API Reference as IPython Notebooks:**
-* gis module: http://dev04875.esri.com:8888/notebooks/docs/gis%20module.ipynb
-* viz module: http://dev04875.esri.com:8888/notebooks/docs/viz%20module.ipynb
-* lyr module: http://dev04875.esri.com:8888/notebooks/docs/lyr%20module.ipynb
-
-**API Reference as sphinx generated HTML documentation:**
-* http://dev04875/ppyp/
+Geosaurus is a comprehensive GIS expressed in Python.  A GIS is a container of geographic information with associated:
+* Configurable (schema driven) information model for all sorts of geographic datasets and information items
+..* Features, maps, imagery, raster, observations, visualizations, analytic results, entity data, tabular datasets,…
+* Intelligent container of information with data items organized by user, group, with metadata, with ratings/reputation,…
+*    Functions for working with entire datasets
+..*    Many wonderful things represented as functions against data organized into packages (used to be tools/toolboxes)
+* APIs for constructing and drilling into the insides of datasets
+..* Iterate over features, create new datasets and add data, etc.
+..* Aka “I/O” libraries and ways to cast GIS data items into Python items (raster to SciPy, etc.)
+* Items for understanding and visualizing data – not just data
+..* Maps & Scenes
+..* Pythonic mechanism for defining and working with these items
 
 ## Project details:
+[Developer website](https://developers.arcgis.com/python/)
 
-**devtopia:**
-* https://devtopia.esri.com/WebGIS/arcgis-python-api-to-webgis
-
-**wiki:**
-* http://mediawikidev.esri.com/index.php/Geosaurus/PortalPy++
-
-**contacts:**
-* Jay Theodore, Rohit Singh, Eva Mui
+See the developer documentation and resources at https://developers.arcgis.com/python/
 
 ## Getting Started
 
@@ -57,29 +33,14 @@ open _build/html/index.html
 ```
 
 ### Installing
-_Requires Python3_
+
+[Install guide for end users](https://developers.arcgis.com/python/guide/Install-and-set-up/)
+
+Install steps for developers:
 
 * Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
 * pip3 install -e . (for using latest source code)
-   OR 
-   pip install --extra-index-url=http://dev06999.esri.com:9000/ --trusted-host dev06999.esri.com arcgis (for a prebuilt pip package)
-* python -m arcgis.install
-
-### Running in iPython Notebook
-
-Install [Jupyter](https://jupyter.readthedocs.org/en/latest/install.html)
-
-```bash
-pip3 install jupyter
-jupyter-notebook
-```
-
-To test widgets open a new Python3 notebook in jupyter-notebook and issue following commands:
-```
-from arcgis.gis import *
-gis = GIS()
-gis.map()
-```
+* python -m arcgis.install (for enabling the map widget for Jupyter notebook)
 
 # Want to contribute?
 See the wiki at https://github.com/ArcGIS/geosaurus/wiki for the project vision and guiding principles, areas needing help, and how to contribute.
