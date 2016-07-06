@@ -5,16 +5,16 @@ Geosaurus is not a client library for a separate web GIS.
 
 Geosaurus is a comprehensive GIS expressed in Python.  A GIS is a container of geographic information with associated:
 * Configurable (schema driven) information model for all sorts of geographic datasets and information items
-..* Features, maps, imagery, raster, observations, visualizations, analytic results, entity data, tabular datasets,…
+ * Features, maps, imagery, raster, observations, visualizations, analytic results, entity data, tabular datasets,…
 * Intelligent container of information with data items organized by user, group, with metadata, with ratings/reputation,…
 *    Functions for working with entire datasets
-..*    Many wonderful things represented as functions against data organized into packages (used to be tools/toolboxes)
+ *    Many wonderful things represented as functions against data organized into packages (used to be tools/toolboxes)
 * APIs for constructing and drilling into the insides of datasets
-..* Iterate over features, create new datasets and add data, etc.
-..* Aka “I/O” libraries and ways to cast GIS data items into Python items (raster to SciPy, etc.)
+ * Iterate over features, create new datasets and add data, etc.
+ * Aka “I/O” libraries and ways to cast GIS data items into Python items (raster to SciPy, etc.)
 * Items for understanding and visualizing data – not just data
-..* Maps & Scenes
-..* Pythonic mechanism for defining and working with these items
+ * Maps & Scenes
+ * Pythonic mechanism for defining and working with these items
 
 ## Project details:
 [Developer website](https://developers.arcgis.com/python/)
