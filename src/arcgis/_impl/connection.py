@@ -672,6 +672,7 @@ class _ArcGISConnection(object):
 
             opener.addheaders = headers
             #print("***"+url)
+            #print("***"+str(postdata))
             resp = opener.open(url, data=encoded_postdata.encode())
             resp_data = self._process_response(resp)
 

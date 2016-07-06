@@ -69,7 +69,12 @@ class Geocoder(collections.OrderedDict):
             "f" : "json"
         }
         #print(self.url)
-        svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
+        try:
+            svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
+        except RuntimeError as e:
+            if e.args[0] == 'Invalid token':
+                svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
+        
         collections.OrderedDict.__init__(self, svcprops)
         try:
             self._address_field = svcprops['singleLineAddressField']['name']
@@ -188,7 +193,7 @@ class Geocoder(collections.OrderedDict):
         if not forStorage is None:
             params['forStorage'] = forStorage
 
-        resp = self._portal.con.post(url, params)
+        resp = self._portal.con.post(url, params, add_token=forStorage)
         if resp is not None:
             return resp['candidates']
         else:
@@ -225,7 +230,7 @@ class Geocoder(collections.OrderedDict):
         if forStorage:
             params['forStorage'] = forStorage
 
-        resp = self._portal.con.post(url, params)
+        resp = self._portal.con.post(url, params, add_token=forStorage)
         return resp
 
     def batch_geocode(self,
@@ -410,7 +415,7 @@ class Geocoder(collections.OrderedDict):
         if not distance is None and \
            isinstance(distance, (int, float)):
             params['distance'] = distance
-        resp = self._portal.con.post(url, params)
+        resp = self._portal.con.post(url, params, add_token=False)
         return resp
 
 
