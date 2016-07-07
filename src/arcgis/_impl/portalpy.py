@@ -1356,10 +1356,10 @@ class Portal(object):
 
 
     def search(self, q, bbox=None, sort_field='title', sort_order='asc',
-               max_results=1000, add_org=True):
+               max_results=1000, within_org=True):
 
 
-        if add_org:
+        if within_org:
             accountid = self._properties.get('id')
             if accountid and q:
                 q += ' accountid:' + accountid
@@ -1382,7 +1382,7 @@ class Portal(object):
 
 
     def search_groups(self, q, sort_field='title',sort_order='asc',
-                      max_groups=1000, add_org=True):
+                      max_groups=1000, within_org=True):
         """ Searches for portal groups.
 
         .. note::
@@ -1398,7 +1398,7 @@ class Portal(object):
                or within your Portal.  As a convenience, the method
                automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set add_org to false.
+               set within_org to false.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1411,7 +1411,7 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
-        add_org           optional boolean, controls whether to search within your org
+        within_org        optional boolean, controls whether to search within your org
         ================  ========================================================
 
         :return:
@@ -1452,7 +1452,7 @@ class Portal(object):
             ================  ========================================================
         """
 
-        if add_org:
+        if within_org:
             accountid = self._properties.get('id')
             if accountid and q:
                 q += ' accountid:' + accountid
@@ -1478,7 +1478,7 @@ class Portal(object):
 
 
     def search_users(self, q, sort_field='username',
-                     sort_order='asc', max_users=1000, add_org=True):
+                     sort_order='asc', max_users=1000, within_org=True):
         """ Searches portal users.
 
         This gives you a list of users and some basic information
@@ -1498,9 +1498,9 @@ class Portal(object):
                or within your Portal.  As a convenience, the method
                automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set add_org to false.  If you use this feature with an
+               set within_org to false.  If you use this feature with an
                OR clause such as field=x or field=y you should put this
-               into parenthesis when using add_org.
+               into parenthesis when using within_org.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1513,7 +1513,7 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         max_users         optional int, maximum number of users returned
         ----------------  --------------------------------------------------------
-        add_org           optional boolean, controls whether to search within your org
+        within_org        optional boolean, controls whether to search within your org
         ================  ========================================================
 
         :return:
@@ -1542,7 +1542,7 @@ class Portal(object):
             ================  ========================================================
         """
 
-        if add_org:
+        if within_org:
             accountid = self._properties.get('id')
             if accountid and q:
                 q += ' accountid:' + accountid
