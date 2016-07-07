@@ -10,7 +10,7 @@ import os
 import tempfile
 import logging
 from .connection import _ArcGISConnection, _normalize_url
-from .connection import _is_http_url, _unicode_to_ascii
+from .connection import _is_http_url, _to_utf8
 from .connection import _parse_hostname, _unpack
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
@@ -244,7 +244,7 @@ class Portal(object):
 
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
-        postdata.update(_unicode_to_ascii(item_properties))
+        postdata.update(_to_utf8(item_properties))
 
         # Build the files list (tuples)
         files = []
@@ -432,7 +432,7 @@ class Portal(object):
         """
 
         postdata = self._postdata()
-        postdata.update(_unicode_to_ascii(group))
+        postdata.update(_to_utf8(group))
 
         # Build the files list (tuples)
         files = []
@@ -1889,7 +1889,7 @@ class Portal(object):
         postdata = self._postdata()
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         if item_properties is not None:
-            postdata.update(_unicode_to_ascii(item_properties))
+            postdata.update(_to_utf8(item_properties))
 
         # Build the files list (tuples)
         files = []
