@@ -1748,7 +1748,7 @@ class User(dict):
         if thumbnail_file is None:
             return 'http://www.arcgis.com/home/js/arcgisonline/css/images/no-user-thumb.jpg'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'community/users/' + self.username + '/info/' + thumbnail_file
+            thumbnail_url_path = self._portal.con.baseurl + '/community/users/' + self.username + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     def _repr_html_(self):
