@@ -23,15 +23,6 @@ See the developer documentation and resources at https://developers.arcgis.com/p
 
 ## Getting Started
 
-### Build the Documentation
-
-```bash
-sphinx-apidoc -o apidoc -e -F -H arcgis -A Esri -V 0.1 -R 0.1 src
-cd apidoc
-make html
-open _build/html/index.html
-```
-
 ### Installing
 
 [Install guide for end users](https://developers.arcgis.com/python/guide/Install-and-set-up/)
@@ -41,6 +32,15 @@ Install steps for developers:
 * Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
 * pip3 install -e . (for using latest source code)
 * python -m arcgis.install (for enabling the map widget for Jupyter notebook)
+
+### Build the Documentation
+
+```bash
+sphinx-apidoc -o apidoc -e -F -H arcgis -A Esri -V 0.1 -R 0.1 src
+cd apidoc
+make html
+open _build/html/index.html
+```
 
 # Want to contribute?
 See the wiki at https://github.com/ArcGIS/geosaurus/wiki for the project vision and guiding principles, areas needing help, and how to contribute.
