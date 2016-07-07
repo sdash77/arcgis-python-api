@@ -4,11 +4,11 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
+from __future__ import absolute_import
 import re
-import sys
+
 import json
 import types
-import json
 from pandas.io.json import json_normalize
 from contextlib import contextmanager
 from arcgis.lyr import *
@@ -23,6 +23,8 @@ import tempfile
 import os
 import string
 import random
+
+from ._impl._contentmanager import Item
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -74,7 +76,7 @@ class Geocoder(collections.OrderedDict):
         except RuntimeError as e:
             if e.args[0] == 'Invalid token':
                 svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
-        
+
         collections.OrderedDict.__init__(self, svcprops)
         try:
             self._address_field = svcprops['singleLineAddressField']['name']
@@ -86,16 +88,16 @@ class Geocoder(collections.OrderedDict):
         return json.dumps(self)
 
     def geocode(self,
-             address,
-             searchExtent=None,
-             location=None,
-             distance=None,
-             outSR=None,
-             category=None,
-             outFields="*",
-             maxLocations=20,
-             magicKey=None,
-             forStorage=False):
+                address,
+                searchExtent=None,
+                location=None,
+                distance=None,
+                outSR=None,
+                category=None,
+                outFields="*",
+                maxLocations=20,
+                magicKey=None,
+                forStorage=False):
         """
         The geocode method geocodes one location per request.
 
@@ -174,7 +176,7 @@ class Geocoder(collections.OrderedDict):
         if not searchExtent is None:
             params['searchExtent'] = searchExtent
         if not location is None and \
-                isinstance(location, list):
+           isinstance(location, list):
             params['location'] = "%s,%s" % (location[0], location[1])
         elif location is not None:
             params['location'] = location
@@ -234,10 +236,10 @@ class Geocoder(collections.OrderedDict):
         return resp
 
     def batch_geocode(self,
-                         addresses,
-                         sourceCountry=None,
-                         category=None,
-                         outSR=None):
+                      addresses,
+                      sourceCountry=None,
+                      category=None,
+                      outSR=None):
         """
         The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.
 
@@ -325,18 +327,18 @@ class Geocoder(collections.OrderedDict):
             return []
 
     def find_best_match(self,
-             address,
-             searchExtent=None,
-             location=None,
-             distance=None,
-             outSR=None,
-             category=None,
-             outFields="*",magicKey=None,
-             forStorage=False):
+                        address,
+                        searchExtent=None,
+                        location=None,
+                        distance=None,
+                        outSR=None,
+                        category=None,
+                        outFields="*",magicKey=None,
+                        forStorage=False):
         """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
         location = self.geocode(address, searchExtent, location, distance,
-                         outSR, category, outFields, 1, magicKey,
-                         forStorage)[0]['location']
+                                outSR, category, outFields, 1, magicKey,
+                                forStorage)[0]['location']
         return location['y'], location['x']
 
     def suggest(self,
@@ -659,8 +661,8 @@ class _AsyncService(object):
                     if "paramUrl" in param_value:
                         param_url = param_value.get("paramUrl")
                         result_url = "{}/jobs/{}/{}".format(task_url,
-                                                                            job_id,
-                                                                            param_url)
+                                                            job_id,
+                                                            param_url)
 
                         params = { "f" : "json" }
                         param_result = self._portal.con.post(result_url, params)
@@ -676,117 +678,117 @@ class _AsyncService(object):
     def _feature_input(self, input_layer):
 
         point_fs = {
-           "layerDefinition":{
-              "currentVersion":10.11,
-              "copyrightText":"",
-              "defaultVisibility":True,
-              "relationships":[
+            "layerDefinition":{
+                "currentVersion":10.11,
+                "copyrightText":"",
+                "defaultVisibility":True,
+                "relationships":[
 
-              ],
-              "isDataVersioned":False,
-              "supportsRollbackOnFailureParameter":True,
-              "supportsStatistics":True,
-              "supportsAdvancedQueries":True,
-              "geometryType":"esriGeometryPoint",
-              "minScale":0,
-              "maxScale":0,
-              "objectIdField":"OBJECTID",
-              "templates":[
+                    ],
+                "isDataVersioned":False,
+                "supportsRollbackOnFailureParameter":True,
+                "supportsStatistics":True,
+                "supportsAdvancedQueries":True,
+                "geometryType":"esriGeometryPoint",
+                "minScale":0,
+                "maxScale":0,
+                "objectIdField":"OBJECTID",
+                "templates":[
 
-              ],
-              "type":"Feature Layer",
-              "displayField":"TITLE",
-              "visibilityField":"VISIBLE",
-              "name":"startDrawPoint",
-              "hasAttachments":False,
-              "typeIdField":"TYPEID",
-              "capabilities":"Query",
-              "allowGeometryUpdates":True,
-              "htmlPopupType":"",
-              "hasM":False,
-              "hasZ":False,
-              "globalIdField":"",
-              "supportedQueryFormats":"JSON",
-              "hasStaticData":False,
-              "maxRecordCount":-1,
-              "indexes":[
+                    ],
+                "type":"Feature Layer",
+                "displayField":"TITLE",
+                "visibilityField":"VISIBLE",
+                "name":"startDrawPoint",
+                "hasAttachments":False,
+                "typeIdField":"TYPEID",
+                "capabilities":"Query",
+                "allowGeometryUpdates":True,
+                "htmlPopupType":"",
+                "hasM":False,
+                "hasZ":False,
+                "globalIdField":"",
+                "supportedQueryFormats":"JSON",
+                "hasStaticData":False,
+                "maxRecordCount":-1,
+                "indexes":[
 
-              ],
-              "types":[
+                    ],
+                "types":[
 
-              ],
-              "fields":[
-                 {
-                    "alias":"OBJECTID",
-                    "name":"OBJECTID",
-                    "type":"esriFieldTypeOID",
-                    "editable":False
-                 },
-                 {
-                    "alias":"Title",
-                    "name":"TITLE",
-                    "length":50,
-                    "type":"esriFieldTypeString",
-                    "editable":True
-                 },
-                 {
-                    "alias":"Visible",
-                    "name":"VISIBLE",
-                    "type":"esriFieldTypeInteger",
-                    "editable":True
-                 },
-                 {
-                    "alias":"Description",
-                    "name":"DESCRIPTION",
-                    "length":1073741822,
-                    "type":"esriFieldTypeString",
-                    "editable":True
-                 },
-                 {
-                    "alias":"Type ID",
-                    "name":"TYPEID",
-                    "type":"esriFieldTypeInteger",
-                    "editable":True
-                 }
-              ]
-           },
-           "featureSet":{
-              "features":[
-                 {
-                    "geometry":{
-                       "x":80.27032792000051,
-                       "y":13.085227147000467,
-                       "spatialReference":{
-                          "wkid": 4326,
-                          "latestWkid":4326
-                       }
-                    },
-                  "attributes":{
-                       "description":"blayer desc",
-                       "title":"blayer",
-                       "OBJECTID":0,
-                       "VISIBLE":1
-                    },
-                    "symbol":{
-                       "angle":0,
-                       "xoffset":0,
-                       "yoffset":8.15625,
-                       "type":"esriPMS",
-                       "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
-                       "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
-                       "contentType":"image/png",
-                       "width":15.75,
-                       "height":21.75
+                    ],
+                "fields":[
+                    {
+                        "alias":"OBJECTID",
+                        "name":"OBJECTID",
+                        "type":"esriFieldTypeOID",
+                        "editable":False
+                        },
+                    {
+                        "alias":"Title",
+                        "name":"TITLE",
+                        "length":50,
+                        "type":"esriFieldTypeString",
+                        "editable":True
+                        },
+                    {
+                        "alias":"Visible",
+                        "name":"VISIBLE",
+                        "type":"esriFieldTypeInteger",
+                        "editable":True
+                        },
+                    {
+                        "alias":"Description",
+                        "name":"DESCRIPTION",
+                        "length":1073741822,
+                        "type":"esriFieldTypeString",
+                        "editable":True
+                        },
+                    {
+                        "alias":"Type ID",
+                        "name":"TYPEID",
+                        "type":"esriFieldTypeInteger",
+                        "editable":True
                     }
-                 }
-              ],
-              "geometryType":"esriGeometryPoint"
-           },
-           "nextObjectId":1
+                ]
+                },
+            "featureSet":{
+                "features":[
+                    {
+                        "geometry":{
+                            "x":80.27032792000051,
+                            "y":13.085227147000467,
+                            "spatialReference":{
+                                "wkid": 4326,
+                                "latestWkid":4326
+                            }
+                            },
+                        "attributes":{
+                            "description":"blayer desc",
+                            "title":"blayer",
+                            "OBJECTID":0,
+                            "VISIBLE":1
+                            },
+                        "symbol":{
+                            "angle":0,
+                            "xoffset":0,
+                            "yoffset":8.15625,
+                            "type":"esriPMS",
+                            "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
+                            "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
+                            "contentType":"image/png",
+                            "width":15.75,
+                            "height":21.75
+                        }
+                    }
+                    ],
+                "geometryType":"esriGeometryPoint"
+                },
+            "nextObjectId":1
         }
 
         input_layer_url = ""
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type.lower() == 'feature service':
                 fs = FeatureService(input_layer)
                 input_layer_url =  fs.layers[0].url #["url"]
@@ -846,7 +848,7 @@ class _AsyncService(object):
         return input_param
 
     def _raster_input(self, input_raster):
-        if isinstance(input_raster, arcgis.gis.Item):
+        if isinstance(input_raster, Item):
             if input_raster.type.lower() == 'image service':
                 input_param =  {"itemId": input_raster.itemid }
             else:
@@ -1047,7 +1049,7 @@ class GeoprocessingTool(collections.OrderedDict):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-         return json.dumps(self)
+        return json.dumps(self)
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]
@@ -1180,10 +1182,10 @@ class GeoAnalyticsTools(_AsyncService):
         params = {
             'f': 'json',
             'item' : {
-              "path": "/bigDataFileShares",
-              "type": "datadir",
-              "id": "",
-              "clientPath": None
+                "path": "/bigDataFileShares",
+                "type": "datadir",
+                "id": "",
+                "clientPath": None
             }
         }
         res = self.gis._portal.con.post(register_data_item_url, params)
@@ -1195,13 +1197,13 @@ class GeoAnalyticsTools(_AsyncService):
         params = {
             'f': 'json',
             'item' : {
-              "path": "/fileShares/_raster_store",
-              "type": "folder",
-              "id": "",
-              "info": {
+                "path": "/fileShares/_raster_store",
+                "type": "folder",
+                "id": "",
+                "info": {
                     "dataStoreConnectionType": "shared",
                     "path": fileshare_path
-              }
+                }
             }
         }
         res = self.gis._portal.con.post(register_data_item_url, params)
@@ -1214,12 +1216,12 @@ class GeoAnalyticsTools(_AsyncService):
         params = {
             'f': 'json',
             'item' : {
-              "path": "/bigDataFileShares/" + server_path,
-              "type": "bigDataFileShare",
-              "id": "",
-              "info": {
+                "path": "/bigDataFileShares/" + server_path,
+                "type": "bigDataFileShare",
+                "id": "",
+                "info": {
                     "path" : fileshare_path
-               }
+                }
             }
         }
         res = self.gis._portal.con.post(register_data_item_url, params)
@@ -1247,15 +1249,15 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def aggregate_points_by_bins(self,
-                       in_points=None,
-                       in_points_layer=None,
-                       in_distance_interval=None,
-                       in_timestep_interval=None,
-                       in_timestep_repeat=None,
-                       in_timestep_reference_time=None,
-                       in_summary_stats=None,
-                       out_features_name=None,
-                       out_sr=None):
+                                 in_points=None,
+                                 in_points_layer=None,
+                                 in_distance_interval=None,
+                                 in_timestep_interval=None,
+                                 in_timestep_repeat=None,
+                                 in_timestep_reference_time=None,
+                                 in_summary_stats=None,
+                                 out_features_name=None,
+                                 out_sr=None):
         """
 
 
@@ -1315,7 +1317,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1323,9 +1325,9 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def describe_dataset(self,
-                       in_dataset=None,
-                       in_dataset_layer=None,
-                       out_sr=None):
+                         in_dataset=None,
+                         in_dataset_layer=None,
+                         out_sr=None):
         """
 
 
@@ -1361,7 +1363,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['output_json']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1369,16 +1371,16 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def aggregate_points_by_polygons(self,
-                       in_points=None,
-                       in_points_layer=None,
-                       in_polygons=None,
-                       in_polygons_layer=None,
-                       in_timestep_interval=None,
-                       in_timestep_repeat=None,
-                       in_timestep_reference_time=None,
-                       in_summary_stats=None,
-                       out_features_name=None,
-                       out_sr=None):
+                                     in_points=None,
+                                     in_points_layer=None,
+                                     in_polygons=None,
+                                     in_polygons_layer=None,
+                                     in_timestep_interval=None,
+                                     in_timestep_repeat=None,
+                                     in_timestep_reference_time=None,
+                                     in_summary_stats=None,
+                                     out_features_name=None,
+                                     out_sr=None):
         """
 
 
@@ -1442,7 +1444,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1450,19 +1452,19 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def feature_join(self,
-                       in_target_features=None,
-                       in_target_features_layer=None,
-                       in_join_features=None,
-                       in_join_features_layer=None,
-                       in_join_operation="Summarize Join Features",
-                       in_summary_stats=None,
-                       in_spatial_relationship=None,
-                       in_spatial_distance=None,
-                       in_temporal_relationship=None,
-                       in_temporal_distance=None,
-                       in_attribute_relationship=None,
-                       out_features_name=None,
-                       out_sr=3857):
+                     in_target_features=None,
+                     in_target_features_layer=None,
+                     in_join_features=None,
+                     in_join_features_layer=None,
+                     in_join_operation="Summarize Join Features",
+                     in_summary_stats=None,
+                     in_spatial_relationship=None,
+                     in_spatial_distance=None,
+                     in_temporal_relationship=None,
+                     in_temporal_distance=None,
+                     in_attribute_relationship=None,
+                     out_features_name=None,
+                     out_sr=3857):
         """
 
 
@@ -1539,7 +1541,7 @@ class GeoAnalyticsTools(_AsyncService):
         print(job_values)
         if out_features_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1623,7 +1625,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1631,14 +1633,14 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def point_density(self,
-                       in_points=None,
-                       in_points_layer=None,
-                       in_population_field=None,
-                       in_cell_size=None,
-                       in_neighborhood="Circle",
-                       in_neighborhood_size=None,
-                       out_features_name=None,
-                       out_sr=None):
+                      in_points=None,
+                      in_points_layer=None,
+                      in_population_field=None,
+                      in_cell_size=None,
+                      in_neighborhood="Circle",
+                      in_neighborhood_size=None,
+                      out_features_name=None,
+                      out_sr=None):
         """
 
 
@@ -1694,7 +1696,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1702,10 +1704,10 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def create_raster(self,
-                       in_features=None,
-                       in_features_layer=None,
-                       in_cell_size=None,
-                       out_sr=None):
+                      in_features=None,
+                      in_features_layer=None,
+                      in_cell_size=None,
+                      out_sr=None):
         """
 
 
@@ -1745,7 +1747,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_crf']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1753,12 +1755,12 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def extract_data(self,
-                       in_features=None,
-                       in_features_layer=None,
-                       in_start_date=None,
-                       in_end_date=None,
-                       out_features_name=None,
-                       out_sr=None):
+                     in_features=None,
+                     in_features_layer=None,
+                     in_start_date=None,
+                     in_end_date=None,
+                     out_features_name=None,
+                     out_sr=None):
         """
 
 
@@ -1806,7 +1808,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1814,16 +1816,16 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def reconstruct_tracks(self,
-                       in_features=None,
-                       in_features_layer=None,
-                       in_track_fields=None,
-                       in_method="PLANAR",
-                       in_buffer_distance_field=None,
-                       in_summary_stats=None,
-                       in_distance_split=None,
-                       in_duration_split=None,
-                       out_features=None,
-                       out_sr=None):
+                           in_features=None,
+                           in_features_layer=None,
+                           in_track_fields=None,
+                           in_method="PLANAR",
+                           in_buffer_distance_field=None,
+                           in_summary_stats=None,
+                           in_distance_split=None,
+                           in_duration_split=None,
+                           out_features=None,
+                           out_sr=None):
         """
 
 
@@ -1887,7 +1889,7 @@ class GeoAnalyticsTools(_AsyncService):
         print(job_values)
         if out_features is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1911,11 +1913,11 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def create_space_time_cube(self,
-                       in_features=None,
-                       in_features_layer=None,
-                       in_bin_size=None,
-                       in_slice_size=None,
-                       out_sr=None):
+                               in_features=None,
+                               in_features_layer=None,
+                               in_bin_size=None,
+                               in_slice_size=None,
+                               out_sr=None):
         """
 
 
@@ -1959,7 +1961,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_cube']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -1967,9 +1969,9 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def sandbox(self,
-                       command=None,
-                       arg=None,
-                       out_sr=None):
+                command=None,
+                arg=None,
+                out_sr=None):
         """
 
 
@@ -1997,19 +1999,19 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def create_panel_data(self,
-                       in_target_features=None,
-                       in_target_features_layer=None,
-                       in_join_features=None,
-                       in_join_features_layer=None,
-                       in_summary_stats=None,
-                       in_spatial_relationship=None,
-                       in_spatial_distance=None,
-                       in_attribute_relationship=None,
-                       in_panel_timestep_interval=None,
-                       in_panel_timestep_repeat=None,
-                       in_panel_reference_time=None,
-                       out_features_name=None,
-                       out_sr=None):
+                          in_target_features=None,
+                          in_target_features_layer=None,
+                          in_join_features=None,
+                          in_join_features_layer=None,
+                          in_summary_stats=None,
+                          in_spatial_relationship=None,
+                          in_spatial_distance=None,
+                          in_attribute_relationship=None,
+                          in_panel_timestep_interval=None,
+                          in_panel_timestep_repeat=None,
+                          in_panel_reference_time=None,
+                          out_features_name=None,
+                          out_sr=None):
         """
 
 
@@ -2085,7 +2087,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2093,8 +2095,8 @@ class GeoAnalyticsTools(_AsyncService):
 
 
     def generate_manifest(self,
-                       in_datastore_folder=None,
-                       out_sr=None):
+                          in_datastore_folder=None,
+                          out_sr=None):
         """
 
 
@@ -2151,15 +2153,15 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def aggregate_points(self,
-                       point_layer,
-                       polygon_layer,
-                       keep_boundaries_with_no_points=True,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_points=False,
-                       output_name=None,
-                       context=None):
+                         point_layer,
+                         polygon_layer,
+                         keep_boundaries_with_no_points=True,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_points=False,
+                         output_name=None,
+                         context=None):
         """
         Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
 
@@ -2219,7 +2221,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['aggregatedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2290,7 +2292,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['hotSpotsResultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2374,7 +2376,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['bufferLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2382,15 +2384,15 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def create_drive_time_areas(self,
-                       input_layer,
-                       break_values=[5, 10, 15],
-                       break_units="Minutes",
-                       travel_mode="Driving",
-                       overlap_policy="Overlap",
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                                input_layer,
+                                break_values=[5, 10, 15],
+                                break_units="Minutes",
+                                travel_mode="Driving",
+                                overlap_policy="Overlap",
+                                time_of_day=None,
+                                time_zone_for_time_of_day="GeoLocal",
+                                output_name=None,
+                                context=None):
         """
 
 
@@ -2449,7 +2451,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['driveTimeAreasLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2457,11 +2459,11 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def dissolve_boundaries(self,
-                       input_layer,
-                       dissolve_fields=[],
-                       summary_fields=[],
-                       output_name=None,
-                       context=None):
+                            input_layer,
+                            dissolve_fields=[],
+                            summary_fields=[],
+                            output_name=None,
+                            context=None):
         """
         Dissolve features based on specified fields.
 
@@ -2504,7 +2506,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['dissolvedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2512,11 +2514,11 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def merge_layers(self,
-                       input_layer,
-                       merge_layer,
-                       merging_attributes=[],
-                       output_name=None,
-                       context=None):
+                     input_layer,
+                     merge_layer,
+                     merging_attributes=[],
+                     output_name=None,
+                     context=None):
         """
         Combines two inputs of the same feature data type into a new output.
 
@@ -2558,7 +2560,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['mergedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2566,16 +2568,16 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def summarize_within(self,
-                       sum_within_layer,
-                       summary_layer,
-                       sum_shape=True,
-                       shape_units=None,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_shape=False,
-                       output_name=None,
-                       context=None):
+                         sum_within_layer,
+                         summary_layer,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None):
         """
         The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
 
@@ -2639,7 +2641,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2651,15 +2653,15 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def enrich_layer(self,
-                       input_layer,
-                       data_collections=[],
-                       analysis_variables=[],
-                       country=None,
-                       buffer_type=None,
-                       distance=None,
-                       units=None,
-                       output_name=None,
-                       context=None):
+                     input_layer,
+                     data_collections=[],
+                     analysis_variables=[],
+                     country=None,
+                     buffer_type=None,
+                     distance=None,
+                     units=None,
+                     output_name=None,
+                     context=None):
         """
         The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
@@ -2718,7 +2720,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['enrichedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2787,7 +2789,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outputLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2795,12 +2797,12 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def extract_data(self,
-                       input_layers=[],
-                       extent=None,
-                       clip=False,
-                       data_format=None,
-                       output_name=None,
-                       context=None):
+                     input_layers=[],
+                     extent=None,
+                     clip=False,
+                     data_format=None,
+                     output_name=None,
+                     context=None):
         """
         Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
 
@@ -2847,7 +2849,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['contentID']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2855,10 +2857,10 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def find_existing_locations(self,
-                       input_layers=[],
-                       expressions=[],
-                       output_name=None,
-                       context=None):
+                                input_layers=[],
+                                expressions=[],
+                                output_name=None,
+                                context=None):
         """
         The Find Existing Locations task selects features in the input layer that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
@@ -2896,7 +2898,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2904,10 +2906,10 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def derive_new_locations(self,
-                       input_layers=[],
-                       expressions=[],
-                       output_name=None,
-                       context=None):
+                             input_layers=[],
+                             expressions=[],
+                             output_name=None,
+                             context=None):
         """
         The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features.In both tasks, the attribute expression  where and the spatial relationships within and contains return the same result. This is because these relationships return entire features.When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
 
@@ -2945,7 +2947,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -2953,10 +2955,10 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def field_calculator(self,
-                       input_layer,
-                       expressions,
-                       output_name=None,
-                       context=None):
+                         input_layer,
+                         expressions,
+                         output_name=None,
+                         context=None):
         """
         Calculates existing fields or creates and calculates new fields.
 
@@ -2994,7 +2996,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3002,17 +3004,17 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def interpolate_points(self,
-                       input_layer,
-                       field,
-                       interpolate_option="5",
-                       output_prediction_error=False,
-                       classification_type="GeometricInterval",
-                       num_classes=10,
-                       class_breaks=[],
-                       bounding_polygon_layer=None,
-                       predict_at_point_layer=None,
-                       output_name=None,
-                       context=None):
+                           input_layer,
+                           field,
+                           interpolate_option="5",
+                           output_prediction_error=False,
+                           classification_type="GeometricInterval",
+                           num_classes=10,
+                           class_breaks=[],
+                           bounding_polygon_layer=None,
+                           predict_at_point_layer=None,
+                           output_name=None,
+                           context=None):
         """
         The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
 
@@ -3081,7 +3083,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3095,18 +3097,18 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def calculate_density(self,
-                       input_layer,
-                       field=None,
-                       cell_size=None,
-                       cell_size_units="Meters",
-                       radius=None,
-                       radius_units=None,
-                       bounding_polygon_layer=None,
-                       area_units=None,
-                       classification_type="EqualInterval",
-                       num_classes=10,
-                       output_name=None,
-                       context=None):
+                          input_layer,
+                          field=None,
+                          cell_size=None,
+                          cell_size_units="Meters",
+                          radius=None,
+                          radius_units=None,
+                          bounding_polygon_layer=None,
+                          area_units=None,
+                          classification_type="EqualInterval",
+                          num_classes=10,
+                          output_name=None,
+                          context=None):
         """
         The Calculate Density task creates a density map from point or line features by spreading known quantities of some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas classified from least dense to most dense.
 
@@ -3177,7 +3179,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3185,22 +3187,22 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def summarize_nearby(self,
-                       sum_nearby_layer,
-                       summary_layer,
-                       near_type="StraightLine",
-                       distances=[],
-                       units="Meters",
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       return_boundaries=True,
-                       sum_shape=True,
-                       shape_units=None,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_shape=False,
-                       output_name=None,
-                       context=None):
+                         sum_nearby_layer,
+                         summary_layer,
+                         near_type="StraightLine",
+                         distances=[],
+                         units="Meters",
+                         time_of_day=None,
+                         time_zone_for_time_of_day="GeoLocal",
+                         return_boundaries=True,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None):
         """
         The SummarizeNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate the total population within five minutes of driving time of a proposed new store location.Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of store accessibility.
 
@@ -3287,7 +3289,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3299,17 +3301,17 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def create_viewshed(self,
-                       input_layer,
-                       dem_resolution="Finest",
-                       maximum_distance=None,
-                       max_distance_units="Meters",
-                       observer_height=None,
-                       observer_height_units="Meters",
-                       target_height=None,
-                       target_height_units="Meters",
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                        input_layer,
+                        dem_resolution="Finest",
+                        maximum_distance=None,
+                        max_distance_units="Meters",
+                        observer_height=None,
+                        observer_height_units="Meters",
+                        target_height=None,
+                        target_height_units="Meters",
+                        generalize=True,
+                        output_name=None,
+                        context=None):
         """
 
 
@@ -3376,7 +3378,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['viewshedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3384,13 +3386,13 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def find_similar_locations(self,
-                       input_layer,
-                       search_layer,
-                       analysis_fields=[],
-                       input_query=None,
-                       number_of_results=0,
-                       output_name=None,
-                       context=None):
+                               input_layer,
+                               search_layer,
+                               analysis_fields=[],
+                               input_query=None,
+                               number_of_results=0,
+                               output_name=None,
+                               context=None):
         """
 
 
@@ -3441,7 +3443,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['similarResultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3453,13 +3455,13 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def create_watersheds(self,
-                       input_layer,
-                       search_distance=None,
-                       search_units="Meters",
-                       source_database="FINEST",
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                          input_layer,
+                          search_distance=None,
+                          search_units="Meters",
+                          source_database="FINEST",
+                          generalize=True,
+                          output_name=None,
+                          context=None):
         """
 
 
@@ -3512,7 +3514,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['snapPourPtsLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3524,16 +3526,16 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def find_nearest(self,
-                       analysis_layer,
-                       near_layer,
-                       measurement_type="StraightLine",
-                       max_count=100,
-                       search_cutoff=2147483647,
-                       search_cutoff_units=None,
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                     analysis_layer,
+                     near_layer,
+                     measurement_type="StraightLine",
+                     max_count=100,
+                     search_cutoff=2147483647,
+                     search_cutoff_units=None,
+                     time_of_day=None,
+                     time_zone_for_time_of_day="GeoLocal",
+                     output_name=None,
+                     context=None):
         """
         Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
 
@@ -3596,7 +3598,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['nearestLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3608,20 +3610,20 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def plan_routes(self,
-                       stops_layer,
-                       route_count,
-                       max_stops_per_route,
-                       route_start_time,
-                       start_layer,
-                       start_layer_route_id_field=None,
-                       return_to_start=True,
-                       end_layer=None,
-                       end_layer_route_id_field=None,
-                       travel_mode="Driving",
-                       stop_service_time=0,
-                       max_route_time=525600,
-                       output_name=None,
-                       context=None):
+                    stops_layer,
+                    route_count,
+                    max_stops_per_route,
+                    route_start_time,
+                    start_layer,
+                    start_layer_route_id_field=None,
+                    return_to_start=True,
+                    end_layer=None,
+                    end_layer_route_id_field=None,
+                    travel_mode="Driving",
+                    stop_service_time=0,
+                    max_route_time=525600,
+                    output_name=None,
+                    context=None):
         """
 
 
@@ -3699,7 +3701,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3713,16 +3715,16 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def trace_downstream(self,
-                       input_layer,
-                       split_distance=None,
-                       split_units="Kilometers",
-                       max_distance=None,
-                       max_distance_units="Kilometers",
-                       bounding_polygon_layer=None,
-                       source_database=None,
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                         input_layer,
+                         split_distance=None,
+                         split_units="Kilometers",
+                         max_distance=None,
+                         max_distance_units="Kilometers",
+                         bounding_polygon_layer=None,
+                         source_database=None,
+                         generalize=True,
+                         output_name=None,
+                         context=None):
         """
 
 
@@ -3785,7 +3787,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['traceLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3793,15 +3795,15 @@ class SpatialAnalysisTools(_AsyncService):
 
 
     def connect_origins_to_destinations(self,
-                       origins_layer,
-                       destinations_layer,
-                       measurement_type="DrivingTime",
-                       origins_layer_route_id_field=None,
-                       destinations_layer_route_id_field=None,
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                                        origins_layer,
+                                        destinations_layer,
+                                        measurement_type="DrivingTime",
+                                        origins_layer_route_id_field=None,
+                                        destinations_layer_route_id_field=None,
+                                        time_of_day=None,
+                                        time_zone_for_time_of_day="GeoLocal",
+                                        output_name=None,
+                                        context=None):
         """
         Calculates routes between pairs of points.
 
@@ -3861,7 +3863,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -3893,12 +3895,12 @@ class RasterAnalysisTools(_AsyncService):
 
 
     def generate(self,
-                       raster_function,
-                       output_raster,
-                       raster_arguments=None,
-                       raster_properties=None,
-                       context=None,
-                       num_instances=None):
+                 raster_function,
+                 output_raster,
+                 raster_arguments=None,
+                 raster_properties=None,
+                 context=None,
+                 num_instances=None):
         """
 
 
@@ -3940,7 +3942,7 @@ class RasterAnalysisTools(_AsyncService):
             except:
                 output_raster = self._gis.content.create_service(output_raster, "Service created by Copy Raster tool")
 
-        if isinstance(raster_arguments, arcgis.gis.Item):
+        if isinstance(raster_arguments, Item):
             if raster_arguments.type.lower() == 'image service':
                 raster_arguments =  { "Raster":{"itemId": raster_arguments.itemid } }
             else:
@@ -3968,7 +3970,7 @@ class RasterAnalysisTools(_AsyncService):
         print(job_values)
         if output_raster is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             item.share(True)
             return item
         else:
@@ -3977,12 +3979,12 @@ class RasterAnalysisTools(_AsyncService):
 
 
     def rasterize(self,
-                       input_table,
-                       output_raster,
-                       raster_info,
-                       value_field=None,
-                       context=None,
-                       num_instances=None):
+                  input_table,
+                  output_raster,
+                  raster_info,
+                  value_field=None,
+                  context=None,
+                  num_instances=None):
         """
 
 
@@ -4027,7 +4029,7 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -4035,14 +4037,14 @@ class RasterAnalysisTools(_AsyncService):
 
 
     def interpolate(self,
-                       input_table,
-                       output_raster,
-                       raster_info,
-                       value_field=None,
-                       interpolation_method="Nearest",
-                       radius=None,
-                       context=None,
-                       num_instances=None):
+                    input_table,
+                    output_raster,
+                    raster_info,
+                    value_field=None,
+                    interpolation_method="Nearest",
+                    radius=None,
+                    context=None,
+                    num_instances=None):
         """
 
 
@@ -4095,7 +4097,7 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = Item(self._portal, itemid)
             return item
         else:
             # Feature Collection
@@ -4103,13 +4105,13 @@ class RasterAnalysisTools(_AsyncService):
 
 
     def copy(self,
-                       input_raster,
-                       output_raster=None,
-                       output_cellsize=None,
-                       resampling_method="NEAREST",
-                       clipping_geometry=None,
-                       context=None,
-                       num_instances=None):
+             input_raster,
+             output_raster=None,
+             output_cellsize=None,
+             resampling_method="NEAREST",
+             clipping_geometry=None,
+             context=None,
+             num_instances=None):
         """
 
 
@@ -4177,6 +4179,6 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
 
         itemid = job_values['outRaster']['itemId']
-        item = arcgis.gis.Item(self._portal, itemid)
+        item = Item(self._portal, itemid)
         item.share(True)
         return item

@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import json
 from pandas.io.json import json_normalize
 import collections
-import arcgis.gis
+from ._impl._contentmanager import Item
 
 class ImageLayer(collections.OrderedDict):
     "represents an image service layer"
@@ -226,7 +226,7 @@ class FeatureCollection(collections.OrderedDict):
         """
         Constructs a feature collection given it's data
         """
-        if isinstance(dictdata, arcgis.gis.Item):
+        if isinstance(dictdata, Item):
             fcdict = dictdata.get_data()
             collections.OrderedDict.__init__(self, fcdict)
         else:
