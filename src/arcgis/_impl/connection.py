@@ -190,7 +190,6 @@ class _ArcGISConnection(object):
     proxy_host = None
     proxy_port = None
     token = None
-    ensure_ascii = None
     _referer = None
     _useragent = None
     _parsed_org_url = None
@@ -200,7 +199,7 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def __init__(self, baseurl, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, all_ssl=False, referer=None,
-                 proxy_host=None, proxy_port=None, ensure_ascii=True):
+                 proxy_host=None, proxy_port=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
 
         self.baseurl = baseurl
@@ -210,7 +209,6 @@ class _ArcGISConnection(object):
         self.all_ssl = all_ssl
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
-        self.ensure_ascii = ensure_ascii
         self.token = None
 
         # Setup the referer and user agent
@@ -417,10 +415,6 @@ class _ArcGISConnection(object):
                                            object_pairs_hook=OrderedDict)
                 else:
                     resp_json = json.loads(resp_data)
-
-                # Convert to ascii if directed to do so
-                if self.ensure_ascii and not use_ordered_dict:
-                    resp_json = _unicode_to_ascii(resp_json)
 
                 # Check for errors, and handle the case where the token timed
                 # out during use (and simply needs to be re-generated)
@@ -676,18 +670,11 @@ class _ArcGISConnection(object):
             resp = opener.open(url, data=encoded_postdata.encode())
             resp_data = self._process_response(resp)
 
-        # Parse the response into JSON
-        if _log.isEnabledFor(logging.DEBUG):
-            _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
         #print(resp_data);
         if use_ordered_dict:
             resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
         else:
             resp_json = json.loads(resp_data)
-
-        # Convert to ascii if directed to do so
-        if self.ensure_ascii and not use_ordered_dict:
-            resp_json = _unicode_to_ascii(resp_json)
 
         # Check for errors, and handle the case where the token timed out
         # during use (and simply needs to be re-generated)
@@ -862,13 +849,13 @@ def _unpack_obj(obj, key=None, flatten=False):
 
     return value
 
-def _unicode_to_ascii(data):
-    """ Converts strings and collections of strings from unicode to ascii. """
+def _to_utf8(data):
+    """ Converts strings and collections of strings from unicode to utf-8. """
     if isinstance(data, dict):
-        return {_unicode_to_ascii(key): _unicode_to_ascii(value) \
+        return {_to_utf8(key): _to_utf8(value) \
                 for key, value in data.items()}
     elif isinstance(data, list):
-        return [_unicode_to_ascii(element) for element in data]
+        return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data
     elif isinstance(data, six.text_type):
@@ -877,18 +864,6 @@ def _unicode_to_ascii(data):
         return data
     else:
         return data
-
-def _remove_non_ascii(s):
-    return ''.join(i for i in s if ord(i) < 128)
-
-def _tostr(obj):
-    if not obj:
-        return ''
-    if isinstance(obj, list):
-        return ', '.join(map(_tostr, obj))
-    return str(obj)
-
-
 
 
 # This function is a workaround to deal with what's typically described as a
