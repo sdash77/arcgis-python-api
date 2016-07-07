@@ -30,8 +30,9 @@ See the developer documentation and resources at https://developers.arcgis.com/p
 Install steps for developers:
 
 * Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
-* pip3 install -e . (for using latest source code)
-* python -m arcgis.install (for enabling the map widget for Jupyter notebook)
+* Download or clone this repo. `git clone https://github.com/ArcGIS/geosaurus.git`
+* `pip3 install -e ./src` (for using latest source code)
+* `python -m arcgis.install` (for enabling the map widget for Jupyter notebook)
 
 ### Build the Documentation
 
