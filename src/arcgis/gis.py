@@ -1027,7 +1027,7 @@ class GroupManager(object):
         grouplist = []
         groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, within_org)
         for group in groups:
-            grouplist.append(Group(self._portal, group['id']))
+            grouplist.append(Group(self._portal, group['id'], group))
         return grouplist
 
 def _is_shapefile(data):
