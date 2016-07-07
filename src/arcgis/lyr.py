@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import json
 from pandas.io.json import json_normalize
 import collections
-from ._impl._contentmanager import Item
+from ._impl import *
 
 class ImageLayer(collections.OrderedDict):
     "represents an image service layer"

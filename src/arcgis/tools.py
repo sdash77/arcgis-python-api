@@ -24,7 +24,7 @@ import os
 import string
 import random
 
-from ._impl._contentmanager import Item
+from ._impl._object import Item
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))

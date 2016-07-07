@@ -8,10 +8,10 @@ from __future__ import absolute_import
 from arcgis.lyr import *
 from arcgis.tools import *
 import arcgis._impl.portalpy as portalpy
-from ._impl._usermanager import UserManager
-from ._impl._groupmanager import GroupManager
-from ._impl._contentmanager import ContentManager
-from ._impl._datastore import  DatastoreManager
+from ._impl._managers import UserManager, GroupManager
+from ._impl._managers import ContentManager
+from ._impl._object import Item
+from ._impl._managers import  DatastoreManager
 from ._impl._util import Error, _lazy_property, _tempinput
 # pylint: disable=fixme, line-too-long
 
