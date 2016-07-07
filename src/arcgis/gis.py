@@ -56,7 +56,7 @@ class GIS(object):
     * groups
     * content
     * datastore
-    * tools - including geometry, geocoder, analysis, rasters, geoanalytics
+    * tools - including geometry, geocoders, analysis, rasters, geoanalytics
 
     Additionally, the GIS object has properties and methods to query it's state:
     * properties
@@ -163,7 +163,11 @@ class GIS(object):
         mapwidget = MapView()
         if location is not None:
             if isinstance(location, str):
-                mapwidget.center = self.tools.geocoder.find_best_match(location)
+                for geocoder in self.tools.geocoders:
+                    best_match = geocoder.find_best_match(location)
+                    if best_match:
+                        mapwidget.center = best_match
+                        break
             elif isinstance(location, tuple):
                 mapwidget.center = location
             else:
@@ -625,28 +629,30 @@ class Tools(object):
     Collection of GIS tools. This class holds references to the helper services and tools available
     in the GIS. This class is not created by users directly.
     An instance of this class, called 'tools', is available as a property of the GIS object.
-    Users access the GIS tools, such as the geocoder, spatial analysis tools, geoanalytics, raster
+    Users access the GIS tools, such as the geocoders, spatial analysis tools, geoanalytics, raster
     geoanalysis tools, etc through the gis.tools object
     """
     def __init__(self, gis):
         self._gis = gis
-        self._geocoder = None
+        self._geocoders = None
         self._geometry = None
         self._analysis = None
         self._raster_analysis = None
         self._geoanalytics = None
 
     @property
-    def geocoder(self):
-        """the geocoder, if available and configured"""
-        if self._geocoder is not None:
-            return self._geocoder
+    def geocoders(self):
+        """the geocoders, if available and configured"""
+        if self._geocoders is not None:
+            return self._geocoders
+        self._geocoders = []
         try:
-            geocodesvcurl = self._gis.properties['helperServices']['geocode'][0]['url']
-            self._geocoder = Geocoder(None, geocodesvcurl, self._gis)
-            return self._geocoder
+            geocode_services = self._gis.properties['helperServices']['geocode']
+            for geocode_service in geocode_services:
+                self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
         except KeyError:
-            return None
+            pass
+        return self._geocoders
 
     @property
     def geometry(self):
