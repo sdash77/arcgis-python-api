@@ -1395,13 +1395,16 @@ class Group(dict):
             self.__dict__.update(groupdict)
             dict.update(groupdict)
 
+    def _hydrate(self):
+        groupdict = self._portal.get_group(self.groupid)
+        self._hydrated = True
+        super().update(groupdict)
+        self.__dict__.update(groupdict)
+
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         # return dict.__getitem__(self, name)
         if not self._hydrated:
-            groupdict = self._portal.get_group(self.groupid)
-            self._hydrated = True
-            super().update(groupdict)
-            self.__dict__.update(groupdict)
+            self._hydrate()
         return dict.__getitem__(self, name)
 
 
@@ -1410,10 +1413,7 @@ class Group(dict):
             return dict.__getitem__(self, k)
         except KeyError:
             if not self._hydrated:
-                groupdict = self._portal.get_group(self.groupid)
-                self._hydrated = True
-                super().update(groupdict)
-                self.__dict__.update(groupdict)
+                self._hydrate()
             return dict.__getitem__(self, k)
 
     def __str__(self):
@@ -1684,7 +1684,10 @@ class Group(dict):
         :return:
             a boolean indicating success
         """
-        return self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
+        resp = self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
+        if resp:
+            self._hydrate()
+        return resp
 
     def leave(self):
         """ Removes the logged in user from the specified group.
@@ -1719,13 +1722,16 @@ class User(dict):
 
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
+    def _hydrate(self):
+        userdict = self._portal.get_user(self.username)
+        self._hydrated = True
+        super().update(userdict)
+        self.__dict__.update(userdict)
+
     def __getattr__(self, name): # support user attributes as user.access, user.email, user.role etc
         # return dict.__getitem__(self, name)
         if not self._hydrated:
-            userdict = self._portal.get_user(self.username)
-            self._hydrated = True
-            super().update(userdict)
-            self.__dict__.update(userdict)
+            self._hydrate()
         return dict.__getitem__(self, name)
 
 
@@ -1734,10 +1740,7 @@ class User(dict):
             return dict.__getitem__(self, k)
         except KeyError:
             if not self._hydrated:
-                userdict = self._portal.get_user(self.username)
-                self._hydrated = True
-                super().update(userdict)
-                self.__dict__.update(userdict)
+                self._hydrate()
             return dict.__getitem__(self, k)
 
     def __str__(self):
@@ -1952,7 +1955,10 @@ class User(dict):
             a boolean indicating success
 
         """
-        return self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region)
+        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region)
+        if ret:
+            self._hydrate()
+        return ret
 
     def update_role(self, role):
         """ Updates this user's role to org_user, org_publisher, org_admin
@@ -2113,13 +2119,16 @@ class Item(dict):
             self.__dict__.update(itemdict)
             dict.update(itemdict)
 
+    def _hydrate(self):
+        itemdict = self._portal.get_item(self.itemid)
+        self._hydrated = True
+        super().update(itemdict)
+        self.__dict__.update(itemdict)
+
     def __getattr__(self, name): # support item attributes
         # return dict.__getitem__(self, name)
         if not self._hydrated:
-            itemdict = self._portal.get_item(self.itemid)
-            self._hydrated = True
-            super().update(itemdict)
-            self.__dict__.update(itemdict)
+            self._hydrate()
         return dict.__getitem__(self, name)
 
     def __getitem__(self, k): # support item attributes as dictionary keys on this object
@@ -2127,10 +2136,7 @@ class Item(dict):
             return dict.__getitem__(self, k)
         except KeyError:
             if not self._hydrated:
-                itemdict = self._portal.get_item(self.itemid)
-                self._hydrated = True
-                super().update(itemdict)
-                self.__dict__.update(itemdict)
+                self._hydrate()
             return dict.__getitem__(self, k)
 
     def download(self, dir):
@@ -2467,7 +2473,10 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
+        ret = self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
+        if ret:
+            self._hydrate()
+        return ret
 
     def get_data(self, try_json=True):
         """Returns the data for the item. Returns a dict if try_json is True. To convert this
