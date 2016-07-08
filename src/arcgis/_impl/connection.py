@@ -30,6 +30,7 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
+from ._util import Error
 __version__ = '1.0'
 _log = logging.getLogger(__name__)
 ########################################################################
@@ -202,8 +203,16 @@ class _ArcGISConnection(object):
                  cert_file=None, expiration=60, all_ssl=False, referer=None,
                  proxy_host=None, proxy_port=None, ensure_ascii=True):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
-
-        self.baseurl = baseurl
+        self._is_arcpy = baseurl.lower() == "pro"
+        if self._is_arcpy:
+            try:
+                import arcpy
+                baseurl = arcpy.GetActivePortalURL()
+                self.baseurl = self._validate_url(url=baseurl)
+            except ImportError:
+                raise Error("Could not import arcpy")
+        else:
+            self.baseurl = baseurl
         '''_normalize_url(baseurl)'''
         self.key_file = key_file
         self.cert_file = cert_file
@@ -235,15 +244,48 @@ class _ArcGISConnection(object):
         # Login if credentials were provided
         if username and password:
             self.login(username, password, expiration)
+        elif self._is_arcpy:
+
+            self.login(username="", password="")
         elif username or password:
             _log.warning('Both username and password required for login')
+    #----------------------------------------------------------------------
+    def _validate_url(self, url):
+        """ensures the base url has the /sharing/rest"""
+        if self._is_arcpy:
+            if not url[-1] == '/':
+                url += '/'
+            if url.lower().find("www.arcgis.com") > -1:
+                urlscheme = urlparse(url).scheme
+                return "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
+            elif url.lower().endswith("sharing/"):
+                return url + 'rest/'
+            elif url.lower().endswith("sharing/rest/"):
+                return url
+            else:
+                return url + 'sharing/rest/'
+        return url
     #----------------------------------------------------------------------
     def generate_token(self, username, password, expiration=60):
         """ Generates and returns a new token, but doesn't re-login. """
         postdata = { 'username': username, 'password': password,
                      'client': 'referer', 'referer': self._referer,
                      'expiration': expiration, 'f': 'json' }
-        if self.baseurl.endswith('/'):
+        if self._is_arcpy:
+            try:
+                import arcpy
+                resp = arcpy.GetSigninToken()
+                if 'referer' in resp:
+                    self._referer = resp['referer']
+                if 'token' in resp:
+                    return resp['token']
+                else:
+                    raise arcpy.ExecuteError("Could not login using Pro Authentication")
+            except ImportError as ie:
+                raise Error("Could not import arcpy")
+            except:
+                raise arcpy.ExecuteError("Could not login using Pro Authentication")
+        elif self.baseurl.endswith('/'):
             resp = self.post('generateToken', postdata, ssl=True)
         else:
             resp = self.post('/generateToken', postdata, ssl=True)
