@@ -76,14 +76,24 @@ class Portal(object):
         portal.delete_user('amy.user', True, 'bob.user')
 
     """
-
-
+    _is_arcpy = False
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir()):
         """ The Portal constructor. Requires URL and optionally username/password."""
+        self._is_arcpy = url.lower() == "pro"
+        if self._is_arcpy:
+            try:
+                import arcpy
+                url = arcpy.GetActivePortalURL()
+                self.url = url
+            except ImportError:
+                raise ImportError("Could not import arcpy")
+            except:
+                raise ValueError("Could not use Pro authentication.")
+        else:
+            self.url = url
 
-        self.url = url
         if url:
             normalized_url = self.url
             '''_normalize_url(self.url)'''
@@ -119,10 +129,14 @@ class Portal(object):
             self.con = connection
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
-
-            self.con = _ArcGISConnection(self.resturl, username, password,
+            if self._is_arcpy:
+                self.con = _ArcGISConnection("pro", "", "",
                                          key_file, cert_file, expiration, True,
                                          referer, proxy_host, proxy_port)
+            else:
+                self.con = _ArcGISConnection(self.resturl, username, password,
+                                             key_file, cert_file, expiration, True,
+                                             referer, proxy_host, proxy_port)
 
 
         self.get_version(True)
