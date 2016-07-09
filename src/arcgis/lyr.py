@@ -3,6 +3,7 @@ The arcgis.lyr module is used for accessing layers exposed from ArcGIS Online
 or Portal.
 """
 from __future__ import absolute_import
+import arcgis.gis
 import json
 from pandas.io.json import json_normalize
 import collections
@@ -226,7 +227,7 @@ class FeatureCollection(collections.OrderedDict):
         """
         Constructs a feature collection given it's data
         """
-        if isinstance(dictdata, Item):
+        if isinstance(dictdata, arcgis.gis.Item):
             fcdict = dictdata.get_data()
             collections.OrderedDict.__init__(self, fcdict)
         else:
