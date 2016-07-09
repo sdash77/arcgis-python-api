@@ -10,6 +10,7 @@ $RECYCLE.BIN/
 
 *.pyc
 src/geosaurus/__pycache__/
+src/arcgis.egg-info/
 .vs/
 *.pyproj
 *.sln
