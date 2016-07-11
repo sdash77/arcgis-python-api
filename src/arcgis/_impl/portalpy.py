@@ -2,13 +2,11 @@
 
 
 from __future__ import absolute_import
-
 import copy
 import imghdr
 import logging
 import os
 import tempfile
-import logging
 from .connection import _ArcGISConnection, _normalize_url
 from .connection import _is_http_url
 from .connection import _parse_hostname, _unpack
@@ -80,7 +78,8 @@ class Portal(object):
     _is_arcpy = False
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
-                 proxy_port=None, connection=None, workdir=tempfile.gettempdir()):
+                 proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
+                 tokenurl=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
         self._is_arcpy = url.lower() == "pro"
         if self._is_arcpy:
@@ -131,15 +130,29 @@ class Portal(object):
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
             if self._is_arcpy:
-                self.con = _ArcGISConnection("pro", "", "",
-                                         key_file, cert_file, expiration, True,
-                                         referer, proxy_host, proxy_port)
+                self.con = _ArcGISConnection(baseurl="pro",
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port)
             else:
-                self.con = _ArcGISConnection(self.resturl, username, password,
-                                             key_file, cert_file, expiration, True,
-                                             referer, proxy_host, proxy_port)
-
-
+                self.con = _ArcGISConnection(baseurl=self.resturl,
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port)
         self.get_version(True)
         self.get_properties(True)
 

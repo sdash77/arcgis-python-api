@@ -137,6 +137,13 @@ class GIS(object):
         """
         return self._get_properties()
 
+    @property
+    def logged_in_user(self):
+        """returns the logged in username"""
+        if self._username is None:
+            return self.properties['user']['username']
+        return self._username
+
     def __exit__(self, typ, value, traceback):
         self._portal.logout()
 

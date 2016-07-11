@@ -189,7 +189,6 @@ class _ArcGISConnection(object):
     proxy_host = None
     proxy_port = None
     _token = None
-    ensure_ascii = None
     _product = None
     _referer = None
     _useragent = None
@@ -206,10 +205,19 @@ class _ArcGISConnection(object):
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
-                 proxy_host=None, proxy_port=None, ensure_ascii=True,
+                 proxy_host=None, proxy_port=None,
                  connection=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
-        self.baseurl = baseurl
+        self._is_arcpy = baseurl.lower() == "pro"
+        if self._is_arcpy:
+            try:
+                import arcpy
+                baseurl = arcpy.GetActivePortalURL()
+                self.baseurl = self._validate_url(url=baseurl)
+            except ImportError:
+                raise Error("Could not import arcpy")
+        else:
+            self.baseurl = baseurl
         self._tokenurl = tokenurl
         '''_normalize_url(baseurl)'''
         self._product = self._check_product()
@@ -218,7 +226,6 @@ class _ArcGISConnection(object):
         self.all_ssl = all_ssl
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
-        self.ensure_ascii = ensure_ascii
         self.token = None
         self._server_token = None
         self._connection = connection # second connection
@@ -245,8 +252,26 @@ class _ArcGISConnection(object):
         # Login if credentials were provided
         if username and password:
             self.login(username, password, expiration)
+        elif self._is_arcpy:
+            self.login(username="", password="")
         elif username or password:
             _log.warning('Both username and password required for login')
+    #----------------------------------------------------------------------
+    def _validate_url(self, url):
+        """ensures the base url has the /sharing/rest"""
+        if self._is_arcpy:
+            if not url[-1] == '/':
+                url += '/'
+            if url.lower().find("www.arcgis.com") > -1:
+                urlscheme = urlparse(url).scheme
+                return "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
+            elif url.lower().endswith("sharing/"):
+                return url + 'rest/'
+            elif url.lower().endswith("sharing/rest/"):
+                return url
+            else:
+                return url + 'sharing/rest/'
+        return url
     #----------------------------------------------------------------------
     @property
     def product(self):
@@ -301,6 +326,22 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def generate_token(self, username, password, expiration=60):
         """ Generates and returns a new token, but doesn't re-login. """
+        if self._is_arcpy and \
+           self.product in ("PORTAL", "AGO"):
+            try:
+                import arcpy
+                arcpy.mapping.Layer
+                resp = arcpy.GetSigninToken()
+                if 'referer' in resp:
+                    self._referer = resp['referer']
+                if 'token' in resp:
+                    return resp['token']
+                else:
+                    raise arcpy.ExecuteError("Could not login using Pro Authentication")
+            except ImportError as ie:
+                raise Error("Could not import arcpy")
+            except:
+                raise arcpy.ExecuteError("Could not login using Pro Authentication")
         if self.product == "SERVER":
             postdata = { 'username': username,
                          'password': password,
@@ -349,7 +390,8 @@ class _ArcGISConnection(object):
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
         try:
-            newtoken = self.generate_token(username, password, expiration)
+            newtoken = self.generate_token(username,
+                                           password, expiration)
             if newtoken:
                 self._token = newtoken
                 self._username = username
@@ -555,10 +597,6 @@ class _ArcGISConnection(object):
                                            object_pairs_hook=OrderedDict)
                 else:
                     resp_json = json.loads(resp_data)
-
-                # Convert to ascii if directed to do so
-                if self.ensure_ascii and not use_ordered_dict:
-                    resp_json = _unicode_to_ascii(resp_json)
 
                 # Check for errors, and handle the case where the token timed
                 # out during use (and simply needs to be re-generated)
@@ -822,9 +860,6 @@ class _ArcGISConnection(object):
         else:
             resp_json = json.loads(resp_data)
 
-        # Convert to ascii if directed to do so
-        if self.ensure_ascii and not use_ordered_dict:
-            resp_json = _unicode_to_ascii(resp_json)
 
         # Check for errors, and handle the case where the token timed out
         # during use (and simply needs to be re-generated)
