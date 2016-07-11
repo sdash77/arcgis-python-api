@@ -15,7 +15,7 @@ html, body, #map {
         margin:0;
         padding:0;
 }
-      
+
       #search {
         display: block;
         position: absolute;
@@ -51,7 +51,7 @@ html, body, #map {
 
 .item_right {
     float: none; /* not needed, just for clarification */
-    
+
     /* the next props are meant to keep this block independent from the other floated one */
     width: auto;
     overflow: hidden;
