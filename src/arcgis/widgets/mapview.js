@@ -191,14 +191,31 @@ define('mapview', [
      "esri/geometry/webMercatorUtils",
      "esri/arcgis/utils",
      "dojo/domReady!"
-   ], function( //widget, manager,
-		widgets,
-		Map, LayerSwipe, Graphic, TimeExtent, Extent, InfoTemplate,
-                Draw, KMLLayer, RasterFunction, ArcGISImageServiceLayer,
-                ImageServiceParameters,
-                Polyline, Polygon, Point, Multipoint, FeatureLayer,
-                smartMapping, SimpleFillSymbol, SimpleLineSymbol, HeatmapRenderer,
-                PictureMarkerSymbol, webMercatorUtils, arcgisUtils){
+   ], function(
+     widgets,
+     Map,
+     LayerSwipe,
+     Graphic,
+     TimeExtent,
+     Extent,
+     InfoTemplate,
+     Draw,
+     KMLLayer,
+     RasterFunction,
+     ArcGISImageServiceLayer,
+     ImageServiceParameters,
+     Polyline,
+     Polygon,
+     Point,
+     Multipoint,
+     FeatureLayer,
+     smartMapping,
+     SimpleFillSymbol,
+     SimpleLineSymbol,
+     HeatmapRenderer,
+     PictureMarkerSymbol,
+     webMercatorUtils,
+     arcgisUtils){
 
     var map, toolbar;
     var MapView = widgets.DOMWidgetView.extend({
