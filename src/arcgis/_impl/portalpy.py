@@ -10,8 +10,9 @@ import os
 import tempfile
 import logging
 from .connection import _ArcGISConnection, _normalize_url
-from .connection import _is_http_url, _to_utf8
+from .connection import _is_http_url
 from .connection import _parse_hostname, _unpack
+from ._util import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
 

@@ -64,3 +64,18 @@ def rot13(s):
     # Return transformation.
     return result
 
+def _to_utf8(data):
+    """ Converts strings and collections of strings from unicode to utf-8. """
+    if isinstance(data, dict):
+        return {_to_utf8(key): _to_utf8(value) \
+                for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_to_utf8(element) for element in data]
+    elif isinstance(data, str):
+        return data
+    elif isinstance(data, six.text_type):
+        return data.encode('utf-8')
+    elif isinstance(data, (float, six.integer_types)):
+        return data
+    else:
+        return data

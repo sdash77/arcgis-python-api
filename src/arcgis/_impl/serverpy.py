@@ -2,13 +2,14 @@ from __future__ import absolute_import
 import json
 import tempfile
 from six.moves.urllib_parse import urlparse
-from .connection2 import _ArcGISConnection
-from . import server
-
+from .connection import _ArcGISConnection
+from .server.ags.catalog import Catalog
+from .server.manage.administration import AGSAdministration
 class Server(object):
     """
     Controls and managers ArcGIS Server
     """
+    _portal_connection = None
     _username = None
     _password = None
     _url = None
@@ -32,9 +33,11 @@ class Server(object):
                  cert_file=None, expiration=60,
                  referer=None, proxy_host=None,
                  proxy_port=None, connection=None,
+                 portal_connection=None,
                  workdir=tempfile.gettempdir()):
         """initializer"""
-        self._url = self._validate_url(url)
+        self._url = url
+        self._validate_url(url)
         self._tokenurl = tokenurl
         self._username = username
         self._password = password
@@ -46,6 +49,7 @@ class Server(object):
         self._proxy_port = proxy_port
         self._connection = connection
         self._workdir = workdir
+        self._portal_connection = portal_connection
         if connection is None:
             self._connection = _ArcGISConnection(baseurl=self._url,
                                                  tokenurl=tokenurl,
@@ -57,7 +61,10 @@ class Server(object):
                                                  all_ssl=True,
                                                  referer=referer,
                                                  proxy_host=proxy_host,
-                                                 proxy_port=proxy_port)
+                                                 proxy_port=proxy_port,
+                                                 connection=portal_connection)
+        else:
+            self._connection = connection
         self.site_info
     #----------------------------------------------------------------------
     @property
@@ -67,28 +74,26 @@ class Server(object):
     def _validate_url(self, url):
         """"""
         parsed = urlparse(url)
-        scheme = url.scheme
-        netloc = url.netloc
+        scheme = parsed.scheme
+        netloc = parsed.netloc
         if len(parsed.path) > 0:
             path = parsed.path[1:].split("/")[0]
         else:
             path = ""
         if len(path) > 0:
-            self._admin_url = "{scheme}://{netloc}/{path}/rest".format(scheme=scheme,
+            self._catalog_url = "{scheme}://{netloc}/{path}/rest".format(scheme=scheme,
                                                                             netloc=netloc,
                                                                             path=path)
-            self._catalog_url = "{scheme}://{netloc}/{path}/admin".format(scheme=scheme,
+            self._admin_url = "{scheme}://{netloc}/{path}/admin".format(scheme=scheme,
                                                                             netloc=netloc,
                                                                             path=path)
         else:
-            self._admin_url = "{scheme}://{netloc}/{path}/rest".format(scheme=scheme,
+            self._catalog_url = "{scheme}://{netloc}/{path}/rest".format(scheme=scheme,
                                                                        netloc=netloc,
                                                                        path="arcgis")
-            self._catalog_url = "{scheme}://{netloc}/{path}/admin".format(scheme=scheme,
+            self._admin_url = "{scheme}://{netloc}/{path}/admin".format(scheme=scheme,
                                                                           netloc=netloc,
                                                                           path="arcgis")
-
-        return url
     #----------------------------------------------------------------------
     @property
     def site_info(self):
@@ -110,7 +115,8 @@ class Server(object):
                                                  all_ssl=True,
                                                  referer=self._referer,
                                                  proxy_host=self._proxy_host,
-                                                 proxy_port=self._proxy_port)
+                                                 proxy_port=self._proxy_port,
+                                                 connection=self._portal_connection)
         return self._connection
     #----------------------------------------------------------------------
     def logout(self):
@@ -118,8 +124,13 @@ class Server(object):
         self._connection = None
     @property
     def catalog(self):
-        return
-    #----------------------------------------------------------------------
+        """Represents the User View of the Server"""
+        return Catalog(url=self._catalog_url,
+                       connection=self._connection,
+                       initialize=False)
+    #---------- ------------------------------------------------------------
     @property
     def administration(self):
-        return
+        """Allows an administrator to manage and control services on a given site."""
+        return AGSAdministration(url=self._admin_url,
+                                 connection=self._connection)

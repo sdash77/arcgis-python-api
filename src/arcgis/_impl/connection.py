@@ -11,7 +11,6 @@ import zlib
 import shutil
 import logging
 import mimetypes
-import collections
 import unicodedata
 try:
     #PY2
@@ -30,7 +29,6 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
-from ._util import Error
 __version__ = '1.0'
 _log = logging.getLogger(__name__)
 ########################################################################
@@ -181,7 +179,7 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             key_file=self.key,
                                             cert_file=self.cert,
                                             timeout=timeout)
-
+########################################################################
 class _ArcGISConnection(object):
     """ A class users to manage connection to ArcGIS services (Portal and Server). """
     baseurl = None
@@ -190,35 +188,40 @@ class _ArcGISConnection(object):
     all_ssl = None
     proxy_host = None
     proxy_port = None
-    token = None
+    _token = None
+    ensure_ascii = None
+    _product = None
     _referer = None
     _useragent = None
     _parsed_org_url = None
     _username = None
     _password = None
     _auth = None
+    _tokenurl = None
+    _token = None
+    _server_token = None
+    _connection = None
+    _portal_connection = None
     #----------------------------------------------------------------------
-    def __init__(self, baseurl, username=None, password=None, key_file=None,
-                 cert_file=None, expiration=60, all_ssl=False, referer=None,
-                 proxy_host=None, proxy_port=None):
+    def __init__(self, baseurl=None, tokenurl=None, username=None,
+                 password=None, key_file=None, cert_file=None,
+                 expiration=60, all_ssl=False, referer=None,
+                 proxy_host=None, proxy_port=None, ensure_ascii=True,
+                 connection=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
-        self._is_arcpy = baseurl.lower() == "pro"
-        if self._is_arcpy:
-            try:
-                import arcpy
-                baseurl = arcpy.GetActivePortalURL()
-                self.baseurl = self._validate_url(url=baseurl)
-            except ImportError:
-                raise Error("Could not import arcpy")
-        else:
-            self.baseurl = baseurl
+        self.baseurl = baseurl
+        self._tokenurl = tokenurl
         '''_normalize_url(baseurl)'''
+        self._product = self._check_product()
         self.key_file = key_file
         self.cert_file = cert_file
         self.all_ssl = all_ssl
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
+        self.ensure_ascii = ensure_ascii
         self.token = None
+        self._server_token = None
+        self._connection = connection # second connection
 
         # Setup the referer and user agent
         if not referer:
@@ -242,73 +245,113 @@ class _ArcGISConnection(object):
         # Login if credentials were provided
         if username and password:
             self.login(username, password, expiration)
-        elif self._is_arcpy:
-
-            self.login(username="", password="")
         elif username or password:
             _log.warning('Both username and password required for login')
     #----------------------------------------------------------------------
-    def _validate_url(self, url):
-        """ensures the base url has the /sharing/rest"""
-        if self._is_arcpy:
-            if not url[-1] == '/':
-                url += '/'
-            if url.lower().find("www.arcgis.com") > -1:
-                urlscheme = urlparse(url).scheme
-                return "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
-            elif url.lower().endswith("sharing/"):
-                return url + 'rest/'
-            elif url.lower().endswith("sharing/rest/"):
-                return url
-            else:
-                return url + 'sharing/rest/'
-        return url
+    @property
+    def product(self):
+        if self._product is None:
+            self._product = self._check_product()
+        return self._product
+    #----------------------------------------------------------------------
+    @property
+    def connection(self):
+        """gets/sets an additional connection object to get a token from"""
+        return self._connection
+    #----------------------------------------------------------------------
+    @connection.setter
+    def connection(self, value):
+        """gets/sets an additional connection object to get a token from"""
+        if self._connection != value:
+            self._connection = value
+            self._token = None
+            self._server_token = None
+    #----------------------------------------------------------------------
+    @property
+    def token(self):
+        """gets/sets the token"""
+        if self._connection and \
+           self._server_token is None:
+            #create a portalserver token
+            if self._connection.product == "AGO":
+                return self.connection.token
+            return self.generate_portal_server_token(
+                serverUrl=self.baseurl)
+        elif self._connection and self._server_token:
+            return self._server_token
+        elif self._connection is None and \
+             self.product == "FEDERATED_SERVER":
+            self._connection = _ArcGISConnection(baseurl=self.baseurl,
+                                                 connection=self)
+            return self.token
+        elif self._token:
+            return self._token
+        elif self._username and self._password:
+            self.login(username=self._username,
+                       password=self._password,
+                       expiration=60)
+            return self._token
+        return None
+    #----------------------------------------------------------------------
+    @token.setter
+    def token(self, value):
+        """gets/sets the token"""
+        if self._token != value:
+            self._token = value
     #----------------------------------------------------------------------
     def generate_token(self, username, password, expiration=60):
         """ Generates and returns a new token, but doesn't re-login. """
-        postdata = { 'username': username, 'password': password,
-                     'client': 'referer', 'referer': self._referer,
-                     'expiration': expiration, 'f': 'json' }
-        if self._is_arcpy:
-            try:
-                import arcpy
-                resp = arcpy.GetSigninToken()
-                if 'referer' in resp:
-                    self._referer = resp['referer']
-                if 'token' in resp:
-                    return resp['token']
-                else:
-                    raise arcpy.ExecuteError("Could not login using Pro Authentication")
-            except ImportError as ie:
-                raise Error("Could not import arcpy")
-            except:
-                raise arcpy.ExecuteError("Could not login using Pro Authentication")
-        elif self.baseurl.endswith('/'):
-            resp = self.post('generateToken', postdata, ssl=True)
+        if self.product == "SERVER":
+            postdata = { 'username': username,
+                         'password': password,
+                         'client': 'requestip',
+                         'expiration': expiration,
+                         'f': 'json' }
         else:
-            resp = self.post('/generateToken', postdata, ssl=True)
+            postdata = { 'username': username, 'password': password,
+                         'client': 'referer', 'referer': self._referer,
+                         'expiration': expiration, 'f': 'json' }
+        if self._tokenurl is None:
+            if self.baseurl.endswith('/'):
+                resp = self.post('generateToken', postdata,
+                                 ssl=True, add_token=False)
+            else:
+                resp = self.post('/generateToken', postdata,
+                                 ssl=True, add_token=False)
+        else:
+            resp = self.post(path=self._tokenurl, postdata=postdata,
+                             ssl=True, add_token=False)
         if resp:
             return resp.get('token')
     #----------------------------------------------------------------------
-    def _make_boundary(self):
-        """ creates a boundary for multipart post (form post)"""
-        if six.PY2:
-            return '-===============%s==' % uuid.uuid4().get_hex()
-        elif six.PY3:
-            return '-===============%s==' % uuid.uuid4().hex
+    def generate_portal_server_token(self, serverUrl, expiration=1440):
+        """generates a server token using Portal token"""
+
+        postdata = {'serverURL':serverUrl,
+                    'token': self._connection.token,
+                    'expiration':str(expiration),
+                    'f': 'json',
+                    'request':'getToken',
+                    'referer':self._referer}
+        if self._tokenurl is None:
+            if self.baseurl.endswith('/'):
+                resp = self.post('generateToken', postdata,
+                                 ssl=True, add_token=False)
+            else:
+                resp = self.post('/generateToken', postdata,
+                                 ssl=True, add_token=False)
         else:
-            from random import choice
-            digits = "0123456789"
-            letters = "abcdefghijklmnopqrstuvwxyz"
-            return '-===============%s==' % ''.join(choice(letters + digits) \
-                                                    for i in range(15))
+            resp = self.post(path=self._tokenurl, postdata=postdata,
+                             ssl=True, add_token=False)
+        if resp:
+            return resp.get('token')
     #----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
         try:
             newtoken = self.generate_token(username, password, expiration)
             if newtoken:
-                self.token = newtoken
+                self._token = newtoken
                 self._username = username
                 self._password = password
                 self._expiration = expiration
@@ -328,12 +371,13 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def logout(self):
         """ Logs out of the portal. """
-        self.token = None
+        self._token = None
+        self._server_token = None
     #----------------------------------------------------------------------
     @property
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
-        return self.token is not None
+        return self._token is not None or self._server_token is not None
     #----------------------------------------------------------------------
     def _mainType(self, resp):
         """ gets the main type from the response object"""
@@ -343,6 +387,50 @@ class _ArcGISConnection(object):
             return resp.headers.get_content_maintype()
         else:
             return None
+    #----------------------------------------------------------------------
+    def _check_product(self):
+        """
+        determines if the product is portal, arcgis online or arcgis server
+        """
+        baseurl = self.baseurl
+        if baseurl.lower().find("arcgis.com") > -1:
+            return "AGO"
+        elif baseurl.lower().find("/sharing/rest") > -1:
+            return "PORTAL"
+        else:
+            #Brute Force Method
+            root = baseurl.lower().split("/sharing")[0]
+            root = baseurl.lower().split('/rest')[0]
+            parts = ['/info', '/rest/info', '/sharing/rest/info']
+            params = {"f" : "json"}
+            for pt in parts:
+                try:
+                    res = self.get(path=root + pt, params=params)
+                    if self._tokenurl is None and \
+                       res is not None and \
+                       'authInfo' in res and \
+                       'tokenServicesUrl' in res['authInfo']:
+                        self._tokenurl = res['authInfo']['tokenServicesUrl']
+                except HTTPError as e:
+                    res = ""
+                if isinstance(res, dict) and \
+                   "currentVersion" in res:
+                    t_parsed = urlparse(self._tokenurl[1:]).path
+                    b_parsed = urlparse(self.baseurl[1:]).path
+                    if t_parsed.startswith("/"):
+                        t_parsed = t_parsed[1:].split("/")[0]
+                    else:
+                        t_parsed = t_parsed.split("/")[0]
+                    if b_parsed.startswith("/"):
+                        b_parsed = b_parsed[1:].split("/")[0]
+                    else:
+                        b_parsed = b_parsed.split("/")[0]
+                    if t_parsed.lower() != b_parsed.lower():
+                        return "FEDERATED_SERVER"
+                    return "SERVER"
+                del pt
+                del res
+        return "PORTAL"
     #----------------------------------------------------------------------
     def _process_response(self, resp):
         """ processes the response object"""
@@ -408,7 +496,9 @@ class _ArcGISConnection(object):
                 if not chunk: break
                 yield chunk
     #----------------------------------------------------------------------
-    def get(self, path, ssl=False, compress=True, try_json=True, is_retry=False, use_ordered_dict=False):
+    def get(self, path, params=None, ssl=False,
+            compress=True, try_json=True, is_retry=False,
+            use_ordered_dict=False):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if url.lower().find("https://") > -1 or\
@@ -417,7 +507,7 @@ class _ArcGISConnection(object):
         elif len(url) == 0:
             url = self.baseurl
         elif (len(url) > 0 and url[0] == '/' ) == False and \
-           self.baseurl.endswith('/') == False:
+             self.baseurl.endswith('/') == False:
             url = "/{path}".format(path=url)
 
         if not url.startswith('http://') and \
@@ -427,8 +517,16 @@ class _ArcGISConnection(object):
             url = url.replace('http://', 'https://')
 
         # Add the token if logged in
+        if params is None:
+            params = {}
+        if try_json:
+            params['f'] = 'json'
         if self.is_logged_in:
-            url = self._url_add_token(url, self.token)
+            params['token'] = self.token
+        if len(params.keys()) > 0:
+            url = "{url}?{params}".format(url=url,
+                                          params=urlencode(params))
+            #url = self._url_add_token(url, self.token)
 
         _log.debug('REQUEST (get): ' + url)
 
@@ -457,6 +555,10 @@ class _ArcGISConnection(object):
                                            object_pairs_hook=OrderedDict)
                 else:
                     resp_json = json.loads(resp_data)
+
+                # Convert to ascii if directed to do so
+                if self.ensure_ascii and not use_ordered_dict:
+                    resp_json = _unicode_to_ascii(resp_json)
 
                 # Check for errors, and handle the case where the token timed
                 # out during use (and simply needs to be re-generated)
@@ -708,15 +810,21 @@ class _ArcGISConnection(object):
 
             opener.addheaders = headers
             #print("***"+url)
-            #print("***"+str(postdata))
             resp = opener.open(url, data=encoded_postdata.encode())
             resp_data = self._process_response(resp)
 
+        # Parse the response into JSON
+        if _log.isEnabledFor(logging.DEBUG):
+            _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
         #print(resp_data);
         if use_ordered_dict:
             resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
         else:
             resp_json = json.loads(resp_data)
+
+        # Convert to ascii if directed to do so
+        if self.ensure_ascii and not use_ordered_dict:
+            resp_json = _unicode_to_ascii(resp_json)
 
         # Check for errors, and handle the case where the token timed out
         # during use (and simply needs to be re-generated)
@@ -891,13 +999,13 @@ def _unpack_obj(obj, key=None, flatten=False):
 
     return value
 
-def _to_utf8(data):
-    """ Converts strings and collections of strings from unicode to utf-8. """
+def _unicode_to_ascii(data):
+    """ Converts strings and collections of strings from unicode to ascii. """
     if isinstance(data, dict):
-        return {_to_utf8(key): _to_utf8(value) \
+        return {_unicode_to_ascii(key): _unicode_to_ascii(value) \
                 for key, value in data.items()}
     elif isinstance(data, list):
-        return [_to_utf8(element) for element in data]
+        return [_unicode_to_ascii(element) for element in data]
     elif isinstance(data, str):
         return data
     elif isinstance(data, six.text_type):
@@ -906,6 +1014,18 @@ def _to_utf8(data):
         return data
     else:
         return data
+
+def _remove_non_ascii(s):
+    return ''.join(i for i in s if ord(i) < 128)
+
+def _tostr(obj):
+    if not obj:
+        return ''
+    if isinstance(obj, list):
+        return ', '.join(map(_tostr, obj))
+    return str(obj)
+
+
 
 
 # This function is a workaround to deal with what's typically described as a
