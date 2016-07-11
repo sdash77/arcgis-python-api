@@ -29,6 +29,7 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
+from ._util import Error
 __version__ = '1.0'
 _log = logging.getLogger(__name__)
 ########################################################################
@@ -853,7 +854,7 @@ class _ArcGISConnection(object):
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
-            _log.debug('RESPONSE: ' + url + ', ' + _unicode_to_ascii(resp_data))
+            _log.debug('RESPONSE: ' + url + ', ' + resp_data)
         #print(resp_data);
         if use_ordered_dict:
             resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
@@ -1033,22 +1034,6 @@ def _unpack_obj(obj, key=None, flatten=False):
         value = [item for sublist in value for item in sublist]
 
     return value
-
-def _unicode_to_ascii(data):
-    """ Converts strings and collections of strings from unicode to ascii. """
-    if isinstance(data, dict):
-        return {_unicode_to_ascii(key): _unicode_to_ascii(value) \
-                for key, value in data.items()}
-    elif isinstance(data, list):
-        return [_unicode_to_ascii(element) for element in data]
-    elif isinstance(data, str):
-        return data
-    elif isinstance(data, six.text_type):
-        return data.encode('utf-8')
-    elif isinstance(data, six.integer_types):
-        return data
-    else:
-        return data
 
 def _remove_non_ascii(s):
     return ''.join(i for i in s if ord(i) < 128)
