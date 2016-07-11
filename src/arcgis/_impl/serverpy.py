@@ -122,6 +122,7 @@ class Server(object):
     def logout(self):
         """deletes the connection class"""
         self._connection = None
+    #----------------------------------------------------------------------
     @property
     def catalog(self):
         """Represents the User View of the Server"""
