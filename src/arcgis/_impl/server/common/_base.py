@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import json
 from collections import OrderedDict
-from ...connection2 import _ArcGISConnection as SiteConnection
+from ...connection import _ArcGISConnection as SiteConnection
 
 ###########################################################################
 class BaseService(OrderedDict):
