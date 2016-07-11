@@ -82,7 +82,7 @@
  */
 
 
-var esriCDN =  location.protocol + "//js.arcgis.com/3.14amd/"
+var esriCDN =  location.protocol + "//js.arcgis.com/3.17amd/"
 var proxyUrl = "/proxy/proxy.jsp" ;
 
 var nbextensionPath = "/nbextensions/arcgis";

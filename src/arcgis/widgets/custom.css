@@ -7,7 +7,7 @@ This will always be an empty file in IPython
 */
 
 
-@import url("http://js.arcgis.com/3.14/esri/css/esri.css");
+@import url("http://js.arcgis.com/3.17/esri/css/esri.css");
 
 html, body, #map {
         height:100%;
