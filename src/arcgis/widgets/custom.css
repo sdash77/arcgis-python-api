@@ -7,7 +7,7 @@ This will always be an empty file in IPython
 */
 
 
-@import url("http://js.arcgis.com/3.14/esri/css/esri.css");
+@import url("http://js.arcgis.com/3.17/esri/css/esri.css");
 
 html, body, #map {
         height:100%;
@@ -15,7 +15,7 @@ html, body, #map {
         margin:0;
         padding:0;
 }
-      
+
       #search {
         display: block;
         position: absolute;
@@ -51,7 +51,7 @@ html, body, #map {
 
 .item_right {
     float: none; /* not needed, just for clarification */
-    
+
     /* the next props are meant to keep this block independent from the other floated one */
     width: auto;
     overflow: hidden;
