@@ -838,7 +838,7 @@ class UserManager(object):
             return User(self._portal, user['username'], user)
         return None
 
-    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, within_org=True):
+    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, outside_org=False):
         """ Searches portal users.
 
         Returns a list of users matching the specified query
@@ -859,9 +859,9 @@ class UserManager(object):
                or within your Portal.  As a convenience, the method
                automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set within_org to false.  If you use this feature with an
+               set outside_org to True.  If you use this feature with an
                OR clause such as field=x or field=y you should put this
-               into parenthesis when using within_org.
+               into parenthesis when using outside_org.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -875,8 +875,8 @@ class UserManager(object):
         ----------------  --------------------------------------------------------
         max_users         optional int, maximum number of users returned
         ----------------  --------------------------------------------------------
-        within_org        optional boolean, controls whether to search within your
-                          org (default is True)
+        outside_org       optional boolean, controls whether to search outside
+                          your org (default is False)
         ================  ========================================================
 
         :return:
@@ -888,7 +888,7 @@ class UserManager(object):
         else:
             userlist = []
 
-            users = self._portal.search_users(query, sort_field, sort_order, max_users, within_org)
+            users = self._portal.search_users(query, sort_field, sort_order, max_users, outside_org)
             for user in users:
                 userlist.append(User(self._portal, user['username'], user))
             return userlist
@@ -989,7 +989,7 @@ class GroupManager(object):
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',
-               max_groups=1000, within_org=True):
+               max_groups=1000, outside_org=False):
         """ Searches for portal groups.
 
         .. note::
@@ -1008,7 +1008,7 @@ class GroupManager(object):
                 or within your Portal.  As a convenience, the method
                 automatically appends your organization id to the query by
                 default.  If you don't want the API to append to your query
-                set within_org to false.
+                set outside_org to True.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1023,7 +1023,7 @@ class GroupManager(object):
         ----------------  --------------------------------------------------------
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
-        within_org        optional boolean, controls whether to search within
+        outside_org       optional boolean, controls whether to search outside
                           your org
         ================  ========================================================
 
@@ -1031,7 +1031,7 @@ class GroupManager(object):
         Returns a list of groups matching the specified query
         """
         grouplist = []
-        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, within_org)
+        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
         for group in groups:
             grouplist.append(Group(self._portal, group['id'], group))
         return grouplist
@@ -1203,7 +1203,7 @@ class ContentManager(object):
             return Item(self._portal, itemid, item)
         return None
 
-    def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, within_org=True):
+    def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, outside_org=False):
         """ Searches for portal items.
 
         .. note::
@@ -1218,8 +1218,8 @@ class ContentManager(object):
                 search within your organization in ArcGIS Online
                 or within your Portal.  As a convenience, the method
                 automatically appends your organization id to the query by
-                default.  If you only want content from outside your org
-                set within_org to False.
+                default.  If you want content from outside your org
+                set outside_org to True.
 
         ================  ===================================================================================
         **Argument**      **Description**
@@ -1236,7 +1236,7 @@ class ContentManager(object):
         ----------------  -----------------------------------------------------------------------------------
         max_items         optional int, maximum number of items returned, default is 10
         ----------------  -----------------------------------------------------------------------------------
-        within_org        optional boolean, controls whether to search within your org (default is True)
+        outside_org       optional boolean, controls whether to search outside your org (default is False)
         ================  ===================================================================================
 
         :return:
@@ -1265,7 +1265,7 @@ class ContentManager(object):
             else:
                 query += ' (type:"' + item_type +'")'
 
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, within_org=within_org)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
         for item in items:
             itemlist.append(Item(self._portal, item['id'], item))
         return itemlist
