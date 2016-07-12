@@ -4,6 +4,7 @@ contains commonly used tools
 import os
 import tempfile
 import zipfile
+import six
 from contextlib import contextmanager
 ###########################################################################
 class Error(Exception): pass
