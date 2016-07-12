@@ -331,7 +331,6 @@ class _ArcGISConnection(object):
            self.product in ("PORTAL", "AGO"):
             try:
                 import arcpy
-                arcpy.mapping.Layer
                 resp = arcpy.GetSigninToken()
                 if 'referer' in resp:
                     self._referer = resp['referer']
