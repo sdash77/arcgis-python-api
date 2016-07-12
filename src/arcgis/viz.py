@@ -110,9 +110,9 @@ class MapView(widgets.DOMWidget):
 
     basemap = Unicode('topo').tag(sync=True)
     width = Unicode('100%').tag(sync=True)
-    zoom = Int(12).tag(sync=True)
+    zoom = Int(2).tag(sync=True)
     id = Unicode('').tag(sync=True)
-    center = List([28.7124568, 77.1175102]).tag(sync=True)
+    center = List([0, 0]).tag(sync=True)
     mode = Unicode('navigate').tag(sync=True)
     addlayer = Unicode('').tag(sync=True)
     start_time = Unicode('').tag(sync=True)
