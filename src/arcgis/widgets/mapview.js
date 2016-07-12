@@ -102,6 +102,7 @@ require.config({
         "dgrid":        esriCDN + "dgrid",
         "xstyle":       esriCDN + "xstyle",
         "put-selector": esriCDN + "put-selector",
+        "moment":       esriCDN + "moment",
 
         // [2] Modules hosted locally.
         // "location" is specified as path relative to web server root.
