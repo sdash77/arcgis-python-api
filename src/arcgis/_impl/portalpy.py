@@ -101,7 +101,7 @@ class Portal(object):
                 normalized_url += '/'
             if normalized_url.lower().find("www.arcgis.com") > -1:
                 urlscheme = urlparse(normalized_url).scheme
-                self.resturl = "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
+                self.resturl = "{scheme}://www.arcgis.com/sharing/rest/".format(scheme=urlscheme)
             elif normalized_url.lower().endswith("sharing/"):
                 self.resturl = normalized_url + 'rest/'
             elif normalized_url.lower().endswith("sharing/rest/"):

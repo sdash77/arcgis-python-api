@@ -265,7 +265,7 @@ class _ArcGISConnection(object):
                 url += '/'
             if url.lower().find("www.arcgis.com") > -1:
                 urlscheme = urlparse(url).scheme
-                return "{scheme}://www.arcgis.com/sharing/rest".format(scheme=urlscheme)
+                return "{scheme}://www.arcgis.com/sharing/rest/".format(scheme=urlscheme)
             elif url.lower().endswith("sharing/"):
                 return url + 'rest/'
             elif url.lower().endswith("sharing/rest/"):
