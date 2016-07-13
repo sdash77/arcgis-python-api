@@ -2601,6 +2601,7 @@ class Item(dict):
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
 
         """
@@ -2652,11 +2653,10 @@ class Item(dict):
                 publish_parameters =  res['publishParameters']
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
-
+            else:
+                publish_parameters =  {"hasStaticData":True, "name": self['title'].replace(' ', '_'), "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+            
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
-
-        #svc_id = ret[0]['serviceItemId']
-        #return Item(self._portal, svc_id)
 
         job_id = ret[0]['jobId']
         serviceitem_id = ret[0]['serviceItemId']
@@ -2665,7 +2665,6 @@ class Item(dict):
             path = path + '/' + folder + '/'
 
         path = path + '/items/' + serviceitem_id + '/status'
-        #print(path)
         params = {
             "f" : "json",
             "jobid" : job_id
