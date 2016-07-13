@@ -892,13 +892,12 @@ class AGSService(BaseServer):
         Output:
            json as dictionary
         """
-        files = {}
         url = self._url + "/iteminfo/upload"
         params = {
             "f" : "json",
             "folder" : folder
         }
-        files['file'] = filePath
+        files =[['file', filePath, os.path.basename(filePath)]]
         return self._con.post(path=url,
                           postdata=params,
                           files=files)
