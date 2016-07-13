@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from ..common._base import BaseServer
+import os
 ########################################################################
 class Uploads(BaseServer):
     """
@@ -79,8 +80,7 @@ class Uploads(BaseServer):
         params = {
             "f" : "json"
         }
-        files = {}
-        files['itemFile'] = filePath
+        files = [['itemFile',filePath, os.path.basename(filePath)]]
         return self._con.post(path=url,
                               postdata=params,
                               files=files)

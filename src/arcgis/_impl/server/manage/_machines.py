@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import os
 from ..common._base import BaseServer
 ########################################################################
 class Machines(BaseServer):
@@ -287,8 +288,7 @@ class Machine(BaseServer):
     def importRootCertificate(self, alias, rootCACertificate):
         """This operation imports a certificate authority (CA)'s root and intermediate certificates into the keystore."""
         url = self._url + "/sslcertificates/importRootOrIntermediate"
-        files = {}
-        files['rootCACertificate'] = rootCACertificate
+        files = [['rootCSCertificate', rootCACertificate, os.path.basename(rootCSCertificate)]]
         params = {
             "f" : "json",
             "alias" : alias
@@ -300,8 +300,7 @@ class Machine(BaseServer):
     def importExistingServerCertificate(self, alias, certPassword, certFile):
         """This operation imports an existing server certificate, stored in the PKCS #12 format, into the keystore."""
         url = self._url + "/sslcertificates/importExistingServerCertificate"
-        files = {}
-        files['certFile'] = certFile
+        files = [['certFile', certFile, os.path.basename(certFile)]]
         params = {
             "f" : "json",
             "alias" : alias,
@@ -314,8 +313,7 @@ class Machine(BaseServer):
     def importCASignedCertificate(self, alias, caSignedCertificate):
         """This operation imports a certificate authority (CA)-signed SSL certificate into the key store."""
         url = self._url + "/sslcertificates/importCASignedCertificate"
-        files = {}
-        files['caSignedCertificate'] = caSignedCertificate
+        files = [['caSignedCertificate', caSignedCertificate, os.path.basename(caSignedCertificate)]]
         params = {
             "f" : "json",
             "alias" : alias
