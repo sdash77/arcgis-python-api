@@ -2669,7 +2669,6 @@ class Item(dict):
             raise Exception("No job results.")
 
         return Item(self._portal, serviceitem_id)
-        return ret
 
 def rot13(s):
     result = ""
