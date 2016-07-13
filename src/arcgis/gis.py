@@ -9,6 +9,7 @@ import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
 
+import json
 import base64
 
 import datetime
@@ -1162,7 +1163,7 @@ class ContentManager(object):
                        has_static_data=False,
                        max_record_count = 1000,
                        supported_query_formats = "JSON",
-                       capabilities = "Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads",
+                       capabilities = None,
                        description = "",
                        copyright_text = "",
                        wkid=102100,
@@ -1170,10 +1171,35 @@ class ContentManager(object):
                        owner=None, folder=None):
         """ Creates a service in the Portal
 
+        Arguments
+            name                    required string, the unique name of the service
+            service_description     optional string, description of the service
+            has_static_data         optional boolean, indicating whether the data changes
+            max_record_count        optional int, ,maximum number of records in query operations
+            supported_query_formats optional string, formats in which query results are returned
+            capabilities            optional string, Specify feature service  capabilities for 
+                                    Create, Delete, Query, Update, and Sync. If left unspecified
+                                    'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+                                    are used for image services, and Create,Delete,Query,Update,Editing'
+                                    are used for feature services, and 'Query' otherwise
+            description             optional string, a user-friendly description for the published dataset.
+            copyright_text          optional string, copyright information associated with the dataset.
+            wkid                    optional int, the well known id of the spatial reference for the service.
+                                    All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
+            service_type            optional string, the type of service to be created
+            owner                   optional string, the username of the owner
+            folder                  optional string, the folder in which to create the service
 
             :return:
-                 The item for the service, if successfully added, None if unsuccessful.
-            """
+                 The item for the service, if successfully created, None if unsuccessful.
+        """
+        if capabilities is None:
+            if service_type == 'imageService':
+                capabilities = 'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+            elif service_type == 'featureService':
+                capabilities = 'Create,Delete,Query,Update,Editing'
+            else:
+                capabilities = 'Query'
 
         itemid = self._portal.create_service(name,
                                              service_description,
@@ -2626,7 +2652,6 @@ class Item(dict):
                 publish_parameters =  res['publishParameters']
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
-                publish_parameters = json.dumps(publish_parameters)
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 
