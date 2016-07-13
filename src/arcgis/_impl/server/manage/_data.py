@@ -92,6 +92,22 @@ class Data(BaseServer):
         }
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
+    def data_items(self, data_types="enterprise"):
+        """
+        returns a class to work with registered data items.
+
+        Parameters:
+           data_types = either enterprise or fileshares
+            enterprise means enterprise databases
+            fileshares needs shared directories
+        """
+        if data_types.lower() == "enterprise":
+            url = self._url + "/enterpriseDatabases"
+        else:
+            url = self._url + "/fileShares"
+        params = {"f" : "json"}
+        return self._con.get(path=url, params=params)
+    #----------------------------------------------------------------------
     def find_data_items(self, parentPath=None, ancestorPath=None,
                       type=None, id=None):
         """
@@ -267,3 +283,5 @@ class Data(BaseServer):
             "f" : "json"
         }
         return self._con.post(path=url, postdata=params)
+
+
