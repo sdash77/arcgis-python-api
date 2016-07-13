@@ -59,14 +59,22 @@ class MultiPartForm(object):
             for k,v in param_dict.items():
                 self.form_fields.append((k,v))
                 del k,v
-        if len(files) == 0:
-            self.files = []
-        else:
-            for key, filePath, fileName in files:
+        if isinstance(files, list):
+            if len(files) == 0:
+                self.files = []
+            else:
+                for key, filePath, fileName in files:
+                    self.add_file(fieldname=key,
+                                  filename=fileName,
+                                  filePath=filePath,
+                                  mimetype=None)
+        elif isinstance(files, dict):
+            for key, filepath in files.items():
                 self.add_file(fieldname=key,
-                              filename=fileName,
-                              filePath=filePath,
+                              filename=os.path.basename(filepath),
+                              filePath=filepath,
                               mimetype=None)
+                del key, filepath
         self.boundary = "-%s" % self._make_boundary()
     #----------------------------------------------------------------------
     def get_content_type(self):
@@ -510,7 +518,8 @@ class _ArcGISConnection(object):
                     read += data
 
                 del data
-            if six.PY3:
+            if six.PY3 and \
+               len(read) > 0:
                 read = read.decode("utf-8").strip()
             try:
                 return read.strip()

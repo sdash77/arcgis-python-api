@@ -242,7 +242,7 @@ class Machine(BaseServer):
         """
         ArcGIS Server uses four ports for communication between GIS
         servers. When you create or join a site, these are assigned to
-        ports 4000–4003. If any of those ports are in use by other
+        ports 4000-4003. If any of those ports are in use by other
         applications, those ports are skipped and a corresponding number of
         additional ports are used beyond 4003.
         You must ensure that your firewall allows communication with other
