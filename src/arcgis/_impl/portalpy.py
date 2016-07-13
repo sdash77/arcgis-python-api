@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 import copy
+import json
 import imghdr
 import logging
 import os
@@ -332,8 +333,8 @@ class Portal(object):
 
         postdata['fileType'] = fileType
 
-        if publishParameters is not None:
-            postdata['publishParameters'] = publishParameters
+        if publishParameters is not None and isinstance(publishParameters, dict):
+            postdata['publishParameters'] = json.dumps(publishParameters)
 
         if outputType is not None:
             postdata['outputType'] = outputType
@@ -371,7 +372,7 @@ class Portal(object):
                        has_static_data=False,
                        max_record_count = 1000,
                        supported_query_formats = "JSON",
-                       capabilities = "Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads",
+                       capabilities = None,
                        description = "",
                        copyright_text = "",
                        wkid=102100,
@@ -428,7 +429,7 @@ class Portal(object):
             }
         }
 
-        postdata['createParameters'] = createParameters
+        postdata['createParameters'] = json.dumps(createParameters)
         postdata['outputType'] = service_type
 
         resp = self.con.post(path, postdata)
