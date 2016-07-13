@@ -82,15 +82,15 @@
  */
 
 
-var esriCDN =  location.protocol + "//js.arcgis.com/3.14amd/"
+var esriCDN =  location.protocol + "//js.arcgis.com/3.17amd/"
 var proxyUrl = "/proxy/proxy.jsp" ;
-    
+
 var nbextensionPath = "/nbextensions/arcgis";
  if (location.href.search("user") > 0){
-    nbextensionPath = location.pathname.split("/").slice(0,3).join("/") + "/nbextensions/arcgis";	
+    nbextensionPath = location.pathname.split("/").slice(0,3).join("/") + "/nbextensions/arcgis";
  }
- 
-    
+
+
 require.config({
       // Define path mappings for modules
       paths: {
@@ -102,14 +102,15 @@ require.config({
         "dgrid":        esriCDN + "dgrid",
         "xstyle":       esriCDN + "xstyle",
         "put-selector": esriCDN + "put-selector",
-        
+        "moment":       esriCDN + "moment",
+
         // [2] Modules hosted locally.
         // "location" is specified as path relative to web server root.
         // "requirejs":  "/research/js/requirejs", - already loaded
         //"text":       "/static/custom/requirejs/text"
         "text":       nbextensionPath + "/requirejs/text"
       },
-      
+
       // Use RequireJS text plugin instead of dojo/text plugin.
       // Any module that requires dojo/text plugin will use RequireJS
       // text plugin instead.
@@ -121,51 +122,51 @@ require.config({
       },
         config: {
         text: {
-          
+
           useXhr: function(url) {
             // Allow cross domain XHR requests:
             // We will route them through a proxy in onXhr below.
             // https://github.com/requirejs/text/blob/master/text.js#L129
-            
+
             return true;
           },
-          
+
           // In IE 9, text plugin fails even before onXhr is called:
           // It fails right when calling xhr.open:
           // https://github.com/requirejs/text/blob/master/text.js#L267
-          // - This is different from other browsers which appear to fail 
+          // - This is different from other browsers which appear to fail
           // much later, allowing us a chance to append proxy below.
-          // -- Probably because IE 9 does not support CORS as opposed to 
+          // -- Probably because IE 9 does not support CORS as opposed to
           // other modern browsers that have CORS support.
-          
+
           // ESRI modification: let's take over xhr.open below
           openXhr: false,
-          
+
           onXhr: function(xhr, url) {
             // Route cross domain XHR through a proxy if required
             var hasCors = (
-              typeof XMLHttpRequest !== "undefined" 
+              typeof XMLHttpRequest !== "undefined"
               && ("withCredentials" in (new XMLHttpRequest()))
             );
-            
+
             xhr.open(
-              "GET", 
-              hasCors ? url : (proxyUrl + "?" + url), 
+              "GET",
+              hasCors ? url : (proxyUrl + "?" + url),
               true
             );
           }
         }
-      } 
+      }
     });
 
 //require([
-    //"widgets/js/widget", 
+    //"widgets/js/widget",
     //"widgets/js/manager",
     //"nbextensions/widgets/widgets/js/widget",
     //"nbextensions/widgets/widgets/js/manager",
 require.undef('mapview');
 
-define('mapview', [ 
+define('mapview', [
      "jupyter-js-widgets",
      "esri/map",
      "esri/dijit/LayerSwipe",
@@ -176,8 +177,8 @@ define('mapview', [
      "esri/toolbars/draw",
      "esri/layers/KMLLayer",
      "esri/layers/RasterFunction",
-     "esri/layers/ArcGISImageServiceLayer", 
-     "esri/layers/ImageServiceParameters", 
+     "esri/layers/ArcGISImageServiceLayer",
+     "esri/layers/ImageServiceParameters",
      "esri/geometry/Polyline",
      "esri/geometry/Polygon",
      "esri/geometry/Point",
@@ -191,61 +192,78 @@ define('mapview', [
      "esri/geometry/webMercatorUtils",
      "esri/arcgis/utils",
      "dojo/domReady!"
-   ], function( //widget, manager, 
-		widgets,
-		Map, LayerSwipe, Graphic, TimeExtent, Extent, InfoTemplate,
-                Draw, KMLLayer, RasterFunction, ArcGISImageServiceLayer, 
-                ImageServiceParameters,
-                Polyline, Polygon, Point, Multipoint, FeatureLayer, 
-                smartMapping, SimpleFillSymbol, SimpleLineSymbol, HeatmapRenderer,
-                PictureMarkerSymbol, webMercatorUtils, arcgisUtils){
-    
+   ], function(
+     widgets,
+     Map,
+     LayerSwipe,
+     Graphic,
+     TimeExtent,
+     Extent,
+     InfoTemplate,
+     Draw,
+     KMLLayer,
+     RasterFunction,
+     ArcGISImageServiceLayer,
+     ImageServiceParameters,
+     Polyline,
+     Polygon,
+     Point,
+     Multipoint,
+     FeatureLayer,
+     smartMapping,
+     SimpleFillSymbol,
+     SimpleLineSymbol,
+     HeatmapRenderer,
+     PictureMarkerSymbol,
+     webMercatorUtils,
+     arcgisUtils){
+
     var map, toolbar;
     var MapView = widgets.DOMWidgetView.extend({
-        
+
         // Render the view.
-        render: function(){ 
+        render: function(){
             $('head').append( $('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath+'/custom.css') );
-            
+
             var that = this;
-    
+
             var id = this.model.get('id')
-            
+
             if ((id) && (id.trim()!='')) {
                 arcgisUtils.createMap(id, this.$el[0]).then(function(response){
                     map = response.map;
                 });
             } else {
-                
+
                 this.$el.append("<div id='"+this.model.get('_swipe_div')+"'>");
-                
-               map = new Map(this.$el[0], { 
+
+               map = new Map(this.$el[0], {
                     basemap: this.model.get('basemap'),
                     center: this.model.get('center').reverse(),
                     zoom: this.model.get('zoom')
                 });
             }
-            
+
             map.on("load", on_load);
-            
-            function on_load() {     
+
+            function on_load() {
                 map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
-                
+
                 // create the draw toolbar, it activates only when mode=draw_*
                 toolbar = new Draw(map);
-                
+
                 // hook up events
                 toolbar.on("draw-end", onDrawEnd);
                 //map.on("extent-change", onExtentChange);
                 map.on("click", onMouseClick);
-                
+
                 var timeExtent = new TimeExtent();
                 timeExtent.startTime = new Date("1/1/1989 UTC");
                 timeExtent.endTime = new Date("1/1/1991 UTC");
                 ///map.setTimeExtent(timeExtent);
 
             }
-            
+
             // JS map events
             /*
             function onExtentChange(evt){
@@ -254,46 +272,46 @@ define('mapview', [
                 that.extent_change(extent, zoomed);
             }
             */
-            
+
             function onDrawEnd(evtObj){
               var geometry = evtObj.geometry;
 
               var graphic = map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
-              
+
               toolbar.deactivate();
               that.draw_end(geometry);
             }
-            
+
             function onMouseClick(event) {
                 console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
-                            " on the screen. The map coordinate at this point is " + 
+                            " on the screen. The map coordinate at this point is " +
                             event.mapPoint.x + ", " + event.mapPoint.y
-                
+
                 );
                 //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
                 //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
                 //console.log(normalizedVal);
                 that.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
             }
-            
+
             // Model change events
             this.model.on('change:zoom', this.zoom_changed, this);
             this.model.on('change:mode', this.mode_changed, this);
-            this.model.on('change:center', this.center_changed, this);  
-            this.model.on('change:basemap', this.basemap_changed, this);  
-            this.model.on('change:addlayer', this.layer_changed, this);  
-            this.model.on('change:start_time', this.start_time_changed, this);  
-            this.model.on('change:end_time', this.end_time_changed, this);  
-            
+            this.model.on('change:center', this.center_changed, this);
+            this.model.on('change:basemap', this.basemap_changed, this);
+            this.model.on('change:addlayer', this.layer_changed, this);
+            this.model.on('change:start_time', this.start_time_changed, this);
+            this.model.on('change:end_time', this.end_time_changed, this);
+
         },
-        
+
         // Incoming Events from the model
         zoom_changed: function() {
             map.setZoom(this.model.get('zoom'));
         },
-        
+
         mode_changed: function() {
-             
+
             if (this.model.get('mode') == "navigate") {
                 console.log("***mode = navigate")
                 toolbar.deactivate();
@@ -302,7 +320,7 @@ define('mapview', [
             } else if (this.model.get('mode') == "###remove_layers") {
                 map.removeAllLayers();
             } else if (this.model.get('mode').indexOf("{") > -1) {
-                
+
                 console.log("***mode=draw_geometry%%%" );
                 var drawgraphic = JSON.parse(this.model.get('mode'));
                 var gfx = new Graphic(drawgraphic);
@@ -310,7 +328,7 @@ define('mapview', [
                 if (gfx.symbol == null) {
                     if (gfx.geometry.type === 'polyline') {
                         console.log("GEOM TYPE POLYLINE");
-                        
+
                         gfx.symbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255,0,0,0.5]),3);
                     } else if (gfx.geometry.type === 'polygon') {
                         console.log("GEOM TYPE POLYGON");
@@ -326,62 +344,62 @@ define('mapview', [
                         gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/marker.png', 32, 32);
                     }
                 }
-                map.graphics.add(gfx); 
-                
+                map.graphics.add(gfx);
+
             } else {
                 var shape = this.model.get('mode');
                 console.log("***mode=draw_" + shape);
-                toolbar.activate(shape);   
+                toolbar.activate(shape);
             }
         },
-        
+
         layer_changed: function() {
-             
+
             if (this.model.get('addlayer').indexOf("{") > -1) {
-                
+
                 console.log("***mode=addlayer%%%" );
-                
+
                 var newlayer = JSON.parse(this.model.get('addlayer'));
                 console.log(newlayer);
                 if (newlayer.type == "KMLLayer") {
                     console.log("KMLLayer " + newlayer.url);
-                    var kml = new KMLLayer(newlayer.url); 
+                    var kml = new KMLLayer(newlayer.url);
                     map.addLayer(kml);
                     kml.on("load", function() {
                       domStyle.set("loading", "display", "none");
                     });
-                } 
-                else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer"))  
+                }
+                else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer"))
                 {
                     console.log("FeatureLayer " + newlayer.url);
-                    
+
                     var layer = new FeatureLayer(newlayer.url, {
                         "outFields":["*"]
-                        }); 
-                   
+                        });
+
                     if (newlayer.opacity != null) {
                         layer.setOpacity(newlayer.opacity);
                     }
-                    
+
                     if (newlayer.definition_expression != null) {
                         console.log("***DEF EXP");
                         console.log(newlayer.definition_expression);
                         layer.setDefinitionExpression(newlayer.definition_expression);
                     }
-                    
+
                     if (newlayer.renderer == "HeatmapRenderer") {
                        var heatmapRenderer = new HeatmapRenderer();
                        layer.setRenderer(heatmapRenderer);
                     }
-                    
+
                     map.addLayer(layer);
-                    
+
                     if (newlayer.renderer == "ClassedColorRenderer") {
                         layer.on("load", function () {
                              createRenderer(newlayer.field_name);
                          });
                     }
-                    
+
                     if (newlayer.renderer == "ClassedSizeRenderer") {
                         layer.on("load", function () {
                              createSizeRenderer(newlayer.field_name);
@@ -401,7 +419,7 @@ define('mapview', [
                            //createLegend(map, layer, field);
                         });
                      }
-                    
+
                     function createSizeRenderer(field) {
                          console.log("ClassedSizeRend2");
                         //smart mapping functionality begins
@@ -416,9 +434,9 @@ define('mapview', [
                            //createLegend(map, layer, field);
                         });
                      }
-                } 
+                }
                 else if (newlayer.type == "ImageLayer") {
-                         
+
                     console.log("ArcGISImageServiceLayer " + newlayer.url);
                     var options = {};
                     var swipelayer = false;
@@ -441,9 +459,9 @@ define('mapview', [
                         }
                     }
                     var layer = new ArcGISImageServiceLayer(newlayer.url, options);
-                    
+
                     map.addLayer(layer);
-                    
+
                     if (swipelayer) {
                         console.log("Swipe Layer");
                         var swipeWidget = new LayerSwipe({
@@ -453,9 +471,9 @@ define('mapview', [
                         }, this.model.get('_swipe_div'));
                         swipeWidget.startup();
                     }
-                }   
+                }
                 else { // Feature Collection
-                
+
                     console.log(newlayer);
 
                     var options = { mode: FeatureLayer.MODE_SNAPSHOT };
@@ -463,32 +481,32 @@ define('mapview', [
                     if (newlayer.options != null) {
                         newlyr_options = Object.assign(options, JSON.parse(newlayer.options));
                     }
-                    
+
                     console.log("***Feature Collection layer###***" );
                     var layer = new FeatureLayer(newlayer, newlyr_options);
-                    
+
                     if (newlayer.options!= null) {
                         var lyr_options = JSON.parse(newlayer.options);
-                        
-                        
+
+
                         console.log("ClassedSizeRend0:"+ lyr_options.renderer);
                         console.log("ClassedSizeRend:" + lyr_options.field_name);
-                        
+
                         if (lyr_options.renderer == "HeatmapRenderer") {
                            var heatmapRenderer = new HeatmapRenderer();
                            var hmoptions = {};
-                            
+
                            if (lyr_options.field_name != null) {
                                hmoptions = {
                                    field: lyr_options.field_name,
                                };
                            }
                            var heatmapRenderer = new HeatmapRenderer(hmoptions);
-                           
+
                            layer.setRenderer(heatmapRenderer);
                         }
-                        
-                        
+
+
                         if (lyr_options.renderer == "ClassedSizeRenderer") {
                             console.log("ClassedSizeRenderer...");
                             setTimeout(function(){ createClassedSizeRenderer(lyr_options.field_name); }, 500);
@@ -497,7 +515,7 @@ define('mapview', [
                                  createClassedSizeRenderer(lyr_options.field_name);
                              });*/
                         }
-                        
+
                         if (lyr_options.renderer == "ClassedColorRenderer") {
                             setTimeout(function(){ createClassedColorRenderer(lyr_options.field_name); }, 500);
                             /*layer.on("load", function () {
@@ -537,20 +555,20 @@ define('mapview', [
                             });
                          }
                     }
-                    
-                    
+
+
                     map.addLayer(layer);
                 }
-                
+
             }
         },
-        
-        
+
+
         center_changed: function() {
             console.log("changing center");
             map.centerAt(this.model.get('center').reverse());
         },
-        
+
         start_time_changed: function() {
             console.log("changing start_time");
             var timeExtent = new TimeExtent();
@@ -558,7 +576,7 @@ define('mapview', [
             timeExtent.endTime = new Date(this.model.get('end_time'));
             map.setTimeExtent(timeExtent);
         },
-        
+
         end_time_changed: function() {
             console.log("changing end_time");
             var timeExtent = new TimeExtent();
@@ -566,17 +584,17 @@ define('mapview', [
             timeExtent.endTime = new Date(this.model.get('end_time'));
             map.setTimeExtent(timeExtent);
         },
-        
+
         basemap_changed: function() {
             map.setBasemap(this.model.get('basemap'));
         },
-        
+
         // Outgoing events to the model
-        
+
         mouse_clicked: function(geometry) { //mapx, mapy) {
             this.send({event: 'mouseclick', message: geometry});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
         },
-        
+
         draw_end: function(geometry) {
             this.model.set('mode','navigate');
             this.touch();
@@ -588,19 +606,19 @@ define('mapview', [
             //console.log(zoomed);
         },
         */
-        
+
         events: {
             // Dictionary of events and their handlers.
             'click': '_handle_click',
         },
-        
+
         _handle_click: function(){
             /**
              * Handles when the button is clicked.
              */
             this.send({event: 'click', message: 'xyz'});
         },
-        
+
     });
 
     return {
@@ -618,8 +636,7 @@ define('mapview', [
                 outFields: ["*"],
                 infoTemplate: infoTemplate
               });
-              
+
               //map.addLayer(featureLayer);
               //map.infoWindow.resize(155,75);
               */
-

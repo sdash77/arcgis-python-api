@@ -9,6 +9,7 @@ import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
 
+import json
 import base64
 
 import datetime
@@ -838,7 +839,7 @@ class UserManager(object):
             return User(self._portal, user['username'], user)
         return None
 
-    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, within_org=True):
+    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, outside_org=False):
         """ Searches portal users.
 
         Returns a list of users matching the specified query
@@ -859,9 +860,9 @@ class UserManager(object):
                or within your Portal.  As a convenience, the method
                automatically appends your organization id to the query by
                default.  If you don't want the API to append to your query
-               set within_org to false.  If you use this feature with an
+               set outside_org to True.  If you use this feature with an
                OR clause such as field=x or field=y you should put this
-               into parenthesis when using within_org.
+               into parenthesis when using outside_org.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -875,8 +876,8 @@ class UserManager(object):
         ----------------  --------------------------------------------------------
         max_users         optional int, maximum number of users returned
         ----------------  --------------------------------------------------------
-        within_org        optional boolean, controls whether to search within your
-                          org (default is True)
+        outside_org       optional boolean, controls whether to search outside
+                          your org (default is False)
         ================  ========================================================
 
         :return:
@@ -888,7 +889,7 @@ class UserManager(object):
         else:
             userlist = []
 
-            users = self._portal.search_users(query, sort_field, sort_order, max_users, within_org)
+            users = self._portal.search_users(query, sort_field, sort_order, max_users, outside_org)
             for user in users:
                 userlist.append(User(self._portal, user['username'], user))
             return userlist
@@ -989,7 +990,7 @@ class GroupManager(object):
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',
-               max_groups=1000, within_org=True):
+               max_groups=1000, outside_org=False):
         """ Searches for portal groups.
 
         .. note::
@@ -1008,7 +1009,7 @@ class GroupManager(object):
                 or within your Portal.  As a convenience, the method
                 automatically appends your organization id to the query by
                 default.  If you don't want the API to append to your query
-                set within_org to false.
+                set outside_org to True.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1023,7 +1024,7 @@ class GroupManager(object):
         ----------------  --------------------------------------------------------
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
-        within_org        optional boolean, controls whether to search within
+        outside_org       optional boolean, controls whether to search outside
                           your org
         ================  ========================================================
 
@@ -1031,7 +1032,7 @@ class GroupManager(object):
         Returns a list of groups matching the specified query
         """
         grouplist = []
-        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, within_org)
+        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
         for group in groups:
             grouplist.append(Group(self._portal, group['id'], group))
         return grouplist
@@ -1162,7 +1163,7 @@ class ContentManager(object):
                        has_static_data=False,
                        max_record_count = 1000,
                        supported_query_formats = "JSON",
-                       capabilities = "Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads",
+                       capabilities = None,
                        description = "",
                        copyright_text = "",
                        wkid=102100,
@@ -1170,10 +1171,35 @@ class ContentManager(object):
                        owner=None, folder=None):
         """ Creates a service in the Portal
 
+        Arguments
+            name                    required string, the unique name of the service
+            service_description     optional string, description of the service
+            has_static_data         optional boolean, indicating whether the data changes
+            max_record_count        optional int, ,maximum number of records in query operations
+            supported_query_formats optional string, formats in which query results are returned
+            capabilities            optional string, Specify feature service  capabilities for 
+                                    Create, Delete, Query, Update, and Sync. If left unspecified
+                                    'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+                                    are used for image services, and Create,Delete,Query,Update,Editing'
+                                    are used for feature services, and 'Query' otherwise
+            description             optional string, a user-friendly description for the published dataset.
+            copyright_text          optional string, copyright information associated with the dataset.
+            wkid                    optional int, the well known id of the spatial reference for the service.
+                                    All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
+            service_type            optional string, the type of service to be created
+            owner                   optional string, the username of the owner
+            folder                  optional string, the folder in which to create the service
 
             :return:
-                 The item for the service, if successfully added, None if unsuccessful.
-            """
+                 The item for the service, if successfully created, None if unsuccessful.
+        """
+        if capabilities is None:
+            if service_type == 'imageService':
+                capabilities = 'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+            elif service_type == 'featureService':
+                capabilities = 'Create,Delete,Query,Update,Editing'
+            else:
+                capabilities = 'Query'
 
         itemid = self._portal.create_service(name,
                                              service_description,
@@ -1203,7 +1229,7 @@ class ContentManager(object):
             return Item(self._portal, itemid, item)
         return None
 
-    def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, within_org=True):
+    def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, outside_org=False):
         """ Searches for portal items.
 
         .. note::
@@ -1218,8 +1244,8 @@ class ContentManager(object):
                 search within your organization in ArcGIS Online
                 or within your Portal.  As a convenience, the method
                 automatically appends your organization id to the query by
-                default.  If you only want content from outside your org
-                set within_org to False.
+                default.  If you want content from outside your org
+                set outside_org to True.
 
         ================  ===================================================================================
         **Argument**      **Description**
@@ -1236,7 +1262,7 @@ class ContentManager(object):
         ----------------  -----------------------------------------------------------------------------------
         max_items         optional int, maximum number of items returned, default is 10
         ----------------  -----------------------------------------------------------------------------------
-        within_org        optional boolean, controls whether to search within your org (default is True)
+        outside_org       optional boolean, controls whether to search outside your org (default is False)
         ================  ===================================================================================
 
         :return:
@@ -1265,7 +1291,7 @@ class ContentManager(object):
             else:
                 query += ' (type:"' + item_type +'")'
 
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, within_org=within_org)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
         for item in items:
             itemlist.append(Item(self._portal, item['id'], item))
         return itemlist
@@ -2575,6 +2601,7 @@ class Item(dict):
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
 
         """
@@ -2626,12 +2653,10 @@ class Item(dict):
                 publish_parameters =  res['publishParameters']
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
-                publish_parameters = json.dumps(publish_parameters)
-
+            else:
+                publish_parameters =  {"hasStaticData":True, "name": self['title'].replace(' ', '_'), "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+            
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
-
-        #svc_id = ret[0]['serviceItemId']
-        #return Item(self._portal, svc_id)
 
         job_id = ret[0]['jobId']
         serviceitem_id = ret[0]['serviceItemId']
@@ -2640,7 +2665,6 @@ class Item(dict):
             path = path + '/' + folder + '/'
 
         path = path + '/items/' + serviceitem_id + '/status'
-        #print(path)
         params = {
             "f" : "json",
             "jobid" : job_id
@@ -2669,7 +2693,6 @@ class Item(dict):
             raise Exception("No job results.")
 
         return Item(self._portal, serviceitem_id)
-        return ret
 
 def rot13(s):
     result = ""
