@@ -180,7 +180,7 @@ class Services(BaseServer):
             else:
                 url = baseURL + "/%s" % folder
             res = self._con.get(path=url, params=params)
-            if res.has_key("services"):
+            if 'services' in res:
                 for service in res['services']:
                     if service['type'].lower() in lower_types:
                         service['URL'] = url + "/%s.%s" % (service['serviceName'],
