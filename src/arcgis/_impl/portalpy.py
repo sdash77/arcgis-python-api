@@ -776,7 +776,7 @@ class Portal(object):
         if thumbnail_file:
             thumbnail_url_path = 'community/groups/' + group_id + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                return self.con.get(thumbnail_url_path, try_json=False)
+                return self.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
 
     def get_group_members(self, group_id):

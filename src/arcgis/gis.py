@@ -2201,7 +2201,7 @@ class Item(dict):
         if thumbnail_file:
             thumbnail_url_path = 'content/items/' + self.itemid + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                return self._portal.con.get(thumbnail_url_path, try_json=False)
+                return self._portal.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
     def download_thumbnail(self, save_folder=None):
         """ Downloads the item thumbnail for this item, returns file path. """
