@@ -1177,7 +1177,7 @@ class ContentManager(object):
             has_static_data         optional boolean, indicating whether the data changes
             max_record_count        optional int, ,maximum number of records in query operations
             supported_query_formats optional string, formats in which query results are returned
-            capabilities            optional string, Specify feature service  capabilities for 
+            capabilities            optional string, Specify feature service  capabilities for
                                     Create, Delete, Query, Update, and Sync. If left unspecified
                                     'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
                                     are used for image services, and Create,Delete,Query,Update,Editing'
@@ -1424,7 +1424,7 @@ class Group(dict):
     def _hydrate(self):
         groupdict = self._portal.get_group(self.groupid)
         self._hydrated = True
-        super().update(groupdict)
+        super(Group, self).update(groupdict)
         self.__dict__.update(groupdict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
@@ -1547,22 +1547,26 @@ class Group(dict):
         """
         return self._portal.get_group_thumbnail(self.groupid)
 
-    def download_thumbnail(self, dir=None):
+    def download_thumbnail(self, save_folder=None):
         """ Downloads the group thumbnail for this group, returns file path. """
+        if self.thumbnail is None:
+            self._hydrate()
         thumbnail_file = self.thumbnail
-
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                if not dir:
-                    dir = self._workdir
+                if not save_folder:
+                    save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                file_path = os.path.join(dir, file_name)
-                self._portal.con.download(thumbnail_url_path, file_path)
-                return file_path
+                file_path = os.path.join(save_folder, file_name)
+
+                return self._portal.con.get(path=thumbnail_url_path,
+                                            out_folder=save_folder,
+                                            file_name=file_name)
+
         else:
             return None
 
@@ -2077,9 +2081,9 @@ class User(dict):
         if thumbnail_file:
             thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                return self._portal.con.get(thumbnail_url_path, try_json=False)
+                return self._portal.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
-    def download_thumbnail(self, dir=None):
+    def download_thumbnail(self, save_folder=None):
         """ Downloads the item thumbnail for this user, returns file path. """
         thumbnail_file = self.thumbnail
 
@@ -2087,13 +2091,15 @@ class User(dict):
         if thumbnail_file:
             thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                if not dir:
-                    dir = self._workdir
+                if not save_folder:
+                    save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                file_path = os.path.join(dir, file_name)
-                self._portal.con.download(thumbnail_url_path, file_path)
+                file_path = os.path.join(save_folder, file_name)
+                self._portal.con.get(path=thumbnail_url_path,
+                                     out_folder=save_folder,
+                                     file_name=file_name)
                 return file_path
         else:
             return None
@@ -2165,12 +2171,13 @@ class Item(dict):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
-    def download(self, dir):
+    def download(self, save_path):
         data_path = 'content/items/' + self.itemid + '/data'
-        if not dir:
-            dir = self._workdir
+        if not save_path:
+            save_path = self._workdir
         if data_path:
-            return self._portal.con.download_to_folder(data_path, dir)
+            return self._portal.con.get(path=data_path,
+                                        out_folder=save_path)
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
@@ -2196,21 +2203,24 @@ class Item(dict):
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False)
 
-    def download_thumbnail(self, dir=None):
+    def download_thumbnail(self, save_folder=None):
         """ Downloads the item thumbnail for this item, returns file path. """
+        if self.thumbnail is None:
+            self._hydrate()
         thumbnail_file = self.thumbnail
 
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = 'content/items/' + self.itemid  + '/info/' + thumbnail_file
             if thumbnail_url_path:
-                if not dir:
-                    dir = self._workdir
+                if not save_folder:
+                    save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                file_path = os.path.join(dir, file_name)
-                self._portal.con.download(thumbnail_url_path, file_path)
+                self._portal.con.get(path=thumbnail_url_path,
+                                     out_folder=save_folder,
+                                     file_name=file_name)
                 return file_path
         else:
             return None
@@ -2238,15 +2248,15 @@ class Item(dict):
             else:
                 raise e
 
-    def download_metadata(self, dir=None):
+    def download_metadata(self, save_folder=None):
         """ Downloads the item metadata for the specified item id, returns file path. """
         metadataurlpath = 'content/items/' + self.itemid + '/info/metadata/metadata.xml'
-        if not dir:
-            dir = self._workdir
-        filepath = os.path.join(dir, 'metadata.xml')
+        if not save_folder:
+            save_folder = self._workdir
         try:
-            self._portal.con.download(metadataurlpath, filepath)
-            return filepath
+            return self._portal.con.get(path=metadataurlpath,
+                                     out_folder=save_folder,
+                                     file_name="metadata.xml")
 
         # If the get operation returns a 400 HTTP/IO Error then the metadata
         # simply doesn't exist, let's just return None in this case
@@ -2601,7 +2611,7 @@ class Item(dict):
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
-        
+
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
 
         """
@@ -2655,7 +2665,7 @@ class Item(dict):
                     publish_parameters.update({"addressFields":address_fields})
             else:
                 publish_parameters =  {"hasStaticData":True, "name": self['title'].replace(' ', '_'), "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
-            
+
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 
         job_id = ret[0]['jobId']

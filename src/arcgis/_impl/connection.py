@@ -3,13 +3,13 @@ from __future__ import absolute_import
 import io
 import os
 import re
-import cgi
 import sys
 import json
 import uuid
 import zlib
 import shutil
 import logging
+import tempfile
 import mimetypes
 import unicodedata
 try:
@@ -482,7 +482,24 @@ class _ArcGISConnection(object):
                 del res
         return "PORTAL"
     #----------------------------------------------------------------------
-    def _process_response(self, resp):
+    def _get_file_name(self, contentDisposition,
+                       url, ext=".unknown"):
+        """ gets the file name from the header or url if possible """
+        if six.PY2:
+            if contentDisposition is not None:
+                return re.findall(r'filename[^;=\n]*=(([\'"]).*?\2|[^;\n]*)',
+                                  contentDisposition.strip().replace('"', ''))[0][0]
+            elif os.path.basename(url).find('.') > -1:
+                return os.path.basename(url)
+        elif six.PY3:
+            if contentDisposition is not None:
+                p = re.compile(r'filename[^;=\n]*=(([\'"]).*?\2|[^;\n]*)')
+                return p.findall(contentDisposition.strip().replace('"', ''))[0][0]
+            elif os.path.basename(url).find('.') > -1:
+                return os.path.basename(url)
+        return "%s.%s" % (uuid.uuid4().get_hex(), ext)
+    #----------------------------------------------------------------------
+    def _process_response(self, resp, out_folder=None,  file_name=None):
         """ processes the response object"""
         CHUNK = 4056
         maintype = self._mainType(resp)
@@ -494,33 +511,54 @@ class _ArcGISConnection(object):
            contentType == 'application/x-zip-compressed' or \
            (contentDisposition is not None and \
             contentDisposition.lower().find('attachment;') > -1):
+            fname = self._get_file_name(
+                contentDisposition=contentDisposition,
+                url=resp.geturl()).split('?')[0]
+            if out_folder is None:
+                out_folder = tempfile.gettempdir()
             if contentLength is not None:
                 max_length = int(contentLength)
                 if max_length < CHUNK:
                     CHUNK = max_length
-            raw = None
-            for data in self._chunk(response=resp):
-                if raw is None:
-                    raw = data
-                else:
-                    raw += data
-                del data
-            return raw
+            if file_name is None:
+                file_name = os.path.join(out_folder, fname)
+            else:
+                file_name = os.path.join(out_folder, file_name)
+            with open(file_name, 'wb') as writer:
+                for data in self._chunk(response=resp):
+                    writer.write(data)
+                    del data
+                del writer
+            return file_name
         else:
             read = ""
-            for data in self._chunk(response=resp, size=CHUNK):
-                if six.PY3 == True:
-                    if read == "":
-                        read = data
+            if file_name and out_folder:
+                f_n_path = os.path.join(out_folder, file_name)
+                with open(f_n_path, 'wb') as writer:
+                    for data in self._chunk(response=resp, size=4096):
+                        if six.PY3 == True:
+                            writer.write(data.decode('utf-8'))
+                        else:
+                            writer.write(data)
+                        del data
+                    writer.flush()
+                return f_n_path
+            else:
+                for data in self._chunk(response=resp, size=4096):
+                    if six.PY3 == True:
+                        if read == "":
+                            read = data
+                        else:
+                            read += data
                     else:
                         read += data
-                else:
-                    read += data
-
-                del data
+                    del data
             if six.PY3 and \
                len(read) > 0:
-                read = read.decode("utf-8").strip()
+                try:
+                    read = read.decode("utf-8").strip()
+                except:
+                    pass
             try:
                 return read.strip()
             except:
@@ -549,7 +587,8 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get(self, path, params=None, ssl=False,
             compress=True, try_json=True, is_retry=False,
-            use_ordered_dict=False):
+            use_ordered_dict=False, out_folder=None,
+            file_name=None, force_bytes=False):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if url.lower().find("https://") > -1 or\
@@ -594,8 +633,15 @@ class _ArcGISConnection(object):
             #request.install_opener(opener)
             req = request.Request(url)
             resp = request.urlopen(req)
-            resp_data = self._process_response(resp)
+            resp_data = self._process_response(resp,
+                                               out_folder=out_folder,
+                                               file_name=file_name)
+            #  if the response is a file saved to disk, return it.
 
+            if os.path.isfile(resp_data):
+                if force_bytes:
+                    return open(resp_data, 'rb').read()
+                return resp_data
             # If we're not trying to parse to JSON, return response as is
             if not try_json:
                 return resp_data
@@ -652,97 +698,6 @@ class _ArcGISConnection(object):
     def _ensure_dir(self, f):
         if not os.path.exists(f):
             os.makedirs(f)
-    #----------------------------------------------------------------------
-    def download_to_folder(self, path, dir_name, ssl=False, is_retry=False):
-        """ Downloads file to specified directory. Handles token timeout and all SSL mode."""
-        url = path
-        if not path.startswith('http://') and not path.startswith('https://'):
-            url = self.baseurl + path
-        if ssl or self.all_ssl:
-            url = url.replace('http://', 'https://')
-
-        # Add the token if logged in
-        if self.is_logged_in:
-            url = self._url_add_token(url, self.token)
-
-        _log.debug('REQUEST (get): ' + url)
-
-        try:
-            # Send the request and read the response
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
-
-            opener.addheaders = headers
-            resp = opener.open(url)
-            resp_data = resp.read()
-
-            content_disp = resp.info().get('Content-Disposition')
-            if content_disp:
-                value, params = cgi.parse_header(content_disp)
-                filename = params['filename']
-            else:
-                filename = "data.bin"
-
-            self._ensure_dir(dir_name)
-            filename = os.path.join(dir_name, filename)
-
-            f = open(filename, 'wb+')
-            f.write(resp_data)
-            f.close()
-
-            return filename
-
-        # If we got an HTTPError when making the request check to see if it's
-        # related to token timeout, in which case, regenerate a token
-        except HTTPError as e:
-            if e.code == 498 and not is_retry:
-                _log.info('Token expired during get request, fetching a new ' \
-                          + 'token and retrying')
-                self.logout()
-                newtoken = self.relogin()
-                newpath = self._url_add_token(path, newtoken)
-                return self.download_to_folder(newpath, dir_name, ssl, is_retry=True)
-            elif e.code == 498:
-                raise RuntimeError('Invalid token')
-            else:
-                raise e
-    #----------------------------------------------------------------------
-    def download(self, path, filepath, ssl=False, is_retry=False):
-        """ Downloads result of an HTTP GET. Handles token timeout and all SSL mode."""
-        url = path
-        if not path.startswith('http://') and not path.startswith('https://'):
-            url = self.baseurl + path
-        if ssl or self.all_ssl:
-            url = url.replace('http://', 'https://')
-
-        # Add the token if logged in
-        if self.is_logged_in:
-            url = self._url_add_token(url, self.token)
-
-        _log.debug('REQUEST (download): ' + url + ', to ' + filepath)
-
-        # Send the request, and handle the case where the token has
-        # timed out (relogin and try again)
-        try:
-            opener = _StrictURLopener()
-            opener.addheaders = [('Referer', self._referer),
-                                 ('User-Agent', self._useragent)]
-            opener.retrieve(url, filepath)
-        except HTTPError as e:
-            if e.code == 498 and not is_retry:
-                _log.info('Token expired during download request, fetching a ' \
-                          + 'new token and retrying')
-                self.logout()
-                newtoken = self.relogin()
-                newpath = self._url_add_token(path, newtoken)
-                self.download(newpath, filepath, ssl, is_retry=True)
-            elif e.code == 498:
-                raise RuntimeError('Invalid token')
-            else:
-                raise e
     #----------------------------------------------------------------------
     def _url_add_token(self, url, token):
 
