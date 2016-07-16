@@ -2039,9 +2039,13 @@ class Portal(object):
         """
         postdata = self._postdata()
         folder_id = self.get_folder_id(owner, folder)
-        resp = self.con.post('content/users/' + owner + '/' + folder_id + '/delete', postdata)
-        if resp:
-            return resp.get('success')
+        if folder_id is None:
+            print("Folder doesn't exist.")
+            return False
+        else:
+            resp = self.con.post('content/users/' + owner + '/' + folder_id + '/delete', postdata)
+            if resp:
+                return resp.get('success')
 
 
 

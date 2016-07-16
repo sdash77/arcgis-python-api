@@ -1297,62 +1297,60 @@ class ContentManager(object):
         return itemlist
     # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
-    def create_folder(self, owner, folder):
-        """ Creates a folder for the given user with the given title. Does nothing if the
-        folder already exists.
+    def create_folder(self, folder, owner=None):
+        """ Creates a folder with the given name, for the given owner. Does nothing if the
+        folder already exists. If owner is not specified, does so for the logged in user.
 
-        ================  ========================================================
+        ================  ===============================================================
         **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        owner             required string, the name of the user
-        ----------------  --------------------------------------------------------
+        ----------------  ---------------------------------------------------------------
         folder            required string, the name of the folder to create for the owner
-        ================  ========================================================
+        ----------------  ---------------------------------------------------------------
+        owner             optional string or User, folder owner, None for logged in user
+        ================  ===============================================================
 
         :return:
             a json object like the following:
             {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"} if the folder was created, None otherwise.
         """
         if folder != '/': # we don't create root folder
-            owner_name = owner
-            if isinstance(owner, arcgis.gis.User):
+            if owner is None:
+                owner = self._portal.logged_in_user()['username']
+                owner_name = owner
+            elif isinstance(owner, arcgis.gis.User):
                 owner_name = owner.username
+            else:
+                owner_name = owner
             if self._portal.get_folder_id(owner_name, folder) is None:
                 return self._portal.create_folder(owner_name, folder)
+            else:
+                print('Folder already exists.')
         return None
 
-    def delete_folder(self, owner, folder):
-        """ Deletes a folder for the given user with the given folder name.
+    def delete_folder(self, folder, owner=None):
+        """ Deletes a folder for the given owner (logged in user by default) with the given folder name.
 
-        ================  ========================================================
+        ================  ===============================================================
         **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        owner             required string, the name of the user
-        ----------------  --------------------------------------------------------
+        ----------------  ---------------------------------------------------------------
         folder            required string, the name of the folder to delete
-        ================  ========================================================
+        ----------------  ---------------------------------------------------------------
+        owner             optional string or User, folder owner, None for logged in user
+        ================  ===============================================================
 
         :return:
             True if succeeded, False otherwise
         """
         if folder != '/':
-            return self._portal.delete_folder(owner, folder)
+            if owner is None:
+                owner = self._portal.logged_in_user()['username']
+                owner_name = owner
+            elif isinstance(owner, arcgis.gis.User):
+                owner_name = owner.username
+            else:
+                owner_name = owner
+            return self._portal.delete_folder(owner_name, folder)
 
-    #def get_folder_id(self, owner, folder_name):
-    #    """ Finds the folder for a particular owner and returns its id.
-
-    #    ================  ========================================================
-    #    **Argument**      **Description**
-    #    ----------------  --------------------------------------------------------
-    #    owner             required string, the name of the user
-    #    ----------------  --------------------------------------------------------
-    #    folder_name       required string, the name of the folder to search for
-    #    ================  ========================================================
-
-    #    :return:
-    #        a boolean if succeeded.
-    #    """
-    #    return self._portal.get_folder_id(owner, folder_name)
 
     def import_data(self, df, address_fields=None):
         """
