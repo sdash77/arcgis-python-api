@@ -199,7 +199,7 @@ class DatastoreItem(dict):
 
         if datadict:
             self.__dict__.update(datadict)
-            dict.update(datadict)
+            super().update(datadict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         return dict.__getitem__(self, name)
@@ -1419,7 +1419,7 @@ class Group(dict):
         self._hydrated = False
         if groupdict:
             self.__dict__.update(groupdict)
-            dict.update(groupdict)
+            super().update(groupdict)
 
     def _hydrate(self):
         groupdict = self._portal.get_group(self.groupid)
@@ -1748,7 +1748,7 @@ class User(dict):
         self._hydrated = False
         if userdict:
             self.__dict__.update(userdict)
-            dict.update(userdict)
+            super().update(userdict)
 
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
@@ -2149,7 +2149,7 @@ class Item(dict):
         self._hydrated = False
         if itemdict:
             self.__dict__.update(itemdict)
-            dict.update(itemdict)
+            super().update(itemdict)
 
     def _hydrate(self):
         itemdict = self._portal.get_item(self.itemid)
