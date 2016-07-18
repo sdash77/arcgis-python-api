@@ -4,7 +4,7 @@ ArcGIS Online Services
 """
 from __future__ import absolute_import
 import json
-from _util import is_valid
+from ._utils import is_valid
 
 from six import add_metaclass
 
