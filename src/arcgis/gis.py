@@ -1559,11 +1559,12 @@ class Group(dict):
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                file_path = os.path.join(save_folder, file_name)
 
-                return self._portal.con.get(path=thumbnail_url_path,
+                file_path = os.path.join(save_folder, file_name)
+                self._portal.con.get(path=thumbnail_url_path,
                                             out_folder=save_folder,
                                             file_name=file_name)
+                return file_path
 
         else:
             return None
@@ -2094,8 +2095,9 @@ class User(dict):
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
+
                 file_path = os.path.join(save_folder, file_name)
-                self._portal.con.get(path=thumbnail_url_path,
+                return self._portal.con.get(path=thumbnail_url_path,
                                      out_folder=save_folder,
                                      file_name=file_name)
                 return file_path
@@ -2216,6 +2218,8 @@ class Item(dict):
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
+                    
+                file_path = os.path.join(save_folder, file_name)
                 self._portal.con.get(path=thumbnail_url_path,
                                      out_folder=save_folder,
                                      file_name=file_name)
@@ -2252,9 +2256,12 @@ class Item(dict):
         if not save_folder:
             save_folder = self._workdir
         try:
-            return self._portal.con.get(path=metadataurlpath,
+            file_name="metadata.xml"
+            file_path = os.path.join(save_folder, file_name)
+            self._portal.con.get(path=metadataurlpath,
                                      out_folder=save_folder,
-                                     file_name="metadata.xml")
+                                     file_name=file_name)
+            return file_path
 
         # If the get operation returns a 400 HTTP/IO Error then the metadata
         # simply doesn't exist, let's just return None in this case
@@ -2513,9 +2520,11 @@ class Item(dict):
         return ret
 
     def get_data(self, try_json=True):
-        """Returns the data for the item. Returns a dict if try_json is True. To convert this
-        dict to string using json.dumps(data). Else, returns the data
-        as a byte array, that can be converted to string using data.decode('utf-8')"""
+        """Returns the data for the item.
+        If the data is a file, it's downloaded and the path to the downloaded file is returned.
+        Else if try_json is True, the method tries to convert it to a Python dict and returns it.
+        To convert this dict to string using json.dumps(data). 
+        Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
 
     def dependent_upon(self):

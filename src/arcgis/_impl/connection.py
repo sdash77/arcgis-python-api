@@ -499,18 +499,17 @@ class _ArcGISConnection(object):
                 return os.path.basename(url)
         return "%s.%s" % (uuid.uuid4().get_hex(), ext)
     #----------------------------------------------------------------------
-    def _process_response(self, resp, out_folder=None,  file_name=None):
+    def _process_response(self, resp, out_folder=None,  file_name=None, force_bytes=False):
         """ processes the response object"""
         CHUNK = 4056
         maintype = self._mainType(resp)
         contentDisposition = resp.headers.get('content-disposition')
         contentType = resp.headers.get('content-type')
         contentLength = resp.headers.get('content-length')
-        if maintype.lower() in ('image',
-                                'application/x-zip-compressed') or \
+        if not force_bytes and \
+           (maintype.lower() in ('image', 'application/x-zip-compressed') or \
            contentType == 'application/x-zip-compressed' or \
-           (contentDisposition is not None and \
-            contentDisposition.lower().find('attachment;') > -1):
+           (contentDisposition is not None and contentDisposition.lower().find('attachment;') > -1)):
             fname = self._get_file_name(
                 contentDisposition=contentDisposition,
                 url=resp.geturl()).split('?')[0]
@@ -529,7 +528,7 @@ class _ArcGISConnection(object):
                     writer.write(data)
                     del data
                 del writer
-            return file_name
+            return file_name, True
         else:
             read = ""
             if file_name and out_folder:
@@ -542,7 +541,7 @@ class _ArcGISConnection(object):
                             writer.write(data)
                         del data
                     writer.flush()
-                return f_n_path
+                return f_n_path, True
             else:
                 for data in self._chunk(response=resp, size=4096):
                     if six.PY3 == True:
@@ -553,17 +552,16 @@ class _ArcGISConnection(object):
                     else:
                         read += data
                     del data
-            if six.PY3 and \
-               len(read) > 0:
+            if six.PY3 and len(read) > 0:
                 try:
                     read = read.decode("utf-8").strip()
                 except:
                     pass
             try:
-                return read.strip()
+                return read.strip(), False
             except:
-                return read
-        return ""
+                return read, False
+        return "", False
     #----------------------------------------------------------------------
     def _chunk(self, response, size=4096):
         """
@@ -633,17 +631,12 @@ class _ArcGISConnection(object):
             #request.install_opener(opener)
             req = request.Request(url)
             resp = request.urlopen(req)
-            resp_data = self._process_response(resp,
+            resp_data, is_file = self._process_response(resp,
                                                out_folder=out_folder,
-                                               file_name=file_name)
-            #  if the response is a file saved to disk, return it.
-
-            if os.path.isfile(resp_data):
-                if force_bytes:
-                    return open(resp_data, 'rb').read()
-                return resp_data
-            # If we're not trying to parse to JSON, return response as is
-            if not try_json:
+                                               file_name=file_name, force_bytes=force_bytes)
+            
+            # If is a file or we're not trying to parse to JSON, return response as is
+            if is_file or not try_json:
                 return resp_data
 
             try:
@@ -678,7 +671,7 @@ class _ArcGISConnection(object):
 
             # If we couldnt parse the response to JSON, return it as is
             except ValueError:
-                return resp
+                return resp_data
 
         # If we got an HTTPError when making the request check to see if it's
         # related to token timeout, in which case, regenerate a token
@@ -796,7 +789,7 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
 
             resp = opener.open(req)
-            resp_data = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp)
         # Otherwise send a normal HTTP POST request
         else:
             encoded_postdata = None
@@ -813,7 +806,7 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp)
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
