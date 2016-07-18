@@ -3,7 +3,6 @@ import json
 import sys
 
 list_types = (list, tuple)
-
 if sys.version_info.major == 2:
     number_type = (int, float)
 else:
@@ -46,11 +45,7 @@ def is_valid(value):
 
 def is_polygon(coords):
     lengths = all(len(elem) >= 4 for elem in coords)
-
     valid_pts = all(is_line(part) for part in coords)
-
-
-    #all()
     isring = all(elem[0] == elem[-1] for elem in coords)
     return lengths and isring and valid_pts
 def is_line(coords):
@@ -58,10 +53,6 @@ def is_line(coords):
     checks to see if the line has at
     least 2 points in the list
     """
-    # list of list objects
-    # either be 0:n number of of lists
-    #
-    # Must have at least two points
     all_valid = True
     if isinstance(coords, list_types) and \
        len(coords) > 0: # list of lists
