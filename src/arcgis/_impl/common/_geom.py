@@ -9,6 +9,10 @@ from _util import is_valid
 from six import add_metaclass
 
 class GeometryFactory(type):
+    """
+    Generates a geometry object from a given set of
+    JSON (dictionary or iterable)
+    """
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
@@ -53,7 +57,7 @@ class BaseGeometry(dict):
     #----------------------------------------------------------------------
     def __getattr__(self, name):
         """
-        Permit dictionary items to be retrieved like object attributes
+        dictionary items to be retrieved like object attributes
         :param name: attribute name
         :type name: str, int
         :return: dictionary value
@@ -65,7 +69,7 @@ class BaseGeometry(dict):
     #----------------------------------------------------------------------
     def __setattr__(self, name, value):
         """
-        Permit dictionary items to be set like object attributes.
+        dictionary items to be set like object attributes.
         :param name: key of item to be set
         :type name: str
         :param value: value to set item to
@@ -75,7 +79,7 @@ class BaseGeometry(dict):
     #----------------------------------------------------------------------
     def __delattr__(self, name):
         """
-        Permit dictionary items to be deleted like object attributes
+        dictionary items to be deleted like object attributes
         :param name: key of item to be deleted
         :type name: str
         """
@@ -83,6 +87,7 @@ class BaseGeometry(dict):
         del self[name]
     #----------------------------------------------------------------------
     def __repr__(self):
+        """returns object as string"""
         return json.dumps(self)
     #----------------------------------------------------------------------
     __str__ = __repr__
