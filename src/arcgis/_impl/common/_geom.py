@@ -22,6 +22,8 @@ class GeometryFactory(type):
                     if 'x' in iterable and \
                        'y' in iterable:
                         return Point(iterable=iterable)
+                    elif 'xmin' in iterable:
+                        return Envelope(iterable)
                     elif 'wkt' in iterable or \
                          'wkid' in iterable:
                         return SpatialReference(iterable)
@@ -35,6 +37,8 @@ class GeometryFactory(type):
                 if 'x' in kwargs or \
                    'y' in kwargs:
                     return Point(**kwargs)
+                elif 'xmin' in kwargs:
+                    return Envelope(iterable, **kwargs)
                 elif 'wkt' in kwargs or \
                      'wkid' in kwargs:
                     return SpatialReference(**kwargs)
@@ -140,6 +144,29 @@ class SpatialReference(Geometry):
             iterable = ()
         super(SpatialReference, self).__init__(iterable)
         self.update(kwargs)
+    #----------------------------------------------------------------------
+    @property
+    def type(self):
+        return self._type
+###########################################################################
+class Envelope(Geometry):
+    """
+    An envelope is a rectangle defined by a range of values for each
+    coordinate and attribute. It also has a spatialReference field. The
+    fields for the z and m ranges are optional. An empty envelope has no
+    in space and is defined by the presence of an xmin field a null value
+    or a "NaN" string.
+    """
+    _type = "ENVELOPE"
+    def __init__(self, iterable=None, **kwargs):
+        if iterable is None:
+            iterable = ()
+        super(Envelope, self). __init__(iterable)
+        self.update(kwargs)
+    #----------------------------------------------------------------------
+    @property
+    def type(self):
+        return self._type
 ###########################################################################
 class Point(Geometry):
     """
@@ -244,3 +271,5 @@ class Polygon(Geometry):
     @property
     def type(self):
         return self._type
+
+
