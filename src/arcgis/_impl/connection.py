@@ -528,7 +528,7 @@ class _ArcGISConnection(object):
                     writer.write(data)
                     del data
                 del writer
-            return file_name
+            return file_name, True
         else:
             read = ""
             if file_name and out_folder:
@@ -541,7 +541,7 @@ class _ArcGISConnection(object):
                             writer.write(data)
                         del data
                     writer.flush()
-                return f_n_path
+                return f_n_path, True
             else:
                 for data in self._chunk(response=resp, size=4096):
                     if six.PY3 == True:
@@ -558,10 +558,10 @@ class _ArcGISConnection(object):
                 except:
                     pass
             try:
-                return read.strip()
+                return read.strip(), False
             except:
-                return read
-        return ""
+                return read, False
+        return "", False
     #----------------------------------------------------------------------
     def _chunk(self, response, size=4096):
         """
@@ -631,12 +631,12 @@ class _ArcGISConnection(object):
             #request.install_opener(opener)
             req = request.Request(url)
             resp = request.urlopen(req)
-            resp_data = self._process_response(resp,
+            resp_data, is_file = self._process_response(resp,
                                                out_folder=out_folder,
                                                file_name=file_name, force_bytes=force_bytes)
             
-            # If we're not trying to parse to JSON, return response as is
-            if not try_json:
+            # If is a file or we're not trying to parse to JSON, return response as is
+            if is_file or not try_json:
                 return resp_data
 
             try:
@@ -671,7 +671,7 @@ class _ArcGISConnection(object):
 
             # If we couldnt parse the response to JSON, return it as is
             except ValueError:
-                return resp
+                return resp_data
 
         # If we got an HTTPError when making the request check to see if it's
         # related to token timeout, in which case, regenerate a token
@@ -789,7 +789,7 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
 
             resp = opener.open(req)
-            resp_data = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp)
         # Otherwise send a normal HTTP POST request
         else:
             encoded_postdata = None
@@ -806,7 +806,7 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp)
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):

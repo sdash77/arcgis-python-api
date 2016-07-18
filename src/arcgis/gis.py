@@ -2520,9 +2520,11 @@ class Item(dict):
         return ret
 
     def get_data(self, try_json=True):
-        """Returns the data for the item. Returns a dict if try_json is True. To convert this
-        dict to string using json.dumps(data). Else, returns the data
-        as a byte array, that can be converted to string using data.decode('utf-8')"""
+        """Returns the data for the item.
+        If the data is a file, it's downloaded and the path to the downloaded file is returned.
+        If if try_json is True, the method tries to convert it to a Python dict and returns it.
+        To convert this dict to string using json.dumps(data). 
+        Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
 
     def dependent_upon(self):
