@@ -199,7 +199,7 @@ class DatastoreItem(dict):
 
         if datadict:
             self.__dict__.update(datadict)
-            super().update(datadict)
+            super(DatastoreItem, self).update(datadict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         return dict.__getitem__(self, name)
@@ -212,7 +212,7 @@ class DatastoreItem(dict):
             path = self._admin_url + "/data/items" + self.datapath
 
             datadict = self._portal.con.post(path, params)
-            super().update(datadict)
+            super(DatastoreItem, self).update(datadict)
             self.__dict__.update(datadict)
             return dict.__getitem__(self, k)
 
@@ -1417,7 +1417,7 @@ class Group(dict):
         self._hydrated = False
         if groupdict:
             self.__dict__.update(groupdict)
-            super().update(groupdict)
+            super(Group, self).update(groupdict)
 
     def _hydrate(self):
         groupdict = self._portal.get_group(self.groupid)
@@ -1746,14 +1746,14 @@ class User(dict):
         self._hydrated = False
         if userdict:
             self.__dict__.update(userdict)
-            super().update(userdict)
+            super(User, self).update(userdict)
 
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
     def _hydrate(self):
         userdict = self._portal.get_user(self.username)
         self._hydrated = True
-        super().update(userdict)
+        super(User, self).update(userdict)
         self.__dict__.update(userdict)
 
     def __getattr__(self, name): # support user attributes as user.access, user.email, user.role etc
@@ -2147,12 +2147,12 @@ class Item(dict):
         self._hydrated = False
         if itemdict:
             self.__dict__.update(itemdict)
-            super().update(itemdict)
+            super(Item, self).update(itemdict)
 
     def _hydrate(self):
         itemdict = self._portal.get_item(self.itemid)
         self._hydrated = True
-        super().update(itemdict)
+        super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
 
     def __getattr__(self, name): # support item attributes
