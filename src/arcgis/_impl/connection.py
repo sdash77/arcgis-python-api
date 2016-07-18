@@ -499,18 +499,17 @@ class _ArcGISConnection(object):
                 return os.path.basename(url)
         return "%s.%s" % (uuid.uuid4().get_hex(), ext)
     #----------------------------------------------------------------------
-    def _process_response(self, resp, out_folder=None,  file_name=None):
+    def _process_response(self, resp, out_folder=None,  file_name=None, force_bytes=False):
         """ processes the response object"""
         CHUNK = 4056
         maintype = self._mainType(resp)
         contentDisposition = resp.headers.get('content-disposition')
         contentType = resp.headers.get('content-type')
         contentLength = resp.headers.get('content-length')
-        if maintype.lower() in ('image',
-                                'application/x-zip-compressed') or \
+        if not force_bytes and \
+           (maintype.lower() in ('image', 'application/x-zip-compressed') or \
            contentType == 'application/x-zip-compressed' or \
-           (contentDisposition is not None and \
-            contentDisposition.lower().find('attachment;') > -1):
+           (contentDisposition is not None and contentDisposition.lower().find('attachment;') > -1)):
             fname = self._get_file_name(
                 contentDisposition=contentDisposition,
                 url=resp.geturl()).split('?')[0]
@@ -553,8 +552,7 @@ class _ArcGISConnection(object):
                     else:
                         read += data
                     del data
-            if six.PY3 and \
-               len(read) > 0:
+            if six.PY3 and len(read) > 0:
                 try:
                     read = read.decode("utf-8").strip()
                 except:
@@ -635,13 +633,8 @@ class _ArcGISConnection(object):
             resp = request.urlopen(req)
             resp_data = self._process_response(resp,
                                                out_folder=out_folder,
-                                               file_name=file_name)
-            #  if the response is a file saved to disk, return it.
-
-            if os.path.isfile(resp_data):
-                if force_bytes:
-                    return open(resp_data, 'rb').read()
-                return resp_data
+                                               file_name=file_name, force_bytes=force_bytes)
+            
             # If we're not trying to parse to JSON, return response as is
             if not try_json:
                 return resp_data
