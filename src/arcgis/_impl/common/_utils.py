@@ -9,7 +9,7 @@ else:
     number_type = (int, float, long)
 #--------------------------------------------------------------------------
 def is_valid(value):
-    from _geomobject import Point, Polygon, Polyline, MultiPoint
+    from _geom import Point, Polygon, Polyline, MultiPoint, Envelope
     """checks if the value is valid"""
     if isinstance(value, Point):
         if hasattr(value, 'x') and \
@@ -20,9 +20,20 @@ def is_valid(value):
              value['x'] == "NaN"):
             return True
         return False
+    elif isinstance(value, Envelope):
+        if all(hasattr(value, a) for a in ('xmin', 'ymin',
+                                           'xmax', 'ymax')) and \
+           all(isinstance(getattr(value,a), number_type) for a in ('xmin', 'ymin',
+                                                                   'xmax', 'ymax')):
+            return True
+        elif hasattr(value, "xmin") and \
+           (value.xmin is None or value.xmin == "NaN"):
+            return True
+        else:
+            return False
     elif isinstance(value, (MultiPoint,
-                          Polygon,
-                          Polyline)):
+                            Polygon,
+                            Polyline)):
         if 'paths' in value:
             if len(value['paths']) == 0:
                 return True
