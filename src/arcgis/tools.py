@@ -24,6 +24,7 @@ import os
 import string
 import random
 
+from ._impl.service._geometry import GeometryService as Geometry
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -74,7 +75,7 @@ class Geocoder(collections.OrderedDict):
         except RuntimeError as e:
             if e.args[0] == 'Invalid token':
                 svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
-        
+
         collections.OrderedDict.__init__(self, svcprops)
         try:
             self._address_field = svcprops['singleLineAddressField']['name']
@@ -419,157 +420,6 @@ class Geocoder(collections.OrderedDict):
         resp = self._portal.con.post(url, params, add_token=False)
         return resp
 
-
-class Geometry(collections.OrderedDict):
-    "represents a geometry service"
-    def __init__(self, item, url=None, gis=None):
-        """
-        Constructs a Geometry Server object given it's item from ArcGIS Online or Portal.
-        """
-        if url is not None:
-            self.url = url
-            self._portal = gis._portal
-        else:
-            if item.type.lower() != 'geometry service':
-                raise TypeError("item type must be geometry service")
-            self._portal = item._portal
-            self.url = item.url
-
-        params = {
-            "f" : "json"
-        }
-        svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
-        collections.OrderedDict.__init__(self, svcprops)
-
-    def __str__(self):
-        return json.dumps(self)
-
-    def areasAndLengths(self,
-                        polygons,
-                        lengthUnit,
-                        areaUnit,
-                        calculationType,
-                        ):
-        """
-           The areasAndLengths operation calculates areas and perimeter lengths
-           for each polygon specified in the input array.
-
-           Inputs:
-              polygons - The array of polygons whose areas and lengths are
-                         to be computed.
-              lengthUnit - The length unit in which the perimeters of
-                           polygons will be calculated. If calculationType
-                           is planar, then lengthUnit can be any esriUnits
-                           constant. If lengthUnit is not specified, the
-                           units are derived from sr. If calculationType is
-                           not planar, then lengthUnit must be a linear
-                           esriUnits constant, such as esriSRUnit_Meter or
-                           esriSRUnit_SurveyMile. If lengthUnit is not
-                           specified, the units are meters. For a list of
-                           valid units, see esriSRUnitType Constants and
-                           esriSRUnit2Type Constant.
-              areaUnit - The area unit in which areas of polygons will be
-                         calculated. If calculationType is planar, then
-                         areaUnit can be any esriUnits constant. If
-                         areaUnit is not specified, the units are derived
-                         from sr. If calculationType is not planar, then
-                         areaUnit must be a linear esriUnits constant such
-                         as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                         areaUnit is not specified, then the units are
-                         meters. For a list of valid units, see
-                         esriSRUnitType Constants and esriSRUnit2Type
-                         constant.
-                         The list of valid esriAreaUnits constants include,
-                         esriSquareInches | esriSquareFeet |
-                         esriSquareYards | esriAcres | esriSquareMiles |
-                         esriSquareMillimeters | esriSquareCentimeters |
-                         esriSquareDecimeters | esriSquareMeters | esriAres
-                         | esriHectares | esriSquareKilometers.
-              calculationType -  The type defined for the area and length
-                                 calculation of the input geometries. The
-                                 type can be one of the following values:
-                                 planar - Planar measurements use 2D
-                                          Euclidean distance to calculate
-                                          area and length. This should
-                                          only be used if the area or
-                                          length needs to be calculated in
-                                          the given spatial reference.
-                                          Otherwise, use preserveShape.
-                                 geodesic - Use this type if you want to
-                                          calculate an area or length using
-                                          only the vertices of the polygon
-                                          and define the lines between the
-                                          points as geodesic segments
-                                          independent of the actual shape
-                                          of the polygon. A geodesic
-                                          segment is the shortest path
-                                          between two points on an ellipsoid.
-                                 preserveShape - This type calculates the
-                                          area or length of the geometry on
-                                          the surface of the Earth
-                                          ellipsoid. The shape of the
-                                          geometry in its coordinate system
-                                          is preserved.
-           Output:
-              JSON as dictionary
-        """
-        url = self.url + "/areasAndLengths"
-        params = {
-            "f" : "json",
-            "lengthUnit" : lengthUnit,
-            "areaUnit" : {"areaUnit" : areaUnit},
-            "calculationType" : calculationType
-        }
-
-        if isinstance(polygons, list) and len(polygons) > 0:
-            p = polygons[0]
-            if isinstance(p, Polygon):
-                params['sr'] = p.spatialReference['wkid']
-                params['polygons'] = [poly.asDictionary for poly in polygons]
-            del p
-        else:
-            return "No polygons provided, please submit a list of polygon geometries"
-
-        resp = self._portal.con.post(url, params)
-
-        return resp
-
-    def simplify(self,
-                 sr,
-                 geometries
-                 ):
-        """returns a simplied geometry object"""
-        url = self.url + "/simplify"
-        params = {
-            "f" : "json",
-            "sr" : sr,
-            "geometries" : geometries
-        }
-        resp = self._portal.con.post(url, params)
-
-        return resp
-
-    def lengths(self,
-                sr,
-                polylines,
-                lengthUnit,
-                calculationType
-                ):
-        """"""
-        allowedCalcTypes = ['planar', 'geodesic', 'preserveShape']
-        if calculationType not in allowedCalcTypes:
-            raise AttributeError("Invalid calculation Type")
-        url = self.url + "/lengths"
-        params = {
-            "f" : "json",
-            "sr" : sr,
-            "polylines": polylines,
-            "lengthUnit" : lengthUnit,
-            "calculationType" : calculationType
-        }
-        resp = self._portal.con.post(url, params)
-
-        return resp['lengths']
 
 class _AsyncService(object):
 

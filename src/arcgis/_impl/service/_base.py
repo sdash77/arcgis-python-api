@@ -28,7 +28,7 @@ class BaseService(OrderedDict):
                       if not attr.startswith('__') and \
                       not attr.startswith('_')]
         params = {"f":"json"}
-        result = connection.get(path_or_url=self._url,
+        result = connection.get(path=self._url,
                                 params=params)
         self._json_dict = result
         for k,v in result.items():
@@ -39,19 +39,7 @@ class BaseService(OrderedDict):
                 self[k] = v
         if isinstance(result, dict):
             self.__dict__.update(result)
-            super(BasePortal, self).update(result)
-    #----------------------------------------------------------------------
-    @property
-    def portal(self):
-        """gets/sets the portal class"""
-        return self._portal
-    #----------------------------------------------------------------------
-    @portal.setter
-    def portal(self, value):
-        """gets/sets the portal class"""
-
-        self._portal = value
-
+            super(BaseService, self).update(result)
     #----------------------------------------------------------------------
     @property
     def connection(self):
@@ -64,8 +52,10 @@ class BaseService(OrderedDict):
         if isinstance(value, _ArcGISConnection):
             self._con = value
             self.refresh()
+        elif value is None:
+            self._con = value
         else:
-            raise ValueError("connection must be of type SiteConnection")
+            raise ValueError("connection must be of type _ArcGISConnection")
     #----------------------------------------------------------------------
     @property
     def url(self):

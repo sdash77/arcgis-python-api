@@ -161,7 +161,7 @@ class Envelope(Geometry):
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
-        super(Envelope, self). __init__(iterable)
+        super(Envelope, self).__init__(iterable)
         self.update(kwargs)
     #----------------------------------------------------------------------
     @property
