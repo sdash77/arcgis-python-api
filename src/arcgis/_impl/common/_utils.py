@@ -3,10 +3,7 @@ import json
 import sys
 
 list_types = (list, tuple)
-if sys.version_info.major == 2:
-    number_type = (int, float)
-else:
-    number_type = (int, float, long)
+number_type = (int, float)
 #--------------------------------------------------------------------------
 def is_valid(value):
     from _geom import Point, Polygon, Polyline, MultiPoint, Envelope
