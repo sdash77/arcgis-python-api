@@ -248,12 +248,12 @@ class GPTask(BaseService):
                 else:
                     params[p.paramName] = p.value
         if method.lower() == "get":
-            res = self._con.get(path_or_url=url, params=params)
+            res = self._con.get(path=url, params=params)
             jobUrl = self._url + "/jobs/%s" % res['jobId']
             return GPJob(connection=self._con, url=jobUrl,
                           initialize=True)
         elif method.lower() == "post":
-            res = self._con.post(path_or_url=url, params=params)
+            res = self._con.post(path=url, params=params)
             jobUrl = self._url + "/jobs/%s" % res['jobId']
             return GPJob(url=jobUrl,
                          connection=self._con,
@@ -292,9 +292,9 @@ class GPTask(BaseService):
                 params[p.paramName] = p.value
             del p
         if method.lower() == "post":
-            return self._con.post(path_or_url=url, postdata=params)
+            return self._con.post(path=url, postdata=params)
         else:
-            return self._con.get(path_or_url=url, params=params)
+            return self._con.get(path=url, params=params)
 ########################################################################
 class GPJob(BaseService):
     """
@@ -314,7 +314,7 @@ class GPJob(BaseService):
         params = {
             "f" : "json"
         }
-        return self._con.get(path_or_url=self._url + "/cancel",
+        return self._con.get(path=self._url + "/cancel",
                             params=params)
     #----------------------------------------------------------------------
     @property
@@ -332,7 +332,7 @@ class GPJob(BaseService):
             "f" : "json",
 
         }
-        return self._con.get(path_or_url=url,
+        return self._con.get(path=url,
                             params=params)
     #----------------------------------------------------------------------
     @property

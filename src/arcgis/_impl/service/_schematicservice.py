@@ -69,7 +69,7 @@ class SchematicsService(BaseService):
         """
         params = {"f" : "json"}
         exportURL = self._url + "/diagrams"
-        return self._con.get(path_or_url=exportURL,
+        return self._con.get(path=exportURL,
                              params=params)
     #----------------------------------------------------------------------
     @property
@@ -82,7 +82,7 @@ class SchematicsService(BaseService):
         """
         params = {"f" : "json"}
         exportURL = self._url + "/folders"
-        return self._con.get(path_or_url=exportURL,
+        return self._con.get(path=exportURL,
                          params=params)
     #----------------------------------------------------------------------
     @property
@@ -94,7 +94,7 @@ class SchematicsService(BaseService):
         """
         params = {"f" : "json"}
         exportURL = self._url + "/schematicLayers"
-        return self._con.get(path_or_url=exportURL,
+        return self._con.get(path=exportURL,
                          params=params)
     #----------------------------------------------------------------------
     @property
@@ -107,7 +107,7 @@ class SchematicsService(BaseService):
         """
         params = {"f" : "json"}
         exportURL = self._url + "/templates"
-        return self._con.get(path_or_url=exportURL,
+        return self._con.get(path=exportURL,
                                  params=params)
     #----------------------------------------------------------------------
     def searchDiagrams(self,whereClause=None,relatedObjects=None,
@@ -156,5 +156,5 @@ class SchematicsService(BaseService):
             params["relatedSchematicObjects"] = relatedSchematicObjects
 
         exportURL = self._url + "/searchDiagrams"
-        return self._con.get(path_or_url=exportURL,
+        return self._con.get(path=exportURL,
                              params=params)
