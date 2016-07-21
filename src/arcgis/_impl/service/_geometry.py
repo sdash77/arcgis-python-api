@@ -1,3 +1,12 @@
+"""
+
+.. module:: _geometry.py
+   :platform: Windows, Linux
+   :synopsis: Represents functions/classes that represents a geometry
+              service.
+.. moduleauthor:: Esri
+
+"""
 from __future__ import absolute_import
 import json
 from ..common._geom import MultiPoint, Point
@@ -18,31 +27,6 @@ class GeometryService(BaseService):
     _portal = None
     _item = None
     _json_dict = None
-    def __init__(self, item=None, url=None, gis=None,connection=None, initialize=False):
-        """
-        Constructs a Geometry Server object given it's item from ArcGIS Online or Portal.
-        """
-        super(GeometryService, self).__init__(**{"item" : item, "gis":gis, "url" : url,
-                                                 "connection" : connection,
-                                                 "initialize" : False})
-        if item is not None and \
-           item.type.lower() != "geometry service":
-            raise TypeError("item type must be geometry service")
-        if gis is not None:
-            self._portal = gis._portal
-        if item is not None:
-            self._url = item.url
-            self._portal = item._portal
-            self.connection = item._portal.con
-        if connection is not None:
-            self.connection = connection
-        elif connection is None and \
-             self._portal is not None:
-            self.connection = self._portal.con
-        if url is not None:
-            self._url = url
-        if initialize:
-            self.init(connection)
     #----------------------------------------------------------------------
     def areas_and_lengths(self,
                         polygons,

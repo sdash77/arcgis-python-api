@@ -2,6 +2,7 @@
 import json
 import sys
 
+
 list_types = (list, tuple)
 if sys.version_info.major == 2:
     number_type = (int, float)
