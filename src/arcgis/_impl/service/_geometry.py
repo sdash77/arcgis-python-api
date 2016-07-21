@@ -12,7 +12,7 @@ import json
 from ..common._geom import MultiPoint, Point
 from ..common._geom import Polygon, Envelope
 from ..common._geom import Polyline, Geometry
-from ._base import BaseService
+from ..common._base import BaseService
 
 ########################################################################
 class GeometryService(BaseService):

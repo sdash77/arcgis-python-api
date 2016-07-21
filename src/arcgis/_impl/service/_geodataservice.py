@@ -8,8 +8,7 @@
 
 """
 from __future__ import absolute_import
-import json
-from ._base import BaseService
+from ..common._base import BaseService
 ########################################################################
 class GeoDataService(BaseService):
     """

@@ -10,7 +10,7 @@
 """
 import time
 import tempfile
-from ._base import BaseService
+from ..common._base import BaseService
 from ..common import Polygon, SpatialReference
 from .geoprocessing import GPJob
 from ._featureservice import FeatureLayer, TableLayer, SchematicLayer

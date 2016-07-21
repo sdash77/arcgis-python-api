@@ -6,7 +6,7 @@ user/developer would.
 from __future__ import absolute_import
 from six.moves.urllib_parse import urlparse
 import json
-from ..common._base import BaseServer
+from ...common._base import BaseServer
 from ...service._layerfactory import Layer
 __all__ = ['Catalog']
 ########################################################################

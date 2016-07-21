@@ -8,7 +8,7 @@
 
 """
 from __future__ import absolute_import
-from ._base import BaseService
+from ..common._base import BaseService
 
 
 ########################################################################

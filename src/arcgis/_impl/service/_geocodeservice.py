@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import json
 from ..common import Point
-from ._base import BaseService
+from ..common._base import BaseService
 ########################################################################
 class GeocodeService(BaseService):
     """

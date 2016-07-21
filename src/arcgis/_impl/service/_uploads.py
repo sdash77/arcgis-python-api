@@ -2,6 +2,7 @@
 Controls the Uploads of file to AGS/AGO
 """
 from __future__ import absolute_import
+from six.moves.urllib_parse import urlencode
 import os
 ########################################################################
 class Uploads(object):

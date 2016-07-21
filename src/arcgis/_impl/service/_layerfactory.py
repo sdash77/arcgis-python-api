@@ -4,7 +4,6 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
-import json
 from six import add_metaclass
 from ._featureservice import FeatureService, FeatureLayer, TableLayer, TiledService
 from .geoprocessing import GPService
@@ -137,4 +136,3 @@ class Layer(object):
         if iterable is None:
             iterable = ()
         super(Layer, self).__init__( url, connection, item, gis, initialize)
-        self.update(kwargs)

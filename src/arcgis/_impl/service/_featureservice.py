@@ -16,12 +16,12 @@ import six
 import json
 from re import search
 from ._uploads import Uploads
-from ..server.common.util import _date_handler
+from ..common._utils import _date_handler
 
 from ..common._filters import *
 from ..common._spatial import scratchFolder, scratchGDB, json_to_featureclass
-from ..server.common.util import create_uid
-from ._base import BaseService
+from ..common._utils import create_uid
+from ..common._base import BaseService
 from ..common._geom import SpatialReference
 from ..common._featureset import FeatureSet
 #from ..portalmanager.hostedservice import AdminFeatureService, AdminFeatureServiceLayer

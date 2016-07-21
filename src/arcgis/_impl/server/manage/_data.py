@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from ..common._base import BaseServer
+from ...common._base import BaseServer
 ########################################################################
 class Data(BaseServer):
     """

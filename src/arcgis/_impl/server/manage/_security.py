@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from ..common._base import BaseServer
+from ...common._base import BaseServer
 ########################################################################
 class Security(BaseServer):
     """ The security resource is a container for all resources and

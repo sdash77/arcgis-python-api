@@ -13,7 +13,7 @@ from ._gpobjects import GPBoolean, GPDataFile, GPDate
 from ._gpobjects import GPDouble, GPFeatureRecordSetLayer, GPLinearUnit
 from ._gpobjects import GPLong, GPMultiValue, GPRasterData
 from ._gpobjects import GPRasterDataLayer, GPRecordSet, GPString
-from .._base import BaseService
+from ...common._base import BaseService
 ########################################################################
 class GPService(BaseService):
     """
