@@ -2218,7 +2218,7 @@ class Item(dict):
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                    
+
                 file_path = os.path.join(save_folder, file_name)
                 self._portal.con.get(path=thumbnail_url_path,
                                      out_folder=save_folder,
@@ -2523,7 +2523,7 @@ class Item(dict):
         """Returns the data for the item.
         If the data is a file, it's downloaded and the path to the downloaded file is returned.
         Else if try_json is True, the method tries to convert it to a Python dict and returns it.
-        To convert this dict to string using json.dumps(data). 
+        To convert this dict to string using json.dumps(data).
         Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
 
@@ -2584,7 +2584,7 @@ class Item(dict):
         path = 'content/users/' + self.owner
 
         path += '/addRelationship'
-        print
+
         resp = self._portal.con.post(path, postdata)
         if resp:
             return resp.get('success')

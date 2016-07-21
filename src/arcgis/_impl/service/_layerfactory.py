@@ -102,7 +102,6 @@ class LayerFactory(type):
                                      initialize=initialize)
         else:
             return None
-        print 'stop'
         return type.__call__(cls,  url, connection, item, gis, initialize)
 ###########################################################################
 @add_metaclass(LayerFactory)
