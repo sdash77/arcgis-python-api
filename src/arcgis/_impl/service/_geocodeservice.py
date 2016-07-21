@@ -1,6 +1,7 @@
 from __future__ import absolute_import
-from ..common.geometry import Point
-from ..common._base import BaseService
+import json
+from ..common import Point
+from ._base import BaseService
 ########################################################################
 class GeocodeService(BaseService):
     """
@@ -169,7 +170,7 @@ class GeocodeService(BaseService):
             results, in a database for example, you need to set this
             parameter to true.
         """
-        if self._con.security_method.lower() != "anonymous":
+        if self._con._auth.lower() != "anon":
             url = self._url + "/find"
             params = {
                 "f" : "json",
@@ -183,7 +184,7 @@ class GeocodeService(BaseService):
                 params['bbox'] = bbox
             if not location is None:
                 if isinstance(location, Point):
-                    params['location'] = location.as_dict
+                    params['location'] = location
                 if isinstance(location, list):
                     params['location'] = "%s,%s" % (location[0], location[1])
                 if not distance is None:
@@ -356,7 +357,7 @@ class GeocodeService(BaseService):
         if not searchExtent is None:
             params['searchExtent'] = searchExtent
         if isinstance(location, Point):
-            params['location'] = location.as_dict
+            params['location'] = location
         elif isinstance(location, list):
             params['location'] = "%s,%s" % (location[0], location[1])
         return self._con.post(path=url,
@@ -430,7 +431,7 @@ class GeocodeService(BaseService):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def reverseGeocode(self, location):
+    def reverse_geocode(self, location):
         """
         The reverseGeocode operation determines the address at a particular
         x/y location. You pass the coordinates of a point location to the
@@ -446,7 +447,7 @@ class GeocodeService(BaseService):
         }
         url = self._url + "/reverseGeocode"
         if isinstance(location, Point):
-            params['location'] = location.as_dict
+            params['location'] = location
         elif isinstance(location, dict):
             params['location'] = "%s,%s" % (location['x'], location['y'])
         elif isinstance(location, list):
@@ -524,7 +525,7 @@ class GeocodeService(BaseService):
         }
         url = self._url + "/suggest"
         if isinstance(location, Point):
-            params['location'] = location.as_dict
+            params['location'] = location
         elif isinstance(location, dict):
             params['location'] = location
         elif isinstance(location, list):

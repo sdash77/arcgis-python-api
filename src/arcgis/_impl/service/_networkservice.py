@@ -1,7 +1,7 @@
 """
 """
 from __future__ import absolute_import
-from ..common._base import BaseService
+from ._base import BaseService
 
 ########################################################################
 class NetworkService(BaseService):

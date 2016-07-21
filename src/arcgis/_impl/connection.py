@@ -217,7 +217,10 @@ class _ArcGISConnection(object):
                  proxy_host=None, proxy_port=None,
                  connection=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
-        self._is_arcpy = baseurl.lower() == "pro"
+        if baseurl is None:
+            self._is_arcpy = False
+        else:
+            self._is_arcpy = baseurl.lower() == "pro"
         if self._is_arcpy:
             try:
                 import arcpy
@@ -240,13 +243,14 @@ class _ArcGISConnection(object):
         self._connection = connection # second connection
 
         # Setup the referer and user agent
-        if not referer:
-            referer = urlparse(baseurl).netloc
-        self._referer = referer
-        self._useragent = 'geosaurus/' + __version__
+        if baseurl:
+            if not referer:
+                referer = urlparse(baseurl).netloc
+            self._referer = referer
+            self._useragent = 'geosaurus/' + __version__
 
-        parsed_url = urlparse(self.baseurl)
-        self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))
+            parsed_url = urlparse(self.baseurl)
+            self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))
 
         self._username = username
         self._password = password
@@ -443,6 +447,8 @@ class _ArcGISConnection(object):
         determines if the product is portal, arcgis online or arcgis server
         """
         baseurl = self.baseurl
+        if baseurl is None:
+            return "UNKNOWN"
         if baseurl.lower().find("arcgis.com") > -1:
             return "AGO"
         elif baseurl.lower().find("/sharing/rest") > -1:
@@ -634,7 +640,7 @@ class _ArcGISConnection(object):
             resp_data, is_file = self._process_response(resp,
                                                out_folder=out_folder,
                                                file_name=file_name, force_bytes=force_bytes)
-            
+
             # If is a file or we're not trying to parse to JSON, return response as is
             if is_file or not try_json:
                 return resp_data

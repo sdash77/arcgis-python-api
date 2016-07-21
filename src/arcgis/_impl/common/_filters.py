@@ -184,7 +184,7 @@ class GeometryFilter(object):
         """ sets the geometry value """
 
         if isinstance(geometry, (Polygon, Point, Polyline, MultiPoint)):
-            self._geomObject = geometry.as_dict
+            self._geomObject = geometry
             self._geomType = geometry.type
         else:
             raise AttributeError("geometry must be a common.Geometry type.")

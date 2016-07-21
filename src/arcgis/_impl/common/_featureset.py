@@ -81,20 +81,20 @@ class Feature(object):
             if isinstance(value, BaseGeometry):
                 if isinstance(value, Point):
                     self._dict['geometry'] = {
-                    "x" : value.as_dict['x'],
-                    "y" : value.as_dict['y']
+                    "x" : value['x'],
+                    "y" : value['y']
                     }
                 elif isinstance(value, MultiPoint):
                     self._dict['geometry'] = {
-                        "points" : value.as_dict['points']
+                        "points" : value['points']
                     }
                 elif isinstance(value, Polyline):
                     self._dict['geometry'] = {
-                        "paths" : value.as_dict['paths']
+                        "paths" : value['paths']
                     }
                 elif isinstance(value, Polygon):
                     self._dict['geometry'] = {
-                        "rings" : value.as_dict['rings']
+                        "rings" : value['rings']
                     }
                 else:
                     return False

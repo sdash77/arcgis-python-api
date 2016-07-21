@@ -346,7 +346,7 @@ class FeatureService(BaseService):
             params['inSR'] = gf['inSR']
         if not outSR is None and \
            isinstance(outSR, SpatialReference):
-            params['outSR'] = outSR.as_dict
+            params['outSR'] = outSR
         elif not outSR is None and \
              isinstance(outSR, dict):
             params['outSR'] = outSR
@@ -437,7 +437,7 @@ class FeatureService(BaseService):
             params['definitionExpression'] = definitionExpression
         if outWKID is not None and \
            isinstance(outWKID, SpatialReference):
-            params['outSR'] = outWKID.as_dict
+            params['outSR'] = outWKID
         elif outWKID is not None and \
              isinstance(outWKID, dict):
             params['outSR'] = outWKID
@@ -1498,7 +1498,7 @@ class FeatureLayer(BaseService):
             params['definitionExpression'] = definitionExpression
         if outWKID is not None and \
            isinstance(outWKID, SpatialReference):
-            params['outSR'] = outWKID.as_dict
+            params['outSR'] = outWKID
         elif outWKID is not None and \
              isinstance(outWKID, dict):
             params['outSR'] = outWKID
