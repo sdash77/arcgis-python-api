@@ -562,7 +562,7 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += '/items/' + item_id + '/delete'
@@ -598,7 +598,7 @@ class Portal(object):
 
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += '/items/' + item_id + '/share'
@@ -634,7 +634,7 @@ class Portal(object):
 
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += 'items/' + item_id + '/unshare'
@@ -1303,7 +1303,7 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = '/content/users/' + current_owner
+        path = 'content/users/' + current_owner
         if current_folder :
             path += '/folder'
         path += 'items/' + item_id + '/reassign'
