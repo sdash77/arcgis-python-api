@@ -7,6 +7,7 @@ from __future__ import absolute_import
 from six.moves.urllib_parse import urlparse
 import json
 from ..common._base import BaseServer
+from ...service._layerfactory import Layer
 __all__ = ['Catalog']
 ########################################################################
 class Catalog(BaseServer):
@@ -130,7 +131,14 @@ class Catalog(BaseServer):
         """gets the services in the current folder"""
         if self._services is None:
             self.init()
-        return self._services
+        layers = []
+        for service in self._services:
+            layers.append(Layer(url="{base}/{name}/{servicetype}".format(
+                base=self._location,
+                name=service['name'],
+                servicetype=service['type']
+                ), connection=self._con))
+        return layers
     #----------------------------------------------------------------------
     @property
     def folders(self):

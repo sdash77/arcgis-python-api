@@ -102,14 +102,37 @@ class LayerFactory(type):
                                      connection=connection,
                                      initialize=initialize)
         else:
-            print 'not implemented'
-            print url, base_name, hasLayer
             return None
         print 'stop'
         return type.__call__(cls,  url, connection, item, gis, initialize)
 ###########################################################################
 @add_metaclass(LayerFactory)
 class Layer(object):
+    """
+    The Layer class allows users to pass a url, connection or other object
+    to the class and get back properties and functions specifically related
+    to the service.
+
+    Inputs:
+       url - internet address to the service
+       connection - connection object that performs the GET and POST calls
+       item - Portal or AGOL Item class
+       gis - GIS object, used for portal type objects
+       initialize - states if you want to pre-load the service's properties
+
+    Anonymous Example:
+       >>> con = _ArcGISConnection()
+       >>> service = Layer(
+       url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/911CallsHotspot/GPServer",
+       connection=con)
+       >>> print (type(service))
+       'GPService'
+       >>> service = Layer(
+       url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer",
+       connection=con)
+       >>> print (type(service))
+       MapService
+    """
     def __init__(self, url, connection=None, item=None, gis=None, initialize=False):
         if iterable is None:
             iterable = ()
