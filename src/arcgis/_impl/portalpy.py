@@ -562,7 +562,7 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += '/items/' + item_id + '/delete'
@@ -598,7 +598,7 @@ class Portal(object):
 
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += '/items/' + item_id + '/share'
@@ -634,7 +634,7 @@ class Portal(object):
 
 
         """
-        path = '/content/users/' + owner
+        path = 'content/users/' + owner
         if folder :
             path += '/' + folder
         path += 'items/' + item_id + '/unshare'
@@ -1303,7 +1303,7 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = '/content/users/' + current_owner
+        path = 'content/users/' + current_owner
         if current_folder :
             path += '/folder'
         path += 'items/' + item_id + '/reassign'
@@ -1383,6 +1383,23 @@ class Portal(object):
                              postdata)
         return resp
 
+    def user_folders(self, owner):
+        resp = self._contents_page(owner, None, 1, 10)
+        results = resp.get('folders')
+        return results
+
+    def user_items(self, owner, folder, max_results=100):
+        count = 0
+        resp = self._contents_page(owner, folder, 1, min(max_results, 100))
+        results = resp.get('items')
+        count += int(resp['num'])
+        nextstart = int(resp['nextStart'])
+        while count < max_results and nextstart > 0:
+            resp = self._contents_page(owner, folder, nextstart, min(max_results - count, 100))
+            results.extend(resp['items'])
+            count += int(resp['num'])
+            nextstart = int(resp['nextStart'])
+        return results
 
     def search(self, q, bbox=None, sort_field='title', sort_order='asc',
                max_results=1000, outside_org=False):
@@ -2097,7 +2114,14 @@ class Portal(object):
             return copy.deepcopy(self._basepostdata)
         return None
 
-
+    def _contents_page(self, owner, folderid=None, start=1, num=100):
+        _log.info("getting user folders and items")
+        postdata = self._postdata()
+        postdata.update({"num":num, "start":start})
+        path = "content/users/{}".format(owner)
+        if folderid:
+            path = "{}/{}".format(path, folderid)
+        return self.con.post(path, postdata)
 
     def _search_page(self, q=None, bbox=None, start=1, num=10, sortfield='', sortorder='asc'):
         _log.info('Searching items (q=' + str(q) + ', bbox=' + str(bbox) \

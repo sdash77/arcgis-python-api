@@ -896,7 +896,7 @@ class UserManager(object):
 
         #TODO: remove org users, invite users
 
-    @property
+    @_lazy_property
     def me(self):
         """ Returns the logged in user
         """
@@ -2104,30 +2104,35 @@ class User(dict):
         else:
             return None
 
-    def content(self):
-        """Returns a dict of user items. The keys of the dict being the users folders, '/' being the root folder,
-        and the values being a list of items in that folder."""
-        retval = {}
-        postdata = {
-            "f": "json"
-        }
-        resp = self._portal.con.post('content/users/' + self.username, postdata)
-        root_items = []
-        for item in resp['items']:
-            root_items.append(Item(self._portal, item['id'], item))
+    @property
+    def folders(self):
+        """list of the user's folders"""
+        return self._portal.user_folders(self.username)
 
-        retval['/'] = root_items
+    def items(self, folder=None, max_items=100):
+        """Returns a list of items in the specified folder.
 
-        folders = []
-        for folder in resp['folders']:
-            resp = self._portal.con.post('content/users/' + self.username + '/'  + folder['id'], postdata)
-            folder_items = []
-            for item in resp['items']:
-                folder_items.append(Item(self._portal, item['id'], item))
+        For content in the root folder, use the default value of None for the folder.
 
-            retval[folder['title']] = folder_items
+        For other folders, pass in the folder name as a string, or a dict containing
+        the folder 'id', such as the dict obtained from the folders property.
+        """
+        items = []
+        folder_id = None
+        if folder is not None:
+            if isinstance(folder, str):
+                folder_id = self._portal.get_folder_id(self.username, folder)
+            elif isinstance(folder, dict):
+                folder_id = folder['id']
+            else:
+                print("folder should be folder name as a string"
+                      "or a dict containing the folder 'id'")
 
-        return retval
+        resp = self._portal.user_items(self.username, folder_id, max_items)
+        for item in resp:
+            items.append(Item(self._portal, item['id'], item))
+
+        return items
 
 
 class Item(dict):
