@@ -206,41 +206,42 @@ class GeocodeService(BaseService):
         else:
             raise Exception("This function works on the ArcGIS Online World Geocoder")
     #----------------------------------------------------------------------
-    def findAddressCandidates(self,
-                              addressDict=None,
-                              singleLine=None,
-                              maxLocations=10,
-                              outFields="*",
-                              outSR=4326,
-                              searchExtent=None,
-                              location=None,
-                              distance=2000,
-                              magicKey=None,
-                              category=None):
+    def geocode(self,
+                addressDict=None,
+                singleLine=None,
+                maxLocations=10,
+                outFields="*",
+                outSR=4326,
+                searchExtent=None,
+                location=None,
+                distance=2000,
+                magicKey=None,
+                category=None,
+                forStorage=False):
         """
-        The findAddressCandidates operation is performed on a geocode
+        The geocode operation is performed on a geocode
         service resource. The result of this operation is a resource
         representing the list of address candidates. This resource provides
         information about candidates, including the address, location, and
         match score. Locators published using ArcGIS Server 10 or later
-        support the single line address field for the findAddressCandidates
+        support the single line address field for the geocode
         operation.
-        You can provide arguments to the findAddressCandidates operation as
+        You can provide arguments to the geocode operation as
         query parameters defined in the following parameters table:
 
         Inputs:
-            addressDict - The various address fields accepted by the
+            address - The various address fields accepted by the
              corresponding geocode service. These fields are listed in the
              addressFields property of the JSON representation associated
              geocode service resource.
              Example: Suppose that addressFields of a geocode service
              resource includes fields with the following names: Street,
              City, State, and Zone. If you want to perform the
-             findAddressCandidates operation by providing values for the
+             geocode operation by providing values for the
              Street and Zone fields, you'd set the query parameters as
              Street=380+New+York+St&Zone=92373
-
-            singleLine - Specifies the location to be geocoded. The input
+             -- or --
+             Specifies the location to be geocoded. The input
              address components are formatted as a single string. The
              singleLine parameter and <addressField> parameters should not
              be passed in the same request.
@@ -299,7 +300,7 @@ class GeocodeService(BaseService):
              on their distance from a location. You must pass a
              searchExtent value in addition to location and distance if you
              want to confine the search results to a specific area.
-            magicKey - The findAddressCandidates operation retrieves
+            magicKey - The geocode operation retrieves
              results more quickly when you pass in valid singleLine and
              magicKey values than when you don't pass in magicKey. However,
              to get this advantage, you need to make a prior request to the
@@ -315,39 +316,47 @@ class GeocodeService(BaseService):
              Looking at the suggestion process from another perspective, as
              the user types, the suggest operation performs a text search,
              which is a redundant part of the overall search that the
-             findAddressCandidates operation can also perform. The user
+             geocode operation can also perform. The user
              chooses a place name or type-narrowing the results to a
              specific record. The results from suggest include text and
              magicKey values that contain the information the user chose;
-             passing these values from suggest into findAddressCandidates
+             passing these values from suggest into geocode
              results in faster and more accurate find operations.
              In summary, using the magicKey parameter in
-             findAddressCandidates is a two-step process:
+             geocode is a two-step process:
               1. Make a request to suggest. The response includes text and
                  magicKey properties.
-              2. Make a request to findAddressCandidates and pass in the
+              2. Make a request to geocode and pass in the
                  text and magicKey values returned from suggest as the
                  singleLine and magicKey input parameters respectively.
             category - The category parameter is only supported by geocode
              services published using StreetMap Premium locators.
+            forStorage - Specifies whether the results of the operation will
+            be persisted. The default value is false, which indicates the
+            results of the operation can't be stored, but they can be
+            temporarily displayed on a map for instance. If you store the
+            results, in a database for example, you need to set this
+            parameter to true.
         """
         url = self._url + "/findAddressCandidates"
         params = {
             "f" : "json",
             "distance" : distance
         }
-        if addressDict is None and \
-           singleLine is None:
+        if address is None:
+            raise Exception("A singleline address or an address dictionary must be passed into this function")
+        if isinstance(address, dict):
+            for k,v in address.items():
+                params[k] = v
+                del k,v
+        elif isinstance(address, (str, unicode)):
+            params['singleLine'] = address
+        else:
             raise Exception("A singleline address or an address dictionary must be passed into this function")
         if not magicKey is None:
             params['magicKey'] = magicKey
         if not category is None:
             params['category'] = category
-        if not addressDict is None:
-            for k,v in addressDict.items():
-                params[k] = v
-        if not singleLine is None:
-            params['singleLine'] = singleLine
         if not maxLocations is None:
             params['maxLocations'] = maxLocations
         if not outFields is None:
@@ -363,18 +372,46 @@ class GeocodeService(BaseService):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def geocodeAddresses(self,
-                         addresses,
-                         outSR=4326,
-                         sourceCountry=None,
-                         category=None):
+    def find_best_match(self,
+                        address,
+                        searchExtent=None,
+                        location=None,
+                        distance=None,
+                        outSR=None,
+                        category=None,
+                        outFields="*",magicKey=None,
+                        forStorage=False):
         """
-        The geocodeAddresses operation is performed on a Geocode Service
+        Returns the (latitude, longitude) or (y, x) coordinates of the best
+        match for specified address
+        """
+        candidates = self.geocode(singleLine=address,
+                                  searchExtent=searchExtent,
+                                  location=location,
+                                  distance=distance,
+                                  outSR=outSR,
+                                  category=category,
+                                  outFields=outFields,
+                                  maxLocations=1,
+                                  magicKey=magicKey,
+                                  forStorage=forStorage)
+        if candidates:
+            location = candidates[0]['location']
+            return location['y'], location['x']
+        return None
+    #----------------------------------------------------------------------
+    def batch_geocode(self,
+                      addresses,
+                      outSR=4326,
+                      sourceCountry=None,
+                      category=None):
+        """
+        The batch_geocode operation is performed on a Geocode Service
         resource. The result of this operation is a resource representing
         the list of geocoded addresses. This resource provides information
         about the addresses including the address, location, score, and
         other geocode service-specific attributes.You can provide arguments
-        to the geocodeAddresses operation as query parameters defined in
+        to the batch_geocode operation as query parameters defined in
         the following parameters table.
 
         Inputs:
@@ -431,7 +468,7 @@ class GeocodeService(BaseService):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def reverse_geocode(self, location):
+    def reverse_geocode(self, location, **kwargs):
         """
         The reverseGeocode operation determines the address at a particular
         x/y location. You pass the coordinates of a point location to the
@@ -454,6 +491,16 @@ class GeocodeService(BaseService):
             params['location'] = "%s,%s" % (location[0], location[1])
         else:
             raise Exception("Invalid location")
+        if 'distance' in kwargs:
+            params['distance'] = kwargs['distance']
+        if 'outSR' in kwargs:
+            params['outSR'] = kwargs['outSR']
+        if 'langCode' in kwargs:
+            params['langCode'] = kwargs['langCode']
+        if 'returnIntersection' in kwargs:
+            params['returnIntersection'] = kwargs['returnIntersection']
+        if 'forStorage' in kwargs:
+            params['forStorage'] = kwargs['forStorage']
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------

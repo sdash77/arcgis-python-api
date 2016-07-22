@@ -15,9 +15,10 @@ import os
 import six
 import json
 from re import search
+from pandas.io.json import json_normalize
+
 from ._uploads import Uploads
 from ..common._utils import _date_handler
-
 from ..common._filters import *
 from ..common._spatial import scratchFolder, scratchGDB, json_to_featureclass
 from ..common._utils import create_uid
@@ -353,8 +354,24 @@ class FeatureService(BaseService):
         if not timeFilter is None and \
            isinstance(timeFilter, dict):
             params['time'] = timeFilter
-        res =  self._con.get(path=qurl,
-                             params=params)
+        results =  self._con.get(path=qurl,
+                                 params=params)
+        if 'error' in results:
+            raise ValueError (results)
+        if not returnCountOnly and not returnIDsOnly:
+            if returnFeatureClass == True:
+                #json_text = json.dumps(results)
+                #return results
+                df = json_normalize(results['features'])
+                df.columns = df.columns.str.replace('attributes.', '')
+                return df
+            else:
+                df = json_normalize(results['features'])
+                df.columns = df.columns.str.replace('attributes.', '')
+                return df
+        else:
+            return results
+
         return res
     #----------------------------------------------------------------------
     def query_related_records(self,
@@ -1394,7 +1411,9 @@ class FeatureLayer(BaseService):
         if as_json or \
            returnCountOnly == True or \
            returnIDsOnly == True:
-            return result
+            df = json_normalize(results['features'])
+            df.columns = df.columns.str.replace('attributes.', '')
+            return df
         elif returnFeatureClass and\
              not returnCountOnly and \
              not returnIDsOnly:
