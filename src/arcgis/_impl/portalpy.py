@@ -14,11 +14,232 @@ from .connection import _parse_hostname, _unpack
 from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
-
+from ._portalpy import *
 
 __version__ = '1.0'
 
 _log = logging.getLogger(__name__)
+class _Portal(object):
+    """ An object representing a connection to a single portal (via URL).
+
+    .. note:: To instantiate a Portal object execute code like this:
+
+            PortalPy.Portal(portalUrl, user, password)
+
+        There are a few things you should know as you use the methods below.
+
+        Group IDs - Many of the group functions require a group id.  This id is
+        different than the group's name or title.  To determine
+        a group id, use the search_groups function using the title
+        to get the group id.
+
+        Time - Many of the methods return a time field.  All time is
+        returned as millseconds since 1 January 1970.  Python
+        expects time in seconds since 1 January 1970 so make sure
+        to divide times from PortalPy by 1000.  See the example
+        a few lines down to see how to convert from PortalPy time
+        to Python time.
+
+    Example - converting time
+
+    .. code-block:: python
+
+        import time
+        .
+        .
+        .
+        group = portalAdmin.get_group('67e1761068b7453693a0c68c92a62e2e')
+        pythontime = time.ctime(group['created']/1000)
+
+    Example - list users in group
+
+    .. code-block:: python
+
+        portal = PortalPy.Portal(portalUrl, user, password)
+        resp = portal.get_group_members('67e1761068b7453693a0c68c92a62e2e')
+        for user in resp['users']:
+            print user
+
+    Example - create a group
+
+    .. code-block:: python
+
+        portal= PortalPy.Portal(portalUrl, user, password)
+        group_id = portalAdmin.create_group('my group', 'test tag', 'a group to share travel maps')
+
+    Example - delete a user named amy and assign her content to bob
+
+    .. code-block:: python
+
+        portal = PortalPy.Portal(portalUrl, user, password)
+        portal.delete_user('amy.user', True, 'bob.user')
+
+    """
+    _is_arcpy = False
+    _con = None
+    _url = None
+    _username = None
+    _password = None
+    _key_file = None
+    _cert_file = None
+    _expiration = 60
+    _referer = None
+    _proxy_host = None
+    _proxy_port = None
+    _connection = None
+    _workdir = None
+    _tokenurl = None
+    def __init__(self, url, username=None, password=None, key_file=None,
+                 cert_file=None, expiration=60, referer=None, proxy_host=None,
+                 proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
+                 tokenurl=None):
+        """ The Portal constructor. Requires URL and optionally username/password."""
+        self._is_arcpy = url.lower() == "pro"
+        self._url = url
+        self._username = username
+        self._password = password
+        self._key_file = key_file
+        self._cert_file = cert_file
+        self._expiration = expiration
+        self._connection = connection
+        self._proxy_host = proxy_host
+        self._proxy_port = proxy_port
+        self._workdir = workdir
+        self._tokenurl = tokenurl
+        if self._is_arcpy:
+            try:
+                import arcpy
+                url = arcpy.GetActivePortalURL()
+                self._url = url
+            except ImportError:
+                raise ImportError("Could not import arcpy")
+            except:
+                raise ValueError("Could not use Pro authentication.")
+        else:
+            self._url = url
+
+        if url:
+            normalized_url = self._url
+            '''_normalize_url(self.url)'''
+            if not normalized_url[-1] == '/':
+                normalized_url += '/'
+            if normalized_url.lower().find("www.arcgis.com") > -1:
+                urlscheme = urlparse(normalized_url).scheme
+                self._resturl = "{scheme}://www.arcgis.com/sharing/rest/".format(scheme=urlscheme)
+            elif normalized_url.lower().endswith("sharing/"):
+                self._resturl = normalized_url + 'rest/'
+            elif normalized_url.lower().endswith("sharing/rest/"):
+                self._resturl = normalized_url
+            else:
+                self._resturl = normalized_url + 'sharing/rest/'
+            self._hostname = _parse_hostname(url)
+        self._workdir = workdir
+
+        # If a connection was passed in, use it, otherwise setup the
+        # connection (use all SSL until portal informs us otherwise)
+        if connection:
+            _log.debug('Using existing connection to: ' + \
+                       _parse_hostname(connection.baseurl))
+            self._con = connection
+        if not connection:
+            _log.debug('Connecting to portal: ' + self.hostname)
+            if self._is_arcpy:
+                self._con = _ArcGISConnection(baseurl="pro",
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port)
+            else:
+                self._con = _ArcGISConnection(baseurl=self._resturl,
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port)
+    @property
+    def administration(self):
+        """gets the administration object"""
+        return administration.Administration(connection=self._con,
+                                             url=self._resturl)
+    #----------------------------------------------------------------------
+    @property
+    def content(self):
+        """gets the content controller"""
+        if self.administration:
+            return self.administration.content
+        return
+    #----------------------------------------------------------------------
+    def get_user_content(self, username=None):
+        """gets specific user's content"""
+        if self.content:
+            return self.content.users.user(username)
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def users(self):
+        """gets the user manager object"""
+        if self.community:
+            return self.community.users
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def community(self):
+        """gets the community manager object"""
+        if self.administration:
+            return self.administration.community
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def groups(self):
+        """gets the group manager object"""
+        if self.community:
+            return self.community.groups
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def portals(self):
+        """gets the portal manager object"""
+        if self.administration:
+            return self.administration.portals
+        return
+    #----------------------------------------------------------------------
+    @property
+    def hosting_servers(self):
+        """returns the hosting servers for Portal/AGOL"""
+        if self.administration:
+            return self.administration.hosting_servers
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def local_portal_admin(self):
+        """if a local portal (non-agol) this is a collection of extra tools
+        to manage the site."""
+        if self.administration:
+            return self.administration.local_portal_admin
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def oauth2(self):
+        """gets the manager that works with OAuth2 applications"""
+        if self.administration:
+            return self.administration.oauth2
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def me(self):
+        """gets the object that represents the current user"""
+        return self.users.user()
 
 class Portal(object):
     """ An object representing a connection to a single portal (via URL).

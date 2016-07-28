@@ -108,7 +108,11 @@ class BaseService(OrderedDict):
                  connection=None, initialize=True,
                  **kwargs):
         """class initializer"""
-        super(BaseService, self).__init__(**{'initialize' : False})
+        super(BaseService, self).__init__(**{'item' : item,
+                                             'gis' : gis,
+                                             'url' : url,
+                                             'connection' : connection,
+                                             'initialize' : False})
         if url is None and \
            item is None:
             raise ValueError("Either an Portal Item or URL must be provided to the service")

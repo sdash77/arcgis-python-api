@@ -207,14 +207,13 @@ class GeocodeService(BaseService):
             raise Exception("This function works on the ArcGIS Online World Geocoder")
     #----------------------------------------------------------------------
     def geocode(self,
-                addressDict=None,
-                singleLine=None,
+                address,
                 maxLocations=10,
                 outFields="*",
-                outSR=4326,
+                outSR=None,
                 searchExtent=None,
                 location=None,
-                distance=2000,
+                distance=None,
                 magicKey=None,
                 category=None,
                 forStorage=False):
@@ -343,34 +342,45 @@ class GeocodeService(BaseService):
             "f" : "json",
             "distance" : distance
         }
-        if address is None:
-            raise Exception("A singleline address or an address dictionary must be passed into this function")
-        if isinstance(address, dict):
-            for k,v in address.items():
-                params[k] = v
-                del k,v
-        elif isinstance(address, (str, unicode)):
-            params['singleLine'] = address
+
+        if address is not None:
+            if isinstance(address, str):
+                params[self.singleLineAddressField['name']] = address
+            elif isinstance(address, dict):
+                params.update(address)
+            else:
+                print("address should be a string (single line address) or dictionary (with address fields as keys)")
         else:
             raise Exception("A singleline address or an address dictionary must be passed into this function")
         if not magicKey is None:
             params['magicKey'] = magicKey
-        if not category is None:
-            params['category'] = category
-        if not maxLocations is None:
-            params['maxLocations'] = maxLocations
-        if not outFields is None:
-            params['outFields'] = outFields
-        if not outSR is None:
-            params['outSR'] = outSR
         if not searchExtent is None:
             params['searchExtent'] = searchExtent
-        if isinstance(location, Point):
-            params['location'] = location
-        elif isinstance(location, list):
+        if not location is None and \
+                isinstance(location, list):
             params['location'] = "%s,%s" % (location[0], location[1])
-        return self._con.post(path=url,
-                             postdata=params)
+        elif location is not None:
+            params['location'] = location
+        if not distance is None:
+            params['distance'] = distance
+        if not outSR is None:
+            params['outSR'] = outSR
+        if not category is None:
+            params['category'] = category
+        if outFields is None:
+            params['outFields'] = "*"
+        else:
+            params['outFields'] = outFields
+        if not maxLocations is None:
+            params['maxLocations'] = maxLocations
+        if not forStorage is None:
+            params['forStorage'] = forStorage
+
+        results = self._con.post(path=url,
+                                 postdata=params)
+        if results:
+            return results['candidates']
+        return []
     #----------------------------------------------------------------------
     def find_best_match(self,
                         address,
@@ -385,7 +395,7 @@ class GeocodeService(BaseService):
         Returns the (latitude, longitude) or (y, x) coordinates of the best
         match for specified address
         """
-        candidates = self.geocode(singleLine=address,
+        candidates = self.geocode(address=address,
                                   searchExtent=searchExtent,
                                   location=location,
                                   distance=distance,

@@ -5,10 +5,12 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
+from ._impl import _portalpy
+from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
-
+from ._impl.service._layerfactory import Layer
 import json
 import base64
 
@@ -89,6 +91,10 @@ class GIS(object):
         self.__enter__()
 
     def __enter__(self):
+        #self._portal = _Portal(url=self._url, username=self._username,
+                               #password=self._password,
+                               #key_file=self._key_file,
+                               #cert_file=self._cert_file)
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
 
     @_lazy_property
@@ -650,7 +656,18 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
+                if geocode_service['name'] == "Esri World Geocoder":
+                    from ._impl.connection import _ArcGISConnection
+                    con = _ArcGISConnection(baseurl=geocode_service['url'],
+                                            connection=self._gis._portal.con)
+                    con.service_url = geocode_service['url']
+                    self._geocoders.append(Layer(item=None,
+                                                url=geocode_service['url'],
+                                                connection=con))
+                else:
+                    self._geocoders.append(Layer(item=None,
+                                                    url=geocode_service['url'],
+                                                    gis=self._gis))
         except KeyError:
             pass
         return self._geocoders
@@ -662,7 +679,7 @@ class Tools(object):
             return self._geometry
         try:
             svcurl = self._gis.properties['helperServices']['geometry']['url']
-            self._geometry = Geometry(None, svcurl, self._gis)
+            self._geometry = Layer(item=None, url=svcurl, gis=self._gis)
             return self._geometry
         except KeyError:
             return None

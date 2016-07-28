@@ -210,6 +210,7 @@ class _ArcGISConnection(object):
     _server_token = None
     _connection = None
     _portal_connection = None
+    _service_url = None
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
@@ -308,7 +309,11 @@ class _ArcGISConnection(object):
     @property
     def token(self):
         """gets/sets the token"""
-        if self._connection and \
+        if self.connection and \
+             self.service_url:
+            return self.connection.generate_portal_server_token(
+                serverUrl=self.service_url)
+        elif self._connection and \
            self._server_token is None:
             #create a portalserver token
             if self._connection.product == "AGO":
@@ -330,6 +335,19 @@ class _ArcGISConnection(object):
                        expiration=60)
             return self._token
         return None
+    #----------------------------------------------------------------------
+    @property
+    def service_url(self):
+        """gets/sets the service url"""
+        return self._service_url
+    #----------------------------------------------------------------------
+    @service_url.setter
+    def service_url(self, value):
+        """gets/sets the service url"""
+        if value:
+            self._service_url = value
+        else:
+            self._service_url = None
     #----------------------------------------------------------------------
     @token.setter
     def token(self, value):
@@ -381,7 +399,7 @@ class _ArcGISConnection(object):
         """generates a server token using Portal token"""
 
         postdata = {'serverURL':serverUrl,
-                    'token': self._connection.token,
+                    'token': self.token,
                     'expiration':str(expiration),
                     'f': 'json',
                     'request':'getToken',
@@ -615,7 +633,7 @@ class _ArcGISConnection(object):
             params = {}
         if try_json:
             params['f'] = 'json'
-        if self.is_logged_in:
+        if self.token:
             params['token'] = self.token
         if len(params.keys()) > 0:
             url = "{url}?{params}".format(url=url,
@@ -639,7 +657,8 @@ class _ArcGISConnection(object):
             resp = request.urlopen(req)
             resp_data, is_file = self._process_response(resp,
                                                out_folder=out_folder,
-                                               file_name=file_name, force_bytes=force_bytes)
+                                               file_name=file_name,
+                                               force_bytes=force_bytes)
 
             # If is a file or we're not trying to parse to JSON, return response as is
             if is_file or not try_json:
@@ -655,18 +674,19 @@ class _ArcGISConnection(object):
                 # Check for errors, and handle the case where the token timed
                 # out during use (and simply needs to be re-generated)
                 try:
-                    if resp_json.get('error', None):
-                        errorcode = resp_json['error']['code']
-                        if errorcode == 498 and not is_retry:
-                            _log.info('Token expired during get request, ' \
-                                      + 'fetching a new token and retrying')
-                            newtoken = self.relogin()
-                            newpath = self._url_add_token(path, newtoken)
-                            return self.get(newpath, ssl, compress, try_json, is_retry=True)
-                        elif errorcode == 498:
-                            raise RuntimeError('Invalid token')
-                        self._handle_json_error(resp_json['error'])
-                        return None
+                    if resp_json:
+                        if 'error' in resp_json:
+                            errorcode = resp_json['error']['code']
+                            if errorcode == 498 and not is_retry:
+                                _log.info('Token expired during get request, ' \
+                                          + 'fetching a new token and retrying')
+                                newtoken = self.relogin()
+                                newpath = self._url_add_token(path, newtoken)
+                                return self.get(newpath, ssl, compress, try_json, is_retry=True)
+                            elif errorcode == 498:
+                                raise RuntimeError('Invalid token')
+                            self._handle_json_error(resp_json['error'])
+                            return None
                 except AttributeError:
                     # Top-level JSON object isnt a dict, so can't have an error
                     pass
@@ -763,9 +783,9 @@ class _ArcGISConnection(object):
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
         # Add the token if logged in
-        if add_token:
-            if self.is_logged_in:
-                postdata['token'] = self.token
+        if add_token and \
+           self.token:
+            postdata['token'] = self.token
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:
