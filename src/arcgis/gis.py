@@ -2167,20 +2167,103 @@ class Item(dict):
         self.itemid = itemid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
-        # itemdict = self._portal.get_item(self.itemid)
         self._hydrated = False
+
         if itemdict:
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
+            if self._has_layers():
+                self.layers = None
+                self.tables = None
+                self['layers'] = None
+                self['tables'] = None
+
+    def _has_layers(self):
+        return self.type ==  'Feature Collection' or \
+            self.type == 'Feature Service' or \
+            self.type == 'Image Service' or \
+            self.type == 'Map Service' or \
+            self.type == 'Globe Service' or \
+            self.type == 'Scene Service' or \
+            self.type == 'Network Analysis Service' or \
+            self.type == 'Vector Tile Service'
+
+    def _populate_layers(self):
+        if self._has_layers():
+            layers = []
+            tables = []
+            
+            params = {"f" : "json"}
+
+            if self.type == 'Image Service': # service that is itself a layer
+                layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                layers.append(ImageLayer(self.url, self, layer))
+
+            elif self.type == 'Feature Collection':
+                lyrs = self.get_data()['layers']
+                for layer in lyrs:
+                    layers.append(FeatureCollection('', self, layer))
+
+            elif self.type == 'Vector Tile Service':
+                layer = self._portal.con.get(self.url, params, use_ordered_dict=True, add_token=False)
+                layers.append(Layer(self.url, self, layer))
+
+            elif self.type == 'Network Analysis Service':
+                # route laters, service area layers, closest facility layers
+                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                for lyr in serviceinfo['routeLayers']:
+                    lyrurl = self.url + '/' + lyr
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layers.append(Layer(lyrurl, self, layer))
+                for lyr in serviceinfo['serviceAreaLayers']:
+                    lyrurl = self.url + '/' + lyr
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layers.append(Layer(lyrurl, self, layer))
+                for lyr in serviceinfo['closestFacilityLayers']:
+                    lyrurl = self.url + '/' + lyr
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layers.append(Layer(lyrurl, self, layer))
+
+            else:
+                m = re.search(r'\d+$', self.url)
+                if m is not None: # ends in digit,
+                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                    layers.append(Layer(self.url, self, layer))
+                else:
+                    fsurl = self.url + '/layers'
+                    params = {
+                        "f" : "json"
+                    }
+
+                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True, add_token=False)
+
+                    #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
+                    for layer in allayers['layers']:
+                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self, layer))
+                    
+                    for table in allayers['tables']:
+                        tables.append(FeatureLayer(self.url + '/' + str(layer['id']), self, table))
+
+            self.layers = layers
+            self.tables = tables
+            self['layers'] = layers
+            self['tables'] = tables
 
     def _hydrate(self):
         itemdict = self._portal.get_item(self.itemid)
         self._hydrated = True
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
+        self._populate_layers()
+
+    def __getattribute__ (self, name):
+        if name == 'layers' or name == 'tables':
+            if self['layers'] == None:
+                self._populate_layers()
+                return self['layers']
+        return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name): # support item attributes
-        # return dict.__getitem__(self, name)
         if not self._hydrated:
             self._hydrate()
         return dict.__getitem__(self, name)

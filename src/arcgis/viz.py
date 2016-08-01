@@ -174,7 +174,38 @@ class MapView(widgets.DOMWidget):
         """
         Adds layers from the provided item
         """
-        if isinstance(item, arcgis.gis.Item):
+        if 'layers' in item:
+            for lyr in item.layers:
+                js_layer = lyr._js_lyr
+                if options is not None:
+                    js_layer.update({ "options" : json.dumps(options) })
+                #print(str(js_layer))      
+                self.addlayer = json.dumps(js_layer)
+        elif isinstance(item, Layer):
+            js_layer = item._js_lyr
+            if options is not None:
+                js_layer.update({ "options" : json.dumps(options) })
+
+            self.addlayer = json.dumps(js_layer)
+
+        else:
+            if options is not None:
+                item.update({ "options" : json.dumps(options) })
+
+            self.addlayer = json.dumps(item)
+
+            #layer = item
+            ''' { 
+                "type" : item['type'], 
+                "url" : item['url'],
+                "definition_expression" : item['definition_expression']
+                "opacity" : 0.75
+                }
+            '''
+            #self.addlayer = json.dumps(layer)
+ 
+        """
+        elif isinstance(item, arcgis.gis.Item):
             if item.type.lower() == 'feature service':
                 fs = Layer(item)
                 lyr_url = ""
@@ -186,16 +217,16 @@ class MapView(widgets.DOMWidget):
                             lyr_url = layer['url'] + "?token=" + item._portal.con.token
                     except:
                         pass
-
+                    
                     js_layer = {
                         "type" : "FeatureLayer",
                         "url" : lyr_url
-                    }
+                        }
                     if options is not None:
                         js_layer.update({ "options" : json.dumps(options) })
 
                     self.addlayer = json.dumps(js_layer)
-
+            
             elif item.type.lower() == 'feature collection':
                 fcdict = item.get_data()
                 fc = FeatureCollection(fcdict['layers'][0])
@@ -214,11 +245,11 @@ class MapView(widgets.DOMWidget):
                         lyr_url = layer['url'] + "?token=" + item._portal.con.token
                 except:
                     pass
-
+                
                 js_layer = {
                     "type" : "ImageLayer",
                     "url" : lyr_url
-                }
+                    }
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
 
@@ -235,11 +266,11 @@ class MapView(widgets.DOMWidget):
                         lyr_url = layer['url'] + "?token=" + item.item._portal.con.token
                 except:
                     pass
-
+                
                 js_layer = {
                     "type" : "FeatureLayer",
                     "url" : lyr_url
-                }
+                    }
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
 
@@ -251,42 +282,19 @@ class MapView(widgets.DOMWidget):
 
             self.addlayer = json.dumps(item)
 
-        elif isinstance(item, Layer):
-            layer = {
-                "type" : "FeatureLayer",
-                "url" : item['url'] + "?token=" + item._portal.con.token
-            }
-            if options is not None:
-                layer.update({ "options" : json.dumps(options) })
-
-            self.addlayer = json.dumps(layer)
-            #json.dumps(item)
-
+        
+        
         elif isinstance(item, ImageLayer):
             layer = {
                 "type" : "ImageLayer",
                 "url" : item['url']
-            }
+                }
             if options is not None:
                 layer.update({ "options" : json.dumps(options) })
 
             self.addlayer = json.dumps(layer)
-            #json.dumps(item)
-        else:
-            if options is not None:
-                item.update({ "options" : json.dumps(options) })
 
-            self.addlayer = json.dumps(item)
-
-            #layer = item
-            ''' {
-                "type" : item['type'],
-                "url" : item['url'],
-                "definition_expression" : item['definition_expression']
-                "opacity" : 0.75
-                }
-            '''
-            #self.addlayer = json.dumps(layer)
+        """
 
     def clear_graphics(self):
         self.mode = "###clear_graphics"

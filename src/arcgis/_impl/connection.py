@@ -610,7 +610,7 @@ class _ArcGISConnection(object):
     def get(self, path, params=None, ssl=False,
             compress=True, try_json=True, is_retry=False,
             use_ordered_dict=False, out_folder=None,
-            file_name=None, force_bytes=False):
+            file_name=None, force_bytes=False, add_token=True):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if url.lower().find("https://") > -1 or\
@@ -628,7 +628,6 @@ class _ArcGISConnection(object):
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
 
-        # Add the token if logged in
         if params is None:
             params = {}
         if try_json:
