@@ -2150,20 +2150,56 @@ class Item(dict):
         self.itemid = itemid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
-        # itemdict = self._portal.get_item(self.itemid)
         self._hydrated = False
+
         if itemdict:
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
+            if self._has_layers():
+                self.layers = None
+                self.tables = None
+                self['layers'] = None
+                self['tables'] = None
+
+    def _has_layers(self):
+        return self.type ==  'Feature Collection' or \
+            self.type == 'Feature Service' or \
+            self.type == 'Image Service' or \
+            self.type == 'Map Service' or \
+            self.type == 'Globe Service' or \
+            self.type == 'Scene Service' or \
+            self.type == 'Network Analysis Service' or \
+            self.type == 'Vector Tile Service'
+
+    def _populate_layers(self):
+        if self._has_layers():
+
+                    for layer in allayers['layers']:
+                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self, layer))
+                    
+                    for table in allayers['tables']:
+                        tables.append(FeatureLayer(self.url + '/' + str(layer['id']), self, table))
+
+            self.layers = layers
+            self.tables = tables
+            self['layers'] = layers
+            self['tables'] = tables
 
     def _hydrate(self):
         itemdict = self._portal.get_item(self.itemid)
         self._hydrated = True
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
+        self._populate_layers()
+
+    def __getattribute__ (self, name):
+        if name == 'layers' or name == 'tables':
+            if self['layers'] == None:
+                self._populate_layers()
+                return self['layers']
+        return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name): # support item attributes
-        # return dict.__getitem__(self, name)
         if not self._hydrated:
             self._hydrate()
         return dict.__getitem__(self, name)
