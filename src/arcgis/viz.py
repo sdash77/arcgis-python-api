@@ -180,7 +180,7 @@ class MapView(widgets.DOMWidget):
                 js_layer = lyr._js_lyr
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
-                print(str(js_layer))      
+                #print(str(js_layer))      
                 self.addlayer = json.dumps(js_layer)
         elif isinstance(item, Layer):
             js_layer = item._js_lyr
