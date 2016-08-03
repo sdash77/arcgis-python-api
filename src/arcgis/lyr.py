@@ -43,7 +43,7 @@ class FeatureService(object):
             allayers = self.item._portal.con.post(fsurl, params)
             try:
                 for layer in allayers['layers']:
-                    layers.append(Layer(self.url, layer, self.item))
+                    layers.append(Layer(self.url, self.item, layer))
                     #print("***" + str(layer))
                     #lyr_type = layer['type']
                     #lyr_url = self.url + '/' + str(layer['id'])
@@ -65,10 +65,16 @@ class Layer(object):
         """
         Constructs a service
         """
-        self._portal = item._portal
+        if item is not None:
+            self._portal = item._portal
+            self._con = self._portal.con
+        else:
+            self._portal = None
+            self._con = None
+
         self.url = url
         self._url = url
-        self._con = self._portal.con
+        
         self.type = type(self).__name__
         self.properties = AttrOrderedDict(dictdata)
 
@@ -696,12 +702,19 @@ class AttachmentManager(object):
 class FeatureCollection(Layer):
     """
     """
-    def __init__(self, url, item, dictdata):
-        super(FeatureCollection, self).__init__(url, item, dictdata)
+    def __init__(self, dictdata):
+        super(FeatureCollection, self).__init__('', None, dictdata)
+        self.layer = self.properties
 
     @property
     def _js_lyr(self):
         return self.properties
+    
+    def __str__(self):
+        return '<%s>' % (type(self).__name__)
+    
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
 
     def query(self):
         """Returns the data in this feature collection as a pandas data frame. Filtering by SQL statement is not supported for feature collections.

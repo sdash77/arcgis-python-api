@@ -649,13 +649,15 @@ class _AsyncService(object):
             elif input_layer.type.lower() == 'feature collection':
                 fcdict = input_layer.get_data()
                 fc = FeatureCollection(fcdict['layers'][0])
-                input_param =  fc
+                input_param =  fc.layer
             else:
                 raise TypeError("item type must be feature service or feature collection")
 
         elif isinstance(input_layer, arcgis.tools.FeatureService):
             input_layer_url = input_layer.layers[0].url #["url"]
             input_param =  {"url": input_layer_url }
+        elif isinstance(input_layer, FeatureCollection):
+            input_param =  input_layer.properties
         elif isinstance(input_layer, Layer):
             input_layer_url = input_layer.url
             input_param =  {"url": input_layer_url }

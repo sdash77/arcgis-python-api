@@ -2130,7 +2130,7 @@ class Item(dict):
             elif self.type == 'Feature Collection':
                 lyrs = self.get_data()['layers']
                 for layer in lyrs:
-                    layers.append(FeatureCollection('', self, layer))
+                    layers.append(FeatureCollection(layer))
 
             elif self.type == 'Vector Tile Service':
                 layer = self._portal.con.get(self.url, params, use_ordered_dict=True, add_token=use_token)

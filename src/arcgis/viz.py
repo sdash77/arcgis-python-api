@@ -174,20 +174,19 @@ class MapView(widgets.DOMWidget):
         """
         Adds layers from the provided item
         """
-        if 'layers' in item:
+        if isinstance(item, Layer):
+            js_layer = item._js_lyr
+            if options is not None:
+                js_layer.update({ "options" : json.dumps(options) })
+
+            self.addlayer = json.dumps(js_layer)
+        elif 'layers' in item:
             for lyr in item.layers:
                 js_layer = lyr._js_lyr
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
                 #print(str(js_layer))      
                 self.addlayer = json.dumps(js_layer)
-        elif isinstance(item, Layer):
-            js_layer = item._js_lyr
-            if options is not None:
-                js_layer.update({ "options" : json.dumps(options) })
-
-            self.addlayer = json.dumps(js_layer)
-
         else:
             if options is not None:
                 item.update({ "options" : json.dumps(options) })
