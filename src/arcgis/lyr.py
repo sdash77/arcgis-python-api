@@ -368,13 +368,13 @@ class FeatureLayer(Layer):
         elif isinstance(timeFilter, dict):
             for k,v in timeFilter.items():
                 params[k] = v
-        if geomtryFilter and \
-           isinstance(geomtryFilter, GeometryFilter):
-            for k,v in geomtryFilter.filter:
+        if geometryFilter and \
+           isinstance(geometryFilter, GeometryFilter):
+            for k,v in geometryFilter.filter:
                 params[k] = v
-        elif geomtryFilter and \
-             isinstance(geomtryFilter, dict):
-            for k,v in geomtryFilter.items():
+        elif geometryFilter and \
+             isinstance(geometryFilter, dict):
+            for k,v in geometryFilter.items():
                 params[k] = v
         if len(kwargs) > 0:
             for k,v in kwargs.items():
