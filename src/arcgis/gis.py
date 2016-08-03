@@ -208,7 +208,10 @@ class DatastoreItem(dict):
             super(DatastoreItem, self).update(datadict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
-        return dict.__getitem__(self, name)
+        try:
+            return dict.__getitem__(self, name)
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
 
     def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
         try:
@@ -1435,7 +1438,11 @@ class Group(dict):
         # return dict.__getitem__(self, name)
         if not self._hydrated:
             self._hydrate()
-        return dict.__getitem__(self, name)
+        try:
+            return dict.__getitem__(self, name)
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+
 
 
     def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
@@ -1764,10 +1771,12 @@ class User(dict):
         self.__dict__.update(userdict)
 
     def __getattr__(self, name): # support user attributes as user.access, user.email, user.role etc
-        # return dict.__getitem__(self, name)
         if not self._hydrated:
             self._hydrate()
-        return dict.__getitem__(self, name)
+        try:
+            return dict.__getitem__(self, name)
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
 
 
     def __getitem__(self, k): # support user attributes as dictionary keys on this object, eg. user['role']
@@ -1849,79 +1858,6 @@ class User(dict):
                     </div>
                 </div>
                 """
-
-    """
-    def get_attributes(self):
-       Returns information for this user.
-
-        Arguments
-            None.
-            ---------------- --------------------------------------------------------
-            created           time (int), when user created
-            ----------------  --------------------------------------------------------
-            culture           string, two-letter language code
-            ----------------  --------------------------------------------------------
-            description       string, user supplied description
-            ----------------  --------------------------------------------------------
-            fullName          string, name of the user
-            ----------------  --------------------------------------------------------
-            modified          time (int), when user last modified
-            ----------------  --------------------------------------------------------
-            region            string, may be None
-            ----------------  --------------------------------------------------------
-            tags              string list, of user tags
-            ----------------  --------------------------------------------------------
-            thumbnail         string, name of file
-            ----------------  --------------------------------------------------------
-            username          string, name of the user
-
-       :return:
-            A dictionary object with the following keys:
-
-            ================  ========================================================
-            **Key**           **Value**
-            ----------------  --------------------------------------------------------
-            access            string
-            ----------------  --------------------------------------------------------
-            created           time (int)
-            ----------------  --------------------------------------------------------
-            culture           string, two-letter language code ('en')
-            ----------------  --------------------------------------------------------
-            description       string
-            ----------------  --------------------------------------------------------
-            email             string
-            ----------------  --------------------------------------------------------
-            fullName          string
-            ----------------  --------------------------------------------------------
-            idpUsername       string, name of the user in the enterprise system
-            ----------------  --------------------------------------------------------
-            groups            list of dictionaries.  For dictionary keys,
-                              see get_group doc.
-            ----------------  --------------------------------------------------------
-            modified          time (int)
-            ----------------  --------------------------------------------------------
-            orgId             string, the organization id
-            ----------------  --------------------------------------------------------
-            preferredView     string, value is either Web, GIS, or null
-            ----------------  --------------------------------------------------------
-            region            string, None or two letter country code
-            ----------------  --------------------------------------------------------
-            role              string, value is either org_user, org_publisher,
-                              org_admin
-            ----------------  --------------------------------------------------------
-            storageUsage      int
-            ----------------  --------------------------------------------------------
-            storageQuota      int
-            ----------------  --------------------------------------------------------
-            tags              list of strings
-            ----------------  --------------------------------------------------------
-            thumbnail         string, name of file
-            ----------------  --------------------------------------------------------
-            username          string, name of user
-            ================  ========================================================
-
-        return self._portal.get_user(self.username)
-    """
 
     def reset(self, password, new_password=None, new_security_question=None, new_security_answer=None):
         """ Resets a user's password, security question, and/or security answer.
@@ -2258,7 +2194,11 @@ class Item(dict):
     def __getattr__(self, name): # support item attributes
         if not self._hydrated:
             self._hydrate()
-        return dict.__getitem__(self, name)
+        try:
+            return dict.__getitem__(self, name)
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+
 
     def __getitem__(self, k): # support item attributes as dictionary keys on this object
         try:
