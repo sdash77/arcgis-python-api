@@ -681,7 +681,7 @@ class _ArcGISConnection(object):
                                           + 'fetching a new token and retrying')
                                 newtoken = self.relogin()
                                 newpath = self._url_add_token(path, newtoken)
-                                return self.get(newpath, ssl, compress, try_json, is_retry=True)
+                                return self.get(path=newpath, params=params, ssl=ssl, compress=compress, try_json=try_json, is_retry=True)
                             elif errorcode == 498:
                                 raise RuntimeError('Invalid token')
                             self._handle_json_error(resp_json['error'])
