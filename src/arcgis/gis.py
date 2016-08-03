@@ -5,12 +5,12 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
-from ._impl import _portalpy
+#from ._impl import _portalpy
 from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
-from ._impl.service._layerfactory import Layer
+#from ._impl.service._layerfactory import Layer
 import json
 import base64
 
@@ -661,13 +661,9 @@ class Tools(object):
                     con = _ArcGISConnection(baseurl=geocode_service['url'],
                                             connection=self._gis._portal.con)
                     con.service_url = geocode_service['url']
-                    self._geocoders.append(Layer(item=None,
-                                                url=geocode_service['url'],
-                                                connection=con))
+                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
                 else:
-                    self._geocoders.append(Layer(item=None,
-                                                    url=geocode_service['url'],
-                                                    gis=self._gis))
+                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
         except KeyError:
             pass
         return self._geocoders
@@ -679,7 +675,7 @@ class Tools(object):
             return self._geometry
         try:
             svcurl = self._gis.properties['helperServices']['geometry']['url']
-            self._geometry = Layer(item=None, url=svcurl, gis=self._gis)
+            self._geometry = Geometry(None, svcurl, self._gis)
             return self._geometry
         except KeyError:
             return None
@@ -2196,7 +2192,7 @@ class Item(dict):
             params = {"f" : "json"}
 
             if self.type == 'Image Service': # service that is itself a layer
-                layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                layer = self._portal.con.post(self.url, params, use_ordered_dict=True)
                 layers.append(ImageLayer(self.url, self, layer))
 
             elif self.type == 'Feature Collection':
@@ -2205,29 +2201,29 @@ class Item(dict):
                     layers.append(FeatureCollection('', self, layer))
 
             elif self.type == 'Vector Tile Service':
-                layer = self._portal.con.get(self.url, params, use_ordered_dict=True, add_token=False)
+                layer = self._portal.con.get(self.url, params, use_ordered_dict=True)
                 layers.append(Layer(self.url, self, layer))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
-                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True)
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
 
             else:
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit,
-                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True)
                     layers.append(Layer(self.url, self, layer))
                 else:
                     fsurl = self.url + '/layers'
@@ -2235,7 +2231,7 @@ class Item(dict):
                         "f" : "json"
                     }
 
-                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True, add_token=False)
+                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True)
 
                     #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
                     for layer in allayers['layers']:

@@ -14,7 +14,7 @@ from .connection import _parse_hostname, _unpack
 from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
-from ._portalpy import *
+#from ._portalpy import *
 
 __version__ = '1.0'
 

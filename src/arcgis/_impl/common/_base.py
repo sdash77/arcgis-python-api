@@ -147,8 +147,7 @@ class BaseService(OrderedDict):
                       if not attr.startswith('__') and \
                       not attr.startswith('_')]
         params = {"f":"json"}
-        result = connection.get(path=self._url,
-                                params=params)
+        result = connection.post(self._url, params)
         self._json_dict = result
         for k,v in result.items():
             if k in attributes:

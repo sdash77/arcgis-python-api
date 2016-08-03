@@ -139,7 +139,7 @@ class Feature(object):
         return self._dict
     #----------------------------------------------------------------------
     @property
-    def asRow(self):
+    def as_row(self):
         """ converts a feature to a list for insertion into an insert cursor
             Output:
                [row items], [field names]
@@ -188,7 +188,7 @@ class Feature(object):
         return self._attributes.keys()
     #----------------------------------------------------------------------
     @property
-    def geometryType(self):
+    def geometry_type(self):
         """ returns the feature's geometry type """
         if self._geomType is None:
             if self.geometry is not None:
