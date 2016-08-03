@@ -656,14 +656,7 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                if geocode_service['name'] == "Esri World Geocoder":
-                    from ._impl.connection import _ArcGISConnection
-                    con = _ArcGISConnection(baseurl=geocode_service['url'],
-                                            connection=self._gis._portal.con)
-                    con.service_url = geocode_service['url']
-                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
-                else:
-                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
+                self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
         except KeyError:
             pass
         return self._geocoders
