@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import json
 import tempfile
 from six.moves.urllib_parse import urlparse
 from .connection import _ArcGISConnection

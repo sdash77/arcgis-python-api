@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import os
-from ..common._base import BaseServer
+from ...common._base import BaseServer
 ########################################################################
 class Machines(BaseServer):
     """
@@ -288,7 +288,7 @@ class Machine(BaseServer):
     def importRootCertificate(self, alias, rootCACertificate):
         """This operation imports a certificate authority (CA)'s root and intermediate certificates into the keystore."""
         url = self._url + "/sslcertificates/importRootOrIntermediate"
-        files = [['rootCSCertificate', rootCACertificate, os.path.basename(rootCSCertificate)]]
+        files = [['rootCSCertificate', rootCACertificate, os.path.basename(rootCACertificate)]]
         params = {
             "f" : "json",
             "alias" : alias

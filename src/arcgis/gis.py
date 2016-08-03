@@ -5,10 +5,12 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
+#from ._impl import _portalpy
+from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
-
+#from ._impl.service._layerfactory import Layer
 import json
 import base64
 
@@ -89,6 +91,10 @@ class GIS(object):
         self.__enter__()
 
     def __enter__(self):
+        #self._portal = _Portal(url=self._url, username=self._username,
+                               #password=self._password,
+                               #key_file=self._key_file,
+                               #cert_file=self._cert_file)
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
 
     @_lazy_property
@@ -650,7 +656,14 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
+                if geocode_service['name'] == "Esri World Geocoder":
+                    from ._impl.connection import _ArcGISConnection
+                    con = _ArcGISConnection(baseurl=geocode_service['url'],
+                                            connection=self._gis._portal.con)
+                    con.service_url = geocode_service['url']
+                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
+                else:
+                    self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
         except KeyError:
             pass
         return self._geocoders
@@ -2179,7 +2192,7 @@ class Item(dict):
             params = {"f" : "json"}
 
             if self.type == 'Image Service': # service that is itself a layer
-                layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                layer = self._portal.con.post(self.url, params, use_ordered_dict=True)
                 layers.append(ImageLayer(self.url, self, layer))
 
             elif self.type == 'Feature Collection':
@@ -2188,29 +2201,29 @@ class Item(dict):
                     layers.append(FeatureCollection('', self, layer))
 
             elif self.type == 'Vector Tile Service':
-                layer = self._portal.con.get(self.url, params, use_ordered_dict=True, add_token=False)
+                layer = self._portal.con.get(self.url, params, use_ordered_dict=True)
                 layers.append(Layer(self.url, self, layer))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
-                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True)
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True)
                     layers.append(Layer(lyrurl, self, layer))
 
             else:
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit,
-                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=False)
+                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True)
                     layers.append(Layer(self.url, self, layer))
                 else:
                     fsurl = self.url + '/layers'
@@ -2218,7 +2231,7 @@ class Item(dict):
                         "f" : "json"
                     }
 
-                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True, add_token=False)
+                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True)
 
                     #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
                     for layer in allayers['layers']:
@@ -2306,7 +2319,7 @@ class Item(dict):
                 file_name = os.path.split(thumbnail_file)[1]
                 if len(file_name) > 50: #If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
-                    
+
                 file_path = os.path.join(save_folder, file_name)
                 self._portal.con.get(path=thumbnail_url_path,
                                      out_folder=save_folder,
@@ -2611,7 +2624,7 @@ class Item(dict):
         """Returns the data for the item.
         If the data is a file, it's downloaded and the path to the downloaded file is returned.
         Else if try_json is True, the method tries to convert it to a Python dict and returns it.
-        To convert this dict to string using json.dumps(data). 
+        To convert this dict to string using json.dumps(data).
         Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
         return self._portal.get_item_data(self.itemid, try_json)
 
@@ -2672,7 +2685,7 @@ class Item(dict):
         path = 'content/users/' + self.owner
 
         path += '/addRelationship'
-        print
+
         resp = self._portal.con.post(path, postdata)
         if resp:
             return resp.get('success')

@@ -9,8 +9,7 @@ import string
 from contextlib import contextmanager
 
 from arcgis.tools import *
-from arcgis.lyr import *
-
+from arcgis.lyr import Layer, FeatureCollection
 #from IPython.html import widgets
 #from IPython.utils.traitlets import Unicode, Int, List
 try:
@@ -208,7 +207,7 @@ class MapView(widgets.DOMWidget):
         """
         elif isinstance(item, arcgis.gis.Item):
             if item.type.lower() == 'feature service':
-                fs = FeatureService(item)
+                fs = Layer(item)
                 lyr_url = ""
                 for layer in fs.layers:
                     lyr_url = layer['url']
@@ -239,7 +238,7 @@ class MapView(widgets.DOMWidget):
                 self.addlayer = json.dumps(fc)
 
             elif item.type.lower() == 'image service':
-                layer = ImageLayer(item)
+                layer = Layer(item)
                 lyr_url = layer['url']
                 try:
                     if 'access' in item and item['access'] != 'public':
