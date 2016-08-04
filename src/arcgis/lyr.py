@@ -8,10 +8,11 @@ import json
 from pandas.io.json import json_normalize
 import collections
 from ._impl import *
-from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict
+from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, AttrMap
 import six
 from arcgis._impl.service import _featureservice
 from arcgis._impl.common import _utils
+from arcgis._impl.common._featureset import _date_handler
 from arcgis._impl.common._spatial import *
 
 class FeatureService(object):
@@ -394,7 +395,9 @@ class FeatureLayer(Layer):
         
         if  returnCountOnly:
             return result['count']
-        elif as_json or returnIDsOnly:
+        elif as_json:
+            return AttrMap(result)
+        elif returnIDsOnly:
             return result
         elif returnFeatureClass and \
              not returnCountOnly and \
@@ -543,11 +546,8 @@ class FeatureLayer(Layer):
            This operation adds, updates, and deletes features to the
            associated feature layer or table in a single call.
            Inputs:
-              adds - The array of features to be added.  These
-                            features should be common.Feature objects
+              adds - The array of features to be added. 
               updates - The array of features to be updateded.
-                               These features should be common.Feature
-                               objects
               deletes - string of OIDs to remove from service
               gdbVersion - Geodatabase version to apply the edits.
               useGlobalIds - instead of referencing the default Object ID
@@ -577,14 +577,24 @@ class FeatureLayer(Layer):
                   }
         if gdbVersion is not None:
             params['gdbVersion'] = gdbVersion
-        if len(adds) > 0 and \
-           isinstance(adds[0], dict):
-            params['adds'] = json.dumps([f for f in adds],
+        if len(adds) > 0:
+            if isinstance(adds[0], dict):
+                params['adds'] = json.dumps([f for f in adds],
                                         default=_date_handler)
-        if len(updates) > 0 and \
-           isinstance(updates[0], dict):
-            params['updates'] = json.dumps([f for f in updates],
-                                           default=_date_handler)
+            elif isinstance(adds[0], AttrMap):
+                params['adds'] = json.dumps([dict(f) for f in adds],
+                                        default=_date_handler)
+            else:
+                print('pass in features as dict or AttrMap')
+        if len(updates) > 0:
+            if isinstance(updates[0], dict):
+                params['updates'] = json.dumps([f for f in updates],
+                                        default=_date_handler)
+            elif isinstance(updates[0], AttrMap):
+                params['updates'] = json.dumps([dict(f) for f in updates],
+                                        default=_date_handler)
+            else:
+                print('pass in features as dict or AttrMap')
         if deletes is not None and \
            isinstance(deletes, str):
             params['deletes'] = deletes
