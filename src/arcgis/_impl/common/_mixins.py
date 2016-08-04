@@ -295,6 +295,9 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
         self._setattr('_sequence_type', sequence_type)
         self._setattr('_allow_invalid_attributes', allow_invalid_attributes)
 
+    def __str__(self):
+        return json.dumps(self, indent=2)
+
     def __repr__(self):
         return json.dumps(self, indent=2)
         #return json.dumps(six.u('{contents}').format(
