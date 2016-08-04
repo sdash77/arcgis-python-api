@@ -194,7 +194,8 @@ class FeatureLayer(Layer):
               multipatchOption=None,
               quanitizationParameters=None,
               returnCentroid=False,
-              as_json=False,
+              as_obj=False,
+              as_dict=False,
               **kwargs):
         """ queries a feature service based on a sql statement
             Inputs:
@@ -307,8 +308,12 @@ class FeatureLayer(Layer):
                                  associated with each feature returned. If
                                  true, the result includes the geometry
                                  centroid. The default is false.
-                as_json - If true, the query will return as the raw JSON.
+                as_obj - If true, the query will return the results as a 
+                         collections.mapping object that provides attribute-style access.
+                         This object can be converted to a dict using dict(obj)
                           The default is False.
+                as_dict - If true, the query will return the results as a dict. 
+                          The default is False
                 returnFeatureClass - If true and arcpy is installed, the
                                      script will attempt to save the result
                                      of the query to a feature class.
@@ -395,9 +400,9 @@ class FeatureLayer(Layer):
         
         if  returnCountOnly:
             return result['count']
-        elif as_json:
+        elif as_obj:
             return AttrMap(result)
-        elif returnIDsOnly:
+        elif returnIDsOnly or as_dict:
             return result
         elif returnFeatureClass and \
              not returnCountOnly and \
