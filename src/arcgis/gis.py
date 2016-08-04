@@ -1070,9 +1070,9 @@ class ContentManager(object):
 
 
             .. note::
-                That content can be a file (such as a service definition, shapefile, CSV, layer package, geoprocessing package,
-                map package) or it can be a URL (to an ArcGIS Server service, WMS service,
-                or an application).
+                That content can be a file (such as a service definition, shapefile, CSV, layer package, 
+                file geodatabase, geoprocessing package, map package) or it can be a URL (to an ArcGIS Server
+                service, WMS service, or an application).
 
                 If you are uploading a package or other file, provide a path or URL
                 to the file in the data argument.
@@ -1148,6 +1148,8 @@ class ContentManager(object):
                 filetype = 'CSV'
             elif (extn == '.SD'):
                 filetype = 'Service Definition'
+            elif title.upper().endswith('.GDB'):
+                filetype = 'File Geodatabase'
             if _is_shapefile(data):
                 filetype = 'Shapefile'
 
@@ -2708,7 +2710,9 @@ class Item(dict):
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
             else:
-                publish_parameters =  {"hasStaticData":True, "name": self['title'].replace(' ', '_'), "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+                name = self['title'].replace(' ', '_')
+                name = name.replace('.', '_')
+                publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 
