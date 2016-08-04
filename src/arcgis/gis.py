@@ -2172,7 +2172,7 @@ class Item(dict):
                         layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self, layer))
                     
                     for table in allayers['tables']:
-                        tables.append(FeatureLayer(self.url + '/' + str(layer['id']), self, table))
+                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self, table))
 
             self.layers = layers
             self.tables = tables
