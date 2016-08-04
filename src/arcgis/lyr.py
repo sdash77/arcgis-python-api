@@ -530,8 +530,7 @@ class FeatureLayer(Layer):
            Output:
 
         """
-        if hasattr(self, "htmlPopupType") and \
-           getattr(self, "htmlPopupType") != "esriServerHTMLPopupTypeNone":
+        if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
             popURL = self._url + "/%s/htmlPopup" % oid
             params = {
                 'f' : "json"
@@ -635,12 +634,9 @@ class FeatureLayer(Layer):
         Output:
            JSON as string
         Usage:
-        >>>sh = arcrest.AGOLTokenSecurityHandler("user", "pw")
-        >>>fl = arcrest.agol.FeatureLayer(url="someurl",
-                                     securityHandler=sh, initialize=True)
-        >>>print fl.calculate(where="OBJECTID < 2",
+        >>>print(fl.calculate(where="OBJECTID < 2",
                               calcExpression={"field": "ZONE",
-                                              "value" : "R1"})
+                                              "value" : "R1"}))
         {'updatedFeatureCount': 1, 'success': True}
         """
         url = self._url + "/calculate"
