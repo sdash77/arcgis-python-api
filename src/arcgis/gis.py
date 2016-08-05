@@ -2209,7 +2209,6 @@ class Item(dict):
         except:
             raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
 
-
     def __getitem__(self, k): # support item attributes as dictionary keys on this object
         try:
             return dict.__getitem__(self, k)
@@ -2759,6 +2758,45 @@ class Item(dict):
             raise Exception("No job results.")
 
         return Item(self._gis, serviceitem_id)
+
+    def move(self, folder, owner=None):
+        """ Move this item to the folder with the given name, for the given owner. If owner is not specified, does so for the logged in user.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        folder            required string, the name of the folder to move the item to.
+                          Use '/' for the root folder.
+        ----------------  ---------------------------------------------------------------
+        owner             optional string or User, folder owner, None for logged in user
+        ================  ===============================================================
+
+        :return:
+            a json object like the following:
+            {
+               "success": true | false,
+               "itemId": "<item id>",
+               "owner": "<owner username>",
+               "folder": "<folder id>"
+            }
+        """
+        if owner is None:
+            owner = self._portal.logged_in_user()['username']
+            owner_name = owner
+        elif isinstance(owner, arcgis.gis.User):
+            owner_name = owner.username
+        else:
+            owner_name = owner
+
+        folder_id = folder
+        if folder != '/': # we don't create root folder
+            folder_id = self._portal.get_folder_id(owner_name, folder)
+        
+        if folder_id is not None:
+            return self._portal.move_item(self.itemid, owner_name, folder_id)
+        else:
+            print('Folder not found for given owner')
+            return None
 
 def rot13(s):
     result = ""

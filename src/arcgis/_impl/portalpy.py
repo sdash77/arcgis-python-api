@@ -2285,7 +2285,12 @@ class Portal(object):
             if resp:
                 return resp.get('success')
 
-
+    def move_item(self, itemid, owner, folder_id):
+        """ Moves the item to given folder """
+        postdata = self._postdata()
+        postdata['folder'] = folder_id
+        resp = self.con.post('content/users/' + owner + '/items/' + itemid + '/move', postdata)
+        return resp
 
     def get_folder_id(self, owner, folder_name):
         """ Finds the folder for a particular owner and returns its id.
