@@ -15,7 +15,7 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._featureset import _date_handler
 from arcgis._impl.common._spatial import *
 
-class FeatureService(object):
+class OldFeatureService(object):
     "represents a feature service"
     def __init__(self, item):
         """
@@ -62,22 +62,21 @@ class Layer(object):
     """
     """
     
-    def __init__(self, url, item, dictdata):
+    def __init__(self, url, gis, dictdata):
         """
-        Constructs a service
+        A layer of geographic data
         """
-        if item is not None:
-            self._portal = item._portal
-            self._con = self._portal.con
-        else:
-            self._portal = None
-            self._con = None
+        if gis is None:
+            gis = GIS()
+
+        self._gis = gis
+        self._con = gis._con
 
         self.url = url
         self._url = url
         
         self.type = type(self).__name__
-        self.properties = AttrOrderedDict(dictdata)
+        self.properties = AttrMap(dictdata)
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
@@ -94,8 +93,8 @@ class ImageLayer(Layer):
         super(ImageLayer, self).__init__(url, item, dictdata)
 
 class FeatureLayer(Layer):
-    def __init__(self, url, item, dictdata):
-        super(FeatureLayer, self).__init__(url, item, dictdata)
+    def __init__(self, url, gis, dictdata):
+        super(FeatureLayer, self).__init__(url, gis, dictdata)
         #self._obj = _featureservice.FeatureLayer(item=item, url=url,
         #                           initialize=False)
         if self.properties.hasAttachments:
@@ -715,7 +714,7 @@ class FeatureCollection(Layer):
     """
     def __init__(self, dictdata):
         super(FeatureCollection, self).__init__('', None, dictdata)
-        self.layer = self.properties
+        self.layer = AttrMap(self.properties)
 
     @property
     def _js_lyr(self):
@@ -738,111 +737,131 @@ class FeatureCollection(Layer):
         df.columns = df.columns.str.replace('attributes.', '')
         return df
     
-class Service(object):
+class GISService(object):
+    """ a GIS service
     """
-    """
-    def __init__(self, svcurl, gis=None, dictdata=None):
-        """
-        Constructs a service
-        """
-        if dictdata is None:
-            self._con = gis._portal.con
-            params = {"f": "json"}
-            dictdata = self._con.post(svcurl, params, use_ordered_dict=True)
-        
-        self.url = svcurl
-
+    def __init__(self, url, gis=None):
         if gis is None:
             gis = GIS()
-                    
-        self.definition = AttrOrderedDict(dictdata)
+        
+        self.url = url
+        self._url = url
+
+        self._gis = gis
+        self._con = gis._con
+        
+        params = {"f": "json"}
+        dictdata = self._con.post(url, params)#, use_ordered_dict=True)
+
+        self.properties = AttrMap(dictdata)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type.lower().endswith('service'):
+            raise TypeError("item must be a type of service, not " + item.type)
+        return cls(item.url, item._gis)
 
     def __str__(self):
-        return json.dumps(self)
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+    
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
 
+class FeatureService(GISService):
+    """ allows use and administration (if access permits) of a feature service """
+
+    def __init__(self, url, gis=None):
+        super(FeatureService, self).__init__(url, gis)
+    
+        fsurl = self.url + '/layers'
+        params = {
+            "f" : "json"
+        }
+
+        layers = []
+        tables = []
+
+        allayers = self._con.post(fsurl, params) #, use_ordered_dict=True)
+        
+        for layer in allayers['layers']:
+            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
+                    
+        for table in allayers['tables']:
+            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self.gis, table))
+
+        self.layers = layers
+        self.tables = tables
+
+    @property
+    def administration(self):
+        """accesses the administration service"""
+        url = self._url
+        res = search("/rest/", url).span()
+        addText = "admin/"
+        part1 = url[:res[1]]
+        part2 = url[res[1]:]
+        adminURL = "%s%s%s" % (part1, addText, part2)
+
+        #res = AdminFeatureService(url=adminURL,
+        #                          connection=self._con,
+        #                          initialize=True)
+        return adminURL#res
+
+    @property
+    def uploads(self):
+        """returns the class to perform the upload function.  it will
+        only return the uploads class if syncEnabled is True.
+        """
+        if self.properties.syncEnabled == True:
+            return Uploads(connection=self._con,
+                           url=self._url + "/uploads")
+        return None
+    
     def query(self,
-              where="1=1",
-              out_fields="*",
-              timeFilter=None,
+              layerDefsFilter=None,
               geometryFilter=None,
+              timeFilter=None,
               returnGeometry=True,
-              returnIDsOnly=False,
+              returnIdsOnly=False,
               returnCountOnly=False,
-              returnFeatureClass=False,
-              returnDistinctValues=False,
-              returnExtentOnly=False,
-              groupByFieldsForStatistics=None,
-              statisticFilter=None,
-              out_fc=None,
-              objectIds="",
-              **kwargs):
-        """ queries a feature service based on a sql statement
-            Inputs:
-               where - the selection sql statement
-               out_fields - the attribute fields to return
-               timeFilter - a TimeFilter object where either the start time
-                            or start and end time are defined to limit the
-                            search results for a given time.  The values in
-                            the timeFilter should be as UTC timestampes in
-                            milliseconds.  No checking occurs to see if they
-                            are in the right format.
-               geometryFilter - a GeometryFilter object to parse down a given
-                               query by another spatial dataset.
-               returnGeometry - true means a geometry will be returned,
-                                else just the attributes
-               returnIDsOnly - false is default.  True means only OBJECTIDs
-                               will be returned
-               returnCountOnly - if True, then an integer is returned only
-                                 based on the sql statement
-               returnFeatureClass - Default False. If true, query will be
-                                    returned as feature class
-               groupByFieldsForStatistics - One or more field names on
-                                    which the values need to be grouped for
-                                    calculating the statistics.
-               statisticFilter - object that performs statistic queries
-               out_fc - only valid if returnFeatureClass is set to True.
-                        Output location of query.
-               kwargs - optional parameters that can be passed to the Query
-                 function.  This will allow users to pass additional
-                 parameters not explicitly implemented on the function. A
-                 complete list of functions available is documented on the
-                 Query REST API.
-            Output:
-               A list of Feature Objects (default) or a path to the output featureclass if
-               returnFeatureClass is set to True.
-         """
+              returnZ=False,
+              returnM=False,
+              outSR=None
+              ):
+        """
+           The Query operation is performed on a feature service resource
+        """
+        qurl = self._url + "/query"
         params = {"f": "json",
-                  "where": where,
-                  "outFields": out_fields,
-                  "returnGeometry" : returnGeometry,
-                  "returnIdsOnly" : returnIDsOnly,
-                  "returnCountOnly" : returnCountOnly,
-                  "returnDistinctValues" : returnDistinctValues,
-                  "returnExtentOnly" : returnExtentOnly
-                  }
-        for key, value in kwargs.items():
-            params[key] = value
-        if not timeFilter is None and \
-           isinstance(timeFilter, filters.TimeFilter):
-            params['time'] = timeFilter.filter
+                  "returnGeometry": returnGeometry,
+                  "returnIdsOnly": returnIdsOnly,
+                  "returnCountOnly": returnCountOnly,
+                  "returnZ": returnZ,
+                  "returnM" : returnM}
+        if not layerDefsFilter is None and \
+           isinstance(layerDefsFilter, dict):
+            params['layerDefs'] = layerDefsFilter
+        elif not layerDefsFilter is None and \
+             isinstance(layerDefsFilter, dict):
+            pass
         if not geometryFilter is None and \
-           isinstance(geometryFilter, filters.GeometryFilter):
-            gf = geometryFilter.filter
-            params['geometry'] = gf['geometry']
+           isinstance(geometryFilter, dict):
+            gf = geometryFilter
             params['geometryType'] = gf['geometryType']
-            params['spatialRelationship'] = gf['spatialRel']
+            params['spatialRel'] = gf['spatialRel']
+            params['geometry'] = gf['geometry']
             params['inSR'] = gf['inSR']
-        if objectIds is not None and objectIds != "":
-            params['objectIds'] = objectIds
-        if not groupByFieldsForStatistics is None:
-            params['groupByFieldsForStatistics'] = groupByFieldsForStatistics
-        if not statisticFilter is None and \
-           isinstance(statisticFilter, filters.StatisticFilter):
-            params['outStatistics'] = statisticFilter.filter
-        fURL = self.url + "/query"
-        #print(fURL)
-        results = self._con.post(fURL, params)
-
+        if not outSR is None and \
+           isinstance(outSR, SpatialReference):
+            params['outSR'] = outSR
+        elif not outSR is None and \
+             isinstance(outSR, dict):
+            params['outSR'] = outSR
+        if not timeFilter is None and \
+           isinstance(timeFilter, dict):
+            params['time'] = timeFilter
+        results =  self._con.get(path=qurl,
+                                 params=params)
         if 'error' in results:
             raise ValueError (results)
         if not returnCountOnly and not returnIDsOnly:
@@ -853,15 +872,355 @@ class Service(object):
                 df.columns = df.columns.str.replace('attributes.', '')
                 return df
             else:
-                #return results #FeatureSet.fromJSON(json.dumps(results))
-                #print(results)
                 df = json_normalize(results['features'])
                 df.columns = df.columns.str.replace('attributes.', '')
                 return df
         else:
             return results
-        return
 
+        return res
+    #----------------------------------------------------------------------
+    def query_related_records(self,
+                              objectIds,
+                              relationshipId,
+                              outFields="*",
+                              definitionExpression=None,
+                              returnGeometry=True,
+                              maxAllowableOffset=None,
+                              geometryPrecision=None,
+                              outWKID=None,
+                              gdbVersion=None,
+                              returnZ=False,
+                              returnM=False):
+        """
+           The Query operation is performed on a feature service layer
+           resource. The result of this operation are feature sets grouped
+           by source layer/table object IDs. Each feature set contains
+           Feature objects including the values for the fields requested by
+           the user. For related layers, if you request geometry
+           information, the geometry of each feature is also returned in
+           the feature set. For related tables, the feature set does not
+           include geometries.
+           Inputs:
+              objectIds - the object IDs of the table/layer to be queried
+              relationshipId - The ID of the relationship to be queried.
+              outFields - the list of fields from the related table/layer
+                          to be included in the returned feature set. This
+                          list is a comma delimited list of field names. If
+                          you specify the shape field in the list of return
+                          fields, it is ignored. To request geometry, set
+                          returnGeometry to true.
+                          You can also specify the wildcard "*" as the
+                          value of this parameter. In this case, the result
+                          s will include all the field values.
+              definitionExpression - The definition expression to be
+                                     applied to the related table/layer.
+                                     From the list of objectIds, only those
+                                     records that conform to this
+                                     expression are queried for related
+                                     records.
+              returnGeometry - If true, the feature set includes the
+                               geometry associated with each feature. The
+                               default is true.
+              maxAllowableOffset - This option can be used to specify the
+                                   maxAllowableOffset to be used for
+                                   generalizing geometries returned by the
+                                   query operation. The maxAllowableOffset
+                                   is in the units of the outSR. If outSR
+                                   is not specified, then
+                                   maxAllowableOffset is assumed to be in
+                                   the unit of the spatial reference of the
+                                   map.
+              geometryPrecision - This option can be used to specify the
+                                  number of decimal places in the response
+                                  geometries.
+              outWKID - The spatial reference of the returned geometry.
+              gdbVersion - The geodatabase version to query. This parameter
+                           applies only if the isDataVersioned property of
+                           the layer queried is true.
+              returnZ - If true, Z values are included in the results if
+                        the features have Z values. Otherwise, Z values are
+                        not returned. The default is false.
+              returnM - If true, M values are included in the results if
+                        the features have M values. Otherwise, M values are
+                        not returned. The default is false.
+        """
+        params = {
+            "f" : "json",
+            "objectIds" : objectIds,
+            "relationshipId" : relationshipId,
+            "outFields" : outFields,
+            "returnGeometry" : returnGeometry,
+            "returnM" : returnM,
+            "returnZ" : returnZ
+        }
+        if gdbVersion is not None:
+            params['gdbVersion'] = gdbVersion
+        if definitionExpression is not None:
+            params['definitionExpression'] = definitionExpression
+        if outWKID is not None and \
+           isinstance(outWKID, SpatialReference):
+            params['outSR'] = outWKID
+        elif outWKID is not None and \
+             isinstance(outWKID, dict):
+            params['outSR'] = outWKID
+        if maxAllowableOffset is not None:
+            params['maxAllowableOffset'] = maxAllowableOffset
+        if geometryPrecision is not None:
+            params['geometryPrecision'] = geometryPrecision
+        quURL = self._url + "/queryRelatedRecords"
+        res = self._con.get(path=quURL, params=params)
+        return res
+    #----------------------------------------------------------------------
+    @property
+    def replicas(self):
+        """ returns all the replicas for a feature service """
+        params = {
+            "f" : "json",
+
+        }
+        url = self._url + "/replicas"
+        return self._con.get(path=url, params=params)
+    #----------------------------------------------------------------------
+    def unregister_replica(self, replica_id):
+        """
+           removes a replica from a feature service
+           Inputs:
+             replica_id - The replicaID returned by the feature service
+                          when the replica was created.
+        """
+        params = {
+            "f" : "json",
+            "replicaID" : replica_id
+        }
+        url = self._url + "/unRegisterReplica"
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def replica_info(self, replica_id):
+        """
+           The replica info resources lists replica metadata for a specific
+           replica.
+           Inputs:
+              replica_id - The replicaID returned by the feature service
+                           when the replica was created.
+        """
+        params = {
+            "f" : "json"
+        }
+        url = self._url + "/replicas/" + replica_id
+        return self._con.get(path=url, params=params)
+    #----------------------------------------------------------------------
+    def create_replica(self,
+                      replicaName,
+                      layers,
+                      layerQueries=None,
+                      geometryFilter=None,
+                      replicaSR=None,
+                      transportType="esriTransportTypeUrl",
+                      returnAttachments=False,
+                      returnAttachmentsDatabyURL=False,
+                      async=False,
+                      attachmentsSyncDirection="none",
+                      syncModel="none",
+                      dataFormat="json",
+                      replicaOptions=None,
+                      wait=False,
+                      out_path=None):
+        """
+        The createReplica operation is performed on a feature service
+        resource. This operation creates the replica between the feature
+        service and a client based on a client-supplied replica definition.
+        It requires the Sync capability. See Sync overview for more
+        information on sync. The response for createReplica includes
+        replicaID, server generation number, and data similar to the
+        response from the feature service query operation.
+        The createReplica operation returns a response of type
+        esriReplicaResponseTypeData, as the response has data for the
+        layers in the replica. If the operation is called to register
+        existing data by using replicaOptions, the response type will be
+        esriReplicaResponseTypeInfo, and the response will not contain data
+        for the layers in the replica.
+
+        Inputs:
+           replicaName - name of the replica
+           layers - layers to export
+           layerQueries - In addition to the layers and geometry parameters, the layerQueries
+            parameter can be used to further define what is replicated. This
+            parameter allows you to set properties on a per layer or per table
+            basis. Only the properties for the layers and tables that you want
+            changed from the default are required.
+            Example:
+             layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+             "where": "requires_inspection = Yes"}}
+           geometryFilter - Geospatial filter applied to the replica to
+            parse down data output.
+           returnAttachments - If true, attachments are added to the replica and returned in the
+            response. Otherwise, attachments are not included.
+           returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
+            attachment returned from createReplica. Otherwise,
+            attachments are embedded in the response.
+           replicaSR - the spatial reference of the replica geometry.
+           transportType -  The transportType represents the response format. If the
+            transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+            and the URL link to the file is returned. Otherwise, the JSON object is returned
+            directly. The default is esriTransportTypeUrl.
+            If async is true, the results will always be returned as if transportType is
+            esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
+            esriTransportTypeUrl regardless of how the parameter is set.
+            Values: esriTransportTypeUrl | esriTransportTypeEmbedded
+           returnAttachments - If true, attachments are added to the replica and returned in
+            the response. Otherwise, attachments are not included. The default is false. This
+            parameter is only applicable if the feature service has attachments.
+           returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for
+            each attachment returned from createReplica. Otherwise, attachments are embedded
+            in the response. The default is true. This parameter is only applicable if the
+            feature service has attachments and if returnAttachments is true.
+           attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when
+            creating a replica. AttachmentsSyncDirection is currently a createReplica property
+            and cannot be overridden during sync.
+            Values: none, upload, bidirectional
+           async - If true, the request is processed as an asynchronous job, and a URL is
+            returned that a client can visit to check the status of the job. See the topic on
+            asynchronous usage for more information. The default is false.
+           syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
+            AttachmentsSyncDirection is currently a createReplica property and cannot be
+            overridden during sync.
+           dataFormat - The format of the replica geodatabase returned in the response. The
+            default is json.
+            Values: filegdb, json, sqlite, shapefile
+           replicaOptions - This parameter instructs the createReplica operation to create a
+            new replica based on an existing replica definition (refReplicaId). It can be used
+            to specify parameters for registration of existing data for sync. The operation
+            will create a replica but will not return data. The responseType returned in the
+            createReplica response will be esriReplicaResponseTypeInfo.
+           wait - if async, wait to pause the process until the async operation is completed.
+           out_path - folder path to save the file
+        """
+        if hasattr(self, "syncEnabled") and \
+           hasattr(self, "capabilities") and \
+           getattr(self, "syncEnabled") == False and \
+           "Extract" not in getattr(self,"capabilities"):
+            return None
+        url = self._url + "/createReplica"
+        dataformat = ["filegdb", "json", "sqlite", "shapefile"]
+        params = {"f" : "json",
+                  "replicaName": replicaName,
+                  "returnAttachments": returnAttachments,
+                  "returnAttachmentsDatabyURL": returnAttachmentsDatabyURL,
+                  "attachmentsSyncDirection" : attachmentsSyncDirection,
+                  "async" : async,
+                  "syncModel" : syncModel,
+                  "layers" : layers
+                  }
+        if dataFormat.lower() in dataformat:
+            params['dataFormat'] = dataFormat.lower()
+        else:
+            raise Exception("Invalid dataFormat")
+        if layerQueries is not None:
+            params['layerQueries'] = layerQueries
+        if geometryFilter is not None and \
+           isinstance(geometryFilter, dict):
+            params.update(geometryFilter)
+        if replicaSR is not None:
+            params['replicaSR'] = replicaSR
+        if replicaOptions is not None:
+            params['replicaOptions'] = replicaOptions
+        if transportType is not None:
+            params['transportType'] = transportType
+
+        if async:
+            if wait:
+                exportJob = self._con.post(path=url,
+                                           postdata=params)
+                status = self.replicaStatus(url=exportJob['statusUrl'])
+                while status['status'].lower() != "completed":
+                    status = self.replicaStatus(url=exportJob['statusUrl'])
+                    if status['status'].lower() == "failed":
+                        return status
+
+                res = status
+
+            else:
+                res = self._con.post(path=url,
+                                     postdata=params)
+        else:
+            res = self._con.post(path=url,
+                                 postdata=params)
+
+
+        if out_path is not None and \
+           os.path.isdir(out_path):
+            dlURL = None
+            if 'resultUrl' in res:
+
+                dlURL = res["resultUrl"]
+            elif 'responseUrl' in res:
+                dlURL = res["responseUrl"]
+            if dlURL is not None:
+                return self._con.get(path=dlURL,
+                                     out_folder=out_path)
+            else:
+                return res
+        elif res is not None:
+            return res
+        return None
+    #----------------------------------------------------------------------
+    def synchronize_replica(self,
+                           replicaID,
+                           transportType="esriTransportTypeUrl",
+                           replicaServerGen=None,
+                           returnIdsForAdds=False,
+                           edits=None,
+                           returnAttachmentDatabyURL=False,
+                           async=False,
+                           syncDirection="snapshot",
+                           syncLayers="perReplica",
+                           editsUploadID=None,
+                           editsUploadFormat=None,
+                           dataFormat="json",
+                           rollbackOnFailure=True):
+        """
+        TODO: implement synchronize replica
+        http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
+        """
+        url = "{url}/synchronizeReplica".format(url=self._url)
+        params = {
+            "f" : "json",
+            "replicaID" : replicaID,
+        }
+        if not transportType is None:
+            params['transportType'] = transportType
+        if not edits is None:
+            params['edits'] = edits
+        if not replicaServerGen is None:
+            params['replicaServerGen'] = replicaServerGen
+        if not returnIdsForAdds is None:
+            params['returnIdsForAdds'] = returnIdsForAdds
+        if not returnAttachmentDatabyURL is None:
+            params['returnAttachmentDatabyURL'] = returnAttachmentDatabyURL
+        if not async is None:
+            params['async'] = async
+        if not syncDirection is None:
+            params['syncDirection'] = syncDirection
+        if not syncLayers is None:
+            params['syncLayers'] = syncLayers
+        if not editsUploadFormat is None:
+            params['editsUploadFormat'] = editsUploadFormat
+        if not editsUploadID is None:
+            params['editsUploadID'] = editsUploadID
+        if not dataFormat is None:
+            params['dataFormat'] = dataFormat
+        if not rollbackOnFailure is None:
+            params['rollbackOnFailure'] = rollbackOnFailure
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def replica_status(self, url):
+        """gets the replica status when exported async set to True"""
+        params = {"f" : "json"}
+        url = url + "/status"
+        return self._con.get(path=url,
+                             params=params)
+########################################################################
 
 
 

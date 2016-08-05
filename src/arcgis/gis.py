@@ -1412,8 +1412,8 @@ class ContentManager(object):
             "publishParameters" : json.dumps(res['publishParameters'])
         }
 
-        res = self._portal.con.post(path, postdata, use_ordered_dict=True)
-        #print(json.dumps(res))
+        res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< AttrMap
+        
         fc = FeatureCollection(res['featureCollection']['layers'][0])
         return fc
 
@@ -2173,14 +2173,14 @@ class Item(dict):
                         "f" : "json"
                     }
 
-                    allayers = self._portal.con.post(fsurl, params, use_ordered_dict=True)
+                    allayers = self._portal.con.post(fsurl, params) #, use_ordered_dict=True)
 
                     #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
                     for layer in allayers['layers']:
-                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self, layer))
+                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
                     
                     for table in allayers['tables']:
-                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self, table))
+                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
 
             self.layers = layers
             self.tables = tables
