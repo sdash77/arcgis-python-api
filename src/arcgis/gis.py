@@ -2797,8 +2797,6 @@ class Item(dict):
                 print("folder should be folder name as a string, or dict with id")
 
         if folder_id is not None:
-            print(owner_name)
-            print(folder_id)
             return self._portal.move_item(self.itemid, owner_name, self.ownerFolder, folder_id)
         else:
             print('Folder not found for given owner')
