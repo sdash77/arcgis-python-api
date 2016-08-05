@@ -7,6 +7,7 @@ import arcgis.gis
 import json
 from pandas.io.json import json_normalize
 import collections
+from re import search
 from ._impl import *
 from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, AttrMap
 import six
@@ -14,49 +15,9 @@ from arcgis._impl.service import _featureservice
 from arcgis._impl.common import _utils
 from arcgis._impl.common._featureset import _date_handler
 from arcgis._impl.common._spatial import *
+from arcgis._impl.common._filters import *
+from arcgis._impl.service._uploads import Uploads
 
-class OldFeatureService(object):
-    "represents a feature service"
-    def __init__(self, item):
-        """
-        Constructs a Feature Service object given it's item from ArcGIS Online or Portal.
-        """
-        if item.type.lower() != 'feature service':
-            raise TypeError("item type must be feature service")
-        self.url = item.url
-        self.item = item
-
-
-        layers = []
-
-        #print("URL of Feature Service: " + self.url)
-        import re
-        m = re.search(r'\d+$', self.url)
-        # if the string ends in digits m will be a Match object, or None otherwise.
-        if m is not None:
-            layers.append(Layer(self.url, None, self.item))
-        else:
-            fsurl = self.url + '/layers'
-            params = {
-                "f" : "json"
-            }
-
-            allayers = self.item._portal.con.post(fsurl, params)
-            try:
-                for layer in allayers['layers']:
-                    layers.append(Layer(self.url, self.item, layer))
-                    #print("***" + str(layer))
-                    #lyr_type = layer['type']
-                    #lyr_url = self.url + '/' + str(layer['id'])
-                    #layers.append({"type": lyr_type, "url" : lyr_url.replace(' ', '%20')})
-            except:
-                layers.append(Layer(self.url, allayers, self.item))
-
-        #print(str(layers))
-        self.layers = layers
-
-    def __str__(self):
-        return "Feature service at " + self.url
 
 class Layer(object):
     """
@@ -99,6 +60,19 @@ class FeatureLayer(Layer):
         #                           initialize=False)
         if self.properties.hasAttachments:
             self.attachments = AttachmentManager(self)
+
+    @property
+    def admin(self):
+        """accesses the administration service"""
+        url = self._url
+        res = search("/rest/", url).span()
+        addText = "admin/"
+        part1 = url[:res[1]]
+        part2 = url[res[1]:]
+        adminURL = "%s%s%s" % (part1, addText, part2)
+
+        res = AdminFeatureServiceLayer(adminURL, self._gis)
+        return res
 
     def _add_attachment(self, oid, file_path):
         """ Adds an attachment to a feature service
@@ -792,8 +766,13 @@ class FeatureService(GISService):
         self.layers = layers
         self.tables = tables
 
+        if self.properties.syncEnabled :
+            self.replicas = ReplicaManager(self)
+            self.uploads = Uploads(connection=self._con,
+                           url=self._url + "/uploads")
+
     @property
-    def administration(self):
+    def admin(self):
         """accesses the administration service"""
         url = self._url
         res = search("/rest/", url).span()
@@ -802,20 +781,8 @@ class FeatureService(GISService):
         part2 = url[res[1]:]
         adminURL = "%s%s%s" % (part1, addText, part2)
 
-        #res = AdminFeatureService(url=adminURL,
-        #                          connection=self._con,
-        #                          initialize=True)
-        return adminURL#res
-
-    @property
-    def uploads(self):
-        """returns the class to perform the upload function.  it will
-        only return the uploads class if syncEnabled is True.
-        """
-        if self.properties.syncEnabled == True:
-            return Uploads(connection=self._con,
-                           url=self._url + "/uploads")
-        return None
+        res = AdminFeatureService(adminURL, self._gis)
+        return res
     
     def query(self,
               layerDefsFilter=None,
@@ -973,7 +940,7 @@ class FeatureService(GISService):
         return res
     #----------------------------------------------------------------------
     @property
-    def replicas(self):
+    def _replicas(self):
         """ returns all the replicas for a feature service """
         params = {
             "f" : "json",
@@ -982,7 +949,7 @@ class FeatureService(GISService):
         url = self._url + "/replicas"
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def unregister_replica(self, replica_id):
+    def _unregister_replica(self, replica_id):
         """
            removes a replica from a feature service
            Inputs:
@@ -996,7 +963,7 @@ class FeatureService(GISService):
         url = self._url + "/unRegisterReplica"
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def replica_info(self, replica_id):
+    def _replica_info(self, replica_id):
         """
            The replica info resources lists replica metadata for a specific
            replica.
@@ -1010,7 +977,7 @@ class FeatureService(GISService):
         url = self._url + "/replicas/" + replica_id
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def create_replica(self,
+    def _create_replica(self,
                       replicaName,
                       layers,
                       layerQueries=None,
@@ -1096,10 +1063,8 @@ class FeatureService(GISService):
            wait - if async, wait to pause the process until the async operation is completed.
            out_path - folder path to save the file
         """
-        if hasattr(self, "syncEnabled") and \
-           hasattr(self, "capabilities") and \
-           getattr(self, "syncEnabled") == False and \
-           "Extract" not in getattr(self,"capabilities"):
+        if self.properties.syncEnabled == False and \
+           "Extract" not in self.properties.capabilities:
             return None
         url = self._url + "/createReplica"
         dataformat = ["filegdb", "json", "sqlite", "shapefile"]
@@ -1165,7 +1130,7 @@ class FeatureService(GISService):
             return res
         return None
     #----------------------------------------------------------------------
-    def synchronize_replica(self,
+    def _synchronize_replica(self,
                            replicaID,
                            transportType="esriTransportTypeUrl",
                            replicaServerGen=None,
@@ -1214,13 +1179,454 @@ class FeatureService(GISService):
             params['rollbackOnFailure'] = rollbackOnFailure
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def replica_status(self, url):
+    def _replica_status(self, url):
         """gets the replica status when exported async set to True"""
         params = {"f" : "json"}
         url = url + "/status"
         return self._con.get(path=url,
                              params=params)
-########################################################################
 
+class ReplicaManager(object):
+    """
+    Manager class for manipulating replicas for disconnected editing of feature services. This class is not created by users directly.
+    An instance of this class, called 'replicas', is available as a property of the FeatureService object,
+    if the layer is sync enabled / supports disconnected editing.
+    Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
+    """
+    def __init__(self, featsvc):
+        self._fs = featsvc
+
+    def get_list(self):
+        """ returns all the replicas for the feature service """
+        return self._fs._replicas
+    #----------------------------------------------------------------------
+    def unregister(self, replica_id):
+        """
+           removes a replica from a feature service
+           Inputs:
+             replica_id - The replicaID returned by the feature service
+                          when the replica was created.
+        """
+        return self._fs._unregister_replica(replica_id)
+    #----------------------------------------------------------------------
+    def get(self, replica_id):
+        """
+           returns replica metadata for a specific replica.
+           Inputs:
+              replica_id - The replicaID returned by the feature service
+                           when the replica was created.
+        """
+        return self._fs._replica_info(replica_id)
+    #----------------------------------------------------------------------
+    def create(self,
+                      replicaName,
+                      layers,
+                      layerQueries=None,
+                      geometryFilter=None,
+                      replicaSR=None,
+                      transportType="esriTransportTypeUrl",
+                      returnAttachments=False,
+                      returnAttachmentsDatabyURL=False,
+                      async=False,
+                      attachmentsSyncDirection="none",
+                      syncModel="none",
+                      dataFormat="json",
+                      replicaOptions=None,
+                      wait=False,
+                      out_path=None):
+        """
+        The createReplica operation is performed on a feature service
+        resource. This operation creates the replica between the feature
+        service and a client based on a client-supplied replica definition.
+        It requires the Sync capability. See Sync overview for more
+        information on sync. The response for createReplica includes
+        replicaID, server generation number, and data similar to the
+        response from the feature service query operation.
+        The createReplica operation returns a response of type
+        esriReplicaResponseTypeData, as the response has data for the
+        layers in the replica. If the operation is called to register
+        existing data by using replicaOptions, the response type will be
+        esriReplicaResponseTypeInfo, and the response will not contain data
+        for the layers in the replica.
+
+        Inputs:
+           replicaName - name of the replica
+           layers - layers to export
+           layerQueries - In addition to the layers and geometry parameters, the layerQueries
+            parameter can be used to further define what is replicated. This
+            parameter allows you to set properties on a per layer or per table
+            basis. Only the properties for the layers and tables that you want
+            changed from the default are required.
+            Example:
+             layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+             "where": "requires_inspection = Yes"}}
+           geometryFilter - Geospatial filter applied to the replica to
+            parse down data output.
+           returnAttachments - If true, attachments are added to the replica and returned in the
+            response. Otherwise, attachments are not included.
+           returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
+            attachment returned from createReplica. Otherwise,
+            attachments are embedded in the response.
+           replicaSR - the spatial reference of the replica geometry.
+           transportType -  The transportType represents the response format. If the
+            transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+            and the URL link to the file is returned. Otherwise, the JSON object is returned
+            directly. The default is esriTransportTypeUrl.
+            If async is true, the results will always be returned as if transportType is
+            esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
+            esriTransportTypeUrl regardless of how the parameter is set.
+            Values: esriTransportTypeUrl | esriTransportTypeEmbedded
+           returnAttachments - If true, attachments are added to the replica and returned in
+            the response. Otherwise, attachments are not included. The default is false. This
+            parameter is only applicable if the feature service has attachments.
+           returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for
+            each attachment returned from createReplica. Otherwise, attachments are embedded
+            in the response. The default is true. This parameter is only applicable if the
+            feature service has attachments and if returnAttachments is true.
+           attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when
+            creating a replica. AttachmentsSyncDirection is currently a createReplica property
+            and cannot be overridden during sync.
+            Values: none, upload, bidirectional
+           async - If true, the request is processed as an asynchronous job, and a URL is
+            returned that a client can visit to check the status of the job. See the topic on
+            asynchronous usage for more information. The default is false.
+           syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
+            AttachmentsSyncDirection is currently a createReplica property and cannot be
+            overridden during sync.
+           dataFormat - The format of the replica geodatabase returned in the response. The
+            default is json.
+            Values: filegdb, json, sqlite, shapefile
+           replicaOptions - This parameter instructs the createReplica operation to create a
+            new replica based on an existing replica definition (refReplicaId). It can be used
+            to specify parameters for registration of existing data for sync. The operation
+            will create a replica but will not return data. The responseType returned in the
+            createReplica response will be esriReplicaResponseTypeInfo.
+           wait - if async, wait to pause the process until the async operation is completed.
+           out_path - folder path to save the file
+        """
+        return self._fs._create_replica(replicaName,
+                      layers,
+                      layerQueries,
+                      geometryFilter,
+                      replicaSR,
+                      transportType,
+                      returnAttachments,
+                      returnAttachmentsDatabyURL,
+                      async,
+                      attachmentsSyncDirection,
+                      syncModel,
+                      dataFormat,
+                      replicaOptions,
+                      wait,
+                      out_path)
+    #----------------------------------------------------------------------
+    def synchronize(self,
+                           replicaID,
+                           transportType="esriTransportTypeUrl",
+                           replicaServerGen=None,
+                           returnIdsForAdds=False,
+                           edits=None,
+                           returnAttachmentDatabyURL=False,
+                           async=False,
+                           syncDirection="snapshot",
+                           syncLayers="perReplica",
+                           editsUploadID=None,
+                           editsUploadFormat=None,
+                           dataFormat="json",
+                           rollbackOnFailure=True):
+        """
+        TODO: implement synchronize replica
+        http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
+        """
+        return self._fs._synchronize_replica(replicaID,
+                           transportType,
+                           replicaServerGen,
+                           returnIdsForAdds,
+                           edits,
+                           returnAttachmentDatabyURL,
+                           async,
+                           syncDirection,
+                           syncLayers,
+                           editsUploadID,
+                           editsUploadFormat,
+                           dataFormat,
+                           rollbackOnFailure)
+    
+class AdminFeatureService(GISService):
+    """ allows administration (if access permits) of a feature service """
+
+    def __init__(self, url, gis=None):
+        super(AdminFeatureService, self).__init__(url, gis)
+    #----------------------------------------------------------------------
+    def refresh(self):
+        """ refreshes a service """
+        params = {"f": "json"}
+        uURL = self._url + "/refresh"
+        res = self._con.get(uURL, params)
+        return res
+
+    #----------------------------------------------------------------------
+    def add_to_definition(self, json_dict):
+        """
+           The addToDefinition operation supports adding a definition
+           property to a hosted feature service. The result of this
+           operation is a response indicating success or failure with error
+           code and description.
+
+           This function will allow users to change add additional values
+           to an already published service.
+
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.
+           Output:
+              JSON message as dictionary
+        """
+        if isinstance(json_dict, AttrMap):
+            json_dict = dict(json_dict)
+
+        params = {
+            "f" : "json",
+            "addToDefinition" : json.dumps(json_dict),
+            "async" : False
+        }
+        uURL = self._url + "/addToDefinition"
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
+    #----------------------------------------------------------------------
+    def update_definition(self, json_dict):
+        """
+           The updateDefinition operation supports updating a definition
+           property in a hosted feature service. The result of this
+           operation is a response indicating success or failure with error
+           code and description.
+
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.
+           Output:
+              JSON Message as dictionary
+        """
+        definition = None
+        if json_dict is not None:
+            
+            if isinstance(json_dict, AttrMap):
+                definition = dict(json_dict)
+            if isinstance(json_dict,collections.OrderedDict) == True:
+                definition = json_dict
+            else:
+
+                definition = collections.OrderedDict()
+                if 'hasStaticData' in json_dict:
+                    definition['hasStaticData'] = json_dict['hasStaticData']
+                if 'allowGeometryUpdates' in json_dict:
+                    definition['allowGeometryUpdates'] = json_dict['allowGeometryUpdates']
+                if 'capabilities' in json_dict:
+                    definition['capabilities'] = json_dict['capabilities']
+                if 'editorTrackingInfo' in json_dict:
+                    definition['editorTrackingInfo'] = collections.OrderedDict()
+                    if 'enableEditorTracking' in json_dict['editorTrackingInfo']:
+                        definition['editorTrackingInfo']['enableEditorTracking'] = json_dict['editorTrackingInfo']['enableEditorTracking']
+
+                    if 'enableOwnershipAccessControl' in json_dict['editorTrackingInfo']:
+                        definition['editorTrackingInfo']['enableOwnershipAccessControl'] = json_dict['editorTrackingInfo']['enableOwnershipAccessControl']
+
+                    if 'allowOthersToUpdate' in json_dict['editorTrackingInfo']:
+                        definition['editorTrackingInfo']['allowOthersToUpdate'] = json_dict['editorTrackingInfo']['allowOthersToUpdate']
+
+                    if 'allowOthersToDelete' in json_dict['editorTrackingInfo']:
+                        definition['editorTrackingInfo']['allowOthersToDelete'] = json_dict['editorTrackingInfo']['allowOthersToDelete']
+
+                    if 'allowOthersToQuery' in json_dict['editorTrackingInfo']:
+                        definition['editorTrackingInfo']['allowOthersToQuery'] = json_dict['editorTrackingInfo']['allowOthersToQuery']
+                    if isinstance(json_dict['editorTrackingInfo'],dict):
+                        for k,v in json_dict['editorTrackingInfo'].items():
+                            if k not in definition['editorTrackingInfo']:
+                                definition['editorTrackingInfo'][k] = v
+                if isinstance(json_dict,dict):
+                    for k,v in json_dict.items():
+                        if k not in definition:
+                            definition[k] = v
+
+        params = {
+            "f" : "json",
+            "updateDefinition" : json.dumps(obj=definition,separators=(',', ':')),
+            "async" : False
+        }
+        uURL = self._url + "/updateDefinition"
+        
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
+    #----------------------------------------------------------------------
+    def delete_from_definition(self, json_dict):
+        """
+           The deleteFromDefinition operation supports deleting a
+           definition property from a hosted feature service. The result of
+           this operation is a response indicating success or failure with
+           error code and description.
+           See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/
+           for additional information on this function.
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.  Only
+                          include the items you want to remove from the
+                          FeatureService or layer.
+
+           Output:
+              JSON Message as dictionary
+
+        """
+        params = {
+            "f" : "json",
+            "deleteFromDefinition" : json.dumps(json_dict),
+            "async" : False
+        }
+        uURL = self._url + "/deleteFromDefinition"
+        
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
+
+class AdminFeatureServiceLayer(GISService):
+    """
+       The layer resource represents a single feature layer or a non
+       spatial table in a feature service.  A feature layer is a table or
+       view with at least one spatial column.
+       For tables, it provides basic information about the table such as
+       its id, name, fields, types and templates.
+       For feature layers, in addition to the table information above, it
+       provides information such as its geometry type, min and max scales,
+       and spatial reference.
+       Each type includes information about the type such as the type id,
+       name, and definition expression.  Sub-types also include a default
+       symbol and a list of feature templates.
+       Each feature template includes a template name, description and a
+       prototypical feature.
+       The property supportsRollbackOnFailures will be true to indicate the
+       support for transactional edits.
+       The property maxRecordCount returns the maximum number of records
+       that will be returned at once for a query.
+       The property capabilities returns Query, Create, Delete, Update, and
+       Editing capabilities. The Editing capability will be included if
+       Create, Delete or Update is enabled for a Feature Service.
+       Note, query and edit operations are not available on a layer in the
+       adminstrative view.
+    """
+    def __init__(self, url, gis=None):
+        super(AdminFeatureServiceLayer, self).__init__(url, gis)
+    #----------------------------------------------------------------------
+    def refresh(self):
+        """ refreshes a service """
+        params = {"f": "json"}
+        uURL = self._url + "/refresh"
+        res = self.get(uURL, params)
+        return res
+
+    #----------------------------------------------------------------------
+    def add_to_definition(self, json_dict):
+        """
+           The addToDefinition operation supports adding a definition
+           property to a hosted feature service. The result of this
+           operation is a response indicating success or failure with error
+           code and description.
+
+           This function will allow users to change add additional values
+           to an already published service.
+
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.
+           Output:
+              JSON message as dictionary
+        """
+        
+        if isinstance(json_dict, AttrMap):
+            json_dict = dict(json_dict)
+
+        params = {
+            "f" : "json",
+            "addToDefinition" : json.dumps(json_dict),
+            #"async" : False
+        }
+        uURL = self._url + "/addToDefinition"
+        
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
+    #----------------------------------------------------------------------
+    def update_definition(self, json_dict):
+        """
+           The updateDefinition operation supports updating a definition
+           property in a hosted feature service. The result of this
+           operation is a response indicating success or failure with error
+           code and description.
+
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.
+           Output:
+              JSON Message as dictionary
+        """
+        
+        if isinstance(json_dict, AttrMap):
+            json_dict = dict(json_dict)
+
+        params = {
+            "f" : "json",
+            "updateDefinition" : json.dumps(json_dict),
+            "async" : False
+        }
+
+        uURL = self._url + "/updateDefinition"
+        
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
+    #----------------------------------------------------------------------
+    def delete_from_definition(self, json_dict):
+        """
+           The deleteFromDefinition operation supports deleting a
+           definition property from a hosted feature service. The result of
+           this operation is a response indicating success or failure with
+           error code and description.
+           See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/
+           for additional information on this function.
+           Input:
+              json_dict - part to add to host service.  The part format can
+                          be derived from the asDictionary property.  For
+                          layer level modifications, run updates on each
+                          individual feature service layer object.  Only
+                          include the items you want to remove from the
+                          FeatureService or layer.
+
+           Output:
+              JSON Message as dictionary
+
+        """
+        
+        if isinstance(json_dict, AttrMap):
+            json_dict = dict(json_dict)
+
+        params = {
+            "f" : "json",
+            "deleteFromDefinition" : json.dumps(json_dict)
+        }
+        uURL = self._url + "/deleteFromDefinition"
+        
+        res = self._con.post(uURL, params)
+        self.refresh()
+        return res
 
 
