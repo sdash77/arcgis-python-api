@@ -87,6 +87,7 @@ class GIS(object):
         self._key_file = key_file
         self._cert_file = cert_file
         self._portal = None
+        self._con = None
         self.tools = Tools(self)
         self.__enter__()
 
@@ -96,27 +97,28 @@ class GIS(object):
                                #key_file=self._key_file,
                                #cert_file=self._cert_file)
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
+        self._con = self._portal.con
 
     @_lazy_property
     def users(self):
         """
         The resource manager for GIS users
         """
-        return UserManager(self._portal)
+        return UserManager(self)
 
     @_lazy_property
     def groups(self):
         """
         The resource manager for GIS groups
         """
-        return GroupManager(self._portal)
+        return GroupManager(self)
 
     @_lazy_property
     def content(self):
         """
         The resource manager for GIS content
         """
-        return ContentManager(self._portal)
+        return ContentManager(self)
 
     @_lazy_property
     def datastore(self):
@@ -731,8 +733,9 @@ class UserManager(object):
     An instance of this class, called 'users', is available as a property of the Gis object.
     Users call methods on this 'users' object to manipulate (create, get, search...) users.
     """
-    def __init__(self, portal):
-        self._portal = portal
+    def __init__(self, gis):
+        self._gis = gis
+        self._portal = gis._portal
 
 
 
@@ -831,7 +834,7 @@ class UserManager(object):
         """
         success = self._portal.signup(username, password, fullname, email)
         if success:
-            return User(self._portal, username)
+            return User(self._gis, username)
         else:
             return None
 
@@ -845,7 +848,7 @@ class UserManager(object):
         """
         user = self._portal.get_user(username)
         if user is not None:
-            return User(self._portal, user['username'], user)
+            return User(self._gis, user['username'], user)
         return None
 
     def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, outside_org=False):
@@ -894,13 +897,13 @@ class UserManager(object):
         """
         if query is None:
             users = self._portal.get_org_users(max_users)
-            return [User(self._portal, u['username'], u) for u in users]
+            return [User(self._gis, u['username'], u) for u in users]
         else:
             userlist = []
 
             users = self._portal.search_users(query, sort_field, sort_order, max_users, outside_org)
             for user in users:
-                userlist.append(User(self._portal, user['username'], user))
+                userlist.append(User(self._gis, user['username'], user))
             return userlist
 
         #TODO: remove org users, invite users
@@ -911,7 +914,7 @@ class UserManager(object):
         """
         me = self._portal.logged_in_user()
         if me is not None:
-            return User(self._portal, me['username'], me)
+            return User(self._gis, me['username'], me)
         else:
             return None
 
@@ -921,8 +924,9 @@ class GroupManager(object):
     An instance of this class, called 'groups', is available as a property of the Gis object.
     Users call methods on this 'groups' object to manipulate (create, get, search...) users.
     """
-    def __init__(self, portal):
-        self._portal = portal
+    def __init__(self, gis):
+        self._gis = gis
+        self._portal = gis._portal
 
     def create(self, title, tags, description=None,
                snippet=None, access='public', thumbnail=None,
@@ -966,7 +970,7 @@ class GroupManager(object):
             'isinvitationOnly' : is_invitation_only}, thumbnail)
         #print(groupid)
         if groupid is not None:
-            return Group(self._portal, groupid)
+            return Group(self._gis, groupid)
         else:
             return None
 
@@ -981,7 +985,7 @@ class GroupManager(object):
 
         groupid = self._portal.create_group_from_dict(dict, thumbnail)
         if groupid is not None:
-            return Group(self._portal, groupid)
+            return Group(self._gis, groupid)
         else:
             return None
 
@@ -995,7 +999,7 @@ class GroupManager(object):
         """
         group = self._portal.get_group(groupid)
         if group is not None:
-            return Group(self._portal, groupid)
+            return Group(self._gis, groupid)
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',
@@ -1043,7 +1047,7 @@ class GroupManager(object):
         grouplist = []
         groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
         for group in groups:
-            grouplist.append(Group(self._portal, group['id'], group))
+            grouplist.append(Group(self._gis, group['id'], group))
         return grouplist
 
 def _is_shapefile(data):
@@ -1062,8 +1066,9 @@ class ContentManager(object):
     An instance of this class, called 'content', is available as a property of the Gis object.
     Users call methods on this 'content' object to manipulate (create, get, search...) items.
     """
-    def __init__(self, portal):
-        self._portal = portal
+    def __init__(self, gis):
+        self._gis = gis
+        self._portal = gis._portal
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to a Portal by creating an item.
@@ -1165,7 +1170,7 @@ class ContentManager(object):
         itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner_name, folder)
 
         if itemid is not None:
-            return Item(self._portal, itemid)
+            return Item(self._gis, itemid)
         else:
             return None
 
@@ -1223,7 +1228,7 @@ class ContentManager(object):
                                              wkid,
                                              service_type, owner, folder)
         if itemid is not None:
-            return Item(self._portal, itemid)
+            return Item(self._gis, itemid)
         else:
             return None
 
@@ -1237,7 +1242,7 @@ class ContentManager(object):
         """
         item = self._portal.get_item(itemid)
         if item is not None:
-            return Item(self._portal, itemid, item)
+            return Item(self._gis, itemid, item)
         return None
 
     def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, outside_org=False):
@@ -1304,7 +1309,7 @@ class ContentManager(object):
 
         items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
         for item in items:
-            itemlist.append(Item(self._portal, item['id'], item))
+            itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
     # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
@@ -1418,9 +1423,10 @@ class Group(dict):
     """
     Represents a group (for example, San Bernardino Fires) within the GIS (ArcGIS Online or Portal for ArcGIS)
     """
-    def __init__(self, portal, groupid, groupdict=None):
+    def __init__(self, gis, groupid, groupdict=None):
         dict.__init__(self)
-        self._portal = portal
+        self._gis = gis
+        self._portal = gis._portal
         self.groupid = groupid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
@@ -1529,7 +1535,7 @@ class Group(dict):
         itemlist = []
         items = self._portal.search('group:' + self.groupid, max_results=max_items)
         for item in items:
-            itemlist.append(Item(self._portal, item['id'], item))
+            itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
 
     def delete(self):
@@ -1752,9 +1758,10 @@ class User(dict):
     """
     Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
     """
-    def __init__(self, portal, username, userdict=None):
+    def __init__(self, gis, username, userdict=None):
         dict.__init__(self)
-        self._portal = portal
+        self._gis = gis
+        self._portal = gis._portal
         self.username = username
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
@@ -2074,7 +2081,7 @@ class User(dict):
 
         resp = self._portal.user_items(self.username, folder_id, max_items)
         for item in resp:
-            items.append(Item(self._portal, item['id'], item))
+            items.append(Item(self._gis, item['id'], item))
 
         return items
 
@@ -2088,9 +2095,10 @@ class Item(dict):
     map package via the item data resource.
     """
 
-    def __init__(self, portal, itemid, itemdict=None):
+    def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
-        self._portal = portal
+        self._portal = gis._portal
+        self._gis = gis
         self.itemid = itemid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
@@ -2596,7 +2604,7 @@ class Item(dict):
         postdata['direction'] = direction
         resp = self._portal.con.post('content/items/' + self.itemid + '/relatedItems', postdata)
         for related_item in resp['relatedItems']:
-            related_items.append(Item(self._portal, related_item['id'], related_item))
+            related_items.append(Item(self._gis, related_item['id'], related_item))
         return related_items
 
     def add_relationship(self, rel_item, rel_type):
@@ -2750,7 +2758,7 @@ class Item(dict):
         else:
             raise Exception("No job results.")
 
-        return Item(self._portal, serviceitem_id)
+        return Item(self._gis, serviceitem_id)
 
 def rot13(s):
     result = ""

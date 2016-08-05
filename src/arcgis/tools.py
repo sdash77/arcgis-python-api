@@ -430,6 +430,7 @@ class _AsyncService(object):
     def __init__(self, url, gis):
         if url is not None:
             self.url = url
+            self._gis = gis
             self._portal = gis._portal
 
     def _analysis_job(self, task, params):
@@ -1173,7 +1174,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1219,7 +1220,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['output_json']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1300,7 +1301,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1397,7 +1398,7 @@ class GeoAnalyticsTools(_AsyncService):
         print(job_values)
         if out_features_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1481,7 +1482,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1552,7 +1553,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1603,7 +1604,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_crf']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1664,7 +1665,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1745,7 +1746,7 @@ class GeoAnalyticsTools(_AsyncService):
         print(job_values)
         if out_features is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1817,7 +1818,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_cube']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -1943,7 +1944,7 @@ class GeoAnalyticsTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['out_features']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2077,7 +2078,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['aggregatedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2148,7 +2149,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['hotSpotsResultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2232,7 +2233,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['bufferLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2307,7 +2308,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['driveTimeAreasLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2362,7 +2363,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['dissolvedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2416,7 +2417,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['mergedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2497,7 +2498,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2576,7 +2577,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['enrichedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2645,7 +2646,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outputLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2705,7 +2706,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['contentID']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2754,7 +2755,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2803,7 +2804,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2852,7 +2853,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -2939,7 +2940,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3035,7 +3036,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3145,7 +3146,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3234,7 +3235,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['viewshedLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3299,7 +3300,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['similarResultLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3370,7 +3371,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['snapPourPtsLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3454,7 +3455,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['nearestLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3557,7 +3558,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3643,7 +3644,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['traceLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3719,7 +3720,7 @@ class SpatialAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3826,7 +3827,7 @@ class RasterAnalysisTools(_AsyncService):
         print(job_values)
         if output_raster is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             item.share(True)
             return item
         else:
@@ -3885,7 +3886,7 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -3953,7 +3954,7 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outRaster']['itemId']
-            item = arcgis.gis.Item(self._portal, itemid)
+            item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
             # Feature Collection
@@ -4035,6 +4036,6 @@ class RasterAnalysisTools(_AsyncService):
         #print(job_values)
 
         itemid = job_values['outRaster']['itemId']
-        item = arcgis.gis.Item(self._portal, itemid)
+        item = arcgis.gis.Item(self._gis, itemid)
         item.share(True)
         return item
