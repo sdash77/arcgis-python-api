@@ -807,7 +807,7 @@ class GeoprocessingTool(collections.OrderedDict):
         params = {
             "f" : "json"
         }
-        svcprops = self.item._portal.con.post(self.url, params, use_ordered_dict=True)
+        svcprops = self.item._portal.con.post(self.url, params,  use_ordered_dict=True)
         collections.OrderedDict.__init__(self, svcprops)
         for task in svcprops['tasks']:
             print("Task: " + task)

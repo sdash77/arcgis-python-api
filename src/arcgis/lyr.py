@@ -761,7 +761,7 @@ class FeatureService(GISService):
             layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
                     
         for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self.gis, table))
+            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
 
         self.layers = layers
         self.tables = tables
@@ -1527,7 +1527,7 @@ class AdminFeatureServiceLayer(GISService):
         """ refreshes a service """
         params = {"f": "json"}
         uURL = self._url + "/refresh"
-        res = self.get(uURL, params)
+        res = self._con.get(uURL, params)
         return res
 
     #----------------------------------------------------------------------
