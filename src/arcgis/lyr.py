@@ -28,7 +28,7 @@ class Layer(object):
         A layer of geographic data
         """
         if gis is None:
-            gis = GIS()
+            gis = arcgis.gis.GIS()
 
         self._gis = gis
         self._con = gis._con
@@ -692,7 +692,7 @@ class FeatureCollection(Layer):
 
     @property
     def _js_lyr(self):
-        return self.properties
+        return dict(self.properties)
     
     def __str__(self):
         return '<%s>' % (type(self).__name__)
@@ -725,7 +725,7 @@ class GISService(object):
         self._con = gis._con
         
         params = {"f": "json"}
-        dictdata = self._con.post(url, params)#, use_ordered_dict=True)
+        dictdata = self._con.post(url, params)
 
         self.properties = AttrMap(dictdata)
 
@@ -755,7 +755,7 @@ class FeatureService(GISService):
         layers = []
         tables = []
 
-        allayers = self._con.post(fsurl, params) #, use_ordered_dict=True)
+        allayers = self._con.post(fsurl, params)
         
         for layer in allayers['layers']:
             layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))

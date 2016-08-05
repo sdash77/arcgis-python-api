@@ -2134,8 +2134,8 @@ class Item(dict):
                 use_token = False
 
             if self.type == 'Image Service': # service that is itself a layer
-                layer = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=use_token)
-                layers.append(ImageLayer(self.url, self, layer))
+                layer = self._portal.con.post(self.url, params, add_token=use_token)
+                layers.append(ImageLayer(self.url, self._gis, layer))
 
             elif self.type == 'Feature Collection':
                 lyrs = self.get_data()['layers']
@@ -2143,37 +2143,37 @@ class Item(dict):
                     layers.append(FeatureCollection(layer))
 
             elif self.type == 'Vector Tile Service':
-                layer = self._portal.con.get(self.url, params, use_ordered_dict=True, add_token=use_token)
-                layers.append(Layer(self.url, self, layer))
+                layer = self._portal.con.get(self.url, params, add_token=use_token)
+                layers.append(Layer(self.url, self._gis, layer))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
-                serviceinfo = self._portal.con.post(self.url, params, use_ordered_dict=True, add_token=use_token)
+                serviceinfo = self._portal.con.post(self.url, params, add_token=use_token)
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=use_token)
-                    layers.append(Layer(lyrurl, self, layer))
+                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layers.append(Layer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=use_token)
-                    layers.append(Layer(lyrurl, self, layer))
+                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layers.append(Layer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, use_ordered_dict=True, add_token=use_token)
-                    layers.append(Layer(lyrurl, self, layer))
+                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layers.append(Layer(lyrurl, self._gis, layer))
 
             else:
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit,
-                    layer = self._portal.con.post(self.url, params, use_ordered_dict=True, use_token=use_token)
-                    layers.append(Layer(self.url, self, layer))
+                    layer = self._portal.con.post(self.url, params, use_token=use_token)
+                    layers.append(Layer(self.url, self._gis, layer))
                 else:
                     fsurl = self.url + '/layers'
                     params = {
                         "f" : "json"
                     }
 
-                    allayers = self._portal.con.post(fsurl, params) #, use_ordered_dict=True)
+                    allayers = self._portal.con.post(fsurl, params)
 
                     #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
                     for layer in allayers['layers']:
