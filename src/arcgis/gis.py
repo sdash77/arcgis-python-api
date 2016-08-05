@@ -2760,15 +2760,15 @@ class Item(dict):
         return Item(self._gis, serviceitem_id)
 
     def move(self, folder, owner=None):
-        """ Move this item to the folder with the given name, for the given owner. If owner is not specified, does so for the logged in user.
+        """ Move this item to the folder with the given name.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         folder            required string, the name of the folder to move the item to.
-                          Use '/' for the root folder.
-        ----------------  ---------------------------------------------------------------
-        owner             optional string or User, folder owner, None for logged in user
+                          Use '/' for the root folder. For other folders, pass in the 
+                          folder name as a string, or a dict containing the folder 'id',
+                          such as the dict obtained from the folders property.
         ================  ===============================================================
 
         :return:
@@ -2779,21 +2779,27 @@ class Item(dict):
                "owner": "<owner username>",
                "folder": "<folder id>"
             }
-        """
-        if owner is None:
-            owner = self._portal.logged_in_user()['username']
-            owner_name = owner
-        elif isinstance(owner, arcgis.gis.User):
-            owner_name = owner.username
-        else:
-            owner_name = owner
-
-        folder_id = folder
-        if folder != '/': # we don't create root folder
-            folder_id = self._portal.get_folder_id(owner_name, folder)
+            
         
+        """
+        owner_name = self._portal.logged_in_user()['username']
+
+        folder_id = None
+        if folder is not None:
+            if isinstance(folder, str):
+                if folder == '/':
+                    folder_id = '/'
+                else:
+                    folder_id = self._portal.get_folder_id(owner_name, folder)
+            elif isinstance(folder, dict):
+                folder_id = folder['id']
+            else:
+                print("folder should be folder name as a string, or dict with id")
+
         if folder_id is not None:
-            return self._portal.move_item(self.itemid, owner_name, folder_id)
+            print(owner_name)
+            print(folder_id)
+            return self._portal.move_item(self.itemid, owner_name, self.ownerFolder, folder_id)
         else:
             print('Folder not found for given owner')
             return None

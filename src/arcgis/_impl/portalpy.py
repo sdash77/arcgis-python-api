@@ -1526,7 +1526,7 @@ class Portal(object):
         """
         path = 'content/users/' + current_owner
         if current_folder :
-            path += '/folder'
+            path += '/' + current_folder + '/'
         path += 'items/' + item_id + '/reassign'
 
         postdata = self._postdata()
@@ -2285,11 +2285,17 @@ class Portal(object):
             if resp:
                 return resp.get('success')
 
-    def move_item(self, itemid, owner, folder_id):
+    def move_item(self, itemid, owner, current_folder, folder_id):
         """ Moves the item to given folder """
+        
+        path = 'content/users/' + owner
+        if current_folder :
+            path += '/' + current_folder 
+        path += '/items/' + itemid + '/move'
+
         postdata = self._postdata()
         postdata['folder'] = folder_id
-        resp = self.con.post('content/users/' + owner + '/items/' + itemid + '/move', postdata)
+        resp = self.con.post(path, postdata)
         return resp
 
     def get_folder_id(self, owner, folder_name):
