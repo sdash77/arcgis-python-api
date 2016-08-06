@@ -1678,8 +1678,9 @@ class AdminMapService(GISService):
        administrative map service resource maintains a set of operations
        that manage the state and contents of the service.
     """
-    def __init__(self, url, gis=None):
-        super(AdminFeatureService, self).__init__(url, gis)
+    def __init__(self, url, gis=None, ms=None):
+        super(AdminMapService, self).__init__(url, gis)
+        self._ms = ms
     
     #----------------------------------------------------------------------
     def refresh(self, serviceDefinition=True):
@@ -1694,6 +1695,11 @@ class AdminMapService(GISService):
         }
 
         res =  self._con.post(self._url, params)
+
+        super(AdminMapService, self)._refresh()
+        
+        self._ms._refresh()
+
         return res
     #----------------------------------------------------------------------
     def cancel_job(self, jobId):
@@ -1731,7 +1737,7 @@ class AdminMapService(GISService):
                         exportTilesAllowed=False,
                         maxExportTileCount=100000):
         """
-        This post operation updates a Tile Service's properties
+        This operation updates a Tile Service's properties
 
         Inputs:
            serviceDefinition - updates a service definition
@@ -1771,35 +1777,39 @@ class MapService(GISService):
         params = {
             "f" : "json"
         }
+        self._populate_layers()
+        self._admin = None
 
+    def _populate_layers(self):        
         layers = []
         tables = []
-
+        
+        fsurl = self.url + '/layers'
+        params = { "f" : "json" }
         allayers = self._con.post(fsurl, params)
         
         for layer in allayers['layers']:
             layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
                     
         for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self.gis, table))
+            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
 
         self.layers = layers
         self.tables = tables
 
-
     @property
     def admin(self):
-        """accesses the administration service"""
-        url = self._url
-        res = search("/rest/", url).span()
-        addText = "admin/"
-        part1 = url[:res[1]]
-        part2 = url[res[1]:]
-        adminURL = "%s%s%s" % (part1, addText, part2)
+        if self._admin is None:
+            """accesses the administration service"""
+            url = self._url
+            res = search("/rest/", url).span()
+            addText = "admin/"
+            part1 = url[:res[1]]
+            part2 = url[res[1]:]
+            adminURL = "%s%s%s" % (part1, addText, part2)
 
-        res = AdminMapService(adminURL, self._gis)
-        return res
-
+            self._admin = AdminMapService(adminURL, self._gis, self)
+        return self._admin
 
     #----------------------------------------------------------------------
     @property
@@ -2244,20 +2254,31 @@ class MapService(GISService):
             return self._con.get(url, params)
         else:
             exportJob = self._con.get(url, params)
-            jobUrl = "%s/jobs/%s" % (url, exportJob['jobId'])
-            gpJob = GPJob(connection=self._con,
-                          url=jobUrl)
 
-            status = gpJob.jobStatus
-            while status != "esriJobSucceeded":
-                if status in ['esriJobFailed',
-                              'esriJobCancelling',
-                              'esriJobCancelled']:
-                    return gpJob.messages
-                else:
+            job_id = exportJob['jobId']
+            path = "%s/jobs/%s" % (url, exportJob['jobId'])
+
+            params = { "f" : "json" }
+            job_response = self._con.post(path, params)
+
+            if "status" in job_response:
+                status = job_response.get("status") 
+                while not status == "esriJobSucceeded":
                     time.sleep(5)
-                    status = gpJob.jobStatus
-            return gpJob.results
+
+                    job_response = self._con.post(path, params)
+                    status = job_response.get("status") 
+                    if status in ['esriJobFailed',
+                              'esriJobCancelling',
+                              'esriJobCancelled',
+                              'esriJobTimedOut']:
+                        print(str(job_response['messages']))
+                        raise Exception('Job Failed with status ' + status)
+            else:
+                raise Exception("No job results.")
+
+            return job_response['results']
+
     #----------------------------------------------------------------------
     def export_tiles(self,
                     levels,
@@ -2366,37 +2387,47 @@ class MapService(GISService):
             return self._con.get(path=url, params=params)
         else:
             exportJob = self._con.get(path=url, params=params)
-            jobUrl = "%s/jobs/%s" % (url, exportJob['jobId'])
-            gpJob = GPJob(url=jobUrl,
-                          connection=self._con)
-            status = gpJob.jobStatus
-            while status != "esriJobSucceeded":
-                if status in ['esriJobFailed',
-                              'esriJobCancelling',
-                              'esriJobCancelled']:
-                    return None
-                else:
+            
+            job_id = exportJob['jobId']
+            path = "%s/jobs/%s" % (url, exportJob['jobId'])
+
+            params = { "f" : "json" }
+            job_response = self._con.post(path, params)
+
+            if "status" in job_response:
+                status = job_response.get("status") 
+                while not status == 'esriJobSucceeded':
                     time.sleep(5)
-                    status = gpJob.jobStatus
-            allResults = gpJob.results
+
+                    job_response = self._con.post(path, params)
+                    status = job_response.get("status") 
+                    if status in ['esriJobFailed',
+                              'esriJobCancelling',
+                              'esriJobCancelled',
+                              'esriJobTimedOut']:
+                        print(str(job_response['messages']))
+                        raise Exception('Job Failed with status ' + status)
+            else:
+                raise Exception("No job results.")
+
+            allResults = job_response['results']
+            
             for k,v in allResults.items():
                 if k == "out_service_url":
                     value = v.value
                     params = {
                         "f" : "json"
                     }
-                    gpRes = self._con.get(path=value,
-                                      params=params)
+                    gpRes = self._con.get(path=value, params=params)
                     if tilePackage == True:
                         files = []
                         for f in gpRes['files']:
                             name = f['name']
                             dlURL = f['url']
                             files.append(
-                                self._con.get(path=dlURL,
+                                self._con.get(dlURL, params,
                                               out_folder=tempfile.gettempdir(),
-                                              file_name=name,
-                                              params=params))
+                                              file_name=name))
                         return files
                     else:
                         return gpRes['folders']
