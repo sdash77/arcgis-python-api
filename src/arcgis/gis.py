@@ -2716,6 +2716,10 @@ class Item(dict):
                 publish_parameters =  res['publishParameters']
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
+
+                #use csv title for service name
+                service_name = self['title'].replace(' ','_').replace('.','_')
+                publish_parameters.update({"name":service_name})
             else:
                 name = self['title'].replace(' ', '_')
                 name = name.replace('.', '_')
