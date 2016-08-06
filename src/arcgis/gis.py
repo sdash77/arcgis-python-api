@@ -963,14 +963,14 @@ class GroupManager(object):
         :return:
             the group, if created, or None
         """
-        groupid = self._portal.create_group_from_dict({
+        group = self._portal.create_group_from_dict({
             'title' : title, 'tags' : tags, 'description' : description,
             'snippet' : snippet, 'access' : access, 'sortField' : sort_field,
             'sortOrder' : sort_order, 'isViewOnly' : is_view_only,
             'isinvitationOnly' : is_invitation_only}, thumbnail)
         #print(groupid)
-        if groupid is not None:
-            return Group(self._gis, groupid)
+        if group is not None:
+            return Group(self._gis, group['id'], group)
         else:
             return None
 
@@ -983,9 +983,9 @@ class GroupManager(object):
         """
         thumbnail = dict.pop("thumbnail", None)
 
-        groupid = self._portal.create_group_from_dict(dict, thumbnail)
-        if groupid is not None:
-            return Group(self._gis, groupid)
+        group = self._portal.create_group_from_dict(dict, thumbnail)
+        if group is not None:
+            return Group(self._gis, group['id'], group)
         else:
             return None
 
@@ -999,7 +999,7 @@ class GroupManager(object):
         """
         group = self._portal.get_group(groupid)
         if group is not None:
-            return Group(self._gis, groupid)
+            return Group(self._gis, groupid, group)
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',

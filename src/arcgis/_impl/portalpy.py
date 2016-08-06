@@ -701,7 +701,7 @@ class Portal(object):
         # Send the POST request, and return the id from the response
         resp = self.con.post('community/createGroup', postdata, files)
         if resp and resp.get('success'):
-            return resp['group']['id']
+            return resp['group']
 
     def create_group(self, title, tags, description=None,
                      snippet=None, access='public', thumbnail=None,
@@ -734,7 +734,7 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a string that is a group id.
+            a dict containing group properties
         """
 
         return self.create_group_from_dict({'title' : title, 'tags' : tags,
