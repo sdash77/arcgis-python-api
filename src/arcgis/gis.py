@@ -2144,7 +2144,7 @@ class Item(dict):
 
             elif self.type == 'Vector Tile Service':
                 layer = self._portal.con.get(self.url, params, add_token=use_token)
-                layers.append(Layer(self.url, self._gis, layer))
+                layers.append(VectorTileLayer(self.url, self._gis, layer))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
@@ -2166,7 +2166,7 @@ class Item(dict):
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit,
                     layer = self._portal.con.post(self.url, params, use_token=use_token)
-                    layers.append(Layer(self.url, self._gis, layer))
+                    layers.append(FeatureLayer(self.url, self._gis, layer))
                 else:
                     fsurl = self.url + '/layers'
                     params = {

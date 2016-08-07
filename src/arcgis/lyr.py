@@ -90,6 +90,64 @@ class GISService(object):
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
 
+class VectorTileLayer(Layer):
+    def __init__(self, url, gis=None, dictdata=None):
+        super(VectorTileLayer, self).__init__(url, gis, dictdata)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Vector Tile Service':
+            raise TypeError("item must be a type of Vector Tile Service, not " + item.type)
+        return cls(item.url, item._gis)
+
+    @property
+    def styles(self):
+        url = "{url}/styles".format(url=self._url)
+        params = {"f" : "json"}
+        return self._con.get(path=url, params=params)
+    #----------------------------------------------------------------------
+    def tile_fonts(self, fontstack, stack_range):
+        """This resource returns glyphs in PBF format. The template url for
+        this fonts resource is represented in Vector Tile Style resource."""
+        url = "{url}/resources/fonts/{fontstack}/{stack_range}.pbf".format(
+            url=self._url,
+            fontstack=fontstack,
+            stack_range=stack_range)
+        params = {}
+        return self._con.get(path=url,
+                             params=params, force_bytes=True)
+    #----------------------------------------------------------------------
+    def vector_tile(self, level, row, column):
+        """This resource represents a single vector tile for the map. The
+        bytes for the tile at the specified level, row and column are
+        returned in PBF format. If a tile is not found, an error is returned."""
+        url = "{url}/tile/{level}/{row}/{column}.pbf".format(url=self._url,
+                                                             level=level,
+                                                             row=row,
+                                                             column=column)
+        params = {}
+        return self._con.get(path=url,
+                             params=params, try_json=False, force_bytes=True)
+    #----------------------------------------------------------------------
+    def tile_sprite(self, out_format="sprite.json"):
+        """
+        This resource returns sprite image and metadata
+        """
+        url = "{url}/resources/sprites/{f}".format(url=self._url,
+                                                   f=out_format)
+        if out_folder is None:
+            out_folder = tempfile.gettempdir()
+        return self._con.get(path=url,
+                             params={})
+    #----------------------------------------------------------------------
+    @property
+    def info(self):
+        """This returns relative paths to a list of resource files"""
+        url = "{url}/resources/info".format(url=self._url)
+        params = {"f" : "json"}
+        return self._con.get(path=url,
+                             params=params)
+
 class ImageLayer(Layer):
     def __init__(self, url, gis=None, dictdata=None):
         super(ImageLayer, self).__init__(url, gis, dictdata)
@@ -1089,7 +1147,7 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
     Layer as well as some attributes unique to Closest Facility Network Layer
     only.
     """
-    def solveClosestFacility(self,incidents,facilities,
+    def solve_closest_facility(self,incidents,facilities,
                              barriers=None,
                              polylineBarriers=None,
                              polygonBarriers=None,
