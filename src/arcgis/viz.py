@@ -180,14 +180,13 @@ class MapView(widgets.DOMWidget):
                 js_layer.update({ "options" : json.dumps(options) })
 
             self.addlayer = json.dumps(js_layer)
-        elif 'layers' in item:
+        elif 'layers' in item: # items as well as services
             for lyr in item.layers:
                 js_layer = lyr._js_lyr
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
-                #print(str(js_layer))      
                 self.addlayer = json.dumps(js_layer)
-        else:
+        else: # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
             if options is not None:
                 item.update({ "options" : json.dumps(options) })
 

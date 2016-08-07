@@ -1412,7 +1412,7 @@ class ContentManager(object):
             "publishParameters" : json.dumps(res['publishParameters'])
         }
 
-        res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< AttrMap
+        res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
         
         fc = FeatureCollection(res['featureCollection']['layers'][0])
         return fc
@@ -2152,15 +2152,15 @@ class Item(dict):
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
                     layer = self._portal.con.post(lyrurl, params, add_token=use_token)
-                    layers.append(Layer(lyrurl, self._gis, layer))
+                    layers.append(RouteNetworkLayer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
                     layer = self._portal.con.post(lyrurl, params, add_token=use_token)
-                    layers.append(Layer(lyrurl, self._gis, layer))
+                    layers.append(ServiceAreaNetworkLayer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
                     layer = self._portal.con.post(lyrurl, params, add_token=use_token)
-                    layers.append(Layer(lyrurl, self._gis, layer))
+                    layers.append(ClosestFacilityNetworkLayer(lyrurl, self._gis, layer))
 
             else:
                 m = re.search(r'\d+$', self.url)
@@ -2175,7 +2175,7 @@ class Item(dict):
 
                     allayers = self._portal.con.post(fsurl, params)
 
-                    #TODO: these need not always be FeatureLayers, eg. raster layer on Map Service
+                    #TODO: these need not always be FeatureLayers, eg. group, raster layer on Map Service
                     for layer in allayers['layers']:
                         layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
                     

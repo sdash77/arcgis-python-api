@@ -9,7 +9,7 @@ from pandas.io.json import json_normalize
 import collections
 from re import search
 from ._impl import *
-from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, AttrMap
+from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, PropertyMap
 import six
 from arcgis._impl.service import _featureservice
 from arcgis._impl.common import _utils
@@ -18,12 +18,11 @@ from arcgis._impl.common._spatial import *
 from arcgis._impl.common._filters import *
 from arcgis._impl.service._uploads import Uploads
 
-
 class Layer(object):
-    """
+    """ a GIS layer
     """
     
-    def __init__(self, url, gis, dictdata):
+    def __init__(self, url, gis=None, dictdata=None):
         """
         A layer of geographic data
         """
@@ -32,12 +31,19 @@ class Layer(object):
 
         self._gis = gis
         self._con = gis._con
-
-        self.url = url
         self._url = url
+        self.url = url
         
-        self.type = type(self).__name__
-        self.properties = AttrMap(dictdata)
+        if dictdata is not None:
+            self.properties = PropertyMap(dictdata)
+        else:
+            self._refresh()
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params)
+
+        self.properties = PropertyMap(dictdata)
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
@@ -48,16 +54,1301 @@ class Layer(object):
     @property
     def _js_lyr(self):
         return { 'type' : type(self).__name__, 'url' : self.url }
+class GISService(object):
+    """ a GIS service
+    """
+    def __init__(self, url, gis=None, dictdata=None):
+        if gis is None:
+            gis = arcgis.gis.GIS()
+        
+        self._gis = gis
+        self._con = gis._con
+        
+        self.url = url
+        self._url = url
+        
+        if dictdata is not None:
+            self.properties = PropertyMap(dictdata)
+        else:
+            self._refresh()
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params)
+
+        self.properties = PropertyMap(dictdata)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type.lower().endswith('service'):
+            raise TypeError("item must be a type of service, not " + item.type)
+        return cls(item.url, item._gis)
+
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+    
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
 
 class ImageLayer(Layer):
-    def __init__(self, url, item, dictdata):
-        super(ImageLayer, self).__init__(url, item, dictdata)
+    def __init__(self, url, gis=None, dictdata=None):
+        super(ImageLayer, self).__init__(url, gis, dictdata)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Image Service':
+            raise TypeError("item must be a type of Image Service, not " + item.type)
+        return cls(item.url, item._gis)
+
+    def export_image(self,
+                    bbox,
+                    imageSR,
+                    bboxSR,
+                    size=None,
+                    time=None,
+                    export_format="jpgpng",
+                    pixelType="UNKNOWN",
+                    noData=None,
+                    noDataInterpretation="esriNoDataMatchAny",
+                    interpolation=None,
+                    compression=None,
+                    compressionQuality=75,
+                    bandIds=None,
+                    moasiacRule=None,
+                    renderingRule="",
+                    f="json",
+                    saveFolder=None,
+                    saveFile=None
+                    ):
+        """
+        The exportImage operation is performed on an image service resource
+        The result of this operation is an image resource. This resource
+        provides information about the exported image, such as its URL,
+        extent, width, and height.
+        In addition to the usual response formats of HTML and JSON, you can
+        also request the image format while performing this operation. When
+        you perform an export with the image format , the server responds
+        by directly streaming the image bytes to the client. With this
+        approach, you don't get any information associated with the
+        exported image other than the image itself.
+
+        Inputs:
+           bbox - The extent (bounding box) of the exported image. Unless
+                  the bboxSR parameter has been specified, the bbox is
+                  assumed to be in the spatial reference of the image
+                  service.
+           imageSR - The spatial reference of the exported image.
+           bboxSR - The spatial reference of the bbox.
+           size - The size (width * height) of the exported image in
+                  pixels. If size is not specified, an image with a default
+                  size of 400 * 400 will be exported.
+           time - The time instant or the time extent of the exported image.
+           export_format - The format of the exported image. The default format is
+                    jpgpng.
+                    Values: jpgpng | png | png8 | png24 | jpg | bmp | gif |
+                            tiff | png32
+           pixelType - The pixel type, also known as data type, pertains to
+                       the type of values stored in the raster, such as
+                       signed integer, unsigned integer, or floating point.
+                       Integers are whole numbers, whereas floating points
+                       have decimals.
+           noDate - The pixel value representing no information.
+           noDataInterpretation - Interpretation of the noData setting. The
+                               default is esriNoDataMatchAny when noData is
+                               a number, and esriNoDataMatchAll when noData
+                               is a comma-delimited string:
+                               esriNoDataMatchAny | esriNoDataMatchAll.
+           interpolation - The resampling process of extrapolating the
+                           pixel values while transforming the raster
+                           dataset when it undergoes warping or when it
+                           changes coordinate space.
+           compression - Controls how to compress the image when exporting
+                         to TIFF format: None, JPEG, LZ77. It does not
+                         control compression on other formats.
+           compressionQuality - Controls how much loss the image will be
+                                subjected to by the compression algorithm.
+                                Valid value ranges of compression quality
+                                are from 0 to 100.
+           bandIds - If there are multiple bands, you can specify a single
+                     band to export, or you can change the band combination
+                     (red, green, blue) by specifying the band number. Band
+                     number is 0 based.
+           mosaicRule - Specifies the mosaic rule when defining how
+                        individual images should be mosaicked. When a mosaic
+                        rule is not specified, the default mosaic rule of
+                        the image service will be used (as advertised in
+                        the root resource: defaultMosaicMethod,
+                        mosaicOperator, sortField, sortValue).
+           renderingRule - Specifies the rendering rule for how the
+                           requested image should be rendered.
+           f - The response format.  default is json
+               Values: json | image | kmz
+        """
+        params = {
+            "bbox" : bbox,
+            "imageSR": imageSR,
+            "bboxSR": bboxSR,
+            "size" : "%s %s" % (size[0], size[1]),
+            "pixelType" : pixelType,
+            "compressionQuality" : compressionQuality,
+
+        }
+        if size is None:
+            size = [400,400]
+        url = self._url + "/exportImage"
+        __allowedFormat = ["jpgpng", "png",
+                           "png8", "png24",
+                           "jpg", "bmp",
+                           "gif", "tiff",
+                           "png32"]
+        __allowedPixelTypes = [
+            "C128", "C64", "F32",
+            "F64", "S16", "S32",
+            "S8", "U1", "U16",
+            "U2", "U32", "U4",
+            "U8", "UNKNOWN"
+        ]
+        __allowednoDataInt = [
+            "esriNoDataMatchAny",
+            "esriNoDataMatchAll"
+        ]
+        __allowedInterpolation = [
+            "RSP_BilinearInterpolation",
+            "RSP_CubicConvolution",
+            "RSP_Majority",
+            "RSP_NearestNeighbor"
+        ]
+        __allowedCompression = [
+            "JPEG", "LZ77"
+        ]
+        if isinstance(moasiacRule, dict):
+            params["moasiacRule"] = moasiacRule
+        if export_format in __allowedFormat:
+            params['format'] = export_format
+        if isinstance(time, datetime.datetime):
+            params['time'] = local_time_to_online(time)
+        if interpolation is not None and \
+           interpolation in __allowedInterpolation and \
+           isinstance(interpolation, str):
+            params['interpolation'] = interpolation
+        if pixelType is not None and \
+           pixelType in __allowedPixelTypes:
+            params['pixelType'] = pixelType
+        if noDataInterpretation in __allowedInterpolation:
+            params['noDataInterpretation']  = noDataInterpretation
+        if noData is not None:
+            params['noData'] = noData
+        if compression is not None and \
+           compression in __allowedCompression:
+            params['compression'] = compression
+        if bandIds is not None and \
+           isinstance(bandIds, list):
+            params['bandIds'] = ",".join(bandIds)
+        if renderingRule is not None:
+            params['renderingRule'] = renderingRule
+        params["f" ] = f
+        if f == "json":
+            return self._con.get(url, params)
+        elif f == "image":
+            result = self._con.get(url, params,
+                               out_folder=saveFolder,
+                               file_name=saveFile)
+            return result
+        elif f == "kmz":
+            return self._con.get(url, params,
+                             out_folder=saveFolder,
+                             file_name=saveFile)
+    #----------------------------------------------------------------------
+    def query(self,
+              where="1=1",
+              out_fields="*",
+              timeFilter=None,
+              geometryFilter=None,
+              returnGeometry=True,
+              returnIDsOnly=False,
+              returnCountOnly=False,
+              pixelSize=None,
+              orderByFields=None,
+              returnDistinctValues=True,
+              outStatistics=None,
+              groupByFieldsForStatistics=None
+              ):
+        """ queries a feature service based on a sql statement
+            Inputs:
+               where - the selection sql statement
+               out_fields - the attribute fields to return
+               timeFilter - a TimeFilter object where either the start time
+                            or start and end time are defined to limit the
+                            search results for a given time.  The values in
+                            the timeFilter should be as UTC timestampes in
+                            milliseconds.  No checking occurs to see if they
+                            are in the right format.
+               geometryFilter - a GeometryFilter object to parse down a given
+                               query by another spatial dataset.
+               returnGeometry - true means a geometry will be returned,
+                                else just the attributes
+               returnIDsOnly - false is default.  True means only OBJECTIDs
+                               will be returned
+               returnCountOnly - if True, then an integer is returned only
+                                 based on the sql statement
+               pixelSize-Query visible rasters at a given pixel size. If
+                         pixelSize is not specified, rasters at all
+                         resolutions can be queried.
+               orderByFields-Order results by one or more field names. Use
+                             ASC or DESC for ascending or descending order,
+                             respectively
+               returnDistinctValues-  If true, returns distinct values
+                                    based on the fields specified in
+                                    outFields. This parameter applies only
+                                    if the supportsAdvancedQueries property
+                                    of the image service is true.
+               outStatistics- the definitions for one or more field-based
+                              statistics to be calculated.
+               groupByFieldsForStatistics-One or more field names using the
+                                         values that need to be grouped for
+                                         calculating the statistics.
+            Output:
+               A list of Feature Objects (default) or a path to the output featureclass if
+               returnFeatureClass is set to True.
+         """
+        params = {"f": "json",
+                  "where": where,
+                  "outFields": out_fields,
+                  "returnGeometry" : returnGeometry,
+                  "returnIdsOnly" : returnIDsOnly,
+                  "returnCountOnly" : returnCountOnly,
+                  }
+        if not groupByFieldsForStatistics is None:
+            params['groupByFieldsForStatistics'] = groupByFieldsForStatistics
+        if not outStatistics is None:
+            params['outStatistics'] = outStatistics
+        if not timeFilter is None and \
+           isinstance(timeFilter, dict):
+            params['time'] = timeFilter
+        if not geometryFilter is None and \
+           isinstance(geometryFilter, dict):
+            gf = geometryFilter
+            params['geometry'] = gf['geometry']
+            params['geometryType'] = gf['geometryType']
+            params['spatialRelationship'] = gf['spatialRel']
+            params['inSR'] = gf['inSR']
+        if pixelSize is not None:
+            params['pixelSize'] = pixelSize
+        if orderByFields is not None:
+            params['orderByFields'] = orderByFields
+        if returnDistinctValues is not None:
+            params['returnDistinctValues'] = returnDistinctValues
+
+        url = self._url + "/query"
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def add_rasters(self,
+            rasterType,
+            itemIds=None,
+            serviceUrl=None,
+            computeStatistics=False,
+            buildPyramids=False,
+            buildThumbnail=False,
+            minimumCellSizeFactor=None,
+            maximumCellSizeFactor=None,
+            attributes=None,
+            geodataTransforms=None,
+            geodataTransformApplyMethod="esriGeodataTransformApplyAppend"
+            ):
+        """
+        This operation is supported at 10.1 and later.
+        The Add Rasters operation is performed on an image service resource.
+        The Add Rasters operation adds new rasters to an image service
+        (POST only).
+        The added rasters can either be uploaded items, using the itemIds
+        parameter, or published services, using the serviceUrl parameter.
+        If itemIds is specified, uploaded rasters are copied to the image
+        service's dynamic image workspace location; if the serviceUrl is
+        specified, the image service adds the URL to the mosaic dataset no
+        raster files are copied. The serviceUrl is required input for the
+        following raster types: Image Service, Map Service, WCS, and WMS.
+
+        Inputs:
+
+        itemIds - The upload items (raster files) to be added. Either
+         itemIds or serviceUrl is needed to perform this operation.
+            Syntax: itemIds=<itemId1>,<itemId2>
+            Example: itemIds=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+                             ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
+        serviceUrl - The URL of the service to be added. The image service
+         will add this URL to the mosaic dataset. Either itemIds or
+         serviceUrl is needed to perform this operation. The service URL is
+         required for the following raster types: Image Service, Map
+         Service, WCS, and WMS.
+            Example: serviceUrl=http://myserver/arcgis/services/Portland/ImageServer
+        rasterType - The type of raster files being added. Raster types
+         define the metadata and processing template for raster files to be
+         added. Allowed values are listed in image service resource.
+            Example: Raster Dataset | CADRG/ECRG | CIB | DTED | Image Service | Map Service | NITF | WCS | WMS
+        computeStatistics - If true, statistics for the rasters will be
+         computed. The default is false.
+            Values: false | true
+        buildPyramids - If true, builds pyramids for the rasters. The
+         default is false.
+                Values: false | true
+        buildThumbnail	 - If true, generates a thumbnail for the rasters.
+         The default is false.
+                Values: false | true
+        minimumCellSizeFactor - The factor (times raster resolution) used
+         to populate the MinPS field (maximum cell size above which the
+         raster is visible).
+                Syntax: minimumCellSizeFactor=<minimumCellSizeFactor>
+                Example: minimumCellSizeFactor=0.1
+        maximumCellSizeFactor - The factor (times raster resolution) used
+         to populate MaxPS field (maximum cell size below which raster is
+         visible).
+                Syntax: maximumCellSizeFactor=<maximumCellSizeFactor>
+                Example: maximumCellSizeFactor=10
+        attributes - Any attribute for the added rasters.
+                Syntax:
+                {
+                  "<name1>" : <value1>,
+                  "<name2>" : <value2>
+                }
+                Example:
+                {
+                  "MinPS": 0,
+                  "MaxPS": 20;
+                  "Year" : 2002,
+                  "State" : "Florida"
+                }
+        geodataTransforms - The geodata transformations applied on the
+         added rasters. A geodata transformation is a mathematical model
+         that performs a geometric transformation on a raster; it defines
+         how the pixels will be transformed when displayed or accessed.
+         Polynomial, projective, identity, and other transformations are
+         available. The geodata transformations are applied to the dataset
+         that is added.
+                Syntax:
+                [
+                {
+                  "geodataTransform" : "<geodataTransformName1>",
+                  "geodataTransformArguments" : {<geodataTransformArguments1>}
+                  },
+                  {
+                  "geodataTransform" : "<geodataTransformName2>",
+                  "geodataTransformArguments" : {<geodataTransformArguments2>}
+                  }
+                ]
+         The syntax of the geodataTransformArguments property varies based
+         on the specified geodataTransform name. See Geodata Transformations
+         documentation for more details.
+        geodataTransformApplyMethod - This parameter defines how to apply
+         the provided geodataTransform. The default is
+         esriGeodataTransformApplyAppend.
+                Values: esriGeodataTransformApplyAppend |
+                esriGeodataTransformApplyReplace |
+                esriGeodataTransformApplyOverwrite
+        """
+        url = self._url + "/add"
+        params = {
+            "f" : "json"
+        }
+        if itemIds is None and serviceUrl is None:
+            raise Exception("An itemId or serviceUrl must be provided")
+        if isinstance(itemIds, str):
+            itemIds = [itemIds]
+        if isinstance(serviceUrl, str):
+            serviceUrl = [serviceUrl]
+        params['geodataTransformApplyMethod'] = geodataTransformApplyMethod
+        params['rasterType'] = rasterType
+        params['buildPyramids'] = buildPyramids
+        params['buildThumbnail'] = buildThumbnail
+        params['minimumCellSizeFactor'] = minimumCellSizeFactor
+        params['computeStatistics'] = computeStatistics
+        params['maximumCellSizeFactor'] = maximumCellSizeFactor
+        params['attributes'] = attributes
+        params['geodataTransforms'] = geodataTransforms
+        if not itemIds is None:
+            params['itemIds'] = itemIds
+        if not serviceUrl is None:
+            params['serviceUrl'] = serviceUrl
+        return self._con.post(url, params)
+    #----------------------------------------------------------------------
+    def colormap(self):
+        """
+        The colormap resource returns RGB color representation of pixel
+        values. This resource is supported if the hasColormap property of
+        the service is true.
+        """
+        if self.hasColormap:
+            url = self._url + "/colormap"
+            params = {
+                "f" : "json"
+            }
+            return self._con.get(url, params)
+        else:
+            return None
+
+class NetworkService(GISService):
+    def __init__(self, url, gis=None, dictdata=None):
+        super(NetworkService, self).__init__(url, gis, dictdata)
+        self._load_layers()
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Network Analysis Service':
+            raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
+        return cls(item.url, item._gis)
+
+    #----------------------------------------------------------------------
+    def _load_layers(self, connection=None):
+        """loads the various layer types"""
+        self._closestFacilityLayers = []
+        self._routeLayers = []
+        self._serviceAreaLayers = []
+        params = {
+            "f" : "json",
+        }
+        if connection is None:
+            connection = self._con
+        json_dict = connection.get(path=self._url, params=params)
+        for k,v in json_dict.items():
+            if k == "routeLayers" and json_dict[k]:
+                self._routeLayers = []
+                for rl in v:
+                    self._routeLayers.append(
+                        RouteNetworkLayer(url=self._url + "/%s" % rl,
+                                          gis=self._gis))
+            elif k == "serviceAreaLayers" and json_dict[k]:
+                self._serviceAreaLayers = []
+                for sal in v:
+                    self._serviceAreaLayers.append(
+                        ServiceAreaNetworkLayer(url=self._url + "/%s" % sal,
+                                                gis=self._gis))
+            elif k == "closestFacilityLayers" and json_dict[k]:
+                self._closestFacilityLayers = []
+                for cf in v:
+                    self._closestFacilityLayers.append(
+                        ClosestFacilityNetworkLayer(url=self._url + "/%s" % cf,
+                                                    gis=self._gis))
+    #----------------------------------------------------------------------
+    @property
+    def route_layers(self):
+        if self._routeLayers is None:
+            self.init()
+        self._load_layers()
+        return self._routeLayers
+    #----------------------------------------------------------------------
+    @property
+    def service_area_layers(self):
+        if self._serviceAreaLayers is None:
+            self.init()
+        self._load_layers()
+        return self._serviceAreaLayers
+    #----------------------------------------------------------------------
+    @property
+    def closest_facility_layers(self):
+        if self._closestFacilityLayers is None:
+            self.init()
+        self._load_layers()
+        return self._closestFacilityLayers
+
+class NetworkLayer(Layer):
+    """
+    The network layer resource represents a single network layer in
+    a network analysis service published by ArcGIS Server. It provides basic
+    information about the network layer such as its name, type, and network
+    classes. Additionally, depending on the layer type, it provides different
+    pieces of information.
+
+    It is a base class for RouteNetworkLayer, ServiceAreaNetworkLayer, and
+    ClosestFacilityNetworkLayer.
+    """
+    def retrieve_travel_modes(self):
+        """identify all the valid travel modes that have been defined on the
+        network dataset or in the portal if the GIS server is federated"""
+        url = self._url + "/retrieveTravelModes"
+        params = {"f":"json"}
+        return self._con.get(path=url,
+                         params=params)
+
+class RouteNetworkLayer(NetworkLayer):
+    """
+    The Route Network Layer which has common properties of Network Layer
+    as well as some attributes unique to Route Network Layer only.
+    """
+    def solve(self,stops,
+              barriers=None,
+              polylineBarriers=None,
+              polygonBarriers=None,
+              travelMode=None,
+              attributeParameterValues=None,
+              returnDirections=None,
+              returnRoutes=True,
+              returnStops=False,
+              returnBarriers=False,
+              returnPolylineBarriers=True,
+              returnPolygonBarriers=True,
+              outSR=None,
+              ignoreInvalidLocations=True,
+              outputLines=None,
+              findBestSequence=False,
+              preserveFirstStop=True,
+              preserveLastStop=True,
+              useTimeWindows=False,
+              startTime=None,
+              startTimeIsUTC=False,
+              accumulateAttributeNames=None,
+              impedanceAttributeName=None,
+              restrictionAttributeNames=None,
+              restrictUTurns=None,
+              useHierarchy=True,
+              directionsLanguage=None,
+              directionsOutputType=None,
+              directionsStyleName=None,
+              directionsLengthUnits=None,
+              directionsTimeAttributeName=None,
+              outputGeometryPrecision=None,
+              outputGeometryPrecisionUnits=None,
+              returnZ=False
+              ):
+        """The solve operation is performed on a network layer resource.
+        The solve operation is supported on a network layer whose layerType
+        is esriNAServerRouteLayer. You can provide arguments to the solve
+        route operation as query parameters.
+        Inputs:
+            stops - The set of stops loaded as network locations during analysis.
+                    Stops can be specified using a simple comma / semi-colon
+                    based syntax or as a JSON structure. If stops are not
+                    specified, preloaded stops from the map document are used in
+                    the analysis.
+            barriers - The set of barriers loaded as network locations during
+                       analysis. Barriers can be specified using a simple comma
+                       / semi-colon based syntax or as a JSON structure. If
+                       barriers are not specified, preloaded barriers from the
+                       map document are used in the analysis. If an empty json
+                       object is passed ('{}') preloaded barriers are ignored.
+            polylineBarriers - The set of polyline barriers loaded as network
+                               locations during analysis. If polyline barriers
+                               are not specified, preloaded polyline barriers
+                               from the map document are used in the analysis.
+                               If an empty json object is passed ('{}')
+                               preloaded polyline barriers are ignored.
+            polygonBarriers - The set of polygon barriers loaded as network
+                              locations during analysis. If polygon barriers
+                              are not specified, preloaded polygon barriers
+                              from the map document are used in the analysis.
+                              If an empty json object is passed ('{}') preloaded
+                              polygon barriers are ignored.
+
+            travelMode - Travel modes provide override values that help you
+                         quickly and consistently model a vehicle or mode of
+                         transportation. The chosen travel mode must be
+                         preconfigured on the network dataset that the routing
+                         service references.
+            attributeParameterValues - A set of attribute parameter values that
+                                       can be parameterized to determine which
+                                       network elements can be used by a vehicle.
+            returnDirections - If true, directions will be generated and returned
+                               with the analysis results. Default is true.
+            returnRoutes - If true, routes will be returned with the analysis
+                           results. Default is true.
+            returnStops -  If true, stops will be returned with the analysis
+                           results. Default is false.
+            returnBarriers -  If true, barriers will be returned with the analysis
+                              results. Default is false.
+            returnPolylineBarriers -  If true, polyline barriers will be returned
+                                      with the analysis results. Default is false.
+            returnPolygonBarriers - If true, polygon barriers will be returned with
+                                    the analysis results. Default is false.
+            outSR - The spatial reference of the geometries returned with the
+                    analysis results.
+            ignoreInvalidLocations - If true, the solver will ignore invalid
+                                     locations. Otherwise, it will raise an error.
+                                     The default is as defined in the network layer.
+            outputLines - The type of output lines to be generated in the result.
+                          The default is as defined in the network layer.
+            findBestSequence - If true, the solver should re-sequence the route in
+                               the optimal order. The default is as defined in the
+                               network layer.
+            preserveFirstStop - If true, the solver should keep the first stop
+                                fixed in the sequence. The default is as defined
+                                in the network layer.
+            preserveLastStop - If true, the solver should keep the last stop fixed
+                               in the sequence. The default is as defined in the
+                               network layer.
+            useTimeWindows - If true, the solver should consider time windows.
+                             The default is as defined in the network layer.
+            startTime - The time the route begins. If not specified, the solver
+                        will use the default as defined in the network layer.
+            startTimeIsUTC - The time zone of the startTime parameter.
+            accumulateAttributeNames - The list of network attribute names to be
+                                       accumulated with the analysis. The default is
+                                       as defined in the network layer. The value
+                                       should be specified as a comma separated list
+                                       of attribute names. You can also specify a
+                                       value of none to indicate that no network
+                                       attributes should be accumulated.
+            impedanceAttributeName - The network attribute name to be used as the
+                                     impedance attribute in analysis. The default is
+                                     as defined in the network layer.
+            restrictionAttributeNames -The list of network attribute names to be
+                                       used as restrictions with the analysis. The
+                                       default is as defined in the network layer.
+                                       The value should be specified as a comma
+                                       separated list of attribute names. You can
+                                       also specify a value of none to indicate that
+                                       no network attributes should be used as
+                                       restrictions.
+            restrictUTurns -  Specifies how U-Turns should be restricted in the
+                              analysis. The default is as defined in the network
+                              layer. Values: esriNFSBAllowBacktrack |
+                              esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
+                              esriNFSBAtDeadEndsAndIntersections
+            useHierarchy -  If true, the hierarchy attribute for the network should
+                            be used in analysis. The default is as defined in the
+                            network layer.
+            directionsLanguage - The language to be used when computing directions.
+                                 The default is as defined in the network layer. The
+                                 list of supported languages can be found in REST
+                                 layer description.
+            directionsOutputType -  Defines content, verbosity of returned
+                                    directions. The default is esriDOTStandard.
+                                    Values: esriDOTComplete | esriDOTCompleteNoEvents
+                                    | esriDOTInstructionsOnly | esriDOTStandard |
+                                    esriDOTSummaryOnly
+            directionsStyleName - The style to be used when returning the directions.
+                                  The default is as defined in the network layer. The
+                                  list of supported styles can be found in REST
+                                  layer description.
+            directionsLengthUnits - The length units to use when computing directions.
+                                    The default is as defined in the network layer.
+                                    Values: esriNAUFeet | esriNAUKilometers |
+                                    esriNAUMeters | esriNAUMiles |
+                                    esriNAUNauticalMiles | esriNAUYards |
+                                    esriNAUUnknown
+            directionsTimeAttributeName - The name of network attribute to use for
+                                          the drive time when computing directions.
+                                          The default is as defined in the network
+                                          layer.
+            outputGeometryPrecision -  The precision of the output geometry after
+                                       generalization. If 0, no generalization of
+                                       output geometry is performed. The default is
+                                       as defined in the network service
+                                       configuration.
+            outputGeometryPrecisionUnits - The units of the output geometry
+                                           precision. The default value is
+                                           esriUnknownUnits. Values: esriUnknownUnits
+                                           | esriCentimeters | esriDecimalDegrees |
+                                           esriDecimeters | esriFeet | esriInches |
+                                           esriKilometers | esriMeters | esriMiles |
+                                           esriMillimeters | esriNauticalMiles |
+                                           esriPoints | esriYards
+            returnZ - If true, Z values will be included in the returned routes and
+                       compressed geometry if the network dataset is Z-aware.
+                       The default is false.
+        """
+
+        if not self.properties.layerType == "esriNAServerRouteLayer":
+            raise ValueError("The solve operation is supported on a network "
+                             "layer of Route type only")
+
+        url = self._url + "/solve"
+        params = {
+                    "f" : "json",
+                    "stops": stops
+                 }
+
+        if not barriers is None:
+            params['barriers'] = barriers
+        if not polylineBarriers is None:
+            params['polylineBarriers'] = polylineBarriers
+        if not polygonBarriers is None:
+            params['polygonBarriers'] = polygonBarriers
+        if not travelMode is None:
+            params['travelMode'] = travelMode
+        if not attributeParameterValues is None:
+            params['attributeParameterValues'] = attributeParameterValues
+        if not returnDirections is None:
+            params['returnDirections'] = returnDirections
+        if not returnRoutes is None:
+            params['returnRoutes'] = returnRoutes
+        if not returnStops is None:
+            params['returnStops'] = returnStops
+        if not returnBarriers is None:
+            params['returnBarriers'] = returnBarriers
+        if not returnPolylineBarriers is None:
+            params['returnPolylineBarriers'] = returnPolylineBarriers
+        if not returnPolygonBarriers is None:
+            params['returnPolygonBarriers'] = returnPolygonBarriers
+        if not outSR is None:
+            params['outSR'] = outSR
+        if not ignoreInvalidLocations is None:
+            params['ignoreInvalidLocations'] = ignoreInvalidLocations
+        if not outputLines is None:
+            params['outputLines'] = outputLines
+        if not findBestSequence is None:
+            params['findBestSequence'] = findBestSequence
+        if not preserveFirstStop is None:
+            params['preserveFirstStop'] = preserveFirstStop
+        if not preserveLastStop is None:
+            params['preserveLastStop'] = preserveLastStop
+        if not useTimeWindows is None:
+            params['useTimeWindows'] = useTimeWindows
+        if not startTime is None:
+            params['startTime'] = startTime
+        if not startTimeIsUTC is None:
+            params['startTimeIsUTC'] = startTimeIsUTC
+        if not accumulateAttributeNames is None:
+            params['accumulateAttributeNames'] = accumulateAttributeNames
+        if not impedanceAttributeName is None:
+            params['impedanceAttributeName'] = impedanceAttributeName
+        if not restrictionAttributeNames is None:
+            params['restrictionAttributeNames'] = restrictionAttributeNames
+        if not restrictUTurns is None:
+            params['restrictUTurns'] = restrictUTurns
+        if not useHierarchy is None:
+            params['useHierarchy'] = useHierarchy
+        if not directionsLanguage is None:
+            params['directionsLanguage'] = directionsLanguage
+        if not directionsOutputType is None:
+            params['directionsOutputType'] = directionsOutputType
+        if not directionsStyleName is None:
+            params['directionsStyleName'] = directionsStyleName
+        if not directionsLengthUnits is None:
+            params['directionsLengthUnits'] = directionsLengthUnits
+        if not directionsTimeAttributeName is None:
+            params['directionsTimeAttributeName'] = directionsTimeAttributeName
+        if not outputGeometryPrecision is None:
+            params['outputGeometryPrecision'] = outputGeometryPrecision
+        if not outputGeometryPrecisionUnits is None:
+            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
+        if not returnZ is None:
+            params['returnZ'] = returnZ
+
+        return self._con.post(path=url,
+                              postdata=params)
+
+class ServiceAreaNetworkLayer(NetworkLayer):
+    """
+    The Service Area Network Layer which has common properties of Network
+    Layer as well as some attributes unique to Service Area Network Layer
+    only.
+    """
+    def solve_service_area(self,facilities,
+                         barriers=None,
+                         polylineBarriers=None,
+                         polygonBarriers=None,
+                         travelMode=None,
+                         attributeParameterValues=None,
+                         defaultBreaks=None,
+                         excludeSourcesFromPolygons=None,
+                         mergeSimilarPolygonRanges=None,
+                         outputLines=None,
+                         outputPolygons=None,
+                         overlapLines=None,
+                         overlapPolygons=None,
+                         splitLinesAtBreaks=None,
+                         splitPolygonsAtBreaks=None,
+                         trimOuterPolygon=None,
+                         trimPolygonDistance=None,
+                         trimPolygonDistanceUnits=None,
+                         returnFacilities=False,
+                         returnBarriers=False,
+                         returnPolylineBarriers=False,
+                         returnPolygonBarriers=False,
+                         outSR=None,
+                         accumulateAttributeNames=None,
+                         impedanceAttributeName=None,
+                         restrictionAttributeNames=None,
+                         restrictUTurns=None,
+                         outputGeometryPrecision=None,
+                         outputGeometryPrecisionUnits='esriUnknownUnits',
+                         useHierarchy=None,
+                         timeOfDay=None,
+                         timeOfDayIsUTC=None,
+                         travelDirection=None,
+                         returnZ=False):
+        """ The solve service area operation is performed on a network layer
+        resource of type service area (layerType is esriNAServerServiceArea).
+        You can provide arguments to the solve service area operation as
+        query parameters.
+        Inputs:
+            facilities - The set of facilities loaded as network locations
+                         during analysis. Facilities can be specified using
+                         a simple comma / semi-colon based syntax or as a
+                         JSON structure. If facilities are not specified,
+                         preloaded facilities from the map document are used
+                         in the analysis. If an empty json object is passed
+                         ('{}') preloaded facilities are ignored.
+            barriers - The set of barriers loaded as network locations during
+                       analysis. Barriers can be specified using a simple
+                       comma/semicolon-based syntax or as a JSON structure.
+                       If barriers are not specified, preloaded barriers from
+                       the map document are used in the analysis. If an empty
+                       json object is passed ('{}'), preloaded barriers are
+                       ignored.
+            polylineBarriers - The set of polyline barriers loaded as network
+                               locations during analysis. If polyline barriers
+                               are not specified, preloaded polyline barriers
+                               from the map document are used in the analysis.
+                               If an empty json object is passed ('{}'),
+                               preloaded polyline barriers are ignored.
+            polygonBarriers - The set of polygon barriers loaded as network
+                              locations during analysis. If polygon barriers
+                              are not specified, preloaded polygon barriers
+                              from the map document are used in the analysis.
+                              If an empty json object is passed ('{}'),
+                              preloaded polygon barriers are ignored.
+            travelMode - Travel modes provide override values that help you
+                         quickly and consistently model a vehicle or mode of
+                         transportation. The chosen travel mode must be
+                         preconfigured on the network dataset that the
+                         service area service references.
+            attributeParameterValues - A set of attribute parameter values that
+                                       can be parameterized to determine which
+                                       network elements can be used by a vehicle.
+            defaultBreaks - A comma-separated list of doubles. The default is
+                            defined in the network analysis layer.
+            excludeSourcesFromPolygons - A comma-separated list of string names.
+                                         The default is defined in the network
+                                         analysis layer.
+
+            mergeSimilarPolygonRanges - If true, similar ranges will be merged
+                                        in the result polygons. The default is
+                                        defined in the network analysis layer.
+            outputLines - The type of lines(s) generated. The default is as
+                          defined in the network analysis layer.
+            outputPolygons - The type of polygon(s) generated. The default is
+                             as defined in the network analysis layer.
+            overlapLines - Indicates if the lines should overlap from multiple
+                           facilities. The default is defined in the network
+                           analysis layer.
+            overlapPolygons - Indicates if the polygons for all facilities
+                              should overlap. The default is defined in the
+                              network analysis layer.
+            splitLinesAtBreaks - If true, lines will be split at breaks. The
+                                 default is defined in the network analysis
+                                 layer.
+            splitPolygonsAtBreaks - If true, polygons will be split at breaks.
+                                    The default is defined in the network
+                                    analysis layer.
+            trimOuterPolygon -  If true, the outermost polygon (at the maximum
+                                break value) will be trimmed. The default is
+                                defined in the network analysis layer.
+            trimPolygonDistance -  If polygons are being trimmed, provides the
+                                   distance to trim. The default is defined in
+                                   the network analysis layer.
+            trimPolygonDistanceUnits - If polygons are being trimmed, specifies
+                                       the units of the trimPolygonDistance. The
+                                       default is defined in the network analysis
+                                       layer.
+            returnFacilities - If true, facilities will be returned with the
+                               analysis results. Default is false.
+            returnBarriers - If true, barriers will be returned with the analysis
+                             results. Default is false.
+            returnPolylineBarriers - If true, polyline barriers will be returned
+                                     with the analysis results. Default is false.
+            returnPolygonBarriers - If true, polygon barriers will be returned
+                                    with the analysis results. Default is false.
+            outSR - The well-known ID of the spatial reference for the geometries
+                    returned with the analysis results. If outSR is not specified,
+                    the geometries are returned in the spatial reference of the map.
+            accumulateAttributeNames - The list of network attribute names to be
+                                       accumulated with the analysis. The default
+                                       is as defined in the network analysis layer.
+                                       The value should be specified as a comma
+                                       separated list of attribute names. You can
+                                       also specify a value of none to indicate that
+                                       no network attributes should be accumulated.
+            impedanceAttributeName - The network attribute name to be used as the
+                                     impedance attribute in analysis. The default
+                                     is as defined in the network analysis layer.
+            restrictionAttributeNames - The list of network attribute names to be
+                                        used as restrictions with the analysis. The
+                                        default is as defined in the network analysis
+                                        layer. The value should be specified as a
+                                        comma separated list of attribute names.
+                                        You can also specify a value of none to
+                                        indicate that no network attributes should
+                                        be used as restrictions.
+            restrictUTurns - Specifies how U-Turns should be restricted in the
+                             analysis. The default is as defined in the network
+                             analysis layer. Values: esriNFSBAllowBacktrack |
+                             esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
+                             esriNFSBAtDeadEndsAndIntersections
+            outputGeometryPrecision - The precision of the output geometry after
+                                      generalization. If 0, no generalization of
+                                      output geometry is performed. The default is
+                                      as defined in the network service configuration.
+            outputGeometryPrecisionUnits - The units of the output geometry precision.
+                                           The default value is esriUnknownUnits.
+                                           Values: esriUnknownUnits | esriCentimeters |
+                                           esriDecimalDegrees | esriDecimeters |
+                                           esriFeet | esriInches | esriKilometers |
+                                           esriMeters | esriMiles | esriMillimeters |
+                                           esriNauticalMiles | esriPoints | esriYards
+            useHierarchy - If true, the hierarchy attribute for the network should be
+                           used in analysis. The default is as defined in the network
+                           layer. This cannot be used in conjunction with outputLines.
+            timeOfDay - The date and time at the facility. If travelDirection is set
+                        to esriNATravelDirectionToFacility, the timeOfDay value
+                        specifies the arrival time at the facility. if travelDirection
+                        is set to esriNATravelDirectionFromFacility, the timeOfDay
+                        value is the departure time from the facility. The time zone
+                        for timeOfDay is specified by timeOfDayIsUTC.
+            timeOfDayIsUTC - The time zone or zones of the timeOfDay parameter. When
+                             set to false, which is the default value, the timeOfDay
+                             parameter refers to the time zone or zones in which the
+                             facilities are located. Therefore, the start or end times
+                             of the service areas are staggered by time zone.
+            travelDirection - Options for traveling to or from the facility. The
+                              default is defined in the network analysis layer.
+            returnZ - If true, Z values will be included in saPolygons and saPolylines
+                      geometry if the network dataset is Z-aware.
+    """
+        if not self.properties.layerType == "esriNAServerServiceAreaLayer":
+            raise TypeError("The solveServiceArea operation is supported on a network "
+                             "layer of Service Area type only")
+
+        url = self._url + "/solveServiceArea"
+        params = {
+                "f" : "json",
+                "facilities": facilities
+                }
+
+        if not barriers is None:
+            params['barriers'] = barriers
+        if not polylineBarriers is None:
+            params['polylineBarriers'] = polylineBarriers
+        if not polygonBarriers is None:
+            params['polygonBarriers'] = polygonBarriers
+        if not travelMode is None:
+            params['travelMode'] = travelMode
+        if not attributeParameterValues is None:
+            params['attributeParameterValues'] = attributeParameterValues
+        if not defaultBreaks is None:
+            params['defaultBreaks'] = defaultBreaks
+        if not excludeSourcesFromPolygons is None:
+            params['excludeSourcesFromPolygons'] = excludeSourcesFromPolygons
+        if not mergeSimilarPolygonRanges is None:
+            params['mergeSimilarPolygonRanges'] = mergeSimilarPolygonRanges
+        if not outputLines is None:
+            params['outputLines'] = outputLines
+        if not outputPolygons is None:
+            params['outputPolygons'] = outputPolygons
+        if not overlapLines is None:
+            params['overlapLines'] = overlapLines
+        if not overlapPolygons is None:
+            params['overlapPolygons'] = overlapPolygons
+        if not splitLinesAtBreaks is None:
+            params['splitLinesAtBreaks'] = splitLinesAtBreaks
+        if not splitPolygonsAtBreaks is None:
+            params['splitPolygonsAtBreaks'] = splitPolygonsAtBreaks
+        if not trimOuterPolygon is None:
+            params['trimOuterPolygon'] = trimOuterPolygon
+        if not trimPolygonDistance is None:
+            params['trimPolygonDistance'] = trimPolygonDistance
+        if not trimPolygonDistanceUnits is None:
+            params['trimPolygonDistanceUnits'] = trimPolygonDistanceUnits
+        if not returnFacilities is None:
+            params['returnFacilities'] = returnFacilities
+        if not returnBarriers is None:
+            params['returnBarriers'] = returnBarriers
+        if not returnPolylineBarriers is None:
+            params['returnPolylineBarriers'] = returnPolylineBarriers
+        if not returnPolygonBarriers is None:
+            params['returnPolygonBarriers'] = returnPolygonBarriers
+        if not outSR is None:
+            params['outSR'] = outSR
+        if not accumulateAttributeNames is None:
+            params['accumulateAttributeNames'] = accumulateAttributeNames
+        if not impedanceAttributeName is None:
+            params['impedanceAttributeName'] = impedanceAttributeName
+        if not restrictionAttributeNames is None:
+            params['restrictionAttributeNames'] = restrictionAttributeNames
+        if not restrictUTurns is None:
+            params['restrictUTurns'] = restrictUTurns
+        if not outputGeometryPrecision is None:
+            params['outputGeometryPrecision'] = outputGeometryPrecision
+        if not outputGeometryPrecisionUnits is None:
+            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
+        if not useHierarchy is None:
+            params['useHierarchy'] = useHierarchy
+        if not timeOfDay is None:
+            params['timeOfDay'] = timeOfDay
+        if not timeOfDayIsUTC is None:
+            params['timeOfDayIsUTC'] = timeOfDayIsUTC
+        if not travelDirection is None:
+            params['travelDirection'] = travelDirection
+        if not returnZ is None:
+            params['returnZ'] = returnZ
+
+        return self._con.post(path=url,
+                              postdata=params)
+
+class ClosestFacilityNetworkLayer(NetworkLayer):
+    """
+    The Closest Facility Network Layer which has common properties of Network
+    Layer as well as some attributes unique to Closest Facility Network Layer
+    only.
+    """
+    def solveClosestFacility(self,incidents,facilities,
+                             barriers=None,
+                             polylineBarriers=None,
+                             polygonBarriers=None,
+                             travelMode=None,
+                             attributeParameterValues=None,
+                             returnDirections=None,
+                             directionsLanguage=None,
+                             directionsStyleName=None,
+                             directionsLengthUnits=None,
+                             directionsTimeAttributeName=None,
+                             returnCFRoutes=True,
+                             returnFacilities=False,
+                             returnIncidents=False,
+                             returnBarriers=False,
+                             returnPolylineBarriers=False,
+                             returnPolygonBarriers=False,
+                             outputLines=None,
+                             defaultCutoff=None,
+                             defaultTargetFacilityCount=None,
+                             travelDirection=None,
+                             outSR=None,
+                             accumulateAttributeNames=None,
+                             impedanceAttributeName=None,
+                             restrictionAttributeNames=None,
+                             restrictUTurns=None,
+                             useHierarchy=True,
+                             outputGeometryPrecision=None,
+                             outputGeometryPrecisionUnits=None,
+                             timeOfDay=None,
+                             timeOfDayIsUTC=None,
+                             timeOfDayUsage=None,
+                             returnZ=False):
+        """The solve operation is performed on a network layer resource of
+        type closest facility (layerType is esriNAServerClosestFacilityLayer).
+        You can provide arguments to the solve route operation as query
+        parameters.
+        Inputs:
+            facilities  - The set of facilities loaded as network locations
+                          during analysis. Facilities can be specified using
+                          a simple comma / semi-colon based syntax or as a
+                          JSON structure. If facilities are not specified,
+                          preloaded facilities from the map document are used
+                          in the analysis.
+            incidents - The set of incidents loaded as network locations
+                        during analysis. Incidents can be specified using
+                        a simple comma / semi-colon based syntax or as a
+                        JSON structure. If incidents are not specified,
+                        preloaded incidents from the map document are used
+                        in the analysis.
+            barriers - The set of barriers loaded as network locations during
+                       analysis. Barriers can be specified using a simple comma
+                       / semi-colon based syntax or as a JSON structure. If
+                       barriers are not specified, preloaded barriers from the
+                       map document are used in the analysis. If an empty json
+                       object is passed ('{}') preloaded barriers are ignored.
+            polylineBarriers - The set of polyline barriers loaded as network
+                               locations during analysis. If polyline barriers
+                               are not specified, preloaded polyline barriers
+                               from the map document are used in the analysis.
+                               If an empty json object is passed ('{}')
+                               preloaded polyline barriers are ignored.
+            polygonBarriers - The set of polygon barriers loaded as network
+                              locations during analysis. If polygon barriers
+                              are not specified, preloaded polygon barriers
+                              from the map document are used in the analysis.
+                              If an empty json object is passed ('{}') preloaded
+                              polygon barriers are ignored.
+            travelMode - Travel modes provide override values that help you
+                         quickly and consistently model a vehicle or mode of
+                         transportation. The chosen travel mode must be
+                         preconfigured on the network dataset that the routing
+                         service references.
+            attributeParameterValues - A set of attribute parameter values that
+                                       can be parameterized to determine which
+                                       network elements can be used by a vehicle.
+            returnDirections - If true, directions will be generated and returned
+                               with the analysis results. Default is true.
+            directionsLanguage - The language to be used when computing directions.
+                                 The default is as defined in the network layer. The
+                                 list of supported languages can be found in REST
+                                 layer description.
+            directionsOutputType -  Defines content, verbosity of returned
+                                    directions. The default is esriDOTStandard.
+                                    Values: esriDOTComplete | esriDOTCompleteNoEvents
+                                    | esriDOTInstructionsOnly | esriDOTStandard |
+                                    esriDOTSummaryOnly
+            directionsStyleName - The style to be used when returning the directions.
+                                  The default is as defined in the network layer. The
+                                  list of supported styles can be found in REST
+                                  layer description.
+            directionsLengthUnits - The length units to use when computing directions.
+                                    The default is as defined in the network layer.
+                                    Values: esriNAUFeet | esriNAUKilometers |
+                                    esriNAUMeters | esriNAUMiles |
+                                    esriNAUNauticalMiles | esriNAUYards |
+                                    esriNAUUnknown
+            directionsTimeAttributeName - The name of network attribute to use for
+                                          the drive time when computing directions.
+                                          The default is as defined in the network
+                                          layer.
+            returnCFRoutes - If true, closest facilities routes will be returned
+                             with the analysis results. Default is true.
+            returnFacilities -  If true, facilities  will be returned with the
+                                analysis results. Default is false.
+            returnIncidents - If true, incidents will be returned with the
+                              analysis results. Default is false.
+            returnBarriers -  If true, barriers will be returned with the analysis
+                              results. Default is false.
+            returnPolylineBarriers -  If true, polyline barriers will be returned
+                                      with the analysis results. Default is false.
+            returnPolygonBarriers - If true, polygon barriers will be returned with
+                                    the analysis results. Default is false.
+            outputLines - The type of output lines to be generated in the result.
+                          The default is as defined in the network layer.
+            defaultCutoff - The default cutoff value to stop traversing.
+            defaultTargetFacilityCount - The default number of facilities to find.
+            travelDirection - Options for traveling to or from the facility.
+                              The default is defined in the network layer.
+                              Values: esriNATravelDirectionFromFacility |
+                              esriNATravelDirectionToFacility
+            outSR - The spatial reference of the geometries returned with the
+                    analysis results.
+            accumulateAttributeNames - The list of network attribute names to be
+                                       accumulated with the analysis. The default is
+                                       as defined in the network layer. The value
+                                       should be specified as a comma separated list
+                                       of attribute names. You can also specify a
+                                       value of none to indicate that no network
+                                       attributes should be accumulated.
+            impedanceAttributeName - The network attribute name to be used as the
+                                     impedance attribute in analysis. The default is
+                                     as defined in the network layer.
+            restrictionAttributeNames -The list of network attribute names to be
+                                       used as restrictions with the analysis. The
+                                       default is as defined in the network layer.
+                                       The value should be specified as a comma
+                                       separated list of attribute names. You can
+                                       also specify a value of none to indicate that
+                                       no network attributes should be used as
+                                       restrictions.
+            restrictUTurns -  Specifies how U-Turns should be restricted in the
+                              analysis. The default is as defined in the network
+                              layer. Values: esriNFSBAllowBacktrack |
+                              esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
+                              esriNFSBAtDeadEndsAndIntersections
+            useHierarchy -  If true, the hierarchy attribute for the network should
+                            be used in analysis. The default is as defined in the
+                            network layer.
+            outputGeometryPrecision -  The precision of the output geometry after
+                                       generalization. If 0, no generalization of
+                                       output geometry is performed. The default is
+                                       as defined in the network service
+                                       configuration.
+            outputGeometryPrecisionUnits - The units of the output geometry
+                                           precision. The default value is
+                                           esriUnknownUnits. Values: esriUnknownUnits
+                                           | esriCentimeters | esriDecimalDegrees |
+                                           esriDecimeters | esriFeet | esriInches |
+                                           esriKilometers | esriMeters | esriMiles |
+                                           esriMillimeters | esriNauticalMiles |
+                                           esriPoints | esriYards
+            timeOfDay - Arrival or departure date and time. Values: specified by
+                        number of milliseconds since midnight Jan 1st, 1970, UTC.
+            timeOfDayIsUTC - The time zone of the timeOfDay parameter. By setting
+                             timeOfDayIsUTC to true, the timeOfDay parameter refers
+                             to Coordinated Universal Time (UTC). Choose this option
+                             if you want to find what's nearest for a specific time,
+                             such as now, but aren't certain in which time zone the
+                             facilities or incidents will be located.
+            timeOfDayUsage - Defines the way timeOfDay value is used. The default
+                             is as defined in the network layer.
+                             Values: esriNATimeOfDayUseAsStartTime |
+                             esriNATimeOfDayUseAsEndTime
+            returnZ - If true, Z values will be included in the returned routes and
+                       compressed geometry if the network dataset is Z-aware.
+                       The default is false.
+    """
+
+        if not self.properties.layerType == "esriNAServerClosestFacilityLayer":
+            raise TypeError("The solveClosestFacility operation is supported on a network "
+                             "layer of Closest Facility type only")
+
+        url = self._url + "/solveClosestFacility"
+        params = {
+                "f" : "json",
+                "facilities": facilities,
+                "incidents": incidents
+                }
+
+        if not barriers is None:
+            params['barriers'] = barriers
+        if not polylineBarriers is None:
+            params['polylineBarriers'] = polylineBarriers
+        if not polygonBarriers is None:
+            params['polygonBarriers'] = polygonBarriers
+        if not travelMode is None:
+            params['travelMode'] = travelMode
+        if not attributeParameterValues is None:
+            params['attributeParameterValues'] = attributeParameterValues
+        if not returnDirections is None:
+            params['returnDirections'] = returnDirections
+        if not directionsLanguage is None:
+            params['directionsLanguage'] = directionsLanguage
+        if not directionsStyleName is None:
+            params['directionsStyleName'] = directionsStyleName
+        if not directionsLengthUnits is None:
+            params['directionsLengthUnits'] = directionsLengthUnits
+        if not directionsTimeAttributeName is None:
+            params['directionsTimeAttributeName'] = directionsTimeAttributeName
+        if not returnCFRoutes is None:
+            params['returnCFRoutes'] = returnCFRoutes
+        if not returnFacilities is None:
+            params['returnFacilities'] = returnFacilities
+        if not returnIncidents is None:
+            params['returnIncidents'] = returnIncidents
+        if not returnBarriers is None:
+            params['returnBarriers'] = returnBarriers
+        if not returnPolylineBarriers is None:
+            params['returnPolylineBarriers'] = returnPolylineBarriers
+        if not returnPolygonBarriers is None:
+            params['returnPolygonBarriers'] = returnPolygonBarriers
+        if not outputLines is None:
+            params['outputLines'] = outputLines
+        if not defaultCutoff is None:
+            params['defaultCutoff'] = defaultCutoff
+        if not defaultTargetFacilityCount is None:
+            params['defaultTargetFacilityCount'] = defaultTargetFacilityCount
+        if not travelDirection is None:
+            params['travelDirection'] = travelDirection
+        if not outSR is None:
+            params['outSR'] = outSR
+        if not accumulateAttributeNames is None:
+            params['accumulateAttributeNames'] = accumulateAttributeNames
+        if not impedanceAttributeName is None:
+            params['impedanceAttributeName'] = impedanceAttributeName
+        if not restrictionAttributeNames is None:
+            params['restrictionAttributeNames'] = restrictionAttributeNames
+        if not restrictUTurns is None:
+            params['restrictUTurns'] = restrictUTurns
+        if not useHierarchy is None:
+            params['useHierarchy'] = useHierarchy
+        if not outputGeometryPrecision is None:
+            params['outputGeometryPrecision'] = outputGeometryPrecision
+        if not outputGeometryPrecisionUnits is None:
+            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
+        if not timeOfDay is None:
+            params['timeOfDay'] = timeOfDay
+        if not timeOfDayIsUTC is None:
+            params['timeOfDayIsUTC'] = timeOfDayIsUTC
+        if not timeOfDayUsage is None:
+            params['timeOfDayUsage'] = timeOfDayUsage
+        if not returnZ is None:
+            params['returnZ'] = returnZ
+
+        return self._con.post(path=url, postdata=params)
 
 class FeatureLayer(Layer):
     def __init__(self, url, gis, dictdata):
         super(FeatureLayer, self).__init__(url, gis, dictdata)
-        #self._obj = _featureservice.FeatureLayer(item=item, url=url,
-        #                           initialize=False)
         if self.properties.hasAttachments:
             self.attachments = AttachmentManager(self)
 
@@ -374,7 +1665,7 @@ class FeatureLayer(Layer):
         if  returnCountOnly:
             return result['count']
         elif as_obj:
-            return AttrMap(result)
+            return PropertyMap(result)
         elif returnIDsOnly or as_dict:
             return result
         elif returnFeatureClass and \
@@ -558,20 +1849,20 @@ class FeatureLayer(Layer):
             if isinstance(adds[0], dict):
                 params['adds'] = json.dumps([f for f in adds],
                                         default=_date_handler)
-            elif isinstance(adds[0], AttrMap):
+            elif isinstance(adds[0], PropertyMap):
                 params['adds'] = json.dumps([dict(f) for f in adds],
                                         default=_date_handler)
             else:
-                print('pass in features as dict or AttrMap')
+                print('pass in features as dict or PropertyMap')
         if len(updates) > 0:
             if isinstance(updates[0], dict):
                 params['updates'] = json.dumps([f for f in updates],
                                         default=_date_handler)
-            elif isinstance(updates[0], AttrMap):
+            elif isinstance(updates[0], PropertyMap):
                 params['updates'] = json.dumps([dict(f) for f in updates],
                                         default=_date_handler)
             else:
-                print('pass in features as dict or AttrMap')
+                print('pass in features as dict or PropertyMap')
         if deletes is not None and \
            isinstance(deletes, str):
             params['deletes'] = deletes
@@ -688,7 +1979,7 @@ class FeatureCollection(Layer):
     """
     def __init__(self, dictdata):
         super(FeatureCollection, self).__init__('', None, dictdata)
-        self.layer = AttrMap(self.properties)
+        self.layer = PropertyMap(self.properties)
 
     @property
     def _js_lyr(self):
@@ -710,39 +2001,6 @@ class FeatureCollection(Layer):
 
         df.columns = df.columns.str.replace('attributes.', '')
         return df
-    
-class GISService(object):
-    """ a GIS service
-    """
-    def __init__(self, url, gis=None):
-        if gis is None:
-            gis = GIS()
-        
-        self.url = url
-        self._url = url
-
-        self._gis = gis
-        self._con = gis._con
-        
-        self._refresh()
-
-    def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params)
-
-        self.properties = AttrMap(dictdata)
-
-    @classmethod
-    def fromitem(cls, item):
-        if not item.type.lower().endswith('service'):
-            raise TypeError("item must be a type of service, not " + item.type)
-        return cls(item.url, item._gis)
-
-    def __str__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
-    
-    def __repr__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
 
 class FeatureService(GISService):
     """ allows use and administration (if access permits) of a feature service """
@@ -757,7 +2015,7 @@ class FeatureService(GISService):
         self._populate_layers()
         self._admin = None
 
-    def _populate_layers(self):        
+    def _populate_layers(self):
         layers = []
         tables = []
         
@@ -1417,7 +2675,7 @@ class AdminFeatureService(GISService):
            Output:
               JSON message as dictionary
         """
-        if isinstance(json_dict, AttrMap):
+        if isinstance(json_dict, PropertyMap):
             json_dict = dict(json_dict)
 
         params = {
@@ -1448,7 +2706,7 @@ class AdminFeatureService(GISService):
         definition = None
         if json_dict is not None:
             
-            if isinstance(json_dict, AttrMap):
+            if isinstance(json_dict, PropertyMap):
                 definition = dict(json_dict)
             if isinstance(json_dict,collections.OrderedDict) == True:
                 definition = json_dict
@@ -1586,7 +2844,7 @@ class AdminFeatureServiceLayer(GISService):
               JSON message as dictionary
         """
         
-        if isinstance(json_dict, AttrMap):
+        if isinstance(json_dict, PropertyMap):
             json_dict = dict(json_dict)
 
         params = {
@@ -1616,7 +2874,7 @@ class AdminFeatureServiceLayer(GISService):
               JSON Message as dictionary
         """
         
-        if isinstance(json_dict, AttrMap):
+        if isinstance(json_dict, PropertyMap):
             json_dict = dict(json_dict)
 
         params = {
@@ -1652,7 +2910,7 @@ class AdminFeatureServiceLayer(GISService):
 
         """
         
-        if isinstance(json_dict, AttrMap):
+        if isinstance(json_dict, PropertyMap):
             json_dict = dict(json_dict)
 
         params = {
@@ -1665,8 +2923,6 @@ class AdminFeatureServiceLayer(GISService):
         self.refresh()
         return res
 
-
-########################################################################
 class AdminMapService(GISService):
     """ allows administration (if access permits) of an ArcGIS Online hosted map service 
     A map service offer access to map and layer content.
@@ -1765,7 +3021,6 @@ class AdminMapService(GISService):
             params["maxExportTileCount"] = int(maxExportTileCount)
         url = self._url + "/edit"
         return self._con.post(url, params)
-
 
 class MapService(GISService):
     """ allows use and administration (if access permits) of a feature service """

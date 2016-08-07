@@ -154,7 +154,6 @@ class Attr(Mapping):
             not hasattr(cls, key)
         )
 
-
 @six.add_metaclass(ABCMeta)
 class MutableAttr(Attr, MutableMapping):
     """
@@ -313,10 +312,10 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
 
         return attr
 
-
-class AttrMap(MutableAttr):
+class PropertyMap(MutableAttr):
     """
-    An implementation of MutableAttr.
+    A collection of property names and values providing access as attributes (ag, property.key) as well as dictionary keys (property['key']). 
+    Can be converted to dict using dict(obj). Makes it easy to get and set values of properties held in a dictionary.
     """
     def __init__(self, items=None, sequence_type=list):
         if items is None:
@@ -371,7 +370,7 @@ class AttrMap(MutableAttr):
         # sequence type seems like more trouble than it is worth.
         # If people want full serialization, they can pickle, and in
         # 99% of cases, sequence_type won't change anyway
-        return six.u("AttrMap({mapping})").format(mapping=repr(self._mapping))
+        return json.dumps(dict(self._mapping), indent=2) #six.u("PropertyMap({mapping})").format(mapping=repr(self._mapping))
 
     def __getstate__(self):
         """
