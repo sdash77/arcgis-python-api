@@ -673,7 +673,7 @@ class Tools(object):
             return self._geometry
         try:
             svcurl = self._gis.properties['helperServices']['geometry']['url']
-            self._geometry = Geometry(None, svcurl, self._gis)
+            self._geometry = Geometry(svcurl, self._gis)
             return self._geometry
         except KeyError:
             return None
