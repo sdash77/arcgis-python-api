@@ -1444,7 +1444,7 @@ class Group(dict):
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         # return dict.__getitem__(self, name)
-        if not self._hydrated:
+        if not self._hydrated and not name.startswith('_'):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
@@ -1457,7 +1457,7 @@ class Group(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated:
+            if not self._hydrated and not name.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
@@ -1780,7 +1780,7 @@ class User(dict):
         self.__dict__.update(userdict)
 
     def __getattr__(self, name): # support user attributes as user.access, user.email, user.role etc
-        if not self._hydrated:
+        if not self._hydrated and not name.startswith('_'):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
@@ -1792,7 +1792,7 @@ class User(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated:
+            if not self._hydrated and not name.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
@@ -2202,7 +2202,7 @@ class Item(dict):
         return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name): # support item attributes
-        if not self._hydrated:
+        if not self._hydrated and not name.startswith('_'):
             self._hydrate()
         try:
             return dict.__getitem__(self, name)
@@ -2213,7 +2213,7 @@ class Item(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated:
+            if not self._hydrated and not name.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
