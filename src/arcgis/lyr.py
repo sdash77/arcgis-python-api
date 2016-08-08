@@ -10,6 +10,7 @@ import collections
 from re import search
 from ._impl import *
 from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, PropertyMap
+from arcgis._impl.common._featureset import Feature, FeatureSet
 import six
 from arcgis._impl.service import _featureservice
 from arcgis._impl.common import _utils

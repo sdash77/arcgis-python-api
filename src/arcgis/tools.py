@@ -4,27 +4,25 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
+
+import os
 import re
 import sys
+import time
 import json
 import types
-import json
-from pandas.io.json import json_normalize
-from contextlib import contextmanager
-from arcgis.lyr import *
-
-import inspect
-import datetime
-import collections
-import arcgis.gis
-import time
-
-import tempfile
-import os
 import string
 import random
-
-from ._impl.service._geometry import GeometryService as Geometry
+import inspect
+import datetime
+import tempfile
+import arcgis.gis
+import collections
+from arcgis.lyr import *
+from contextlib import contextmanager
+from pandas.io.json import json_normalize
+from arcgis._impl.common._featureset import Feature, FeatureSet
+from ._impl.service._geometry import GeometryService, Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 
 #--------------------------------------------------------------------------
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -916,47 +914,49 @@ class GeoprocessingTool(collections.OrderedDict):
         name_type = self._method_params[caller_fnname]
 
         params.update({ "f" : "json" })
+
+        #---------------------in---------------------#
+        """
         for k, v in params.items():
             #print(k + " = " + str(v))
             if k in name_type:
                 py_type = name_type[k]
                 if py_type == 'GPFeatureRecordSetLayer':
+                    # if passed in geometries but require featureset, create one
                     geometry = v
                     val = {}
                     val['geometryType'] = 'esriGeometryPoint'
                     val['features'] = [{"geometry" : geometry}]
                     val['sr'] = {"wkid":102100,"latestWkid":3857}
                     params[k] = val
-                    #params[k] = """{"geometryType":"esriGeometryPoint", "features":""" + json.dumps(geometry) + ""","sr":{"wkid":102100,"latestWkid":3857}}"""
-                    #print("Updated" + k + " to " + json.dumps(params[k]))
-
+        """
+        #--------------------------------------------#
         resp = self.item._portal.con.post(url, params)
+        #--------------------------------------------#
 
         ret_type = name_type['return']
-        try:
+        #try:
+        if 1==1:
             geometries = []
-
+            
+            #--------------------out---------------------#
+            # if FeatureSet, return FeatureSet... and let map.draw draw features from featureset
             if ret_type == 'GPFeatureRecordSetLayer':
                 #print("RESP IN GP:"+str(resp))
+                #resp = {"results":[{"paramName":"Output","dataType":"GPFeatureRecordSetLayer","value":{"geometryType":"esriGeometryPolyline","spatialReference":{"wkid":4326},"features":[{"attributes":{"FID":1,"FNODE_":0,"Shape_Length":32.794529279575883},"geometry":{"paths":[[[84.8748779296875,-5.9821438789367676],[85.697532653808594,-6.5506825447082448],[85.362907409667969,-7.493033885955807],[84.996139526367188,-8.423344612121582],[84.110282897949219,-8.8873043060302734],[83.259567260742188,-9.4129314422607422],[82.274673461914063,-9.5861167907714808],[81.274681091308594,-9.582554817199707],[80.277946472167969,-9.6632461547851562],[79.287498474121094,-9.8011550903320312],[78.3453369140625,-10.136309623718265],[77.481758117675781,-10.640528678894043],[76.563209533691406,-11.035839080810547],[75.613388061523438,-11.348619461059567],[74.674003601074219,-11.691491127014157],[73.757270812988281,-12.090988159179688],[72.79632568359375,-12.367743492126465],[71.802711486816406,-12.480551719665527],[70.901077270507813,-12.913044929504391],[70.1573486328125,-13.581530570983887],[69.268287658691406,-14.039313316345215],[68.351539611816406,-14.438780784606934],[67.512741088867188,-14.983222007751465],[66.603912353515625,-15.400397300720215],[65.611618041992188,-15.276482582092285],[64.64862060546875,-15.006984710693359],[63.674091339111328,-14.782718658447262],[62.679428100585938,-14.885892868041989],[61.699390411376953,-15.084704399108883],[60.713626861572266,-15.252829551696777],[59.714076995849609,-15.22271728515625],[58.786506652832031,-14.849072456359863],[57.924812316894531,-14.341644287109375],[57.436767578125,-13.838002204895016],[57.370742797851563,-13.777911186218258],[57.367759704589844,-13.775339126586911]]]}}],"exceededTransferLimit":False}}],"messages":[]}
+                
                 value = resp['results'][0]['value']
-                geom_type = value['geometryType']
-                sr = value['spatialReference']
+                featset = FeatureSet.from_dict(value)
+                return featset
 
-                geo_geom_type = geom_type.lower()[len("esriGeometry"):]
-
-                features = value['features']
-                geometries = []
-                for feature in features:
-                    geometry = feature['geometry']
-                    geometry['spatialReference'] = sr
-                    geometry['type'] = geo_geom_type
-
-                    geometries.append(geometry)
-
-            return geometries
-        except:
-            print("Error: " + str(resp))
-            return resp
+                #    geometries.append(geometry)
+            else:
+                print("NOT FS")
+                
+            return resp['results'][0]['value']
+        #except:
+        #    print("Error: " + str(resp))
+        #    return resp
 
 
     def execute(self, task, input,

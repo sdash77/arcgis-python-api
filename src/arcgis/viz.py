@@ -158,7 +158,17 @@ class MapView(widgets.DOMWidget):
         elif isinstance(shape, tuple): # (lat, long) pair
             shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
 
-        if isinstance(shape, dict):
+        if isinstance(shape, FeatureSet):
+            fset = shape
+            for feature in fset.features:
+                graphic = {
+                    "geometry" : feature.geometry,
+                    "infoTemplate" : popup,
+                    "symbol" : symbol,
+                    "attributes" : feature.attributes
+                }
+                self.mode = json.dumps(graphic)
+        elif isinstance(shape, dict):
             graphic = {
                 "geometry" : shape,
                 "infoTemplate" : popup,
