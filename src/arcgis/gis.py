@@ -1367,7 +1367,6 @@ class ContentManager(object):
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
 
-
     def import_data(self, df, address_fields=None):
         """
         Imports a Pandas data frame, that has an address column,
@@ -1417,7 +1416,20 @@ class ContentManager(object):
         fc = FeatureCollection(res['featureCollection']['layers'][0])
         return fc
 
+    def is_service_name_available(self, service_name, service_type):
+        """
+        Returns True is the specified service_name is available for the specified service_type
+        """
+        path = "portals/self/isServiceNameAvailable"
 
+        postdata = {
+            "f": "pjson",
+            "name" : service_name,
+            "type" : service_type
+        }
+
+        res = self._portal.con.post(path, postdata)
+        return res['available']
 
 class Group(dict):
     """
