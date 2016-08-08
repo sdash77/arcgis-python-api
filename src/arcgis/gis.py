@@ -2757,7 +2757,7 @@ class Item(dict):
             # Query and report the Analysis job status.
             #
             num_messages = 0
-            print(str(job_response))
+            #print(str(job_response))
             if "status" in job_response:
                 while not job_response.get("status") == "completed":
                     time.sleep(5)
