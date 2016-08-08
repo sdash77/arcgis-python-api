@@ -2739,39 +2739,41 @@ class Item(dict):
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 
-        job_id = ret[0]['jobId']
         serviceitem_id = ret[0]['serviceItemId']
-        path = 'content/users/' + self.owner
-        if folder is not None:
-            path = path + '/' + folder + '/'
+        
+        if 'jobId' in ret[0]:
+            job_id = ret[0]['jobId']
+            path = 'content/users/' + self.owner
+            if folder is not None:
+                path = path + '/' + folder + '/'
 
-        path = path + '/items/' + serviceitem_id + '/status'
-        params = {
-            "f" : "json",
-            "jobid" : job_id
-        }
-        job_response = self._portal.con.post(path, params)
+            path = path + '/items/' + serviceitem_id + '/status'
+            params = {
+                "f" : "json",
+                "jobid" : job_id
+            }
+            job_response = self._portal.con.post(path, params)
 
-        # Query and report the Analysis job status.
-        #
-        num_messages = 0
-        print(str(job_response))
-        if "status" in job_response:
-            while not job_response.get("status") == "completed":
-                time.sleep(5)
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+            print(str(job_response))
+            if "status" in job_response:
+                while not job_response.get("status") == "completed":
+                    time.sleep(5)
 
-                job_response = self._portal.con.post(path, params)
+                    job_response = self._portal.con.post(path, params)
 
-                #print(str(job_response))
-                if job_response.get("status") == "esriJobFailed":
-                    raise Exception("Job failed.")
-                elif job_response.get("status") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("status") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
+                    #print(str(job_response))
+                    if job_response.get("status") == "esriJobFailed":
+                        raise Exception("Job failed.")
+                    elif job_response.get("status") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("status") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
 
-        else:
-            raise Exception("No job results.")
+            else:
+                raise Exception("No job results.")
 
         return Item(self._gis, serviceitem_id)
 
