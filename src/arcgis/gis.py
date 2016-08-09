@@ -1455,7 +1455,6 @@ class Group(dict):
         self.__dict__.update(groupdict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
-        # return dict.__getitem__(self, name)
         if not self._hydrated and not name.startswith('_'):
             self._hydrate()
         try:
@@ -1469,7 +1468,7 @@ class Group(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated and not name.startswith('_'):
+            if not self._hydrated and not k.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
@@ -1804,7 +1803,7 @@ class User(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated and not name.startswith('_'):
+            if not self._hydrated and not k.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
@@ -2225,7 +2224,7 @@ class Item(dict):
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            if not self._hydrated and not name.startswith('_'):
+            if not self._hydrated and not k.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
 

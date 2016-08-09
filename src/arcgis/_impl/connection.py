@@ -872,8 +872,9 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def _handle_json_error(self, error):
         _log.error(error.get('message', 'Unknown Error'))
-        for errordetail in error['details']:
-            _log.error(errordetail)
+        if 'details' in error:
+            for errordetail in error['details']:
+                _log.error(errordetail)
 
 
 class _StrictURLopener(request.FancyURLopener):
