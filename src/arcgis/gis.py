@@ -2764,7 +2764,7 @@ class Item(dict):
                     job_response = self._portal.con.post(path, params)
 
                     #print(str(job_response))
-                    if job_response.get("status") == "esriJobFailed":
+                    if job_response.get("status") == "esriJobFailed" or "failed":
                         raise Exception("Job failed.")
                     elif job_response.get("status") == "esriJobCancelled":
                         raise Exception("Job cancelled.")
