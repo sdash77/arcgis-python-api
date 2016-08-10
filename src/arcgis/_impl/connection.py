@@ -675,7 +675,7 @@ class _ArcGISConnection(object):
                 try:
                     if resp_json:
                         if 'error' in resp_json:
-                            errorcode = resp_json['error']['code']
+                            errorcode = resp_json['error']['code'] if 'code' in resp_json['error'] else 0
                             if errorcode == 498 and not is_retry:
                                 _log.info('Token expired during get request, ' \
                                           + 'fetching a new token and retrying')
@@ -684,7 +684,7 @@ class _ArcGISConnection(object):
                                 return self.get(path=newpath, params=params, ssl=ssl, compress=compress, try_json=try_json, is_retry=True)
                             elif errorcode == 498:
                                 raise RuntimeError('Invalid token')
-                            self._handle_json_error(resp_json['error'])
+                            self._handle_json_error(resp_json['error'], errorcode)
                             return None
                 except AttributeError:
                     # Top-level JSON object isnt a dict, so can't have an error
@@ -859,7 +859,7 @@ class _ArcGISConnection(object):
                                      is_retry=True)
                 elif errorcode == 498:
                     raise RuntimeError('Invalid token')
-                self._handle_json_error(resp_json['error'])
+                self._handle_json_error(resp_json['error'], errorcode)
                 return None
         except AttributeError:
             # Top-level JSON object isnt a dict, so can't have an error
@@ -870,12 +870,16 @@ class _ArcGISConnection(object):
     def _get_content_type(self, filename):
         return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
     #----------------------------------------------------------------------
-    def _handle_json_error(self, error):
-        _log.error(error.get('message', 'Unknown Error'))
+    def _handle_json_error(self, error, errorcode):
+        errormessage = error.get('message', 'Unknown Error')
+        _log.error(errormessage)
         if 'details' in error:
             for errordetail in error['details']:
+                errormessage = errormessage + "\n" + errordetail
                 _log.error(errordetail)
 
+        errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
+        raise RuntimeError(errormessage)
 
 class _StrictURLopener(request.FancyURLopener):
     def http_error_default(self, url, fp, errcode, errmsg, headers):

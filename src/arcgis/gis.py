@@ -11,6 +11,7 @@ import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
 #from ._impl.service._layerfactory import Layer
+import re
 import json
 import base64
 
@@ -2728,11 +2729,11 @@ class Item(dict):
                 if address_fields is not None:
                     publish_parameters.update({"addressFields":address_fields})
 
-                #use csv title for service name
-                service_name = self['title'].replace(' ','_').replace('.','_')
-                publish_parameters.update({"name":service_name})
+                # use csv title for service name, after replacing non-alphanumeric characters with _
+                service_name = re.sub(r'[\W_]+', '_', self['title'])
+                publish_parameters.update({"name": service_name})
             else:
-                name = self['title'].replace(' ', '_')
+                name = re.sub(r'[\W_]+', '_', self['title'])
                 name = name.replace('.', '_')
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 

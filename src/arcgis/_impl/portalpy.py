@@ -500,7 +500,10 @@ class Portal(object):
         files = []
         if data:
             if _is_http_url(data):
-                data =request.urlretrieve(data)[0]
+                data = request.urlretrieve(data)[0]
+            else:
+                if not os.path.isfile(os.path.abspath(data)):
+                    raise RuntimeError("File("+data+") not found.")
             files.append(('file', data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):

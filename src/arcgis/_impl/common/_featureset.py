@@ -4,11 +4,6 @@ from __future__ import division
 import datetime
 import time
 import json
-try:
-    import arcpy
-    arcpyFound = True
-except:
-    arcpyFound = False
 import copy
 import os
 import tempfile
@@ -185,6 +180,11 @@ class Feature(object):
            Output:
               list of feature objects
         """
+        try:
+            import arcpy
+            arcpyFound = True
+        except:
+            arcpyFound = False
         if arcpyFound:
             desc = arcpy.Describe(dataset)
             fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
