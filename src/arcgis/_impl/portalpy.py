@@ -1529,13 +1529,15 @@ class Portal(object):
         """
         path = 'content/users/' + current_owner
         if current_folder :
-            path += '/' + current_folder + '/'
-        path += 'items/' + item_id + '/reassign'
+            path += '/' + current_folder
+        path += '/items/' + item_id + '/reassign'
 
         postdata = self._postdata()
         postdata['targetUsername'] = target_owner
-        postdata['targetFoldername'] = target_folder if target_folder else '/'
-        return self.con.post(path, postdata)
+        postdata['targetFolderName'] = target_folder if target_folder else '/'
+        resp = self.con.post(path, postdata)
+        if resp:
+            return resp.get('success')
 
     def reset_user(self, username, password, new_password=None,
                    new_security_question=None, new_security_answer=None):

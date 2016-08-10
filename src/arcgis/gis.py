@@ -2436,7 +2436,10 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
-        return self._portal.reassign_item(self.itemid, self.owner, target_owner, current_folder, target_folder)
+        resp = self._portal.reassign_item(self.itemid, self.owner, target_owner, current_folder, target_folder)
+        if resp is True:
+            self._hydrate() # refresh
+            return resp
 
     def share(self, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
