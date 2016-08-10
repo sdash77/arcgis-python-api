@@ -2734,7 +2734,6 @@ class Item(dict):
                 publish_parameters.update({"name": service_name})
             else:
                 name = re.sub(r'[\W_]+', '_', self['title'])
-                name = name.replace('.', '_')
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
