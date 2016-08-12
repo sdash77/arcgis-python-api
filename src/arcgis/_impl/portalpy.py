@@ -617,8 +617,9 @@ class Portal(object):
 
         # Setup the item path, including the folder, and post to it
         path = 'content/users/' + owner
-        if folder:
-            path += '/' + folder
+        if folder and folder != '/':
+            folder_id = self.get_folder_id(owner, folder)
+            path += '/' + folder_id
         path += '/createService'
 
 

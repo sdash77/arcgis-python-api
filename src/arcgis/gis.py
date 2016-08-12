@@ -1102,7 +1102,7 @@ class ContentManager(object):
             ---------------     ----------------------------------------------------
             owner               optional string, defaults to logged in user.
             ---------------     ----------------------------------------------------
-            folder              optional string, content folder where placing item
+            folder              optional string, name of folder where placing item
             ===============     ====================================================
 
 
@@ -1205,7 +1205,7 @@ class ContentManager(object):
                                     All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
             service_type            optional string, the type of service to be created
             owner                   optional string, the username of the owner
-            folder                  optional string, the folder in which to create the service
+            folder                  optional string, name of folder in which to create the service
 
             :return:
                  The item for the service, if successfully created, None if unsuccessful.
