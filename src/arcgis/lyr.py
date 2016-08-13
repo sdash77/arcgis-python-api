@@ -1532,8 +1532,7 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
 class FeatureLayer(Layer):
     def __init__(self, url, gis, dictdata):
         super(FeatureLayer, self).__init__(url, gis, dictdata)
-        if self.properties.hasAttachments:
-            self.attachments = AttachmentManager(self)
+        self.attachments = AttachmentManager(self)
 
     @property
     def admin(self):
@@ -1556,17 +1555,15 @@ class FeatureLayer(Layer):
             Output:
               JSON Repsonse
         """
-        if self.properties.hasAttachments:
-            attachURL = self._url + "/%s/addAttachment" % oid
-            params = {'f':'json'}
+        attachURL = self._url + "/%s/addAttachment" % oid
+        params = {'f':'json'}
 
-            files = {'attachment': file_path}
-            res = self._con.post(path=attachURL,
-                                 postdata=params,
-                                 files=files)
-            return res
-        else:
-            return "Attachments are not supported for this feature service."
+        files = {'attachment': file_path}
+        res = self._con.post(path=attachURL,
+                                postdata=params,
+                                files=files)
+        return res
+        
     #----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
         """ removes an attachment from a feature service feature
