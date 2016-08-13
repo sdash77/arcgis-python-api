@@ -145,7 +145,7 @@ class GIS(object):
         """
         The properties of the GIS
         """
-        return self._get_properties()
+        return PropertyMap(self._get_properties())
 
     def __exit__(self, typ, value, traceback):
         self._portal.logout()
