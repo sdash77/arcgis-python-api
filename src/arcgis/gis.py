@@ -126,7 +126,7 @@ class GIS(object):
         """
         The resource manager for the GIS data store
         """
-        fedservers_url = self._url + "/portaladmin/federation/servers?f=json"
+        fedservers_url = self._url + "/portaladmin/federation/servers"
         #print(fedservers_url)
         res = self._portal.con.get(fedservers_url)
         servers = res['servers']
@@ -188,9 +188,9 @@ class GIS(object):
         return mapwidget
 
 
-class DatastoreItem(dict):
+class Datastore(dict):
     """
-    Represents a datastore item (folder, database or bigdata fileshare) within the GIS's data store
+    Represents a datastore (folder, database or bigdata fileshare) within the GIS's data store
     """
     def __init__(self, datastore, path):
         dict.__init__(self)
@@ -208,7 +208,7 @@ class DatastoreItem(dict):
 
         if datadict:
             self.__dict__.update(datadict)
-            super(DatastoreItem, self).update(datadict)
+            super(Datastore, self).update(datadict)
 
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         try:
@@ -224,7 +224,7 @@ class DatastoreItem(dict):
             path = self._admin_url + "/data/items" + self.datapath
 
             datadict = self._portal.con.post(path, params)
-            super(DatastoreItem, self).update(datadict)
+            super(Datastore, self).update(datadict)
             self.__dict__.update(datadict)
             return dict.__getitem__(self, k)
 
@@ -358,7 +358,7 @@ class DatastoreItem(dict):
         res = self._portal.con.post(data_item_manifest_url, params)
 
         for dataset in res['datasets']:
-            print("/server/datastores" + self.datapath + '/' + dataset['path'] + ' ('+ dataset['type'] + ')')
+            print(dataset['name'] + ' ('+ dataset['format']['extension'] + ')')
 
 class DatastoreManager(object):
     """
@@ -452,7 +452,7 @@ class DatastoreManager(object):
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params)
         if res['status'] == 'success' or res['status'] == 'exists':
-            return DatastoreItem(self, "/fileShares/" + name)
+            return Datastore(self, "/fileShares/" + name)
         else:
             print(str(res))
             return None
@@ -485,7 +485,7 @@ class DatastoreManager(object):
         res = self._portal.con.post(path, params)
 
         if res['status'] == 'success' or res['status'] == 'exists':
-            output = DatastoreItem(self, "/bigDataFileShares/" + name)
+            output = Datastore(self, "/bigDataFileShares/" + name)
 
         if res['success']:
             print("Created Big Data file share for " + name)
@@ -535,7 +535,7 @@ class DatastoreManager(object):
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params)
         if res['status'] == 'success' or res['status'] == 'exists':
-            return DatastoreItem(self, "/enterpriseDatabases/" + name)
+            return Datastore(self, "/enterpriseDatabases/" + name)
         else:
             print(str(res))
             return None
@@ -560,7 +560,7 @@ class DatastoreManager(object):
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params)
         if res['status'] == 'success' or res['status'] == 'exists':
-            return DatastoreItem(self, "/enterpriseDatabases/" + name)
+            return Datastore(self, "/enterpriseDatabases/" + name)
         else:
             print(str(res))
             return None
@@ -578,7 +578,7 @@ class DatastoreManager(object):
 
         datadict = self._portal.con.post(urlpath, params)
         if 'status' not in datadict:
-            return DatastoreItem(self, path)
+            return Datastore(self, path)
         else:
             print(datadict['messages'])
             return None
@@ -620,7 +620,7 @@ class DatastoreManager(object):
 
         res = self._portal.con.post(path, params)
         for item in res['items']:
-            dataitems.append(DatastoreItem(self, item['path']))
+            dataitems.append(Datastore(self, item['path']))
         return dataitems
 
     def validate(self):
@@ -707,7 +707,7 @@ class Tools(object):
                 print("This GIS does not support geoanalytics")
                 return None
 
-            self._geoanalytics = GeoAnalyticsTools(svcurl, self._gis)
+            self._geoanalytics = BigDataTools(svcurl, self._gis)
             return self._geoanalytics
         except KeyError:
             return None
@@ -1184,6 +1184,7 @@ class ContentManager(object):
                        description = "",
                        copyright_text = "",
                        wkid=102100,
+                       create_params=None,
                        service_type="imageService",
                        owner=None, folder=None):
         """ Creates a service in the Portal
@@ -1203,7 +1204,11 @@ class ContentManager(object):
             copyright_text          optional string, copyright information associated with the dataset.
             wkid                    optional int, the well known id of the spatial reference for the service.
                                     All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
-            service_type            optional string, the type of service to be created
+            
+            create_params           optional dict, containing all create parameters. If this parameter is used, all the parameters above are ignored
+            
+            service_type            optional string, the type of service to be created, imageService, featureService
+
             owner                   optional string, the username of the owner
             folder                  optional string, name of folder in which to create the service
 
@@ -1227,7 +1232,7 @@ class ContentManager(object):
                                              description,
                                              copyright_text,
                                              wkid,
-                                             service_type, owner, folder)
+                                             service_type, create_params, owner, folder)
         if itemid is not None:
             return Item(self._gis, itemid)
         else:
@@ -2128,6 +2133,7 @@ class Item(dict):
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
             self.type == 'Feature Service' or \
+            self.type == 'Big Data File Share' or \
             self.type == 'Image Service' or \
             self.type == 'Map Service' or \
             self.type == 'Globe Service' or \
@@ -2154,6 +2160,14 @@ class Item(dict):
                 for layer in lyrs:
                     layers.append(FeatureCollection(layer))
 
+            elif self.type == 'Big Data File Share':
+                serviceinfo = self._portal.con.post(self.url, params, add_token=use_token)
+                for lyr in serviceinfo['children']:
+                    lyrurl = self.url + '/' + lyr['name']
+                    #layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layers.append(Layer(lyrurl, self._gis))
+
+            
             elif self.type == 'Vector Tile Service':
                 layer = self._portal.con.get(self.url, params, add_token=use_token)
                 layers.append(VectorTileLayer(self.url, self._gis, layer))

@@ -1530,7 +1530,7 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
         return self._con.post(path=url, postdata=params)
 
 class FeatureLayer(Layer):
-    def __init__(self, url, gis, dictdata):
+    def __init__(self, url, gis, dictdata=None):
         super(FeatureLayer, self).__init__(url, gis, dictdata)
         self.attachments = AttachmentManager(self)
 

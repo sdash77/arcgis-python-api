@@ -600,7 +600,7 @@ class Portal(object):
                        description = "",
                        copyright_text = "",
                        wkid=102100,
-                       service_type="imageService", owner=None, folder=None):
+                       service_type="imageService", create_params=None, owner=None, folder=None):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
@@ -654,7 +654,11 @@ class Portal(object):
             }
         }
 
-        postdata['createParameters'] = json.dumps(createParameters)
+        if create_params is not None:
+            postdata['createParameters'] = json.dumps(create_params)
+        else:
+            postdata['createParameters'] = json.dumps(createParameters)
+
         postdata['outputType'] = service_type
 
         resp = self.con.post(path, postdata)

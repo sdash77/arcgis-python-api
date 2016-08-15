@@ -429,7 +429,15 @@ class _AsyncService(object):
         if url is not None:
             self.url = url
             self._gis = gis
+            self._con = gis._con
             self._portal = gis._portal
+            self._refresh()
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params)
+
+        self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
         """ Submits an Analysis job and returns the job URL for monitoring the job
@@ -3781,8 +3789,8 @@ class RasterAnalysisTools(_AsyncService):
         out_raster : image layer item, if none, one is created, can also pass string (name of item+service)
         """
         if output_raster is None:
-            output_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_raster = self._gis.content.create_service(output_name, "Service created by Copy Raster tool")
+            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
+            output_raster = self._gis.content.create_service(output_ras_name, "Service created by Copy Raster tool")
         elif isinstance(output_raster, str):
             try:
                 matched = False
@@ -3999,8 +4007,8 @@ class RasterAnalysisTools(_AsyncService):
         task ="CopyRaster"
 
         if output_raster is None:
-            output_name = input_raster['title'].replace (" ", "_") + '_' + 'Copy' + '_' + _id_generator()
-            output_raster = self._gis.content.create_service(output_name, "Service created by Copy Raster tool")
+            output_ras_name = input_raster['title'].replace (" ", "_") + '_' + 'Copy' + '_' + _id_generator()
+            output_raster = self._gis.content.create_service(output_ras_name, "Service created by Copy Raster tool")
         elif isinstance(output_raster, str):
             #check if there's an item by that name, if yes, use that
             try:
@@ -4039,3 +4047,1481 @@ class RasterAnalysisTools(_AsyncService):
         item = arcgis.gis.Item(self._gis, itemid)
         item.share(True)
         return item
+
+class BigDataTools(_AsyncService):
+    "Exposes the BigData Tools from the GeoAnalyticsTools service. The GeoAnalyticsTools service is provided for distributed analysis of large datasets."
+
+    def __init__(self, url, gis):
+        """
+        Constructs a client to the service given it's url from ArcGIS Online or Portal.
+        """
+        super().__init__(url, gis)
+        
+        params = {
+            "f" : "json"
+        }
+
+    def __str__(self):
+        return json.dumps(self)
+        
+        
+    def _create_output_service(self, output_name, task):
+        ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
+        if not ok:
+            raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+        
+        createParameters = {
+                "currentVersion": 10.2,
+                "serviceDescription": "",
+                "hasVersionedData": False,
+                "supportsDisconnectedEditing": False,
+                "hasStaticData": True,
+                "maxRecordCount": 2000,
+                "supportedQueryFormats": "JSON",
+                "capabilities": "Query",
+                "description": "",
+                "copyrightText": "",
+                "allowGeometryUpdates": False,
+                "syncEnabled": False,
+                "editorTrackingInfo": {
+                    "enableEditorTracking": False,
+                    "enableOwnershipAccessControl": False,
+                    "allowOthersToUpdate": True,
+                    "allowOthersToDelete": True
+                },
+                "xssPreventionInfo": {
+                    "xssPreventionEnabled": True,
+                    "xssPreventionRule": "InputOnly",
+                    "xssInputRule": "rejectInvalid"
+                },
+                "tables": [],
+                "name": output_name,
+                "options": {
+                    "dataSourceType": "spatiotemporal"
+                }
+            }
+        
+        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
+        description = "Feature Service generated from running the " + task + " tool."
+        item_properties = {
+                "description" : description,
+                "tags" : "Analysis Result, " + task,
+                "snippet": "Analysis Feature Service generated from " + task
+                }
+        output_service.update(item_properties)
+        return output_service
+        
+    
+
+
+    def aggregate_points(self,
+                       point_layer,
+                       output_name,
+                       distance_interval=None,
+                       distance_interval_unit=None,
+                       bin_type="SQUARE",
+                       polygon_layer=None,
+                       time_interval=None,
+                       time_interval_unit=None,
+                       time_repeat=None,
+                       time_repeat_unit=None,
+                       time_reference=None,
+                       summary_fields=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        point_layer : Required FeatureSet
+            
+        distance_interval : Optional float
+            
+        distance_interval_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        bin_type : Optional string
+            One of the following: ['SQUARE', 'HEXAGON']
+        polygon_layer : Optional FeatureSet
+            
+        time_interval : Optional int
+            
+        time_interval_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_repeat : Optional int
+            
+        time_repeat_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_reference : Optional datetime.date
+            
+        summary_fields : Optional string
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="AggregatePoints"
+
+        params = {}
+
+        params["pointLayer"] = super()._feature_input(point_layer)
+        if distance_interval is not None:
+            params["distanceInterval"] = distance_interval
+        if distance_interval_unit is not None:
+            params["distanceIntervalUnit"] = distance_interval_unit
+        if bin_type is not None:
+            params["binType"] = bin_type
+        if polygon_layer is not None:
+            params["polygonLayer"] = super()._feature_input(polygon_layer)
+        if time_interval is not None:
+            params["timeInterval"] = time_interval
+        if time_interval_unit is not None:
+            params["timeIntervalUnit"] = time_interval_unit
+        if time_repeat is not None:
+            params["timeRepeat"] = time_repeat
+        if time_repeat_unit is not None:
+            params["timeRepeatUnit"] = time_repeat_unit
+        if time_reference is not None:
+            params["timeReference"] = time_reference
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def describe_dataset(self,
+                       in_dataset,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        in_dataset : Required FeatureSet
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output_json : layer (Feature Service item)
+        """
+
+        task ="DescribeDataset"
+
+        params = {}
+
+        params["in_dataset"] = in_dataset
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output_json'])
+
+
+    def join_features(self,
+                       target_layer,
+                       join_layer,
+                       output_name,
+                       join_operation="Join one to one",
+                       join_fields=None,
+                       summary_fields=None,
+                       spatial_relationship=None,
+                       spatial_near_distance=None,
+                       spatial_near_distance_unit=None,
+                       temporal_relationship=None,
+                       temporal_near_distance=None,
+                       temporal_near_distance_unit=None,
+                       attribute_relationship=None,
+                       join_condition=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        target_layer : Required FeatureSet
+            
+        join_layer : Required FeatureSet
+            
+        join_operation : Required string
+            One of the following: ['Join one to one', 'Join one to many']
+        join_fields : Optional string
+            
+        summary_fields : Optional string
+            
+        spatial_relationship : Optional string
+            One of the following: ['Equals', 'Intersects', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near']
+        spatial_near_distance : Optional float
+            
+        spatial_near_distance_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        temporal_relationship : Optional string
+            One of the following: ['Equals', 'Intersects', 'During', 'Contains', 'Finishes', 'FinishedBy', 'Meets', 'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near']
+        temporal_near_distance : Optional int
+            
+        temporal_near_distance_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        attribute_relationship : Optional string
+            
+        join_condition : Optional string
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="JoinFeatures"
+
+        params = {}
+
+        params["targetLayer"] = super()._feature_input(target_layer)
+        params["joinLayer"] = super()._feature_input(join_layer)
+        params["joinOperation"] = join_operation
+        if join_fields is not None:
+            params["joinFields"] = join_fields
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+        if spatial_relationship is not None:
+            params["spatialRelationship"] = spatial_relationship
+        if spatial_near_distance is not None:
+            params["spatialNearDistance"] = spatial_near_distance
+        if spatial_near_distance_unit is not None:
+            params["spatialNearDistanceUnit"] = spatial_near_distance_unit
+        if temporal_relationship is not None:
+            params["temporalRelationship"] = temporal_relationship
+        if temporal_near_distance is not None:
+            params["temporalNearDistance"] = temporal_near_distance
+        if temporal_near_distance_unit is not None:
+            params["temporalNearDistanceUnit"] = temporal_near_distance_unit
+        if attribute_relationship is not None:
+            params["attributeRelationship"] = attribute_relationship
+        if join_condition is not None:
+            params["joinCondition"] = join_condition
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def create_buffers(self,
+                       input_layer,
+                       output_name,
+                       distance=None,
+                       distance_unit=None,
+                       field=None,
+                       method="PLANAR",
+                       dissolve_option="NONE",
+                       dissolve_fields=None,
+                       summary_fields=None,
+                       multipart=False,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        distance : Optional float
+            
+        distance_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        field : Optional string
+            
+        method : Required string
+            One of the following: ['GEODESIC', 'PLANAR']
+        dissolve_option : Optional string
+            One of the following: ['ALL', 'LIST', 'NONE']
+        dissolve_fields : Optional string
+            
+        summary_fields : Optional string
+            
+        multipart : Optional bool
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="CreateBuffers"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+        if distance is not None:
+            params["distance"] = distance
+        if distance_unit is not None:
+            params["distanceUnit"] = distance_unit
+        if field is not None:
+            params["field"] = field
+        params["method"] = method
+        if dissolve_option is not None:
+            params["dissolveOption"] = dissolve_option
+        if dissolve_fields is not None:
+            params["dissolveFields"] = dissolve_fields
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+        if multipart is not None:
+            params["multipart"] = multipart
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def calculate_density(self,
+                       input_layer,
+                       bin_size,
+                       bin_size_unit,
+                       radius,
+                       radius_unit,
+                       output_name,
+                       fields=None,
+                       weight="UNIFORM",
+                       bin_type="SQUARE",
+                       time_interval=None,
+                       time_interval_unit=None,
+                       time_repeat=None,
+                       time_repeat_unit=None,
+                       time_reference=None,
+                       area_units=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        fields : Optional string
+            
+        weight : Required string
+            One of the following: ['UNIFORM', 'KERNEL']
+        bin_size : Required float
+            
+        bin_size_unit : Required string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        bin_type : Required string
+            One of the following: ['SQUARE', 'HEXAGON']
+        time_interval : Optional int
+            
+        time_interval_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_repeat : Optional int
+            
+        time_repeat_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_reference : Optional datetime.date
+            
+        radius : Required float
+            
+        radius_unit : Required string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        area_units : Optional string
+            One of the following: ['ACRES', 'SQUARE_KILOMETERS', 'SQUARE_INCHES', 'SQUARE_FEET', 'SQUARE_YARDS', 'SQUARE_MAP_UNITS', 'SQUARE_METERS', 'SQUARE_MILES', 'HECTARES']
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="CalculateDensity"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+        if fields is not None:
+            params["fields"] = fields
+        params["weight"] = weight
+        params["binSize"] = bin_size
+        params["binSizeUnit"] = bin_size_unit
+        params["binType"] = bin_type
+        if time_interval is not None:
+            params["timeInterval"] = time_interval
+        if time_interval_unit is not None:
+            params["timeIntervalUnit"] = time_interval_unit
+        if time_repeat is not None:
+            params["timeRepeat"] = time_repeat
+        if time_repeat_unit is not None:
+            params["timeRepeatUnit"] = time_repeat_unit
+        if time_reference is not None:
+            params["timeReference"] = time_reference
+        params["radius"] = radius
+        params["radiusUnit"] = radius_unit
+        if area_units is not None:
+            params["areaUnits"] = area_units
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def reconstruct_tracks(self,
+                       input_layer,
+                       track_fields,
+                       output_name,
+                       method="PLANAR",
+                       buffer_field=None,
+                       summary_fields=None,
+                       time_split=None,
+                       time_split_unit=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        track_fields : Required string
+            
+        method : Required string
+            One of the following: ['GEODESIC', 'PLANAR']
+        buffer_field : Optional string
+            
+        summary_fields : Optional string
+            
+        time_split : Optional int
+            
+        time_split_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="ReconstructTracks"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+        params["trackFields"] = track_fields
+        params["method"] = method
+        if buffer_field is not None:
+            params["bufferField"] = buffer_field
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+        if time_split is not None:
+            params["timeSplit"] = time_split
+        if time_split_unit is not None:
+            params["timeSplitUnit"] = time_split_unit
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def create_space_time_cube(self,
+                       point_layer,
+                       distance_interval,
+                       distance_interval_unit,
+                       time_interval,
+                       time_interval_unit,
+                       output_name,
+                       time_interval_alignment=None,
+                       reference_time=None,
+                       summary_fields=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        point_layer : Required FeatureSet
+            
+        distance_interval : Required float
+            
+        distance_interval_unit : Required string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        time_interval : Required int
+            
+        time_interval_unit : Required string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_interval_alignment : Optional string
+            One of the following: ['END_TIME', 'START_TIME', 'REFERENCE_TIME']
+        reference_time : Optional datetime.date
+            
+        summary_fields : Optional string
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output_cube : layer (Feature Service item)
+        """
+
+        task ="CreateSpaceTimeCube"
+
+        params = {}
+
+        params["pointLayer"] = super()._feature_input(point_layer)
+        params["distanceInterval"] = distance_interval
+        params["distanceIntervalUnit"] = distance_interval_unit
+        params["timeInterval"] = time_interval
+        params["timeIntervalUnit"] = time_interval_unit
+        if time_interval_alignment is not None:
+            params["timeIntervalAlignment"] = time_interval_alignment
+        if reference_time is not None:
+            params["referenceTime"] = reference_time
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['outputCube'])
+
+
+    def create_panel_data(self,
+                       in_target_features,
+                       in_join_features,
+                       time_interval,
+                       time_interval_unit,
+                       time_repeat,
+                       time_repeat_unit,
+                       time_reference,
+                       out_features_name,
+                       in_summary_stats=None,
+                       in_spatial_relationship=None,
+                       in_spatial_distance=None,
+                       in_spatial_distance_unit=None,
+                       in_attribute_relationship=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        in_target_features : Required FeatureSet
+            
+        in_join_features : Required FeatureSet
+            
+        in_summary_stats : Optional string
+            
+        in_spatial_relationship : Optional string
+            One of the following: ['Intersect', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near']
+        in_spatial_distance : Optional float
+            
+        in_spatial_distance_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        in_attribute_relationship : Optional string
+            
+        time_interval : Required int
+            
+        time_interval_unit : Required string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_repeat : Required int
+            
+        time_repeat_unit : Required string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_reference : Required datetime.date
+            
+        out_features_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        out_features : layer (Feature Service item)
+        """
+
+        task ="CreatePanelData"
+
+        params = {}
+
+        params["in_target_features"] = in_target_features
+        params["in_join_features"] = in_join_features
+        if in_summary_stats is not None:
+            params["in_summary_stats"] = in_summary_stats
+        if in_spatial_relationship is not None:
+            params["in_spatial_relationship"] = in_spatial_relationship
+        if in_spatial_distance is not None:
+            params["in_spatial_distance"] = in_spatial_distance
+        if in_spatial_distance_unit is not None:
+            params["in_spatial_distanceUnit"] = in_spatial_distance_unit
+        if in_attribute_relationship is not None:
+            params["in_attribute_relationship"] = in_attribute_relationship
+        params["timeInterval"] = time_interval
+        params["timeIntervalUnit"] = time_interval_unit
+        params["timeRepeat"] = time_repeat
+        params["timeRepeatUnit"] = time_repeat_unit
+        params["timeReference"] = time_reference
+        params["out_featuresName"] = out_features_name
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['out_features'])
+
+
+    def generate_manifest(self,
+                       data_store_item_id,
+                       update_data_item=False,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        data_store_item_id : Required string
+            
+        update_data_item : Optional bool
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        manifest : layer (Feature Service item)
+        """
+
+        task ="GenerateManifest"
+
+        params = {}
+
+        params["dataStoreItemId"] = data_store_item_id
+        if update_data_item is not None:
+            params["updateDataItem"] = update_data_item
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['manifest'])
+
+
+    def create_sample(self,
+                       input_layer,
+                       output_layer_name,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        output_layer_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output_layer : layer (Feature Service item)
+        """
+
+        task ="CreateSample"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+        params["outputLayerName"] = output_layer_name
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['outputLayer'])
+
+
+    def copy_to_data_store(self,
+                       input_layer,
+                       output_name,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="CopyToDataStore"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def summarize_attributes(self,
+                       input_layer,
+                       fields,
+                       output_name,
+                       summary_fields=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        input_layer : Required FeatureSet
+            
+        fields : Required string
+            
+        summary_fields : Optional string
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="SummarizeAttributes"
+
+        params = {}
+
+        params["inputLayer"] = super()._feature_input(input_layer)
+        params["fields"] = fields
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def summarize_within(self,
+                       summary_layer,
+                       output_name,
+                       bin_size=None,
+                       bin_size_unit=None,
+                       bin_type="SQUARE",
+                       sum_within_layer=None,
+                       time_interval=None,
+                       time_interval_unit=None,
+                       time_repeat=None,
+                       time_repeat_unit=None,
+                       time_reference=None,
+                       summary_fields=None,
+                       proportional_weighting=False,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        summary_layer : Required FeatureSet
+            
+        bin_size : Optional float
+            
+        bin_size_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        bin_type : Optional string
+            One of the following: ['SQUARE', 'HEXAGON']
+        sum_within_layer : Optional FeatureSet
+            
+        time_interval : Optional int
+            
+        time_interval_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_repeat : Optional int
+            
+        time_repeat_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_reference : Optional datetime.date
+            
+        summary_fields : Optional string
+            
+        proportional_weighting : Optional bool
+            
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="SummarizeWithin"
+
+        params = {}
+
+        params["summaryLayer"] = super()._feature_input(summary_layer)
+        if bin_size is not None:
+            params["binSize"] = bin_size
+        if bin_size_unit is not None:
+            params["binSizeUnit"] = bin_size_unit
+        if bin_type is not None:
+            params["binType"] = bin_type
+        if sum_within_layer is not None:
+            params["sumWithinLayer"] = super()._feature_input(sum_within_layer)
+        if time_interval is not None:
+            params["timeInterval"] = time_interval
+        if time_interval_unit is not None:
+            params["timeIntervalUnit"] = time_interval_unit
+        if time_repeat is not None:
+            params["timeRepeat"] = time_repeat
+        if time_repeat_unit is not None:
+            params["timeRepeatUnit"] = time_repeat_unit
+        if time_reference is not None:
+            params["timeReference"] = time_reference
+        if summary_fields is not None:
+            params["summaryFields"] = summary_fields
+        if proportional_weighting is not None:
+            params["proportionalWeighting"] = proportional_weighting
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def find_hot_spots(self,
+                       point_layer,
+                       bin_size,
+                       bin_size_unit,
+                       output_name,
+                       time_step_interval=None,
+                       time_step_interval_unit=None,
+                       time_step_alignment=None,
+                       referencetime=None,
+                       neighborhood_distance=None,
+                       neighborhood_distance_unit=None,
+                       out_sr=None,
+                       out_extent=None,
+                       datastore="GDB",
+                       context=None):
+        """
+        
+
+        Parameters
+        ----------
+        point_layer : Required FeatureSet
+            
+        bin_size : Required float
+            
+        bin_size_unit : Required string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        time_step_interval : Optional int
+            
+        time_step_interval_unit : Optional string
+            One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+        time_step_alignment : Optional string
+            One of the following: ['END_TIME', 'START_TIME', 'REFERENCE_TIME']
+        referencetime : Optional datetime.date
+            
+        neighborhood_distance : Optional float
+            
+        neighborhood_distance_unit : Optional string
+            One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+        output_name : Required string
+            
+        out_sr : Optional string
+            
+        out_extent : Optional string
+            
+        datastore : Optional string
+            One of the following: ['BDS', 'GDB']
+        context : Optional string
+            
+
+        Returns
+        -------
+        output : layer (Feature Service item)
+        """
+
+        task ="FindHotSpots"
+
+        params = {}
+
+        params["pointLayer"] = super()._feature_input(point_layer)
+        params["binSize"] = bin_size
+        params["binSizeUnit"] = bin_size_unit
+        if time_step_interval is not None:
+            params["time_step_interval"] = time_step_interval
+        if time_step_interval_unit is not None:
+            params["time_step_intervalUnit"] = time_step_interval_unit
+        if time_step_alignment is not None:
+            params["time_step_alignment"] = time_step_alignment
+        if referencetime is not None:
+            params["reference time"] = referencetime
+        if neighborhood_distance is not None:
+            params["neighborhoodDistance"] = neighborhood_distance
+        if neighborhood_distance_unit is not None:
+            params["neighborhoodDistanceUnit"] = neighborhood_distance_unit
+
+        output_service = self._create_output_service(output_name, task)
+
+        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        if out_sr is not None:
+            params["gax:env:out_sr"] = out_sr
+        if out_extent is not None:
+            params["gax:env:outExtent"] = out_extent
+        if datastore is not None:
+            params["gax:env:datastore"] = datastore
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        #print(job_values)
+        if output_name is not None:
+            #url = job_values['output']['url']
+            #return FeatureLayer(url, self._gis) #item
+            item_properties = {
+                "properties":{
+                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                    "jobType": "GPServer",
+                    "jobId": job_info['jobId'],
+                    "jobStatus": "completed"
+                    }
+                }
+            output_service.update(item_properties)
+            return output_service
+        else:
+            # Feature Collection
+            return FeatureCollection(job_values['output'])
+
+
+    def find_similar_locations(self):
+        """
+        
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+        task ="FindSimilarLocations"
+
+        params = {}
+
+        return { }
