@@ -207,7 +207,7 @@ def _to_utf8(data):
     """ Converts strings and collections of strings from unicode to utf-8. """
     if isinstance(data, dict):
         return {_to_utf8(key): _to_utf8(value) \
-                for key, value in data.items()}
+                for key, value in data.items() if value is not None}
     elif isinstance(data, list):
         return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
