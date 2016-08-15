@@ -680,7 +680,7 @@ class Tools(object):
             return None
 
     @property
-    def rasteranalytics(self):
+    def rasteranalysis(self):
         """the portal's raster analysis tools, if available and configured"""
         if self._raster_analysis is not None:
             return self._raster_analysis
@@ -713,7 +713,7 @@ class Tools(object):
             return None
 
     @property
-    def analysis(self):
+    def featureanalysis(self):
         """the portal's spatial analysis tools, if available and configured"""
         if self._analysis is not None:
             return self._analysis
@@ -722,7 +722,7 @@ class Tools(object):
                 svcurl = self._gis.properties['helperServices']['analysis']['url']
             except:
                 svcurl = 'https://analysis6.arcgis.com/arcgis/rest/services/tasks/GPServer'
-            self._analysis = SpatialAnalysisTools(svcurl, self._gis)
+            self._analysis = FeatureAnalysisTools(svcurl, self._gis)
             return self._analysis
         except KeyError:
             return None

@@ -1998,8 +1998,8 @@ class GeoAnalyticsTools(_AsyncService):
         #print("FETCHED" + json.dumps(manifest))
         return manifest
 ###########################################################################
-class SpatialAnalysisTools(_AsyncService):
-    "Represents the SpatialAnalysisTools service. The SpatialAnalysisTools service is used for supporting Spatial analysis capability in Portal for ArcGIS."
+class FeatureAnalysisTools(_AsyncService):
+    "Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability in Portal for ArcGIS and ArcGIS Online."
 
     def __init__(self, url, gis):
         """
