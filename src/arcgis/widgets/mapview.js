@@ -172,6 +172,8 @@ define('mapview', [
      "esri/dijit/LayerSwipe",
      "esri/graphic",
      "esri/TimeExtent",
+     "esri/ServerInfo",
+     "esri/IdentityManager",  
      "esri/geometry/Extent",
      "esri/InfoTemplate",
      "esri/toolbars/draw",
@@ -198,6 +200,8 @@ define('mapview', [
      LayerSwipe,
      Graphic,
      TimeExtent,
+     ServerInfo,
+     IdentityManager,
      Extent,
      InfoTemplate,
      Draw,
@@ -227,24 +231,86 @@ define('mapview', [
 
             var that = this;
 
-            var id = this.model.get('id')
+            var token_info = this.model.get('_token_info')
+            if ((token_info) && (token_info.trim()!='')) {
 
-            if ((id) && (id.trim()!='')) {
-                arcgisUtils.createMap(id, this.$el[0]).then(function(response){
-                    map = response.map;
-                });
+                var token = JSON.parse(token_info);
+                                
+                var serverInfo = new ServerInfo();  
+                serverInfo.server = token.server;  
+                serverInfo.tokenServiceUrl = token.tokenurl;  
+
+
+                IdentityManager.registerServers([serverInfo]);  
+
+
+                var userId = token.username;  
+                var password = token.password;  
+
+
+                // https://geonet.esri.com/thread/119062
+                IdentityManager.generateToken(serverInfo, {  
+                    username: userId,  
+                    password: password  
+                }).then(function(response) {  
+                    console.log(JSON.stringify(token));
+                    IdentityManager.registerToken({  
+                        server: serverInfo.server,  
+                        userId: userId,  
+                        token: response.token,  
+                        expires: response.expires,  
+                        ssl: response.ssl  
+                    });  
+                }).then(function(response) {
+                    {
+                        var id = that.model.get('id');
+                        if ((id) && (id.trim()!='')) {
+                            arcgisUtils.createMap(id, that.$el[0]).then(function(response){
+                                map = response.map;
+                                map.on("load", on_load);
+                            });
+                        } else {
+
+                            that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
+
+                           map = new Map(that.$el[0], {
+                                basemap: that.model.get('basemap'),
+                                center: that.model.get('center').reverse(),
+                                zoom: that.model.get('zoom')
+                            });
+
+                            map.on("load", on_load);
+                        }
+                        //map.on("load", on_load);
+                    }
+                });  
+                
+                
             } else {
+                
+                var id = that.model.get('id');
+                    if ((id) && (id.trim()!='')) {
+                        arcgisUtils.createMap(id, that.$el[0]).then(function(response){
+                            map = response.map;
+                            map.on("load", on_load);
+                        });
+                    } else {
 
-                this.$el.append("<div id='"+this.model.get('_swipe_div')+"'>");
+                        that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
-               map = new Map(this.$el[0], {
-                    basemap: this.model.get('basemap'),
-                    center: this.model.get('center').reverse(),
-                    zoom: this.model.get('zoom')
-                });
+                       map = new Map(that.$el[0], {
+                            basemap: that.model.get('basemap'),
+                            center: that.model.get('center').reverse(),
+                            zoom: that.model.get('zoom')
+                        });
+                        
+                        map.on("load", on_load);
+                    }
+                
             }
-
-            map.on("load", on_load);
+            
+            
+            
 
             function on_load() {
                 map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts

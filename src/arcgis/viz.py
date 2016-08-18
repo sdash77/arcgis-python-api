@@ -18,9 +18,9 @@ except:
     from IPython.html import widgets
 #from IPython.html import widgets
 try:
-    from traitlets import Unicode, Int, List
+    from traitlets import Unicode, Int, List, Bool
 except:
-    from IPython.utils.traitlets import Unicode, Int, List
+    from IPython.utils.traitlets import Unicode, Int, List, Bool
 
 
 """
@@ -52,13 +52,17 @@ class WebMap(collections.OrderedDict):
         if webmapitem.type.lower() != 'web map':
             raise TypeError("item type must be web map")
         self.item = webmapitem
+        self._gis = webmapitem._gis
+        self._con = self._gis._con
         webmapdict = self.item.get_data()
         collections.OrderedDict.__init__(self, webmapdict)
         #dict.update(webmapdict)
 
-    def _repr_html_(self):
-        #return '<iframe width=810 height=600 src="'+"http://developers.arcgis.com/javascript/samples/mobile_arcgis/?webmap="+self.item.itemid+'"/>'
-        return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
+    #def _repr_html_(self):
+    def _ipython_display_(self, **kwargs):
+        #return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
+        mapwidget = MapView(gis=self._gis, item=self.item)
+        return mapwidget._ipython_display_(**kwargs)
 
     #def __repr__(self):
     #    dictrepr = collections.OrderedDict.__repr__(self)
@@ -105,7 +109,7 @@ class MapView(widgets.DOMWidget):
     _view_name = Unicode('MapView').tag(sync=True)
     _view_module = Unicode('mapview').tag(sync=True)
 
-    value = Unicode('Hello World!').tag(sync=True)
+    #value = Unicode('Hello World!').tag(sync=True)
 
     basemap = Unicode('topo').tag(sync=True)
     width = Unicode('100%').tag(sync=True)
@@ -116,10 +120,17 @@ class MapView(widgets.DOMWidget):
     addlayer = Unicode('').tag(sync=True)
     start_time = Unicode('').tag(sync=True)
     end_time = Unicode('').tag(sync=True)
+
+    _token_info = Unicode('').tag(sync=True)
+
     _swipe_div = Unicode('').tag(sync=True)
 
     def __init__(self, **kwargs):
-        """Constructor"""
+        """Constructor of Map widget. 
+        Accepts the following keyword arguments:
+        gis     The gis instance with which the map widget works, used for authentication, and adding secure layers and private items from that GIS
+        item    webmap item from portal with which to initialize the map widget
+        """
         super(MapView, self).__init__(**kwargs)
         self._click_handlers = widgets.CallbackDispatcher()
         self._draw_end_handlers = widgets.CallbackDispatcher()
@@ -128,6 +139,18 @@ class MapView(widgets.DOMWidget):
 
         self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic", "terrain", "osm"]
         self._swipe_div = 'swipeDiv' +''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        
+        self._gis = kwargs.pop('gis', None)
+        if self._gis is not None:
+            token_info = {
+                "server" : self._gis._con.baseurl,
+                "tokenurl" : (self._gis._con.baseurl + 
+                               'generateToken').replace('http://', 'https://'),
+                "username" : self._gis._con._username,
+                "password" : self._gis._con._password
+            }
+            self._token_info = json.dumps(token_info)
+            
         self.item = kwargs.pop('item', None)
         if self.item is not None:
             if self.item.type.lower() != 'web map':

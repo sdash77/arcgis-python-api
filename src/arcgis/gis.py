@@ -170,7 +170,7 @@ class GIS(object):
     def map(self, location=None, zoomlevel=None):
         """Creates a map widget centered at the location (Address or (lat, long) tuple) with the specified zoom-level(integer)"""
         from arcgis.viz import MapView
-        mapwidget = MapView()
+        mapwidget = MapView(gis=self)
         if location is not None:
             if isinstance(location, str):
                 for geocoder in self.tools.geocoders:
@@ -2147,12 +2147,12 @@ class Item(dict):
             tables = []
             
             params = {"f" : "json"}
-            use_token = True
+            secured = True
             if self.access == 'public':
-                use_token = False
+                secured = False
 
             if self.type == 'Image Service': # service that is itself a layer
-                layer = self._portal.con.post(self.url, params, add_token=use_token)
+                layer = self._portal.con.post(self.url, params, add_token=secured)
                 layers.append(ImageLayer(self.url, self._gis, layer))
 
             elif self.type == 'Feature Collection':
@@ -2161,7 +2161,7 @@ class Item(dict):
                     layers.append(FeatureCollection(layer))
 
             elif self.type == 'Big Data File Share':
-                serviceinfo = self._portal.con.post(self.url, params, add_token=use_token)
+                serviceinfo = self._portal.con.post(self.url, params, add_token=secured)
                 for lyr in serviceinfo['children']:
                     lyrurl = self.url + '/' + lyr['name']
                     #layer = self._portal.con.post(lyrurl, params, add_token=use_token)
@@ -2169,29 +2169,29 @@ class Item(dict):
 
             
             elif self.type == 'Vector Tile Service':
-                layer = self._portal.con.get(self.url, params, add_token=use_token)
+                layer = self._portal.con.get(self.url, params, add_token=secured)
                 layers.append(VectorTileLayer(self.url, self._gis, layer))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
-                serviceinfo = self._portal.con.post(self.url, params, add_token=use_token)
+                serviceinfo = self._portal.con.post(self.url, params, add_token=secured)
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
                     layers.append(RouteNetworkLayer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
                     layers.append(ServiceAreaNetworkLayer(lyrurl, self._gis, layer))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=use_token)
+                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
                     layers.append(ClosestFacilityNetworkLayer(lyrurl, self._gis, layer))
 
             else:
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit,
-                    layer = self._portal.con.post(self.url, params, use_token=use_token)
+                    layer = self._portal.con.post(self.url, params, add_token=secured)
                     layers.append(FeatureLayer(self.url, self._gis, layer))
                 else:
                     fsurl = self.url + '/layers'
