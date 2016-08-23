@@ -98,6 +98,10 @@ class GIS(object):
                                #key_file=self._key_file,
                                #cert_file=self._cert_file)
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
+        
+        if self._url.lower() == "pro":
+            self._url = self._portal.url
+
         self._con = self._portal.con
 
     @_lazy_property
