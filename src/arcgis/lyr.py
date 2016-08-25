@@ -1532,6 +1532,10 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
 class FeatureLayer(Layer):
     def __init__(self, url, gis, dictdata=None):
         super(FeatureLayer, self).__init__(url, gis, dictdata)
+
+        if (dictdata is not None) and ('fields' not in dictdata):
+            self._refresh()
+        
         self.attachments = AttachmentManager(self)
 
     @property
