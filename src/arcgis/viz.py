@@ -102,8 +102,8 @@ class WebScene(collections.OrderedDict):
         return json.dumps(self)
 
     def update(self):
-        with _tempinput(self.__str__()) as tempfilename:
-            self.item.update(data=tempfilename)
+        #with _tempinput(self.__str__()) as tempfilename:
+        self.item.update({ 'text':self.__str__() })
 
 class MapView(widgets.DOMWidget):
     _view_name = Unicode('MapView').tag(sync=True)
