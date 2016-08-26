@@ -20,7 +20,6 @@ import arcgis.gis
 import collections
 from arcgis.lyr import *
 from contextlib import contextmanager
-from pandas.io.json import json_normalize
 from arcgis._impl.common._featureset import Feature, FeatureSet
 from ._impl.service._geometry import GeometryService, Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 
