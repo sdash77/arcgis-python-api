@@ -5,7 +5,7 @@ or Portal.
 from __future__ import absolute_import
 import arcgis.gis
 import json
-from pandas.io.json import json_normalize
+#from pandas.io.json import json_normalize
 import collections
 from re import search
 from ._impl import *
@@ -1872,9 +1872,10 @@ class FeatureLayer(Layer):
             os.remove(temp)
             return fc
         else:
-            df = json_normalize(result['features'])
-            df.columns = df.columns.str.replace('attributes.', '')
-            return df
+            return result['features']
+            #df = json_normalize(result['features'])
+            #df.columns = df.columns.str.replace('attributes.', '')
+            #return df
             #return FeatureSet.fromJSON(jsonValue=json.dumps(result))
         return result
     #----------------------------------------------------------------------
@@ -2176,15 +2177,17 @@ class FeatureCollection(Layer):
         return '<%s>' % (type(self).__name__)
 
     def query(self):
-        """Returns the data in this feature collection as a pandas data frame. Filtering by SQL statement is not supported for feature collections.
+        """Returns the data in this feature collection. Filtering by SQL statement is not supported for feature collections.
         """
         if 'layers' in self.properties:
-            df = json_normalize(self.properties['layers'][0]['featureSet']['features'])
+            #df = json_normalize(self.properties['layers'][0]['featureSet']['features'])
+            return self.properties['layers'][0]['featureSet']['features']
         else:
-            df = json_normalize(self.properties['featureSet']['features'])
+            return self.properties['layers'][0]['featureSet']['features']
+            #df = json_normalize(self.properties['featureSet']['features'])
 
-        df.columns = df.columns.str.replace('attributes.', '')
-        return df
+        #df.columns = df.columns.str.replace('attributes.', '')
+        #return df
 
 class FeatureService(GISService):
     """ allows use and administration (if access permits) of a feature service """
@@ -2280,18 +2283,18 @@ class FeatureService(GISService):
         if not returnCountOnly and not returnIDsOnly:
             if returnFeatureClass == True:
                 #json_text = json.dumps(results)
-                #return results
-                df = json_normalize(results['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                return df
+                return results
+                #df = json_normalize(results['features'])
+                #df.columns = df.columns.str.replace('attributes.', '')
+                #return df
             else:
-                df = json_normalize(results['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                return df
+                return results
+                #df = json_normalize(results['features'])
+                #df.columns = df.columns.str.replace('attributes.', '')
+                #return df
         else:
             return results
 
-        return res
     #----------------------------------------------------------------------
     def query_related_records(self,
                               objectIds,

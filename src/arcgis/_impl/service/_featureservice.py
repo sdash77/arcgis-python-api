@@ -15,7 +15,7 @@ import os
 import six
 import json
 from re import search
-from pandas.io.json import json_normalize
+#from pandas.io.json import json_normalize
 
 from ._uploads import Uploads
 from ..common._utils import _date_handler
@@ -358,21 +358,7 @@ class FeatureService(BaseService):
                                  params=params)
         if 'error' in results:
             raise ValueError (results)
-        if not returnCountOnly and not returnIDsOnly:
-            if returnFeatureClass == True:
-                #json_text = json.dumps(results)
-                #return results
-                df = json_normalize(results['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                return df
-            else:
-                df = json_normalize(results['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                return df
-        else:
-            return results
-
-        return res
+        return results
     #----------------------------------------------------------------------
     def query_related_records(self,
                               objectIds,
@@ -1411,9 +1397,10 @@ class FeatureLayer(BaseService):
         if as_json or \
            returnCountOnly == True or \
            returnIDsOnly == True:
-            df = json_normalize(results['features'])
-            df.columns = df.columns.str.replace('attributes.', '')
-            return df
+            return results
+            #df = json_normalize(results['features'])
+            #df.columns = df.columns.str.replace('attributes.', '')
+            #return df
         elif returnFeatureClass and\
              not returnCountOnly and \
              not returnIDsOnly:
