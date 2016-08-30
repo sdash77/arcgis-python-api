@@ -141,7 +141,7 @@ class MapView(widgets.DOMWidget):
         self._swipe_div = 'swipeDiv' +''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         
         self._gis = kwargs.pop('gis', None)
-        if self._gis is not None:
+        if self._gis is not None and self._gis._con._username is not None: # not anonymous
             token_info = {
                 "server" : self._gis._con.baseurl,
                 "tokenurl" : (self._gis._con.baseurl + 
