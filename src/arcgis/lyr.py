@@ -2833,7 +2833,7 @@ class AdminFeatureService(GISService):
         """ refreshes a service """
         params = {"f": "json"}
         uURL = self._url + "/refresh"
-        res = self._con.get(uURL, params)
+        res = self._con.post(uURL, params)
         
         super(AdminFeatureService, self)._refresh()
         self._populate_layers()
@@ -3005,7 +3005,7 @@ class AdminFeatureServiceLayer(GISService):
         """ refreshes a service """
         params = {"f": "json"}
         uURL = self._url + "/refresh"
-        res = self._con.get(uURL, params)
+        res = self._con.post(uURL, params)
 
         super(AdminFeatureServiceLayer, self)._refresh()
 
