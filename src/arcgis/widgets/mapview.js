@@ -169,12 +169,14 @@ require.undef('mapview');
 define('mapview', [
      "jupyter-js-widgets",
      "esri/map",
+     "esri/config",
      "esri/dijit/LayerSwipe",
      "esri/graphic",
      "esri/TimeExtent",
      "esri/ServerInfo",
      "esri/IdentityManager",  
      "esri/geometry/Extent",
+     "esri/SpatialReference",
      "esri/InfoTemplate",
      "esri/toolbars/draw",
      "esri/layers/KMLLayer",
@@ -197,12 +199,14 @@ define('mapview', [
    ], function(
      widgets,
      Map,
+     esriConfig,
      LayerSwipe,
      Graphic,
      TimeExtent,
      ServerInfo,
      IdentityManager,
      Extent,
+     SpatialReference,
      InfoTemplate,
      Draw,
      KMLLayer,
@@ -221,7 +225,6 @@ define('mapview', [
      PictureMarkerSymbol,
      webMercatorUtils,
      arcgisUtils){
-
     var map, toolbar;
     var MapView = widgets.DOMWidgetView.extend({
 
@@ -236,6 +239,8 @@ define('mapview', [
 
                 var token = JSON.parse(token_info);
                                 
+                esriConfig.defaults.io.corsEnabledServers.push(token.server);
+                
                 var serverInfo = new ServerInfo();  
                 serverInfo.server = token.server;  
                 serverInfo.tokenServiceUrl = token.tokenurl;  
@@ -252,8 +257,7 @@ define('mapview', [
                 IdentityManager.generateToken(serverInfo, {  
                     username: userId,  
                     password: password  
-                }).then(function(response) {  
-                    console.log(JSON.stringify(token));
+                }).then(function(response) {
                     IdentityManager.registerToken({  
                         server: serverInfo.server,  
                         userId: userId,  
@@ -273,12 +277,32 @@ define('mapview', [
 
                             that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
-                           map = new Map(that.$el[0], {
-                                basemap: that.model.get('basemap'),
-                                center: that.model.get('center').reverse(),
-                                zoom: that.model.get('zoom')
-                            });
+                            if (that.model.get('_extent').indexOf("{") > -1) {
+                               var ext = JSON.parse(that.model.get('_extent'));
 
+                               var newExtent = new Extent();
+                               newExtent.xmin = ext.xmin;
+                               newExtent.xmax = ext.xmax;
+                               newExtent.ymin = ext.ymin;
+                               newExtent.ymax = ext.ymax;
+
+                               newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+
+                               map = new Map(that.$el[0], {
+                                    basemap: that.model.get('basemap'),
+                                    extent: newExtent
+                                });
+
+
+                           } else {
+                               
+                               map = new Map(that.$el[0], {
+                                    basemap: that.model.get('basemap'),
+                                    center: that.model.get('center').reverse(),
+                                    zoom: that.model.get('zoom')
+                                });
+                           }
+                            
                             map.on("load", on_load);
                         }
                         //map.on("load", on_load);
@@ -298,11 +322,34 @@ define('mapview', [
 
                         that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
-                       map = new Map(that.$el[0], {
-                            basemap: that.model.get('basemap'),
-                            center: that.model.get('center').reverse(),
-                            zoom: that.model.get('zoom')
-                        });
+                        
+                       if (that.model.get('_extent').indexOf("{") > -1) {
+                           var ext = JSON.parse(that.model.get('_extent'));
+            
+                           var newExtent = new Extent();
+                           newExtent.xmin = ext.xmin;
+                           newExtent.xmax = ext.xmax;
+                           newExtent.ymin = ext.ymin;
+                           newExtent.ymax = ext.ymax;
+
+                           newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+                           
+                           map = new Map(that.$el[0], {
+                                basemap: that.model.get('basemap'),
+                                extent: newExtent
+                            });
+                           
+
+                       } else {
+                           map = new Map(that.$el[0], {
+                                basemap: that.model.get('basemap'),
+                                center: that.model.get('center').reverse(),
+                                zoom: that.model.get('zoom')
+                            });
+                       }
+                        
+                        
+                        
                         
                         map.on("load", on_load);
                     }
@@ -323,9 +370,9 @@ define('mapview', [
                 //map.on("extent-change", onExtentChange);
                 map.on("click", onMouseClick);
 
-                var timeExtent = new TimeExtent();
-                timeExtent.startTime = new Date("1/1/1989 UTC");
-                timeExtent.endTime = new Date("1/1/1991 UTC");
+                //var timeExtent = new TimeExtent();
+                //timeExtent.startTime = new Date("1/1/1989 UTC");
+                //timeExtent.endTime = new Date("1/1/1991 UTC");
                 ///map.setTimeExtent(timeExtent);
 
             }
@@ -363,6 +410,7 @@ define('mapview', [
             // Model change events
             this.model.on('change:zoom', this.zoom_changed, this);
             this.model.on('change:mode', this.mode_changed, this);
+            this.model.on('change:_extent', this.extent_changed, this);
             this.model.on('change:center', this.center_changed, this);
             this.model.on('change:basemap', this.basemap_changed, this);
             this.model.on('change:addlayer', this.layer_changed, this);
@@ -633,6 +681,22 @@ define('mapview', [
         center_changed: function() {
             console.log("changing center");
             map.centerAt(this.model.get('center').reverse());
+        },
+        
+        extent_changed: function() {
+            console.log("changing extent");
+            
+            var ext = JSON.parse(this.model.get('_extent'));
+            
+            var newExtent = new Extent();
+            newExtent.xmin = ext.xmin;
+            newExtent.xmax = ext.xmax;
+            newExtent.ymin = ext.ymin;
+            newExtent.ymax = ext.ymax;
+            
+            newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+
+            map.setExtent(newExtent);
         },
 
         start_time_changed: function() {

@@ -22,6 +22,7 @@ from arcgis.lyr import *
 from contextlib import contextmanager
 from arcgis._impl.common._featureset import Feature, FeatureSet
 from ._impl.service._geometry import GeometryService, Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
+from arcgis.lyr import GISService
 
 #--------------------------------------------------------------------------
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -42,7 +43,7 @@ def _get_hosted_server_admin_url(servers):
     return None
 ###########################################################################
 
-class Geocoder(collections.OrderedDict):
+class Geocoder(GISService): #collections.OrderedDict):
     """Geocoder represents a geocode service resource exposed by the GIS.
     It can find point locations of addresses, business names, and so on.
     The output points can be visualized on a map, inserted as stops for a route,
@@ -53,38 +54,51 @@ class Geocoder(collections.OrderedDict):
     An instance of the Geocoder is available through the gis.tools.geocoder
     property, accessible from the GIS object.
     """
-    def __init__(self, item, url=None, gis=None):
-        """
-        Constructs a Geocoder object given a geocoding service item from ArcGIS Online or Portal.
-        """
-        if url is not None:
-            self.url = url
-            self._portal = gis._portal
-        else:
-            if item.type.lower() != 'geocoding service':
-                raise TypeError("item type must be geocoding service")
-            self._portal = item._portal
-            self.url = item.url
-
-        params = {
-            "f" : "json"
-        }
-        #print(self.url)
+    def __init__(self, url, gis=None, dictdata=None):
+        super(Geocoder, self).__init__(url, gis, dictdata)
         try:
-            svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
-        except RuntimeError as e:
-            if e.args[0] == 'Invalid token':
-                svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
-
-        collections.OrderedDict.__init__(self, svcprops)
-        try:
-            self._address_field = svcprops['singleLineAddressField']['name']
+            self._address_field = self.properties.singleLineAddressField.name
         except:
             print("Geocoder does not support single line address input")
 
-    def __str__(self):
-        # return "Geocode service at " + self.url
-        return json.dumps(self)
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Geocoding Service':
+            raise TypeError("item must be a type of Geocoding Service, not " + item.type)
+        return cls(item.url, item._gis)
+
+    #def __init__(self, item, url=None, gis=None):
+    #    """
+    #    Constructs a Geocoder object given a geocoding service item from ArcGIS Online or Portal.
+    #    """
+    #    if url is not None:
+    #        self.url = url
+    #        self._portal = gis._portal
+    #    else:
+    #        if item.type.lower() != 'geocoding service':
+    #            raise TypeError("item type must be geocoding service")
+    #        self._portal = item._portal
+    #        self.url = item.url
+
+    #    params = {
+    #        "f" : "json"
+    #    }
+    #    #print(self.url)
+    #    try:
+    #        svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
+    #    except RuntimeError as e:
+    #        if e.args[0] == 'Invalid token':
+    #            svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
+
+    #    collections.OrderedDict.__init__(self, svcprops)
+    #    try:
+    #        self._address_field = svcprops['singleLineAddressField']['name']
+    #    except:
+    #        print("Geocoder does not support single line address input")
+
+    #def __str__(self):
+    #    # return "Geocode service at " + self.url
+    #    return json.dumps(self)
 
     def geocode(self,
              address,
@@ -194,7 +208,9 @@ class Geocoder(collections.OrderedDict):
         if not forStorage is None:
             params['forStorage'] = forStorage
 
-        resp = self._portal.con.post(url, params, add_token=forStorage)
+        #resp = self._portal.con.post(url, params, add_token=forStorage)
+        resp = self._con.post(url, params, token= self._token)
+
         if resp is not None:
             return resp['candidates']
         else:
@@ -231,7 +247,9 @@ class Geocoder(collections.OrderedDict):
         if forStorage:
             params['forStorage'] = forStorage
 
-        resp = self._portal.con.post(url, params, add_token=forStorage)
+        #resp = self._portal.con.post(url, params, add_token=forStorage)
+        resp = self._con.post(url, params, token= self._token)
+
         return resp
 
     def batch_geocode(self,
@@ -319,7 +337,7 @@ class Geocoder(collections.OrderedDict):
 
         params['addresses'] = { "records" : addr_recordset }
 
-        resp = self._portal.con.post(url, params)
+        resp = self._con.post(url, params, token=self._token)
         if resp is not None:
             return resp['locations']
         else:
@@ -417,7 +435,7 @@ class Geocoder(collections.OrderedDict):
         if not distance is None and \
            isinstance(distance, (int, float)):
             params['distance'] = distance
-        resp = self._portal.con.post(url, params, add_token=False)
+        resp = self._con.post(url, params, add_token=False)
         return resp
 
 ###########################################################################

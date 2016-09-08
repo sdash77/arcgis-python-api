@@ -120,7 +120,7 @@ class MapView(widgets.DOMWidget):
     addlayer = Unicode('').tag(sync=True)
     start_time = Unicode('').tag(sync=True)
     end_time = Unicode('').tag(sync=True)
-
+    _extent = Unicode('').tag(sync=True)
     _token_info = Unicode('').tag(sync=True)
 
     _swipe_div = Unicode('').tag(sync=True)
@@ -337,6 +337,13 @@ class MapView(widgets.DOMWidget):
     def remove_layers(self):
         self.mode = "###remove_layers"
 
+    @property
+    def extent(self):
+        return json.loads(self._extent)
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = json.dumps(value)
 
     def on_click(self, callback, remove=False):
         """Register a callback to execute when the map is clicked.

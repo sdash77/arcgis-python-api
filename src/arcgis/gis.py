@@ -172,15 +172,26 @@ class GIS(object):
     #    return self._portal.usage(startTime, endTime, period, vars, etype, stype, groupby, appId)
 
     def map(self, location=None, zoomlevel=None):
-        """Creates a map widget centered at the location (Address or (lat, long) tuple) with the specified zoom-level(integer)"""
+        """Creates a map widget centered at the location (Address or (lat, long) tuple)
+        with the specified zoom-level(integer). If an Address is provided, it is geocoded
+        using the GIS's configured geocoders and if a match is found, the geographic
+        extent of the matched address is used as the map extent. If a zoomlevel is also
+        provided, the map is centered at the matched address instead and the map is zoomed
+        to the specified zoomlevel.
+        """
         from arcgis.viz import MapView
         mapwidget = MapView(gis=self)
         if location is not None:
             if isinstance(location, str):
                 for geocoder in self.tools.geocoders:
-                    best_match = geocoder.find_best_match(location)
-                    if best_match:
-                        mapwidget.center = best_match
+                    locations = geocoder.geocode(location, outSR=4326, maxLocations=1)
+                    if len(locations) == 1:
+                        if zoomlevel is not None:
+                            location = locations[0]['location']
+                            mapwidget.center =  location['y'], location['x']
+                            mapwidget.zoom = zoomlevel
+                        else:
+                            mapwidget.extent = locations[0]['extent']
                         break
             elif isinstance(location, tuple):
                 mapwidget.center = location
@@ -666,7 +677,7 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(None, geocode_service['url'], self._gis))
+                self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
         except KeyError:
             pass
         return self._geocoders

@@ -309,30 +309,22 @@ class _ArcGISConnection(object):
     @property
     def token(self):
         """gets/sets the token"""
-        if self.connection and \
-             self.service_url:
-            return self.connection.generate_portal_server_token(
-                serverUrl=self.service_url)
-        elif self._connection and \
-           self._server_token is None:
+        if self.connection and self.service_url:
+            return self.connection.generate_portal_server_token(serverUrl=self.service_url)
+        elif self._connection and self._server_token is None:
             #create a portalserver token
             if self._connection.product == "AGO":
                 return self.connection.token
-            return self.generate_portal_server_token(
-                serverUrl=self.baseurl)
+            return self.generate_portal_server_token(serverUrl=self.baseurl)
         elif self._connection and self._server_token:
             return self._server_token
-        elif self._connection is None and \
-             self.product == "FEDERATED_SERVER":
-            self._connection = _ArcGISConnection(baseurl=self.baseurl,
-                                                 connection=self)
+        elif self._connection is None and self.product == "FEDERATED_SERVER":
+            self._connection = _ArcGISConnection(baseurl=self.baseurl, connection=self)
             return self.token
         elif self._token:
             return self._token
         elif self._username and self._password:
-            self.login(username=self._username,
-                       password=self._password,
-                       expiration=60)
+            self.login(username=self._username, password=self._password, expiration=60)
             return self._token
         return None
     #----------------------------------------------------------------------
@@ -759,7 +751,8 @@ class _ArcGISConnection(object):
         return handlers
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
-             is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True):
+             is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
+             token=None):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path
@@ -785,6 +778,10 @@ class _ArcGISConnection(object):
         if add_token and \
            self.token:
             postdata['token'] = self.token
+        
+        if token is not None: # use the provided token, if any
+            postdata['token'] = token
+        
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:

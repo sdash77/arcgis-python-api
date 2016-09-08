@@ -27,11 +27,17 @@ class Layer(object):
         """
         A layer of geographic data
         """
+        self._token = None
+
         if gis is None:
             gis = arcgis.gis.GIS()
+            self._gis = gis
+            self._con = gis._con
+        else:
+            self._gis = gis
+            self._con = gis._con
+            self._token = self._con.generate_portal_server_token(url)
 
-        self._gis = gis
-        self._con = gis._con
         self._url = url
         self.url = url
         
@@ -70,12 +76,17 @@ class GISService(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None, dictdata=None):
+        self._token = None
+
         if gis is None:
             gis = arcgis.gis.GIS()
-        
-        self._gis = gis
-        self._con = gis._con
-        
+            self._gis = gis
+            self._con = gis._con
+        else:
+            self._gis = gis
+            self._con = gis._con
+            self._token = self._con.generate_portal_server_token(url)
+
         self.url = url
         self._url = url
         
