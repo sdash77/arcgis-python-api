@@ -451,11 +451,11 @@ define('mapview', [
                     } else if (gfx.geometry.type === 'point') {
                         console.log("GEOM TYPE POINT");
 
-                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/marker.png', 32, 32);
+                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/pink.png', 32, 32);
                     } else if (gfx.geometry.type === 'multipoint') {
                         console.log("GEOM TYPE MULTIPOINT");
 
-                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/marker.png', 32, 32);
+                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/pink.png', 32, 32);
                     }
                 }
                 map.graphics.add(gfx);
