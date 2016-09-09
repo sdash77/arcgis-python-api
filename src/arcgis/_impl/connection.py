@@ -551,10 +551,7 @@ class _ArcGISConnection(object):
                 f_n_path = os.path.join(out_folder, file_name)
                 with open(f_n_path, 'wb') as writer:
                     for data in self._chunk(response=resp, size=4096):
-                        if six.PY3 == True:
-                            writer.write(data.decode('utf-8'))
-                        else:
-                            writer.write(data)
+                        writer.write(data)
                         del data
                     writer.flush()
                 return f_n_path, True
