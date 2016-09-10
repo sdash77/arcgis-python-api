@@ -117,7 +117,7 @@ class MapView(widgets.DOMWidget):
     id = Unicode('').tag(sync=True)
     center = List([0, 0]).tag(sync=True)
     mode = Unicode('navigate').tag(sync=True)
-    addlayer = Unicode('').tag(sync=True)
+    _addlayer = Unicode('').tag(sync=True)
     start_time = Unicode('').tag(sync=True)
     end_time = Unicode('').tag(sync=True)
     _extent = Unicode('').tag(sync=True)
@@ -212,120 +212,19 @@ class MapView(widgets.DOMWidget):
             if options is not None:
                 js_layer.update({ "options" : json.dumps(options) })
 
-            self.addlayer = json.dumps(js_layer)
+            self._addlayer = json.dumps(js_layer)
         elif 'layers' in item: # items as well as services
             for lyr in item.layers:
                 js_layer = lyr._js_lyr
                 if options is not None:
                     js_layer.update({ "options" : json.dumps(options) })
-                self.addlayer = json.dumps(js_layer)
+                self._addlayer = json.dumps(js_layer)
         else: # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
             if options is not None:
                 item.update({ "options" : json.dumps(options) })
 
-            self.addlayer = json.dumps(item)
+            self._addlayer = json.dumps(item)
 
-            #layer = item
-            ''' { 
-                "type" : item['type'], 
-                "url" : item['url'],
-                "definition_expression" : item['definition_expression']
-                "opacity" : 0.75
-                }
-            '''
-            #self.addlayer = json.dumps(layer)
- 
-        """
-        elif isinstance(item, arcgis.gis.Item):
-            if item.type.lower() == 'feature service':
-                fs = Layer(item)
-                lyr_url = ""
-                for layer in fs.layers:
-                    lyr_url = layer['url']
-                    #if it's from this portal, only then add token...
-                    try:
-                        if 'access' in item and item['access'] != 'public':
-                            lyr_url = layer['url'] + "?token=" + item._portal.con.token
-                    except:
-                        pass
-                    
-                    js_layer = {
-                        "type" : "FeatureLayer",
-                        "url" : lyr_url
-                        }
-                    if options is not None:
-                        js_layer.update({ "options" : json.dumps(options) })
-
-                    self.addlayer = json.dumps(js_layer)
-            
-            elif item.type.lower() == 'feature collection':
-                fcdict = item.get_data()
-                fc = FeatureCollection(fcdict['layers'][0])
-                #layer = fcdict['layers'][0]
-
-                if options is not None:
-                    fc.update({ "options" : json.dumps(options) })
-
-                self.addlayer = json.dumps(fc)
-
-            elif item.type.lower() == 'image service':
-                layer = Layer(item)
-                lyr_url = layer['url']
-                try:
-                    if 'access' in item and item['access'] != 'public':
-                        lyr_url = layer['url'] + "?token=" + item._portal.con.token
-                except:
-                    pass
-                
-                js_layer = {
-                    "type" : "ImageLayer",
-                    "url" : lyr_url
-                    }
-                if options is not None:
-                    js_layer.update({ "options" : json.dumps(options) })
-
-                self.addlayer = json.dumps(js_layer)
-            else:
-                raise TypeError("item type must be feature service or image service")
-
-
-        elif isinstance(item, FeatureService):
-            for layer in item.layers:
-                lyr_url = ""
-                try:
-                    if 'access' in item and item['access'] != 'public':
-                        lyr_url = layer['url'] + "?token=" + item.item._portal.con.token
-                except:
-                    pass
-                
-                js_layer = {
-                    "type" : "FeatureLayer",
-                    "url" : lyr_url
-                    }
-                if options is not None:
-                    js_layer.update({ "options" : json.dumps(options) })
-
-                self.addlayer = json.dumps(js_layer)
-
-        elif isinstance(item, FeatureCollection):
-            if options is not None:
-                item.update({ "options" : json.dumps(options) })
-
-            self.addlayer = json.dumps(item)
-
-        
-        
-        elif isinstance(item, ImageLayer):
-            layer = {
-                "type" : "ImageLayer",
-                "url" : item['url']
-                }
-            if options is not None:
-                layer.update({ "options" : json.dumps(options) })
-
-            self.addlayer = json.dumps(layer)
-
-        """
 
     def clear_graphics(self):
         self.mode = "###clear_graphics"

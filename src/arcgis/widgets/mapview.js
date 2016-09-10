@@ -413,7 +413,7 @@ define('mapview', [
             this.model.on('change:_extent', this.extent_changed, this);
             this.model.on('change:center', this.center_changed, this);
             this.model.on('change:basemap', this.basemap_changed, this);
-            this.model.on('change:addlayer', this.layer_changed, this);
+            this.model.on('change:_addlayer', this.layer_changed, this);
             this.model.on('change:start_time', this.start_time_changed, this);
             this.model.on('change:end_time', this.end_time_changed, this);
 
@@ -469,11 +469,11 @@ define('mapview', [
 
         layer_changed: function() {
 
-            if (this.model.get('addlayer').indexOf("{") > -1) {
+            if (this.model.get('_addlayer').indexOf("{") > -1) {
 
-                console.log("***mode=addlayer%%%" );
+                console.log("***mode=_addlayer" );
 
-                var newlayer = JSON.parse(this.model.get('addlayer'));
+                var newlayer = JSON.parse(this.model.get('_addlayer'));
                 console.log(newlayer);
                 if (newlayer.type == "KMLLayer") {
                     console.log("KMLLayer " + newlayer.url);
