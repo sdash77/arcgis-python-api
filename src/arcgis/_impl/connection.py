@@ -32,6 +32,9 @@ from six.moves import http_client
 from .common._utils import Error
 __version__ = '1.0'
 _log = logging.getLogger(__name__)
+
+DEFAULT_TOKEN = uuid.uuid4()
+
 ########################################################################
 class MultiPartForm(object):
     """Accumulate the data to be used when posting a form."""
@@ -599,7 +602,8 @@ class _ArcGISConnection(object):
     def get(self, path, params=None, ssl=False,
             compress=True, try_json=True, is_retry=False,
             use_ordered_dict=False, out_folder=None,
-            file_name=None, force_bytes=False, add_token=True):
+            file_name=None, force_bytes=False, add_token=True,
+            token=DEFAULT_TOKEN):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if url.lower().find("https://") > -1 or\
@@ -621,12 +625,20 @@ class _ArcGISConnection(object):
             params = {}
         if try_json:
             params['f'] = 'json'
-        if self.token:
-            params['token'] = self.token
+        
+        
+        if add_token:
+            if token != DEFAULT_TOKEN: # use the provided token, if any
+                if token is not None:
+                    params['token'] = token
+                else:
+                    pass # no token, public access
+            elif self.token is not None:
+                params['token'] = self.token
+
         if len(params.keys()) > 0:
             url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
-            #url = self._url_add_token(url, self.token)
 
         _log.debug('REQUEST (get): ' + url)
 
@@ -669,7 +681,18 @@ class _ArcGISConnection(object):
                                 _log.info('Token expired during get request, ' \
                                           + 'fetching a new token and retrying')
                                 newtoken = self.relogin()
+                                
+                                
+                                self.token = newtoken
+
+                                if token != DEFAULT_TOKEN: # was provided a FEDERATED SERVER token, that has expired
+                                    newtoken = self.generate_portal_server_token(url)
+                                else:
+                                    newtoken = newtoken
+
                                 newpath = self._url_add_token(path, newtoken)
+
+
                                 return self.get(path=newpath, params=params, ssl=ssl, compress=compress, try_json=try_json, is_retry=True)
                             elif errorcode == 498:
                                 raise RuntimeError('Invalid token')
@@ -749,7 +772,7 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
-             token=None):
+             token=DEFAULT_TOKEN):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path
@@ -772,13 +795,15 @@ class _ArcGISConnection(object):
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
         # Add the token if logged in
-        if add_token and \
-           self.token:
-            postdata['token'] = self.token
-        
-        if token is not None: # use the provided token, if any
-            postdata['token'] = token
-        
+        if add_token:
+            if token != DEFAULT_TOKEN: # use the provided token, if any
+                if token is not None:
+                    postdata['token'] = token
+                else:
+                    pass # no token, public access
+            elif self.token is not None:
+                postdata['token'] = self.token
+
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:
@@ -848,7 +873,15 @@ class _ArcGISConnection(object):
                               + 'token and retrying')
                     self.logout()
                     newtoken = self.relogin()
-                    postdata['token'] = newtoken
+
+                    self.token = newtoken
+
+                    if token != DEFAULT_TOKEN: # was provided a token, that has expired
+                        newfedtoken = self.generate_portal_server_token(url)
+                        postdata['token'] = newfedtoken
+                    else:
+                        postdata['token'] = newtoken
+
                     return self.post(path, postdata, files, ssl, compress,
                                      is_retry=True)
                 elif errorcode == 498:

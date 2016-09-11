@@ -677,7 +677,7 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                self._geocoders.append(Geocoder(geocode_service['url'], self._gis, secure=True))
         except KeyError:
             pass
         return self._geocoders
@@ -2167,8 +2167,7 @@ class Item(dict):
                 secured = False
 
             if self.type == 'Image Service': # service that is itself a layer
-                layer = self._portal.con.post(self.url, params, add_token=secured)
-                layers.append(ImageLayer(self.url, self._gis, layer))
+                layers.append(ImageLayer(self.url, self._gis, None, secure=secured))
 
             elif self.type == 'Feature Collection':
                 lyrs = self.get_data()['layers']
@@ -2176,52 +2175,51 @@ class Item(dict):
                     layers.append(FeatureCollection(layer))
 
             elif self.type == 'Big Data File Share':
-                serviceinfo = self._portal.con.post(self.url, params, add_token=secured)
+                serviceinfo = self._portal.con.post(self.url, params)
                 for lyr in serviceinfo['children']:
                     lyrurl = self.url + '/' + lyr['name']
-                    #layer = self._portal.con.post(lyrurl, params, add_token=use_token)
-                    layers.append(Layer(lyrurl, self._gis))
+                    layers.append(Layer(lyrurl, self._gis, secure=secured))
 
             
             elif self.type == 'Vector Tile Service':
-                layer = self._portal.con.get(self.url, params, add_token=secured)
-                layers.append(VectorTileLayer(self.url, self._gis, layer))
+                layers.append(VectorTileLayer(self.url, self._gis, None, secure=secured))
 
             elif self.type == 'Network Analysis Service':
                 # route laters, service area layers, closest facility layers
-                serviceinfo = self._portal.con.post(self.url, params, add_token=secured)
+                token = None
+                if secured:
+                    token = self._gis._con.generate_portal_server_token(self.url)
+                serviceinfo = self._portal.con.post(self.url, params, token=token)
                 for lyr in serviceinfo['routeLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
-                    layers.append(RouteNetworkLayer(lyrurl, self._gis, layer))
+                    layers.append(RouteNetworkLayer(lyrurl, self._gis, None, secure=secured))
                 for lyr in serviceinfo['serviceAreaLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
-                    layers.append(ServiceAreaNetworkLayer(lyrurl, self._gis, layer))
+                    layers.append(ServiceAreaNetworkLayer(lyrurl, self._gis, None, secure=secured))
                 for lyr in serviceinfo['closestFacilityLayers']:
                     lyrurl = self.url + '/' + lyr
-                    layer = self._portal.con.post(lyrurl, params, add_token=secured)
-                    layers.append(ClosestFacilityNetworkLayer(lyrurl, self._gis, layer))
+                    layers.append(ClosestFacilityNetworkLayer(lyrurl, self._gis, None, secure=secured))
 
             else:
                 m = re.search(r'\d+$', self.url)
-                if m is not None: # ends in digit,
-                    layer = self._portal.con.post(self.url, params, add_token=secured)
-                    layers.append(FeatureLayer(self.url, self._gis, layer))
+                if m is not None: # ends in digit
+                    layers.append(FeatureLayer(self.url, self._gis, None, secure=secured))
                 else:
                     fsurl = self.url + '/layers'
                     params = {
                         "f" : "json"
                     }
-
-                    allayers = self._portal.con.post(fsurl, params)
+                    token = None
+                    if secured:
+                        token = self._gis._con.generate_portal_server_token(self.url)
+                    allayers = self._portal.con.post(fsurl, params, token=token)
 
                     #TODO: these need not always be FeatureLayers, eg. group, raster layer on Map Service
                     for layer in allayers['layers']:
-                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
+                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, secure=secured))
                     
                     for table in allayers['tables']:
-                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
+                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, secure=secured))
 
             self.layers = layers
             self.tables = tables

@@ -54,8 +54,8 @@ class Geocoder(GISService): #collections.OrderedDict):
     An instance of the Geocoder is available through the gis.tools.geocoder
     property, accessible from the GIS object.
     """
-    def __init__(self, url, gis=None, dictdata=None):
-        super(Geocoder, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None, dictdata=None, secure=True):
+        super(Geocoder, self).__init__(url, gis, dictdata, secure)
         try:
             self._address_field = self.properties.singleLineAddressField.name
         except:
@@ -65,41 +65,11 @@ class Geocoder(GISService): #collections.OrderedDict):
     def fromitem(cls, item):
         if not item.type == 'Geocoding Service':
             raise TypeError("item must be a type of Geocoding Service, not " + item.type)
-        return cls(item.url, item._gis)
-
-    #def __init__(self, item, url=None, gis=None):
-    #    """
-    #    Constructs a Geocoder object given a geocoding service item from ArcGIS Online or Portal.
-    #    """
-    #    if url is not None:
-    #        self.url = url
-    #        self._portal = gis._portal
-    #    else:
-    #        if item.type.lower() != 'geocoding service':
-    #            raise TypeError("item type must be geocoding service")
-    #        self._portal = item._portal
-    #        self.url = item.url
-
-    #    params = {
-    #        "f" : "json"
-    #    }
-    #    #print(self.url)
-    #    try:
-    #        svcprops = self._portal.con.post(self.url, params, use_ordered_dict=True)
-    #    except RuntimeError as e:
-    #        if e.args[0] == 'Invalid token':
-    #            svcprops = self._portal.con.post(self.url, {"f" : "json"}, use_ordered_dict=True, add_token=False)
-
-    #    collections.OrderedDict.__init__(self, svcprops)
-    #    try:
-    #        self._address_field = svcprops['singleLineAddressField']['name']
-    #    except:
-    #        print("Geocoder does not support single line address input")
-
-    #def __str__(self):
-    #    # return "Geocode service at " + self.url
-    #    return json.dumps(self)
-
+        secure = True
+        if item.access == 'public':
+            secure = False
+        return cls(item.url, item._gis, secure=secure)
+    
     def geocode(self,
              address,
              searchExtent=None,
@@ -208,8 +178,7 @@ class Geocoder(GISService): #collections.OrderedDict):
         if not forStorage is None:
             params['forStorage'] = forStorage
 
-        #resp = self._portal.con.post(url, params, add_token=forStorage)
-        resp = self._con.post(url, params, token= self._token)
+        resp = self._con.post(url, params, token=self._token)
 
         if resp is not None:
             return resp['candidates']
@@ -247,8 +216,7 @@ class Geocoder(GISService): #collections.OrderedDict):
         if forStorage:
             params['forStorage'] = forStorage
 
-        #resp = self._portal.con.post(url, params, add_token=forStorage)
-        resp = self._con.post(url, params, token= self._token)
+        resp = self._con.post(url, params, token=self._token)
 
         return resp
 
@@ -435,7 +403,7 @@ class Geocoder(GISService): #collections.OrderedDict):
         if not distance is None and \
            isinstance(distance, (int, float)):
             params['distance'] = distance
-        resp = self._con.post(url, params, add_token=False)
+        resp = self._con.post(url, params, token=self._token)
         return resp
 
 ###########################################################################

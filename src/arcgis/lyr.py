@@ -23,7 +23,7 @@ class Layer(object):
     """ a GIS layer
     """
     
-    def __init__(self, url, gis=None, dictdata=None):
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
         """
         A layer of geographic data
         """
@@ -33,10 +33,12 @@ class Layer(object):
             gis = arcgis.gis.GIS()
             self._gis = gis
             self._con = gis._con
+            self._token = None
         else:
             self._gis = gis
             self._con = gis._con
-            self._token = self._con.generate_portal_server_token(url)
+            if secure:
+                self._token = self._con.generate_portal_server_token(url)
 
         self._url = url
         self.url = url
@@ -47,8 +49,15 @@ class Layer(object):
             self._refresh()
 
     def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params)
+        try:
+            params = {"f": "json"}
+            dictdata = self._con.post(self.url, params, token=self._token)
+        except RuntimeError as e:
+            if 'Token Required' in e.args[0]:
+                # secure service
+                self._token = self._con.generate_portal_server_token(self.url)
+                params = {"f": "json"}
+                dictdata = self._con.post(self.url, params, token=self._token)
 
         self.properties = PropertyMap(dictdata)
 
@@ -70,22 +79,24 @@ class Layer(object):
             for k,v in kwargs.items():
                 params[k] = v
                 del k,v
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
 
 class GISService(object):
     """ a GIS service
     """
-    def __init__(self, url, gis=None, dictdata=None):
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
         self._token = None
 
         if gis is None:
             gis = arcgis.gis.GIS()
             self._gis = gis
             self._con = gis._con
+            self._token = None
         else:
             self._gis = gis
             self._con = gis._con
-            self._token = self._con.generate_portal_server_token(url)
+            if secure:
+                self._token = self._con.generate_portal_server_token(url)
 
         self.url = url
         self._url = url
@@ -96,8 +107,15 @@ class GISService(object):
             self._refresh()
 
     def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params)
+        try:
+            params = {"f": "json"}
+            dictdata = self._con.post(self.url, params, token=self._token)
+        except RuntimeError as e:
+            if 'Token Required' in e.args[0]:
+                # secure service
+                self._token = self._con.generate_portal_server_token(self.url)
+                params = {"f": "json"}
+                dictdata = self._con.post(self.url, params, token=self._token)
 
         self.properties = PropertyMap(dictdata)
 
@@ -105,7 +123,10 @@ class GISService(object):
     def fromitem(cls, item):
         if not item.type.lower().endswith('service'):
             raise TypeError("item must be a type of service, not " + item.type)
-        return cls(item.url, item._gis)
+        secure = True
+        if item.access == 'public':
+            secure = False
+        return cls(item.url, item._gis, secure=secure)
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
@@ -121,23 +142,50 @@ class GISService(object):
             for k,v in kwargs.items():
                 params[k] = v
                 del k,v
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
 
 class VectorTileLayer(Layer):
-    def __init__(self, url, gis=None, dictdata=None):
-        super(VectorTileLayer, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
+
+        self._token = None
+
+        if gis is None:
+            gis = arcgis.gis.GIS()
+            self._gis = gis
+            self._con = gis._con
+            self._token = None
+        else:
+            self._gis = gis
+            self._con = gis._con
+            if secure:
+                self._token = self._con.generate_portal_server_token(url)
+
+        self._url = url
+        self.url = url
+        
+        if dictdata is not None:
+            self.properties = PropertyMap(dictdata)
+        else:
+            params = {"f" : "json"}
+            dictdata = self._con.get(path=url, params=params, token=self._token)
+            self.properties = PropertyMap(dictdata)
+
+        #super(VectorTileLayer, self).__init__(url, gis, dictdata, secure)
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Vector Tile Service':
             raise TypeError("item must be a type of Vector Tile Service, not " + item.type)
-        return cls(item.url, item._gis)
+        secure = True
+        if item.access == 'public':
+            secure = False
+        return cls(item.url, item._gis, secure=secure)
 
     @property
     def styles(self):
         url = "{url}/styles".format(url=self._url)
         params = {"f" : "json"}
-        return self._con.get(path=url, params=params)
+        return self._con.get(path=url, params=params, token=self._token)
     #----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range):
         """This resource returns glyphs in PBF format. The template url for
@@ -148,7 +196,7 @@ class VectorTileLayer(Layer):
             stack_range=stack_range)
         params = {}
         return self._con.get(path=url,
-                             params=params, force_bytes=True)
+                             params=params, force_bytes=True, token=self._token)
     #----------------------------------------------------------------------
     def vector_tile(self, level, row, column):
         """This resource represents a single vector tile for the map. The
@@ -160,7 +208,7 @@ class VectorTileLayer(Layer):
                                                              column=column)
         params = {}
         return self._con.get(path=url,
-                             params=params, try_json=False, force_bytes=True)
+                             params=params, try_json=False, force_bytes=True, token=self._token)
     #----------------------------------------------------------------------
     def tile_sprite(self, out_format="sprite.json"):
         """
@@ -171,7 +219,7 @@ class VectorTileLayer(Layer):
         if out_folder is None:
             out_folder = tempfile.gettempdir()
         return self._con.get(path=url,
-                             params={})
+                             params={}, token=self._token)
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -179,17 +227,20 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/info".format(url=self._url)
         params = {"f" : "json"}
         return self._con.get(path=url,
-                             params=params)
+                             params=params, token=self._token)
 
 class ImageLayer(Layer):
-    def __init__(self, url, gis=None, dictdata=None):
-        super(ImageLayer, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
+        super(ImageLayer, self).__init__(url, gis, dictdata, secure)
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Image Service':
             raise TypeError("item must be a type of Image Service, not " + item.type)
-        return cls(item.url, item._gis)
+        secure = True
+        if item.access == 'public':
+            secure = False
+        return cls(item.url, item._gis, secure=secure)
 
     def export_image(self,
                     bbox,
@@ -339,16 +390,16 @@ class ImageLayer(Layer):
             params['renderingRule'] = renderingRule
         params["f" ] = f
         if f == "json":
-            return self._con.get(url, params)
+            return self._con.get(url, params, token=self._token)
         elif f == "image":
             result = self._con.get(url, params,
                                out_folder=saveFolder,
-                               file_name=saveFile)
+                               file_name=saveFile, token=self._token)
             return result
         elif f == "kmz":
             return self._con.get(url, params,
                              out_folder=saveFolder,
-                             file_name=saveFile)
+                             file_name=saveFile, token=self._token)
     #----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -431,7 +482,7 @@ class ImageLayer(Layer):
             params['returnDistinctValues'] = returnDistinctValues
 
         url = self._url + "/query"
-        return self._con.get(url, params)
+        return self._con.get(url, params, token=self._token)
     #----------------------------------------------------------------------
     def add_rasters(self,
             rasterType,
@@ -559,7 +610,7 @@ class ImageLayer(Layer):
             params['itemIds'] = itemIds
         if not serviceUrl is None:
             params['serviceUrl'] = serviceUrl
-        return self._con.post(url, params)
+        return self._con.post(url, params, token=self._token)
     #----------------------------------------------------------------------
     def colormap(self):
         """
@@ -572,23 +623,26 @@ class ImageLayer(Layer):
             params = {
                 "f" : "json"
             }
-            return self._con.get(url, params)
+            return self._con.get(url, params, token=self._token)
         else:
             return None
 
 class NetworkService(GISService):
-    def __init__(self, url, gis=None, dictdata=None):
-        super(NetworkService, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
+        super(NetworkService, self).__init__(url, gis, dictdata, secure)
         self._load_layers()
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Network Analysis Service':
             raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
-        return cls(item.url, item._gis)
+        secure = True
+        if item.access == 'public':
+            secure = False
+        return cls(item.url, item._gis, secure=secure)
 
     #----------------------------------------------------------------------
-    def _load_layers(self, connection=None):
+    def _load_layers(self):
         """loads the various layer types"""
         self._closestFacilityLayers = []
         self._routeLayers = []
@@ -596,28 +650,29 @@ class NetworkService(GISService):
         params = {
             "f" : "json",
         }
-        if connection is None:
-            connection = self._con
-        json_dict = connection.get(path=self._url, params=params)
+        json_dict = self._con.get(path=self._url, params=params, token=self._token)
         for k,v in json_dict.items():
             if k == "routeLayers" and json_dict[k]:
                 self._routeLayers = []
                 for rl in v:
                     self._routeLayers.append(
                         RouteNetworkLayer(url=self._url + "/%s" % rl,
-                                          gis=self._gis))
+                                          gis=self._gis,
+                                          secure=(self._token is not None)))
             elif k == "serviceAreaLayers" and json_dict[k]:
                 self._serviceAreaLayers = []
                 for sal in v:
                     self._serviceAreaLayers.append(
                         ServiceAreaNetworkLayer(url=self._url + "/%s" % sal,
-                                                gis=self._gis))
+                                                gis=self._gis,
+                                                secure=(self._token is not None)))
             elif k == "closestFacilityLayers" and json_dict[k]:
                 self._closestFacilityLayers = []
                 for cf in v:
                     self._closestFacilityLayers.append(
                         ClosestFacilityNetworkLayer(url=self._url + "/%s" % cf,
-                                                    gis=self._gis))
+                                                    gis=self._gis,
+                                                    secure=(self._token is not None)))
     #----------------------------------------------------------------------
     @property
     def route_layers(self):
@@ -641,8 +696,8 @@ class NetworkService(GISService):
         return self._closestFacilityLayers
 
 class SchematicsService(GISService):
-    def __init__(self, url, gis=None, dictdata=None):
-        super(SchematicsService, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None, dictdata=None, secure=False):
+        super(SchematicsService, self).__init__(url, gis, dictdata, secure)
 
     @property
     def diagrams(self):
@@ -654,7 +709,7 @@ class SchematicsService(GISService):
         params = {"f" : "json"}
         exportURL = self._url + "/diagrams"
         return self._con.get(path=exportURL,
-                             params=params)
+                             params=params, token=self._token)
     #----------------------------------------------------------------------
     @property
     def folders(self):
@@ -667,7 +722,7 @@ class SchematicsService(GISService):
         params = {"f" : "json"}
         exportURL = self._url + "/folders"
         return self._con.get(path=exportURL,
-                         params=params)
+                         params=params, token=self._token)
     #----------------------------------------------------------------------
     @property
     def schematic_layers(self):
@@ -679,7 +734,7 @@ class SchematicsService(GISService):
         params = {"f" : "json"}
         exportURL = self._url + "/schematicLayers"
         return self._con.get(path=exportURL,
-                         params=params)
+                         params=params, token=self._token)
     #----------------------------------------------------------------------
     @property
     def templates(self):
@@ -692,7 +747,7 @@ class SchematicsService(GISService):
         params = {"f" : "json"}
         exportURL = self._url + "/templates"
         return self._con.get(path=exportURL,
-                                 params=params)
+                                 params=params, token=self._token)
     #----------------------------------------------------------------------
     def search_diagrams(self,whereClause=None,relatedObjects=None,
                        relatedSchematicObjects=None):
@@ -741,7 +796,7 @@ class SchematicsService(GISService):
 
         exportURL = self._url + "/searchDiagrams"
         return self._con.get(path=exportURL,
-                             params=params)
+                             params=params, token=self._token)
 
 class NetworkLayer(Layer):
     """
@@ -760,7 +815,7 @@ class NetworkLayer(Layer):
         url = self._url + "/retrieveTravelModes"
         params = {"f":"json"}
         return self._con.get(path=url,
-                         params=params)
+                         params=params, token=self._token)
 
 class RouteNetworkLayer(NetworkLayer):
     """
@@ -1017,7 +1072,7 @@ class RouteNetworkLayer(NetworkLayer):
             params['returnZ'] = returnZ
 
         return self._con.post(path=url,
-                              postdata=params)
+                              postdata=params, token=self._token)
 
 class ServiceAreaNetworkLayer(NetworkLayer):
     """
@@ -1275,7 +1330,7 @@ class ServiceAreaNetworkLayer(NetworkLayer):
             params['returnZ'] = returnZ
 
         return self._con.post(path=url,
-                              postdata=params)
+                              postdata=params, token=self._token)
 
 class ClosestFacilityNetworkLayer(NetworkLayer):
     """
@@ -1538,11 +1593,11 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
         if not returnZ is None:
             params['returnZ'] = returnZ
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
 
 class FeatureLayer(Layer):
-    def __init__(self, url, gis, dictdata=None):
-        super(FeatureLayer, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis, dictdata=None, secure=False):
+        super(FeatureLayer, self).__init__(url, gis, dictdata, secure)
 
         if (dictdata is not None) and ('fields' not in dictdata):
             self._refresh()
@@ -1559,7 +1614,7 @@ class FeatureLayer(Layer):
         part2 = url[res[1]:]
         adminURL = "%s%s%s" % (part1, addText, part2)
 
-        res = AdminFeatureServiceLayer(adminURL, self._gis)
+        res = AdminFeatureServiceLayer(adminURL, self._gis, secure=True)
         return res
 
     def _add_attachment(self, oid, file_path):
@@ -1576,7 +1631,7 @@ class FeatureLayer(Layer):
         files = {'attachment': file_path}
         res = self._con.post(path=attachURL,
                                 postdata=params,
-                                files=files)
+                                files=files, token=self._token)
         return res
         
     #----------------------------------------------------------------------
@@ -1593,7 +1648,7 @@ class FeatureLayer(Layer):
             "f":"json",
             "attachmentIds" : "%s" % attachment_id
         }
-        return self._con.post(url, params)
+        return self._con.post(url, params, token=self._token)
     #----------------------------------------------------------------------
     def _update_attachment(self, oid, attachment_id, file_path):
         """ updates an existing attachment with a new file
@@ -1612,7 +1667,7 @@ class FeatureLayer(Layer):
         files = {'attachment': file_path }
         res = self._con.post(path=url,
                              postdata=params,
-                             files=files)
+                             files=files, token=self._token)
         return res
     #----------------------------------------------------------------------
     def _list_attachments(self, oid):
@@ -1621,7 +1676,7 @@ class FeatureLayer(Layer):
         params = {
             "f":"json"
         }
-        return self._con.get(path=url, params=params)
+        return self._con.get(path=url, params=params, token=self._token)
     #----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -1853,7 +1908,7 @@ class FeatureLayer(Layer):
                 del k,v
 
         result = self._con.post(path=url,
-                                postdata=params)
+                                postdata=params, token=self._token)
         if 'error' in result:
             raise ValueError(result)
         
@@ -1979,7 +2034,7 @@ class FeatureLayer(Layer):
         if geometryPrecision is not None:
             params['geometryPrecision'] = geometryPrecision
         quURL = self._url + "/queryRelatedRecords"
-        return self._con.get(path=quURL, params=params)
+        return self._con.get(path=quURL, params=params, token=self._token)
     #----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
@@ -1996,7 +2051,7 @@ class FeatureLayer(Layer):
                 'f' : "json"
             }
 
-            return self._con.get(path=popURL, params=params)
+            return self._con.get(path=popURL, params=params, token=self._token)
         return ""
     #----------------------------------------------------------------------
     def edit_features(self,
@@ -2062,7 +2117,7 @@ class FeatureLayer(Layer):
         if deletes is not None and \
            isinstance(deletes, str):
             params['deletes'] = deletes
-        return self._con.post(path=editURL, postdata=params)
+        return self._con.post(path=editURL, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def calculate(self, where, calc_expression, sql_format="standard"):
         """
@@ -2116,7 +2171,7 @@ class FeatureLayer(Layer):
         else:
             params['sqlFormat'] = "standard"
         return self._con.post(path=url,
-                              postdata=params)
+                              postdata=params, token=self._token)
 
 class AttachmentManager(object):
     """
@@ -2137,7 +2192,7 @@ class AttachmentManager(object):
         att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, attachment_id)
         if not save_path:
             save_path = tempfile.gettempdir()
-        return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path)
+        return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path, token=self._layer._token)
 
     def add(self, oid, file_path):
         """ Adds an attachment to a feature service
@@ -2174,7 +2229,7 @@ class FeatureCollection(Layer):
     """
     """
     def __init__(self, dictdata):
-        super(FeatureCollection, self).__init__('', None, dictdata)
+        super(FeatureCollection, self).__init__('', None, dictdata, secure=False)
         self.layer = PropertyMap(self.properties)
 
     @property
@@ -2194,7 +2249,7 @@ class FeatureCollection(Layer):
             #df = json_normalize(self.properties['layers'][0]['featureSet']['features'])
             return self.properties['layers'][0]['featureSet']['features']
         else:
-            return self.properties['layers'][0]['featureSet']['features']
+            return self.properties['featureSet']['features']
             #df = json_normalize(self.properties['featureSet']['features'])
 
         #df.columns = df.columns.str.replace('attributes.', '')
@@ -2203,8 +2258,8 @@ class FeatureCollection(Layer):
 class FeatureService(GISService):
     """ allows use and administration (if access permits) of a feature service """
 
-    def __init__(self, url, gis=None):
-        super(FeatureService, self).__init__(url, gis)
+    def __init__(self, url, gis=None, secure=False):
+        super(FeatureService, self).__init__(url, gis, secure=secure)
     
         if self.properties.syncEnabled :
             self.replicas = ReplicaManager(self)
@@ -2219,13 +2274,15 @@ class FeatureService(GISService):
         
         fsurl = self.url + '/layers'
         params = { "f" : "json" }
-        allayers = self._con.post(fsurl, params)
+        allayers = self._con.post(fsurl, params, token=self._token)
         
         for layer in allayers['layers']:
-            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
+            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, 
+                                       secure=(self._token is not None)))
                     
         for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
+            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, 
+                                       secure=(self._token is not None)))
 
         self.layers = layers
         self.tables = tables
@@ -2288,7 +2345,7 @@ class FeatureService(GISService):
            isinstance(timeFilter, dict):
             params['time'] = timeFilter
         results =  self._con.get(path=qurl,
-                                 params=params)
+                                 params=params, token=self._token)
         if 'error' in results:
             raise ValueError (results)
         if not returnCountOnly and not returnIDsOnly:
@@ -2396,7 +2453,7 @@ class FeatureService(GISService):
         if geometryPrecision is not None:
             params['geometryPrecision'] = geometryPrecision
         quURL = self._url + "/queryRelatedRecords"
-        res = self._con.get(path=quURL, params=params)
+        res = self._con.get(path=quURL, params=params, token=self._token)
         return res
     #----------------------------------------------------------------------
     @property
@@ -2407,7 +2464,7 @@ class FeatureService(GISService):
 
         }
         url = self._url + "/replicas"
-        return self._con.get(path=url, params=params)
+        return self._con.get(path=url, params=params, token=self._token)
     #----------------------------------------------------------------------
     def _unregister_replica(self, replica_id):
         """
@@ -2421,7 +2478,7 @@ class FeatureService(GISService):
             "replicaID" : replica_id
         }
         url = self._url + "/unRegisterReplica"
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def _replica_info(self, replica_id):
         """
@@ -2435,7 +2492,7 @@ class FeatureService(GISService):
             "f" : "json"
         }
         url = self._url + "/replicas/" + replica_id
-        return self._con.get(path=url, params=params)
+        return self._con.get(path=url, params=params, token=self._token)
     #----------------------------------------------------------------------
     def _create_replica(self,
                       replicaName,
@@ -2556,7 +2613,7 @@ class FeatureService(GISService):
         if async:
             if wait:
                 exportJob = self._con.post(path=url,
-                                           postdata=params)
+                                           postdata=params, token=self._token)
                 status = self.replicaStatus(url=exportJob['statusUrl'])
                 while status['status'].lower() != "completed":
                     status = self.replicaStatus(url=exportJob['statusUrl'])
@@ -2567,10 +2624,10 @@ class FeatureService(GISService):
 
             else:
                 res = self._con.post(path=url,
-                                     postdata=params)
+                                     postdata=params, token=self._token)
         else:
             res = self._con.post(path=url,
-                                 postdata=params)
+                                 postdata=params, token=self._token)
 
 
         if out_path is not None and \
@@ -2583,7 +2640,7 @@ class FeatureService(GISService):
                 dlURL = res["responseUrl"]
             if dlURL is not None:
                 return self._con.get(path=dlURL,
-                                     out_folder=out_path)
+                                     out_folder=out_path, token=self._token)
             else:
                 return res
         elif res is not None:
@@ -2637,14 +2694,14 @@ class FeatureService(GISService):
             params['dataFormat'] = dataFormat
         if not rollbackOnFailure is None:
             params['rollbackOnFailure'] = rollbackOnFailure
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def _replica_status(self, url):
         """gets the replica status when exported async set to True"""
         params = {"f" : "json"}
         url = url + "/status"
         return self._con.get(path=url,
-                             params=params)
+                             params=params, token=self._token)
 
 class ReplicaManager(object):
     """
@@ -3223,8 +3280,8 @@ class AdminMapService(GISService):
 class MapService(GISService):
     """ allows use and administration (if access permits) of a feature service """
 
-    def __init__(self, url, gis=None):
-        super(MapService, self).__init__(url, gis)
+    def __init__(self, url, gis=None, secure=False):
+        super(MapService, self).__init__(url, gis, secure=secure)
     
         fsurl = self.url + '/layers'
         params = {
@@ -3239,13 +3296,15 @@ class MapService(GISService):
         
         fsurl = self.url + '/layers'
         params = { "f" : "json" }
-        allayers = self._con.post(fsurl, params)
+        allayers = self._con.post(fsurl, params, token=self._token)
         
         for layer in allayers['layers']:
-            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer))
+            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, 
+                                       secure=(self._token is not None)))
                     
         for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table))
+            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, 
+                                       secure=(self._token is not None)))
 
         self.layers = layers
         self.tables = tables
@@ -3270,21 +3329,21 @@ class MapService(GISService):
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
         return self._con.get(url, {"f" : 'json'},
                              file_name="mapImage.kmz",
-                             out_folder=tempfile.gettempdir())
+                             out_folder=tempfile.gettempdir(), token=self._token)
     #----------------------------------------------------------------------
     @property
     def itemInfo(self):
         """returns the service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f" : "json"}
-        return self._con.get(url, params)
+        return self._con.get(url, params, token=self._token)
     #----------------------------------------------------------------------
     @property
     def metadata(self):
         """returns the service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f" : "json"}
-        return self._con.get(url, params)
+        return self._con.get(url, params, token=self._token)
     #----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
         """"""
@@ -3297,7 +3356,7 @@ class MapService(GISService):
         return self._con.get(url,
                              params,
                              out_folder=out_path,
-                             file_name="thumbnail.png")
+                             file_name="thumbnail.png", token=self._token)
     #----------------------------------------------------------------------
     def identify(self,
                  geometry,
@@ -3462,7 +3521,7 @@ class MapService(GISService):
             params['gdbVersion'] = gdbVersion
 
         identifyURL = "{url}/identify".format(url=self._url)
-        return self._con.get(identifyURL, params)
+        return self._con.get(identifyURL, params, token=self._token)
     #----------------------------------------------------------------------
     def find(self, searchText, layers,
              contains=True, searchFields="",
@@ -3488,7 +3547,7 @@ class MapService(GISService):
             "gdbVersion" : gdbVersion,
             "layers" : layers
         }
-        res = self._con.get(url, params)
+        res = self._con.get(url, params, token=self._token)
         return res
     #----------------------------------------------------------------------
     def generate_kml(self, save_location, docName, layers, layerOptions="composite"):
@@ -3523,7 +3582,7 @@ class MapService(GISService):
             'layers' : layers,
             'layerOptions': layerOptions}
         return self._con.get(kmlURL, params,
-                             out_folder=save_location)
+                             out_folder=save_location, token=self._token)
     #----------------------------------------------------------------------
     def export_map(self,
                   bbox,
@@ -3632,7 +3691,7 @@ class MapService(GISService):
         if mapScale is not None:
             params['mapScale'] = mapScale
         exportURL = self._url + "/export"
-        return self._con.get(exportURL, params)
+        return self._con.get(exportURL, params, token=self._token)
 
     #----------------------------------------------------------------------
     def estimate_export_tiles_size(self,
@@ -3719,7 +3778,7 @@ class MapService(GISService):
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params)
+                    job_response = self._con.post(path, params, token=self._token)
                     status = job_response.get("status") 
                     if status in ['esriJobFailed',
                               'esriJobCancelling',
@@ -3837,9 +3896,9 @@ class MapService(GISService):
         elif isinstance(areaOfInterest, dict):
             params["areaOfInterest"] = { "features": [areaOfInterest]}
         if async == True:
-            return self._con.get(path=url, params=params)
+            return self._con.get(path=url, params=params, token=self._token)
         else:
-            exportJob = self._con.get(path=url, params=params)
+            exportJob = self._con.get(path=url, params=params, token=self._token)
             
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
@@ -3871,7 +3930,7 @@ class MapService(GISService):
                     params = {
                         "f" : "json"
                     }
-                    gpRes = self._con.get(path=value, params=params)
+                    gpRes = self._con.get(path=value, params=params, token=self._token)
                     if tilePackage == True:
                         files = []
                         for f in gpRes['files']:
@@ -3880,7 +3939,7 @@ class MapService(GISService):
                             files.append(
                                 self._con.get(dlURL, params,
                                               out_folder=tempfile.gettempdir(),
-                                              file_name=name))
+                                              file_name=name), token=self._token)
                         return files
                     else:
                         return gpRes['folders']
