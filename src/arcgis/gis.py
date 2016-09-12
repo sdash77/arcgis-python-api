@@ -1614,7 +1614,7 @@ class Group(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                self._portal.con.get(path=thumbnail_url_path,
+                self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
                                             out_folder=save_folder,
                                             file_name=file_name)
                 return file_path
@@ -2080,7 +2080,7 @@ class User(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                return self._portal.con.get(path=thumbnail_url_path,
+                return self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
                                      out_folder=save_folder,
                                      file_name=file_name)
                 return file_path
@@ -2305,7 +2305,7 @@ class Item(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                self._portal.con.get(path=thumbnail_url_path,
+                self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
                                      out_folder=save_folder,
                                      file_name=file_name)
                 return file_path

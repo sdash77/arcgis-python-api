@@ -557,6 +557,7 @@ class _ArcGISConnection(object):
                         writer.write(data)
                         del data
                     writer.flush()
+                    del writer
                 return f_n_path, True
             else:
                 for data in self._chunk(response=resp, size=4096):
@@ -639,7 +640,6 @@ class _ArcGISConnection(object):
         if len(params.keys()) > 0:
             url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
-
         _log.debug('REQUEST (get): ' + url)
 
         try:
