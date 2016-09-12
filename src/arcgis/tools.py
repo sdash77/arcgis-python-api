@@ -413,20 +413,14 @@ class Geocoder(GISService): #collections.OrderedDict):
 
 ###########################################################################
 
-class _AsyncService(object):
+class _AsyncService(GISService):
 
-    def __init__(self, url, gis):
-        if url is not None:
-            self.url = url
-            self._gis = gis
-            self._con = gis._con
-            self._portal = gis._portal
-            self._refresh()
-
+    def __init__(self, url, gis, secure=True):
+        super(_AsyncService, self).__init__(url, gis, None, secure)
+        
     def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params)
-
+        params = {"f" : "json"}
+        dictdata = self._con.get(path=self.url, params=params, token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
@@ -445,7 +439,7 @@ class _AsyncService(object):
 
         params["f"] = "json"
 
-        resp = self._portal.con.post(submit_url, params)
+        resp = self._con.post(submit_url, params, token=self._token)
         #print(resp)
         return task_url, resp
 
@@ -458,7 +452,7 @@ class _AsyncService(object):
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = { "f" : "json" }
-            job_response = self._portal.con.post(job_url, params)
+            job_response = self._con.post(job_url, params, token=self._token)
 
             # Query and report the Analysis job status.
             #
@@ -468,7 +462,7 @@ class _AsyncService(object):
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._portal.con.post(job_url, params)
+                    job_response = self._con.post(job_url, params, token=self._token)
                     #print(job_response)
                     messages = job_response['messages'] if 'messages' in job_response else []
                     num = len(messages)
@@ -515,7 +509,7 @@ class _AsyncService(object):
                                                                             param_url)
 
                         params = { "f" : "json" }
-                        param_result = self._portal.con.post(result_url, params)
+                        param_result = self._con.post(result_url, params, token=self._token)
 
                         job_value = param_result.get("value")
                         result_values[key] = job_value
@@ -991,21 +985,11 @@ class GeoprocessingTool(collections.OrderedDict):
 class FeatureAnalysisTools(_AsyncService):
     "Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability in Portal for ArcGIS and ArcGIS Online."
 
-    def __init__(self, url, gis):
+    def __init__(self, url, gis, secure=True):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super().__init__(url, gis)
-
-        params = {
-            "f" : "json"
-        }
-
-    def __str__(self):
-        return json.dumps(self)
-
-
-
+        super(FeatureAnalysisTools, self).__init__(url, gis, secure)
 
     def aggregate_points(self,
                        point_layer,
@@ -2734,18 +2718,11 @@ class FeatureAnalysisTools(_AsyncService):
 class RasterAnalysisTools(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
 
-    def __init__(self, url, gis):
+    def __init__(self, url, gis, secure=True):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super().__init__(url, gis)
-        
-        params = {
-            "f" : "json"
-        }
-
-    def __str__(self):
-        return json.dumps(self)
+        super(RasterAnalysisTools, self).__init__(url, gis, secure)
         
     def _create_output_image_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Image Service")
@@ -3569,19 +3546,11 @@ class RasterAnalysisTools(_AsyncService):
 class BigDataTools(_AsyncService):
     "Exposes the BigData Tools from the GeoAnalyticsTools service. The GeoAnalyticsTools service is provided for distributed analysis of large datasets."
 
-    def __init__(self, url, gis):
+    def __init__(self, url, gis, secure=True):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super().__init__(url, gis)
-        
-        params = {
-            "f" : "json"
-        }
-
-    def __str__(self):
-        return json.dumps(self)
-        
+        super(RasterAnalysisTools, self).__init__(url, gis, secure)
         
     def _create_output_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")

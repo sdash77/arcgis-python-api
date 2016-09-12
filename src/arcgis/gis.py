@@ -704,7 +704,7 @@ class Tools(object):
             except:
                 svcurl = 'https://rdvmags01.esri.com/arcgis/rest/services/System/RasterAnalysisTools/GPServer'
 
-            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
+            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis, secure=True)
             return self._raster_analysis
         except KeyError:
             return None
@@ -721,7 +721,7 @@ class Tools(object):
                 print("This GIS does not support geoanalytics")
                 return None
 
-            self._geoanalytics = BigDataTools(svcurl, self._gis)
+            self._geoanalytics = BigDataTools(svcurl, self._gis, secure=True)
             return self._geoanalytics
         except KeyError:
             return None
@@ -735,8 +735,10 @@ class Tools(object):
             try:
                 svcurl = self._gis.properties['helperServices']['analysis']['url']
             except:
-                svcurl = 'https://analysis6.arcgis.com/arcgis/rest/services/tasks/GPServer'
-            self._analysis = FeatureAnalysisTools(svcurl, self._gis)
+                print("This GIS does not support spatial analysis")
+                return None
+
+            self._analysis = FeatureAnalysisTools(svcurl, self._gis, secure=True)
             return self._analysis
         except KeyError:
             return None
