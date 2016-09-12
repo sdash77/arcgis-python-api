@@ -2263,7 +2263,7 @@ class Item(dict):
             save_path = self._workdir
         if data_path:
             return self._portal.con.get(path=data_path,
-                                        out_folder=save_path)
+                                        out_folder=save_path, try_json=False, force_bytes=True)
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
