@@ -9,12 +9,11 @@ import json
 import collections
 from re import search
 from ._impl import *
-from arcgis._impl.common._mixins import MutableAttr, AttrDict, AttrOrderedDict, PropertyMap
-from arcgis._impl.common._featureset import Feature, FeatureSet
+from arcgis._impl.common._mixins import PropertyMap
+
 import six
-from arcgis._impl.service import _featureservice
+
 from arcgis._impl.common import _utils
-from arcgis._impl.common._featureset import _date_handler
 from arcgis._impl.common._spatial import *
 from arcgis._impl.common._filters import *
 from arcgis._impl.service._uploads import Uploads
@@ -3946,3 +3945,26 @@ class MapService(GISService):
                 else:
                     return None
 
+#----------------------------------------------------------------------
+def _date_handler(obj):
+    if isinstance(obj, datetime.datetime):
+        return local_time_to_online(obj)
+    else:
+        return obj
+#----------------------------------------------------------------------
+def local_time_to_online(dt=None):
+    """
+       converts datetime object to a UTC timestamp for AGOL
+       Inputs:
+          dt - datetime object
+       Output:
+          Long value
+    """
+    if dt is None:
+        dt = datetime.datetime.now()
+
+    is_dst = time.daylight and time.localtime().tm_isdst > 0
+    utc_offset =  (time.altzone if is_dst else time.timezone)
+
+    return (time.mktime(dt.timetuple())  * 1000) + (utc_offset *1000)
+########################################################################

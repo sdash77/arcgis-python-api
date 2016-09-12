@@ -9,8 +9,9 @@ import os
 import tempfile
 import uuid
 from ._spatial import json_to_featureclass
-from ._geom import BaseGeometry
-from ._geom import Geometry, Point, MultiPoint, Polygon, Polyline, SpatialReference
+#from ._geom import BaseGeometry
+#from ._geom import Geometry, Point, MultiPoint, Polygon, Polyline, SpatialReference
+from arcgis.geom import BaseGeometry, Geometry, Point, MultiPoint, Polygon, Polyline, SpatialReference
 __all__ = ["Feature", "FeatureSet"]
 #----------------------------------------------------------------------
 def _date_handler(obj):

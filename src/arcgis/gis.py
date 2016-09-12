@@ -10,7 +10,6 @@ from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis.tools import *
 from arcgis.lyr import *
-#from ._impl.service._layerfactory import Layer
 import re
 import json
 import base64

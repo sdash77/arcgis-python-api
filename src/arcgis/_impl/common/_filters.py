@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import json
-from ._geom import Polygon, Polyline, Point, MultiPoint
+from arcgis.geom import Polygon, Polyline, Point, MultiPoint
 ########################################################################
 class StatisticFilter(object):
     """
