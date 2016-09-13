@@ -527,11 +527,9 @@ class _ArcGISConnection(object):
         contentLength = resp.headers.get('content-length')
         if not force_bytes and \
            (maintype.lower() in ('image', 'application/x-zip-compressed') or \
-           contentType == 'application/x-zip-compressed' or \
+            contentType == 'application/x-zip-compressed' or \
            (contentDisposition is not None and contentDisposition.lower().find('attachment;') > -1)):
-            fname = self._get_file_name(
-                contentDisposition=contentDisposition,
-                url=resp.geturl()).split('?')[0]
+            fname = self._get_file_name(contentDisposition=contentDisposition, url=resp.geturl()).split('?')[0]
             if out_folder is None:
                 out_folder = tempfile.gettempdir()
             if contentLength is not None:

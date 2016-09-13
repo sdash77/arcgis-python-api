@@ -1615,7 +1615,7 @@ class Group(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
+                self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                             out_folder=save_folder,
                                             file_name=file_name)
                 return file_path
@@ -2081,7 +2081,7 @@ class User(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                return self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
+                return self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                      out_folder=save_folder,
                                      file_name=file_name)
                 return file_path
@@ -2263,7 +2263,7 @@ class Item(dict):
             save_path = self._workdir
         if data_path:
             return self._portal.con.get(path=data_path,
-                                        out_folder=save_path, try_json=False, force_bytes=True)
+                                        out_folder=save_path, try_json=False)
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
@@ -2306,7 +2306,7 @@ class Item(dict):
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
-                self._portal.con.get(path=thumbnail_url_path, try_json=False, force_bytes=True,
+                self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                      out_folder=save_folder,
                                      file_name=file_name)
                 return file_path
