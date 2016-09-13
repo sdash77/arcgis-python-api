@@ -18,6 +18,9 @@ from arcgis._impl.common._spatial import *
 from arcgis._impl.common._filters import *
 from arcgis._impl.service._uploads import Uploads
 
+_log = logging.getLogger(__name__)
+
+
 class Layer(object):
     """ a GIS layer
     """
@@ -95,7 +98,12 @@ class GISService(object):
             self._gis = gis
             self._con = gis._con
             if secure:
-                self._token = self._con.generate_portal_server_token(url)
+                try:
+                    self._token = self._con.generate_portal_server_token(url)
+                except RuntimeError as e:
+                    if 'Unable to generate token' in e.args[0]:
+                        _log.warning('Unable to generate token for server :' + url)
+                        self._token = None
 
         self.url = url
         self._url = url

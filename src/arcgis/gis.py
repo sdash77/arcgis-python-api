@@ -22,7 +22,6 @@ import tempfile
 from six.moves.urllib.error import HTTPError
 # pylint: disable=fixme, line-too-long
 
-
 class Error(Exception): pass
 
 @contextmanager
