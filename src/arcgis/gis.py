@@ -956,7 +956,8 @@ class GroupManager(object):
         ----------------  ---------------------------------------------------------
         title             required string, name of the group
         ----------------  ---------------------------------------------------------
-        tags              required string, comma-delimited list of tags
+        tags              required, comma-delimited list of tags, or list of tags 
+                          as strings
         ----------------  ---------------------------------------------------------
         description       optional string, describes group in detail
         ----------------  ---------------------------------------------------------
@@ -980,6 +981,8 @@ class GroupManager(object):
         :return:
             the group, if created, or None
         """
+        if type(tags) is list:
+            tags = ",".join(tags)
         group = self._portal.create_group_from_dict({
             'title' : title, 'tags' : tags, 'description' : description,
             'snippet' : snippet, 'access' : access, 'sortField' : sort_field,
@@ -1135,7 +1138,8 @@ class ContentManager(object):
             -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
             -----------------  ----------------------------------------------------------------------------
-            tags               optional string of comma-separated values.  Used for searches on items.
+            tags               optional string of comma-separated values, or list of strings.
+                               Used for searches on items.
             -----------------  ----------------------------------------------------------------------------
             snippet            optional string.  Provides a very short summary of the what the item is.
             -----------------  ----------------------------------------------------------------------------
@@ -1183,6 +1187,10 @@ class ContentManager(object):
         owner_name = owner
         if isinstance(owner, arcgis.gis.User):
             owner_name = owner.username
+        
+        if 'tags' in item_properties:
+            if type(item_properties['tags']) is list:
+                item_properties['tags'] = ",".join(item_properties['tags'])
 
         itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner_name, folder)
 
@@ -1743,7 +1751,8 @@ class Group(dict):
         ------------------  ---------------------------------------------------------
         title               optional string, name of the group
         ------------------  ---------------------------------------------------------
-        tags                optional string, comma-delimited list of tags
+        tags                optional string (comma-delimited list of tags) or
+                            list of tags as strings
         ------------------  ---------------------------------------------------------
         description         optional string, describes group in detail
         ------------------  ---------------------------------------------------------
@@ -1767,6 +1776,9 @@ class Group(dict):
         :return:
             a boolean indicating success
         """
+        if tags is not None:
+            if type(tags) is list:
+                tags = ",".join(tags)
         resp = self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
         if resp:
             self._hydrate()
@@ -1950,7 +1962,7 @@ class User(dict):
         ----------------  ----------------------------------------------------------
         description       optional string, a description of the user.
         ----------------  ----------------------------------------------------------
-        tags              optional string, comma-separated tags for searching
+        tags              optional string (comma-separated tags) or list of tags
         ----------------  ----------------------------------------------------------
         thumbnail         optional string, path or url to a file.  can be PNG, GIF,
                           JPEG, max size 1 MB
@@ -1968,6 +1980,10 @@ class User(dict):
             a boolean indicating success
 
         """
+        if tags is not None:
+            if type(tags) is list:
+                tags = ",".join(tags)
+
         ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region)
         if ret:
             self._hydrate()
@@ -2603,6 +2619,12 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
+
+        if item_properties is not None:
+            if 'tags' in item_properties:
+                if type(item_properties['tags']) is list:
+                    item_properties['tags'] = ",".join(item_properties['tags'])
+
         ret = self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
         if ret:
             self._hydrate()
