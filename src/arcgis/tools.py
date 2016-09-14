@@ -59,8 +59,8 @@ class Geocoder(GISService): #collections.OrderedDict):
     An instance of the Geocoder is available through the gis.tools.geocoder
     property, accessible from the GIS object.
     """
-    def __init__(self, url, gis=None, dictdata=None, secure=True):
-        super(Geocoder, self).__init__(url, gis, dictdata, secure)
+    def __init__(self, url, gis=None, dictdata=None):
+        super(Geocoder, self).__init__(url, gis)
         try:
             self._address_field = self.properties.singleLineAddressField.name
         except:
@@ -70,10 +70,8 @@ class Geocoder(GISService): #collections.OrderedDict):
     def fromitem(cls, item):
         if not item.type == 'Geocoding Service':
             raise TypeError("item must be a type of Geocoding Service, not " + item.type)
-        secure = True
-        if item.access == 'public':
-            secure = False
-        return cls(item.url, item._gis, secure=secure)
+        
+        return cls(item.url, item._gis)
     
     def geocode(self,
              address,
@@ -415,8 +413,8 @@ class Geocoder(GISService): #collections.OrderedDict):
 
 class _AsyncService(GISService):
 
-    def __init__(self, url, gis, secure=True):
-        super(_AsyncService, self).__init__(url, gis, None, secure)
+    def __init__(self, url, gis):
+        super(_AsyncService, self).__init__(url, gis)
         
     def _refresh(self):
         params = {"f" : "json"}
@@ -634,9 +632,7 @@ class _AsyncService(GISService):
         input_layer_url = ""
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type.lower() == 'feature service':
-                fs = FeatureService(input_layer)
-                input_layer_url =  fs.layers[0].url #["url"]
-                input_param =  {"url": input_layer_url }
+                input_param =  {"url": input_layer.layers[0].url }
             elif input_layer.type.lower() == 'feature collection':
                 fcdict = input_layer.get_data()
                 fc = FeatureCollection(fcdict['layers'][0])
@@ -985,11 +981,11 @@ class GeoprocessingTool(collections.OrderedDict):
 class FeatureAnalysisTools(_AsyncService):
     "Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability in Portal for ArcGIS and ArcGIS Online."
 
-    def __init__(self, url, gis, secure=True):
+    def __init__(self, url, gis):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super(FeatureAnalysisTools, self).__init__(url, gis, secure)
+        super(FeatureAnalysisTools, self).__init__(url, gis)
 
     def aggregate_points(self,
                        point_layer,
@@ -2718,11 +2714,11 @@ class FeatureAnalysisTools(_AsyncService):
 class RasterAnalysisTools(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
 
-    def __init__(self, url, gis, secure=True):
+    def __init__(self, url, gis):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super(RasterAnalysisTools, self).__init__(url, gis, secure)
+        super(RasterAnalysisTools, self).__init__(url, gis)
         
     def _create_output_image_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Image Service")
@@ -3546,11 +3542,11 @@ class RasterAnalysisTools(_AsyncService):
 class BigDataTools(_AsyncService):
     "Exposes the BigData Tools from the GeoAnalyticsTools service. The GeoAnalyticsTools service is provided for distributed analysis of large datasets."
 
-    def __init__(self, url, gis, secure=True):
+    def __init__(self, url, gis):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super(RasterAnalysisTools, self).__init__(url, gis, secure)
+        super(RasterAnalysisTools, self).__init__(url, gis)
         
     def _create_output_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
@@ -5023,8 +5019,8 @@ class GeometryService(GISService):
     name GeometryService.
     """
 
-    def __init__(self, url, gis=None, dictdata=None):
-        super(GeometryService, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None):
+        super(GeometryService, self).__init__(url, gis)
 
     @classmethod
     def fromitem(cls, item):

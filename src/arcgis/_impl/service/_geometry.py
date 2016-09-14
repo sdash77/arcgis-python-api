@@ -24,8 +24,8 @@ class GeometryService(GISService):
     name GeometryService.
     """
 
-    def __init__(self, url, gis=None, dictdata=None):
-        super(GeometryService, self).__init__(url, gis, dictdata)
+    def __init__(self, url, gis=None):
+        super(GeometryService, self).__init__(url, gis)
 
     @classmethod
     def fromitem(cls, item):

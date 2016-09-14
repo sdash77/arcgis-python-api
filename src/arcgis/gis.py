@@ -675,7 +675,7 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(geocode_service['url'], self._gis, secure=True))
+                self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
         except KeyError:
             pass
         return self._geocoders
@@ -703,7 +703,7 @@ class Tools(object):
             except:
                 svcurl = 'https://rdvmags01.esri.com/arcgis/rest/services/System/RasterAnalysisTools/GPServer'
 
-            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis, secure=True)
+            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
             return self._raster_analysis
         except KeyError:
             return None
@@ -720,7 +720,7 @@ class Tools(object):
                 print("This GIS does not support geoanalytics")
                 return None
 
-            self._geoanalytics = BigDataTools(svcurl, self._gis, secure=True)
+            self._geoanalytics = BigDataTools(svcurl, self._gis)
             return self._geoanalytics
         except KeyError:
             return None
@@ -737,7 +737,7 @@ class Tools(object):
                 print("This GIS does not support spatial analysis")
                 return None
 
-            self._analysis = FeatureAnalysisTools(svcurl, self._gis, secure=True)
+            self._analysis = FeatureAnalysisTools(svcurl, self._gis)
             return self._analysis
         except KeyError:
             return None
@@ -2178,12 +2178,9 @@ class Item(dict):
             tables = []
             
             params = {"f" : "json"}
-            secured = True
-            if self.access == 'public':
-                secured = False
 
             if self.type == 'Image Service': # service that is itself a layer
-                layers.append(ImageLayer(self.url, self._gis, None, secure=secured))
+                layers.append(ImageLayer(self.url, self._gis))
 
             elif self.type == 'Feature Collection':
                 lyrs = self.get_data()['layers']
@@ -2194,48 +2191,44 @@ class Item(dict):
                 serviceinfo = self._portal.con.post(self.url, params)
                 for lyr in serviceinfo['children']:
                     lyrurl = self.url + '/' + lyr['name']
-                    layers.append(Layer(lyrurl, self._gis, secure=secured))
+                    layers.append(Layer(lyrurl, self._gis))
 
             
             elif self.type == 'Vector Tile Service':
-                layers.append(VectorTileLayer(self.url, self._gis, None, secure=secured))
+                layers.append(VectorTileLayer(self.url, self._gis))
 
             elif self.type == 'Network Analysis Service':
-                # route laters, service area layers, closest facility layers
-                token = None
-                if secured:
-                    token = self._gis._con.generate_portal_server_token(self.url)
-                serviceinfo = self._portal.con.post(self.url, params, token=token)
-                for lyr in serviceinfo['routeLayers']:
-                    lyrurl = self.url + '/' + lyr
-                    layers.append(RouteNetworkLayer(lyrurl, self._gis, None, secure=secured))
-                for lyr in serviceinfo['serviceAreaLayers']:
-                    lyrurl = self.url + '/' + lyr
-                    layers.append(ServiceAreaNetworkLayer(lyrurl, self._gis, None, secure=secured))
-                for lyr in serviceinfo['closestFacilityLayers']:
-                    lyrurl = self.url + '/' + lyr
-                    layers.append(ClosestFacilityNetworkLayer(lyrurl, self._gis, None, secure=secured))
+                svc = NetworkService.fromitem(self)
 
+                # route laters, service area layers, closest facility layers
+                for lyr in svc.route_layers:
+                    layers.append(lyr)
+                for lyr in svc.service_area_layers:
+                    layers.append(lyr)
+                for lyr in svc.closest_facility_layers:
+                    layers.append(lyr)
+
+            elif self.type == 'Feature Service':
+                svc = FeatureService.fromitem(self)
+                for lyr in svc.layers:
+                    layers.append(lyr)
+
+            elif self.type == 'Map Service':
+                svc = MapService.fromitem(self)
+                for lyr in svc.layers:
+                    layers.append(lyr)
             else:
                 m = re.search(r'\d+$', self.url)
                 if m is not None: # ends in digit
-                    layers.append(FeatureLayer(self.url, self._gis, None, secure=secured))
+                    layers.append(FeatureLayer(self.url, self._gis))
                 else:
-                    fsurl = self.url + '/layers'
-                    params = {
-                        "f" : "json"
-                    }
-                    token = None
-                    if secured:
-                        token = self._gis._con.generate_portal_server_token(self.url)
-                    allayers = self._portal.con.post(fsurl, params, token=token)
-
-                    #TODO: these need not always be FeatureLayers, eg. group, raster layer on Map Service
-                    for layer in allayers['layers']:
-                        layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, secure=secured))
-                    
-                    for table in allayers['tables']:
-                        tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, secure=secured))
+                    svc = GISService.fromitem(self)
+                    for lyr in svc.properties.layers:
+                        lyr = Layer(svc.url+'/'+str(lyr.id), gis)
+                        layers.append(lyr)
+                    for lyr in svc.properties.tables:
+                        lyr = Layer(svc.url+'/'+str(lyr.id), gis)
+                        tables.append(lyr)
 
             self.layers = layers
             self.tables = tables
@@ -2247,12 +2240,18 @@ class Item(dict):
         self._hydrated = True
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
-        self._populate_layers()
+        try:
+            self._populate_layers()
+        except:
+            pass
 
     def __getattribute__ (self, name):
         if name == 'layers' or name == 'tables':
             if self['layers'] == None:
-                self._populate_layers()
+                try:
+                    self._populate_layers()
+                except:
+                    pass
                 return self['layers']
         return super(Item, self).__getattribute__(name)
 
@@ -2790,7 +2789,10 @@ class Item(dict):
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 
-        serviceitem_id = ret[0]['serviceItemId']
+        try:
+            serviceitem_id = ret[0]['serviceItemId']
+        except KeyError as ke:
+            raise RuntimeError(ret[0]['error']['message'])
         
         if 'jobId' in ret[0]:
             job_id = ret[0]['jobId']

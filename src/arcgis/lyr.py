@@ -12,7 +12,7 @@ from ._impl import *
 from arcgis._impl.common._mixins import PropertyMap
 
 import six
-
+from six.moves.urllib.error import HTTPError
 from arcgis._impl.common import _utils
 from arcgis._impl.common._spatial import *
 from arcgis._impl.common._filters import *
@@ -22,14 +22,15 @@ _log = logging.getLogger(__name__)
 
 
 class Layer(object):
-    """ a GIS layer
-    """
-    
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
-        """
-        A layer of geographic data
-        """
+    """ a GIS layer """
+
+    def __init__(self, url, gis=None):
         self._token = None
+        
+        self.url = url
+        self._url = url
+        
+        err = None
 
         if gis is None:
             gis = arcgis.gis.GIS()
@@ -39,28 +40,43 @@ class Layer(object):
         else:
             self._gis = gis
             self._con = gis._con
-            if secure:
+            try:
+                # try as a federated server
                 self._token = self._con.generate_portal_server_token(url)
+                self._refresh()
+            except RuntimeError as e:
+                if 'Unable to generate token' in e.args[0]:
+                    try:
+                        # try as a public server
+                        self._token = None
+                        self._refresh()
+                    except HTTPError as httperror:
+                        _log.error(httperror)
+                        err = httperror
+                    except RuntimeError as e:
+                        if 'Token Required' in e.args[0]:
+                            # try token in the provided gis
+                            self._token = self._con.token
+                            self._refresh()
+                elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
+                    try:
+                        # try as a public server
+                        self._token = None
+                        self._refresh()
+                    except RuntimeError as e:
+                        if 'Token Required' in e.args[0]:
+                            # try token in the provided gis
+                            self._token = self._con.token
+                            self._refresh()
+                else:
+                    raise e
 
-        self._url = url
-        self.url = url
-        
-        if dictdata is not None:
-            self.properties = PropertyMap(dictdata)
-        else:
-            self._refresh()
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
 
     def _refresh(self):
-        try:
-            params = {"f": "json"}
-            dictdata = self._con.post(self.url, params, token=self._token)
-        except RuntimeError as e:
-            if 'Token Required' in e.args[0]:
-                # secure service
-                self._token = self._con.generate_portal_server_token(self.url)
-                params = {"f": "json"}
-                dictdata = self._con.post(self.url, params, token=self._token)
-
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params, token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def __str__(self):
@@ -86,8 +102,13 @@ class Layer(object):
 class GISService(object):
     """ a GIS service
     """
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
+    def __init__(self, url, gis=None):
         self._token = None
+        
+        self.url = url
+        self._url = url
+        
+        err = None
 
         if gis is None:
             gis = arcgis.gis.GIS()
@@ -97,43 +118,51 @@ class GISService(object):
         else:
             self._gis = gis
             self._con = gis._con
-            if secure:
-                try:
-                    self._token = self._con.generate_portal_server_token(url)
-                except RuntimeError as e:
-                    if 'Unable to generate token' in e.args[0]:
-                        _log.warning('Unable to generate token for server :' + url)
+            try:
+                # try as a federated server
+                self._token = self._con.generate_portal_server_token(url)
+                self._refresh()
+            except RuntimeError as e:
+                if 'Unable to generate token' in e.args[0]:
+                    try:
+                        # try as a public server
                         self._token = None
+                        self._refresh()
+                    except HTTPError as httperror:
+                        _log.error(httperror)
+                        err = httperror
+                    except RuntimeError as e:
+                        if 'Token Required' in e.args[0]:
+                            # try token in the provided gis
+                            self._token = self._con.token
+                            self._refresh()
+                elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
+                    try:
+                        # try as a public server
+                        self._token = None
+                        self._refresh()
+                    except RuntimeError as e:
+                        if 'Token Required' in e.args[0]:
+                            # try token in the provided gis
+                            self._token = self._con.token
+                            self._refresh()
+                else:
+                    raise e
 
-        self.url = url
-        self._url = url
-        
-        if dictdata is not None:
-            self.properties = PropertyMap(dictdata)
-        else:
-            self._refresh()
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
 
     def _refresh(self):
-        try:
-            params = {"f": "json"}
-            dictdata = self._con.post(self.url, params, token=self._token)
-        except RuntimeError as e:
-            if 'Token Required' in e.args[0]:
-                # secure service
-                self._token = self._con.generate_portal_server_token(self.url)
-                params = {"f": "json"}
-                dictdata = self._con.post(self.url, params, token=self._token)
-
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params, token=self._token)
         self.properties = PropertyMap(dictdata)
+        
 
     @classmethod
     def fromitem(cls, item):
         if not item.type.lower().endswith('service'):
             raise TypeError("item must be a type of service, not " + item.type)
-        secure = True
-        if item.access == 'public':
-            secure = False
-        return cls(item.url, item._gis, secure=secure)
+        return cls(item.url, item._gis)
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
@@ -152,9 +181,13 @@ class GISService(object):
         return self._con.post(path=url, postdata=params, token=self._token)
 
 class VectorTileLayer(Layer):
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
-
+    def __init__(self, url, gis=None):
         self._token = None
+        
+        self.url = url
+        self._url = url
+        
+        err = None
 
         if gis is None:
             gis = arcgis.gis.GIS()
@@ -164,29 +197,39 @@ class VectorTileLayer(Layer):
         else:
             self._gis = gis
             self._con = gis._con
-            if secure:
+            try:
+                # try as a federated server
                 self._token = self._con.generate_portal_server_token(url)
+                self._refresh()
+            except RuntimeError as e:
+                if 'Unable to generate token' in e.args[0]:
+                    try:
+                        # try as a public server
+                        self._token = None
+                        self._refresh()
+                    except HTTPError as httperror:
+                        _log.error(httperror)
+                        err = httperror
+                    except RuntimeError as e:
+                        if 'Token Required' in e.args[0]:
+                            # try token in the provided gis
+                            self._token = self._con.token
+                            self._refresh()
 
-        self._url = url
-        self.url = url
-        
-        if dictdata is not None:
-            self.properties = PropertyMap(dictdata)
-        else:
-            params = {"f" : "json"}
-            dictdata = self._con.get(path=url, params=params, token=self._token)
-            self.properties = PropertyMap(dictdata)
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
 
-        #super(VectorTileLayer, self).__init__(url, gis, dictdata, secure)
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.get(self.url, params, token=self._token)
+        self.properties = PropertyMap(dictdata)
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Vector Tile Service':
             raise TypeError("item must be a type of Vector Tile Service, not " + item.type)
-        secure = True
-        if item.access == 'public':
-            secure = False
-        return cls(item.url, item._gis, secure=secure)
+        
+        return cls(item.url, item._gis)
 
     @property
     def styles(self):
@@ -237,17 +280,15 @@ class VectorTileLayer(Layer):
                              params=params, token=self._token)
 
 class ImageLayer(Layer):
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
-        super(ImageLayer, self).__init__(url, gis, dictdata, secure)
+    def __init__(self, url, gis=None):
+        super(ImageLayer, self).__init__(url, gis)
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Image Service':
             raise TypeError("item must be a type of Image Service, not " + item.type)
-        secure = True
-        if item.access == 'public':
-            secure = False
-        return cls(item.url, item._gis, secure=secure)
+
+        return cls(item.url, item._gis)
 
     def export_image(self,
                     bbox,
@@ -635,18 +676,16 @@ class ImageLayer(Layer):
             return None
 
 class NetworkService(GISService):
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
-        super(NetworkService, self).__init__(url, gis, dictdata, secure)
+    def __init__(self, url, gis=None):
+        super(NetworkService, self).__init__(url, gis)
         self._load_layers()
 
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Network Analysis Service':
             raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
-        secure = True
-        if item.access == 'public':
-            secure = False
-        return cls(item.url, item._gis, secure=secure)
+        
+        return cls(item.url, item._gis)
 
     #----------------------------------------------------------------------
     def _load_layers(self):
@@ -664,47 +703,41 @@ class NetworkService(GISService):
                 for rl in v:
                     self._routeLayers.append(
                         RouteNetworkLayer(url=self._url + "/%s" % rl,
-                                          gis=self._gis,
-                                          secure=(self._token is not None)))
+                                          gis=self._gis))
             elif k == "serviceAreaLayers" and json_dict[k]:
                 self._serviceAreaLayers = []
                 for sal in v:
                     self._serviceAreaLayers.append(
                         ServiceAreaNetworkLayer(url=self._url + "/%s" % sal,
-                                                gis=self._gis,
-                                                secure=(self._token is not None)))
+                                                gis=self._gis))
             elif k == "closestFacilityLayers" and json_dict[k]:
                 self._closestFacilityLayers = []
                 for cf in v:
                     self._closestFacilityLayers.append(
                         ClosestFacilityNetworkLayer(url=self._url + "/%s" % cf,
-                                                    gis=self._gis,
-                                                    secure=(self._token is not None)))
+                                                    gis=self._gis))
     #----------------------------------------------------------------------
     @property
     def route_layers(self):
         if self._routeLayers is None:
-            self.init()
-        self._load_layers()
+            self._load_layers()
         return self._routeLayers
     #----------------------------------------------------------------------
     @property
     def service_area_layers(self):
         if self._serviceAreaLayers is None:
-            self.init()
-        self._load_layers()
+            self._load_layers()
         return self._serviceAreaLayers
     #----------------------------------------------------------------------
     @property
     def closest_facility_layers(self):
         if self._closestFacilityLayers is None:
-            self.init()
-        self._load_layers()
+            self._load_layers()
         return self._closestFacilityLayers
 
 class SchematicsService(GISService):
-    def __init__(self, url, gis=None, dictdata=None, secure=False):
-        super(SchematicsService, self).__init__(url, gis, dictdata, secure)
+    def __init__(self, url, gis=None):
+        super(SchematicsService, self).__init__(url, gis)
 
     @property
     def diagrams(self):
@@ -1603,11 +1636,8 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
         return self._con.post(path=url, postdata=params, token=self._token)
 
 class FeatureLayer(Layer):
-    def __init__(self, url, gis, dictdata=None, secure=False):
-        super(FeatureLayer, self).__init__(url, gis, dictdata, secure)
-
-        if (dictdata is not None) and ('fields' not in dictdata):
-            self._refresh()
+    def __init__(self, url, gis):
+        super(FeatureLayer, self).__init__(url, gis)
         
         self.attachments = AttachmentManager(self)
 
@@ -1621,7 +1651,7 @@ class FeatureLayer(Layer):
         part2 = url[res[1]:]
         adminURL = "%s%s%s" % (part1, addText, part2)
 
-        res = AdminFeatureServiceLayer(adminURL, self._gis, secure=True)
+        res = AdminFeatureServiceLayer(adminURL, self._gis)
         return res
 
     def _add_attachment(self, oid, file_path):
@@ -2236,8 +2266,8 @@ class FeatureCollection(Layer):
     """
     """
     def __init__(self, dictdata):
-        super(FeatureCollection, self).__init__('', None, dictdata, secure=False)
-        self.layer = PropertyMap(self.properties)
+        self.properties = PropertyMap(dictdata)
+        self.layer = self.properties
 
     @property
     def _js_lyr(self):
@@ -2265,8 +2295,8 @@ class FeatureCollection(Layer):
 class FeatureService(GISService):
     """ allows use and administration (if access permits) of a feature service """
 
-    def __init__(self, url, gis=None, secure=False):
-        super(FeatureService, self).__init__(url, gis, secure=secure)
+    def __init__(self, url, gis=None):
+        super(FeatureService, self).__init__(url, gis)
     
         if self.properties.syncEnabled :
             self.replicas = ReplicaManager(self)
@@ -2279,17 +2309,23 @@ class FeatureService(GISService):
         layers = []
         tables = []
         
-        fsurl = self.url + '/layers'
-        params = { "f" : "json" }
-        allayers = self._con.post(fsurl, params, token=self._token)
+        for lyr in self.properties.layers:
+            lyr = FeatureLayer(self.url+'/'+str(lyr.id), self._gis)
+            layers.append(lyr)
+
+        for lyr in self.properties.tables:
+            lyr = FeatureLayer(self.url+'/'+str(lyr.id), self._gis)
+            tables.append(lyr)
+
+        #fsurl = self.url + '/layers'
+        #params = { "f" : "json" }
+        #allayers = self._con.post(fsurl, params, token=self._token)
         
-        for layer in allayers['layers']:
-            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, 
-                                       secure=(self._token is not None)))
+        #for layer in allayers['layers']:
+        #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
                     
-        for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, 
-                                       secure=(self._token is not None)))
+        #for table in allayers['tables']:
+        #    tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis))
 
         self.layers = layers
         self.tables = tables
@@ -3287,13 +3323,9 @@ class AdminMapService(GISService):
 class MapService(GISService):
     """ allows use and administration (if access permits) of a feature service """
 
-    def __init__(self, url, gis=None, secure=False):
-        super(MapService, self).__init__(url, gis, secure=secure)
+    def __init__(self, url, gis=None):
+        super(MapService, self).__init__(url, gis)
     
-        fsurl = self.url + '/layers'
-        params = {
-            "f" : "json"
-        }
         self._populate_layers()
         self._admin = None
 
@@ -3301,17 +3333,23 @@ class MapService(GISService):
         layers = []
         tables = []
         
-        fsurl = self.url + '/layers'
-        params = { "f" : "json" }
-        allayers = self._con.post(fsurl, params, token=self._token)
+        for lyr in self.properties.layers:
+            lyr = FeatureLayer(self.url+'/'+str(lyr.id), self._gis)
+            layers.append(lyr)
+
+        for lyr in self.properties.tables:
+            lyr = FeatureLayer(self.url+'/'+str(lyr.id), self._gis)
+            tables.append(lyr)
+
+        #fsurl = self.url + '/layers'
+        #params = { "f" : "json" }
+        #allayers = self._con.post(fsurl, params, token=self._token)
         
-        for layer in allayers['layers']:
-            layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis, layer, 
-                                       secure=(self._token is not None)))
+        #for layer in allayers['layers']:
+        #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
                     
-        for table in allayers['tables']:
-            tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis, table, 
-                                       secure=(self._token is not None)))
+        #for table in allayers['tables']:
+        #    tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis))
 
         self.layers = layers
         self.tables = tables
