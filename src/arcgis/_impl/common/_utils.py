@@ -9,6 +9,7 @@ import tempfile
 from contextlib import contextmanager
 
 import six
+import logging 
 
 list_types = (list, tuple)
 if sys.version_info.major == 3:
@@ -218,3 +219,9 @@ def _to_utf8(data):
         return data
     else:
         return data
+#--------------------------------------------------------------------------
+class _DisableLogger():
+    def __enter__(self):
+       logging.disable(logging.CRITICAL)
+    def __exit__(self, a, b, c):
+       logging.disable(logging.NOTSET)

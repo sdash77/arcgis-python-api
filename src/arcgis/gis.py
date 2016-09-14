@@ -8,6 +8,8 @@ from __future__ import absolute_import
 #from ._impl import _portalpy
 from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
+from arcgis._impl.common._utils import _DisableLogger
+
 from arcgis.tools import *
 from arcgis.lyr import *
 import re
@@ -23,6 +25,8 @@ from six.moves.urllib.error import HTTPError
 # pylint: disable=fixme, line-too-long
 
 class Error(Exception): pass
+
+
 
 @contextmanager
 def _tempinput(data):
@@ -2241,7 +2245,8 @@ class Item(dict):
         super(Item, self).update(itemdict)
         self.__dict__.update(itemdict)
         try:
-            self._populate_layers()
+            with _DisableLogger():
+                self._populate_layers()
         except:
             pass
 
@@ -2249,7 +2254,8 @@ class Item(dict):
         if name == 'layers' or name == 'tables':
             if self['layers'] == None:
                 try:
-                    self._populate_layers()
+                    with _DisableLogger():
+                        self._populate_layers()
                 except:
                     pass
                 return self['layers']

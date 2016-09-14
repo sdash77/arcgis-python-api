@@ -18,6 +18,8 @@ from arcgis._impl.common._spatial import *
 from arcgis._impl.common._filters import *
 from arcgis._impl.service._uploads import Uploads
 
+from arcgis._impl.common._utils import _DisableLogger
+
 _log = logging.getLogger(__name__)
 
 
@@ -40,36 +42,37 @@ class Layer(object):
         else:
             self._gis = gis
             self._con = gis._con
-            try:
-                # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except RuntimeError as e:
-                if 'Unable to generate token' in e.args[0]:
-                    try:
-                        # try as a public server
-                        self._token = None
-                        self._refresh()
-                    except HTTPError as httperror:
-                        _log.error(httperror)
-                        err = httperror
-                    except RuntimeError as e:
-                        if 'Token Required' in e.args[0]:
-                            # try token in the provided gis
-                            self._token = self._con.token
+            with _DisableLogger():
+                try:
+                    # try as a federated server
+                    self._token = self._con.generate_portal_server_token(url)
+                    self._refresh()
+                except RuntimeError as e:
+                    if 'Unable to generate token' in e.args[0]:
+                        try:
+                            # try as a public server
+                            self._token = None
                             self._refresh()
-                elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
-                    try:
-                        # try as a public server
-                        self._token = None
-                        self._refresh()
-                    except RuntimeError as e:
-                        if 'Token Required' in e.args[0]:
-                            # try token in the provided gis
-                            self._token = self._con.token
+                        except HTTPError as httperror:
+                            _log.error(httperror)
+                            err = httperror
+                        except RuntimeError as e:
+                            if 'Token Required' in e.args[0]:
+                                # try token in the provided gis
+                                self._token = self._con.token
+                                self._refresh()
+                    elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
+                        try:
+                            # try as a public server
+                            self._token = None
                             self._refresh()
-                else:
-                    raise e
+                        except RuntimeError as e:
+                            if 'Token Required' in e.args[0]:
+                                # try token in the provided gis
+                                self._token = self._con.token
+                                self._refresh()
+                    else:
+                        raise e
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
@@ -118,36 +121,38 @@ class GISService(object):
         else:
             self._gis = gis
             self._con = gis._con
-            try:
-                # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except RuntimeError as e:
-                if 'Unable to generate token' in e.args[0]:
-                    try:
-                        # try as a public server
-                        self._token = None
-                        self._refresh()
-                    except HTTPError as httperror:
-                        _log.error(httperror)
-                        err = httperror
-                    except RuntimeError as e:
-                        if 'Token Required' in e.args[0]:
-                            # try token in the provided gis
-                            self._token = self._con.token
+            
+            with _DisableLogger():
+                try:
+                    # try as a federated server
+                    self._token = self._con.generate_portal_server_token(url)
+                    self._refresh()
+                except RuntimeError as e:
+                    if 'Unable to generate token' in e.args[0]:
+                        try:
+                            # try as a public server
+                            self._token = None
                             self._refresh()
-                elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
-                    try:
-                        # try as a public server
-                        self._token = None
-                        self._refresh()
-                    except RuntimeError as e:
-                        if 'Token Required' in e.args[0]:
-                            # try token in the provided gis
-                            self._token = self._con.token
+                        except HTTPError as httperror:
+                            _log.error(httperror)
+                            err = httperror
+                        except RuntimeError as e:
+                            if 'Token Required' in e.args[0]:
+                                # try token in the provided gis
+                                self._token = self._con.token
+                                self._refresh()
+                    elif 'invalid token' in e.args[0].lower(): # Image Services http://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer
+                        try:
+                            # try as a public server
+                            self._token = None
                             self._refresh()
-                else:
-                    raise e
+                        except RuntimeError as e:
+                            if 'Token Required' in e.args[0]:
+                                # try token in the provided gis
+                                self._token = self._con.token
+                                self._refresh()
+                    else:
+                        raise e
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
