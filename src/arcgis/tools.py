@@ -3612,9 +3612,9 @@ class BigDataTools(_AsyncService):
                        time_reference=None,
                        summary_fields=None,
                        out_sr=None,
+                         process_sr=None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -3644,14 +3644,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
             
+        process_sr : Optional int
+
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -3661,6 +3662,7 @@ class BigDataTools(_AsyncService):
         task ="AggregatePoints"
 
         params = {}
+        context = {}
 
         params["pointLayer"] = super()._feature_input(point_layer)
         if distance_interval is not None:
@@ -3688,13 +3690,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context['extent'] = out_extent
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
