@@ -3546,7 +3546,8 @@ class BigDataTools(_AsyncService):
         """
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
-        super(RasterAnalysisTools, self).__init__(url, gis)
+        # super(RasterAnalysisTools, self).__init__(url, gis)
+        super(BigDataTools, self).__init__(url, gis)
         
     def _create_output_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
