@@ -12,8 +12,6 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-packages = ['arcgis','arcgis/_impl']
-
 # Get the long description from the README file
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
@@ -72,7 +70,7 @@ setup(
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
-    packages=packages,
+    packages=find_packages(),
     package_data={'arcgis': [
                        'widgets/*.js',
                        'widgets/*.css',
