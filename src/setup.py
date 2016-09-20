@@ -28,7 +28,7 @@ setup(
     long_description='Python API to your Web GIS',
 
     # The project's main homepage.
-    url='https://github.com/esri/geosaurus',
+    url='https://developers.arcgis.com/python/',
 
     # Author details
     author='Esri',
@@ -43,7 +43,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
@@ -80,7 +80,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pandas', 'six'],
+    install_requires=['six'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
