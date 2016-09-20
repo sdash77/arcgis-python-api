@@ -3803,9 +3803,9 @@ class BigDataTools(_AsyncService):
                        attribute_relationship=None,
                        join_condition=None,
                        out_sr=None,
+                      process_sr = None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -3839,14 +3839,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -3856,6 +3857,7 @@ class BigDataTools(_AsyncService):
         task ="JoinFeatures"
 
         params = {}
+        context = {}
 
         params["targetLayer"] = super()._feature_input(target_layer)
         params["joinLayer"] = super()._feature_input(join_layer)
@@ -3885,13 +3887,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+            # if datastore is not None:
+            #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -3928,9 +3932,9 @@ class BigDataTools(_AsyncService):
                        summary_fields=None,
                        multipart=False,
                        out_sr=None,
+                       process_sr = None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -3956,14 +3960,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -3973,6 +3978,7 @@ class BigDataTools(_AsyncService):
         task ="CreateBuffers"
 
         params = {}
+        context = {}
 
         params["inputLayer"] = super()._feature_input(input_layer)
         if distance is not None:
@@ -3995,13 +4001,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context["outSR"] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context["processSR"] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4043,9 +4051,9 @@ class BigDataTools(_AsyncService):
                        time_reference=None,
                        area_units=None,
                        out_sr=None,
+                          process_sr = None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -4081,14 +4089,15 @@ class BigDataTools(_AsyncService):
             One of the following: ['ACRES', 'SQUARE_KILOMETERS', 'SQUARE_INCHES', 'SQUARE_FEET', 'SQUARE_YARDS', 'SQUARE_MAP_UNITS', 'SQUARE_METERS', 'SQUARE_MILES', 'HECTARES']
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
-        out_extent : Optional string
+        out_extent : Optional int
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4098,6 +4107,7 @@ class BigDataTools(_AsyncService):
         task ="CalculateDensity"
 
         params = {}
+        context = {}
 
         params["inputLayer"] = super()._feature_input(input_layer)
         if fields is not None:
@@ -4125,13 +4135,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4157,18 +4169,18 @@ class BigDataTools(_AsyncService):
 
 
     def reconstruct_tracks(self,
-                       input_layer,
-                       track_fields,
-                       output_name,
-                       method="PLANAR",
-                       buffer_field=None,
-                       summary_fields=None,
-                       time_split=None,
-                       time_split_unit=None,
-                       out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                           input_layer,
+                           track_fields,
+                           output_name,
+                           method="PLANAR",
+                           buffer_field=None,
+                           summary_fields=None,
+                           time_split=None,
+                           time_split_unit=None,
+                           out_sr=None,
+                           process_sr=None,
+                           out_extent=None,
+                           datastore="GDB"):
         """
         
 
@@ -4190,14 +4202,15 @@ class BigDataTools(_AsyncService):
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4207,6 +4220,7 @@ class BigDataTools(_AsyncService):
         task ="ReconstructTracks"
 
         params = {}
+        context = {}
 
         params["inputLayer"] = super()._feature_input(input_layer)
         params["trackFields"] = track_fields
@@ -4224,13 +4238,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+            # if datastore is not None:
+            #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4256,19 +4272,19 @@ class BigDataTools(_AsyncService):
 
 
     def create_space_time_cube(self,
-                       point_layer,
-                       distance_interval,
-                       distance_interval_unit,
-                       time_interval,
-                       time_interval_unit,
-                       output_name,
-                       time_interval_alignment=None,
-                       reference_time=None,
-                       summary_fields=None,
-                       out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                               point_layer,
+                               distance_interval,
+                               distance_interval_unit,
+                               time_interval,
+                               time_interval_unit,
+                               output_name,
+                               time_interval_alignment=None,
+                               reference_time=None,
+                               summary_fields=None,
+                               out_sr=None,
+                               process_sr = None,
+                               out_extent=None,
+                               datastore="GDB"):
         """
         
 
@@ -4292,14 +4308,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4309,6 +4326,7 @@ class BigDataTools(_AsyncService):
         task ="CreateSpaceTimeCube"
 
         params = {}
+        context = {}
 
         params["pointLayer"] = super()._feature_input(point_layer)
         params["distanceInterval"] = distance_interval
@@ -4326,13 +4344,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4688,9 +4708,9 @@ class BigDataTools(_AsyncService):
                        output_name,
                        summary_fields=None,
                        out_sr=None,
+                             process_sr = None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -4704,14 +4724,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4721,6 +4742,7 @@ class BigDataTools(_AsyncService):
         task ="SummarizeAttributes"
 
         params = {}
+        context = {}
 
         params["inputLayer"] = super()._feature_input(input_layer)
         params["fields"] = fields
@@ -4731,13 +4753,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4777,9 +4801,9 @@ class BigDataTools(_AsyncService):
                        summary_fields=None,
                        proportional_weighting=False,
                        out_sr=None,
+                         process_sr=None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -4811,14 +4835,15 @@ class BigDataTools(_AsyncService):
             
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4828,6 +4853,7 @@ class BigDataTools(_AsyncService):
         task ="SummarizeWithin"
 
         params = {}
+        context = {}
 
         params["summaryLayer"] = super()._feature_input(summary_layer)
         if bin_size is not None:
@@ -4857,13 +4883,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4900,9 +4928,9 @@ class BigDataTools(_AsyncService):
                        neighborhood_distance=None,
                        neighborhood_distance_unit=None,
                        out_sr=None,
+                       process_sr = None,
                        out_extent=None,
-                       datastore="GDB",
-                       context=None):
+                       datastore="GDB"):
         """
         
 
@@ -4928,14 +4956,15 @@ class BigDataTools(_AsyncService):
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         output_name : Required string
             
-        out_sr : Optional string
+        out_sr : Optional int
+
+        process_sr : Optional int
             
         out_extent : Optional string
             
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
-            
+
 
         Returns
         -------
@@ -4945,6 +4974,7 @@ class BigDataTools(_AsyncService):
         task ="FindHotSpots"
 
         params = {}
+        context = {}
 
         params["pointLayer"] = super()._feature_input(point_layer)
         params["binSize"] = bin_size
@@ -4966,13 +4996,15 @@ class BigDataTools(_AsyncService):
 
         params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
         if out_sr is not None:
-            params["gax:env:out_sr"] = out_sr
+            context['outSR'] = {'wkid': int(out_sr)}
+        if process_sr is not None:
+            context['processSR'] = {'wkid': int(process_sr)}
         if out_extent is not None:
-            params["gax:env:outExtent"] = out_extent
-        if datastore is not None:
-            params["gax:env:datastore"] = datastore
+            context["extent"] = out_extent
+        # if datastore is not None:
+        #     params["gax:env:datastore"] = datastore
         if context is not None:
-            params["context"] = context
+            params["context"] = json.dumps(context)
 
         task_url, job_info = super()._analysis_job(task, params)
 
@@ -4997,22 +5029,22 @@ class BigDataTools(_AsyncService):
             return FeatureCollection(job_values['output'])
 
 
-    def find_similar_locations(self):
-        """
-        
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        task ="FindSimilarLocations"
-
-        params = {}
-
-        return { }
+    # def find_similar_locations(self):
+    #     """
+    #
+    #
+    #     Parameters
+    #     ----------
+    #
+    #     Returns
+    #     -------
+    #     """
+    #
+    #     task ="FindSimilarLocations"
+    #
+    #     params = {}
+    #
+    #     return { }
 
 
 ########################################################################
