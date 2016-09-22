@@ -240,7 +240,7 @@ define('mapview', [
                 var token = JSON.parse(token_info);
                                 
                 esriConfig.defaults.io.corsEnabledServers.push(token.server);
-                
+
                 var serverInfo = new ServerInfo();  
                 serverInfo.server = token.server;  
                 serverInfo.tokenServiceUrl = token.tokenurl;  
@@ -268,7 +268,12 @@ define('mapview', [
                 }).then(function(response) {
                     {
                         var id = that.model.get('id');
+                        
                         if ((id) && (id.trim()!='')) {
+                            var arcgis_url = that.model.get('_arcgis_url');
+                            if ((arcgis_url) && (arcgis_url.trim()!='')) {
+                                arcgisUtils.arcgisUrl = arcgis_url;
+                            }
                             arcgisUtils.createMap(id, that.$el[0]).then(function(response){
                                 map = response.map;
                                 map.on("load", on_load);
@@ -314,6 +319,10 @@ define('mapview', [
                 
                 var id = that.model.get('id');
                     if ((id) && (id.trim()!='')) {
+                        var arcgis_url = that.model.get('_arcgis_url');
+                        if ((arcgis_url) && (arcgis_url.trim()!='')) {
+                            arcgisUtils.arcgisUrl = arcgis_url;
+                        }
                         arcgisUtils.createMap(id, that.$el[0]).then(function(response){
                             map = response.map;
                             map.on("load", on_load);

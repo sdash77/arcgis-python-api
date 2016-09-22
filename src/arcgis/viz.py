@@ -123,6 +123,8 @@ class MapView(widgets.DOMWidget):
     _extent = Unicode('').tag(sync=True)
     _token_info = Unicode('').tag(sync=True)
 
+    _arcgis_url = Unicode('').tag(sync=True)
+
     _swipe_div = Unicode('').tag(sync=True)
 
     def __init__(self, **kwargs):
@@ -150,6 +152,8 @@ class MapView(widgets.DOMWidget):
                 "password" : self._gis._con._password
             }
             self._token_info = json.dumps(token_info)
+            if self._gis.properties.portalName != 'ArcGIS Online':
+                self._arcgis_url = self._gis._con.baseurl + 'content/items'
             
         self.item = kwargs.pop('item', None)
         if self.item is not None:
