@@ -143,7 +143,7 @@ class MapView(widgets.DOMWidget):
         self._gis = kwargs.pop('gis', None)
         if self._gis is not None and self._gis._con._username is not None: # not anonymous
             token_info = {
-                "server" : self._gis._con.baseurl,
+                "server" : self._gis._con.baseurl.replace('http://', 'https://'),
                 "tokenurl" : (self._gis._con.baseurl + 
                                'generateToken').replace('http://', 'https://'),
                 "username" : self._gis._con._username,
