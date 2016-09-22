@@ -219,7 +219,7 @@ class _ArcGISConnection(object):
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
                  proxy_host=None, proxy_port=None,
-                 connection=None):
+                 connection=None, verify_cert=True):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
         if baseurl is None:
             self._is_arcpy = False
@@ -245,6 +245,8 @@ class _ArcGISConnection(object):
         self.token = None
         self._server_token = None
         self._connection = connection # second connection
+        
+        self._verify_cert = verify_cert
 
         # Setup the referer and user agent
         if baseurl:
@@ -750,7 +752,7 @@ class _ArcGISConnection(object):
                            urlencode(new_qs_list),
                            urlparts.fragment))
     #----------------------------------------------------------------------
-    def get_handlers(self):
+    def get_handlers(self, verify_cert=True):
         handlers = []
 
         if self._auth == "BASICAUTH": # used by LDAP
@@ -766,6 +768,14 @@ class _ArcGISConnection(object):
 
         cj = cookiejar.CookieJar()
         handlers.append(request.HTTPCookieProcessor(cj))
+
+        if not verify_cert or not self._verify_cert:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            handler = request.HTTPSHandler(context=ctx)
+            handlers.append(handler)
+
         return handlers
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
@@ -789,9 +799,9 @@ class _ArcGISConnection(object):
 
         if ssl or self.all_ssl:
             url = url.replace('http://', 'https://')
-        if verify_cert == False:
-            import ssl
-            ssl._create_default_https_context = ssl._create_unverified_context
+        #if verify_cert == False:
+        #    import ssl
+        #    ssl._create_default_https_context = ssl._create_unverified_context
         # Add the token if logged in
         if add_token:
             if token != DEFAULT_TOKEN: # use the provided token, if any
@@ -825,7 +835,7 @@ class _ArcGISConnection(object):
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 
-            handlers = self.get_handlers()
+            handlers = self.get_handlers(verify_cert)
             opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
@@ -842,7 +852,7 @@ class _ArcGISConnection(object):
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 
-            handlers = self.get_handlers()
+            handlers = self.get_handlers(verify_cert)
             opener = request.build_opener(*handlers)
 
             opener.addheaders = headers
@@ -880,7 +890,7 @@ class _ArcGISConnection(object):
                     else:
                         retry_token = newtoken
 
-                    return self.post(path, postdata, files, ssl, compress, token=retry_token,
+                    return self.post(path, postdata, files, ssl, compress, token=retry_token, verify_cert=verify_cert,
                                      is_retry=True)
                 elif errorcode == 498:
                     raise RuntimeError('Invalid token')

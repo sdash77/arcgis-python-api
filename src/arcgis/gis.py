@@ -71,7 +71,7 @@ class GIS(object):
 
     _version = '0.1'
 
-    def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None):
+    def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None, verify_cert=True):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
@@ -91,6 +91,7 @@ class GIS(object):
         self._cert_file = cert_file
         self._portal = None
         self._con = None
+        self._verify_cert = verify_cert
         self.tools = Tools(self)
         self.__enter__()
 
@@ -99,7 +100,7 @@ class GIS(object):
                                #password=self._password,
                                #key_file=self._key_file,
                                #cert_file=self._cert_file)
-        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file)
+        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file, verify_cert=self._verify_cert)
         
         if self._url.lower() == "pro":
             self._url = self._portal.url
@@ -221,7 +222,7 @@ class Datastore(dict):
         params = { "f" : "json" }
         path = self._admin_url + "/data/items" + self.datapath
 
-        datadict = self._portal.con.post(path, params)
+        datadict = self._portal.con.post(path, params, verify_cert=False)
 
         if datadict:
             self.__dict__.update(datadict)
@@ -240,7 +241,7 @@ class Datastore(dict):
             params = { "f" : "json" }
             path = self._admin_url + "/data/items" + self.datapath
 
-            datadict = self._portal.con.post(path, params)
+            datadict = self._portal.con.post(path, params, verify_cert=False)
             super(Datastore, self).update(datadict)
             self.__dict__.update(datadict)
             return dict.__getitem__(self, k)
@@ -262,7 +263,7 @@ class Datastore(dict):
         params = {
             'f': 'json',
         }
-        res = self._portal.con.post(data_item_manifest_url, params)
+        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
         return res
 
     @manifest.setter
@@ -281,7 +282,7 @@ class Datastore(dict):
                 'f' : 'pjson'
             }
 
-            resp = self._portal.con.post(manifest_upload_url, postdata, files)
+            resp = self._portal.con.post(manifest_upload_url, postdata, files, verify_cert=False)
 
             if resp['status'] == 'success':
                 return True
@@ -300,7 +301,7 @@ class Datastore(dict):
             'f': 'json',
             'itemPath': self.datapath
         }
-        res = self._portal.con.post(data_item_manifest_url, params)
+        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
         return res["totalRefCount"]
 
     def delete(self):
@@ -314,7 +315,7 @@ class Datastore(dict):
         }
         path = self._admin_url + "/data/unregisterItem"
 
-        resp = self._portal.con.post(path, params)
+        resp = self._portal.con.post(path, params, verify_cert=False)
         if resp:
             return resp.get('success')
         else:
@@ -335,7 +336,7 @@ class Datastore(dict):
         }
         path = self._admin_url +  "/data/items" + self.datapath +  "/edit"
 
-        resp = self._portal.con.post(path, params)
+        resp = self._portal.con.post(path, params, verify_cert=False)
         if resp ['status'] == 'success':
             return True
         else:
@@ -352,7 +353,7 @@ class Datastore(dict):
         params = { "f" : "json" }
         path = self._admin_url + "/data/items" + self.datapath
 
-        datadict = self._portal.con.post(path, params)
+        datadict = self._portal.con.post(path, params, verify_cert=False)
 
         params = {
             "f" : "json",
@@ -360,7 +361,7 @@ class Datastore(dict):
         }
         path = self._admin_url + "/data/validateDataItem"
 
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
 
     def list_datasets(self):
@@ -372,7 +373,7 @@ class Datastore(dict):
         params = {
             'f': 'json',
         }
-        res = self._portal.con.post(data_item_manifest_url, params)
+        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
 
         for dataset in res['datasets']:
             print(dataset['name'] + ' ('+ dataset['format']['extension'] + ')')
@@ -414,7 +415,7 @@ class DatastoreManager(object):
         """
         params = {"f" : "json"}
         path = self._admin_url + "/data/config"
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         return res
 
     @config.setter
@@ -467,7 +468,7 @@ class DatastoreManager(object):
             "item" : item
         }
         path = self._admin_url + "/data/registerItem"
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
             return Datastore(self, "/fileShares/" + name)
         else:
@@ -499,7 +500,7 @@ class DatastoreManager(object):
                 }
             }
         }
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
 
         if res['status'] == 'success' or res['status'] == 'exists':
             output = Datastore(self, "/bigDataFileShares/" + name)
@@ -550,7 +551,7 @@ class DatastoreManager(object):
             "item" : item
         }
         path = self._admin_url + "/data/registerItem"
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
             return Datastore(self, "/enterpriseDatabases/" + name)
         else:
@@ -575,7 +576,7 @@ class DatastoreManager(object):
         params['item'] = item
 
         path = self._admin_url + "/data/registerItem"
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
             return Datastore(self, "/enterpriseDatabases/" + name)
         else:
@@ -593,7 +594,7 @@ class DatastoreManager(object):
         params = { "f" : "json" }
         urlpath = self._admin_url + "/data/items" + path
 
-        datadict = self._portal.con.post(urlpath, params)
+        datadict = self._portal.con.post(urlpath, params, verify_cert=False)
         if 'status' not in datadict:
             return Datastore(self, path)
         else:
@@ -635,7 +636,7 @@ class DatastoreManager(object):
 
         dataitems = []
 
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         for item in res['items']:
             dataitems.append(Datastore(self, item['path']))
         return dataitems
@@ -651,7 +652,7 @@ class DatastoreManager(object):
         """
         params = {"f" : "json"}
         path = self._admin_url + "/data/validateAllDataItems"
-        res = self._portal.con.post(path, params)
+        res = self._portal.con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
 
 class Tools(object):

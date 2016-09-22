@@ -301,7 +301,7 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None):
+                 tokenurl=None, verify_cert=True):
         """ The Portal constructor. Requires URL and optionally username/password."""
         self._is_arcpy = url.lower() == "pro"
         if self._is_arcpy:
@@ -374,7 +374,8 @@ class Portal(object):
                                              all_ssl=True,
                                              referer=referer,
                                              proxy_host=proxy_host,
-                                             proxy_port=proxy_port)
+                                             proxy_port=proxy_port, 
+                                             verify_cert=verify_cert)
         self.get_version(True)
         self.get_properties(True)
 
