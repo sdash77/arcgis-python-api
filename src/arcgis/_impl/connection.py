@@ -873,14 +873,14 @@ class _ArcGISConnection(object):
                     newtoken = self.relogin()
 
                     self.token = newtoken
-
+                    retry_token = None
                     if token != DEFAULT_TOKEN: # was provided a token, that has expired
                         newfedtoken = self.generate_portal_server_token(url)
-                        postdata['token'] = newfedtoken
+                        retry_token = newfedtoken
                     else:
-                        postdata['token'] = newtoken
+                        retry_token = newtoken
 
-                    return self.post(path, postdata, files, ssl, compress,
+                    return self.post(path, postdata, files, ssl, compress, token=retry_token,
                                      is_retry=True)
                 elif errorcode == 498:
                     raise RuntimeError('Invalid token')
