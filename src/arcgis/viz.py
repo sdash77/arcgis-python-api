@@ -218,6 +218,8 @@ class MapView(widgets.DOMWidget):
 
             self._addlayer = json.dumps(js_layer)
         elif 'layers' in item: # items as well as services
+            if item.layers is None:
+                raise RuntimeError('No layers accessible/available in this item or service')
             for lyr in item.layers:
                 js_layer = lyr._js_lyr
                 if options is not None:
