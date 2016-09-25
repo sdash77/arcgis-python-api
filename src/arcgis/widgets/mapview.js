@@ -225,7 +225,7 @@ define('mapview', [
      PictureMarkerSymbol,
      webMercatorUtils,
      arcgisUtils){
-    var map, toolbar;
+    //var map, toolbar;
     var MapView = widgets.DOMWidgetView.extend({
 
         // Render the view.
@@ -274,13 +274,13 @@ define('mapview', [
                             if ((arcgis_url) && (arcgis_url.trim()!='')) {
                                 arcgisUtils.arcgisUrl = arcgis_url;
                             }
-                            arcgisUtils.createMap(id, that.$el[0]).then(function(response){
-                                map = response.map;
-                                map.on("load", on_load);
+                            arcgisUtils.createMap(id, that.el).then(function(response){
+                                this.map = response.map;
+                                this.map.on("load", on_load);
                             });
                         } else {
 
-                            that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
+                            //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
                             if (that.model.get('_extent').indexOf("{") > -1) {
                                var ext = JSON.parse(that.model.get('_extent'));
@@ -293,7 +293,7 @@ define('mapview', [
 
                                newExtent.spatialReference = new SpatialReference({ wkid:4326 });
 
-                               map = new Map(that.$el[0], {
+                               this.map = new Map(that.el, {
                                     basemap: that.model.get('basemap'),
                                     extent: newExtent
                                 });
@@ -301,14 +301,14 @@ define('mapview', [
 
                            } else {
                                
-                               map = new Map(that.$el[0], {
+                               this.map = new Map(that.el, {
                                     basemap: that.model.get('basemap'),
                                     center: that.model.get('center').reverse(),
                                     zoom: that.model.get('zoom')
                                 });
                            }
                             
-                            map.on("load", on_load);
+                            this.map.on("load", on_load);
                         }
                         //map.on("load", on_load);
                     }
@@ -323,13 +323,13 @@ define('mapview', [
                         if ((arcgis_url) && (arcgis_url.trim()!='')) {
                             arcgisUtils.arcgisUrl = arcgis_url;
                         }
-                        arcgisUtils.createMap(id, that.$el[0]).then(function(response){
-                            map = response.map;
-                            map.on("load", on_load);
+                        arcgisUtils.createMap(id, that.el).then(function(response){
+                            this.map = response.map;
+                            this.map.on("load", on_load);
                         });
                     } else {
 
-                        that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
+                        //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
                         
                        if (that.model.get('_extent').indexOf("{") > -1) {
@@ -343,14 +343,14 @@ define('mapview', [
 
                            newExtent.spatialReference = new SpatialReference({ wkid:4326 });
                            
-                           map = new Map(that.$el[0], {
+                           this.map = new Map(that.el, {
                                 basemap: that.model.get('basemap'),
                                 extent: newExtent
                             });
                            
 
                        } else {
-                           map = new Map(that.$el[0], {
+                           this.map = new Map(that.el, {
                                 basemap: that.model.get('basemap'),
                                 center: that.model.get('center').reverse(),
                                 zoom: that.model.get('zoom')
@@ -358,33 +358,35 @@ define('mapview', [
                        }
                         
                         
+                        //setTimeout(function(){ alert("Hello");this.map.on("load", on_load); }, 3000);
                         
                         
-                        map.on("load", on_load);
+                        this.map.on("load", on_load);
                     }
                 
             }
             
             
             
-
-            function on_load() {
-                map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
+            
+            function on_load(evt) {
+                evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
 
                 // create the draw toolbar, it activates only when mode=draw_*
-                toolbar = new Draw(map);
+                that.toolbar = new Draw(evt.map);
 
                 // hook up events
-                toolbar.on("draw-end", onDrawEnd);
+                that.toolbar.on("draw-end", onDrawEnd);
                 //map.on("extent-change", onExtentChange);
-                map.on("click", onMouseClick);
-
+                evt.map.on("click", onMouseClick);
+                
                 //var timeExtent = new TimeExtent();
                 //timeExtent.startTime = new Date("1/1/1989 UTC");
                 //timeExtent.endTime = new Date("1/1/1991 UTC");
                 ///map.setTimeExtent(timeExtent);
 
             }
+            
 
             // JS map events
             /*
@@ -394,13 +396,12 @@ define('mapview', [
                 that.extent_change(extent, zoomed);
             }
             */
-
             function onDrawEnd(evtObj){
               var geometry = evtObj.geometry;
 
-              var graphic = map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
+              var graphic = that.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
 
-              toolbar.deactivate();
+              that.toolbar.deactivate();
               that.draw_end(geometry);
             }
 
@@ -415,6 +416,7 @@ define('mapview', [
                 //console.log(normalizedVal);
                 that.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
             }
+            
 
             // Model change events
             this.model.on('change:zoom', this.zoom_changed, this);
@@ -427,21 +429,21 @@ define('mapview', [
             this.model.on('change:end_time', this.end_time_changed, this);
 
         },
-
+        
         // Incoming Events from the model
         zoom_changed: function() {
-            map.setZoom(this.model.get('zoom'));
+            this.map.setZoom(this.model.get('zoom'));
         },
 
         mode_changed: function() {
 
             if (this.model.get('mode') == "navigate") {
                 console.log("***mode = navigate")
-                toolbar.deactivate();
+                this.toolbar.deactivate();
             } else if (this.model.get('mode') == "###clear_graphics") {
-                map.graphics.clear();
+                this.map.graphics.clear();
             } else if (this.model.get('mode') == "###remove_layers") {
-                map.removeAllLayers();
+                this.map.removeAllLayers();
             } else if (this.model.get('mode').indexOf("{") > -1) {
 
                 console.log("***mode=draw_geometry%%%" );
@@ -467,12 +469,12 @@ define('mapview', [
                         gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/pink.png', 32, 32);
                     }
                 }
-                map.graphics.add(gfx);
+                this.map.graphics.add(gfx);
 
             } else {
                 var shape = this.model.get('mode');
                 console.log("***mode=draw_" + shape);
-                toolbar.activate(shape);
+                this.toolbar.activate(shape);
             }
         },
 
@@ -487,7 +489,7 @@ define('mapview', [
                 if (newlayer.type == "KMLLayer") {
                     console.log("KMLLayer " + newlayer.url);
                     var kml = new KMLLayer(newlayer.url);
-                    map.addLayer(kml);
+                    this.map.addLayer(kml);
                     kml.on("load", function() {
                       domStyle.set("loading", "display", "none");
                     });
@@ -515,7 +517,7 @@ define('mapview', [
                        layer.setRenderer(heatmapRenderer);
                     }
 
-                    map.addLayer(layer);
+                    this.map.addLayer(layer);
 
                     if (newlayer.renderer == "ClassedColorRenderer") {
                         layer.on("load", function () {
@@ -534,7 +536,7 @@ define('mapview', [
                         smartMapping.createClassedColorRenderer({
                            layer: layer,
                            field: field,
-                           basemap: map.getBasemap(),
+                           basemap: this.map.getBasemap(),
                            classificationMethod: "quantile"
                         }).then(function (response) {
                            layer.setRenderer(response.renderer);
@@ -549,7 +551,7 @@ define('mapview', [
                         smartMapping.createClassedSizeRenderer({
                            layer: layer,
                            field: field,
-                           basemap: map.getBasemap(),
+                           basemap: this.map.getBasemap(),
                            classificationMethod: "quantile"
                         }).then(function (response) {
                            layer.setRenderer(response.renderer);
@@ -583,7 +585,7 @@ define('mapview', [
                     }
                     var layer = new ArcGISImageServiceLayer(newlayer.url, options);
 
-                    map.addLayer(layer);
+                    this.map.addLayer(layer);
 
                     if (swipelayer) {
                         console.log("Swipe Layer");
@@ -653,7 +655,7 @@ define('mapview', [
                             smartMapping.createClassedColorRenderer({
                                layer: layer,
                                field: field,
-                               basemap: map.getBasemap(),
+                               basemap: this.map.getBasemap(),
                                classificationMethod: "quantile"
                             }).then(function (response) {
                                layer.setRenderer(response.renderer);
@@ -669,7 +671,7 @@ define('mapview', [
                             smartMapping.createClassedSizeRenderer({
                                layer: layer,
                                field: field,
-                               basemap: map.getBasemap(),
+                               basemap: this.map.getBasemap(),
                                classificationMethod: "quantile"
                             }).then(function (response) {
                                layer.setRenderer(response.renderer);
@@ -680,7 +682,7 @@ define('mapview', [
                     }
 
 
-                    map.addLayer(layer);
+                    this.map.addLayer(layer);
                 }
 
             }
@@ -689,7 +691,7 @@ define('mapview', [
 
         center_changed: function() {
             console.log("changing center");
-            map.centerAt(this.model.get('center').reverse());
+            this.map.centerAt(this.model.get('center').reverse());
         },
         
         extent_changed: function() {
@@ -705,7 +707,7 @@ define('mapview', [
             
             newExtent.spatialReference = new SpatialReference({ wkid:4326 });
 
-            map.setExtent(newExtent);
+            this.map.setExtent(newExtent);
         },
 
         start_time_changed: function() {
@@ -713,7 +715,7 @@ define('mapview', [
             var timeExtent = new TimeExtent();
             timeExtent.startTime = new Date(this.model.get('start_time'));
             timeExtent.endTime = new Date(this.model.get('end_time'));
-            map.setTimeExtent(timeExtent);
+            this.map.setTimeExtent(timeExtent);
         },
 
         end_time_changed: function() {
@@ -721,11 +723,11 @@ define('mapview', [
             var timeExtent = new TimeExtent();
             timeExtent.startTime = new Date(this.model.get('start_time'));
             timeExtent.endTime = new Date(this.model.get('end_time'));
-            map.setTimeExtent(timeExtent);
+            this.map.setTimeExtent(timeExtent);
         },
 
         basemap_changed: function() {
-            map.setBasemap(this.model.get('basemap'));
+            this.map.setBasemap(this.model.get('basemap'));
         },
 
         // Outgoing events to the model
@@ -767,7 +769,14 @@ define('mapview', [
     //manager.WidgetManager.register_widget_view('MapView', MapView);
 });
 
-
+define(function(){
+    function load_ipython_extension(){
+        console.info('loaded map widget');
+    }
+    return {
+        load_ipython_extension: load_ipython_extension
+    }
+});
               /*
               var infoTemplate = new InfoTemplate("${state_name}", "Population (2000):  ${pop2000:NumberFormat}");
               var featureLayer = new FeatureLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/3",{
