@@ -266,125 +266,78 @@ define('mapview', [
                         ssl: response.ssl  
                     });  
                 }).then(function(response) {
-                    {
-                        var id = that.model.get('id');
-                        
-                        if ((id) && (id.trim()!='')) {
-                            var arcgis_url = that.model.get('_arcgis_url');
-                            if ((arcgis_url) && (arcgis_url.trim()!='')) {
-                                arcgisUtils.arcgisUrl = arcgis_url;
-                            }
-                            arcgisUtils.createMap(id, that.el).then(function(response){
-                                this.map = response.map;
-                                this.map.on("load", on_load);
-                            });
-                        } else {
-
-                            //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
-
-                            if (that.model.get('_extent').indexOf("{") > -1) {
-                               var ext = JSON.parse(that.model.get('_extent'));
-
-                               var newExtent = new Extent();
-                               newExtent.xmin = ext.xmin;
-                               newExtent.xmax = ext.xmax;
-                               newExtent.ymin = ext.ymin;
-                               newExtent.ymax = ext.ymax;
-
-                               newExtent.spatialReference = new SpatialReference({ wkid:4326 });
-
-                               this.map = new Map(that.el, {
-                                    basemap: that.model.get('basemap'),
-                                    extent: newExtent
-                                });
-
-
-                           } else {
-                               
-                               this.map = new Map(that.el, {
-                                    basemap: that.model.get('basemap'),
-                                    center: that.model.get('center').reverse(),
-                                    zoom: that.model.get('zoom')
-                                });
-                           }
-                            
-                            this.map.on("load", on_load);
-                        }
-                        //map.on("load", on_load);
-                    }
+                    
+                    load_map(that);
+                    
                 });  
                 
                 
             } else {
                 
-                var id = that.model.get('id');
-                    if ((id) && (id.trim()!='')) {
-                        var arcgis_url = that.model.get('_arcgis_url');
-                        if ((arcgis_url) && (arcgis_url.trim()!='')) {
-                            arcgisUtils.arcgisUrl = arcgis_url;
-                        }
-                        arcgisUtils.createMap(id, that.el).then(function(response){
-                            this.map = response.map;
-                            this.map.on("load", on_load);
-                        });
-                    } else {
-
-                        //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
-
-                        
-                       if (that.model.get('_extent').indexOf("{") > -1) {
-                           var ext = JSON.parse(that.model.get('_extent'));
-            
-                           var newExtent = new Extent();
-                           newExtent.xmin = ext.xmin;
-                           newExtent.xmax = ext.xmax;
-                           newExtent.ymin = ext.ymin;
-                           newExtent.ymax = ext.ymax;
-
-                           newExtent.spatialReference = new SpatialReference({ wkid:4326 });
-                           
-                           this.map = new Map(that.el, {
-                                basemap: that.model.get('basemap'),
-                                extent: newExtent
-                            });
-                           
-
-                       } else {
-                           this.map = new Map(that.el, {
-                                basemap: that.model.get('basemap'),
-                                center: that.model.get('center').reverse(),
-                                zoom: that.model.get('zoom')
-                            });
-                       }
-                        
-                        
-                        //setTimeout(function(){ alert("Hello");this.map.on("load", on_load); }, 3000);
-                        
-                        
-                        this.map.on("load", on_load);
-                    }
+                load_map(that);
                 
             }
             
-            
-            
+            function load_map(that) {
+                var id = that.model.get('id');
+                if ((id) && (id.trim()!='')) {
+                    var arcgis_url = that.model.get('_arcgis_url');
+                    if ((arcgis_url) && (arcgis_url.trim()!='')) {
+                        arcgisUtils.arcgisUrl = arcgis_url;
+                    }
+                    arcgisUtils.createMap(id, that.el).then(function(response){
+                        that.map = response.map;
+                        that.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
+                        // create the draw toolbar, it activates only when mode=draw_*
+                        that.toolbar = new Draw(that.map);
+                        // hook up events
+                        that.toolbar.on("draw-end", onDrawEnd);
+                        //map.on("extent-change", onExtentChange);
+                        that.map.on("click", onMouseClick);
+                    });
+                } else {
+
+                    //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
+
+                    if (that.model.get('_extent').indexOf("{") > -1) {
+                       var ext = JSON.parse(that.model.get('_extent'));
+
+                       var newExtent = new Extent();
+                       newExtent.xmin = ext.xmin;
+                       newExtent.xmax = ext.xmax;
+                       newExtent.ymin = ext.ymin;
+                       newExtent.ymax = ext.ymax;
+
+                       newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+
+                       that.map = new Map(that.el, {
+                            basemap: that.model.get('basemap'),
+                            extent: newExtent
+                        });
+
+
+                   } else {
+
+                       that.map = new Map(that.el, {
+                            basemap: that.model.get('basemap'),
+                            center: that.model.get('center').reverse(),
+                            zoom: that.model.get('zoom')
+                        });
+                   }
+
+                    that.map.on("load", on_load);
+                }
+            }
             
             function on_load(evt) {
+                console.log('***on_load');
                 evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
-
                 // create the draw toolbar, it activates only when mode=draw_*
                 that.toolbar = new Draw(evt.map);
-
                 // hook up events
                 that.toolbar.on("draw-end", onDrawEnd);
                 //map.on("extent-change", onExtentChange);
                 evt.map.on("click", onMouseClick);
-                
-                //var timeExtent = new TimeExtent();
-                //timeExtent.startTime = new Date("1/1/1989 UTC");
-                //timeExtent.endTime = new Date("1/1/1991 UTC");
-                ///map.setTimeExtent(timeExtent);
-
             }
             
 
@@ -429,6 +382,47 @@ define('mapview', [
             this.model.on('change:end_time', this.end_time_changed, this);
 
         },
+        /*
+        on_load: function(evt) {
+            console.log('***on_load');
+            evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
+
+            // create the draw toolbar, it activates only when mode=draw_*
+            this.toolbar = new Draw(evt.map);
+
+            // hook up events
+            this.toolbar.on("draw-end", this.onDrawEnd);
+            //map.on("extent-change", onExtentChange);
+            //evt.map.target.on("click", this.onMouseClick);   
+            evt.map.on("click", this.onMouseClick);   
+        },
+
+        onDrawEnd : function(evtObj){
+            var geometry = evtObj.geometry;
+
+            var graphic = this.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
+
+            this.toolbar.deactivate();
+            //this.draw_end(geometry);
+                        this.model.set('mode','navigate');
+            this.touch();
+            this.send({event: 'draw-end', message: geometry});
+        },
+
+        onMouseClick: function(event) {
+            console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
+                        " on the screen. The map coordinate at this point is " +
+                        event.mapPoint.x + ", " + event.mapPoint.y
+
+            );
+            //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
+            //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
+            //console.log(normalizedVal);
+            
+            //this.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
+            this.send({event: 'mouseclick', message: event.mapPoint});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
+        },
+        */
         
         // Incoming Events from the model
         zoom_changed: function() {
