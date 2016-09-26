@@ -231,7 +231,7 @@ define('mapview', [
         // Render the view.
         render: function(){
             $('head').append( $('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath+'/custom.css') );
-
+            $('body').addClass('claro');
             var that = this;
 
             var token_info = this.model.get('_token_info')
@@ -279,6 +279,8 @@ define('mapview', [
             }
             
             function load_map(that) {
+                IPython.keyboard_manager.disable(); // loading map can cause modal dialog for secure resources which is
+                                                    // incompatible with keyboard manager (eats shortcut keys)
                 var id = that.model.get('id');
                 if ((id) && (id.trim()!='')) {
                     var arcgis_url = that.model.get('_arcgis_url');
@@ -286,6 +288,7 @@ define('mapview', [
                         arcgisUtils.arcgisUrl = arcgis_url;
                     }
                     arcgisUtils.createMap(id, that.el).then(function(response){
+                        IPython.keyboard_manager.enable();
                         that.map = response.map;
                         that.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
                         // create the draw toolbar, it activates only when mode=draw_*
@@ -331,6 +334,7 @@ define('mapview', [
             
             function on_load(evt) {
                 console.log('***on_load');
+                IPython.keyboard_manager.enable();
                 evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
                 // create the draw toolbar, it activates only when mode=draw_*
                 that.toolbar = new Draw(evt.map);
