@@ -1517,7 +1517,7 @@ class Group(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return 'http://www.arcgis.com/home/images/group-no-image.png'
+            return self._portal.url + '/home/images/group-no-image.png' 
         else:
             thumbnail_url_path = self._portal.con.baseurl + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
@@ -1859,7 +1859,7 @@ class User(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return 'http://www.arcgis.com/home/js/arcgisonline/css/images/no-user-thumb.jpg'
+            return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg' 
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/community/users/' + self.username + '/info/' + thumbnail_file
             return thumbnail_url_path
@@ -2340,7 +2340,10 @@ class Item(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return 'http://static.arcgis.com/images/desktopapp.png'
+            if self._gis.properties.portalName == 'ArcGIS Online':
+                return 'http://static.arcgis.com/images/desktopapp.png'
+            else:
+                return self._portal.url + '/portalimages/desktopapp.png' 
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
