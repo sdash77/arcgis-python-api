@@ -1817,6 +1817,8 @@ class User(dict):
         # userdict = self._portal.get_user(self.username)
         self._hydrated = False
         if userdict:
+            if 'groups' in userdict and len(userdict['groups']) == 0: # groups aren't set unless hydrated
+                del userdict['groups']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
 
