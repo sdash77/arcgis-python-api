@@ -17,12 +17,12 @@ requirements:
         - python
         - setuptools
         - six
-        - ipywidgets >=5.1.5
+        - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
     run:
         - python
         - six
-        - ipywidgets >=5.1.5
+        - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
 test:
     imports:
