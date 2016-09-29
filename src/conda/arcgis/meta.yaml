@@ -5,11 +5,11 @@
 
 package:
     name: arcgis
-    version: '0.2'
+    version: '0.3'
 source:
-    fn: geosaurus-0.2-beta.zip
+    fn: geosaurus-0.3-beta.zip
     sha256: a1ab70011e920f211cb77da75b946e727fe3e7e25289e0bf9ea5308fc39ac223
-    url: http://pydemo.esri.com:9000/geosaurus-0.2-beta.zip
+    url: http://pydemo.esri.com:9000/geosaurus-0.3-beta.zip
 build:
     number: '1'
 requirements:

@@ -1,2 +1,2 @@
-"%PREFIX%\python.exe" -m arcgis.install -u
-"%PREFIX%\Scripts\jupyter-nbextension.exe" enable --py --sys-prefix widgetsnbextension
+"%PREFIX%\Scripts\jupyter-nbextension.exe" install --py --sys-prefix arcgis  >> "%PREFIX%/.messages.txt" 2>&1
+"%PREFIX%\Scripts\jupyter-nbextension.exe" enable  --py --sys-prefix arcgis  >> "%PREFIX%/.messages.txt" 2>&1
