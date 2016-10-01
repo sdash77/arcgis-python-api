@@ -2384,46 +2384,50 @@ class Item(dict):
                 raise e
 
     def _get_icon(self):
+        icon = "layers16.png"
         if self.type.lower() == "web map":
-            return "maps16.png"
+            icon = "maps16.png"
         elif self.type.lower() == "web scene":
-            return "webscene16.png"
+            icon = "webscene16.png"
         elif self.type.lower() == "cityengine web scene":
-            return "webscene16.png"
+            icon = "webscene16.png"
         elif self.type.lower() == "pro map":
-            return "mapsgray16.png"
+            icon = "mapsgray16.png"
         elif self.type.lower() == "feature service":
-            return "featureshosted16.png"
+            icon = "featureshosted16.png"
         elif self.type.lower() == "map service":
-            return "mapimages16.png"
+            icon = "mapimages16.png"
         elif self.type.lower() == "image service":
-            return "imagery16.png"
+            icon = "imagery16.png"
         elif self.type.lower() == "kml":
-            return "features16.png"
+            icon = "features16.png"
         elif self.type.lower() == "wms":
-            return "mapimages16.png"
+            icon = "mapimages16.png"
         elif self.type.lower() == "feature collection":
-            return "features16.png"
+            icon = "features16.png"
         elif self.type.lower() == "feature collection template":
-            return "maps16.png"
+            icon = "maps16.png"
         elif self.type.lower() == "geodata service":
-            return "layers16.png"
+            icon = "layers16.png"
         elif self.type.lower() == "globe service":
-            return "layers16.png"
+            icon = "layers16.png"
         elif self.type.lower() == "shapefile":
-            return "datafiles16.png"
+            icon = "datafiles16.png"
         elif self.type.lower() == "web map application":
-            return "apps16.png"
+            icon = "apps16.png"
         elif self.type.lower() == "map package":
-            return "mapsgray16.png"
+            icon = "mapsgray16.png"
         elif self.type.lower() == "feature layer":
-            return "featureshosted16.png"
+            icon = "featureshosted16.png"
         elif self.type.lower() == "map service":
-            return "maptiles16.png"
+            icon = "maptiles16.png"
         elif self.type.lower() == "map document":
-            return "mapsgray16.png"
+            icon = "mapsgray16.png"
         else:
-            return "layers16.png"
+            icon = "layers16.png"
+        
+        icon = self._portal.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
+        return icon
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
@@ -2451,7 +2455,7 @@ class Item(dict):
                     <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
-                        <br>""" + snippet + """<img src='http://www.arcgis.com/home/js/jsapi/esri/css/images/item_type_icons/""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
+                        <br>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
                         <br>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
                         <br>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
