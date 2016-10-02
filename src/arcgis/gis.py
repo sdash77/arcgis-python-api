@@ -1565,11 +1565,11 @@ class Group(dict):
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(title) + """</b>
                         </a>
-                        <br>
-                        <br><b>Summary</b>: """ + str(snippet) + """
-                        <br><b>Description</b>: """ + str(description)  + """
-                        <br><b>Owner</b>: """ + str(owner)  + """
-                        <br><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/>
+                        <br/><b>Summary</b>: """ + str(snippet) + """
+                        <br/><b>Description</b>: """ + str(description)  + """
+                        <br/><b>Owner</b>: """ + str(owner)  + """
+                        <br/><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -1909,11 +1909,11 @@ class User(dict):
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + str(url) + """' target='_blank'><b>""" + str(fullName) + """</b>
                         </a>
-                        <br><br><b>Bio</b>: """ + str(description) + """
-                        <br><b>First Name</b>: """ + str(firstName) + """
-                        <br><b>Last Name</b>: """ + str(lastName)  + """
-                        <br><b>Username</b>: """ + str(self.username)  + """
-                        <br><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><br/><b>Bio</b>: """ + str(description) + """
+                        <br/><b>First Name</b>: """ + str(firstName) + """
+                        <br/><b>Last Name</b>: """ + str(lastName)  + """
+                        <br/><b>Username</b>: """ + str(self.username)  + """
+                        <br/><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -2455,9 +2455,9 @@ class Item(dict):
                     <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
-                        <br>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
-                        <br>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
-                        <br>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
+                        <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
+                        <br/>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
+                        <br/>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
                 </div>
                 """
