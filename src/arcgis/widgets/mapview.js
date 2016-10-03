@@ -477,7 +477,7 @@ define('mapview', [
         },
 
         layer_changed: function() {
-
+            var that = this;
             if (this.model.get('_addlayer').indexOf("{") > -1) {
 
                 console.log("***mode=_addlayer" );
@@ -534,7 +534,7 @@ define('mapview', [
                         smartMapping.createClassedColorRenderer({
                            layer: layer,
                            field: field,
-                           basemap: this.map.getBasemap(),
+                           basemap: that.map.getBasemap(),
                            classificationMethod: "quantile"
                         }).then(function (response) {
                            layer.setRenderer(response.renderer);
@@ -549,7 +549,7 @@ define('mapview', [
                         smartMapping.createClassedSizeRenderer({
                            layer: layer,
                            field: field,
-                           basemap: this.map.getBasemap(),
+                           basemap: that.map.getBasemap(),
                            classificationMethod: "quantile"
                         }).then(function (response) {
                            layer.setRenderer(response.renderer);
@@ -653,7 +653,7 @@ define('mapview', [
                             smartMapping.createClassedColorRenderer({
                                layer: layer,
                                field: field,
-                               basemap: this.map.getBasemap(),
+                               basemap: that.map.getBasemap(),
                                classificationMethod: "quantile"
                             }).then(function (response) {
                                layer.setRenderer(response.renderer);
@@ -669,7 +669,7 @@ define('mapview', [
                             smartMapping.createClassedSizeRenderer({
                                layer: layer,
                                field: field,
-                               basemap: this.map.getBasemap(),
+                               basemap: that.map.getBasemap(),
                                classificationMethod: "quantile"
                             }).then(function (response) {
                                layer.setRenderer(response.renderer);
