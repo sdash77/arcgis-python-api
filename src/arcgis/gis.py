@@ -2286,7 +2286,7 @@ class Item(dict):
             save_path = self._workdir
         if data_path:
             return self._portal.con.get(path=data_path, file_name=self.name,
-                                        out_folder=save_path, try_json=False,)
+                                        out_folder=save_path, try_json=False)
 
     def get_thumbnail(self):
         """ Returns the bytes that make up the thumbnail for this item.
@@ -2349,7 +2349,10 @@ class Item(dict):
             return thumbnail_url_path
 
     def get_metadata(self):
-        """ Returns the item metadata for the specified item id. """
+        """ Returns the item metadata for the specified item. 
+            Returns None if the item does not have metadata.
+            Items with metadata have 'Metadata' in their typeKeywords
+        """
         metadataurlpath = 'content/items/' + self.itemid  + '/info/metadata/metadata.xml'
         try:
             return self._portal.con.get(metadataurlpath, try_json=False)
@@ -2363,7 +2366,10 @@ class Item(dict):
                 raise e
 
     def download_metadata(self, save_folder=None):
-        """ Downloads the item metadata for the specified item id, returns file path. """
+        """ Downloads the item metadata for the specified item id, returns file path. 
+            Returns None if the item does not have metadata.
+            Items with metadata have 'Metadata' in their typeKeywords
+        """
         metadataurlpath = 'content/items/' + self.itemid + '/info/metadata/metadata.xml'
         if not save_folder:
             save_folder = self._workdir
@@ -2372,7 +2378,7 @@ class Item(dict):
             file_path = os.path.join(save_folder, file_name)
             self._portal.con.get(path=metadataurlpath,
                                      out_folder=save_folder,
-                                     file_name=file_name)
+                                     file_name=file_name, try_json=False)
             return file_path
 
         # If the get operation returns a 400 HTTP/IO Error then the metadata
@@ -2594,7 +2600,7 @@ class Item(dict):
         ----------------  ----------------------------------------------------------------------------
         type              optional string, indicates type of item.  See URL 1 below for valid values.
         ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optinal string list.  Lists all sub-types.  See URL 1 for valid values.
+        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
