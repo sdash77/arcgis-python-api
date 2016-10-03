@@ -9,7 +9,7 @@ from __future__ import absolute_import
 from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis._impl.common._utils import _DisableLogger
-
+from arcgis._impl.common._mixins import PropertyMap
 from arcgis.tools import *
 from arcgis.lyr import *
 import re
@@ -22,6 +22,7 @@ import locale
 import zipfile
 import tempfile
 from six.moves.urllib.error import HTTPError
+from contextlib import contextmanager
 # pylint: disable=fixme, line-too-long
 
 class Error(Exception): pass

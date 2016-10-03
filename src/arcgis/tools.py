@@ -26,6 +26,7 @@ import collections
 from arcgis.lyr import *
 from contextlib import contextmanager
 from arcgis._impl.common._spatial import json_to_featureclass
+from arcgis._impl.common._mixins import PropertyMap
 from arcgis.geom import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 __all__ = ['BigDataTools', 'Feature', 'FeatureAnalysisTools', 'FeatureSet', 'Geocoder', 'GeometryService', 'GeoprocessingTool', 'RasterAnalysisTools']
 
