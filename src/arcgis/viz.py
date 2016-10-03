@@ -21,7 +21,7 @@ try:
     from traitlets import Unicode, Int, List, Bool
 except:
     from IPython.utils.traitlets import Unicode, Int, List, Bool
-
+__all__ = ["WebMap", "WebScene", "MapView"]
 
 """
 The arcgis.viz module provides components for visualizing GIS data and analysis.
