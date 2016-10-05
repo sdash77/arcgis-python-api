@@ -20,6 +20,6 @@ def json_to_featureclass(json_file,
                          out_fc):
     if hasArcPy:
         return arcpy.JSONToFeatures_conversion(in_json_file=json_file,
-                                               out_fc=out_fc)[0]
+                                               out_features=out_fc)[0]
     return None
 #----------------------------------------------------------------------
