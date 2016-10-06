@@ -20,6 +20,7 @@ from arcgis._impl.service._uploads import Uploads
 
 from arcgis._impl.common._utils import _DisableLogger
 
+from arcgis._impl.common._utils import _date_handler
 
 __all__ = ['GISService', 'FeatureCollection', 'FeatureLayer', 'FeatureService', 'ImageLayer', 'Layer', 'MapService', 'NetworkLayer', 'NetworkService', 'SchematicsService', 'VectorTileLayer']
 
@@ -2130,6 +2131,8 @@ class FeatureLayer(Layer):
            Output:
               dictionary of messages
         """
+        from arcgis.tools import FeatureSet
+        from arcgis.tools import Feature
         if adds is None:
             adds = []
         if updates is None:
@@ -2141,7 +2144,10 @@ class FeatureLayer(Layer):
                   }
         if gdbVersion is not None:
             params['gdbVersion'] = gdbVersion
-        if len(adds) > 0:
+        if isinstance(adds, FeatureSet):
+            params['adds'] = json.dumps([f.as_dict for f in adds.features],
+                                        default=_date_handler)
+        elif len(adds) > 0:
             if isinstance(adds[0], dict):
                 params['adds'] = json.dumps([f for f in adds],
                                         default=_date_handler)
@@ -2150,18 +2156,37 @@ class FeatureLayer(Layer):
                                         default=_date_handler)
             else:
                 print('pass in features as dict or PropertyMap')
-        if len(updates) > 0:
+        if isinstance(updates, FeatureSet):
+            params['updates'] = json.dumps([f.as_dict for f in updates.features],
+                                        default=_date_handler)
+        elif len(updates) > 0:
             if isinstance(updates[0], dict):
                 params['updates'] = json.dumps([f for f in updates],
                                         default=_date_handler)
             elif isinstance(updates[0], PropertyMap):
                 params['updates'] = json.dumps([dict(f) for f in updates],
                                         default=_date_handler)
+            elif isinstance(updates[0], Feature):
+                params['updates'] = json.dumps([f.as_dict for f in updates],
+                                        default=_date_handler)                
             else:
                 print('pass in features as dict or PropertyMap')
         if deletes is not None and \
            isinstance(deletes, str):
             params['deletes'] = deletes
+        elif deletes is not None and \
+            isinstance(deletes, PropertyMap):
+            print('pass in delete, unable to convert PropertyMap to string list of OIDs')
+            
+        elif deletes is not None and \
+            isinstance(deletes, FeatureSet):
+            params['deletes']  = ",".join([str(feat.get_value(field_name = deletes.objectIdFieldName)) for feat in deletes.features])
+        
+        if 'deletes' not in params and \
+           'updates' not in params and \
+           'adds' not in params:
+            print ("Parameters not valid for edit_features")
+            return None
         return self._con.post(path=editURL, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def calculate(self, where, calc_expression, sql_format="standard"):
@@ -3999,26 +4024,4 @@ class MapService(GISService):
                 else:
                     return None
 
-#----------------------------------------------------------------------
-def _date_handler(obj):
-    if isinstance(obj, datetime.datetime):
-        return local_time_to_online(obj)
-    else:
-        return obj
-#----------------------------------------------------------------------
-def local_time_to_online(dt=None):
-    """
-       converts datetime object to a UTC timestamp for AGOL
-       Inputs:
-          dt - datetime object
-       Output:
-          Long value
-    """
-    if dt is None:
-        dt = datetime.datetime.now()
-
-    is_dst = time.daylight and time.localtime().tm_isdst > 0
-    utc_offset =  (time.altzone if is_dst else time.timezone)
-
-    return (time.mktime(dt.timetuple())  * 1000) + (utc_offset *1000)
 ########################################################################

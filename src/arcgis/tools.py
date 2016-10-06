@@ -6453,48 +6453,48 @@ class Feature(object):
         """returns a featureset from a dict"""
         return cls(feature['geometry'], feature['attributes'])
     #----------------------------------------------------------------------
-    @staticmethod
-    def fc_to_features(dataset):
-        """
-           converts a dataset to a list of feature objects, if ArcPy is available
-           Input:
-              dataset - path to table or feature class
-           Output:
-              list of feature objects
-        """
-        try:
-            import arcpy
-            arcpyFound = True
-        except:
-            arcpyFound = False
-        if arcpyFound:
-            desc = arcpy.Describe(dataset)
-            fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
-            date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
-            non_geom_fields = copy.deepcopy(fields)
-            features = []
-            if hasattr(desc, "shapeFieldName"):
-                fields.append("SHAPE@JSON")
-            del desc
-            with arcpy.da.SearchCursor(dataset, fields) as rows:
-                for row in rows:
-                    row = list(row)
-                    for df in date_fields:
-                        if row[fields.index(df)] != None:
-                            row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
-                    template = {
-                        "attributes" : dict(zip(non_geom_fields, row))
-                    }
-                    if "SHAPE@JSON" in fields:
-                        template['geometry'] = \
-                            json.loads(row[fields.index("SHAPE@JSON")])
+    #@staticmethod
+    #def fc_to_features(dataset):
+        #"""
+           #converts a dataset to a list of feature objects, if ArcPy is available
+           #Input:
+              #dataset - path to table or feature class
+           #Output:
+              #list of feature objects
+        #"""
+        #try:
+            #import arcpy
+            #arcpyFound = True
+        #except:
+            #arcpyFound = False
+        #if arcpyFound:
+            #desc = arcpy.Describe(dataset)
+            #fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
+            #date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
+            #non_geom_fields = copy.deepcopy(fields)
+            #features = []
+            #if hasattr(desc, "shapeFieldName"):
+                #fields.append("SHAPE@JSON")
+            #del desc
+            #with arcpy.da.SearchCursor(dataset, fields) as rows:
+                #for row in rows:
+                    #row = list(row)
+                    #for df in date_fields:
+                        #if row[fields.index(df)] != None:
+                            #row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
+                    #template = {
+                        #"attributes" : dict(zip(non_geom_fields, row))
+                    #}
+                    #if "SHAPE@JSON" in fields:
+                        #template['geometry'] = \
+                            #json.loads(row[fields.index("SHAPE@JSON")])
 
-                    features.append(
-                        Feature.from_dict(template)
-                    )
-                    del row
-            return features
-        return None
+                    #features.append(
+                        #Feature.from_dict(template)
+                    #)
+                    #del row
+            #return features
+        #return None
 
     #----------------------------------------------------------------------
     def __str__(self):
@@ -6541,7 +6541,7 @@ class FeatureSet(object):
                  globalIdFieldName=None):
         """Constructor"""
         self._fields = fields
-        self._features = features
+        
         self._hasZ = hasZ
         self._hasM = hasM
         self._geometryType = geometryType
@@ -6550,6 +6550,24 @@ class FeatureSet(object):
         self._objectIdFieldName = objectIdFieldName
         self._globalIdFieldName = globalIdFieldName
         
+        #conversion of different inputs to a common list of feature objects
+        if isinstance(features, str):
+            #convert the featuresclass to a list of features
+            features = self._fc_to_features(dataset=features)
+            if features is None:
+                raise AttributeError("Feature class could not be converted to a feature set")
+        elif isinstance(features,list):
+            if len(features) > 0:
+                if "attributes" in features[0]:
+                    if "geometry" in features[0]:
+                        features = [Feature(feat['geometry'],feat['attributes']) for feat in features]
+                    else:
+                        features = [Feature(None,feat['attributes']) for feat in features]
+                elif "geometry" in features[0]:
+                    features = [Feature(feat['geometry'],None) for feat in features]
+        self._features = features
+        if len(features) == 0:
+            raise AttributeError("FeatureSet requires a list of features") 
         g0 = None
         f = features[0]
         if isinstance(f, Feature):
@@ -6573,11 +6591,79 @@ class FeatureSet(object):
                 self._geometryType = "esriGeometryMultipoint"
             else:
                 raise AttributeError("Invalid geometry type")
-
+            
+        #Try to find the object ID field if not specified
+        if self._objectIdFieldName is None:
+            #check to see if features a dict or feature object
+            if isinstance(f, Feature):
+                #Look for OBJECTID first, if it does not exist, look for FID
+                for field in f.fields:
+                    if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break;
+                for field in f.fields:
+                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break;
+            else:
+                for field, v in f.items():
+                    if re.search("^{0}$".format("OBJECTID"),field , re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break;
+                for field, v in f.items():
+                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break;
     #----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
         return json.dumps(self.value)
+   
+    def _fc_to_features(self,dataset):
+        """
+           converts a dataset to a list of feature objects, if ArcPy is available
+           Input:
+              dataset - path to table or feature class
+           Output:
+              list of feature objects
+        """
+        try:
+            import arcpy
+            arcpyFound = True
+        except:
+            arcpyFound = False
+            raise AttributeError("ArcPy is required to create a feature set from a feature class")
+        if arcpyFound:
+            if arcpy.Exists(dataset=dataset) == False:
+                raise AttributeError("Error creating FeatureSet: {0} does not exist".format(dataset))
+                
+            desc = arcpy.Describe(dataset)
+            fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
+            date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
+            non_geom_fields = copy.deepcopy(fields)
+            features = []
+            if hasattr(desc, "shapeFieldName"):
+                fields.append("SHAPE@JSON")
+            del desc
+            with arcpy.da.SearchCursor(dataset, fields) as rows:
+                for row in rows:
+                    row = list(row)
+                    for df in date_fields:
+                        if row[fields.index(df)] != None:
+                            row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
+                    template = {
+                        "attributes" : dict(zip(non_geom_fields, row))
+                    }
+                    if "SHAPE@JSON" in fields:
+                        template['geometry'] = \
+                            json.loads(row[fields.index("SHAPE@JSON")])
+
+                    features.append(
+                        Feature.from_dict(template)
+                    )
+                    del row
+            return features
+        return None    
     #----------------------------------------------------------------------
     @property
     def value(self):
@@ -6618,7 +6704,7 @@ class FeatureSet(object):
     @property
     def to_json(self):
         """converts the object to JSON"""
-        return json.dumps(self.value)
+        return json.dumps(self.value, default=_date_handler)
     #----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""
@@ -6655,11 +6741,7 @@ class FeatureSet(object):
                           globalIdFieldName=jd['globalIdFieldName'] if 'globalIdFieldName' in jd else None,
                           displayFieldName=jd['displayFieldName'] if 'displayFieldName' in jd else None,
                           spatialReference=jd['spatialReference'] if 'spatialReference' in jd else None)
-    #----------------------------------------------------------------------
-    @property
-    def fields(self):
-        """gets the featureset's fields"""
-        return self._fields
+
     #----------------------------------------------------------------------
     @property
     def spatialReference(self):
@@ -6807,10 +6889,12 @@ class FeatureSet(object):
     def features(self):
         """gets the features in the FeatureSet"""
         return self._features
+    #----------------------------------------------------------------------
     @property
     def fields(self):
         """gets the fieldsin the FeatureSet"""
         return self._fields
+    #----------------------------------------------------------------------
     @fields.setter
     def fields(self, fields):
         """sets the fieldsin the FeatureSet"""
