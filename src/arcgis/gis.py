@@ -24,6 +24,7 @@ import tempfile
 from six.moves.urllib.error import HTTPError
 from contextlib import contextmanager
 # pylint: disable=fixme, line-too-long
+import os
 
 class Error(Exception): pass
 
@@ -1190,7 +1191,7 @@ class ContentManager(object):
                 item_properties['title'] = title
 
         owner_name = owner
-        if isinstance(owner, arcgis.gis.User):
+        if isinstance(owner, User):
             owner_name = owner.username
         
         if 'tags' in item_properties:
@@ -1368,7 +1369,7 @@ class ContentManager(object):
             if owner is None:
                 owner = self._portal.logged_in_user()['username']
                 owner_name = owner
-            elif isinstance(owner, arcgis.gis.User):
+            elif isinstance(owner, User):
                 owner_name = owner.username
             else:
                 owner_name = owner
@@ -1396,7 +1397,7 @@ class ContentManager(object):
             if owner is None:
                 owner = self._portal.logged_in_user()['username']
                 owner_name = owner
-            elif isinstance(owner, arcgis.gis.User):
+            elif isinstance(owner, User):
                 owner_name = owner.username
             else:
                 owner_name = owner
@@ -2742,6 +2743,7 @@ class Item(dict):
             return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False):
+        import time
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature services as well as tiled map services.
