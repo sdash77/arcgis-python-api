@@ -297,6 +297,11 @@ define('mapview', [
                         that.toolbar.on("draw-end", onDrawEnd);
                         //map.on("extent-change", onExtentChange);
                         that.map.on("click", onMouseClick);
+                        
+                        that.mode_changed();
+                        that.layer_changed();
+                        that.start_time_changed();
+                        that.end_time_changed();
                     });
                 } else {
 
@@ -342,6 +347,12 @@ define('mapview', [
                 that.toolbar.on("draw-end", onDrawEnd);
                 //map.on("extent-change", onExtentChange);
                 evt.map.on("click", onMouseClick);
+                
+
+                that.mode_changed();
+                that.layer_changed();
+                that.start_time_changed();
+                that.end_time_changed();
             }
             
 
@@ -480,7 +491,7 @@ define('mapview', [
             var that = this;
             if (this.model.get('_addlayer').indexOf("{") > -1) {
 
-                console.log("***mode=_addlayer" );
+                console.log("***addlayer" );
 
                 var newlayer = JSON.parse(this.model.get('_addlayer'));
                 console.log(newlayer);
@@ -709,19 +720,25 @@ define('mapview', [
         },
 
         start_time_changed: function() {
-            console.log("changing start_time");
-            var timeExtent = new TimeExtent();
-            timeExtent.startTime = new Date(this.model.get('start_time'));
-            timeExtent.endTime = new Date(this.model.get('end_time'));
-            this.map.setTimeExtent(timeExtent);
+            var start_time = this.model.get('start_time')
+            if ((start_time) && (start_time.trim()!='')) {
+                console.log("changing start_time");
+                var timeExtent = new TimeExtent();
+                timeExtent.startTime = new Date(this.model.get('start_time'));
+                timeExtent.endTime = new Date(this.model.get('end_time'));
+                this.map.setTimeExtent(timeExtent);
+            }
         },
 
         end_time_changed: function() {
-            console.log("changing end_time");
-            var timeExtent = new TimeExtent();
-            timeExtent.startTime = new Date(this.model.get('start_time'));
-            timeExtent.endTime = new Date(this.model.get('end_time'));
-            this.map.setTimeExtent(timeExtent);
+            var end_time = this.model.get('end_time')
+            if ((end_time) && (end_time.trim()!='')) {
+                console.log("changing end_time");
+                var timeExtent = new TimeExtent();
+                timeExtent.startTime = new Date(this.model.get('start_time'));
+                timeExtent.endTime = new Date(this.model.get('end_time'));
+                this.map.setTimeExtent(timeExtent);
+            }
         },
 
         basemap_changed: function() {
