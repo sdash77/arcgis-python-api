@@ -63,7 +63,7 @@ class GIS(object):
     * users
     * groups
     * content
-    * datastore
+    * datastores
     * tools - including geometry, geocoders, analysis, rasters, geoanalytics
 
     Additionally, the GIS object has properties and methods to query it's state:
@@ -94,6 +94,7 @@ class GIS(object):
         self._portal = None
         self._con = None
         self._verify_cert = verify_cert
+        self._datastores = None
         self.tools = Tools(self)
         self.__enter__()
 
@@ -131,23 +132,26 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
-    def datastore(self):
+    def datastores(self):
         """
-        The resource manager for the GIS data store
+        The list of datastores resource managers for sites federated with the GIS. 
         """
+        if self._datastores is not None:
+            return self._datastores
+
+        self._datastores = []
+        
         fedservers_url = self._url + "/portaladmin/federation/servers"
-        #print(fedservers_url)
         res = self._portal.con.get(fedservers_url)
         servers = res['servers']
 
         admin_url = None
 
         for server in servers:
-            if server['isHosted']:
-                admin_url = server['adminUrl'] + '/admin'
-                return DatastoreManager(self, admin_url)
+            admin_url = server['adminUrl'] + '/admin'
+            self._datastores.append(DatastoreManager(self, admin_url))
 
-        return None
+        return self._datastores
 
     @_lazy_property
     def properties(self):
@@ -384,8 +388,8 @@ class DatastoreManager(object):
     """
     Manager class for managing the GIS data stores in on-premises ArcGIS Portals.
     This class is not created by users directly.
-    An instance of this class, called 'datastores', is available as a property of the GIS object.
-    Users call methods on this 'datastores' object to manage the data stores.
+    An instance of a list of this class, called 'datastores', is available as a property of the GIS object.
+    Users call methods on members of this 'datastores' list to manage the datastores in a site federated with the portal.
     """
     def __init__(self, gis, admin_url=None):
         self._gis = gis
@@ -405,6 +409,9 @@ class DatastoreManager(object):
 
     def __str__(self):
         return json.dumps(self)
+    
+    def __repr__(self):
+        return '<%s for %s>' % (type(self).__name__, self._admin_url)
 
     @property
     def config(self):
