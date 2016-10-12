@@ -157,7 +157,9 @@ class MapView(widgets.DOMWidget):
             
         self.item = kwargs.pop('item', None)
         if self.item is not None:
-            if self.item.type.lower() != 'web map':
+            if isinstance(self.item, WebMap):
+                self.item = self.item.item
+            if 'type' in self.item and self.item.type.lower() != 'web map':
                 raise TypeError("item type must be web map")
             self.id = self.item.id
 

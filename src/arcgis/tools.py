@@ -27,7 +27,7 @@ from arcgis.lyr import *
 from contextlib import contextmanager
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.geom import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
+from arcgis.geom import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry, SpatialReference,BaseGeometry
 from arcgis._impl.common._utils import _date_handler
 __all__ = ['BigDataTools', 'Feature', 'FeatureAnalysisTools', 'FeatureSet', 'Geocoder', 'GeometryService', 'GeoprocessingTool', 'RasterAnalysisTools']
 
@@ -6876,7 +6876,7 @@ class FeatureSet(object):
             tempDir =  tempfile.gettempdir()
             tempFile = os.path.join(tempDir, "%s.json" % uuid.uuid4().hex)
             with open(tempFile, 'wt') as writer:
-                writer.write(self.toJSON)
+                writer.write(self.to_json)
                 writer.flush()
                 writer.close()
             del writer

@@ -2234,10 +2234,10 @@ class Item(dict):
                 else:
                     svc = GISService.fromitem(self)
                     for lyr in svc.properties.layers:
-                        lyr = Layer(svc.url+'/'+str(lyr.id), gis)
+                        lyr = Layer(svc.url+'/'+str(lyr.id), self._gis)
                         layers.append(lyr)
                     for lyr in svc.properties.tables:
-                        lyr = Layer(svc.url+'/'+str(lyr.id), gis)
+                        lyr = Layer(svc.url+'/'+str(lyr.id), self._gis)
                         tables.append(lyr)
 
             self.layers = layers

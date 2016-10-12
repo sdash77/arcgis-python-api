@@ -4,6 +4,7 @@ or Portal.
 """
 from __future__ import absolute_import
 import arcgis.gis
+from arcgis.geom import SpatialReference
 import json
 #from pandas.io.json import json_normalize
 import collections
@@ -21,6 +22,7 @@ from arcgis._impl.service._uploads import Uploads
 from arcgis._impl.common._utils import _DisableLogger
 
 from arcgis._impl.common._utils import _date_handler
+from arcgis._impl.common._utils import local_time_to_online
 
 __all__ = ['GISService', 'FeatureCollection', 'FeatureLayer', 'FeatureService', 'ImageLayer', 'Layer', 'MapService', 'NetworkLayer', 'NetworkService', 'SchematicsService', 'VectorTileLayer']
 
@@ -383,6 +385,8 @@ class ImageLayer(Layer):
            f - The response format.  default is json
                Values: json | image | kmz
         """
+        import datetime
+        
         params = {
             "bbox" : bbox,
             "imageSR": imageSR,
@@ -464,7 +468,7 @@ class ImageLayer(Layer):
               timeFilter=None,
               geometryFilter=None,
               returnGeometry=True,
-              returnIDsOnly=False,
+              returnIdsOnly=False,
               returnCountOnly=False,
               pixelSize=None,
               orderByFields=None,
@@ -486,7 +490,7 @@ class ImageLayer(Layer):
                                query by another spatial dataset.
                returnGeometry - true means a geometry will be returned,
                                 else just the attributes
-               returnIDsOnly - false is default.  True means only OBJECTIDs
+               returnIdsOnly - false is default.  True means only OBJECTIDs
                                will be returned
                returnCountOnly - if True, then an integer is returned only
                                  based on the sql statement
@@ -514,7 +518,7 @@ class ImageLayer(Layer):
                   "where": where,
                   "outFields": out_fields,
                   "returnGeometry" : returnGeometry,
-                  "returnIdsOnly" : returnIDsOnly,
+                  "returnIdsOnly" : returnIdsOnly,
                   "returnCountOnly" : returnCountOnly,
                   }
         if not groupByFieldsForStatistics is None:
@@ -1731,7 +1735,7 @@ class FeatureLayer(Layer):
               geometryFilter=None,
               returnGeometry=True,
               returnCountOnly=False,
-              returnIDsOnly=False,
+              returnIdsOnly=False,
               returnFeatureClass=False,
               returnDistinctValues=False,
               returnExtentOnly=False,
@@ -1808,7 +1812,7 @@ class FeatureLayer(Layer):
                                         only if the
                                         supportsAdvancedQueries property of
                                         the layer is true.
-                returnIDsOnly -  If true, the response only includes an
+                returnIdsOnly -  If true, the response only includes an
                                  array of object IDs. Otherwise, the
                                  response is a feature set. The default is
                                  false.
@@ -1899,7 +1903,7 @@ class FeatureLayer(Layer):
         params['returnCentroid'] = returnCentroid
         params['returnCountOnly'] = returnCountOnly
         params['returnExtentOnly'] = returnExtentOnly
-        params['returnIdsOnly'] = returnIDsOnly
+        params['returnIdsOnly'] = returnIdsOnly
         params['returnZ'] = returnZ
         params['returnM'] = returnM
         if resultRecordCount:
@@ -1962,11 +1966,11 @@ class FeatureLayer(Layer):
             return result['count']
         elif as_obj:
             return PropertyMap(result)
-        elif returnIDsOnly or as_dict:
+        elif returnIdsOnly or as_dict:
             return result
         elif returnFeatureClass and \
              not returnCountOnly and \
-             not returnIDsOnly:
+             not returnIdsOnly:
             uid = _utils.create_uid()
             if out_fc is None:
                 out_fc = os.path.join(scratchGDB(),
@@ -1975,7 +1979,7 @@ class FeatureLayer(Layer):
             temp = scratchFolder() + os.sep + uid + ".json"
             with open(temp, 'wb') as writer:
                 if six.PY3:
-                        text = bytes(text, 'UTF-8')
+                    text = bytes(text, 'UTF-8')
                 writer.write(text)
                 writer.flush()
                 del writer
@@ -2424,15 +2428,16 @@ class FeatureService(GISService):
                                  params=params, token=self._token)
         if 'error' in results:
             raise ValueError (results)
-        if not returnCountOnly and not returnIDsOnly:
-            if returnFeatureClass == True:
+        if not returnCountOnly and not returnIdsOnly:
+            return results
+            #if returnFeatureClass == True:
                 #json_text = json.dumps(results)
-                return results
+                #return results
                 #df = json_normalize(results['features'])
                 #df.columns = df.columns.str.replace('attributes.', '')
                 #return df
-            else:
-                return results
+            #else:
+            #    return results
                 #df = json_normalize(results['features'])
                 #df.columns = df.columns.str.replace('attributes.', '')
                 #return df
@@ -3829,6 +3834,7 @@ class MapService(GISService):
          is set to False, the function will wait until the task completes.
            Values: True | False
         """
+        import time
         url = self._url + "/estimateExportTilesSize"
         params = {
             "f" : "json",
@@ -3957,6 +3963,7 @@ class MapService(GISService):
          to the user instead of the user having the check the job status
          manually.
         """
+        import time
         params = {
             "f" : "json",
             "tilePackage" : tilePackage,
