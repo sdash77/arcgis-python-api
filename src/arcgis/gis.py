@@ -183,9 +183,13 @@ class GIS(object):
         to the specified zoomlevel.
         """
         from arcgis.viz import MapView
-        mapwidget = MapView(gis=self)
-        if location is not None:
-            if isinstance(location, str):
+        
+        if location is not  None:
+            if isinstance(location,Item):
+                if (location.type == 'Web Map'):
+                    mapwidget = MapView(gis=self,item=location)
+            elif isinstance(location, str):
+                mapwidget = MapView(gis=self)
                 for geocoder in self.tools.geocoders:
                     locations = geocoder.geocode(location, outSR=4326, maxLocations=1)
                     if len(locations) == 1:
