@@ -5,8 +5,6 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
-#from ._impl import _portalpy
-from ._impl.portalpy import _Portal
 import arcgis._impl.portalpy as portalpy
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.common._mixins import PropertyMap
@@ -99,10 +97,6 @@ class GIS(object):
         self.__enter__()
 
     def __enter__(self):
-        #self._portal = _Portal(url=self._url, username=self._username,
-                               #password=self._password,
-                               #key_file=self._key_file,
-                               #cert_file=self._cert_file)
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file, verify_cert=self._verify_cert)
         
         if self._url.lower() == "pro":

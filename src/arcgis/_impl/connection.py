@@ -265,17 +265,13 @@ class _ArcGISConnection(object):
         if cert_file is not None and key_file is not None:
             self._auth = "PKI"
         elif username is not None and password is not None:
-            self._auth = "BUILTIN" # or "BASICAUTH" (LDAP) or NTLM or Kerberos (login sets this up)
+            self._auth = "BUILTIN" # or BASIC (LDAP) or DIGEST
         else:
-            self._auth = "ANON"
-
-        # Login if credentials were provided
-        if username and password:
+            self._auth = "ANON" # or IWA (NTLM or Kerberos) (self.login sets this up)
+            
+        if cert_file is None and key_file is None:
             self.login(username, password, expiration)
-        elif self._is_arcpy:
-            self.login(username="", password="")
-        elif username or password:
-            _log.warning('Both username and password required for login')
+
     #----------------------------------------------------------------------
     def _validate_url(self, url):
         """ensures the base url has the /sharing/rest"""
@@ -417,21 +413,50 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
+        
         try:
-            newtoken = self.generate_token(username,
-                                           password, expiration)
-            if newtoken:
-                self._token = newtoken
-                self._username = username
-                self._password = password
-                self._expiration = expiration
-                self._auth = "BUILTIN"
-            return newtoken
+            resp = self.post('', { 'f': 'json' }, add_token=False) # probe portal to find auth scheme
+                                                  # if basic, digest, NTLM or Kerberos, etc is being used
+                                                  # except handler will catch it and set self._auth appropriately
+
+            if username is not None and password is not None:
+                newtoken = self.generate_token(username, password, expiration)
+
+                if newtoken:
+                    self._token = newtoken
+                    self._username = username
+                    self._password = password
+                    self._expiration = expiration
+                    
+                    return newtoken
+            else:
+                self._auth = "ANON"
+
         except HTTPError as err:
-            if err.code == 401: # using basic authentication
-                self._auth = "BASICAUTH"
+            if err.code == 401: 
+                authhdr = err.headers.get('WWW-Authenticate')
+                if authhdr is not None:
+                    if authhdr.lower().startswith('basic'):
+                        self._auth = "BASIC"
+                        return None
+                    elif authhdr.lower().startswith('digest'):
+                        self._auth = "DIGEST"
+                        return None
+                    elif authhdr.lower().startswith('ntlm'):
+                        self._auth = "IWA"
+                        return None
+                    elif authhdr.lower().startswith('negotiate'):
+                        self._auth = "IWA"
+                        return None
+                    else:
+                        _log.warn('Unsupported authentication scheme: ' + authhdr)
             else:
                 raise
+        except ValueError as ve:
+            if str(ve) == "AbstractBasicAuthHandler does not support the following scheme: 'Negotiate'":
+                self._auth = "IWA"
+            
+            
     #----------------------------------------------------------------------
     def relogin(self, expiration=None):
         """ Re-authenticates with the portal using the same username/password. """
@@ -755,8 +780,8 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
         handlers = []
-
-        if self._auth == "BASICAUTH": # used by LDAP
+        
+        if self._auth == "BASIC": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
                                  self._parsed_org_url,
@@ -764,7 +789,33 @@ class _ArcGISConnection(object):
                                  self._password)
             handlers.append(request.HTTPBasicAuthHandler(passman))
 
-        if self._auth == "PKI":
+        if self._auth == "DIGEST":
+            passman = request.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None,
+                                 self._parsed_org_url,
+                                 self._username,
+                                 self._password)
+            handlers.append(request.HTTPDigestAuthHandler(passman))
+
+        elif self._auth == "IWA":
+            if os.name == 'nt':
+                try:
+                    from .common._iwa import NtlmSspiAuthHandler, KerberosSspiAuthHandler
+                
+                    auth_NTLM = NtlmSspiAuthHandler()
+                    auth_krb = KerberosSspiAuthHandler()
+                
+                    handlers.append(auth_NTLM)
+                    handlers.append(auth_krb)
+
+                except Error as err:
+                    _log.error("pywin32 and kerberos-sspi packages are required for IWA authentication.")
+                    _log.error("Please install them:\n\tconda install pywin32\n\tconda install kerberos-sspi")
+                    _log.error(str(err))
+            else:
+                _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
+            
+        elif self._auth == "PKI":
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
         cj = cookiejar.CookieJar()
