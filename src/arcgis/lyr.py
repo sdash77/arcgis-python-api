@@ -6,6 +6,9 @@ from __future__ import absolute_import
 import arcgis.gis
 from arcgis.geom import SpatialReference
 import json
+import time
+import datetime
+
 #from pandas.io.json import json_normalize
 import collections
 from re import search
@@ -277,8 +280,6 @@ class VectorTileLayer(Layer):
         """
         url = "{url}/resources/sprites/{f}".format(url=self._url,
                                                    f=out_format)
-        if out_folder is None:
-            out_folder = tempfile.gettempdir()
         return self._con.get(path=url,
                              params={}, token=self._token)
     #----------------------------------------------------------------------
@@ -2695,9 +2696,9 @@ class FeatureService(GISService):
             if wait:
                 exportJob = self._con.post(path=url,
                                            postdata=params, token=self._token)
-                status = self.replicaStatus(url=exportJob['statusUrl'])
+                status = self._replica_status(url=exportJob['statusUrl'])
                 while status['status'].lower() != "completed":
-                    status = self.replicaStatus(url=exportJob['statusUrl'])
+                    status = self._replica_status(url=exportJob['statusUrl'])
                     if status['status'].lower() == "failed":
                         return status
 
