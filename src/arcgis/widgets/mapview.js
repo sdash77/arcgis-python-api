@@ -82,88 +82,88 @@
  */
 
 
-var esriCDN =  location.protocol + "//js.arcgis.com/3.17amd/"
-var proxyUrl = "/proxy/proxy.jsp" ;
+var esriCDN = location.protocol + "//js.arcgis.com/3.17amd/"
+var proxyUrl = "/proxy/proxy.jsp";
 
 var nbextensionPath = "/nbextensions/arcgis";
- if (location.href.search("user") > 0){
-    nbextensionPath = location.pathname.split("/").slice(0,3).join("/") + "/nbextensions/arcgis";
- }
+if (location.href.search("user") > 0) {
+    nbextensionPath = location.pathname.split("/").slice(0, 3).join("/") + "/nbextensions/arcgis";
+}
 
 
 require.config({
-      // Define path mappings for modules
-      paths: {
+    // Define path mappings for modules
+    paths: {
         // [1] Modules hosted on Esri CDN.
-        "dojo":         esriCDN + "dojo",
-        "dojox":        esriCDN + "dojox",
-        "dijit":        esriCDN + "dijit",
-        "esri":         esriCDN + "esri",
-        "dgrid":        esriCDN + "dgrid",
-        "xstyle":       esriCDN + "xstyle",
+        "dojo": esriCDN + "dojo",
+        "dojox": esriCDN + "dojox",
+        "dijit": esriCDN + "dijit",
+        "esri": esriCDN + "esri",
+        "dgrid": esriCDN + "dgrid",
+        "xstyle": esriCDN + "xstyle",
         "put-selector": esriCDN + "put-selector",
-        "moment":       esriCDN + "moment",
+        "moment": esriCDN + "moment",
 
         // [2] Modules hosted locally.
         // "location" is specified as path relative to web server root.
         // "requirejs":  "/research/js/requirejs", - already loaded
         //"text":       "/static/custom/requirejs/text"
-        "text":       nbextensionPath + "/requirejs/text"
-      },
+        "text": nbextensionPath + "/requirejs/text"
+    },
 
-      // Use RequireJS text plugin instead of dojo/text plugin.
-      // Any module that requires dojo/text plugin will use RequireJS
-      // text plugin instead.
-      // http://requirejs.org/docs/api.html#config
-      map: {
+    // Use RequireJS text plugin instead of dojo/text plugin.
+    // Any module that requires dojo/text plugin will use RequireJS
+    // text plugin instead.
+    // http://requirejs.org/docs/api.html#config
+    map: {
         "*": {
-          "dojo/text": "text"
+            "dojo/text": "text"
         }
-      },
-        config: {
+    },
+    config: {
         text: {
 
-          useXhr: function(url) {
-            // Allow cross domain XHR requests:
-            // We will route them through a proxy in onXhr below.
-            // https://github.com/requirejs/text/blob/master/text.js#L129
+            useXhr: function (url) {
+                // Allow cross domain XHR requests:
+                // We will route them through a proxy in onXhr below.
+                // https://github.com/requirejs/text/blob/master/text.js#L129
 
-            return true;
-          },
+                return true;
+            },
 
-          // In IE 9, text plugin fails even before onXhr is called:
-          // It fails right when calling xhr.open:
-          // https://github.com/requirejs/text/blob/master/text.js#L267
-          // - This is different from other browsers which appear to fail
-          // much later, allowing us a chance to append proxy below.
-          // -- Probably because IE 9 does not support CORS as opposed to
-          // other modern browsers that have CORS support.
+            // In IE 9, text plugin fails even before onXhr is called:
+            // It fails right when calling xhr.open:
+            // https://github.com/requirejs/text/blob/master/text.js#L267
+            // - This is different from other browsers which appear to fail
+            // much later, allowing us a chance to append proxy below.
+            // -- Probably because IE 9 does not support CORS as opposed to
+            // other modern browsers that have CORS support.
 
-          // ESRI modification: let's take over xhr.open below
-          openXhr: false,
+            // ESRI modification: let's take over xhr.open below
+            openXhr: false,
 
-          onXhr: function(xhr, url) {
-            // Route cross domain XHR through a proxy if required
-            var hasCors = (
-              typeof XMLHttpRequest !== "undefined"
-              && ("withCredentials" in (new XMLHttpRequest()))
-            );
+            onXhr: function (xhr, url) {
+                // Route cross domain XHR through a proxy if required
+                var hasCors = (
+                  typeof XMLHttpRequest !== "undefined"
+                  && ("withCredentials" in (new XMLHttpRequest()))
+                );
 
-            xhr.open(
-              "GET",
-              hasCors ? url : (proxyUrl + "?" + url),
-              true
-            );
-          }
+                xhr.open(
+                  "GET",
+                  hasCors ? url : (proxyUrl + "?" + url),
+                  true
+                );
+            }
         }
-      }
-    });
+    }
+});
 
 //require([
-    //"widgets/js/widget",
-    //"widgets/js/manager",
-    //"nbextensions/widgets/widgets/js/widget",
-    //"nbextensions/widgets/widgets/js/manager",
+//"widgets/js/widget",
+//"widgets/js/manager",
+//"nbextensions/widgets/widgets/js/widget",
+//"nbextensions/widgets/widgets/js/manager",
 require.undef('mapview');
 
 define('mapview', [
@@ -174,7 +174,7 @@ define('mapview', [
      "esri/graphic",
      "esri/TimeExtent",
      "esri/ServerInfo",
-     "esri/IdentityManager",  
+     "esri/IdentityManager",
      "esri/geometry/Extent",
      "esri/SpatialReference",
      "esri/InfoTemplate",
@@ -195,8 +195,11 @@ define('mapview', [
      "esri/symbols/PictureMarkerSymbol",
      "esri/geometry/webMercatorUtils",
      "esri/arcgis/utils",
+     "esri/dijit/PopupTemplate",
+     "dojo/_base/array",
+     "dojo/_base/lang",
      "dojo/domReady!"
-   ], function(
+], function (
      widgets,
      Map,
      esriConfig,
@@ -224,70 +227,73 @@ define('mapview', [
      HeatmapRenderer,
      PictureMarkerSymbol,
      webMercatorUtils,
-     arcgisUtils){
+     arcgisUtils,
+     PopupTemplate,
+     array,
+     lang) {
     //var map, toolbar;
     var MapView = widgets.DOMWidgetView.extend({
 
         // Render the view.
-        render: function(){
-            $('head').append( $('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath+'/custom.css') );
+        render: function () {
+            $('head').append($('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath + '/custom.css'));
             $('body').addClass('claro');
             var that = this;
 
             var token_info = this.model.get('_token_info')
-            if ((token_info) && (token_info.trim()!='')) {
+            if ((token_info) && (token_info.trim() != '')) {
 
                 var token = JSON.parse(token_info);
-                                
+
                 esriConfig.defaults.io.corsEnabledServers.push(token.server);
 
-                var serverInfo = new ServerInfo();  
-                serverInfo.server = token.server;  
-                serverInfo.tokenServiceUrl = token.tokenurl;  
+                var serverInfo = new ServerInfo();
+                serverInfo.server = token.server;
+                serverInfo.tokenServiceUrl = token.tokenurl;
 
 
-                IdentityManager.registerServers([serverInfo]);  
+                IdentityManager.registerServers([serverInfo]);
 
 
-                var userId = token.username;  
-                var password = token.password;  
+                var userId = token.username;
+                var password = token.password;
 
 
                 // https://geonet.esri.com/thread/119062
-                IdentityManager.generateToken(serverInfo, {  
-                    username: userId,  
-                    password: password  
-                }).then(function(response) {
-                    IdentityManager.registerToken({  
-                        server: serverInfo.server,  
-                        userId: userId,  
-                        token: response.token,  
-                        expires: response.expires,  
-                        ssl: response.ssl  
-                    });  
-                }).then(function(response) {
-                    
+                IdentityManager.generateToken(serverInfo, {
+                    username: userId,
+                    password: password
+                }).then(function (response) {
+                    IdentityManager.registerToken({
+                        server: serverInfo.server,
+                        userId: userId,
+                        token: response.token,
+                        expires: response.expires,
+                        ssl: response.ssl
+                    });
+                }).then(function (response) {
+
                     load_map(that);
-                    
-                });  
-                
-                
+
+                });
+
+
             } else {
-                
+
                 load_map(that);
-                
+
             }
-            
+
             function load_map(that) {
                 IPython.keyboard_manager.disable(); // loading map can cause modal dialog for secure resources which is
-                                                    // incompatible with keyboard manager (eats shortcut keys)
+                // incompatible with keyboard manager (eats shortcut keys)
                 var id = that.model.get('id');
-                if ((id) && (id.trim()!='')) {
+                if ((id) && (id.trim() != '')) {
                     var arcgis_url = that.model.get('_arcgis_url');
-                    if ((arcgis_url) && (arcgis_url.trim()!='')) {
+                    if ((arcgis_url) && (arcgis_url.trim() != '')) {
                         arcgisUtils.arcgisUrl = arcgis_url;
                     }
-                    arcgisUtils.createMap(id, that.el).then(function(response){
+                    arcgisUtils.createMap(id, that.el).then(function (response) {
                         IPython.keyboard_manager.enable();
                         that.map = response.map;
                         that.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
@@ -297,7 +303,7 @@ define('mapview', [
                         that.toolbar.on("draw-end", onDrawEnd);
                         //map.on("extent-change", onExtentChange);
                         that.map.on("click", onMouseClick);
-                        
+
                         that.mode_changed();
                         that.layer_changed();
                         that.start_time_changed();
@@ -308,35 +314,35 @@ define('mapview', [
                     //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
 
                     if (that.model.get('_extent').indexOf("{") > -1) {
-                       var ext = JSON.parse(that.model.get('_extent'));
+                        var ext = JSON.parse(that.model.get('_extent'));
 
-                       var newExtent = new Extent();
-                       newExtent.xmin = ext.xmin;
-                       newExtent.xmax = ext.xmax;
-                       newExtent.ymin = ext.ymin;
-                       newExtent.ymax = ext.ymax;
+                        var newExtent = new Extent();
+                        newExtent.xmin = ext.xmin;
+                        newExtent.xmax = ext.xmax;
+                        newExtent.ymin = ext.ymin;
+                        newExtent.ymax = ext.ymax;
 
-                       newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+                        newExtent.spatialReference = new SpatialReference({ wkid: 4326 });
 
-                       that.map = new Map(that.el, {
+                        that.map = new Map(that.el, {
                             basemap: that.model.get('basemap'),
                             extent: newExtent
                         });
 
 
-                   } else {
+                    } else {
 
-                       that.map = new Map(that.el, {
+                        that.map = new Map(that.el, {
                             basemap: that.model.get('basemap'),
                             center: that.model.get('center').reverse(),
                             zoom: that.model.get('zoom')
                         });
-                   }
+                    }
 
                     that.map.on("load", on_load);
                 }
             }
-            
+
             function on_load(evt) {
                 console.log('***on_load');
                 IPython.keyboard_manager.enable();
@@ -347,14 +353,14 @@ define('mapview', [
                 that.toolbar.on("draw-end", onDrawEnd);
                 //map.on("extent-change", onExtentChange);
                 evt.map.on("click", onMouseClick);
-                
+
 
                 that.mode_changed();
                 that.layer_changed();
                 that.start_time_changed();
                 that.end_time_changed();
             }
-            
+
 
             // JS map events
             /*
@@ -364,17 +370,17 @@ define('mapview', [
                 that.extent_change(extent, zoomed);
             }
             */
-            function onDrawEnd(evtObj){
-              var geometry = evtObj.geometry;
+            function onDrawEnd(evtObj) {
+                var geometry = evtObj.geometry;
 
-              var graphic = that.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
+                var graphic = that.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
 
-              that.toolbar.deactivate();
-              that.draw_end(geometry);
+                that.toolbar.deactivate();
+                that.draw_end(geometry);
             }
 
             function onMouseClick(event) {
-                console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
+                console.log("User clicked at " + event.screenPoint.x + ", " + event.screenPoint.y +
                             " on the screen. The map coordinate at this point is " +
                             event.mapPoint.x + ", " + event.mapPoint.y
 
@@ -384,7 +390,7 @@ define('mapview', [
                 //console.log(normalizedVal);
                 that.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
             }
-            
+
 
             // Model change events
             this.model.on('change:zoom', this.zoom_changed, this);
@@ -401,34 +407,34 @@ define('mapview', [
         on_load: function(evt) {
             console.log('***on_load');
             evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
-
+    
             // create the draw toolbar, it activates only when mode=draw_*
             this.toolbar = new Draw(evt.map);
-
+    
             // hook up events
             this.toolbar.on("draw-end", this.onDrawEnd);
             //map.on("extent-change", onExtentChange);
             //evt.map.target.on("click", this.onMouseClick);   
             evt.map.on("click", this.onMouseClick);   
         },
-
+    
         onDrawEnd : function(evtObj){
             var geometry = evtObj.geometry;
-
+    
             var graphic = this.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
-
+    
             this.toolbar.deactivate();
             //this.draw_end(geometry);
                         this.model.set('mode','navigate');
             this.touch();
             this.send({event: 'draw-end', message: geometry});
         },
-
+    
         onMouseClick: function(event) {
             console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
                         " on the screen. The map coordinate at this point is " +
                         event.mapPoint.x + ", " + event.mapPoint.y
-
+    
             );
             //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
             //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
@@ -438,13 +444,13 @@ define('mapview', [
             this.send({event: 'mouseclick', message: event.mapPoint});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
         },
         */
-        
+
         // Incoming Events from the model
-        zoom_changed: function() {
+        zoom_changed: function () {
             this.map.setZoom(this.model.get('zoom'));
         },
 
-        mode_changed: function() {
+        mode_changed: function () {
 
             if (this.model.get('mode') == "navigate") {
                 console.log("***mode = navigate")
@@ -455,7 +461,7 @@ define('mapview', [
                 this.map.removeAllLayers();
             } else if (this.model.get('mode').indexOf("{") > -1) {
 
-                console.log("***mode=draw_geometry%%%" );
+                console.log("***mode=draw_geometry%%%");
                 var drawgraphic = JSON.parse(this.model.get('mode'));
                 var gfx = new Graphic(drawgraphic);
 
@@ -463,7 +469,7 @@ define('mapview', [
                     if (gfx.geometry.type === 'polyline') {
                         console.log("GEOM TYPE POLYLINE");
 
-                        gfx.symbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255,0,0,0.5]),3);
+                        gfx.symbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255, 0, 0, 0.5]), 3);
                     } else if (gfx.geometry.type === 'polygon') {
                         console.log("GEOM TYPE POLYGON");
 
@@ -486,12 +492,27 @@ define('mapview', [
                 this.toolbar.activate(shape);
             }
         },
+        createTemplate: function (layer) {
+            var fieldInfos = array.map(layer.fields, function (field) {
+                return {
+                    "fieldName": field.name,
+                    "label": field.alias,
+                    "visible": true
+                }
+            });
 
-        layer_changed: function() {
+            var template = new PopupTemplate({
+                title: layer.name,
+                fieldInfos: fieldInfos
+            });
+            return template;
+        },
+
+        layer_changed: function () {
             var that = this;
             if (this.model.get('_addlayer').indexOf("{") > -1) {
 
-                console.log("***addlayer" );
+                console.log("***addlayer");
 
                 var newlayer = JSON.parse(this.model.get('_addlayer'));
                 console.log(newlayer);
@@ -499,17 +520,16 @@ define('mapview', [
                     console.log("KMLLayer " + newlayer.url);
                     var kml = new KMLLayer(newlayer.url);
                     this.map.addLayer(kml);
-                    kml.on("load", function() {
-                      domStyle.set("loading", "display", "none");
+                    kml.on("load", function () {
+                        domStyle.set("loading", "display", "none");
                     });
                 }
-                else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer"))
-                {
+                else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer")) {
                     console.log("FeatureLayer " + newlayer.url);
 
                     var layer = new FeatureLayer(newlayer.url, {
-                        "outFields":["*"]
-                        });
+                        "outFields": ["*"]
+                    });
 
                     if (newlayer.opacity != null) {
                         layer.setOpacity(newlayer.opacity);
@@ -522,52 +542,65 @@ define('mapview', [
                     }
 
                     if (newlayer.renderer == "HeatmapRenderer") {
-                       var heatmapRenderer = new HeatmapRenderer();
-                       layer.setRenderer(heatmapRenderer);
+                        var heatmapRenderer = new HeatmapRenderer();
+                        layer.setRenderer(heatmapRenderer);
                     }
+
+                    bRend = false;
+                    bSRend = false;
 
                     this.map.addLayer(layer);
 
                     if (newlayer.renderer == "ClassedColorRenderer") {
-                        layer.on("load", function () {
-                             createRenderer(newlayer.field_name);
-                         });
+                        bRend = true;
+                        //layer.on("load", function () {
+                        //  createRenderer(newlayer.field_name);
+                        //});
                     }
 
                     if (newlayer.renderer == "ClassedSizeRenderer") {
-                        layer.on("load", function () {
-                             createSizeRenderer(newlayer.field_name);
-                         });
+                        bSRend = true;
+                        //layer.on("load", function () {
+                        //  createSizeRenderer(newlayer.field_name);
+                        //});
                     }
-
-                     function createRenderer(field) {
+                    layer.on("load", lang.hitch(this, function () {
+                        layer.setInfoTemplate(this.createTemplate(layer));
+                        if (bRend) {
+                            createRenderer(newlayer.field_name);
+                        }
+                        if (bSRend) {
+                            createSizeRenderer(newlayer.field_name);
+                        }
+                    }));
+                    function createRenderer(field) {
                         //smart mapping functionality begins
                         smartMapping.createClassedColorRenderer({
-                           layer: layer,
-                           field: field,
-                           basemap: that.map.getBasemap(),
-                           classificationMethod: "quantile"
+                            layer: layer,
+                            field: field,
+                            basemap: that.map.getBasemap(),
+                            classificationMethod: "quantile"
                         }).then(function (response) {
-                           layer.setRenderer(response.renderer);
-                           layer.redraw();
-                           //createLegend(map, layer, field);
+                            layer.setRenderer(response.renderer);
+                            layer.redraw();
+                            //createLegend(map, layer, field);
                         });
-                     }
+                    }
 
                     function createSizeRenderer(field) {
-                         console.log("ClassedSizeRend2");
+                        console.log("ClassedSizeRend2");
                         //smart mapping functionality begins
                         smartMapping.createClassedSizeRenderer({
-                           layer: layer,
-                           field: field,
-                           basemap: that.map.getBasemap(),
-                           classificationMethod: "quantile"
+                            layer: layer,
+                            field: field,
+                            basemap: that.map.getBasemap(),
+                            classificationMethod: "quantile"
                         }).then(function (response) {
-                           layer.setRenderer(response.renderer);
-                           layer.redraw();
-                           //createLegend(map, layer, field);
+                            layer.setRenderer(response.renderer);
+                            layer.redraw();
+                            //createLegend(map, layer, field);
                         });
-                     }
+                    }
                 }
                 else if (newlayer.type == "ImageLayer") {
 
@@ -616,34 +649,39 @@ define('mapview', [
                         newlyr_options = Object.assign(options, JSON.parse(newlayer.options));
                     }
 
-                    console.log("***Feature Collection layer###***" );
+                    console.log("***Feature Collection layer###***");
                     var layer = new FeatureLayer(newlayer, newlyr_options);
+                    //code added by MM to add pop up to a FC
 
-                    if (newlayer.options!= null) {
+                    layer.setInfoTemplate(this.createTemplate(layer));
+
+                    //end changes from mm
+
+                    if (newlayer.options != null) {
                         var lyr_options = JSON.parse(newlayer.options);
 
 
-                        console.log("ClassedSizeRend0:"+ lyr_options.renderer);
+                        console.log("ClassedSizeRend0:" + lyr_options.renderer);
                         console.log("ClassedSizeRend:" + lyr_options.field_name);
 
                         if (lyr_options.renderer == "HeatmapRenderer") {
-                           var heatmapRenderer = new HeatmapRenderer();
-                           var hmoptions = {};
+                            var heatmapRenderer = new HeatmapRenderer();
+                            var hmoptions = {};
 
-                           if (lyr_options.field_name != null) {
-                               hmoptions = {
-                                   field: lyr_options.field_name,
-                               };
-                           }
-                           var heatmapRenderer = new HeatmapRenderer(hmoptions);
+                            if (lyr_options.field_name != null) {
+                                hmoptions = {
+                                    field: lyr_options.field_name,
+                                };
+                            }
+                            var heatmapRenderer = new HeatmapRenderer(hmoptions);
 
-                           layer.setRenderer(heatmapRenderer);
+                            layer.setRenderer(heatmapRenderer);
                         }
 
 
                         if (lyr_options.renderer == "ClassedSizeRenderer") {
                             console.log("ClassedSizeRenderer...");
-                            setTimeout(function(){ createClassedSizeRenderer(lyr_options.field_name); }, 500);
+                            setTimeout(function () { createClassedSizeRenderer(lyr_options.field_name); }, 500);
                             /*layer.on("load", function () {
                                 console.log("AAA");
                                  createClassedSizeRenderer(lyr_options.field_name);
@@ -651,7 +689,7 @@ define('mapview', [
                         }
 
                         if (lyr_options.renderer == "ClassedColorRenderer") {
-                            setTimeout(function(){ createClassedColorRenderer(lyr_options.field_name); }, 500);
+                            setTimeout(function () { createClassedColorRenderer(lyr_options.field_name); }, 500);
                             /*layer.on("load", function () {
                                 console.log("BBB");
                                  createClassedColorRenderer(lyr_options.field_name);
@@ -659,35 +697,35 @@ define('mapview', [
                              */
                         }
 
-                         function createClassedColorRenderer(field) {
+                        function createClassedColorRenderer(field) {
                             //smart mapping functionality begins
                             smartMapping.createClassedColorRenderer({
-                               layer: layer,
-                               field: field,
-                               basemap: that.map.getBasemap(),
-                               classificationMethod: "quantile"
+                                layer: layer,
+                                field: field,
+                                basemap: that.map.getBasemap(),
+                                classificationMethod: "quantile"
                             }).then(function (response) {
-                               layer.setRenderer(response.renderer);
-                               layer.redraw();
-                               //createLegend(map, layer, field);
+                                layer.setRenderer(response.renderer);
+                                layer.redraw();
+                                //createLegend(map, layer, field);
                             });
-                         }
+                        }
 
 
-                         function createClassedSizeRenderer(field) {
-                             console.log("ClassedSizeRend2");
+                        function createClassedSizeRenderer(field) {
+                            console.log("ClassedSizeRend2");
                             //smart mapping functionality begins
                             smartMapping.createClassedSizeRenderer({
-                               layer: layer,
-                               field: field,
-                               basemap: that.map.getBasemap(),
-                               classificationMethod: "quantile"
+                                layer: layer,
+                                field: field,
+                                basemap: that.map.getBasemap(),
+                                classificationMethod: "quantile"
                             }).then(function (response) {
-                               layer.setRenderer(response.renderer);
-                               layer.redraw();
-                               //createLegend(map, layer, field);
+                                layer.setRenderer(response.renderer);
+                                layer.redraw();
+                                //createLegend(map, layer, field);
                             });
-                         }
+                        }
                     }
 
 
@@ -698,30 +736,30 @@ define('mapview', [
         },
 
 
-        center_changed: function() {
+        center_changed: function () {
             console.log("changing center");
             this.map.centerAt(this.model.get('center').reverse());
         },
-        
-        extent_changed: function() {
+
+        extent_changed: function () {
             console.log("changing extent");
-            
+
             var ext = JSON.parse(this.model.get('_extent'));
-            
+
             var newExtent = new Extent();
             newExtent.xmin = ext.xmin;
             newExtent.xmax = ext.xmax;
             newExtent.ymin = ext.ymin;
             newExtent.ymax = ext.ymax;
-            
-            newExtent.spatialReference = new SpatialReference({ wkid:4326 });
+
+            newExtent.spatialReference = new SpatialReference({ wkid: 4326 });
 
             this.map.setExtent(newExtent);
         },
 
-        start_time_changed: function() {
+        start_time_changed: function () {
             var start_time = this.model.get('start_time')
-            if ((start_time) && (start_time.trim()!='')) {
+            if ((start_time) && (start_time.trim() != '')) {
                 console.log("changing start_time");
                 var timeExtent = new TimeExtent();
                 timeExtent.startTime = new Date(this.model.get('start_time'));
@@ -730,9 +768,9 @@ define('mapview', [
             }
         },
 
-        end_time_changed: function() {
+        end_time_changed: function () {
             var end_time = this.model.get('end_time')
-            if ((end_time) && (end_time.trim()!='')) {
+            if ((end_time) && (end_time.trim() != '')) {
                 console.log("changing end_time");
                 var timeExtent = new TimeExtent();
                 timeExtent.startTime = new Date(this.model.get('start_time'));
@@ -741,20 +779,20 @@ define('mapview', [
             }
         },
 
-        basemap_changed: function() {
+        basemap_changed: function () {
             this.map.setBasemap(this.model.get('basemap'));
         },
 
         // Outgoing events to the model
 
-        mouse_clicked: function(geometry) { //mapx, mapy) {
-            this.send({event: 'mouseclick', message: geometry});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
+        mouse_clicked: function (geometry) { //mapx, mapy) {
+            this.send({ event: 'mouseclick', message: geometry });//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
         },
 
-        draw_end: function(geometry) {
-            this.model.set('mode','navigate');
+        draw_end: function (geometry) {
+            this.model.set('mode', 'navigate');
             this.touch();
-            this.send({event: 'draw-end', message: geometry});
+            this.send({ event: 'draw-end', message: geometry });
         },
         /*
         extent_change(extent, zoomed) {
@@ -768,38 +806,38 @@ define('mapview', [
             'click': '_handle_click',
         },
 
-        _handle_click: function(){
+        _handle_click: function () {
             /**
              * Handles when the button is clicked.
              */
-            this.send({event: 'click', message: 'xyz'});
+            this.send({ event: 'click', message: 'xyz' });
         },
 
     });
 
     return {
-        MapView : MapView
+        MapView: MapView
     };
 
     //manager.WidgetManager.register_widget_view('MapView', MapView);
 });
 
-define(function(){
-    function load_ipython_extension(){
+define(function () {
+    function load_ipython_extension() {
         console.info('loaded map widget');
     }
     return {
         load_ipython_extension: load_ipython_extension
     }
 });
-              /*
-              var infoTemplate = new InfoTemplate("${state_name}", "Population (2000):  ${pop2000:NumberFormat}");
-              var featureLayer = new FeatureLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/3",{
-                mode: FeatureLayer.MODE_ONDEMAND,
-                outFields: ["*"],
-                infoTemplate: infoTemplate
-              });
+/*
+var infoTemplate = new InfoTemplate("${state_name}", "Population (2000):  ${pop2000:NumberFormat}");
+var featureLayer = new FeatureLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/3",{
+  mode: FeatureLayer.MODE_ONDEMAND,
+  outFields: ["*"],
+  infoTemplate: infoTemplate
+});
 
-              //map.addLayer(featureLayer);
-              //map.infoWindow.resize(155,75);
-              */
+//map.addLayer(featureLayer);
+//map.infoWindow.resize(155,75);
+*/

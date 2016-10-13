@@ -152,9 +152,9 @@ class MapView(widgets.DOMWidget):
                 "password" : self._gis._con._password
             }
             self._token_info = json.dumps(token_info)
-            if self._gis.properties.portalName != 'ArcGIS Online':
-                self._arcgis_url = self._gis._con.baseurl + 'content/items'
-            
+            #if self._gis.properties.portalName != 'ArcGIS Online':
+            self._arcgis_url = self._gis._con.baseurl + 'content/items'
+
         self.item = kwargs.pop('item', None)
         if self.item is not None:
             if isinstance(self.item, WebMap):
