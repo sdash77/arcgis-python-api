@@ -11,8 +11,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.tools import *
 from arcgis.lyr import *
 
-from arcgis.gis import Item
-
 import re
 import json
 import base64
