@@ -3848,15 +3848,15 @@ class MapService(GISService):
         if not areaOfInterest is None:
             params['areaOfInterest'] = areaOfInterest
         if async == True:
-            return self._con.get(url, params)
+            return self._con.get(url, params, token=self._token)
         else:
-            exportJob = self._con.get(url, params)
+            exportJob = self._con.get(url, params, token=self._token)
 
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = { "f" : "json" }
-            job_response = self._con.post(path, params)
+            job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
                 status = job_response.get("status") 
@@ -3990,14 +3990,14 @@ class MapService(GISService):
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = { "f" : "json" }
-            job_response = self._con.post(path, params)
+            job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
                 status = job_response.get("status") 
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params)
+                    job_response = self._con.post(path, params, token=self._token)
                     status = job_response.get("status") 
                     if status in ['esriJobFailed',
                               'esriJobCancelling',

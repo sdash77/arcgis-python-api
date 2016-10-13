@@ -5161,7 +5161,7 @@ class GeometryService(GISService):
             params['polygons'] = [polygons]
         else:
             return "No polygons provided, please submit a list of polygon geometries"
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def __geometryListToGeomTemplate(self, geometries):
         """
@@ -5293,7 +5293,7 @@ class GeometryService(GISService):
             params['polylines'] = [polylines]
         elif isinstance(polylines, list):
             params['polylines'] = polylines
-        result = self._con.post(path=url, postdata=params)
+        result = self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in result:
             return result
         return self._process_results(result)
@@ -5356,11 +5356,12 @@ class GeometryService(GISService):
             elif isinstance(g, Polyline):
                 params['geometries'] = {"geometryType": "esriGeometryPolyline",
                                                         "geometries" : self.__geomToStringArray(geometries, "list")}
-        elif isinstance(geometries, list) and len(geometries) > 0 and \
-             isinstance(geometries[0], dict):
-            params['geometries'] = geometries
-        else:
-            return None
+            elif isinstance(g, dict):
+                params['geometries'] = geometries
+            else:
+                print('The passed in geometries are in an unsupported format. '
+                      'List of dicts or Geometry objects are supported')
+                return None
         if isinstance(distances, list):
             distances = [str(d) for d in distances]
 
@@ -5373,7 +5374,7 @@ class GeometryService(GISService):
         if outSR is not None:
             params['outSR'] = outSR
 
-        results = self._con.post(path=url, postdata=params)
+        results = self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5414,7 +5415,7 @@ class GeometryService(GISService):
                                                         "geometries" : self.__geomToStringArray(geometries, "list")}
         else:
             return None
-        results = self._con.post(path=url, postdata=params)
+        results = self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5470,7 +5471,7 @@ class GeometryService(GISService):
             params['target'] = template
         else:
             AttributeError("You must provide at least 1 Polygon/Polyline geometry in a list")
-        results = self._con.post(path=url, postdata=params)
+        results = self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5541,7 +5542,7 @@ class GeometryService(GISService):
                 template['geometryType'] = "esriGeometryPolygon"
             template['geometries'].append(g)
         params['geometries'] = template
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5610,7 +5611,7 @@ class GeometryService(GISService):
             raise AttributeError("Invalid geometry type")
         geomTemplate['geometry'] = geometry
         params['geometry'] = geomTemplate
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5656,7 +5657,7 @@ class GeometryService(GISService):
         geometry2 = self.__geometryToGeomTemplate(geometry=geometry2)
         params['geometry1'] = geometry1
         params['geometry2'] = geometry2
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def find_transformation(self, inSR, outSR, extentOfInterest=None, numOfResults=1):
         """
@@ -5702,7 +5703,7 @@ class GeometryService(GISService):
             params['numOfResults'] = numOfResults
         if isinstance(extentOfInterest, Envelope):
             params['extentOfInterest'] = extentOfInterest
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def from_geo_coordinate_string(self, sr, strings,
                                 conversionType, conversionMode=None):
@@ -5759,7 +5760,7 @@ class GeometryService(GISService):
         }
         if not conversionMode is None:
             params['conversionMode'] = conversionMode
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def generalize(self,
                    sr,
@@ -5792,7 +5793,7 @@ class GeometryService(GISService):
             "maxDeviation": maxDeviation
         }
         params['geometries'] = self.__geometryListToGeomTemplate(geometries=geometries)
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5827,7 +5828,7 @@ class GeometryService(GISService):
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries),
             "geometry" : self.__geometryToGeomTemplate(geometry=geometry)
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -5856,7 +5857,7 @@ class GeometryService(GISService):
             "polygons": self.__geomToStringArray(geometries=polygons,
                                                  returnType="list")
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return results
@@ -5912,7 +5913,7 @@ class GeometryService(GISService):
             "lengthUnit" : lengthUnit,
             "calculationType" : calculationType
         }
-        res = self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params, token=self._token)
         if res is not None and 'lengths' in res:
             return res['lengths']
         else:
@@ -5986,7 +5987,7 @@ class GeometryService(GISService):
             "bevelRatio" : bevelRatio,
             "simplifyResult" : json.dumps(simplifyResult)
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -6029,7 +6030,7 @@ class GeometryService(GISService):
             "transformation" : transformation,
             "transformFoward": transformFoward
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -6092,7 +6093,7 @@ class GeometryService(GISService):
             "relation" : relation,
             "relationParam" : relationParam
         }
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def reshape(self,
                 sr,
@@ -6124,7 +6125,7 @@ class GeometryService(GISService):
             params['reshaper'] = reshaper
         else:
             raise AttributeError("Invalid reshaper object, must be Polyline")
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -6150,7 +6151,7 @@ class GeometryService(GISService):
             "sr" : sr,
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -6233,8 +6234,7 @@ class GeometryService(GISService):
             params['rounding'] = rounding
         if isinstance(addSpaces, bool):
             params['addSpaces'] = addSpaces
-        return self._con.post(path=url,
-                             postdata=params)
+        return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def trim_extend(self,
                    sr,
@@ -6286,7 +6286,7 @@ class GeometryService(GISService):
             "extendHow": extendHow,
             "trimExtendTo" : trimExtendTo
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
@@ -6310,7 +6310,7 @@ class GeometryService(GISService):
             "sr" : sr,
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
         }
-        results =  self._con.post(path=url, postdata=params)
+        results =  self._con.post(path=url, postdata=params, token=self._token)
         if 'error' in results:
             return results
         return self._process_results(results)
