@@ -136,12 +136,10 @@ class GIS(object):
 
         self._datastores = []
         
-        fedservers_url = self._url + "/portaladmin/federation/servers"
-        res = self._portal.con.get(fedservers_url)
+        res = self._portal.con.post("portals/self/servers", {"f": "json"})
+
         servers = res['servers']
-
         admin_url = None
-
         for server in servers:
             admin_url = server['adminUrl'] + '/admin'
             self._datastores.append(DatastoreManager(self, admin_url))
@@ -394,21 +392,10 @@ class DatastoreManager(object):
     An instance of a list of this class, called 'datastores', is available as a property of the GIS object.
     Users call methods on members of this 'datastores' list to manage the datastores in a site federated with the portal.
     """
-    def __init__(self, gis, admin_url=None):
+    def __init__(self, gis, admin_url):
         self._gis = gis
         self._portal = gis._portal
-        if admin_url is None:
-            fedservers_url = self._gis._url + "portaladmin/federation/servers?f=json"
-            res = self._gis._portal.con.get(fedservers_url)
-            servers = res['servers']
-
-            self._admin_url = None
-
-            for server in servers:
-                if server['isHosted']:
-                    self._admin_url = server['adminUrl'] + '/admin'
-        else:
-            self._admin_url = admin_url
+        self._admin_url = admin_url
 
     def __str__(self):
         return json.dumps(self)
