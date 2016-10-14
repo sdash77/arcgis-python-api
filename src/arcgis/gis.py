@@ -2118,7 +2118,6 @@ class User(dict):
                 return self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                      out_folder=save_folder,
                                      file_name=file_name)
-                return file_path
         else:
             return None
 

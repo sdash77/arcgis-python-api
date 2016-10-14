@@ -58,3 +58,5 @@ ___*
 
 # IDE files
 .idea
+src/.vscode/launch.json
+src/.vscode/settings.json
