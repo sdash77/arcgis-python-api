@@ -581,7 +581,38 @@ class Portal(object):
 
         if resp:
             return resp.get('success')
+    def protect_item(self, item_id, owner, folder=None, enable=True):
+        """ Enable or disable delete protection on the item
 
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        owner             required string, owner of the item currently
+        ----------------  --------------------------------------------------------
+        folder            optional string, folder containing the item.  Defaults to the root folder.
+        ----------------  --------------------------------------------------------
+        enable            optional boolean, True to enable delete protection, False to 
+                          to disable it
+        ================  ========================================================
+
+        :return:
+            dict with key "success" containing boolean whether process completed or not
+            
+
+        """
+        path = 'content/users/' + owner
+        if folder :
+            path += '/' + folder
+        if enable == True:
+            path += '/items/' + item_id + '/protect'
+        else:
+            path += '/items/' + item_id + '/unprotect'
+        postdata = self._postdata()
+        resp = self.con.post(path, postdata)
+        if resp:
+            return resp
     def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
 

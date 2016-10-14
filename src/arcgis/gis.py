@@ -2909,6 +2909,29 @@ class Item(dict):
         else:
             print('Folder not found for given owner')
             return None
+    def protect(self, enable=True):
+        """ Enable or disable delete protection on the item
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        enable            optional boolean, True to enable delete protection, False to 
+                          to disable it
+        ================  ===============================================================
+
+        :return:
+            a json object like the following:
+            {
+               "success": true | false
+            }
+            
+        
+        """
+        try:
+            folder = self.ownerFolder
+        except:
+            folder = None
+        return self._portal.protect_item(self.itemid, self.owner, folder, enable)
 
 def rot13(s):
     result = ""
