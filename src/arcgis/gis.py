@@ -184,27 +184,31 @@ class GIS(object):
         to the specified zoomlevel.
         """
         from arcgis.viz import MapView
-        
-        if location is not  None:
-            if isinstance(location,Item):
-                if (location.type == 'Web Map'):
-                    mapwidget = MapView(gis=self,item=location)
-            elif isinstance(location, str):
-                mapwidget = MapView(gis=self)
+
+        if isinstance(location, Item) and location.type == 'Web Map':
+            mapwidget = MapView(gis=self, item=location)
+        else:
+            mapwidget = MapView(gis=self)
+
+            # Geocode the location
+            if isinstance(location, str):
                 for geocoder in self.tools.geocoders:
                     locations = geocoder.geocode(location, outSR=4326, maxLocations=1)
                     if len(locations) == 1:
                         if zoomlevel is not None:
-                            location = locations[0]['location']
-                            mapwidget.center =  location['y'], location['x']
+                            loc = locations[0]['location']
+                            mapwidget.center = loc['y'], loc['x']
                             mapwidget.zoom = zoomlevel
                         else:
                             mapwidget.extent = locations[0]['extent']
                         break
-            elif isinstance(location, tuple):
+
+            # Center the map at the location
+            elif isinstance(location, (tuple, list)):
                 mapwidget.center = location
-            else:
+            elif location is not None:
                 print("location must be an address(string) or (lat, long) pair as a tuple")
+
         if zoomlevel is not None:
             mapwidget.zoom = zoomlevel
 
