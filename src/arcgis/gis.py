@@ -705,7 +705,8 @@ class Tools(object):
             try:
                 svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
             except:
-                svcurl = 'https://rdvmags01.esri.com/arcgis/rest/services/System/RasterAnalysisTools/GPServer'
+                print("This GIS does not support raster analysis")
+                return None
 
             self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
             return self._raster_analysis
