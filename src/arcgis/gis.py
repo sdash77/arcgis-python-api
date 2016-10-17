@@ -24,6 +24,8 @@ from six.moves.urllib.error import HTTPError
 from contextlib import contextmanager
 # pylint: disable=fixme, line-too-long
 import os
+import logging
+_log = logging.getLogger(__name__)
 
 class Error(Exception): pass
 
@@ -679,7 +681,11 @@ class Tools(object):
         try:
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
-                self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                try:
+                    self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                except RuntimeError as re:
+                    _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
+                    _log.warning(str(re))
         except KeyError:
             pass
         return self._geocoders
