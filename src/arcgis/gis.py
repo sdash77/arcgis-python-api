@@ -1229,10 +1229,9 @@ class ContentManager(object):
             has_static_data         optional boolean, indicating whether the data changes
             max_record_count        optional int, ,maximum number of records in query operations
             supported_query_formats optional string, formats in which query results are returned
-            capabilities            optional string, Specify feature service  capabilities for
-                                    Create, Delete, Query, Update, and Sync. If left unspecified
-                                    'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
-                                    are used for image services, and Create,Delete,Query,Update,Editing'
+            capabilities            optional string, Specify service capabilities.
+                                    If left unspecified, 'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+                                    are used for image services, and 'Create,Delete,Query,Update,Editing'
                                     are used for feature services, and 'Query' otherwise
             description             optional string, a user-friendly description for the published dataset.
             copyright_text          optional string, copyright information associated with the dataset.

@@ -981,7 +981,19 @@ class GeoprocessingTool(collections.OrderedDict):
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 ###########################################################################
 class FeatureAnalysisTools(_AsyncService):
-    "Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability in Portal for ArcGIS and ArcGIS Online."
+    """
+    Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability 
+    in Portal for ArcGIS and ArcGIS Online.
+    
+    Several `FeatureAnalysisTools` accept feature layers as inputs. The input layer can be passed in using several different formats:
+    * a Feature Service Item. The first layer in the Feature Service is used as input
+    * a Feature Collection Item. The first layer in the Feature Collection is used as input
+    * an `arcgis.lyr.FeatureService` object. The first layer in the Feature Service is used as input
+    * an `arcgis.lyr.FeatureCollection` object. The first layer in the Feature Collection is used as input
+    * an `arcgis.lyr.Layer` object. The object could be any sub-class of Layer that has features
+    * a Feature Collection specified as a python dictionary (with layer definition and a feature set)
+    * a string with the url of the feature service
+    """
 
     def __init__(self, url, gis):
         """
