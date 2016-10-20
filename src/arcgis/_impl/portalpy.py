@@ -142,7 +142,8 @@ class Portal(object):
                                              all_ssl=True,
                                              referer=referer,
                                              proxy_host=proxy_host,
-                                             proxy_port=proxy_port)
+                                             proxy_port=proxy_port, 
+                                             verify_cert=verify_cert)
             else:
                 self.con = _ArcGISConnection(baseurl=self.resturl,
                                              tokenurl=tokenurl,

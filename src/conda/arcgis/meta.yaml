@@ -7,9 +7,9 @@ package:
     name: arcgis
     version: '0.3'
 source:
-    fn: geosaurus-0.3-beta.zip
+    fn: geosaurus-0.3-prerel.zip
     sha256: 53affcf14819c048475af579d4da43f0eb007bc5fd779533e877e441e889cdf9
-    url: http://pydemo.esri.com:9000/geosaurus-0.3-beta.zip
+    url: http://pydemo.esri.com:9000/geosaurus-0.3-prerel.zip
 build:
     number: '1'
 requirements:
@@ -19,11 +19,15 @@ requirements:
         - six
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
+        - pywin32
+        - kerberos-sspi
     run:
         - python
         - six
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
+        - pywin32
+        - kerberos-sspi
 test:
     imports:
         - arcgis
@@ -31,4 +35,4 @@ test:
 about:
     home: https://developers.arcgis.com/python
     license: Esri License
-    summary: ArcGIS Python API (Beta 2)
+    summary: ArcGIS Python API (Pre-release)

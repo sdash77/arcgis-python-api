@@ -226,6 +226,7 @@ class _ArcGISConnection(object):
             self._is_arcpy = False
         else:
             self._is_arcpy = baseurl.lower() == "pro"
+            self._auth = "PRO"
         if self._is_arcpy:
             try:
                 import arcpy
@@ -415,6 +416,11 @@ class _ArcGISConnection(object):
         """ Logs into the portal using username/password. """
         
         try:
+            if self._is_arcpy: # PRO authentication
+                newtoken = self.generate_token(username, password, expiration)
+                if newtoken:
+                    self._token = newtoken
+
             resp = self.post('', { 'f': 'json' }, add_token=False) # probe portal to find auth scheme
                                                   # if basic, digest, NTLM or Kerberos, etc is being used
                                                   # except handler will catch it and set self._auth appropriately

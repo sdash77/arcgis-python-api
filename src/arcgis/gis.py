@@ -937,13 +937,13 @@ class UserManager(object):
 
         #TODO: remove org users, invite users
 
-    @_lazy_property
+    @property
     def me(self):
         """ Returns the logged in user
         """
-        me = self._portal.logged_in_user()
-        if me is not None:
-            return User(self._gis, me['username'], me)
+        meuser = self._portal.logged_in_user()
+        if meuser is not None:
+            return User(self._gis, meuser['username'], meuser)
         else:
             return None
 
