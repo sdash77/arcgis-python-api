@@ -7,9 +7,9 @@ package:
     name: arcgis
     version: '0.3'
 source:
-    fn: geosaurus-0.3-prerel.zip
+    fn: geosaurus-0.3-beta.zip
     sha256: 53affcf14819c048475af579d4da43f0eb007bc5fd779533e877e441e889cdf9
-    url: http://pydemo.esri.com:9000/geosaurus-0.3-prerel.zip
+    url: http://pydemo.esri.com:9000/geosaurus-0.3-beta.zip
 build:
     number: '1'
 requirements:
