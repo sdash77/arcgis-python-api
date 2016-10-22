@@ -493,7 +493,7 @@ class DatastoreManager(object):
         path_str = '{"path":"' + server_path + '"}'
         params = {
             'f': 'json',
-            'item' : {
+            'item' : json.dumps({
                 "path": "/bigDataFileShares/" + name,
                 "type": "bigDataFileShare",
                 
@@ -501,7 +501,7 @@ class DatastoreManager(object):
                     "connectionString": path_str,
                     "connectionType": "fileShare"
                 }
-            }
+            })
         }
         res = self._portal.con.post(path, params, verify_cert=False)
 
