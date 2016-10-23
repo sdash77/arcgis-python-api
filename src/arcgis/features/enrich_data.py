@@ -6,7 +6,7 @@ enrich_layer retrieves information about the people, places, and businesses in a
 travel time or distance from a location.
 """
 
-def enrich_layer(self,
+def enrich_layer(
                  input_layer,
                  data_collections=[],
                  analysis_variables=[],

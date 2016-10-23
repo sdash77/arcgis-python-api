@@ -6,19 +6,20 @@ find_hot_spots identifies statistically significant clustering in the spatial pa
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
 
-def calculate_density(self,
-                      input_layer,
-                      field=None,
-                      cell_size=None,
-                      cell_size_units="Meters",
-                      radius=None,
-                      radius_units=None,
-                      bounding_polygon_layer=None,
-                      area_units=None,
-                      classification_type="EqualInterval",
-                      num_classes=10,
-                      output_name=None,
-                      context=None):
+
+def calculate_density(
+        input_layer,
+        field=None,
+        cell_size=None,
+        cell_size_units="Meters",
+        radius=None,
+        radius_units=None,
+        bounding_polygon_layer=None,
+        area_units=None,
+        classification_type="EqualInterval",
+        num_classes=10,
+        output_name=None,
+        context=None):
     """
     The Calculate Density task creates a density map from point or line features by spreading known quantities of some
     phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
@@ -61,14 +62,14 @@ def calculate_density(self,
     pass
 
 
-def find_hot_spots(self,
-                   analysis_layer,
-                   analysis_field=None,
-                   divided_by_field=None,
-                   bounding_polygon_layer=None,
-                   aggregation_polygon_layer=None,
-                   output_name=None,
-                   context=None):
+def find_hot_spots(
+        analysis_layer,
+        analysis_field=None,
+        divided_by_field=None,
+        bounding_polygon_layer=None,
+        aggregation_polygon_layer=None,
+        output_name=None,
+        context=None):
     """
     The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted
     polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
@@ -101,18 +102,18 @@ def find_hot_spots(self,
     pass
 
 
-def interpolate_points(self,
-                       input_layer,
-                       field,
-                       interpolate_option="5",
-                       output_prediction_error=False,
-                       classification_type="GeometricInterval",
-                       num_classes=10,
-                       class_breaks=[],
-                       bounding_polygon_layer=None,
-                       predict_at_point_layer=None,
-                       output_name=None,
-                       context=None):
+def interpolate_points(
+        input_layer,
+        field,
+        interpolate_option="5",
+        output_prediction_error=False,
+        classification_type="GeometricInterval",
+        num_classes=10,
+        class_breaks=[],
+        bounding_polygon_layer=None,
+        predict_at_point_layer=None,
+        output_name=None,
+        context=None):
     """
     The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of
     points. The task takes point data with values at each point and returns areas classified by predicted values.
