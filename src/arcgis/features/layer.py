@@ -677,8 +677,11 @@ class FeatureDataset(GISService):
     def __init__(self, url, gis=None):
         super(FeatureDataset, self).__init__(url, gis)
 
-        if self.properties.syncEnabled:
-            self.replicas = ReplicaManager(self)
+        try:
+            if self.properties.syncEnabled:
+                self.replicas = ReplicaManager(self)
+        except AttributeError:
+            pass
 
         self._populate_layers()
         self._admin = None
