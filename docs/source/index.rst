@@ -13,10 +13,18 @@ Contents:
    :caption: arcgis
 
    arcgis.gis
+   arcgis.features
+   arcgis.features.managers
+   arcgis.features.analyze_patterns
+   arcgis.features.enrich_data
+   arcgis.features.find_locations
+   arcgis.features.manage_data
+   arcgis.features.summarize_data
    arcgis.lyr
    arcgis.viz
    arcgis.tools
    arcgis.geom
+   
 
 Indices and tables
 ==================

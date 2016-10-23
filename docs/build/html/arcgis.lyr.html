@@ -30,9 +30,12 @@
   
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
         <link rel="next" title="arcgis.viz module" href="arcgis.viz.html"/>
-        <link rel="prev" title="arcgis.gis module" href="arcgis.gis.html"/> 
+        <link rel="prev" title="arcgis.features.summarize_data module" href="arcgis.features.summarize_data.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -96,7 +99,42 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#arcgis-gis-tools">arcgis.gis.Tools</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">arcgis.lyr module</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.html">arcgis.features module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-feature">arcgis.features.Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featurelayer">arcgis.features.FeatureLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-table">arcgis.features.Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featuredataset">arcgis.features.FeatureDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featureset">arcgis.features.FeatureSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featurecollection">arcgis.features.FeatureCollection</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.managers.html">arcgis.features.managers module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-attachmentmanager">arcgis.features.managers.AttachmentManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-replicamanager">arcgis.features.managers.ReplicaManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-featuredatasetmanager">arcgis.features.managers.FeatureDatasetManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-featurelayermanager">arcgis.features.managers.FeatureLayerManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.enrich_data.html#arcgis-features-enrich-data">arcgis.features.enrich_data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.find_locations.html#arcgis-features-find-locations">arcgis.features.find_locations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.manage_data.html">arcgis.features.manage_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.manage_data.html#arcgis-features-manage-data">arcgis.features.manage_data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.summarize_data.html">arcgis.features.summarize_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data">arcgis.features.summarize_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-aggregate-points">arcgis.features.summarize_data.aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-summarize-nearby">arcgis.features.summarize_data.summarize_nearby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-summarize-within">arcgis.features.summarize_data.summarize_within</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.lyr module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-lyr-mapservice">arcgis.lyr.MapService</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-lyr-adminmapservice">arcgis.lyr.AdminMapService</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-lyr-featureservice">arcgis.lyr.FeatureService</a></li>
@@ -167,7 +205,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -672,817 +710,24 @@ server cache for the service.</p>
 </div>
 <div class="section" id="arcgis-lyr-featureservice">
 <h2>arcgis.lyr.FeatureService<a class="headerlink" href="#arcgis-lyr-featureservice" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.FeatureService">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">FeatureService</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureService" title="Permalink to this definition">¶</a></dt>
-<dd><p>allows use and administration (if access permits) of a feature service</p>
-<dl class="attribute">
-<dt id="arcgis.lyr.FeatureService.admin">
-<code class="descname">admin</code><a class="headerlink" href="#arcgis.lyr.FeatureService.admin" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureService.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>layerDefsFilter=None</em>, <em>geometryFilter=None</em>, <em>timeFilter=None</em>, <em>returnGeometry=True</em>, <em>returnIdsOnly=False</em>, <em>returnCountOnly=False</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>outSR=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureService.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Query operation is performed on a feature service resource</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureService.query_related_records">
-<code class="descname">query_related_records</code><span class="sig-paren">(</span><em>objectIds</em>, <em>relationshipId</em>, <em>outFields='*'</em>, <em>definitionExpression=None</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=None</em>, <em>geometryPrecision=None</em>, <em>outWKID=None</em>, <em>gdbVersion=None</em>, <em>returnZ=False</em>, <em>returnM=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureService.query_related_records" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Query operation is performed on a feature service layer
-resource. The result of this operation are feature sets grouped
-by source layer/table object IDs. Each feature set contains
-Feature objects including the values for the fields requested by
-the user. For related layers, if you request geometry
-information, the geometry of each feature is also returned in
-the feature set. For related tables, the feature set does not
-include geometries.
-Inputs:</p>
-<blockquote>
-<div><p>objectIds - the object IDs of the table/layer to be queried
-relationshipId - The ID of the relationship to be queried.
-outFields - the list of fields from the related table/layer</p>
-<blockquote>
-<div>to be included in the returned feature set. This
-list is a comma delimited list of field names. If
-you specify the shape field in the list of return
-fields, it is ignored. To request geometry, set
-returnGeometry to true.
-You can also specify the wildcard &#8220;*&#8221; as the
-value of this parameter. In this case, the result
-s will include all the field values.</div></blockquote>
-<dl class="docutils">
-<dt>definitionExpression - The definition expression to be</dt>
-<dd>applied to the related table/layer.
-From the list of objectIds, only those
-records that conform to this
-expression are queried for related
-records.</dd>
-<dt>returnGeometry - If true, the feature set includes the</dt>
-<dd>geometry associated with each feature. The
-default is true.</dd>
-<dt>maxAllowableOffset - This option can be used to specify the</dt>
-<dd>maxAllowableOffset to be used for
-generalizing geometries returned by the
-query operation. The maxAllowableOffset
-is in the units of the outSR. If outSR
-is not specified, then
-maxAllowableOffset is assumed to be in
-the unit of the spatial reference of the
-map.</dd>
-<dt>geometryPrecision - This option can be used to specify the</dt>
-<dd>number of decimal places in the response
-geometries.</dd>
-</dl>
-<p>outWKID - The spatial reference of the returned geometry.
-gdbVersion - The geodatabase version to query. This parameter</p>
-<blockquote>
-<div>applies only if the isDataVersioned property of
-the layer queried is true.</div></blockquote>
-<dl class="docutils">
-<dt>returnZ - If true, Z values are included in the results if</dt>
-<dd>the features have Z values. Otherwise, Z values are
-not returned. The default is false.</dd>
-<dt>returnM - If true, M values are included in the results if</dt>
-<dd>the features have M values. Otherwise, M values are
-not returned. The default is false.</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-adminfeatureservice">
 <h2>arcgis.lyr.AdminFeatureService<a class="headerlink" href="#arcgis-lyr-adminfeatureservice" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.AdminFeatureService">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">AdminFeatureService</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>fs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureService" title="Permalink to this definition">¶</a></dt>
-<dd><p>allows administration (if access permits) of a feature service</p>
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureService.add_to_definition">
-<code class="descname">add_to_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureService.add_to_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The addToDefinition operation supports adding a definition
-property to a hosted feature service. The result of this
-operation is a response indicating success or failure with error
-code and description.</p>
-<p>This function will allow users to change add additional values
-to an already published service.</p>
-<dl class="docutils">
-<dt>Input:</dt>
-<dd><dl class="first last docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the properties property.  For
-layer level modifications, run updates on each
-individual feature service layer object.</dd>
-</dl>
-</dd>
-<dt>Output:</dt>
-<dd>JSON message as dictionary</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureService.delete_from_definition">
-<code class="descname">delete_from_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureService.delete_from_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The deleteFromDefinition operation supports deleting a
-definition property from a hosted feature service. The result of
-this operation is a response indicating success or failure with
-error code and description.
-See: <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/</a>
-for additional information on this function.
-Input:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the properties property.  For
-layer level modifications, run updates on each
-individual feature service layer object.  Only
-include the items you want to remove from the
-FeatureService or layer.</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>JSON Message as dictionary</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureService.refresh">
-<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureService.refresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>refreshes a service</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureService.update_definition">
-<code class="descname">update_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureService.update_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The updateDefinition operation supports updating a definition
-property in a hosted feature service. The result of this
-operation is a response indicating success or failure with error
-code and description.</p>
-<dl class="docutils">
-<dt>Input:</dt>
-<dd><dl class="first last docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the properties property.  For
-layer level modifications, run updates on each
-individual feature service layer object.</dd>
-</dl>
-</dd>
-<dt>Output:</dt>
-<dd>JSON Message as dictionary</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-adminfeatureservicelayer">
 <h2>arcgis.lyr.AdminFeatureServiceLayer<a class="headerlink" href="#arcgis-lyr-adminfeatureservicelayer" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.AdminFeatureServiceLayer">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">AdminFeatureServiceLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureServiceLayer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The layer resource represents a single feature layer or a non
-spatial table in a feature service.  A feature layer is a table or
-view with at least one spatial column.
-For tables, it provides basic information about the table such as
-its id, name, fields, types and templates.
-For feature layers, in addition to the table information above, it
-provides information such as its geometry type, min and max scales,
-and spatial reference.
-Each type includes information about the type such as the type id,
-name, and definition expression.  Sub-types also include a default
-symbol and a list of feature templates.
-Each feature template includes a template name, description and a
-prototypical feature.
-The property supportsRollbackOnFailures will be true to indicate the
-support for transactional edits.
-The property maxRecordCount returns the maximum number of records
-that will be returned at once for a query.
-The property capabilities returns Query, Create, Delete, Update, and
-Editing capabilities. The Editing capability will be included if
-Create, Delete or Update is enabled for a Feature Service.
-Note, query and edit operations are not available on a layer in the
-adminstrative view.</p>
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureServiceLayer.add_to_definition">
-<code class="descname">add_to_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureServiceLayer.add_to_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The addToDefinition operation supports adding a definition
-property to a hosted feature service. The result of this
-operation is a response indicating success or failure with error
-code and description.</p>
-<p>This function will allow users to change add additional values
-to an already published service.</p>
-<dl class="docutils">
-<dt>Input:</dt>
-<dd><dl class="first last docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the asDictionary property.  For
-layer level modifications, run updates on each
-individual feature service layer object.</dd>
-</dl>
-</dd>
-<dt>Output:</dt>
-<dd>JSON message as dictionary</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureServiceLayer.delete_from_definition">
-<code class="descname">delete_from_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureServiceLayer.delete_from_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The deleteFromDefinition operation supports deleting a
-definition property from a hosted feature service. The result of
-this operation is a response indicating success or failure with
-error code and description.
-See: <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/</a>
-for additional information on this function.
-Input:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the asDictionary property.  For
-layer level modifications, run updates on each
-individual feature service layer object.  Only
-include the items you want to remove from the
-FeatureService or layer.</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>JSON Message as dictionary</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureServiceLayer.refresh">
-<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureServiceLayer.refresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>refreshes a service</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AdminFeatureServiceLayer.update_definition">
-<code class="descname">update_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AdminFeatureServiceLayer.update_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>The updateDefinition operation supports updating a definition
-property in a hosted feature service. The result of this
-operation is a response indicating success or failure with error
-code and description.</p>
-<dl class="docutils">
-<dt>Input:</dt>
-<dd><dl class="first last docutils">
-<dt>json_dict - part to add to host service.  The part format can</dt>
-<dd>be derived from the asDictionary property.  For
-layer level modifications, run updates on each
-individual feature service layer object.</dd>
-</dl>
-</dd>
-<dt>Output:</dt>
-<dd>JSON Message as dictionary</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-replicamanager">
 <h2>arcgis.lyr.ReplicaManager<a class="headerlink" href="#arcgis-lyr-replicamanager" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.ReplicaManager">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">ReplicaManager</code><span class="sig-paren">(</span><em>featsvc</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manager class for manipulating replicas for disconnected editing of feature services. This class is not created by users directly.
-An instance of this class, called &#8216;replicas&#8217;, is available as a property of the FeatureService object,
-if the layer is sync enabled / supports disconnected editing.
-Users call methods on this &#8216;replicas&#8217; object to manipulate (create, synchronize, unregister) replicas.</p>
-<dl class="method">
-<dt id="arcgis.lyr.ReplicaManager.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>replicaName</em>, <em>layers</em>, <em>layerQueries=None</em>, <em>geometryFilter=None</em>, <em>replicaSR=None</em>, <em>transportType='esriTransportTypeUrl'</em>, <em>returnAttachments=False</em>, <em>returnAttachmentsDatabyURL=False</em>, <em>async=False</em>, <em>attachmentsSyncDirection='none'</em>, <em>syncModel='none'</em>, <em>dataFormat='json'</em>, <em>replicaOptions=None</em>, <em>wait=False</em>, <em>out_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager.create" title="Permalink to this definition">¶</a></dt>
-<dd><p>The createReplica operation is performed on a feature service
-resource. This operation creates the replica between the feature
-service and a client based on a client-supplied replica definition.
-It requires the Sync capability. See Sync overview for more
-information on sync. The response for createReplica includes
-replicaID, server generation number, and data similar to the
-response from the feature service query operation.
-The createReplica operation returns a response of type
-esriReplicaResponseTypeData, as the response has data for the
-layers in the replica. If the operation is called to register
-existing data by using replicaOptions, the response type will be
-esriReplicaResponseTypeInfo, and the response will not contain data
-for the layers in the replica.</p>
-<dl class="docutils">
-<dt>Inputs:</dt>
-<dd><p class="first">replicaName - name of the replica
-layers - layers to export
-layerQueries - In addition to the layers and geometry parameters, the layerQueries</p>
-<blockquote>
-<div><p>parameter can be used to further define what is replicated. This
-parameter allows you to set properties on a per layer or per table
-basis. Only the properties for the layers and tables that you want
-changed from the default are required.
-Example:</p>
-<blockquote>
-<div>layerQueries = {&#8220;0&#8221;:{&#8220;queryOption&#8221;: &#8220;useFilter&#8221;, &#8220;useGeometry&#8221;: true,
-&#8220;where&#8221;: &#8220;requires_inspection = Yes&#8221;}}</div></blockquote>
-</div></blockquote>
-<dl class="docutils">
-<dt>geometryFilter - Geospatial filter applied to the replica to</dt>
-<dd>parse down data output.</dd>
-<dt>returnAttachments - If true, attachments are added to the replica and returned in the</dt>
-<dd>response. Otherwise, attachments are not included.</dd>
-<dt>returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each</dt>
-<dd>attachment returned from createReplica. Otherwise,
-attachments are embedded in the response.</dd>
-</dl>
-<p>replicaSR - the spatial reference of the replica geometry.
-transportType -  The transportType represents the response format. If the</p>
-<blockquote>
-<div>transportType is esriTransportTypeUrl, the JSON response is contained in a file,
-and the URL link to the file is returned. Otherwise, the JSON object is returned
-directly. The default is esriTransportTypeUrl.
-If async is true, the results will always be returned as if transportType is
-esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
-esriTransportTypeUrl regardless of how the parameter is set.
-Values: esriTransportTypeUrl | esriTransportTypeEmbedded</div></blockquote>
-<dl class="docutils">
-<dt>returnAttachments - If true, attachments are added to the replica and returned in</dt>
-<dd>the response. Otherwise, attachments are not included. The default is false. This
-parameter is only applicable if the feature service has attachments.</dd>
-<dt>returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for</dt>
-<dd>each attachment returned from createReplica. Otherwise, attachments are embedded
-in the response. The default is true. This parameter is only applicable if the
-feature service has attachments and if returnAttachments is true.</dd>
-<dt>attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when</dt>
-<dd>creating a replica. AttachmentsSyncDirection is currently a createReplica property
-and cannot be overridden during sync.
-Values: none, upload, bidirectional</dd>
-<dt>async - If true, the request is processed as an asynchronous job, and a URL is</dt>
-<dd>returned that a client can visit to check the status of the job. See the topic on
-asynchronous usage for more information. The default is false.</dd>
-<dt>syncModel - Client can specify the attachmentsSyncDirection when creating a replica.</dt>
-<dd>AttachmentsSyncDirection is currently a createReplica property and cannot be
-overridden during sync.</dd>
-<dt>dataFormat - The format of the replica geodatabase returned in the response. The</dt>
-<dd>default is json.
-Values: filegdb, json, sqlite, shapefile</dd>
-<dt>replicaOptions - This parameter instructs the createReplica operation to create a</dt>
-<dd>new replica based on an existing replica definition (refReplicaId). It can be used
-to specify parameters for registration of existing data for sync. The operation
-will create a replica but will not return data. The responseType returned in the
-createReplica response will be esriReplicaResponseTypeInfo.</dd>
-</dl>
-<p class="last">wait - if async, wait to pause the process until the async operation is completed.
-out_path - folder path to save the file</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.ReplicaManager.get">
-<code class="descname">get</code><span class="sig-paren">(</span><em>replica_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager.get" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns replica metadata for a specific replica.
-Inputs:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>replica_id - The replicaID returned by the feature service</dt>
-<dd>when the replica was created.</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.ReplicaManager.get_list">
-<code class="descname">get_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager.get_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns all the replicas for the feature service</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.ReplicaManager.synchronize">
-<code class="descname">synchronize</code><span class="sig-paren">(</span><em>replicaID</em>, <em>transportType='esriTransportTypeUrl'</em>, <em>replicaServerGen=None</em>, <em>returnIdsForAdds=False</em>, <em>edits=None</em>, <em>returnAttachmentDatabyURL=False</em>, <em>async=False</em>, <em>syncDirection='snapshot'</em>, <em>syncLayers='perReplica'</em>, <em>editsUploadID=None</em>, <em>editsUploadFormat=None</em>, <em>dataFormat='json'</em>, <em>rollbackOnFailure=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager.synchronize" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO: implement synchronize replica
-<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000</a></p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.ReplicaManager.unregister">
-<code class="descname">unregister</code><span class="sig-paren">(</span><em>replica_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.ReplicaManager.unregister" title="Permalink to this definition">¶</a></dt>
-<dd><p>removes a replica from a feature service
-Inputs:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>replica_id - The replicaID returned by the feature service</dt>
-<dd>when the replica was created.</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-attachmentmanager">
 <h2>arcgis.lyr.AttachmentManager<a class="headerlink" href="#arcgis-lyr-attachmentmanager" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.AttachmentManager">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">AttachmentManager</code><span class="sig-paren">(</span><em>layer</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manager class for manipulating feature layer attachments. This class is not created by users directly.
-An instance of this class, called &#8216;attachments&#8217;, is available as a property of the FeatureLayer object,
-if the layer supports attachments.
-Users call methods on this &#8216;attachments&#8217; object to manipulate (create, get, list, delete) attachments.</p>
-<dl class="method">
-<dt id="arcgis.lyr.AttachmentManager.add">
-<code class="descname">add</code><span class="sig-paren">(</span><em>oid</em>, <em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager.add" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds an attachment to a feature service
-Input:</p>
-<blockquote>
-<div>oid - string - OBJECTID value to add attachment to
-file_path - string - path to file</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>JSON Repsonse</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AttachmentManager.delete">
-<code class="descname">delete</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>removes an attachment from a feature
-Input:</p>
-<blockquote>
-<div>oid - integer or string - id of feature
-attachment_id - integer - id of attachment to erase</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>JSON response</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AttachmentManager.download">
-<code class="descname">download</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em>, <em>save_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager.download" title="Permalink to this definition">¶</a></dt>
-<dd><p>downloads attachment and returns it&#8217;s path on disk</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AttachmentManager.get_list">
-<code class="descname">get_list</code><span class="sig-paren">(</span><em>oid</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager.get_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the list of attachements for a given OBJECT ID</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.AttachmentManager.update">
-<code class="descname">update</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em>, <em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.AttachmentManager.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>updates an existing attachment with a new file
-Inputs:</p>
-<blockquote>
-<div>oid - string/integer - Unique record ID
-attachment_id - integer - Unique attachment identifier
-file_path - string - path to new attachment</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>JSON response</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-featurelayer">
 <h2>arcgis.lyr.FeatureLayer<a class="headerlink" href="#arcgis-lyr-featurelayer" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.FeatureLayer">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">FeatureLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
-<dt id="arcgis.lyr.FeatureLayer.admin">
-<code class="descname">admin</code><a class="headerlink" href="#arcgis.lyr.FeatureLayer.admin" title="Permalink to this definition">¶</a></dt>
-<dd><p>accesses the administration service</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureLayer.calculate">
-<code class="descname">calculate</code><span class="sig-paren">(</span><em>where</em>, <em>calc_expression</em>, <em>sql_format='standard'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer.calculate" title="Permalink to this definition">¶</a></dt>
-<dd><p>The calculate operation is performed on a feature service layer
-resource. It updates the values of one or more fields in an
-existing feature service layer based on SQL expressions or scalar
-values. The calculate operation can only be used if the
-supportsCalculate property of the layer is true.
-Neither the Shape field nor system fields can be updated using
-calculate. System fields include ObjectId and GlobalId.
-See Calculate a field for more information on supported expressions</p>
-<dl class="docutils">
-<dt>Inputs:</dt>
-<dd><dl class="first last docutils">
-<dt>where - A where clause can be used to limit the updated records.</dt>
-<dd>Any legal SQL where clause operating on the fields in
-the layer is allowed.</dd>
-<dt>calcExpression - The array of field/value info objects that</dt>
-<dd><p class="first">contain the field or fields to update and their
-scalar values or SQL expression.  Allowed types
-are dictionary and list.  List must be a list
-of dictionary objects.
-Calculation Format is as follows:</p>
-<blockquote class="last">
-<div>{&#8220;field&#8221; : &#8220;&lt;field name&gt;&#8221;,
-&#8220;value&#8221; : &#8220;&lt;value&gt;&#8221;}</div></blockquote>
-</dd>
-<dt>sqlFormat - The SQL format for the calcExpression. It can be</dt>
-<dd>either standard SQL92 (standard) or native SQL
-(native). The default is standard.
-Values: standard, native</dd>
-</dl>
-</dd>
-<dt>Output:</dt>
-<dd>JSON as string</dd>
-</dl>
-<p>Usage:
-&gt;&gt;&gt;print(fl.calculate(where=&#8221;OBJECTID &lt; 2&#8221;,</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>calcExpression={&#8220;field&#8221;: &#8220;ZONE&#8221;,</dt>
-<dd>&#8220;value&#8221; : &#8220;R1&#8221;}))</dd>
-</dl>
-</div></blockquote>
-<p>{&#8216;updatedFeatureCount&#8217;: 1, &#8216;success&#8217;: True}</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureLayer.edit_features">
-<code class="descname">edit_features</code><span class="sig-paren">(</span><em>adds=None</em>, <em>updates=None</em>, <em>deletes=None</em>, <em>gdbVersion=None</em>, <em>useGlobalIds=False</em>, <em>rollbackOnFailure=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer.edit_features" title="Permalink to this definition">¶</a></dt>
-<dd><p>This operation adds, updates, and deletes features to the
-associated feature layer or table in a single call.
-Inputs:</p>
-<blockquote>
-<div><p>adds - The array of features to be added. 
-updates - The array of features to be updateded.
-deletes - string of OIDs to remove from service
-gdbVersion - Geodatabase version to apply the edits.
-useGlobalIds - instead of referencing the default Object ID</p>
-<blockquote>
-<div>field, the service will look at a GUID field
-to track changes.  This means the GUIDs will
-be passed instead of OIDs for delete,
-update or add features.</div></blockquote>
-<dl class="docutils">
-<dt>rollbackOnFailure - Optional parameter to specify if the</dt>
-<dd>edits should be applied only if all
-submitted edits succeed. If false, the
-server will apply the edits that succeed
-even if some of the submitted edits fail.
-If true, the server will apply the edits
-only if all edits succeed. The default
-value is true.</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>dictionary of messages</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureLayer.get_html_popup">
-<code class="descname">get_html_popup</code><span class="sig-paren">(</span><em>oid</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer.get_html_popup" title="Permalink to this definition">¶</a></dt>
-<dd><p>The htmlPopup resource provides details about the HTML pop-up
-authored by the user using ArcGIS for Desktop.
-Input:</p>
-<blockquote>
-<div>oid - object id of the feature where the HTML pop-up</div></blockquote>
-<p>Output:</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureLayer.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>where='1=1'</em>, <em>out_fields='*'</em>, <em>timeFilter=None</em>, <em>geometryFilter=None</em>, <em>returnGeometry=True</em>, <em>returnCountOnly=False</em>, <em>returnIdsOnly=False</em>, <em>returnFeatureClass=False</em>, <em>returnDistinctValues=False</em>, <em>returnExtentOnly=False</em>, <em>groupByFieldsForStatistics=None</em>, <em>statisticFilter=None</em>, <em>resultOffset=None</em>, <em>resultRecordCount=None</em>, <em>out_fc=None</em>, <em>objectIds=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>maxAllowableOffset=None</em>, <em>outSR=None</em>, <em>geometryPrecision=None</em>, <em>gdbVersion=None</em>, <em>orderByFields=None</em>, <em>outStatistics=None</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>multipatchOption=None</em>, <em>quanitizationParameters=None</em>, <em>returnCentroid=False</em>, <em>as_obj=False</em>, <em>as_dict=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>queries a feature service based on a sql statement
-Inputs:</p>
-<blockquote>
-<div><blockquote>
-<div><p>where - the selection sql statement
-out_fields - the attribute fields to return
-objectIds -  The object IDs of this layer or table to be</p>
-<blockquote>
-<div>queried.</div></blockquote>
-<dl class="docutils">
-<dt>distance - The buffer distance for the input geometries.</dt>
-<dd>The distance unit is specified by units. For
-example, if the distance is 100, the query
-geometry is a point, units is set to meters, and
-all points within 100 meters of the point are
-returned.</dd>
-<dt>units - The unit for calculating the buffer distance. If</dt>
-<dd>unit is not specified, the unit is derived from the
-geometry spatial reference. If the geometry spatial
-reference is not specified, the unit is derived
-from the feature service data spatial reference.
-This parameter only applies if
-supportsQueryWithDistance is true.
-Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
-esriSRUnit_Foot | esriSRUnit_Kilometer |
-esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile</dd>
-<dt>timeFilter - a TimeFilter object where either the start time</dt>
-<dd>or start and end time are defined to limit the
-search results for a given time.  The values in
-the timeFilter should be as UTC timestampes in
-milliseconds.  No checking occurs to see if they
-are in the right format.</dd>
-<dt>geometryFilter - a GeometryFilter object to parse down a given</dt>
-<dd>query by another spatial dataset.</dd>
-<dt>maxAllowableOffset - This option can be used to specify the</dt>
-<dd>maxAllowableOffset to be used for
-generalizing geometries returned by
-the query operation.
-The maxAllowableOffset is in the units
-of outSR. If outSR is not specified,
-maxAllowableOffset is assumed to be in
-the unit of the spatial reference of
-the map.</dd>
-</dl>
-<p>outSR - The spatial reference of the returned geometry.
-geometryPrecision -  This option can be used to specify the</p>
-<blockquote>
-<div>number of decimal places in the
-response geometries returned by the
-Query operation.</div></blockquote>
-<p>gdbVersion - Geodatabase version to query
-returnDistinctValues -  If true, it returns distinct values</p>
-<blockquote>
-<div>based on the fields specified in
-outFields. This parameter applies
-only if the
-supportsAdvancedQueries property of
-the layer is true.</div></blockquote>
-<dl class="docutils">
-<dt>returnIdsOnly -  If true, the response only includes an</dt>
-<dd>array of object IDs. Otherwise, the
-response is a feature set. The default is
-false.</dd>
-<dt>returnCountOnly -  If true, the response only includes the</dt>
-<dd>count (number of features/records) that
-would be returned by a query. Otherwise,
-the response is a feature set. The
-default is false. This option supersedes
-the returnIdsOnly parameter. If
-returnCountOnly = true, the response will
-return both the count and the extent.</dd>
-<dt>returnExtentOnly -  If true, the response only includes the</dt>
-<dd>extent of the features that would be
-returned by the query. If
-returnCountOnly=true, the response will
-return both the count and the extent.
-The default is false. This parameter
-applies only if the
-supportsReturningQueryExtent property
-of the layer is true.</dd>
-<dt>orderByFields - One or more field names on which the</dt>
-<dd>features/records need to be ordered. Use
-ASC or DESC for ascending or descending,
-respectively, following every field to
-control the ordering.</dd>
-<dt>groupByFieldsForStatistics - One or more field names on</dt>
-<dd>which the values need to be
-grouped for calculating the
-statistics.</dd>
-<dt>outStatistics - The definitions for one or more field-based</dt>
-<dd>statistics to be calculated.</dd>
-<dt>returnZ -  If true, Z values are included in the results if</dt>
-<dd>the features have Z values. Otherwise, Z values
-are not returned. The default is false.</dd>
-<dt>returnM - If true, M values are included in the results if</dt>
-<dd>the features have M values. Otherwise, M values
-are not returned. The default is false.</dd>
-<dt>multipatchOption - This option dictates how the geometry of</dt>
-<dd>a multipatch feature will be returned.</dd>
-<dt>resultOffset -  This option can be used for fetching query</dt>
-<dd>results by skipping the specified number of
-records and starting from the next record
-(that is, resultOffset + 1th).</dd>
-<dt>resultRecordCount - This option can be used for fetching</dt>
-<dd>query results up to the
-resultRecordCount specified. When
-resultOffset is specified but this
-parameter is not, the map service
-defaults it to maxRecordCount. The
-maximum value for this parameter is the
-value of the layer&#8217;s maxRecordCount
-property.</dd>
-<dt>quanitizationParameters - Used to project the geometry onto</dt>
-<dd>a virtual grid, likely
-representing pixels on the screen.</dd>
-<dt>returnCentroid - Used to return the geometry centroid</dt>
-<dd>associated with each feature returned. If
-true, the result includes the geometry
-centroid. The default is false.</dd>
-<dt>as_obj - If true, the query will return the results as a </dt>
-<dd><p class="first">collections.mapping object that provides attribute-style access.
-This object can be converted to a dict using dict(obj)</p>
-<blockquote class="last">
-<div>The default is False.</div></blockquote>
-</dd>
-<dt>as_dict - If true, the query will return the results as a dict. </dt>
-<dd>The default is False</dd>
-<dt>returnFeatureClass - If true and arcpy is installed, the</dt>
-<dd>script will attempt to save the result
-of the query to a feature class.</dd>
-<dt>out_fc - only valid if returnFeatureClass is set to True.</dt>
-<dd>Output location of query. If out_fc is set to None,
-then the feature class will be saved to the scratch
-File Geodatabase with a random name.</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>kwargs - optional parameters that can be passed to the Query</dt>
-<dd>function.  This will allow users to pass additional
-parameters not explicitly implemented on the function. A
-complete list of functions available is documented on the
-Query REST API.</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>Output:</dt>
-<dd>A list of Feature Objects (default) or a path to the output featureclass if
-returnFeatureClass is set to True.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.lyr.FeatureLayer.query_related_records">
-<code class="descname">query_related_records</code><span class="sig-paren">(</span><em>objectIds</em>, <em>relationshipId</em>, <em>outFields='*'</em>, <em>definitionExpression=None</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=None</em>, <em>geometryPrecision=None</em>, <em>outWKID=None</em>, <em>gdbVersion=None</em>, <em>returnZ=False</em>, <em>returnM=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureLayer.query_related_records" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Query operation is performed on a feature service layer
-resource. The result of this operation are feature sets grouped
-by source layer/table object IDs. Each feature set contains
-Feature objects including the values for the fields requested by
-the user. For related layers, if you request geometry
-information, the geometry of each feature is also returned in
-the feature set. For related tables, the feature set does not
-include geometries.
-Inputs:</p>
-<blockquote>
-<div><p>objectIds - the object IDs of the table/layer to be queried
-relationshipId - The ID of the relationship to be queried.
-outFields - the list of fields from the related table/layer</p>
-<blockquote>
-<div>to be included in the returned feature set. This
-list is a comma delimited list of field names. If
-you specify the shape field in the list of return
-fields, it is ignored. To request geometry, set
-returnGeometry to true.
-You can also specify the wildcard &#8220;*&#8221; as the
-value of this parameter. In this case, the result
-s will include all the field values.</div></blockquote>
-<dl class="docutils">
-<dt>definitionExpression - The definition expression to be</dt>
-<dd>applied to the related table/layer.
-From the list of objectIds, only those
-records that conform to this
-expression are queried for related
-records.</dd>
-<dt>returnGeometry - If true, the feature set includes the</dt>
-<dd>geometry associated with each feature. The
-default is true.</dd>
-<dt>maxAllowableOffset - This option can be used to specify the</dt>
-<dd>maxAllowableOffset to be used for
-generalizing geometries returned by the
-query operation. The maxAllowableOffset
-is in the units of the outSR. If outSR
-is not specified, then
-maxAllowableOffset is assumed to be in
-the unit of the spatial reference of the
-map.</dd>
-<dt>geometryPrecision - This option can be used to specify the</dt>
-<dd>number of decimal places in the response
-geometries.</dd>
-</dl>
-<p>outWKID - The spatial reference of the returned geometry.
-gdbVersion - The geodatabase version to query. This parameter</p>
-<blockquote>
-<div>applies only if the isDataVersioned property of
-the layer queried is true.</div></blockquote>
-<dl class="docutils">
-<dt>returnZ - If true, Z values are included in the results if</dt>
-<dd>the features have Z values. Otherwise, Z values are
-not returned. The default is false.</dd>
-<dt>returnM - If true, M values are included in the results if</dt>
-<dd>the features have M values. Otherwise, M values are
-not returned. The default is false.</dd>
-</dl>
-</div></blockquote>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-featurecollection">
 <h2>arcgis.lyr.FeatureCollection<a class="headerlink" href="#arcgis-lyr-featurecollection" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="arcgis.lyr.FeatureCollection">
-<em class="property">class </em><code class="descclassname">arcgis.lyr.</code><code class="descname">FeatureCollection</code><span class="sig-paren">(</span><em>dictdata</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureCollection" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="arcgis.lyr.FeatureCollection.query">
-<code class="descname">query</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.lyr.FeatureCollection.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the data in this feature collection. Filtering by SQL statement is not supported for feature collections.</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="arcgis-lyr-vectortilelayer">
 <h2>arcgis.lyr.VectorTileLayer<a class="headerlink" href="#arcgis-lyr-vectortilelayer" title="Permalink to this headline">¶</a></h2>
@@ -2427,7 +1672,7 @@ resources by the REST API.</p>
         <a href="arcgis.viz.html" class="btn btn-neutral float-right" title="arcgis.viz module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.features.summarize_data.html" class="btn btn-neutral" title="arcgis.features.summarize_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

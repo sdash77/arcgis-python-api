@@ -1,6 +1,4 @@
-__all__ = ["gis"]
 __version__ = '0.3'
-
 
 from .gis import GIS
 

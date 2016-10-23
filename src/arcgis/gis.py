@@ -5,26 +5,26 @@ within ArcGIS Online or an ArcGIS Portal. This module provides functionality to 
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
-import arcgis._impl.portalpy as portalpy
-from arcgis._impl.common._utils import _DisableLogger
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis.tools import *
-from arcgis.lyr import *
 
-import re
-import json
 import base64
-
 import datetime
+import json
 import locale
-
-import zipfile
-import tempfile
-from six.moves.urllib.error import HTTPError
-from contextlib import contextmanager
-# pylint: disable=fixme, line-too-long
-import os
 import logging
+import os
+import re
+import tempfile
+import zipfile
+from contextlib import contextmanager
+
+import arcgis._impl.portalpy as portalpy
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._utils import _DisableLogger
+from arcgis.features import FeatureLayer, FeatureCollection, FeatureDataset
+from arcgis.lyr import *
+from arcgis.tools import *
+from six.moves.urllib.error import HTTPError
+
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -2222,7 +2222,7 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == 'Feature Service':
-                svc = FeatureService.fromitem(self)
+                svc = FeatureDataset.fromitem(self)
                 for lyr in svc.layers:
                     layers.append(lyr)
 

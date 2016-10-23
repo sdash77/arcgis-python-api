@@ -30,8 +30,11 @@
   
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
-        <link rel="next" title="arcgis.lyr module" href="arcgis.lyr.html"/>
+        <link rel="next" title="arcgis.features module" href="arcgis.features.html"/>
         <link rel="prev" title="API Reference for the ArcGIS Python API" href="index.html"/> 
 
   
@@ -83,7 +86,7 @@
             
                 <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="">arcgis.gis module</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-gis">arcgis.gis.GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-contentmanager">arcgis.gis.ContentManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-item">arcgis.gis.Item</a></li>
@@ -94,6 +97,41 @@
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-datastoremanager">arcgis.gis.DatastoreManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-datastore">arcgis.gis.Datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#arcgis-gis-tools">arcgis.gis.Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.html">arcgis.features module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-feature">arcgis.features.Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featurelayer">arcgis.features.FeatureLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-table">arcgis.features.Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featuredataset">arcgis.features.FeatureDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featureset">arcgis.features.FeatureSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.html#arcgis-features-featurecollection">arcgis.features.FeatureCollection</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.managers.html">arcgis.features.managers module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-attachmentmanager">arcgis.features.managers.AttachmentManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-replicamanager">arcgis.features.managers.ReplicaManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-featuredatasetmanager">arcgis.features.managers.FeatureDatasetManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.managers.html#arcgis-features-managers-featurelayermanager">arcgis.features.managers.FeatureLayerManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.enrich_data.html#arcgis-features-enrich-data">arcgis.features.enrich_data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.find_locations.html#arcgis-features-find-locations">arcgis.features.find_locations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.manage_data.html">arcgis.features.manage_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.manage_data.html#arcgis-features-manage-data">arcgis.features.manage_data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.summarize_data.html">arcgis.features.summarize_data module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data">arcgis.features.summarize_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-aggregate-points">arcgis.features.summarize_data.aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-summarize-nearby">arcgis.features.summarize_data.summarize_nearby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.summarize_data.html#arcgis-features-summarize-data-summarize-within">arcgis.features.summarize_data.summarize_within</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.lyr.html">arcgis.lyr module</a><ul>
@@ -167,7 +205,7 @@
         <div class="rst-content">
           
 
-
+ 
 
 
 
@@ -1057,9 +1095,9 @@ your org</td>
 <code class="descname">add_users</code><span class="sig-paren">(</span><em>usernames</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.add_users" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds users to this group.
 .. note:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span>This method will only work if the user for the
-Portal object is either an administrator for the entire
-Portal or the owner of the group.
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">This</span> <span class="n">method</span> <span class="n">will</span> <span class="n">only</span> <span class="n">work</span> <span class="k">if</span> <span class="n">the</span> <span class="n">user</span> <span class="k">for</span> <span class="n">the</span>
+<span class="n">Portal</span> <span class="nb">object</span> <span class="ow">is</span> <span class="n">either</span> <span class="n">an</span> <span class="n">administrator</span> <span class="k">for</span> <span class="n">the</span> <span class="n">entire</span>
+<span class="n">Portal</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">owner</span> <span class="n">of</span> <span class="n">the</span> <span class="n">group</span><span class="o">.</span>
 </pre></div>
 </div>
 <table border="1" class="docutils">
@@ -2069,7 +2107,7 @@ geoanalysis tools, etc through the gis.tools object</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.lyr.html" class="btn btn-neutral float-right" title="arcgis.lyr module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.features.html" class="btn btn-neutral float-right" title="arcgis.features module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="API Reference for the ArcGIS Python API" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

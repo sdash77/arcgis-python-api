@@ -9,7 +9,9 @@ import string
 from contextlib import contextmanager
 
 from arcgis.tools import *
-from arcgis.lyr import Layer, FeatureCollection
+from arcgis.lyr import Layer
+from arcgis.features import FeatureCollection
+
 #from IPython.html import widgets
 #from IPython.utils.traitlets import Unicode, Int, List
 try:
