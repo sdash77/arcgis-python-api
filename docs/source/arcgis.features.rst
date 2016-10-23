@@ -1,6 +1,8 @@
 arcgis.features module
 ======================
 
+.. automodule:: arcgis.features
+
 arcgis.features.Feature
 --------------
 .. autoclass:: arcgis.features.Feature
