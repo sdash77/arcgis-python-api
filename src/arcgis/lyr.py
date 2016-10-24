@@ -16,7 +16,7 @@ from six.moves.urllib.error import HTTPError
 
 from ._impl import *
 
-__all__ = ['GISService', 'Layer', 'DynamicMapLayer', 'SchematicsLayers', 'VectorTileLayer']
+__all__ = ['GISService', 'Layer', 'DynamicMapLayer', 'SchematicsLayer', 'VectorTileLayer']
 
 _log = logging.getLogger(__name__)
 
@@ -268,9 +268,9 @@ class VectorTileLayer(Layer):
                              params=params, token=self._token)
 
 
-class SchematicsLayers(Layer):
+class SchematicsLayer(Layer):
     def __init__(self, url, gis=None):
-        super(SchematicsLayers, self).__init__(url, gis)
+        super(SchematicsLayer, self).__init__(url, gis)
 
     @property
     def diagrams(self):

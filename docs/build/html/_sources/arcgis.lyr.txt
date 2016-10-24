@@ -1,15 +1,23 @@
 arcgis.lyr module
 =================
 
-MapService
+.. automodule:: arcgis.lyr
+
+Layer
 -------------------------
-.. autoclass:: arcgis.lyr.MapService
+.. autoclass:: arcgis.lyr.Layer
     :members:
     :undoc-members:
 
-AdminMapService
+DynamicMapLayer
 -------------------------
-.. autoclass:: arcgis.lyr.AdminMapService
+.. autoclass:: arcgis.lyr.DynamicMapLayer
+    :members:
+    :undoc-members:
+
+DynamicMapLayerManager
+-------------------------
+.. autoclass:: arcgis.lyr.DynamicMapLayerManager
     :members:
     :undoc-members:
 
@@ -19,44 +27,9 @@ VectorTileLayer
     :members:
     :undoc-members:
 
-ImageLayer
+SchematicsLayer
 -------------------------
-.. autoclass:: arcgis.lyr.ImageLayer
+.. autoclass:: arcgis.lyr.SchematicsLayer
     :members:
     :undoc-members:
 
-NetworkService
--------------------------
-.. autoclass:: arcgis.lyr.NetworkService
-    :members:
-    :undoc-members:
-
-NetworkLayer
-----------------------------
-.. autoclass:: arcgis.lyr.NetworkLayer
-    :members:
-    :undoc-members:
-
-RouteNetworkLayer
-----------------------------
-.. autoclass:: arcgis.lyr.RouteNetworkLayer
-    :members:
-    :undoc-members:
-
-ServiceAreaNetworkLayer
-----------------------------
-.. autoclass:: arcgis.lyr.ServiceAreaNetworkLayer
-    :members:
-    :undoc-members:
-
-ClosestFacilityNetworkLayer
-----------------------------
-.. autoclass:: arcgis.lyr.ClosestFacilityNetworkLayer
-    :members:
-    :undoc-members:
-
-SchematicsService
-----------------------------
-.. autoclass:: arcgis.lyr.SchematicsService
-    :members:
-    :undoc-members:

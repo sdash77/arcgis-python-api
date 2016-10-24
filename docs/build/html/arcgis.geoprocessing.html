@@ -1,0 +1,590 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>arcgis.geocoding module &mdash; arcgis 0.3 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
+        <link rel="next" title="arcgis.geometry module" href="arcgis.geometry.html"/>
+        <link rel="prev" title="arcgis.geocoding module" href="arcgis.geocoding.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> arcgis
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">arcgis</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#user">User</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#group">Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastore">Datastore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#contentmanager">ContentManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#usermanager">UserManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#groupmanager">GroupManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastoremanager">DatastoreManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#feature">Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayer">FeatureLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#table">Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featuredataset">FeatureDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.managers.html">arcgis.features.managers module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.managers.html#attachmentmanager">AttachmentManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.managers.html#replicamanager">ReplicaManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.managers.html#featuredatasetmanager">FeatureDatasetManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.managers.html#featurelayermanager">FeatureLayerManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#interpolate-points">interpolate_points</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.enrich_data.html#enrich-layer">enrich_layer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#find-existing-locations">find_existing_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#derive-new-locations">derive_new_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#find-similar-locations">find_similar_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#choose-best-facilities">choose_best_facilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#create-viewshed">create_viewshed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#create-watersheds">create_watersheds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#trace-downstream">trace_downstream</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.manage_data.html">arcgis.features.manage_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#dissolve-boundaries">dissolve_boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#extract-data">extract_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#merge-layers">merge_layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#overlay-layers">overlay_layers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.summarize_data.html">arcgis.features.summarize_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-nearby">summarize_nearby</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-within">summarize_within</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.raster.html">arcgis.raster module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#imagelayer">ImageLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#generate-raster">generate_raster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#rasterize">rasterize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#interpolate">interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#summarize-raster-within">summarize_raster_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#density">density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#classify">classify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#segment-mean-shift">segment_mean_shift</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#train-classifier">train_classifier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#convert-raster-to-feature">convert_raster_to_feature</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.network.html">arcgis.network module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#networklayer">NetworkLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#routelayer">RouteLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#servicearealayer">ServiceAreaLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#closestfacilitylayer">ClosestFacilityLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#networkdataset">NetworkDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoanalytics.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reverse-geocode">reverse_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batch-geocode">batch_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#find-best-match">find_best_match</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#point">Point</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#multipoint">MultiPoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#polyline">PolyLine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#polygon">Polygon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#envelope">Envelope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#spatialreference">SpatialReference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#geometry">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#areas-and-lengths">areas_and_lengths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#auto-complete">auto_complete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#buffer">buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#convex-hull">convex_hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#cut">cut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#density">density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#difference">difference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#distance">distance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#find-transformation">find_transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#from-geo-coordinate-string">from_geo_coordinate_string</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#generalize">generalize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#intersect">intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#label-points">label_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#lengths">lengths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#offset">offset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#project">project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#relation">relation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#reshape">reshape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#to-geo-coordinate-string">to_geo_coordinate_string</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#trim-extend">trim_extend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#union">union</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.lyr.html">arcgis.lyr module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.lyr.html#layer">Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.lyr.html#dynamicmaplayer">DynamicMapLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.lyr.html#dynamicmaplayermanager">DynamicMapLayerManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.lyr.html#vectortilelayer">VectorTileLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.lyr.html#schematicslayer">SchematicsLayer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.viz.html">arcgis.viz module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.viz.html#webmap">WebMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.viz.html#webscene">WebScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.viz.html#mapview">MapView</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>arcgis.geocoding module</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/arcgis.geoprocessing.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-arcgis.geocoding">
+<span id="arcgis-geocoding-module"></span><h1>arcgis.geocoding module<a class="headerlink" href="#module-arcgis.geocoding" title="Permalink to this headline">¶</a></h1>
+<p>The arcgis.geocoding module provides functions for geocoding, batch geocoding and reverse geocoding.</p>
+<p>Geocoders can find point locations of addresses, business names, and so on.
+The output points can be visualized on a map, inserted as stops for a route,
+or loaded as input for spatial analysis. It is also used to generate
+batch results for a set of addresses, as well as for reverse geocoding,
+i.e. determining the address at a particular x/y location.</p>
+<div class="section" id="geocode">
+<h2>geocode<a class="headerlink" href="#geocode" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.geocoding.geocode">
+<code class="descclassname">geocoding.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>address</em>, <em>searchExtent=None</em>, <em>location=None</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>category=None</em>, <em>outFields='*'</em>, <em>maxLocations=20</em>, <em>magicKey=None</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.geocode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The geocode function geocodes one location per request.</p>
+<dl class="docutils">
+<dt>Inputs:</dt>
+<dd><p class="first">address - Specifies the location to be geocoded. This can be a string
+containing the street address, place name, postal code, or POI.</p>
+<blockquote>
+<div><p>Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding geocode service. These fields are listed in the addressFields property of the associated geocode service resource. For example, if the addressFields of a geocode service resource includes fields with the following names: Street, City, State and Zone, then the address argument is of the form:
+{</p>
+<blockquote>
+<div>Street: &#8220;1234 W Main St&#8221;,
+City: &#8220;Small Town&#8221;,
+State: &#8220;WA&#8221;,
+Zone: &#8220;99027&#8221;</div></blockquote>
+<p>}</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>searchExtent - A set of bounding box coordinates that limit the search</dt>
+<dd>area to a specific region. This is especially useful for
+applications in which a user will search for places and
+addresses only within the current map extent.</dd>
+<dt>location - Defines an origin point location that is used with</dt>
+<dd>the distance parameter to sort geocoding candidates based upon
+their proximity to the location. The distance parameter
+specifies the radial distance from the location in meters. The
+priority of candidates within this radius is boosted relative
+to those outside the radius.</dd>
+<dt>distance - Specifies the radius of an area around a point</dt>
+<dd>location which is used to boost the rank of geocoding
+candidates so that candidates closest to the location are
+returned first. The distance value is in meters.</dd>
+<dt>outSR - The spatial reference of the x/y coordinates returned by</dt>
+<dd>a geocode request. This is useful for applications using a map
+with a spatial reference different than that of the geocode
+service.</dd>
+<dt>category - A place or address type which can be used to filter</dt>
+<dd>find results. The parameter supports input of single category
+values or multiple comma-separated values. The category
+parameter can be passed in a request with or without the text
+parameter.</dd>
+</dl>
+<p>outFields - The list of fields to be returned in the response.
+maxLocation - The maximum number of locations to be returned by</p>
+<blockquote>
+<div>a search, up to the maximum number allowed by the service. If
+not specified, then one location will be returned.</div></blockquote>
+<dl class="last docutils">
+<dt>magicKey - The find operation retrieves results quicker when you</dt>
+<dd>pass in valid text and magicKey values than when you don&#8217;t pass
+in magicKey. However, to get these advantages, you need to make
+a prior request to suggest, which provides a magicKey. This may
+or may not be relevant to your workflow.</dd>
+<dt>forStorage - Specifies whether the results of the operation will</dt>
+<dd>be persisted. The default value is false, which indicates the
+results of the operation can&#8217;t be stored, but they can be
+temporarily displayed on a map for instance. If you store the
+results, in a database for example, you need to set this
+parameter to true.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="reverse-geocode">
+<h2>reverse_geocode<a class="headerlink" href="#reverse-geocode" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.geocoding.reverse_geocode">
+<code class="descclassname">geocoding.</code><code class="descname">reverse_geocode</code><span class="sig-paren">(</span><em>location</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>langCode=None</em>, <em>returnIntersection=False</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.reverse_geocode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The reverseGeocode operation determines the address at a particular
+x/y location. You pass the coordinates of a point location to the
+geocoding service, and the service returns the address that is
+closest to the location.
+Input:</p>
+<blockquote>
+<div>location - a list defined as [X,Y] or a JSON Point</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="batch-geocode">
+<h2>batch_geocode<a class="headerlink" href="#batch-geocode" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.geocoding.batch_geocode">
+<code class="descclassname">geocoding.</code><code class="descname">batch_geocode</code><span class="sig-paren">(</span><em>addresses</em>, <em>sourceCountry=None</em>, <em>category=None</em>, <em>outSR=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.batch_geocode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.</p>
+<dl class="docutils">
+<dt>Inputs:</dt>
+<dd><p class="first">addresses - A list of addresses to be geocoded.
+For passing in the location name as a single line of text —
+single field batch geocoding — use a string.
+For passing in the location name as multiple lines of text
+multifield batch geocoding — use the address fields described
+in the Geocoder documentation.</p>
+<blockquote>
+<div><p>The maximum number of addresses that can be geocoded in a
+single request is limited to the SuggestedBatchSize property of
+the locator.
+Syntax:</p>
+<blockquote>
+<div><p>addresses = [&#8220;380 New York St, Redlands, CA&#8221;,
+&#8220;1 World Way, Los Angeles, CA&#8221;,
+&#8220;1200 Getty Center Drive, Los Angeles, CA&#8221;,
+&#8220;5905 Wilshire Boulevard, Los Angeles, CA&#8221;,
+&#8220;100 Universal City Plaza, Universal City, CA 91608&#8221;,
+&#8220;4800 Oak Grove Dr, Pasadena, CA 91109&#8221;]</p>
+<p>OR</p>
+<dl class="docutils">
+<dt>addresses= [{</dt>
+<dd>&#8220;Address&#8221;: &#8220;380 New York St.&#8221;,
+&#8220;City&#8221;: &#8220;Redlands&#8221;,
+&#8220;Region&#8221;: &#8220;CA&#8221;,
+&#8220;Postal&#8221;: &#8220;92373&#8221;</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>},{</dt>
+<dd>&#8220;Address&#8221;: &#8220;1 World Way&#8221;,
+&#8220;City&#8221;: &#8220;Los Angeles&#8221;,
+&#8220;Region&#8221;: &#8220;CA&#8221;,
+&#8220;Postal&#8221;: &#8220;90045&#8221;</dd>
+</dl>
+<p>}]</p>
+</div></blockquote>
+<dl class="last docutils">
+<dt>sourceCountry - The sourceCountry parameter is only supported by</dt>
+<dd>geocode services published using StreetMap Premium locators.
+Added at 10.3 and only supported by geocode services published
+with ArcGIS 10.3 for Server and later versions.</dd>
+<dt>category - The category parameter is only supported by geocode</dt>
+<dd>services published using StreetMap Premium locators.</dd>
+<dt>outSR - The well-known ID of the spatial reference, or a spatial</dt>
+<dd>reference json object for the returned addresses. For a list of
+valid WKID values, see Projected coordinate systems and
+Geographic coordinate systems.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="find-best-match">
+<h2>find_best_match<a class="headerlink" href="#find-best-match" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.geocoding.find_best_match">
+<code class="descclassname">geocoding.</code><code class="descname">find_best_match</code><span class="sig-paren">(</span><em>address</em>, <em>searchExtent=None</em>, <em>location=None</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>category=None</em>, <em>outFields='*'</em>, <em>magicKey=None</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.find_best_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address</p>
+</dd></dl>
+
+</div>
+<div class="section" id="suggest">
+<h2>suggest<a class="headerlink" href="#suggest" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.geocoding.suggest">
+<code class="descclassname">geocoding.</code><code class="descname">suggest</code><span class="sig-paren">(</span><em>text</em>, <em>location</em>, <em>distance=None</em>, <em>category=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.suggest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The result of this operation is a resource representing a list of
+suggested matches for the input text. This resource provides the
+matching text as well as a unique ID value, which links a
+suggestion to a specific place or address.
+A geocode service must meet the following requirements to support
+the suggest operation:</p>
+<blockquote>
+<div>The address locator from which the geocode service was published
+must support suggestions. Only address locators created using
+ArcGIS 10.3 for Desktop and later can support suggestions. See
+the Create Address Locator geoprocessing tool help topic for more
+information.
+The geocode service must have the Suggest capability enabled.
+Only geocode services published using ArcGIS 10.3 for Server or
+later support the Suggest capability.</div></blockquote>
+<p>The suggest operation allows character-by-character auto-complete
+suggestions to be generated for user input in a client application.
+This capability facilitates the interactive search user experience
+by reducing the number of characters that need to be typed before
+a suggested match is obtained. A client application can provide a
+list of suggestions that is updated with each character typed by a
+user until the address they are looking for appears in the list.
+Inputs:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>text - The input text provided by a user that is used by the</dt>
+<dd>suggest operation to generate a list of possible matches. This
+is a required parameter.</dd>
+<dt>location -  Defines an origin point location that is used with</dt>
+<dd>the distance parameter to sort suggested candidates based on
+their proximity to the location. The distance parameter
+specifies the radial distance from the location in meters. The
+priority of candidates within this radius is boosted relative
+to those outside the radius.
+This is useful in mobile applications where a user wants to
+search for places in the vicinity of their current GPS
+location. It is also useful for web mapping applications where
+a user wants to find places within or near the map extent.
+The location parameter can be specified without specifying a
+distance. If distance is not specified, it defaults to 2000
+meters.
+The object can be an common.geometry.Point or X/Y list object</dd>
+<dt>distance - Specifies the radius around the point defined in the</dt>
+<dd>location parameter to create an area, which is used to boost
+the rank of suggested candidates so that candidates closest to
+the location are returned first. The distance value is in
+meters.
+If the distance parameter is specified, the location parameter
+must be specified as well.
+It is important to note that the location and distance
+parameters allow searches to extend beyond the specified search
+radius. They are not used to filter results, but rather to rank
+resulting candidates based on their distance from a location.</dd>
+<dt>category - The category parameter is only supported by geocode</dt>
+<dd>services published using StreetMap Premium locators.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="arcgis.geometry.html" class="btn btn-neutral float-right" title="arcgis.geometry module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="arcgis.geocoding.html" class="btn btn-neutral" title="arcgis.geocoding module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Esri.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -14,10 +14,14 @@ Contents:
 
    arcgis.gis
    arcgis.features.toc
+   arcgis.raster
+   arcgis.network
+   arcgis.geoanalytics
+   arcgis.geocoding
+   arcgis.geoprocessing
+   arcgis.geometry
    arcgis.lyr
    arcgis.viz
-   arcgis.tools
-   arcgis.geom
    
 
 Indices and tables
@@ -25,10 +29,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-
-.. arcgis.features.managers
-   arcgis.features.analyze_patterns
-   arcgis.features.enrich_data
-   arcgis.features.find_locations
-   arcgis.features.manage_data
-   arcgis.features.summarize_data

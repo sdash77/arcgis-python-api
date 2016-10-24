@@ -37,12 +37,6 @@ Datastore
     :undoc-members:
     :show-inheritance:
 
-Tools
---------------
-.. autoclass:: arcgis.gis.Tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
     
 ContentManager
 -------------------------

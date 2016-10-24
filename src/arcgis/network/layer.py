@@ -1,67 +1,6 @@
 from arcgis.lyr import GISService, Layer
 
 
-class NetworkService(GISService):
-    def __init__(self, url, gis=None):
-        super(NetworkService, self).__init__(url, gis)
-        self._load_layers()
-
-    @classmethod
-    def fromitem(cls, item):
-        if not item.type == 'Network Analysis Service':
-            raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
-
-        return cls(item.url, item._gis)
-
-    #----------------------------------------------------------------------
-    def _load_layers(self):
-        """loads the various layer types"""
-        self._closestFacilityLayers = []
-        self._routeLayers = []
-        self._serviceAreaLayers = []
-        params = {
-            "f" : "json",
-        }
-        json_dict = self._con.get(path=self._url, params=params, token=self._token)
-        for k,v in json_dict.items():
-            if k == "routeLayers" and json_dict[k]:
-                self._routeLayers = []
-                for rl in v:
-                    self._routeLayers.append(
-                        RouteNetworkLayer(url=self._url + "/%s" % rl,
-                                          gis=self._gis))
-            elif k == "serviceAreaLayers" and json_dict[k]:
-                self._serviceAreaLayers = []
-                for sal in v:
-                    self._serviceAreaLayers.append(
-                        ServiceAreaNetworkLayer(url=self._url + "/%s" % sal,
-                                                gis=self._gis))
-            elif k == "closestFacilityLayers" and json_dict[k]:
-                self._closestFacilityLayers = []
-                for cf in v:
-                    self._closestFacilityLayers.append(
-                        ClosestFacilityNetworkLayer(url=self._url + "/%s" % cf,
-                                                    gis=self._gis))
-    #----------------------------------------------------------------------
-    @property
-    def route_layers(self):
-        if self._routeLayers is None:
-            self._load_layers()
-        return self._routeLayers
-    #----------------------------------------------------------------------
-    @property
-    def service_area_layers(self):
-        if self._serviceAreaLayers is None:
-            self._load_layers()
-        return self._serviceAreaLayers
-    #----------------------------------------------------------------------
-    @property
-    def closest_facility_layers(self):
-        if self._closestFacilityLayers is None:
-            self._load_layers()
-        return self._closestFacilityLayers
-
-
 class NetworkLayer(Layer):
     """
     The network layer resource represents a single network layer in
@@ -82,7 +21,7 @@ class NetworkLayer(Layer):
                          params=params, token=self._token)
 
 
-class RouteNetworkLayer(NetworkLayer):
+class RouteLayer(NetworkLayer):
     """
     The Route Network Layer which has common properties of Network Layer
     as well as some attributes unique to Route Network Layer only.
@@ -340,7 +279,7 @@ class RouteNetworkLayer(NetworkLayer):
                               postdata=params, token=self._token)
 
 
-class ServiceAreaNetworkLayer(NetworkLayer):
+class ServiceAreaLayer(NetworkLayer):
     """
     The Service Area Network Layer which has common properties of Network
     Layer as well as some attributes unique to Service Area Network Layer
@@ -599,7 +538,7 @@ class ServiceAreaNetworkLayer(NetworkLayer):
                               postdata=params, token=self._token)
 
 
-class ClosestFacilityNetworkLayer(NetworkLayer):
+class ClosestFacilityLayer(NetworkLayer):
     """
     The Closest Facility Network Layer which has common properties of Network
     Layer as well as some attributes unique to Closest Facility Network Layer
@@ -861,3 +800,64 @@ class ClosestFacilityNetworkLayer(NetworkLayer):
             params['returnZ'] = returnZ
 
         return self._con.post(path=url, postdata=params, token=self._token)
+
+
+class NetworkDataset(GISService):
+    def __init__(self, url, gis=None):
+        super(NetworkDataset, self).__init__(url, gis)
+        self._load_layers()
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Network Analysis Service':
+            raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
+
+        return cls(item.url, item._gis)
+
+    #----------------------------------------------------------------------
+    def _load_layers(self):
+        """loads the various layer types"""
+        self._closestFacilityLayers = []
+        self._routeLayers = []
+        self._serviceAreaLayers = []
+        params = {
+            "f" : "json",
+        }
+        json_dict = self._con.get(path=self._url, params=params, token=self._token)
+        for k,v in json_dict.items():
+            if k == "routeLayers" and json_dict[k]:
+                self._routeLayers = []
+                for rl in v:
+                    self._routeLayers.append(
+                        RouteLayer(url=self._url + "/%s" % rl,
+                                   gis=self._gis))
+            elif k == "serviceAreaLayers" and json_dict[k]:
+                self._serviceAreaLayers = []
+                for sal in v:
+                    self._serviceAreaLayers.append(
+                        ServiceAreaLayer(url=self._url + "/%s" % sal,
+                                         gis=self._gis))
+            elif k == "closestFacilityLayers" and json_dict[k]:
+                self._closestFacilityLayers = []
+                for cf in v:
+                    self._closestFacilityLayers.append(
+                        ClosestFacilityLayer(url=self._url + "/%s" % cf,
+                                             gis=self._gis))
+    #----------------------------------------------------------------------
+    @property
+    def route_layers(self):
+        if self._routeLayers is None:
+            self._load_layers()
+        return self._routeLayers
+    #----------------------------------------------------------------------
+    @property
+    def service_area_layers(self):
+        if self._serviceAreaLayers is None:
+            self._load_layers()
+        return self._serviceAreaLayers
+    #----------------------------------------------------------------------
+    @property
+    def closest_facility_layers(self):
+        if self._closestFacilityLayers is None:
+            self._load_layers()
+        return self._closestFacilityLayers

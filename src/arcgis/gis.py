@@ -23,7 +23,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.features import FeatureLayer, FeatureCollection, FeatureDataset
 from arcgis.lyr import *
-from arcgis.network import NetworkService
+from arcgis.network import NetworkDataset
 from arcgis.raster import ImageLayer
 
 from arcgis._impl.tools import _Geocoder
@@ -101,7 +101,7 @@ class GIS(object):
         self._con = None
         self._verify_cert = verify_cert
         self._datastores = None
-        self._tools = Tools(self)
+        self._tools = _Tools(self)
         self.__enter__()
 
     def __enter__(self):
@@ -663,7 +663,7 @@ class DatastoreManager(object):
         res = self._portal.con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
 
-class Tools(object):
+class _Tools(object):
     """
     Collection of GIS tools. This class holds references to the helper services and tools available
     in the GIS. This class is not created by users directly.
@@ -2217,7 +2217,7 @@ class Item(dict):
                 layers.append(VectorTileLayer(self.url, self._gis))
 
             elif self.type == 'Network Analysis Service':
-                svc = NetworkService.fromitem(self)
+                svc = NetworkDataset.fromitem(self)
 
                 # route laters, service area layers, closest facility layers
                 for lyr in svc.route_layers:
