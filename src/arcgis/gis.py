@@ -18,11 +18,16 @@ import zipfile
 from contextlib import contextmanager
 
 import arcgis._impl.portalpy as portalpy
+
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.features import FeatureLayer, FeatureCollection, FeatureDataset
 from arcgis.lyr import *
-from arcgis.tools import *
+from arcgis.network import NetworkService
+from arcgis.raster import ImageLayer
+
+from arcgis._impl.tools import _Geocoder
+
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -65,14 +70,14 @@ class GIS(object):
     * groups
     * content
     * datastores
-    * tools - including geometry, geocoders, analysis, rasters, geoanalytics
 
-    Additionally, the GIS object has properties and methods to query it's state:
+    Additionally, the GIS object has properties to query it's state:
     * properties
-    * usage()
-    """
 
-    _version = '0.1'
+    The GIS provides mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+    as well as the results of your analysis. To create a new map, call the map method:
+    * map()
+    """
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None, verify_cert=True):
         """
@@ -96,7 +101,7 @@ class GIS(object):
         self._con = None
         self._verify_cert = verify_cert
         self._datastores = None
-        self.tools = Tools(self)
+        self._tools = Tools(self)
         self.__enter__()
 
     def __enter__(self):
@@ -192,7 +197,7 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
-                for geocoder in self.tools.geocoders:
+                for geocoder in self._tools.geocoders:
                     locations = geocoder.geocode(location, outSR=4326, maxLocations=1)
                     if len(locations) == 1:
                         if zoomlevel is not None:
@@ -663,9 +668,10 @@ class Tools(object):
     Collection of GIS tools. This class holds references to the helper services and tools available
     in the GIS. This class is not created by users directly.
     An instance of this class, called 'tools', is available as a property of the GIS object.
-    Users access the GIS tools, such as the geocoders, spatial analysis tools, geoanalytics, raster
-    geoanalysis tools, etc through the gis.tools object
+    Users access the GIS tools, such as the geocoders through
+    the gis.tools object
     """
+    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
     def __init__(self, gis):
         self._gis = gis
         self._geocoders = None
@@ -684,7 +690,7 @@ class Tools(object):
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
                 try:
-                    self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                    self._geocoders.append(_Geocoder(geocode_service['url'], self._gis))
                 except RuntimeError as re:
                     _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
                     _log.warning(str(re))
@@ -692,68 +698,68 @@ class Tools(object):
             pass
         return self._geocoders
 
-    @property
-    def geometry(self):
-        """the portal's geometry  tools, if available and configured"""
-        if self._geometry is not None:
-            return self._geometry
-        try:
-            svcurl = self._gis.properties['helperServices']['geometry']['url']
-            self._geometry = GeometryService(svcurl, self._gis)
-            return self._geometry
-        except KeyError:
-            return None
+    # @property
+    # def geometry(self):
+    #     """the portal's geometry  tools, if available and configured"""
+    #     if self._geometry is not None:
+    #         return self._geometry
+    #     try:
+    #         svcurl = self._gis.properties['helperServices']['geometry']['url']
+    #         self._geometry = _GeometryService(svcurl, self._gis)
+    #         return self._geometry
+    #     except KeyError:
+    #         return None
 
-    @property
-    def rasteranalysis(self):
-        """the portal's raster analysis tools, if available and configured"""
-        if self._raster_analysis is not None:
-            return self._raster_analysis
-        try:
-            try:
-                svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
-            except:
-                print("This GIS does not support raster analysis")
-                return None
+    # @property
+    # def rasteranalysis(self):
+    #     """the portal's raster analysis tools, if available and configured"""
+    #     if self._raster_analysis is not None:
+    #         return self._raster_analysis
+    #     try:
+    #         try:
+    #             svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
+    #         except:
+    #             print("This GIS does not support raster analysis")
+    #             return None
+    #
+    #         self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
+    #         return self._raster_analysis
+    #     except KeyError:
+    #         return None
+    #
+    # @property
+    # def geoanalytics(self):
+    #     """the portal's bigdata analytics tools, if available and configured"""
+    #     if self._geoanalytics is not None:
+    #         return self._geoanalytics
+    #     try:
+    #         try:
+    #             svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
+    #         except:
+    #             print("This GIS does not support geoanalytics")
+    #             return None
+    #
+    #         self._geoanalytics = GeoanalyticsTools(svcurl, self._gis)
+    #         return self._geoanalytics
+    #     except KeyError:
+    #         return None
 
-            self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
-            return self._raster_analysis
-        except KeyError:
-            return None
-
-    @property
-    def bigdata(self):
-        """the portal's bigdata analytics tools, if available and configured"""
-        if self._geoanalytics is not None:
-            return self._geoanalytics
-        try:
-            try:
-                svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
-            except:
-                print("This GIS does not support geoanalytics")
-                return None
-
-            self._geoanalytics = BigDataTools(svcurl, self._gis)
-            return self._geoanalytics
-        except KeyError:
-            return None
-
-    @property
-    def featureanalysis(self):
-        """the portal's spatial analysis tools, if available and configured"""
-        if self._analysis is not None:
-            return self._analysis
-        try:
-            try:
-                svcurl = self._gis.properties['helperServices']['analysis']['url']
-            except:
-                print("This GIS does not support spatial analysis")
-                return None
-
-            self._analysis = FeatureAnalysisTools(svcurl, self._gis)
-            return self._analysis
-        except KeyError:
-            return None
+    # @property
+    # def featureanalysis(self):
+    #     """the portal's spatial analysis tools, if available and configured"""
+    #     if self._analysis is not None:
+    #         return self._analysis
+    #     try:
+    #         try:
+    #             svcurl = self._gis.properties['helperServices']['analysis']['url']
+    #         except:
+    #             print("This GIS does not support spatial analysis")
+    #             return None
+    #
+    #         self._analysis = _FeatureAnalysisTools(svcurl, self._gis)
+    #         return self._analysis
+    #     except KeyError:
+    #         return None
 
 
 class UserManager(object):
@@ -2227,7 +2233,7 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == 'Map Service':
-                svc = MapService.fromitem(self)
+                svc = DynamicMapLayer.fromitem(self)
                 for lyr in svc.layers:
                     layers.append(lyr)
             else:

@@ -1,50 +1,26 @@
 arcgis.tools module
 ===================
 
-arcgis.tools.FeatureAnalysisTools
+GeoanaliticsTools
 -------------------------
-.. autoclass:: arcgis.tools.FeatureAnalysisTools
+.. autoclass:: arcgis.tools.GeoanaliticsTools
     :members:
     :undoc-members:
 
-arcgis.tools.BigDataTools
--------------------------
-.. autoclass:: arcgis.tools.BigDataTools
-    :members:
-    :undoc-members:
-
-arcgis.tools.RasterAnalysisTools
+RasterAnalysisTools
 -------------------------
 .. autoclass:: arcgis.tools.RasterAnalysisTools
     :members:
     :undoc-members:
 
-arcgis.tools.Geocoder
+Geocoder
 -------------------------
 .. autoclass:: arcgis.tools.Geocoder
     :members:
     :undoc-members:
 
-arcgis.tools.GeoprocessingTool
+GeoprocessingTool
 -------------------------
 .. autoclass:: arcgis.tools.GeoprocessingTool
-    :members:
-    :undoc-members:
-
-arcgis.tools.GeometryService
--------------------------
-.. autoclass:: arcgis.tools.GeometryService
-    :members:
-    :undoc-members:
-
-arcgis.tools.Feature
--------------------------
-.. autoclass:: arcgis.tools.Feature
-    :members:
-    :undoc-members:
-
-arcgis.tools.FeatureSet
--------------------------
-.. autoclass:: arcgis.tools.FeatureSet
     :members:
     :undoc-members:

@@ -18,7 +18,7 @@ from arcgis._impl.common._utils import _date_handler
 
 from .managers import AttachmentManager, ReplicaManager, FeatureDatasetManager, FeatureLayerManager
 from .feature import Feature, FeatureSet
-from arcgis.geom import SpatialReference
+from arcgis.geometry import SpatialReference
 from arcgis.lyr import Layer, GISService
 
 
@@ -42,7 +42,7 @@ class FeatureLayer(Layer):
         :param storage: optional, the feature dataset to which this layer belongs
         """
         super(FeatureLayer, self).__init__(url, gis)
-        self.storage = storage
+        self.dataset = storage
         self.attachments = AttachmentManager(self)
 
     @property
@@ -59,6 +59,13 @@ class FeatureLayer(Layer):
 
         res = FeatureLayerManager(admin_url, self._gis)
         return res
+
+    @property
+    def dataset(self):
+        """
+        The feature dataset to which this layer belongs.
+        """
+        return self.dataset
 
     def _add_attachment(self, oid, file_path):
         """ Adds an attachment to a feature service
@@ -660,12 +667,10 @@ class FeatureDataset(GISService):
     """
     A FeatureDataset is a collection of feature layers and tables, with the associated relationships among the entities.
 
-    This class allows use and administration (if access permits) of a feature dataset.
-
     In a web GIS, a feature dataset is exposed as a feature service with multiple feature layers.
 
     Instances of FeatureDatasets can be obtained from feature service Items in the GIS using
-    `FeatureDataset.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `storage`
+    `FeatureDataset.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `dataset`
     attribute of feature layer objects.
 
     FeatureDatasets can be configured and managed using their `manager` helper object.

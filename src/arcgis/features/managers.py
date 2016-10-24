@@ -34,7 +34,7 @@ class AttachmentManager(object):
         return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path, token=self._layer._token)
 
     def add(self, oid, file_path):
-        """ Adds an attachment to a feature service
+        """ Adds an attachment to a feature layer
             Input:
               oid - string - OBJECTID value to add attachment to
               file_path - string - path to file
@@ -78,13 +78,13 @@ class ReplicaManager(object):
         self._fs = featsvc
 
     def get_list(self):
-        """ returns all the replicas for the feature service """
+        """ returns all the replicas for the feature dataset """
         return self._fs._replicas
 
     # ----------------------------------------------------------------------
     def unregister(self, replica_id):
         """
-           removes a replica from a feature service
+           unregisters a replica from a feature dataset
            Inputs:
              replica_id - The replicaID returned by the feature service
                           when the replica was created.
@@ -119,14 +119,14 @@ class ReplicaManager(object):
                wait=False,
                out_path=None):
         """
-        The createReplica operation is performed on a feature service
+        The create operation is performed on a feature dataset
         resource. This operation creates the replica between the feature
-        service and a client based on a client-supplied replica definition.
+        dataset and a client based on a client-supplied replica definition.
         It requires the Sync capability. See Sync overview for more
-        information on sync. The response for createReplica includes
-        replicaID, server generation number, and data similar to the
-        response from the feature service query operation.
-        The createReplica operation returns a response of type
+        information on sync. The response for create includes
+        replicaID, replica generation number, and data similar to the
+        response from the feature dataset query operation.
+        The create operation returns a response of type
         esriReplicaResponseTypeData, as the response has data for the
         layers in the replica. If the operation is called to register
         existing data by using replicaOptions, the response type will be
@@ -220,9 +220,10 @@ class ReplicaManager(object):
                     data_format="json",
                     rollback_on_failure=True):
         """
-        TODO: implement synchronize replica
+        synchronizes replica with feature dataset
         http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
         """
+        # TODO:
         return self._fs._synchronize_replica(replica_id,
                                              transport_type,
                                              replica_server_gen,
@@ -242,8 +243,8 @@ class FeatureDatasetManager(GISService):
     """
     Allows updating the definition (if access permits) of a feature dataset.
     This class is not created by users directly.
-    An instance of this class, called 'manager', is available as a property of the FeatureDataset object,
-    if the layer supports attachments.
+    An instance of this class, called 'manager', is available as a property of the FeatureDataset object.
+
     Users call methods on this 'manager' object to manage the feature dataset.
     """
 
@@ -276,7 +277,7 @@ class FeatureDatasetManager(GISService):
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a service """
+        """ refreshes a feature dataset """
         params = {"f": "json"}
         refresh_url = self._url + "/refresh"
         res = self._con.post(refresh_url, params)
@@ -292,8 +293,8 @@ class FeatureDatasetManager(GISService):
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):
         """
-           The addToDefinition operation supports adding a definition
-           property to a hosted feature service. The result of this
+           The add_to_definition operation supports adding a definition
+           property to a hosted feature dataset service. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -324,8 +325,8 @@ class FeatureDatasetManager(GISService):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict):
         """
-           The updateDefinition operation supports updating a definition
-           property in a hosted feature service. The result of this
+           The update_definition operation supports updating a definition
+           property in a hosted feature dataset service. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -397,8 +398,8 @@ class FeatureDatasetManager(GISService):
     # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict):
         """
-        The deleteFromDefinition operation supports deleting a
-        definition property from a hosted feature service. The result of
+        The delete_from_definition operation supports deleting a
+        definition property from a hosted feature dataset service. The result of
         this operation is a response indicating success or failure with
         error code and description.
         See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
@@ -454,7 +455,7 @@ class FeatureLayerManager(GISService):
     def add_to_definition(self, json_dict):
         """
            The addToDefinition operation supports adding a definition
-           property to a hosted feature service. The result of this
+           property to a hosted feature layer. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -488,7 +489,7 @@ class FeatureLayerManager(GISService):
     def update_definition(self, json_dict):
         """
            The updateDefinition operation supports updating a definition
-           property in a hosted feature service. The result of this
+           property in a hosted feature layer. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -520,7 +521,7 @@ class FeatureLayerManager(GISService):
     def delete_from_definition(self, json_dict):
         """
            The deleteFromDefinition operation supports deleting a
-           definition property from a hosted feature service. The result of
+           definition property from a hosted feature layer. The result of
            this operation is a response indicating success or failure with
            error code and description.
            See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa

@@ -12,7 +12,7 @@ import uuid
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
-from arcgis.geom import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
+from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
 from arcgis.lyr import Layer
 
 
@@ -161,52 +161,8 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, feature):
-        """returns a featureset from a dict"""
+        """returns a feature from a dict"""
         return cls(feature['geometry'], feature['attributes'])
-        # ----------------------------------------------------------------------
-        # @staticmethod
-        # def fc_to_features(dataset):
-        # """
-        # converts a dataset to a list of feature objects, if ArcPy is available
-        # Input:
-        # dataset - path to table or feature class
-        # Output:
-        # list of feature objects
-        # """
-        # try:
-        # import arcpy
-        # arcpyFound = True
-        # except:
-        # arcpyFound = False
-        # if arcpyFound:
-        # desc = arcpy.Describe(dataset)
-        # fields = [field.name for field in arcpy.ListFields(dataset) if field.type not in ['Geometry']]
-        # date_fields = [field.name for field in arcpy.ListFields(dataset) if field.type =='Date']
-        # non_geom_fields = copy.deepcopy(fields)
-        # features = []
-        # if hasattr(desc, "shapeFieldName"):
-        # fields.append("SHAPE@JSON")
-        # del desc
-        # with arcpy.da.SearchCursor(dataset, fields) as rows:
-        # for row in rows:
-        # row = list(row)
-        # for df in date_fields:
-        # if row[fields.index(df)] != None:
-        # row[fields.index(df)] = int((_date_handler(row[fields.index(df)])))
-        # template = {
-        # "attributes" : dict(zip(non_geom_fields, row))
-        # }
-        # if "SHAPE@JSON" in fields:
-        # template['geometry'] = \
-        # json.loads(row[fields.index("SHAPE@JSON")])
-
-        # features.append(
-        # Feature.from_dict(template)
-        # )
-        # del row
-        # return features
-        # return None
-
     # ----------------------------------------------------------------------
     def __str__(self):
         """"""
@@ -219,14 +175,16 @@ class FeatureSet(object):
 
     FeatureSets are commonly used as input/output with several Geoprocessing
     Tools, and can be the obtained through the query() methods of feature layers.
+    A FeatureSet can be combined with a layer definition to compose a FeatureCollection.
 
     FeatureSet contains Feature objects, including the values for the
     fields requested by the user. For layers, if you request geometry
     information, the geometry of each feature is also returned in the
     FeatureSet. For tables, the FeatureSet does not include geometries.
+
     If a Spatial Reference is not specified at the FeatureSet level, the
-    FeatureSet will assume the Spatial Reference of its first feature. If
-    the SpatialR eference of the first feature is also not specified, the
+    FeatureSet will assume the SpatialReference of its first feature. If
+    the SpatialReference of the first feature is also not specified, the
     spatial reference will be UnknownCoordinateSystem.
     """
     _fields = None
@@ -643,6 +601,12 @@ class FeatureSet(object):
 class FeatureCollection(Layer):
     """
     FeatureCollection is an object with a layer definition and a feature set.
+
+    It is an in-memopry collection of features with rendering information.
+
+    Feature Collections can be stored as Items in the GIS, added as layers to a map or scene,
+    passed as inputs to feature analysis tools, and returned as results from feature analysis tools
+    if an output name for a feature layer is not specified when calling the tool.
     """
 
     # noinspection PyMissingConstructor

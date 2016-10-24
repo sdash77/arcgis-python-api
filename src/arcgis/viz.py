@@ -1,16 +1,14 @@
 ﻿from __future__ import absolute_import
-import arcgis.gis
+
+import collections
 import json
 import os
-import tempfile
-import collections
 import random
 import string
+import tempfile
 from contextlib import contextmanager
 
-from arcgis.tools import *
 from arcgis.lyr import Layer
-from arcgis.features import FeatureCollection
 
 #from IPython.html import widgets
 #from IPython.utils.traitlets import Unicode, Int, List
