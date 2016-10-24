@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.geocoding module &mdash; arcgis 0.3 documentation</title>
+  <title>arcgis.geoprocessing module &mdash; arcgis 0.3 documentation</title>
   
 
   
@@ -194,12 +194,8 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.geocoding module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#geocode">geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#reverse-geocode">reverse_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#batch-geocode">batch_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#find-best-match">find_best_match</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#suggest">suggest</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.geoprocessing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#geoprocessingtool">GeoprocessingTool</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
@@ -277,7 +273,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>arcgis.geocoding module</li>
+    <li>arcgis.geoprocessing module</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -291,229 +287,20 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-arcgis.geocoding">
-<span id="arcgis-geocoding-module"></span><h1>arcgis.geocoding module<a class="headerlink" href="#module-arcgis.geocoding" title="Permalink to this headline">¶</a></h1>
-<p>The arcgis.geocoding module provides functions for geocoding, batch geocoding and reverse geocoding.</p>
-<p>Geocoders can find point locations of addresses, business names, and so on.
-The output points can be visualized on a map, inserted as stops for a route,
-or loaded as input for spatial analysis. It is also used to generate
-batch results for a set of addresses, as well as for reverse geocoding,
-i.e. determining the address at a particular x/y location.</p>
-<div class="section" id="geocode">
-<h2>geocode<a class="headerlink" href="#geocode" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="module-arcgis.geoprocessing">
+<span id="arcgis-geoprocessing-module"></span><h1>arcgis.geoprocessing module<a class="headerlink" href="#module-arcgis.geoprocessing" title="Permalink to this headline">¶</a></h1>
+<p>Allows invocation of Geoprocessing tools in the GIS</p>
+<div class="section" id="geoprocessingtool">
+<h2>GeoprocessingTool<a class="headerlink" href="#geoprocessingtool" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.geoprocessing.GeoprocessingTool">
+<em class="property">class </em><code class="descclassname">arcgis.geoprocessing.</code><code class="descname">GeoprocessingTool</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.GeoprocessingTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>A geoprocessing tool.</p>
 <dl class="method">
-<dt id="arcgis.geocoding.geocode">
-<code class="descclassname">geocoding.</code><code class="descname">geocode</code><span class="sig-paren">(</span><em>address</em>, <em>searchExtent=None</em>, <em>location=None</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>category=None</em>, <em>outFields='*'</em>, <em>maxLocations=20</em>, <em>magicKey=None</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.geocode" title="Permalink to this definition">¶</a></dt>
-<dd><p>The geocode function geocodes one location per request.</p>
-<dl class="docutils">
-<dt>Inputs:</dt>
-<dd><p class="first">address - Specifies the location to be geocoded. This can be a string
-containing the street address, place name, postal code, or POI.</p>
-<blockquote>
-<div><p>Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding geocode service. These fields are listed in the addressFields property of the associated geocode service resource. For example, if the addressFields of a geocode service resource includes fields with the following names: Street, City, State and Zone, then the address argument is of the form:
-{</p>
-<blockquote>
-<div>Street: &#8220;1234 W Main St&#8221;,
-City: &#8220;Small Town&#8221;,
-State: &#8220;WA&#8221;,
-Zone: &#8220;99027&#8221;</div></blockquote>
-<p>}</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>searchExtent - A set of bounding box coordinates that limit the search</dt>
-<dd>area to a specific region. This is especially useful for
-applications in which a user will search for places and
-addresses only within the current map extent.</dd>
-<dt>location - Defines an origin point location that is used with</dt>
-<dd>the distance parameter to sort geocoding candidates based upon
-their proximity to the location. The distance parameter
-specifies the radial distance from the location in meters. The
-priority of candidates within this radius is boosted relative
-to those outside the radius.</dd>
-<dt>distance - Specifies the radius of an area around a point</dt>
-<dd>location which is used to boost the rank of geocoding
-candidates so that candidates closest to the location are
-returned first. The distance value is in meters.</dd>
-<dt>outSR - The spatial reference of the x/y coordinates returned by</dt>
-<dd>a geocode request. This is useful for applications using a map
-with a spatial reference different than that of the geocode
-service.</dd>
-<dt>category - A place or address type which can be used to filter</dt>
-<dd>find results. The parameter supports input of single category
-values or multiple comma-separated values. The category
-parameter can be passed in a request with or without the text
-parameter.</dd>
-</dl>
-<p>outFields - The list of fields to be returned in the response.
-maxLocation - The maximum number of locations to be returned by</p>
-<blockquote>
-<div>a search, up to the maximum number allowed by the service. If
-not specified, then one location will be returned.</div></blockquote>
-<dl class="last docutils">
-<dt>magicKey - The find operation retrieves results quicker when you</dt>
-<dd>pass in valid text and magicKey values than when you don&#8217;t pass
-in magicKey. However, to get these advantages, you need to make
-a prior request to suggest, which provides a magicKey. This may
-or may not be relevant to your workflow.</dd>
-<dt>forStorage - Specifies whether the results of the operation will</dt>
-<dd>be persisted. The default value is false, which indicates the
-results of the operation can&#8217;t be stored, but they can be
-temporarily displayed on a map for instance. If you store the
-results, in a database for example, you need to set this
-parameter to true.</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dt id="arcgis.geoprocessing.GeoprocessingTool.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>task</em>, <em>input</em>, <em>outSR=None</em>, <em>processSR=None</em>, <em>returnZ=False</em>, <em>returnM=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.GeoprocessingTool.execute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-</div>
-<div class="section" id="reverse-geocode">
-<h2>reverse_geocode<a class="headerlink" href="#reverse-geocode" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.geocoding.reverse_geocode">
-<code class="descclassname">geocoding.</code><code class="descname">reverse_geocode</code><span class="sig-paren">(</span><em>location</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>langCode=None</em>, <em>returnIntersection=False</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.reverse_geocode" title="Permalink to this definition">¶</a></dt>
-<dd><p>The reverseGeocode operation determines the address at a particular
-x/y location. You pass the coordinates of a point location to the
-geocoding service, and the service returns the address that is
-closest to the location.
-Input:</p>
-<blockquote>
-<div>location - a list defined as [X,Y] or a JSON Point</div></blockquote>
-</dd></dl>
-
-</div>
-<div class="section" id="batch-geocode">
-<h2>batch_geocode<a class="headerlink" href="#batch-geocode" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.geocoding.batch_geocode">
-<code class="descclassname">geocoding.</code><code class="descname">batch_geocode</code><span class="sig-paren">(</span><em>addresses</em>, <em>sourceCountry=None</em>, <em>category=None</em>, <em>outSR=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.batch_geocode" title="Permalink to this definition">¶</a></dt>
-<dd><p>The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.</p>
-<dl class="docutils">
-<dt>Inputs:</dt>
-<dd><p class="first">addresses - A list of addresses to be geocoded.
-For passing in the location name as a single line of text —
-single field batch geocoding — use a string.
-For passing in the location name as multiple lines of text
-multifield batch geocoding — use the address fields described
-in the Geocoder documentation.</p>
-<blockquote>
-<div><p>The maximum number of addresses that can be geocoded in a
-single request is limited to the SuggestedBatchSize property of
-the locator.
-Syntax:</p>
-<blockquote>
-<div><p>addresses = [&#8220;380 New York St, Redlands, CA&#8221;,
-&#8220;1 World Way, Los Angeles, CA&#8221;,
-&#8220;1200 Getty Center Drive, Los Angeles, CA&#8221;,
-&#8220;5905 Wilshire Boulevard, Los Angeles, CA&#8221;,
-&#8220;100 Universal City Plaza, Universal City, CA 91608&#8221;,
-&#8220;4800 Oak Grove Dr, Pasadena, CA 91109&#8221;]</p>
-<p>OR</p>
-<dl class="docutils">
-<dt>addresses= [{</dt>
-<dd>&#8220;Address&#8221;: &#8220;380 New York St.&#8221;,
-&#8220;City&#8221;: &#8220;Redlands&#8221;,
-&#8220;Region&#8221;: &#8220;CA&#8221;,
-&#8220;Postal&#8221;: &#8220;92373&#8221;</dd>
-</dl>
-</div></blockquote>
-<dl class="docutils">
-<dt>},{</dt>
-<dd>&#8220;Address&#8221;: &#8220;1 World Way&#8221;,
-&#8220;City&#8221;: &#8220;Los Angeles&#8221;,
-&#8220;Region&#8221;: &#8220;CA&#8221;,
-&#8220;Postal&#8221;: &#8220;90045&#8221;</dd>
-</dl>
-<p>}]</p>
-</div></blockquote>
-<dl class="last docutils">
-<dt>sourceCountry - The sourceCountry parameter is only supported by</dt>
-<dd>geocode services published using StreetMap Premium locators.
-Added at 10.3 and only supported by geocode services published
-with ArcGIS 10.3 for Server and later versions.</dd>
-<dt>category - The category parameter is only supported by geocode</dt>
-<dd>services published using StreetMap Premium locators.</dd>
-<dt>outSR - The well-known ID of the spatial reference, or a spatial</dt>
-<dd>reference json object for the returned addresses. For a list of
-valid WKID values, see Projected coordinate systems and
-Geographic coordinate systems.</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-</div>
-<div class="section" id="find-best-match">
-<h2>find_best_match<a class="headerlink" href="#find-best-match" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.geocoding.find_best_match">
-<code class="descclassname">geocoding.</code><code class="descname">find_best_match</code><span class="sig-paren">(</span><em>address</em>, <em>searchExtent=None</em>, <em>location=None</em>, <em>distance=None</em>, <em>outSR=None</em>, <em>category=None</em>, <em>outFields='*'</em>, <em>magicKey=None</em>, <em>forStorage=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.find_best_match" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address</p>
-</dd></dl>
-
-</div>
-<div class="section" id="suggest">
-<h2>suggest<a class="headerlink" href="#suggest" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.geocoding.suggest">
-<code class="descclassname">geocoding.</code><code class="descname">suggest</code><span class="sig-paren">(</span><em>text</em>, <em>location</em>, <em>distance=None</em>, <em>category=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geocoding.suggest" title="Permalink to this definition">¶</a></dt>
-<dd><p>The result of this operation is a resource representing a list of
-suggested matches for the input text. This resource provides the
-matching text as well as a unique ID value, which links a
-suggestion to a specific place or address.
-A geocode service must meet the following requirements to support
-the suggest operation:</p>
-<blockquote>
-<div>The address locator from which the geocode service was published
-must support suggestions. Only address locators created using
-ArcGIS 10.3 for Desktop and later can support suggestions. See
-the Create Address Locator geoprocessing tool help topic for more
-information.
-The geocode service must have the Suggest capability enabled.
-Only geocode services published using ArcGIS 10.3 for Server or
-later support the Suggest capability.</div></blockquote>
-<p>The suggest operation allows character-by-character auto-complete
-suggestions to be generated for user input in a client application.
-This capability facilitates the interactive search user experience
-by reducing the number of characters that need to be typed before
-a suggested match is obtained. A client application can provide a
-list of suggestions that is updated with each character typed by a
-user until the address they are looking for appears in the list.
-Inputs:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>text - The input text provided by a user that is used by the</dt>
-<dd>suggest operation to generate a list of possible matches. This
-is a required parameter.</dd>
-<dt>location -  Defines an origin point location that is used with</dt>
-<dd>the distance parameter to sort suggested candidates based on
-their proximity to the location. The distance parameter
-specifies the radial distance from the location in meters. The
-priority of candidates within this radius is boosted relative
-to those outside the radius.
-This is useful in mobile applications where a user wants to
-search for places in the vicinity of their current GPS
-location. It is also useful for web mapping applications where
-a user wants to find places within or near the map extent.
-The location parameter can be specified without specifying a
-distance. If distance is not specified, it defaults to 2000
-meters.
-The object can be an common.geometry.Point or X/Y list object</dd>
-<dt>distance - Specifies the radius around the point defined in the</dt>
-<dd>location parameter to create an area, which is used to boost
-the rank of suggested candidates so that candidates closest to
-the location are returned first. The distance value is in
-meters.
-If the distance parameter is specified, the location parameter
-must be specified as well.
-It is important to note that the location and distance
-parameters allow searches to extend beyond the specified search
-radius. They are not used to filter results, but rather to rank
-resulting candidates based on their distance from a location.</dd>
-<dt>category - The category parameter is only supported by geocode</dt>
-<dd>services published using StreetMap Premium locators.</dd>
-</dl>
-</div></blockquote>
 </dd></dl>
 
 </div>
