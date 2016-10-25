@@ -14,14 +14,82 @@ import random
 import string
 import tempfile
 import time
+import logging
 from contextlib import contextmanager
 
 import arcgis.gis
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
-from arcgis.lyr import *
+
+_log = logging.getLogger(__name__)
+
 
 __all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_Geocoder', '_GeometryService', '_RasterAnalysisTools']
+
+
+class _GISService(object):
+    """ a GIS service
+    """
+    def __init__(self, url, gis=None):
+        self._token = None
+
+        self.url = url
+        self._url = url
+
+        err = None
+
+        if gis is None:
+            gis = GIS()
+            self._gis = gis
+            self._con = gis._con
+            self._token = None
+        else:
+            self._gis = gis
+            self._con = gis._con
+
+        with _DisableLogger():
+            try:
+                # try as a federated server
+                self._token = self._con.generate_portal_server_token(url)
+                self._refresh()
+            except RuntimeError as e:
+                try:
+                    # try as a public server
+                    self._token = None
+                    self._refresh()
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._token = self._con.token
+                        self._refresh()
+
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params, token=self._token)
+        self.properties = PropertyMap(dictdata)
+
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._token)
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -36,7 +104,7 @@ def _tempinput(data):
     os.unlink(temp.name)
 
 
-class _Geocoder(GISService): #collections.OrderedDict):
+class _Geocoder(_GISService): #collections.OrderedDict):
     """Geocoder represents a geocode service resource exposed by the GIS.
     It can find point locations of addresses, business names, and so on.
     The output points can be visualized on a map, inserted as stops for a route,
@@ -398,7 +466,7 @@ class _Geocoder(GISService): #collections.OrderedDict):
         return resp
 
 
-class _AsyncService(GISService):
+class _AsyncService(_GISService):
 
     def __init__(self, url, gis):
         super(_AsyncService, self).__init__(url, gis)
@@ -4777,7 +4845,7 @@ class _GeoanalyticsTools(_AsyncService):
     #     return { }
 
 
-class _GeometryService(GISService):
+class _GeometryService(_GISService):
     """
     A geometry service contains utility methods that provide access to
     sophisticated and frequently used geometric operations. An ArcGIS
@@ -6041,3 +6109,102 @@ class _GeometryService(GISService):
         if 'error' in results:
             return results
         return self._process_results(results)
+
+
+class _Tools(object):
+    """
+    Collection of GIS tools. This class holds references to the helper services and tools available
+    in the GIS. This class is not created by users directly.
+    An instance of this class, called 'tools', is available as a property of the GIS object.
+    Users access the GIS tools, such as the geocoders through
+    the gis.tools object
+    """
+    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
+    def __init__(self, gis):
+        self._gis = gis
+        self._geocoders = None
+        self._geometry = None
+        self._analysis = None
+        self._raster_analysis = None
+        self._geoanalytics = None
+
+    @property
+    def geocoders(self):
+        """the geocoders, if available and configured"""
+        if self._geocoders is not None:
+            return self._geocoders
+        self._geocoders = []
+        try:
+            geocode_services = self._gis.properties['helperServices']['geocode']
+            for geocode_service in geocode_services:
+                try:
+                    self._geocoders.append(_Geocoder(geocode_service['url'], self._gis))
+                except RuntimeError as re:
+                    _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
+                    _log.warning(str(re))
+        except KeyError:
+            pass
+        return self._geocoders
+
+    @property
+    def geometry(self):
+        """the portal's geometry  tools, if available and configured"""
+        if self._geometry is not None:
+            return self._geometry
+        try:
+            svcurl = self._gis.properties['helperServices']['geometry']['url']
+            self._geometry = _GeometryService(svcurl, self._gis)
+            return self._geometry
+        except KeyError:
+            return None
+
+    @property
+    def rasteranalysis(self):
+        """the portal's raster analysis tools, if available and configured"""
+        if self._raster_analysis is not None:
+            return self._raster_analysis
+        try:
+            try:
+                svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
+            except:
+                print("This GIS does not support raster analysis")
+                return None
+
+            self._raster_analysis = _RasterAnalysisTools(svcurl, self._gis)
+            return self._raster_analysis
+        except KeyError:
+            return None
+
+    @property
+    def geoanalytics(self):
+        """the portal's bigdata analytics tools, if available and configured"""
+        if self._geoanalytics is not None:
+            return self._geoanalytics
+        try:
+            try:
+                svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
+            except:
+                print("This GIS does not support geoanalytics")
+                return None
+
+            self._geoanalytics = _GeoanalyticsTools(svcurl, self._gis)
+            return self._geoanalytics
+        except KeyError:
+            return None
+
+    @property
+    def featureanalysis(self):
+        """the portal's spatial analysis tools, if available and configured"""
+        if self._analysis is not None:
+            return self._analysis
+        try:
+            try:
+                svcurl = self._gis.properties['helperServices']['analysis']['url']
+            except:
+                print("This GIS does not support spatial analysis")
+                return None
+
+            self._analysis = _FeatureAnalysisTools(svcurl, self._gis)
+            return self._analysis
+        except KeyError:
+            return None

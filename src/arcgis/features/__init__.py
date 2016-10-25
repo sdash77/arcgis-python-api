@@ -14,7 +14,7 @@ and user experience - on a map, in a 3D scene, as entities with a property sheet
 """
 
 from .feature import Feature, FeatureSet, FeatureCollection
-from .layer import FeatureLayer, Table, FeatureDataset
-from .managers import AttachmentManager, ReplicaManager, FeatureDatasetManager, FeatureLayerManager
+from .layer import FeatureLayer, Table, FeatureLayerCollection
+from .managers import AttachmentManager, ReplicaManager, FeatureLayerCollectionManager, FeatureLayerManager
 
-__all__ = ['Feature', 'FeatureSet', 'FeatureCollection', 'FeatureLayer', 'Table', 'FeatureDataset']
+__all__ = ['Feature', 'FeatureSet', 'FeatureCollection', 'FeatureLayer', 'Table', 'FeatureLayerCollection']

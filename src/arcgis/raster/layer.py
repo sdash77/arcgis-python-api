@@ -1,5 +1,5 @@
 from arcgis._impl.common._utils import local_time_to_online
-from arcgis.lyr import Layer
+from arcgis.gis import Layer
 
 
 class ImageLayer(Layer):

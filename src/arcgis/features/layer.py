@@ -16,10 +16,10 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import scratchGDB, scratchFolder, json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
 
-from .managers import AttachmentManager, ReplicaManager, FeatureDatasetManager, FeatureLayerManager
+from .managers import AttachmentManager, ReplicaManager, FeatureLayerCollectionManager, FeatureLayerManager
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
-from arcgis.lyr import Layer, GISService
+from arcgis.gis import Layer, _GISResource
 
 
 class FeatureLayer(Layer):
@@ -42,7 +42,7 @@ class FeatureLayer(Layer):
         :param storage: optional, the feature dataset to which this layer belongs
         """
         super(FeatureLayer, self).__init__(url, gis)
-        self.dataset = storage
+        self._storage = storage
         self.attachments = AttachmentManager(self)
 
     @property
@@ -61,11 +61,18 @@ class FeatureLayer(Layer):
         return res
 
     @property
-    def dataset(self):
+    def storage(self):
         """
-        The feature dataset to which this layer belongs.
+        The feature layer collection to which this layer belongs.
         """
-        return self.dataset
+        return self._storage
+
+    @storage.setter
+    def storage(self, value):
+        """
+        The feature layer collection to which this layer belongs.
+        """
+        self._storage = value
 
     def _add_attachment(self, oid, file_path):
         """ Adds an attachment to a feature service
@@ -663,14 +670,14 @@ class Table(FeatureLayer):
     pass
 
 
-class FeatureDataset(GISService):
+class FeatureLayerCollection(_GISResource):
     """
-    A FeatureDataset is a collection of feature layers and tables, with the associated relationships among the entities.
+    A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 
     In a web GIS, a feature dataset is exposed as a feature service with multiple feature layers.
 
     Instances of FeatureDatasets can be obtained from feature service Items in the GIS using
-    `FeatureDataset.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `dataset`
+    `FeatureLayerCollection.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `dataset`
     attribute of feature layer objects.
 
     FeatureDatasets can be configured and managed using their `manager` helper object.
@@ -680,7 +687,7 @@ class FeatureDataset(GISService):
     """
 
     def __init__(self, url, gis=None):
-        super(FeatureDataset, self).__init__(url, gis)
+        super(FeatureLayerCollection, self).__init__(url, gis)
 
         try:
             if self.properties.syncEnabled:
@@ -730,7 +737,7 @@ class FeatureDataset(GISService):
             part2 = url[res[1]:]
             admin_url = "%s%s%s" % (part1, add_text, part2)
 
-            self._admin = FeatureDatasetManager(admin_url, self._gis, self)
+            self._admin = FeatureLayerCollectionManager(admin_url, self._gis, self)
         return self._admin
 
     def query(self,

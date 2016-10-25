@@ -7,7 +7,8 @@ import json
 import tempfile
 
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.lyr import GISService
+from arcgis.gis import _GISResource
+
 
 #pylint: disable=protected-access
 
@@ -69,7 +70,7 @@ class ReplicaManager(object):
     """
     Manager class for manipulating replicas for disconnected editing of feature datasets.
     This class is not created by users directly.
-    An instance of this class, called 'replicas', is available as a property of the FeatureDataset object,
+    An instance of this class, called 'replicas', is available as a property of the FeatureLayerCollection object,
     if the layer is sync enabled / supports disconnected editing.
     Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
     """
@@ -239,17 +240,17 @@ class ReplicaManager(object):
                                              rollback_on_failure)
 
 
-class FeatureDatasetManager(GISService):
+class FeatureLayerCollectionManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a feature dataset.
     This class is not created by users directly.
-    An instance of this class, called 'manager', is available as a property of the FeatureDataset object.
+    An instance of this class, called 'manager', is available as a property of the FeatureLayerCollection object.
 
     Users call methods on this 'manager' object to manage the feature dataset.
     """
 
     def __init__(self, url, gis=None, fs=None):
-        super(FeatureDatasetManager, self).__init__(url, gis)
+        super(FeatureLayerCollectionManager, self).__init__(url, gis)
         self._fs = fs
         self._populate_layers()
 
@@ -282,7 +283,7 @@ class FeatureDatasetManager(GISService):
         refresh_url = self._url + "/refresh"
         res = self._con.post(refresh_url, params)
 
-        super(FeatureDatasetManager, self)._refresh()
+        super(FeatureLayerCollectionManager, self)._refresh()
         self._populate_layers()
 
         self._fs._refresh()
@@ -428,7 +429,7 @@ class FeatureDatasetManager(GISService):
         return res
 
 
-class FeatureLayerManager(GISService):
+class FeatureLayerManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a feature layer. This class is not created by users
     directly.

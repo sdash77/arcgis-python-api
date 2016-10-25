@@ -13,7 +13,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
-from arcgis.lyr import Layer
+from arcgis.gis import Layer
 
 
 class Feature(object):

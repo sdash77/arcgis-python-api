@@ -1,4 +1,4 @@
-from arcgis.lyr import GISService, Layer
+from arcgis.gis import Layer, _GISResource
 
 
 class NetworkLayer(Layer):
@@ -802,9 +802,9 @@ class ClosestFacilityLayer(NetworkLayer):
         return self._con.post(path=url, postdata=params, token=self._token)
 
 
-class NetworkDataset(GISService):
+class NetworkLayerCollection(_GISResource):
     def __init__(self, url, gis=None):
-        super(NetworkDataset, self).__init__(url, gis)
+        super(NetworkLayerCollection, self).__init__(url, gis)
         self._load_layers()
 
     @classmethod

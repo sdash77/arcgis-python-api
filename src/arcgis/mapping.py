@@ -1,182 +1,315 @@
-"""
-The arcgis.lyr module is used for accessing layers exposed from ArcGIS Online
-or Portal.
+﻿"""
+The arcgis.mapping module provides components for visualizing GIS data and analysis.
+This module includes components such as MapView - an IPython Notebook widget for
+working with maps, as well as WebMap and WebScene components that enable 2D and 3D
+mapping and visualization in the GIS. This module also includes mapping layers like
+DynamicMapLayer and VectorTileLayer
 """
 from __future__ import absolute_import
 
+import collections
+import json
+import os
+import random
+import string
+import tempfile
+import logging
+
+from contextlib import contextmanager
 from re import search
 
-import arcgis.features # import Table, FeatureLayer, FeatureDataset
+import arcgis.features
 import arcgis.gis
-from arcgis._impl.common._filters import *
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _DisableLogger
-from arcgis.geometry import SpatialReference
-from six.moves.urllib.error import HTTPError
+from arcgis.geometry import SpatialReference, Polygon
 
-from ._impl import *
+from arcgis.gis import Layer, _GISResource
 
-__all__ = ['GISService', 'Layer', 'DynamicMapLayer', 'SchematicsLayer', 'VectorTileLayer']
+#from IPython.html import widgets
+#from IPython.utils.traitlets import Unicode, Int, List
+
+try:
+    from ipywidgets import widgets
+except:
+    from IPython.html import widgets
+#from IPython.html import widgets
+try:
+    from traitlets import Unicode, Int, List, Bool
+except:
+    from IPython.utils.traitlets import Unicode, Int, List, Bool
+
+__all__ = ["WebMap", "WebScene", "MapView", "DynamicMapLayer", "DynamicMapLayerManager", "VectorTileLayer"]
 
 _log = logging.getLogger(__name__)
 
+@contextmanager
+def _tempinput(data):
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    temp.write((bytes(data, 'UTF-8')))
+    temp.close()
+    yield temp.name
+    os.unlink(temp.name)
 
-class Layer(object):
-    """ a GIS layer """
-
-    def __init__(self, url, gis=None):
-        self._token = None
-        
-        self.url = url
-        self._url = url
-        
-        err = None
-
-        if gis is None:
-            gis = arcgis.gis.GIS()
-            self._gis = gis
-            self._con = gis._con
-            self._token = None
-        else:
-            self._gis = gis
-            self._con = gis._con
-
-        with _DisableLogger():
-            try:
-                # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except RuntimeError as e:
-                try:
-                    # try as a public server
-                    self._token = None
-                    self._refresh()
-                except HTTPError as httperror:
-                    _log.error(httperror)
-                    err = httperror
-                except RuntimeError as e:
-                    if 'Token Required' in e.args[0]:
-                        # try token in the provided gis
-                        self._token = self._con.token
-                        self._refresh()
-
-        if err is not None:
-            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
-
-    def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._token)
-        print(str(PropertyMap(dictdata)))
-        self.properties = PropertyMap(dictdata)
-
-    def __str__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
-    
-    def __repr__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
-    
-    @property
-    def _js_lyr(self):
-        return { 'type' : type(self).__name__, 'url' : self.url }
-
-
-    @property
-    def properties(self):
-        """
-        Returns the properties of this layer. The properties are returned using a mutable mapping that allows attribute
-        access as well as dict-style access. It can be converted to a dict using dict(properties) if required.
-        """
-        return self.properties
-
-    def invoke(self, method, **kwargs):
-        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
-        url = self._url + "/" + method
-        params = { "f" : "json"}
-        if len(kwargs) > 0:
-            for k,v in kwargs.items():
-                params[k] = v
-                del k,v
-        return self._con.post(path=url, postdata=params, token=self._token)
-
-
-class GISService(object):
-    """ a GIS service
+# pylint: disable=fixme, line-too-long
+class WebMap(collections.OrderedDict):
     """
-    def __init__(self, url, gis=None):
-        self._token = None
-        
-        self.url = url
-        self._url = url
-        
-        err = None
+    Represents a webmap and provides access to it's basemaps and operational layers as well
+    as functionality to visualize and interact with them.
+    http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/
+    """
+    def __init__(self, webmapitem):
+        """
+        Constructs a Webmap object given it's item from ArcGIS Online or Portal.
+        """
+        if webmapitem.type.lower() != 'web map':
+            raise TypeError("item type must be web map")
+        self.item = webmapitem
+        self._gis = webmapitem._gis
+        self._con = self._gis._con
+        webmapdict = self.item.get_data()
+        collections.OrderedDict.__init__(self, webmapdict)
+        #dict.update(webmapdict)
 
-        if gis is None:
-            gis = arcgis.gis.GIS()
-            self._gis = gis
-            self._con = gis._con
-            self._token = None
-        else:
-            self._gis = gis
-            self._con = gis._con
-            
-        with _DisableLogger():
-            try:
-                # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except RuntimeError as e:
-                try:
-                    # try as a public server
-                    self._token = None
-                    self._refresh()
-                except HTTPError as httperror:
-                    _log.error(httperror)
-                    err = httperror
-                except RuntimeError as e:
-                    if 'Token Required' in e.args[0]:
-                        # try token in the provided gis
-                        self._token = self._con.token
-                        self._refresh()
+    #def _repr_html_(self):
+    def _ipython_display_(self, **kwargs):
+        #return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
+        mapwidget = MapView(gis=self._gis, item=self.item)
+        return mapwidget._ipython_display_(**kwargs)
 
-        if err is not None:
-            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
-
-    def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._token)
-        self.properties = PropertyMap(dictdata)
-        
-
-    @classmethod
-    def fromitem(cls, item):
-        if not item.type.lower().endswith('service'):
-            raise TypeError("item must be a type of service, not " + item.type)
-        return cls(item.url, item._gis)
+    #def __repr__(self):
+    #    dictrepr = collections.OrderedDict.__repr__(self)
+    #    return '%s(%s)' % (type(self).__name__, dictrepr)
 
     def __str__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
-    
-    def __repr__(self):
-        return '<%s url:"%s">' % (type(self).__name__, self.url)
+        return json.dumps(self)
 
-    def invoke(self, method, **kwargs):
-        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
-        url = self._url + "/" + method
-        params = { "f" : "json"}
-        if len(kwargs) > 0:
-            for k,v in kwargs.items():
-                params[k] = v
-                del k,v
-        return self._con.post(path=url, postdata=params, token=self._token)
+    def update(self):
+        #with _tempinput(self.__str__()) as tempfilename:
+        self.item.update({ 'text':self.__str__() })
+
+class WebScene(collections.OrderedDict):
+    """
+    Represents a web scene and provides access to it's basemaps and operational layers as well
+    as functionality to visualize and interact with them.
+    """
+
+    def __init__(self, websceneitem):
+        """
+        Constructs a WebScene object given it's item from ArcGIS Online or Portal.
+        """
+        if websceneitem.type.lower() != 'web scene':
+            raise TypeError("item type must be web scene")
+        self.item = websceneitem
+        webscenedict = self.item.get_data()
+        collections.OrderedDict.__init__(self, webscenedict)
+
+    def _repr_html_(self):
+        return '<iframe width=960 height=600 src="'+"http://www.arcgis.com/home/webscene/viewer.html?webscene="+self.item.itemid+'"/>'
+
+    #def __repr__(self):
+    #    dictrepr = dict.__repr__(self)
+    #    return '%s(%s)' % (type(self).__name__, dictrepr)
+
+    def __str__(self):
+        return json.dumps(self)
+
+    def update(self):
+        #with _tempinput(self.__str__()) as tempfilename:
+        self.item.update({ 'text':self.__str__() })
+
+class MapView(widgets.DOMWidget):
+    _view_name = Unicode('MapView').tag(sync=True)
+    _view_module = Unicode('mapview').tag(sync=True)
+
+    #value = Unicode('Hello World!').tag(sync=True)
+
+    basemap = Unicode('topo').tag(sync=True)
+    width = Unicode('100%').tag(sync=True)
+    zoom = Int(2).tag(sync=True)
+    id = Unicode('').tag(sync=True)
+    center = List([0, 0]).tag(sync=True)
+    mode = Unicode('navigate').tag(sync=True)
+    _addlayer = Unicode('').tag(sync=True)
+    start_time = Unicode('').tag(sync=True)
+    end_time = Unicode('').tag(sync=True)
+    _extent = Unicode('').tag(sync=True)
+    _token_info = Unicode('').tag(sync=True)
+
+    _arcgis_url = Unicode('').tag(sync=True)
+
+    _swipe_div = Unicode('').tag(sync=True)
+
+    def __init__(self, **kwargs):
+        """Constructor of Map widget. 
+        Accepts the following keyword arguments:
+        gis     The gis instance with which the map widget works, used for authentication, and adding secure layers and private items from that GIS
+        item    webmap item from portal with which to initialize the map widget
+        """
+        super(MapView, self).__init__(**kwargs)
+        self._click_handlers = widgets.CallbackDispatcher()
+        self._draw_end_handlers = widgets.CallbackDispatcher()
+
+        self.on_msg(self._handle_map_msg)
+
+        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic", "terrain", "osm"]
+        self._swipe_div = 'swipeDiv' +''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        
+        self._gis = kwargs.pop('gis', None)
+        if self._gis is not None and self._gis._con._username is not None: # not anonymous
+            token_info = {
+                "server" : self._gis._con.baseurl.replace('http://', 'https://'),
+                "tokenurl" : (self._gis._con.baseurl + 
+                               'generateToken').replace('http://', 'https://'),
+                "username" : self._gis._con._username,
+                "password" : self._gis._con._password
+            }
+            self._token_info = json.dumps(token_info)
+            #if self._gis.properties.portalName != 'ArcGIS Online':
+            self._arcgis_url = self._gis._con.baseurl + 'content/items'
+
+        self.item = kwargs.pop('item', None)
+        if self.item is not None:
+            if isinstance(self.item, WebMap):
+                self.item = self.item.item
+            if 'type' in self.item and self.item.type.lower() != 'web map':
+                raise TypeError("item type must be web map")
+            self.id = self.item.id
+
+    def draw(self, shape, popup=None, symbol=None, attributes=None):
+        """
+        Draws a shape.
+
+        Arguments:
+        shape is one of ["circle", "downarrow", "ellipse", "extent", "freehandpolygon",
+        "freehandpolyline", "leftarrow", "line", "multipoint", "point", "polygon", "polyline",
+        "rectangle", "rightarrow", "triangle", "uparrow", or geometry dict object]
+
+        popup is a dict containing "title" and "content" as keys that will be displayed
+        when the shape is clicked
+
+        symbol is a symbol specified in json format as described at http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000
+        a default symbol is used is one is not specified
+
+        attributes is a dict containing name value pairs of fields and field values
+        associated with the graphic.
+
+        """
+        if isinstance(shape, list) and len(shape) == 2: # [lat, long] pair
+            shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
+        elif isinstance(shape, tuple): # (lat, long) pair
+            shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
+
+        if isinstance(shape, FeatureSet):
+            fset = shape
+            for feature in fset.features:
+                graphic = {
+                    "geometry" : feature.geometry,
+                    "infoTemplate" : popup,
+                    "symbol" : symbol,
+                    "attributes" : feature.attributes
+                }
+                self.mode = json.dumps(graphic)
+        elif isinstance(shape, dict):
+            graphic = {
+                "geometry" : shape,
+                "infoTemplate" : popup,
+                "symbol" : symbol,
+                "attributes" : attributes
+            }
+            self.mode = json.dumps(graphic)
+            #print(json.dumps(graphic))
+        else:
+            self.mode = shape
+
+    def add_layer(self, item, options=None):
+        """
+        Adds layers from the provided item
+        """
+        if isinstance(item, Layer):
+            js_layer = item._js_lyr
+            if options is not None:
+                js_layer.update({ "options" : json.dumps(options) })
+
+            self._addlayer = json.dumps(js_layer)
+        elif 'layers' in item: # items as well as services
+            if item.layers is None:
+                raise RuntimeError('No layers accessible/available in this item or service')
+            for lyr in item.layers:
+                js_layer = lyr._js_lyr
+                if options is not None:
+                    js_layer.update({ "options" : json.dumps(options) })
+                self._addlayer = json.dumps(js_layer)
+        else: # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
+            if options is not None:
+                item.update({ "options" : json.dumps(options) })
+
+            self._addlayer = json.dumps(item)
+
+
+    def clear_graphics(self):
+        self.mode = "###clear_graphics"
+
+    def set_time_extent(self, start_time, end_time):
+        self.start_time = start_time
+        self.end_time = end_time
+
+    def remove_layers(self):
+        self.mode = "###remove_layers"
+
+    @property
+    def extent(self):
+        return json.loads(self._extent)
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = json.dumps(value)
+
+    def on_click(self, callback, remove=False):
+        """Register a callback to execute when the map is clicked.
+
+        The callback will be called with one argument,
+        the clicked widget instance.
+
+        Parameters
+        ----------
+        remove : bool (optional)
+            Set to true to remove the callback from the list of callbacks."""
+        self._click_handlers.register_callback(callback, remove=remove)
+
+    def on_draw_end(self, callback, remove=False):
+        """Register a callback to execute when something is drawn
+
+        The callback will be called with two argument,
+        the clicked widget instance, and the geometry drawn
+
+        Parameters
+        ----------
+        remove : bool (optional)
+            Set to true to remove the callback from the list of callbacks."""
+        self._draw_end_handlers.register_callback(callback, remove=remove)
+
+    #def _handle_map_msg(self, _, content):
+    def _handle_map_msg(self, _, content, buffers):
+        """Handle a msg from the front-end.
+
+        Parameters
+        ----------
+        content: dict
+            Content of the msg."""
+
+        if content.get('event', '') == 'mouseclick':
+            self._click_handlers(self, content.get('message', None))
+        if content.get('event', '') == 'draw-end':
+            self._draw_end_handlers(self, content.get('message', None))
 
 
 class VectorTileLayer(Layer):
     def __init__(self, url, gis=None):
         self._token = None
-        
+
         self.url = url
         self._url = url
-        
+
         err = None
 
         if gis is None:
@@ -218,7 +351,7 @@ class VectorTileLayer(Layer):
     def fromitem(cls, item):
         if not item.type == 'Vector Tile Service':
             raise TypeError("item must be a type of Vector Tile Service, not " + item.type)
-        
+
         return cls(item.url, item._gis)
 
     @property
@@ -268,112 +401,8 @@ class VectorTileLayer(Layer):
                              params=params, token=self._token)
 
 
-class SchematicsLayer(Layer):
-    def __init__(self, url, gis=None):
-        super(SchematicsLayer, self).__init__(url, gis)
-
-    @property
-    def diagrams(self):
-        """
-        The Schematic Diagrams resource represents all the schematic diagrams
-        under a schematic service. It is returned as an array of Schematic
-        Diagram resource by the REST API.
-        """
-        params = {"f" : "json"}
-        exportURL = self._url + "/diagrams"
-        return self._con.get(path=exportURL,
-                             params=params, token=self._token)
-    #----------------------------------------------------------------------
-    @property
-    def folders(self):
-        """
-        The Schematic Folders resource represents the set of schematic folders
-        in the schematic dataset(s) related to the schematic layers under a
-        schematic service. It is returned as an array of <Schematic Folder Object>
-        by the REST API.
-        """
-        params = {"f" : "json"}
-        exportURL = self._url + "/folders"
-        return self._con.get(path=exportURL,
-                         params=params, token=self._token)
-    #----------------------------------------------------------------------
-    @property
-    def layers(self):
-        """
-        The Schematic Layers resource represents all the schematic layers
-        under a schematic service published by ArcGIS Server. It is returned
-        as an array of Schematic Layer resources by the REST API.
-        """
-        params = {"f" : "json"}
-        exportURL = self._url + "/schematicLayers"
-        return self._con.get(path=exportURL,
-                         params=params, token=self._token)
-    #----------------------------------------------------------------------
-    @property
-    def templates(self):
-        """
-        The Schematic Diagram Templates represents all the schematic diagram
-        templates related to the published schematic layers under a schematic
-        service. It is returned as an array of Schematic Diagram Template
-        resources by the REST API.
-        """
-        params = {"f" : "json"}
-        exportURL = self._url + "/templates"
-        return self._con.get(path=exportURL,
-                                 params=params, token=self._token)
-    #----------------------------------------------------------------------
-    def search_diagrams(self,whereClause=None,relatedObjects=None,
-                       relatedSchematicObjects=None):
-        """
-        The Schematic Search Diagrams operation is performed on the schematic
-        service resource. The result of this operation is an array of Schematic
-        Diagram Information Object.
-
-        It is used to search diagrams in the schematic service by criteria;
-        that is, diagrams filtered out via a where clause on any schematic
-        diagram class table field, diagrams that contain schematic features
-        associated with a specific set of GIS features/objects, or diagrams
-        that contain schematic features associated with the same GIS features/
-        objects related to another set of schematic features.
-
-        Inputs:
-            whereClause - A where clause for the query filter. Any legal SQL
-                          where clause operating on the fields in the schematic
-                          diagram class table is allowed. See the Schematic
-                          diagram class table fields section below to know the
-                          exact list of field names that can be used in this
-                          where clause.
-            relatedObjects - An array containing the list of the GIS features/
-                             objects IDs per feature class/table name that are in
-                             relation with schematic features in the resulting
-                             queried diagrams. Each GIS feature/object ID
-                             corresponds to a value of the OBJECTID field in the
-                             GIS feature class/table.
-            relatedSchematicObjects - An array containing the list of the
-                                      schematic feature names per schematic
-                                      feature class ID that have the same
-                                      associated GIS features/objects with
-                                      schematic features in the resulting
-                                      queried diagrams. Each schematic feature
-                                      name corresponds to a value of the
-                                      SCHEMATICTID field in the schematic
-                                      feature class.
-        """
-        params = {"f" : "json"}
-        if whereClause:
-            params["where"] = whereClause
-        if relatedObjects:
-            params["relatedObjects"] = relatedObjects
-        if relatedSchematicObjects:
-            params["relatedSchematicObjects"] = relatedSchematicObjects
-
-        exportURL = self._url + "/searchDiagrams"
-        return self._con.get(path=exportURL,
-                             params=params, token=self._token)
-
-
-class DynamicMapLayerManager(GISService):
-    """ allows administration (if access permits) of an ArcGIS Online hosted map service 
+class DynamicMapLayerManager(_GISResource):
+    """ allows administration (if access permits) of an ArcGIS Online hosted map service
     A map service offer access to map and layer content.
 
        The REST API administrative map service resource represents a map
@@ -386,7 +415,7 @@ class DynamicMapLayerManager(GISService):
     def __init__(self, url, gis=None, ms=None):
         super(DynamicMapLayerManager, self).__init__(url, gis)
         self._ms = ms
-    
+
     #----------------------------------------------------------------------
     def refresh(self, serviceDefinition=True):
         """
@@ -402,7 +431,7 @@ class DynamicMapLayerManager(GISService):
         res =  self._con.post(self._url, params)
 
         super(DynamicMapLayerManager, self)._refresh()
-        
+
         self._ms._refresh()
 
         return res
@@ -477,29 +506,29 @@ class DynamicMapLayer(Layer):
 
     def __init__(self, url, gis=None):
         super(DynamicMapLayer, self).__init__(url, gis)
-    
+
         self._populate_layers()
         self._admin = None
 
-    def _populate_layers(self):        
+    def _populate_layers(self):
         layers = []
         tables = []
-        
+
         for lyr in self.properties.layers:
-            lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureDataset(self.url, self._gis))
+            lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureLayerCollection(self.url, self._gis))
             layers.append(lyr)
 
         for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureDataset(self.url, self._gis))
+            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureLayerCollection(self.url, self._gis))
             tables.append(lyr)
 
         #fsurl = self.url + '/layers'
         #params = { "f" : "json" }
         #allayers = self._con.post(fsurl, params, token=self._token)
-        
+
         #for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
-                    
+
         #for table in allayers['tables']:
         #    tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis))
 
@@ -972,12 +1001,12 @@ class DynamicMapLayer(Layer):
             job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
-                status = job_response.get("status") 
+                status = job_response.get("status")
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
                     job_response = self._con.post(path, params, token=self._token)
-                    status = job_response.get("status") 
+                    status = job_response.get("status")
                     if status in ['esriJobFailed',
                               'esriJobCancelling',
                               'esriJobCancelled',
@@ -1098,7 +1127,7 @@ class DynamicMapLayer(Layer):
             return self._con.get(path=url, params=params, token=self._token)
         else:
             exportJob = self._con.get(path=url, params=params, token=self._token)
-            
+
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
@@ -1106,12 +1135,12 @@ class DynamicMapLayer(Layer):
             job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
-                status = job_response.get("status") 
+                status = job_response.get("status")
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
                     job_response = self._con.post(path, params, token=self._token)
-                    status = job_response.get("status") 
+                    status = job_response.get("status")
                     if status in ['esriJobFailed',
                               'esriJobCancelling',
                               'esriJobCancelled',
@@ -1122,7 +1151,7 @@ class DynamicMapLayer(Layer):
                 raise Exception("No job results.")
 
             allResults = job_response['results']
-            
+
             for k,v in allResults.items():
                 if k == "out_service_url":
                     value = v.value

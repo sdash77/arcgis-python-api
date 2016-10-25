@@ -18,16 +18,9 @@ import zipfile
 from contextlib import contextmanager
 
 import arcgis._impl.portalpy as portalpy
-
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-from arcgis.features import FeatureLayer, FeatureCollection, FeatureDataset
-from arcgis.lyr import *
-from arcgis.network import NetworkDataset
-from arcgis.raster import ImageLayer
-
-from arcgis._impl.tools import _Geocoder
-
+from arcgis._impl.tools import _Tools
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -188,7 +181,7 @@ class GIS(object):
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
         """
-        from arcgis.viz import MapView
+        from arcgis.mapping import MapView
 
         if isinstance(location, Item) and location.type == 'Web Map':
             mapwidget = MapView(gis=self, item=location)
@@ -391,6 +384,7 @@ class Datastore(dict):
 
         for dataset in res['datasets']:
             print(dataset['name'] + ' ('+ dataset['format']['extension'] + ')')
+
 
 class DatastoreManager(object):
     """
@@ -663,104 +657,6 @@ class DatastoreManager(object):
         res = self._portal.con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
 
-class _Tools(object):
-    """
-    Collection of GIS tools. This class holds references to the helper services and tools available
-    in the GIS. This class is not created by users directly.
-    An instance of this class, called 'tools', is available as a property of the GIS object.
-    Users access the GIS tools, such as the geocoders through
-    the gis.tools object
-    """
-    # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
-    def __init__(self, gis):
-        self._gis = gis
-        self._geocoders = None
-        self._geometry = None
-        self._analysis = None
-        self._raster_analysis = None
-        self._geoanalytics = None
-
-    @property
-    def geocoders(self):
-        """the geocoders, if available and configured"""
-        if self._geocoders is not None:
-            return self._geocoders
-        self._geocoders = []
-        try:
-            geocode_services = self._gis.properties['helperServices']['geocode']
-            for geocode_service in geocode_services:
-                try:
-                    self._geocoders.append(_Geocoder(geocode_service['url'], self._gis))
-                except RuntimeError as re:
-                    _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
-                    _log.warning(str(re))
-        except KeyError:
-            pass
-        return self._geocoders
-
-    # @property
-    # def geometry(self):
-    #     """the portal's geometry  tools, if available and configured"""
-    #     if self._geometry is not None:
-    #         return self._geometry
-    #     try:
-    #         svcurl = self._gis.properties['helperServices']['geometry']['url']
-    #         self._geometry = _GeometryService(svcurl, self._gis)
-    #         return self._geometry
-    #     except KeyError:
-    #         return None
-
-    # @property
-    # def rasteranalysis(self):
-    #     """the portal's raster analysis tools, if available and configured"""
-    #     if self._raster_analysis is not None:
-    #         return self._raster_analysis
-    #     try:
-    #         try:
-    #             svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
-    #         except:
-    #             print("This GIS does not support raster analysis")
-    #             return None
-    #
-    #         self._raster_analysis = RasterAnalysisTools(svcurl, self._gis)
-    #         return self._raster_analysis
-    #     except KeyError:
-    #         return None
-    #
-    # @property
-    # def geoanalytics(self):
-    #     """the portal's bigdata analytics tools, if available and configured"""
-    #     if self._geoanalytics is not None:
-    #         return self._geoanalytics
-    #     try:
-    #         try:
-    #             svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
-    #         except:
-    #             print("This GIS does not support geoanalytics")
-    #             return None
-    #
-    #         self._geoanalytics = GeoanalyticsTools(svcurl, self._gis)
-    #         return self._geoanalytics
-    #     except KeyError:
-    #         return None
-
-    # @property
-    # def featureanalysis(self):
-    #     """the portal's spatial analysis tools, if available and configured"""
-    #     if self._analysis is not None:
-    #         return self._analysis
-    #     try:
-    #         try:
-    #             svcurl = self._gis.properties['helperServices']['analysis']['url']
-    #         except:
-    #             print("This GIS does not support spatial analysis")
-    #             return None
-    #
-    #         self._analysis = _FeatureAnalysisTools(svcurl, self._gis)
-    #         return self._analysis
-    #     except KeyError:
-    #         return None
-
 
 class UserManager(object):
     """
@@ -953,6 +849,7 @@ class UserManager(object):
         else:
             return None
 
+
 class GroupManager(object):
     """
     Manager class for manipulating GIS groups. This class is not created by users directly.
@@ -1087,6 +984,7 @@ class GroupManager(object):
         for group in groups:
             grouplist.append(Group(self._gis, group['id'], group))
         return grouplist
+
 
 def _is_shapefile(data):
     if zipfile.is_zipfile(data):
@@ -1477,6 +1375,7 @@ class ContentManager(object):
 
         res = self._portal.con.post(path, postdata)
         return res['available']
+
 
 class Group(dict):
     """
@@ -2192,6 +2091,11 @@ class Item(dict):
             self.type == 'Vector Tile Service'
 
     def _populate_layers(self):
+        from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection
+        from arcgis.mapping import VectorTileLayer, DynamicMapLayer
+        from arcgis.network import NetworkLayerCollection
+        from arcgis.raster import ImageLayer
+
         if self._has_layers():
             layers = []
             tables = []
@@ -2217,7 +2121,7 @@ class Item(dict):
                 layers.append(VectorTileLayer(self.url, self._gis))
 
             elif self.type == 'Network Analysis Service':
-                svc = NetworkDataset.fromitem(self)
+                svc = NetworkLayerCollection.fromitem(self)
 
                 # route laters, service area layers, closest facility layers
                 for lyr in svc.route_layers:
@@ -2228,7 +2132,7 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == 'Feature Service':
-                svc = FeatureDataset.fromitem(self)
+                svc = FeatureLayerCollection.fromitem(self)
                 for lyr in svc.layers:
                     layers.append(lyr)
 
@@ -2241,7 +2145,7 @@ class Item(dict):
                 if m is not None: # ends in digit
                     layers.append(FeatureLayer(self.url, self._gis))
                 else:
-                    svc = GISService.fromitem(self)
+                    svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         lyr = Layer(svc.url+'/'+str(lyr.id), self._gis)
                         layers.append(lyr)
@@ -2933,6 +2837,7 @@ class Item(dict):
             folder = None
         return self._portal.protect_item(self.itemid, self.owner, folder, enable)
 
+
 def rot13(s):
     result = ""
 
@@ -2959,3 +2864,93 @@ def rot13(s):
     # Return transformation.
     return result
 
+
+class _GISResource(object):
+    """ a GIS service
+    """
+    def __init__(self, url, gis=None):
+        self._token = None
+
+        self.url = url
+        self._url = url
+
+        err = None
+
+        if gis is None:
+            gis = GIS()
+            self._gis = gis
+            self._con = gis._con
+            self._token = None
+        else:
+            self._gis = gis
+            self._con = gis._con
+
+        with _DisableLogger():
+            try:
+                # try as a federated server
+                self._token = self._con.generate_portal_server_token(url)
+                self._refresh()
+            except RuntimeError as e:
+                try:
+                    # try as a public server
+                    self._token = None
+                    self._refresh()
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._token = self._con.token
+                        self._refresh()
+
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.post(self.url, params, token=self._token)
+        self.properties = PropertyMap(dictdata)
+
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self.url)
+
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._token)
+
+
+class Layer(_GISResource):
+    """
+    The layer is a primary concept for working with data in a GIS.
+
+    Users create, import, export, analyze, edit, and visualize layers.
+
+    Layers can be added to and visualized using maps. They act as inputs to and outputs from analysis tools.
+
+    Layers are created by publishing data to a GIS, and are exposed as a broader resource (Item) in the
+    GIS. Layer objects can be obtained through the layers attribute on layer Items in the GIS.
+    """
+
+    @classmethod
+    def fromitem(cls, item, index=0):
+        """
+        returns the layer at the specified index from a layer item
+        :param item: an item representing a layer
+        :param index: optional, the index of the layer amongst the item's layers
+        :return: the layer at the specified index
+        """
+        return item.layers[index]
+
+    @property
+    def _js_lyr(self):
+        return { 'type' : type(self).__name__, 'url' : self.url }
