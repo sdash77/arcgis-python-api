@@ -1241,6 +1241,8 @@ class ContentManager(object):
                 query += ' (type:"web scene" NOT type:"CityEngine Web Scene")'
             elif item_type == "feature layer":
                 query += ' (type:"feature service")'
+            elif item_type == "feature layer collection":
+                query += ' (type:"feature service")'
             elif item_type == "image layer":
                 query += ' (type:"image service")'
             elif item_type == "layer":
@@ -2906,6 +2908,12 @@ class _GISResource(object):
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
+
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type.lower().endswith('service'):
+            raise TypeError("item must be a type of service, not " + item.type)
+        return cls(item.url, item._gis)
 
     def _refresh(self):
         params = {"f": "json"}
