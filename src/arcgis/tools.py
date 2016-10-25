@@ -1664,22 +1664,26 @@ class FeatureAnalysisTools(_AsyncService):
         clip : Optional bool
             Select features that intersect the extent or clip features within the extent.
         data_format : Optional string
-            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases.&lt;/p&gt;
+            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV
         output_name : Optional string
-            Additional properties such as output feature service name.
+            Additional properties such as output name of the item
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
 
         Returns
         -------
-        content_id : layer (FeatureCollection)
+         an item in the GIS
         """
 
         task ="ExtractData"
 
         params = {}
 
-        params["inputLayers"] = input_layers
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(super()._feature_input(input_lyr))
+
+        params["inputLayers"] = input_layers_param
         if extent is not None:
             params["extent"] = extent
         if clip is not None:
@@ -1695,15 +1699,7 @@ class FeatureAnalysisTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info)
-        #print(job_values)
-        if output_name is not None:
-            itemid = job_values['contentID']['itemId']
-            item = arcgis.gis.Item(self._gis, itemid)
-            return item
-        else:
-            # Feature Collection
-            return FeatureCollection(job_values['contentID'])
-
+        return self._gis.content.get(job_values['contentID']['itemId'])
 
     def find_existing_locations(self,
                        input_layers=[],
