@@ -6598,49 +6598,55 @@ class FeatureSet(object):
         g0 = None
         f = features[0]
         if isinstance(f, Feature):
-            g0 = f.geometry
-        else:
-            g0 = f['geometry']
-        
-        if spatialReference is None:
-            if 'spatialReference' in g0:
-                self._spatialReference = g0['spatialReference']
+            if "geometry" in f.as_dict: # can construct features out of tables with just attributes, no geometry
+                g0 = f.geometry
+        elif isinstance(f, dict):
+            if "geometry" in f:
+                g0 = f['geometry']
 
-        geometry = Geometry(g0)
-        if geometryType is None:
-            if isinstance(geometry, Polyline):
-                self._geometryType = "esriGeometryPolyline"
-            elif isinstance(geometry, Polygon):
-                self._geometryType = "esriGeometryPolygon"
-            elif isinstance(geometry, Point):
-                self._geometryType = "esriGeometryPoint"
-            elif isinstance(geometry, MultiPoint):
-                self._geometryType = "esriGeometryMultipoint"
-            else:
-                raise AttributeError("Invalid geometry type")
+        if g0 is not None:
+            if spatialReference is None:
+                if 'spatialReference' in g0:
+                    self._spatialReference = g0['spatialReference']
+
+            geometry = Geometry(g0)
+            if geometryType is None:
+                if isinstance(geometry, Polyline):
+                    self._geometryType = "esriGeometryPolyline"
+                elif isinstance(geometry, Polygon):
+                    self._geometryType = "esriGeometryPolygon"
+                elif isinstance(geometry, Point):
+                    self._geometryType = "esriGeometryPoint"
+                elif isinstance(geometry, MultiPoint):
+                    self._geometryType = "esriGeometryMultipoint"
+            # else:
+            #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
             
         #Try to find the object ID field if not specified
         if self._objectIdFieldName is None:
             #check to see if features a dict or feature object
             if isinstance(f, Feature):
                 #Look for OBJECTID first, if it does not exist, look for FID
-                for field in f.fields:
-                    if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                        self._objectIdFieldName = field
-                        break;
-                for field in f.fields:
-                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                        self._objectIdFieldName = field
-                        break;
+                if hasattr(f, 'fields'):
+                    if self._fields is None:
+                        self._fields = f.fields #get fields from first feature if not set
+                    for field in f.fields:
+                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                            self._objectIdFieldName = field
+                            break
+                    for field in f.fields:
+                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                            self._objectIdFieldName = field
+                            break
             else:
                 for field, v in f.items():
                     if re.search("^{0}$".format("OBJECTID"),field , re.IGNORECASE):
                         self._objectIdFieldName = field
-                        break;
+                        break
                 for field, v in f.items():
                     if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                         self._objectIdFieldName = field
-                        break;
+                        break
     #----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
