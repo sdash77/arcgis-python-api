@@ -6425,9 +6425,10 @@ class Feature(object):
     @property
     def attributes(self):
         """returns the feature attributes"""
-        if self._attributes is None:
+        if self._attributes is None and 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
         return self._attributes
+
     @attributes.setter
     def attributes(self, value):
         """gets/sets a feature's attributes"""
@@ -6437,8 +6438,11 @@ class Feature(object):
     @property
     def fields(self):
         """ returns a list of feature fields """
-        self._attributes = self._dict['attributes']
-        return self._attributes.keys()
+        if 'attributes' in self._dict:
+            self._attributes = self._dict['attributes']
+            return self._attributes.keys()
+        else:
+            return []
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
@@ -6566,13 +6570,28 @@ class FeatureSet(object):
                 raise AttributeError("Feature class could not be converted to a feature set")
         elif isinstance(features,list):
             if len(features) > 0:
-                if "attributes" in features[0]:
-                    if "geometry" in features[0]:
-                        features = [Feature(feat['geometry'],feat['attributes']) for feat in features]
-                    else:
-                        features = [Feature(None,feat['attributes']) for feat in features]
-                elif "geometry" in features[0]:
-                    features = [Feature(feat['geometry'],None) for feat in features]
+                f = features[0]
+                if isinstance(f, Feature):
+                    # features passed in as a list of Feature objects
+                    if "attributes" in f.as_dict:
+                        if "geometry" in f.as_dict:
+                            features = [Feature(feat.as_dict['geometry'],feat.as_dict['attributes']) for feat in features]
+                        else:
+                            features = [Feature(None,feat.as_dict['attributes']) for feat in features]
+                    elif "geometry" in f.as_dict:
+                        features = [Feature(feat.as_dict['geometry'],None) for feat in features]
+                elif isinstance(f, dict):
+                    # features passed in as a list of dicts
+                    if "attributes" in f:
+                        if "geometry" in f:
+                            features = [Feature(feat['geometry'],feat['attributes']) for feat in features]
+                        else:
+                            features = [Feature(None,feat['attributes']) for feat in features]
+                    elif "geometry" in f:
+                        features = [Feature(feat['geometry'],None) for feat in features]
+                else:
+                    raise AttributeError("FeatureSet requires a list of features (as dicts or Feature objects)") 
+
         self._features = features
         if len(features) == 0:
             raise AttributeError("FeatureSet requires a list of features") 
