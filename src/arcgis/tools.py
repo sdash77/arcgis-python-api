@@ -6458,12 +6458,16 @@ class Feature(object):
     def from_json(cls, json_str):
         """returns a feature from a JSON string"""
         feature = json.loads(json_str)
-        return cls(feature['geometry'], feature['attributes'])
+        geom = feature['geometry'] if 'geometry' in feature else None
+        attribs = feature['attributes'] if 'attributes' in feature else None
+        return cls(geom, attribs)
     #----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, feature):
         """returns a featureset from a dict"""
-        return cls(feature['geometry'], feature['attributes'])
+        geom = feature['geometry'] if 'geometry' in feature else None
+        attribs = feature['attributes'] if 'attributes' in feature else None
+        return cls(geom, attribs)
     #----------------------------------------------------------------------
     #@staticmethod
     #def fc_to_features(dataset):
@@ -6627,17 +6631,17 @@ class FeatureSet(object):
             #check to see if features a dict or feature object
             if isinstance(f, Feature):
                 #Look for OBJECTID first, if it does not exist, look for FID
-                if hasattr(f, 'fields'):
-                    if self._fields is None:
-                        self._fields = f.fields #get fields from first feature if not set
-                    for field in f.fields:
-                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                            self._objectIdFieldName = field
-                            break
-                    for field in f.fields:
-                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                            self._objectIdFieldName = field
-                            break
+                
+                if self._fields is None:
+                    self._fields = f.fields #get fields from first feature if not set
+                for field in f.fields:
+                    if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break
+                for field in f.fields:
+                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                        self._objectIdFieldName = field
+                        break
             else:
                 for field, v in f.items():
                     if re.search("^{0}$".format("OBJECTID"),field , re.IGNORECASE):
