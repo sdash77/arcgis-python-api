@@ -15,6 +15,6 @@ representation and user experience - on a map, in a 3D scene, as entities with a
 
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
-from .managers import AttachmentManager, ReplicaManager, FeatureLayerCollectionManager, FeatureLayerManager
+from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
 
 __all__ = ['Feature', 'FeatureSet', 'FeatureCollection', 'FeatureLayer', 'Table', 'FeatureLayerCollection']

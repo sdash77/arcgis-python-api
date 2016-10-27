@@ -16,7 +16,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import scratchGDB, scratchFolder, json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
 
-from .managers import AttachmentManager, ReplicaManager, FeatureLayerCollectionManager, FeatureLayerManager
+from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Layer, _GISResource
@@ -691,7 +691,7 @@ class FeatureLayerCollection(_GISResource):
 
         try:
             if self.properties.syncEnabled:
-                self.replicas = ReplicaManager(self)
+                self.replicas = SyncManager(self)
         except AttributeError:
             pass
 

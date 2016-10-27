@@ -67,15 +67,15 @@ class AttachmentManager(object):
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
 
-class ReplicaManager(object):
+class SyncManager(object):
     """
-    Manager class for manipulating replicas for disconnected editing of feature layer collections.
+    Manager class for manipulating replicas for syncing disconnected editing of feature layers.
     This class is not created by users directly.
     An instance of this class, called 'replicas', is available as a property of the FeatureLayerCollection object,
     if the layer is sync enabled / supports disconnected editing.
     Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
     """
-
+    # http://services.arcgis.com/help/fsDisconnectedEditing.html
     def __init__(self, featsvc):
         self._fs = featsvc
 
