@@ -123,7 +123,7 @@ class Feature(object):
     @property
     def attributes(self):
         """returns the feature attributes"""
-        if self._attributes is None:
+        if self._attributes is None and 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
         return self._attributes
 
@@ -137,8 +137,11 @@ class Feature(object):
     @property
     def fields(self):
         """ returns a list of feature fields """
-        self._attributes = self._dict['attributes']
-        return self._attributes.keys()
+        if 'attributes' in self._dict:
+            self._attributes = self._dict['attributes']
+            return self._attributes.keys()
+        else:
+            return []
 
     # ----------------------------------------------------------------------
     @property
@@ -156,13 +159,17 @@ class Feature(object):
     def from_json(cls, json_str):
         """returns a feature from a JSON string"""
         feature = json.loads(json_str)
-        return cls(feature['geometry'], feature['attributes'])
+        geom = feature['geometry'] if 'geometry' in feature else None
+        attribs = feature['attributes'] if 'attributes' in feature else None
+        return cls(geom, attribs)
 
     # ----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, feature):
         """returns a feature from a dict"""
-        return cls(feature['geometry'], feature['attributes'])
+        geom = feature['geometry'] if 'geometry' in feature else None
+        attribs = feature['attributes'] if 'attributes' in feature else None
+        return cls(geom, attribs)
     # ----------------------------------------------------------------------
     def __str__(self):
         """"""
@@ -228,53 +235,72 @@ class FeatureSet(object):
             if features is None:
                 raise AttributeError("Feature class could not be converted to a feature set")
         elif isinstance(features, list):
-            if len(features) > 0:
-                if "attributes" in features[0]:
-                    if "geometry" in features[0]:
+            feature = features[0]
+            if isinstance(feature, Feature):
+                # features passed in as a list of Feature objects
+                if "attributes" in feature.as_dict:
+                    if "geometry" in feature.as_dict:
+                        features = [Feature(feat.as_dict['geometry'], feat.as_dict['attributes']) for feat in features]
+                    else:
+                        features = [Feature(None, feat.as_dict['attributes']) for feat in features]
+                elif "geometry" in feature.as_dict:
+                    features = [Feature(feat.as_dict['geometry'], None) for feat in features]
+            elif isinstance(feature, dict):
+                # features passed in as a list of dicts
+                if "attributes" in feature:
+                    if "geometry" in feature:
                         features = [Feature(feat['geometry'], feat['attributes']) for feat in features]
                     else:
                         features = [Feature(None, feat['attributes']) for feat in features]
-                elif "geometry" in features[0]:
+                elif "geometry" in feature:
                     features = [Feature(feat['geometry'], None) for feat in features]
+            else:
+                raise AttributeError("FeatureSet requires a list of features (as dicts or Feature objects)")
+
         self._features = features
         if len(features) == 0:
             raise AttributeError("FeatureSet requires a list of features")
         feature_geom = None
         feature = features[0]
-        if isinstance(feature, Feature):
-            feature_geom = feature.geometry
-        else:
-            feature_geom = feature['geometry']
 
-        if spatial_reference is None:
-            if 'spatialReference' in feature_geom:
-                self._spatial_reference = feature_geom['spatialReference']
+        if "geometry" in feature.as_dict: # can construct features out of tables with just attributes, no geometry
+                feat_geom = feature.geometry
+        elif isinstance(feature, dict):
+            if "geometry" in feature:
+                feat_geom = feature['geometry']
 
-        geometry = Geometry(feature_geom)
-        if geometry_type is None:
-            if isinstance(geometry, Polyline):
-                self._geometry_type = "esriGeometryPolyline"
-            elif isinstance(geometry, Polygon):
-                self._geometry_type = "esriGeometryPolygon"
-            elif isinstance(geometry, Point):
-                self._geometry_type = "esriGeometryPoint"
-            elif isinstance(geometry, MultiPoint):
-                self._geometry_type = "esriGeometryMultipoint"
-            else:
-                raise AttributeError("Invalid geometry type")
+        if feat_geom is not None:
+            if spatial_reference is None:
+                if 'spatialReference' in feat_geom:
+                    self._spatialReference = feat_geom['spatialReference']
+
+            geometry = Geometry(feat_geom)
+            if geometry_type is None:
+                if isinstance(geometry, Polyline):
+                    self._geometryType = "esriGeometryPolyline"
+                elif isinstance(geometry, Polygon):
+                    self._geometryType = "esriGeometryPolygon"
+                elif isinstance(geometry, Point):
+                    self._geometryType = "esriGeometryPoint"
+                elif isinstance(geometry, MultiPoint):
+                    self._geometryType = "esriGeometryMultipoint"
+            # else:
+            #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
         # Try to find the object ID field if not specified
         if self._object_id_field_name is None:
             # check to see if features a dict or feature object
             if isinstance(feature, Feature):
                 # Look for OBJECTID first, if it does not exist, look for FID
+                if self._fields is None:
+                    self._fields = feature.fields  # get fields from first feature if not set
                 for field in feature.fields:
                     if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                        self._object_id_field_name = field
+                        self._objectIdFieldName = field
                         break
                 for field in feature.fields:
                     if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                        self._object_id_field_name = field
+                        self._objectIdFieldName = field
                         break
             else:
                 for field, _ in feature.items():

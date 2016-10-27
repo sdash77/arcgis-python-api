@@ -2727,6 +2727,30 @@ class Item(dict):
             else:
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+        elif fileType == 'CSV': # merge users passed-in publish parameters with analyze results
+            publish_parameters_orig = publish_parameters
+            path = "content/features/analyze"
+
+            postdata = {
+                "f": "pjson",
+                "itemid" : self.itemid,
+                "filetype" : "csv",
+
+                "analyzeParameters" : {
+                    "enableGlobalGeocoding": "true",
+                    "sourceLocale":"en-us",
+                    #"locationType":"address",
+                    "sourceCountry":"",
+                    "sourceCountryHint":""
+                }
+            }
+
+            if address_fields is not None:
+                postdata['analyzeParameters']['locationType'] = 'address'
+
+            res = self._portal.con.post(path, postdata)
+            publish_parameters =  res['publishParameters']
+            publish_parameters.update(publish_parameters_orig)
 
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
 

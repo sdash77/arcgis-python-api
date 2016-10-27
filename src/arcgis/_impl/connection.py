@@ -684,9 +684,9 @@ class _ArcGISConnection(object):
             handlers = self.get_handlers()
             opener = request.build_opener(*handlers)
             opener.addheaders = headers
-            #request.install_opener(opener)
-            req = request.Request(url)
-            resp = request.urlopen(req)
+
+            resp = opener.open(url)
+
             resp_data, is_file = self._process_response(resp,
                                                out_folder=out_folder,
                                                file_name=file_name,
