@@ -60,3 +60,4 @@ ___*
 .idea
 src/.vscode/launch.json
 src/.vscode/settings.json
+*.bz2
