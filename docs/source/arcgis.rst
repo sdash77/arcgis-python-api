@@ -4,22 +4,37 @@ arcgis package
 Submodules
 ----------
 
-arcgis.geom module
+arcgis.gis module
 ------------------
 
-arcgis.gis module
+arcgis.features module
 -----------------
 
-arcgis.lyr module
+arcgis.raster module
+------------------
+
+arcgis.network module
 -----------------
 
-arcgis.tools module
+arcgis.schematics module
+-----------------
+
+arcgis.geoanalytics module
 -------------------
 
-
-arcgis.viz module
+arcgis.geocoding module
 -----------------
 
+arcgis.geometry module
+-----------------
+
+arcgis.geoprocessing module
+-----------------
+
+arcgis.mapping module
+-----------------
+   
+   
 Module contents
 ---------------
 

@@ -1,0 +1,768 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>arcgis.features.managers module &mdash; arcgis 0.3 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
+        <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
+        <link rel="next" title="arcgis.raster module" href="arcgis.raster.html"/>
+        <link rel="prev" title="arcgis.features.summarize_data module" href="arcgis.features.summarize_data.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> arcgis
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">arcgis</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#user">User</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#group">Group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastore">Datastore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#layer">Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#contentmanager">ContentManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#usermanager">UserManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#groupmanager">GroupManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastoremanager">DatastoreManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#feature">Feature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayer">FeatureLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#table">Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featuredataset">FeatureDataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#interpolate-points">interpolate_points</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.enrich_data.html#enrich-layer">enrich_layer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#find-existing-locations">find_existing_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#derive-new-locations">derive_new_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#find-similar-locations">find_similar_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#choose-best-facilities">choose_best_facilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#create-viewshed">create_viewshed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#create-watersheds">create_watersheds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.find_locations.html#trace-downstream">trace_downstream</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.manage_data.html">arcgis.features.manage_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#dissolve-boundaries">dissolve_boundaries</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#extract-data">extract_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#merge-layers">merge_layers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#overlay-layers">overlay_layers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.summarize_data.html">arcgis.features.summarize_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-nearby">summarize_nearby</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-within">summarize_within</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.managers module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attachmentmanager">AttachmentManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#replicamanager">ReplicaManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#featurelayercollectionmanager">FeatureLayerCollectionManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#featurelayermanager">FeatureLayerManager</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.raster.html">arcgis.raster module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#imagelayer">ImageLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#generate-raster">generate_raster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#rasterize">rasterize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#interpolate">interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#summarize-raster-within">summarize_raster_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#density">density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#classify">classify</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#segment-mean-shift">segment_mean_shift</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#train-classifier">train_classifier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.html#convert-raster-to-feature">convert_raster_to_feature</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.network.html">arcgis.network module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#networklayer">NetworkLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#routelayer">RouteLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#servicearealayer">ServiceAreaLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#closestfacilitylayer">ClosestFacilityLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.network.html#networkdataset">NetworkDataset</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.schematics.html">arcgis.schematics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematicslayer">SchematicsLayer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoanalytics.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoanalytics.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#point">Point</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#multipoint">MultiPoint</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#polyline">Polyline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#polygon">Polygon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#envelope">Envelope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#spatialreference">SpatialReference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#geometry">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#areas-and-lengths">areas_and_lengths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#auto-complete">auto_complete</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#buffer">buffer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#convex-hull">convex_hull</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#cut">cut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#density">density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#difference">difference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#distance">distance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#find-transformation">find_transformation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#from-geo-coordinate-string">from_geo_coordinate_string</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#generalize">generalize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#intersect">intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#label-points">label_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#lengths">lengths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#offset">offset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#project">project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#relation">relation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#reshape">reshape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#to-geo-coordinate-string">to_geo_coordinate_string</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#trim-extend">trim_extend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geometry.html#union">union</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoprocessing.html">arcgis.geoprocessing module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#geoprocessingtool">GeoprocessingTool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webmap">WebMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webscene">WebScene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#mapview">MapView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#dynamicmaplayer">DynamicMapLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#dynamicmaplayermanager">DynamicMapLayerManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#vectortilelayer">VectorTileLayer</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
+      
+    <li>arcgis.features.managers module</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/arcgis.features.managers.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-arcgis.features.managers">
+<span id="arcgis-features-managers-module"></span><h1>arcgis.features.managers module<a class="headerlink" href="#module-arcgis.features.managers" title="Permalink to this headline">¶</a></h1>
+<p>Helper classes for managing feature layers and datasets.  These class are not created by users directly.
+Instances of this class, are available as a properties of feature layers and make it easier to manage them.</p>
+<div class="section" id="attachmentmanager">
+<h2>AttachmentManager<a class="headerlink" href="#attachmentmanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.features.managers.AttachmentManager">
+<em class="property">class </em><code class="descclassname">arcgis.features.managers.</code><code class="descname">AttachmentManager</code><span class="sig-paren">(</span><em>layer</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager class for manipulating feature layer attachments. This class is not created by users directly.
+An instance of this class, called &#8216;attachments&#8217;, is available as a property of the FeatureLayer object,
+if the layer supports attachments.
+Users call methods on this &#8216;attachments&#8217; object to manipulate (create, get, list, delete) attachments.</p>
+<dl class="method">
+<dt id="arcgis.features.managers.AttachmentManager.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>oid</em>, <em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an attachment to a feature layer
+Input:</p>
+<blockquote>
+<div>oid - string - OBJECTID value to add attachment to
+file_path - string - path to file</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>JSON Repsonse</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.AttachmentManager.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>removes an attachment from a feature
+Input:</p>
+<blockquote>
+<div>oid - integer or string - id of feature
+attachment_id - integer - id of attachment to erase</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>JSON response</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.AttachmentManager.download">
+<code class="descname">download</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em>, <em>save_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>downloads attachment and returns it&#8217;s path on disk</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.AttachmentManager.get_list">
+<code class="descname">get_list</code><span class="sig-paren">(</span><em>oid</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager.get_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the list of attachements for a given OBJECT ID</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.AttachmentManager.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>oid</em>, <em>attachment_id</em>, <em>file_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.AttachmentManager.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>updates an existing attachment with a new file
+Inputs:</p>
+<blockquote>
+<div>oid - string/integer - Unique record ID
+attachment_id - integer - Unique attachment identifier
+file_path - string - path to new attachment</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>JSON response</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="replicamanager">
+<h2>ReplicaManager<a class="headerlink" href="#replicamanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.features.managers.ReplicaManager">
+<em class="property">class </em><code class="descclassname">arcgis.features.managers.</code><code class="descname">ReplicaManager</code><span class="sig-paren">(</span><em>featsvc</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manager class for manipulating replicas for disconnected editing of feature datasets.
+This class is not created by users directly.
+An instance of this class, called &#8216;replicas&#8217;, is available as a property of the FeatureLayerCollection object,
+if the layer is sync enabled / supports disconnected editing.
+Users call methods on this &#8216;replicas&#8217; object to manipulate (create, synchronize, unregister) replicas.</p>
+<dl class="method">
+<dt id="arcgis.features.managers.ReplicaManager.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>replica_name</em>, <em>layers</em>, <em>layer_queries=None</em>, <em>geometry_filter=None</em>, <em>replica_sr=None</em>, <em>transport_type='esriTransportTypeUrl'</em>, <em>return_attachments=False</em>, <em>return_attachments_databy_url=False</em>, <em>async=False</em>, <em>attachments_sync_direction='none'</em>, <em>sync_model='none'</em>, <em>data_format='json'</em>, <em>replica_options=None</em>, <em>wait=False</em>, <em>out_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>The create operation is performed on a feature dataset
+resource. This operation creates the replica between the feature
+dataset and a client based on a client-supplied replica definition.
+It requires the Sync capability. See Sync overview for more
+information on sync. The response for create includes
+replicaID, replica generation number, and data similar to the
+response from the feature dataset query operation.
+The create operation returns a response of type
+esriReplicaResponseTypeData, as the response has data for the
+layers in the replica. If the operation is called to register
+existing data by using replicaOptions, the response type will be
+esriReplicaResponseTypeInfo, and the response will not contain data
+for the layers in the replica.</p>
+<dl class="docutils">
+<dt>Inputs:</dt>
+<dd><p class="first">replicaName - name of the replica
+layers - layers to export
+layerQueries - In addition to the layers and geometry parameters, the layerQueries</p>
+<blockquote>
+<div><p>parameter can be used to further define what is replicated. This
+parameter allows you to set properties on a per layer or per table
+basis. Only the properties for the layers and tables that you want
+changed from the default are required.
+Example:</p>
+<blockquote>
+<div>layerQueries = {&#8220;0&#8221;:{&#8220;queryOption&#8221;: &#8220;useFilter&#8221;, &#8220;useGeometry&#8221;: true,
+&#8220;where&#8221;: &#8220;requires_inspection = Yes&#8221;}}</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>geometryFilter - Geospatial filter applied to the replica to</dt>
+<dd>parse down data output.</dd>
+<dt>returnAttachments - If true, attachments are added to the replica and returned in the</dt>
+<dd>response. Otherwise, attachments are not included.</dd>
+<dt>returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each</dt>
+<dd>attachment returned from createReplica. Otherwise,
+attachments are embedded in the response.</dd>
+</dl>
+<p>replicaSR - the spatial reference of the replica geometry.
+transportType -  The transportType represents the response format. If the</p>
+<blockquote>
+<div>transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+and the URL link to the file is returned. Otherwise, the JSON object is returned
+directly. The default is esriTransportTypeUrl.
+If async is true, the results will always be returned as if transportType is
+esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
+esriTransportTypeUrl regardless of how the parameter is set.
+Values: esriTransportTypeUrl | esriTransportTypeEmbedded</div></blockquote>
+<dl class="docutils">
+<dt>returnAttachments - If true, attachments are added to the replica and returned in</dt>
+<dd>the response. Otherwise, attachments are not included. The default is false. This
+parameter is only applicable if the feature service has attachments.</dd>
+<dt>returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for</dt>
+<dd>each attachment returned from createReplica. Otherwise, attachments are embedded
+in the response. The default is true. This parameter is only applicable if the
+feature service has attachments and if returnAttachments is true.</dd>
+<dt>attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when</dt>
+<dd>creating a replica. AttachmentsSyncDirection is currently a createReplica property
+and cannot be overridden during sync.
+Values: none, upload, bidirectional</dd>
+<dt>async - If true, the request is processed as an asynchronous job, and a URL is</dt>
+<dd>returned that a client can visit to check the status of the job. See the topic on
+asynchronous usage for more information. The default is false.</dd>
+<dt>syncModel - Client can specify the attachmentsSyncDirection when creating a replica.</dt>
+<dd>AttachmentsSyncDirection is currently a createReplica property and cannot be
+overridden during sync.</dd>
+<dt>dataFormat - The format of the replica geodatabase returned in the response. The</dt>
+<dd>default is json.
+Values: filegdb, json, sqlite, shapefile</dd>
+<dt>replicaOptions - This parameter instructs the createReplica operation to create a</dt>
+<dd>new replica based on an existing replica definition (refReplicaId). It can be used
+to specify parameters for registration of existing data for sync. The operation
+will create a replica but will not return data. The responseType returned in the
+createReplica response will be esriReplicaResponseTypeInfo.</dd>
+</dl>
+<p class="last">wait - if async, wait to pause the process until the async operation is completed.
+out_path - folder path to save the file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.ReplicaManager.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>replica_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns replica metadata for a specific replica.
+Inputs:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>replica_id - The replicaID returned by the feature service</dt>
+<dd>when the replica was created.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.ReplicaManager.get_list">
+<code class="descname">get_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager.get_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns all the replicas for the feature dataset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.ReplicaManager.synchronize">
+<code class="descname">synchronize</code><span class="sig-paren">(</span><em>replica_id</em>, <em>transport_type='esriTransportTypeUrl'</em>, <em>replica_server_gen=None</em>, <em>return_ids_for_adds=False</em>, <em>edits=None</em>, <em>return_attachment_databy_url=False</em>, <em>async=False</em>, <em>sync_direction='snapshot'</em>, <em>sync_layers='perReplica'</em>, <em>edits_upload_id=None</em>, <em>edits_upload_format=None</em>, <em>data_format='json'</em>, <em>rollback_on_failure=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager.synchronize" title="Permalink to this definition">¶</a></dt>
+<dd><p>synchronizes replica with feature dataset
+<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000</a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.ReplicaManager.unregister">
+<code class="descname">unregister</code><span class="sig-paren">(</span><em>replica_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.ReplicaManager.unregister" title="Permalink to this definition">¶</a></dt>
+<dd><p>unregisters a replica from a feature dataset
+Inputs:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>replica_id - The replicaID returned by the feature service</dt>
+<dd>when the replica was created.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="featurelayercollectionmanager">
+<h2>FeatureLayerCollectionManager<a class="headerlink" href="#featurelayercollectionmanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager">
+<em class="property">class </em><code class="descclassname">arcgis.features.managers.</code><code class="descname">FeatureLayerCollectionManager</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>fs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows updating the definition (if access permits) of a feature dataset.
+This class is not created by users directly.
+An instance of this class, called &#8216;manager&#8217;, is available as a property of the FeatureLayerCollection object.</p>
+<p>Users call methods on this &#8216;manager&#8217; object to manage the feature dataset.</p>
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.add_to_definition">
+<code class="descname">add_to_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.add_to_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The add_to_definition operation supports adding a definition
+property to a hosted feature dataset service. The result of this
+operation is a response indicating success or failure with error
+code and description.</p>
+<p>This function will allow users to change add additional values
+to an already published service.</p>
+<dl class="docutils">
+<dt>Input:</dt>
+<dd><dl class="first last docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the properties property.  For
+layer level modifications, run updates on each
+individual feature service layer object.</dd>
+</dl>
+</dd>
+<dt>Output:</dt>
+<dd>JSON message as dictionary</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.delete_from_definition">
+<code class="descname">delete_from_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.delete_from_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The delete_from_definition operation supports deleting a
+definition property from a hosted feature dataset service. The result of
+this operation is a response indicating success or failure with
+error code and description.
+See <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/</a> # noqa
+for additional information on this function.
+Input:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the properties property.  For
+layer level modifications, run updates on each
+individual feature service layer object.  Only
+include the items you want to remove from the
+FeatureService or layer.</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>JSON Message as dictionary</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.fromitem">
+<code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.invoke">
+<code class="descname">invoke</code><span class="sig-paren">(</span><em>method</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.invoke" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the specified method on this service passing in parameters from the kwargs name-value pairs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>refreshes a feature dataset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.update_definition">
+<code class="descname">update_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.update_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The update_definition operation supports updating a definition
+property in a hosted feature dataset service. The result of this
+operation is a response indicating success or failure with error
+code and description.</p>
+<dl class="docutils">
+<dt>Input:</dt>
+<dd><dl class="first last docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the properties property.  For
+layer level modifications, run updates on each
+individual feature service layer object.</dd>
+</dl>
+</dd>
+<dt>Output:</dt>
+<dd>JSON Message as dictionary</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="featurelayermanager">
+<h2>FeatureLayerManager<a class="headerlink" href="#featurelayermanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.features.managers.FeatureLayerManager">
+<em class="property">class </em><code class="descclassname">arcgis.features.managers.</code><code class="descname">FeatureLayerManager</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows updating the definition (if access permits) of a feature layer. This class is not created by users
+directly.
+An instance of this class, called &#8216;manager&#8217;, is available as a property of the FeatureLayer object,
+if the layer can be managed by the user.
+Users call methods on this &#8216;manager&#8217; object to manage the feature layer.</p>
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.add_to_definition">
+<code class="descname">add_to_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.add_to_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The addToDefinition operation supports adding a definition
+property to a hosted feature layer. The result of this
+operation is a response indicating success or failure with error
+code and description.</p>
+<p>This function will allow users to change add additional values
+to an already published service.</p>
+<dl class="docutils">
+<dt>Input:</dt>
+<dd><dl class="first last docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the asDictionary property.  For
+layer level modifications, run updates on each
+individual feature service layer object.</dd>
+</dl>
+</dd>
+<dt>Output:</dt>
+<dd>JSON message as dictionary</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.delete_from_definition">
+<code class="descname">delete_from_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.delete_from_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The deleteFromDefinition operation supports deleting a
+definition property from a hosted feature layer. The result of
+this operation is a response indicating success or failure with
+error code and description.
+See: <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/</a> # noqa
+for additional information on this function.
+Input:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the asDictionary property.  For
+layer level modifications, run updates on each
+individual feature service layer object.  Only
+include the items you want to remove from the
+FeatureService or layer.</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>JSON Message as dictionary</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.fromitem">
+<code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.invoke">
+<code class="descname">invoke</code><span class="sig-paren">(</span><em>method</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.invoke" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the specified method on this service passing in parameters from the kwargs name-value pairs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.refresh">
+<code class="descname">refresh</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>refreshes a service</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.update_definition">
+<code class="descname">update_definition</code><span class="sig-paren">(</span><em>json_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.update_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The updateDefinition operation supports updating a definition
+property in a hosted feature layer. The result of this
+operation is a response indicating success or failure with error
+code and description.</p>
+<dl class="docutils">
+<dt>Input:</dt>
+<dd><dl class="first last docutils">
+<dt>json_dict - part to add to host service.  The part format can</dt>
+<dd>be derived from the asDictionary property.  For
+layer level modifications, run updates on each
+individual feature service layer object.</dd>
+</dl>
+</dd>
+<dt>Output:</dt>
+<dd>JSON Message as dictionary</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="arcgis.raster.html" class="btn btn-neutral float-right" title="arcgis.raster module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="arcgis.features.summarize_data.html" class="btn btn-neutral" title="arcgis.features.summarize_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Esri.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

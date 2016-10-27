@@ -13,14 +13,19 @@ Contents:
    :caption: arcgis
 
    arcgis.gis
-   arcgis.lyr
-   arcgis.viz
-   arcgis.tools
-   arcgis.geom
+   arcgis.features.toc
+   arcgis.raster
+   arcgis.network
+   arcgis.schematics
+   arcgis.geoanalytics
+   arcgis.geocoding
+   arcgis.geometry
+   arcgis.geoprocessing
+   arcgis.mapping
+   
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-

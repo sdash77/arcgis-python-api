@@ -36,7 +36,7 @@ import sphinx_rtd_theme
 
 # Add the source code to sys path. Sphinx autodoc will try to import the source 
 # during the build process
-sys.path.insert(0,'D:\\code\\Python\\myForks\\geosaurus\\src')
+sys.path.insert(0,'C:\\xc\\GitHub\\geosaurus\\src')
 
 html_theme = 'sphinx_rtd_theme'
 
