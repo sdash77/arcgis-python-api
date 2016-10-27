@@ -34,15 +34,15 @@ class FeatureLayer(Layer):
     Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
-    def __init__(self, url, gis=None, storage=None):
+    def __init__(self, url, gis=None, container=None):
         """
         Constructs a feature layer given a feature layer URL
         :param url: feature layer url
         :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
-        :param storage: optional, the feature layer collection to which this layer belongs
+        :param container: optional, the feature layer collection to which this layer belongs
         """
         super(FeatureLayer, self).__init__(url, gis)
-        self._storage = storage
+        self._storage = container
         self.attachments = AttachmentManager(self)
 
     @property
@@ -61,14 +61,14 @@ class FeatureLayer(Layer):
         return res
 
     @property
-    def storage(self):
+    def container(self):
         """
         The feature layer collection to which this layer belongs.
         """
         return self._storage
 
-    @storage.setter
-    def storage(self, value):
+    @container.setter
+    def container(self, value):
         """
         The feature layer collection to which this layer belongs.
         """
