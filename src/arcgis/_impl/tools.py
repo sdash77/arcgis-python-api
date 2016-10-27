@@ -32,6 +32,7 @@ class _GISService(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None):
+        from arcgis.features import FeatureCollection
         self._token = None
 
         self.url = url

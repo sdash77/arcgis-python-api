@@ -39,7 +39,7 @@ class FeatureLayer(Layer):
         Constructs a feature layer given a feature layer URL
         :param url: feature layer url
         :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
-        :param storage: optional, the feature dataset to which this layer belongs
+        :param storage: optional, the feature layer collection to which this layer belongs
         """
         super(FeatureLayer, self).__init__(url, gis)
         self._storage = storage
@@ -674,7 +674,7 @@ class FeatureLayerCollection(_GISResource):
     """
     A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 
-    In a web GIS, a feature dataset is exposed as a feature service with multiple feature layers.
+    In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
 
     Instances of FeatureDatasets can be obtained from feature service Items in the GIS using
     `FeatureLayerCollection.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `dataset`
@@ -683,7 +683,7 @@ class FeatureLayerCollection(_GISResource):
     FeatureDatasets can be configured and managed using their `manager` helper object.
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
-    replicas for disconnected editing of the feature dataset.
+    replicas for disconnected editing of the feature layer collection.
     """
 
     def __init__(self, url, gis=None):
@@ -728,7 +728,7 @@ class FeatureLayerCollection(_GISResource):
 
     @property
     def manager(self):
-        """ helper object to manage the feature dataset, update it's definition, etc """
+        """ helper object to manage the feature layer collection, update it's definition, etc """
         if self._admin is None:
             url = self._url
             res = search("/rest/", url).span()

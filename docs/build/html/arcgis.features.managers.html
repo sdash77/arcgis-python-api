@@ -35,8 +35,8 @@
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
         <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
-        <link rel="next" title="arcgis.features.analyze_patterns module" href="arcgis.features.analyze_patterns.html"/>
-        <link rel="prev" title="arcgis.features module" href="arcgis.features.toc.html"/> 
+        <link rel="next" title="arcgis.raster module" href="arcgis.raster.html"/>
+        <link rel="prev" title="arcgis.features.summarize_data module" href="arcgis.features.summarize_data.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -108,13 +108,6 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.managers module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#attachmentmanager">AttachmentManager</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#replicamanager">ReplicaManager</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#featurelayercollectionmanager">FeatureLayerCollectionManager</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#featurelayermanager">FeatureLayerManager</a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
@@ -146,6 +139,13 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#aggregate-points">aggregate_points</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-nearby">summarize_nearby</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.summarize_data.html#summarize-within">summarize_within</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.managers module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attachmentmanager">AttachmentManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#replicamanager">ReplicaManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#featurelayercollectionmanager">FeatureLayerCollectionManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#featurelayermanager">FeatureLayerManager</a></li>
 </ul>
 </li>
 </ul>
@@ -292,7 +292,8 @@
             
   <div class="section" id="module-arcgis.features.managers">
 <span id="arcgis-features-managers-module"></span><h1>arcgis.features.managers module<a class="headerlink" href="#module-arcgis.features.managers" title="Permalink to this headline">¶</a></h1>
-<p>Helper classes for managing feature layers and datasets.</p>
+<p>Helper classes for managing feature layers and datasets.  These class are not created by users directly.
+Instances of this class, are available as a properties of feature layers and make it easier to manage them.</p>
 <div class="section" id="attachmentmanager">
 <h2>AttachmentManager<a class="headerlink" href="#attachmentmanager" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -554,6 +555,11 @@ FeatureService or layer.</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerCollectionManager.fromitem">
+<code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="arcgis.features.managers.FeatureLayerCollectionManager.invoke">
 <code class="descname">invoke</code><span class="sig-paren">(</span><em>method</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerCollectionManager.invoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the specified method on this service passing in parameters from the kwargs name-value pairs</p>
@@ -649,6 +655,11 @@ FeatureService or layer.</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="arcgis.features.managers.FeatureLayerManager.fromitem">
+<code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="arcgis.features.managers.FeatureLayerManager.invoke">
 <code class="descname">invoke</code><span class="sig-paren">(</span><em>method</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.invoke" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the specified method on this service passing in parameters from the kwargs name-value pairs</p>
@@ -693,10 +704,10 @@ individual feature service layer object.</dd>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.features.analyze_patterns.html" class="btn btn-neutral float-right" title="arcgis.features.analyze_patterns module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.raster.html" class="btn btn-neutral float-right" title="arcgis.raster module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.features.toc.html" class="btn btn-neutral" title="arcgis.features module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.features.summarize_data.html" class="btn btn-neutral" title="arcgis.features.summarize_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

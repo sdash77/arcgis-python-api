@@ -1,5 +1,6 @@
 """
-Helper classes for managing feature layers and datasets.
+Helper classes for managing feature layers and datasets.  These class are not created by users directly.
+Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
 
 import collections
@@ -68,7 +69,7 @@ class AttachmentManager(object):
 
 class ReplicaManager(object):
     """
-    Manager class for manipulating replicas for disconnected editing of feature datasets.
+    Manager class for manipulating replicas for disconnected editing of feature layer collections.
     This class is not created by users directly.
     An instance of this class, called 'replicas', is available as a property of the FeatureLayerCollection object,
     if the layer is sync enabled / supports disconnected editing.
@@ -79,13 +80,13 @@ class ReplicaManager(object):
         self._fs = featsvc
 
     def get_list(self):
-        """ returns all the replicas for the feature dataset """
+        """ returns all the replicas for the feature layer collection """
         return self._fs._replicas
 
     # ----------------------------------------------------------------------
     def unregister(self, replica_id):
         """
-           unregisters a replica from a feature dataset
+           unregisters a replica from a feature layer collection
            Inputs:
              replica_id - The replicaID returned by the feature service
                           when the replica was created.
@@ -120,13 +121,13 @@ class ReplicaManager(object):
                wait=False,
                out_path=None):
         """
-        The create operation is performed on a feature dataset
+        The create operation is performed on a feature layer collection
         resource. This operation creates the replica between the feature
         dataset and a client based on a client-supplied replica definition.
         It requires the Sync capability. See Sync overview for more
         information on sync. The response for create includes
         replicaID, replica generation number, and data similar to the
-        response from the feature dataset query operation.
+        response from the feature layer collection query operation.
         The create operation returns a response of type
         esriReplicaResponseTypeData, as the response has data for the
         layers in the replica. If the operation is called to register
@@ -221,7 +222,7 @@ class ReplicaManager(object):
                     data_format="json",
                     rollback_on_failure=True):
         """
-        synchronizes replica with feature dataset
+        synchronizes replica with feature layer collection
         http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
         """
         # TODO:
@@ -242,11 +243,11 @@ class ReplicaManager(object):
 
 class FeatureLayerCollectionManager(_GISResource):
     """
-    Allows updating the definition (if access permits) of a feature dataset.
+    Allows updating the definition (if access permits) of a feature layer collection.
     This class is not created by users directly.
     An instance of this class, called 'manager', is available as a property of the FeatureLayerCollection object.
 
-    Users call methods on this 'manager' object to manage the feature dataset.
+    Users call methods on this 'manager' object to manage the feature layer collection.
     """
 
     def __init__(self, url, gis=None, fs=None):
@@ -278,7 +279,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a feature dataset """
+        """ refreshes a feature layer collection """
         params = {"f": "json"}
         refresh_url = self._url + "/refresh"
         res = self._con.post(refresh_url, params)
@@ -295,7 +296,7 @@ class FeatureLayerCollectionManager(_GISResource):
     def add_to_definition(self, json_dict):
         """
            The add_to_definition operation supports adding a definition
-           property to a hosted feature dataset service. The result of this
+           property to a hosted feature layer collection service. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -327,7 +328,7 @@ class FeatureLayerCollectionManager(_GISResource):
     def update_definition(self, json_dict):
         """
            The update_definition operation supports updating a definition
-           property in a hosted feature dataset service. The result of this
+           property in a hosted feature layer collection service. The result of this
            operation is a response indicating success or failure with error
            code and description.
 
@@ -400,7 +401,7 @@ class FeatureLayerCollectionManager(_GISResource):
     def delete_from_definition(self, json_dict):
         """
         The delete_from_definition operation supports deleting a
-        definition property from a hosted feature dataset service. The result of
+        definition property from a hosted feature layer collection service. The result of
         this operation is a response indicating success or failure with
         error code and description.
         See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa

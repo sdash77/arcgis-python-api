@@ -8,9 +8,9 @@ entities - a set of entities is modelled as rows in a table.  Tables represent e
 properties.  In addition to working with “entities with location” as features, the system can also work with
 non-spatial entities as rows in tables.  The system can also model relationships between entities using properties
 which act as primary and foreign keys.  A collection of feature classes and tables, with the associated
-relationships among the entities, is a feature dataset. FeatureDatasets are one of the dataset types contained
-in a Datastore.  Finally, features are not simply entities in a dataset.  Features have a visual representation
-and user experience - on a map, in a 3D scene, as entities with a property sheet or popups.
+relationships among the entities, is a feature layer collection. FeatureLayerCollections are one of the dataset types
+contained in a Datastore.  Finally, features are not simply entities in a dataset.  Features have a visual
+representation and user experience - on a map, in a 3D scene, as entities with a property sheet or popups.
 """
 
 from .feature import Feature, FeatureSet, FeatureCollection
