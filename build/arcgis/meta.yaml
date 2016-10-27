@@ -17,15 +17,15 @@ requirements:
         - six
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
-        - pywin32
-        - kerberos-sspi
+        - pywin32          [win]
+        - kerberos-sspi    [win]
     run:
         - python
         - six
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
-        - pywin32
-        - kerberos-sspi
+        - pywin32          [win]
+        - kerberos-sspi    [win]
 test:
     imports:
         - arcgis
