@@ -1,0 +1,36 @@
+# This file created by conda-build 2.0.1
+# meta.yaml template originally from:
+# e:\share\conda-project\conda-packages\arcgis-api, last modified Mon Sep 19 14:51:09 2016
+# ------------------------------------------------
+
+package:
+    name: arcgis
+    version: '0.3'
+source:
+    path: ../../src
+build:
+    number: '1'
+requirements:
+    build:
+        - python
+        - setuptools
+        - six
+        - ipywidgets >=5.2.2
+        - widgetsnbextension >=1.2.6
+        - pywin32          [win]
+        - kerberos-sspi    [win]
+    run:
+        - python
+        - six
+        - ipywidgets >=5.2.2
+        - widgetsnbextension >=1.2.6
+        - pywin32          [win]
+        - kerberos-sspi    [win]
+test:
+    imports:
+        - arcgis
+        - arcgis.viz
+about:
+    home: https://developers.arcgis.com/python
+    license: Esri License
+    summary: ArcGIS Python API (Pre-release)
