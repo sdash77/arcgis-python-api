@@ -1,5 +1,5 @@
 """
-These tools are used to identify areas that meet a number of different criteria you specify. These criteria can be based
+These functions are used to identify areas that meet a number of different criteria you specify. These criteria can be based
 upon attribute queries (for example, parcels that are vacant) and spatial queries (for example, within 1 kilometer of a
 river). The areas that are found can be selected from existing features (such as existing land parcels) or new features
 can be created where all the requirements are met.
@@ -16,6 +16,7 @@ trace_downstream determines the flow paths in a downstream direction from the lo
 
 
 def find_existing_locations(
+        gis,
         input_layers=[],
         expressions=[],
         output_name=None,
@@ -29,6 +30,8 @@ def find_existing_locations(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layers : Required list of strings
         A list of layers that will be used in the expressions parameter.
     expressions : Required string
@@ -43,10 +46,15 @@ def find_existing_locations(
     -------
     result_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.find_existing_locations(
+        input_layers,
+        expressions,
+        output_name,
+        context)
 
 
 def derive_new_locations(
+        gis,
         input_layers=[],
         expressions=[],
         output_name=None,
@@ -66,6 +74,8 @@ def derive_new_locations(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layers : Required list of strings
         A list of layers that will be used in the expressions parameter.
     expressions : Required string
@@ -80,10 +90,15 @@ def derive_new_locations(
     -------
     result_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.derive_new_locations(
+        input_layers,
+        expressions,
+        output_name,
+        context)
 
 
 def find_similar_locations(
+        gis,
         input_layer,
         search_layer,
         analysis_fields=[],
@@ -96,6 +111,8 @@ def find_similar_locations(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layer : Required layer (see Feature Input in documentation)
 
     search_layer : Required layer (see Feature Input in documentation)
@@ -117,18 +134,26 @@ def find_similar_locations(
        "similar_result_layer" : layer (FeatureCollection)
        "process_info" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.find_similar_locations(
+        input_layer,
+        search_layer,
+        analysis_fields,
+        input_query,
+        number_of_results,
+        output_name,
+        context)
 
-
+"""
 def choose_best_facilities():
-    """
+    '
     Choose the best locations for facilities by allocating locations that have demand for these facilities in a way that
     satisfies a given goal.
-    """
-    pass
-
+    '
+    pass #TODO
+"""
 
 def create_viewshed(
+        gis,
         input_layer,
         dem_resolution="Finest",
         maximum_distance=None,
@@ -145,6 +170,8 @@ def create_viewshed(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layer : Required layer (see Feature Input in documentation)
 
     dem_resolution : Optional string
@@ -172,10 +199,23 @@ def create_viewshed(
     -------
     viewshed_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.create_viewshed(
+        gis,
+        input_layer,
+        dem_resolution,
+        maximum_distance,
+        max_distance_units,
+        observer_height,
+        observer_height_units,
+        target_height,
+        target_height_units,
+        generalize,
+        output_name,
+        context)
 
 
 def create_watersheds(
+        gis,
         input_layer,
         search_distance=None,
         search_units="Meters",
@@ -188,6 +228,8 @@ def create_watersheds(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layer : Required layer (see Feature Input in documentation)
 
     search_distance : Optional float
@@ -209,10 +251,18 @@ def create_watersheds(
        "snap_pour_pts_layer" : layer (FeatureCollection)
        "watershed_layer" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.create_watersheds(
+        input_layer,
+        search_distance,
+        search_units,
+        source_database,
+        generalize,
+        output_name,
+        context)
 
 
 def trace_downstream(
+        gis,
         input_layer,
         split_distance=None,
         split_units="Kilometers",
@@ -228,6 +278,8 @@ def trace_downstream(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layer : Required layer (see Feature Input in documentation)
 
     split_distance : Optional float
@@ -253,4 +305,14 @@ def trace_downstream(
     -------
     trace_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.trace_downstream(
+        input_layer,
+        split_distance,
+        split_units,
+        max_distance,
+        max_distance_units,
+        bounding_polygon_layer,
+        source_database,
+        generalize,
+        output_name,
+        context)

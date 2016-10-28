@@ -1,13 +1,13 @@
 """
-These tools help you identify, quantify, and visualize spatial patterns in your data.
+These functions help you identify, quantify, and visualize spatial patterns in your data.
 
 calculate_density takes known quantities of some phenomenon and spreads these quantities across the map.
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
 
-
 def calculate_density(
+        gis,
         input_layer,
         field=None,
         cell_size=None,
@@ -21,12 +21,13 @@ def calculate_density(
         output_name=None,
         context=None):
     """
-    The Calculate Density task creates a density map from point or line features by spreading known quantities of some
-    phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
+    The calculate_density function creates a density map from point or line features by spreading known quantities of
+    some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
     classified from least dense to most dense.
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The point or line features from which to calculate density.
     field : Optional string
@@ -59,10 +60,23 @@ def calculate_density(
     -------
     result_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.analyze_patterns(
+        input_layer,
+        field,
+        cell_size,
+        cell_size_units,
+        radius,
+        radius_units,
+        bounding_polygon_layer,
+        area_units,
+        classification_type,
+        num_classes,
+        output_name,
+        context)
 
 
 def find_hot_spots(
+        gis,
         analysis_layer,
         analysis_field=None,
         divided_by_field=None,
@@ -71,11 +85,13 @@ def find_hot_spots(
         output_name=None,
         context=None):
     """
-    The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted
-    polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
+    The Find Hot Spots function finds statistically significant clusters of incident points, weighted points, or
+    weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation.
+    Output is a hot spot map.
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     analysis_layer : Required layer (see Feature Input in documentation)
         The point or polygon feature layer for which hot spots will be calculated.
     analysis_field : Optional string
@@ -99,10 +115,19 @@ def find_hot_spots(
        "hot_spots_result_layer" : layer (FeatureCollection)
        "process_info" : list of messages
     """
-    pass
+    return gis._tools._analysis.find_hot_spots(
+        gis,
+        analysis_layer,
+        analysis_field,
+        divided_by_field,
+        bounding_polygon_layer,
+        aggregation_polygon_layer,
+        output_name,
+        context)
 
 
 def interpolate_points(
+        gis,
         input_layer,
         field,
         interpolate_option="5",
@@ -115,11 +140,13 @@ def interpolate_points(
         output_name=None,
         context=None):
     """
-    The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of
-    points. The task takes point data with values at each point and returns areas classified by predicted values.
+    The Interpolate Points function allows you to predict values at new locations based on measurements from a
+    collection of points. The function takes point data with values at each point and returns areas classified by
+    predicted values.
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The point layer whose features will be interpolated.
     field : Required string
@@ -158,4 +185,15 @@ def interpolate_points(
        "prediction_error" : layer (FeatureCollection)
        "predicted_point_layer" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.interpolate_points(
+        input_layer,
+        field,
+        interpolate_option,
+        output_prediction_error,
+        classification_type,
+        num_classes,
+        class_breaks,
+        bounding_polygon_layer,
+        predict_at_point_layer,
+        output_name,
+        context)

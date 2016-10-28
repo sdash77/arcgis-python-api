@@ -1,5 +1,5 @@
 """
-These tools calculate total counts, lengths, areas, and basic descriptive statistics of features and their attributes
+These functions calculate total counts, lengths, areas, and basic descriptive statistics of features and their attributes
 within areas or near other features.
 
 aggregate_points calculates statistics about points that fall within specified areas.
@@ -7,7 +7,8 @@ summarize_nearby calculates statistics for features and their attributes that ar
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
 
-def aggregate_points(point_layer,
+def aggregate_points(gis,
+                     point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points=True,
                      summary_fields=[],
@@ -23,6 +24,7 @@ def aggregate_points(point_layer,
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     point_layer : Required layer (see Feature Input in documentation)
         Point layer to be aggregated
     polygon_layer : Required layer (see Feature Input in documentation)
@@ -51,11 +53,21 @@ def aggregate_points(point_layer,
        "aggregated_layer" : layer (FeatureCollection)
        "group_summary" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.aggregate_points(
+                     point_layer,
+                     polygon_layer,
+                     keep_boundaries_with_no_points,
+                     summary_fields,
+                     group_by_field,
+                     minority_majority,
+                     percent_points,
+                     output_name,
+                     context)
 
 
 
-def summarize_nearby(sum_nearby_layer,
+def summarize_nearby(gis,
+                     sum_nearby_layer,
                      summary_layer,
                      near_type="StraightLine",
                      distances=[],
@@ -81,6 +93,7 @@ def summarize_nearby(sum_nearby_layer,
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     sum_nearby_layer : Required layer (see Feature Input in documentation)
         Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.
     summary_layer : Required layer (see Feature Input in documentation)
@@ -135,10 +148,27 @@ def summarize_nearby(sum_nearby_layer,
        "result_layer" : layer (FeatureCollection)
        "group_by_summary" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.summarize_nearby(
+                     sum_nearby_layer,
+                     summary_layer,
+                     near_type,
+                     distances,
+                     units,
+                     time_of_day,
+                     time_zone_for_time_of_day,
+                     return_boundaries,
+                     sum_shape,
+                     shape_units,
+                     summary_fields,
+                     group_by_field,
+                     minority_majority,
+                     percent_shape,
+                     output_name,
+                     context)
 
 
-def summarize_within(sum_within_layer,
+def summarize_within(gis,
+                     sum_within_layer,
                      summary_layer,
                      sum_shape=True,
                      shape_units=None,
@@ -158,6 +188,7 @@ def summarize_within(sum_within_layer,
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     sum_within_layer : Required layer (see Feature Input in documentation)
         A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below)
         that fall within the boundaries of these polygons will be summarized.
@@ -193,4 +224,14 @@ def summarize_within(sum_within_layer,
        "result_layer" : layer (FeatureCollection)
        "group_by_summary" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.summarize_within(
+                     sum_within_layer,
+                     summary_layer,
+                     sum_shape,
+                     shape_units,
+                     summary_fields,
+                     group_by_field,
+                     minority_majority,
+                     percent_shape,
+                     output_name,
+                     context)

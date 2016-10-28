@@ -1,5 +1,5 @@
 """
-These tools help you answer one of the most common questions posed in spatial analysis: "What is near what?"
+These functions help you answer one of the most common questions posed in spatial analysis: "What is near what?"
 
 connect_origins_to_destinations measures the travel time or distance between pairs of points.
 create_buffers create areas of equal distance from features.
@@ -10,6 +10,7 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 
 
 def connect_origins_to_destinations(
+        gis,
         origins_layer,
         destinations_layer,
         measurement_type="DrivingTime",
@@ -24,6 +25,7 @@ def connect_origins_to_destinations(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     origins_layer : Required layer (see Feature Input in documentation)
         The routes start from points in the origins layer.
     destinations_layer : Required layer (see Feature Input in documentation)
@@ -54,10 +56,20 @@ def connect_origins_to_destinations(
        "unassigned_origins_layer" : layer (FeatureCollection)
        "unassigned_destinations_layer" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.connect_origins_to_destinations(
+        origins_layer,
+        destinations_layer,
+        measurement_type,
+        origins_layer_route_id_field,
+        destinations_layer_route_id_field,
+        time_of_day,
+        time_zone_for_time_of_day,
+        output_name,
+        context)
 
 
 def create_buffers(
+        gis,
         input_layer,
         distances=[],
         field=None,
@@ -73,6 +85,7 @@ def create_buffers(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The input to be buffered.
     distances : Optional list of floats
@@ -98,10 +111,21 @@ def create_buffers(
     -------
     buffer_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.create_buffers(
+        input_layer,
+        distances,
+        field,
+        units,
+        dissolve_type,
+        ring_type,
+        side_type,
+        end_type,
+        output_name,
+        context)
 
 
 def create_drive_time_areas(
+        gis,
         input_layer,
         break_values=[5, 10, 15],
         break_units="Minutes",
@@ -116,6 +140,7 @@ def create_drive_time_areas(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
 
     break_values : Optional list of floats
@@ -139,10 +164,20 @@ def create_drive_time_areas(
     -------
     drive_time_areas_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.create_drive_time_areas(
+        input_layer,
+        break_values,
+        break_units,
+        travel_mode,
+        overlap_policy,
+        time_of_day,
+        time_zone_for_time_of_day,
+        output_name,
+        context)
 
 
 def find_nearest(
+        gis,
         analysis_layer,
         near_layer,
         measurement_type="StraightLine",
@@ -160,6 +195,7 @@ def find_nearest(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     analysis_layer : Required layer (see Feature Input in documentation)
         For each feature in this layer, the task finds the nearest features from the nearLayer.
     near_layer : Required layer (see Feature Input in documentation)
@@ -188,10 +224,21 @@ def find_nearest(
        "nearest_layer" : layer (FeatureCollection)
        "connecting_lines_layer" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.find_nearest(
+        analysis_layer,
+        near_layer,
+        measurement_type,
+        max_count,
+        search_cutoff,
+        search_cutoff_units,
+        time_of_day,
+        time_zone_for_time_of_day,
+        output_name,
+        context)
 
 
 def plan_routes(
+        gis,
         stops_layer,
         route_count,
         max_stops_per_route,
@@ -215,6 +262,8 @@ def plan_routes(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     stops_layer : Required layer (see Feature Input in documentation)
 
     route_count : Required int
@@ -251,4 +300,18 @@ def plan_routes(
        "assigned_stops_layer" : layer (FeatureCollection)
        "unassigned_stops_layer" : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.plan_routes(
+        stops_layer,
+        route_count,
+        max_stops_per_route,
+        route_start_time,
+        start_layer,
+        start_layer_route_id_field,
+        return_to_start,
+        end_layer,
+        end_layer_route_id_field,
+        travel_mode,
+        stop_service_time,
+        max_route_time,
+        output_name,
+        context)

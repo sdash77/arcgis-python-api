@@ -1,12 +1,12 @@
 """
-These tools help you explore the character of areas. Detailed demographic data and statistics are returned for your
+These functions help you explore the character of areas. Detailed demographic data and statistics are returned for your
 chosen areas.
 
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
 
-def enrich_layer(
+def enrich_layer(gis,
                  input_layer,
                  data_collections=[],
                  analysis_variables=[],
@@ -17,13 +17,15 @@ def enrich_layer(
                  output_name=None,
                  context=None):
     """
-    The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround
+    The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
     your data locations. For example: What kind of people live here? What do people like to do in this area? What are
     their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
     features that includes all demographic and geographic information from given data collections.
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
+
     input_layer : Required layer (see Feature Input in documentation)
         Feature layer to enrich with new data
     data_collections : Optional list of strings
@@ -50,4 +52,13 @@ def enrich_layer(
     -------
     enriched_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.enrich_layer(gis,
+                 input_layer,
+                 data_collections,
+                 analysis_variables,
+                 country,
+                 buffer_type,
+                 distance,
+                 units,
+                 output_name,
+                 context)

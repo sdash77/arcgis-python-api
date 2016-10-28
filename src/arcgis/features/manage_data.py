@@ -1,5 +1,5 @@
 """
-These tools are used for both the day-to-day management of geographic data and for combining data prior to analysis.
+These functions are used for both the day-to-day management of geographic data and for combining data prior to analysis.
 
 dissolve_boundaries merges together areas that share a common boundary and a common attribute value.
 extract_data creates new datasets by extracting features from your existing data.
@@ -9,7 +9,7 @@ maps and creating a single map containing all the information found in the stack
 """
 
 
-def dissolve_boundaries(
+def dissolve_boundaries(gis,
         input_layer,
         dissolve_fields=[],
         summary_fields=[],
@@ -20,6 +20,7 @@ def dissolve_boundaries(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The layer containing polygon features that will be dissolved.
     dissolve_fields : Optional list of strings
@@ -37,11 +38,16 @@ def dissolve_boundaries(
     -------
     dissolved_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.dissolve_boundaries(
+        input_layer,
+        dissolve_fields,
+        summary_fields,
+        output_name,
+        context)
 
 
-def extract_data(
-        input_layers=[],
+def extract_data(gis,
+        input_layers,
         extent=None,
         clip=False,
         data_format=None,
@@ -53,6 +59,7 @@ def extract_data(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layers : Required list of strings
         The layers from which you can extract features.
     extent : Optional string
@@ -70,10 +77,16 @@ def extract_data(
     -------
     content_id : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.extract_data(
+        input_layers,
+        extent,
+        clip,
+        data_format,
+        output_name,
+        context)
 
 
-def merge_layers(
+def merge_layers(gis,
         input_layer,
         merge_layer,
         merging_attributes=[],
@@ -84,6 +97,7 @@ def merge_layers(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
          The point, line, or polygon  features to merge with the mergeLayer.
     merge_layer : Required layer (see Feature Input in documentation)
@@ -101,10 +115,15 @@ def merge_layers(
     -------
     merged_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.merge_layers(
+        input_layer,
+        merge_layer,
+        merging_attributes,
+        output_name,
+        context)
 
 
-def overlay_layers(
+def overlay_layers(gis,
         input_layer,
         overlay_layer,
         overlay_type="Intersect",
@@ -118,6 +137,7 @@ def overlay_layers(
 
     Parameters
     ----------
+    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The input analysis layer.
     overlay_layer : Required layer (see Feature Input in documentation)
@@ -141,4 +161,12 @@ def overlay_layers(
     -------
     output_layer : layer (FeatureCollection)
     """
-    pass
+    return gis._tools._analysis.overlay_layers(
+        input_layer,
+        overlay_layer,
+        overlay_type,
+        snap_to_input,
+        output_type,
+        tolerance,
+        output_name,
+        context)
