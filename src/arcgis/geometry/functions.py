@@ -1,38 +1,38 @@
+# https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer.
 
 # ----------------------------------------------------------------------
-def areas_and_lengths(
+def areas_and_lengths(gis,
                       polygons,
-                      lengthUnit,
-                      areaUnit,
-                      calculationType,
+                      length_unit,
+                      area_unit,
+                      calculation_type,
                       sr=4326):
     """
-       The areasAndLengths operation is performed on a geometry service
-       resource. This operation calculates areas and perimeter lengths
+       The areas_and_lengths function calculates areas and perimeter lengths
        for each polygon specified in the input array.
 
        Inputs:
           polygons - The array of polygons whose areas and lengths are
                      to be computed.
-          lengthUnit - The length unit in which the perimeters of
-                       polygons will be calculated. If calculationType
-                       is planar, then lengthUnit can be any esriUnits
+          length_unit - The length unit in which the perimeters of
+                       polygons will be calculated. If calculation_type
+                       is planar, then length_unit can be any esriUnits
                        constant. If lengthUnit is not specified, the
                        units are derived from sr. If calculationType is
                        not planar, then lengthUnit must be a linear
                        esriUnits constant, such as esriSRUnit_Meter or
-                       esriSRUnit_SurveyMile. If lengthUnit is not
+                       esriSRUnit_SurveyMile. If length_unit is not
                        specified, the units are meters. For a list of
                        valid units, see esriSRUnitType Constants and
                        esriSRUnit2Type Constant.
-          areaUnit - The area unit in which areas of polygons will be
-                     calculated. If calculationType is planar, then
-                     areaUnit can be any esriUnits constant. If
-                     areaUnit is not specified, the units are derived
-                     from sr. If calculationType is not planar, then
-                     areaUnit must be a linear esriUnits constant such
+          area_unit - The area unit in which areas of polygons will be
+                     calculated. If calculation_type is planar, then
+                     area_unit can be any esriUnits constant. If
+                     area_unit is not specified, the units are derived
+                     from sr. If calculation_type is not planar, then
+                     area_unit must be a linear esriUnits constant such
                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                     areaUnit is not specified, then the units are
+                     area_unit is not specified, then the units are
                      meters. For a list of valid units, see
                      esriSRUnitType Constants and esriSRUnit2Type
                      constant.
@@ -42,7 +42,7 @@ def areas_and_lengths(
                      esriSquareMillimeters | esriSquareCentimeters |
                      esriSquareDecimeters | esriSquareMeters | esriAres
                      | esriHectares | esriSquareKilometers.
-          calculationType -  The type defined for the area and length
+          calculation_type -  The type defined for the area and length
                              calculation of the input geometries. The
                              type can be one of the following values:
                              planar - Planar measurements use 2D
@@ -70,54 +70,22 @@ def areas_and_lengths(
        Output:
           JSON as dictionary
     """
-    pass
+    return gis._tools._geometry.areasAndLengths(
+        polygons,
+        length_unit,
+        area_unit,
+        calculation_type,
+        sr)
 
 
 # ----------------------------------------------------------------------
-def __geometryListToGeomTemplate( geometries):
-    """
-        converts a list of common.Geometry objects to the geometry
-        template value
-        Input:
-           geometries - list of common.Geometry objects
-        Output:
-           Dictionary in geometry service template
-    """
-    pass
-
-
-# ----------------------------------------------------------------------
-def __geometryToGeomTemplate( geometry):
-    """
-       Converts a single geometry object to a geometry service geometry
-       template value.
-
-       Input:
-          geometry - geometry object
-       Output:
-          python dictionary of geometry template
-    """
-    pass
-
-
-# ----------------------------------------------------------------------
-def __geomToStringArray( geometries, returnType="str"):
-    """ function to convert the geomtries to strings """
-    pass
-
-# ----------------------------------------------------------------------
-def _process_results( results):
-    pass
-
-
-# ----------------------------------------------------------------------
-def auto_complete(
+def auto_complete(gis,
                   polygons=None,
                   polylines=None,
                   sr=None
                   ):
     """
-       The autoComplete operation simplifies the process of
+       The auto_complete function simplifies the process of
        constructing new polygons that are adjacent to other polygons.
        It constructs polygons that fill in the gaps between existing
        polygons and a set of polylines.
@@ -131,37 +99,37 @@ def auto_complete(
 
 
 # ----------------------------------------------------------------------
-def buffer(
+def buffer(gis,
            geometries,
-           inSR,
+           in_sr,
            distances,
            unit,
-           outSR=None,
-           bufferSR=None,
-           unionResults=True,
+           out_sr=None,
+           buffer_sr=None,
+           union_results=True,
            geodesic=True
            ):
     """
-       The buffer operation is performed on a geometry service resource
-       The result of this operation is buffered polygons at the
+       The buffer function is performed on a geometry service resource
+       The result of this function is buffered polygons at the
        specified distances for the input geometry array. Options are
        available to union buffers and to use geodesic distance.
 
        Inputs:
          geometries - The array of geometries to be buffered.
-         isSR - The well-known ID of the spatial reference or a spatial
+         is_sr - The well-known ID of the spatial reference or a spatial
           reference JSON object for the input geometries.
          distances - The distances that each of the input geometries is
           buffered.
          unit - The units for calculating each buffer distance. If unit
           is not specified, the units are derived from bufferSR. If
           bufferSR is not specified, the units are derived from inSR.
-         outSR - The well-known ID of the spatial reference or a
+         out_sr - The well-known ID of the spatial reference or a
           spatial reference JSON object for the input geometries.
-         bufferSR - The well-known ID of the spatial reference or a
+         buffer_sr - The well-known ID of the spatial reference or a
           spatial reference JSON object for the input geometries.
-         unionResults -  If true, all geometries buffered at a given
-          distance are unioned into a single (possibly multipart)
+         union_results -  If true, all geometries buffered at a given
+          distance are unioned into a single (gis,possibly multipart)
           polygon, and the unioned geometry is placed in the output
           array. The default is false
          geodesic - Set geodesic to true to buffer the input geometries
@@ -175,11 +143,11 @@ def buffer(
 
 
 # ----------------------------------------------------------------------
-def convex_hull(
+def convex_hull(gis,
                 geometries,
                 sr=None):
     """
-    The convexHull operation is performed on a geometry service
+    The convex_hull function is performed on a geometry service
     resource. It returns the convex hull of the input geometry. The
     input geometry can be a point, multipoint, polyline, or polygon.
     The convex hull is typically a polygon but can also be a polyline
@@ -194,15 +162,15 @@ def convex_hull(
 
 
 # ----------------------------------------------------------------------
-def cut(
+def cut(gis,
         cutter,
         target,
         sr=None):
     """
-    The cut operation is performed on a geometry service resource. This
-    operation splits the target polyline or polygon where it's crossed
+    The cut function is performed on a geometry service resource. This
+    function splits the target polyline or polygon where it's crossed
     by the cutter polyline.
-    At 10.1 and later, this operation calls simplify on the input
+    At 10.1 and later, this function calls simplify on the input
     cutter and target geometries.
 
     Inputs:
@@ -223,16 +191,16 @@ def cut(
 
 
 # ----------------------------------------------------------------------
-def density(
+def density(gis,
             geometries,
             sr,
-            maxSegmentLength,
-            lengthUnit,
+            max_segment_length,
+            length_unit,
             geodesic=False,
             ):
     """
-    The densify operation is performed on a geometry service resource.
-    This operation densifies geometries by plotting points between
+    The densify function is performed using the GIS's geometry engine.
+    This function densifies geometries by plotting points between
     existing vertices.
 
     Inputs:
@@ -243,34 +211,34 @@ def density(
        sr - The well-known ID or a spatial reference JSON object for
         the input polylines. For a list of valid WKID values, see
         Projected coordinate systems and Geographic coordinate systems.
-       maxSegmentLength - All segments longer than maxSegmentLength are
+       max_segment_length - All segments longer than maxSegmentLength are
         replaced with sequences of lines no longer than
         maxSegmentLength.
-       lengthUnit - The length unit of maxSegmentLength. If geodesic is
+       length_unit - The length unit of max_segment_length. If geodesic is
         set to false, then the units are derived from sr, and
-        lengthUnit is ignored. If geodesic is set to true, then
-        lengthUnit must be a linear unit. In a case where lengthUnit is
+        length_unit is ignored. If geodesic is set to true, then
+        length_unit must be a linear unit. In a case where length_unit is
         not specified and sr is a PCS, the units are derived from sr.
-        In a case where lengthUnit is not specified and sr is a GCS,
+        In a case where length_unit is not specified and sr is a GCS,
         then the units are meters.
        geodesic - If geodesic is set to true, then geodesic distance is
-        used to calculate maxSegmentLength. Geodesic distance is the
+        used to calculate max_segment_length. Geodesic distance is the
         shortest path between two points along the ellipsoid of the
         earth. If geodesic is set to false, then 2D Euclidean distance
-        is used to calculate maxSegmentLength. The default is false.
+        is used to calculate max_segment_length. The default is false.
     """
     pass
 
 
 # ----------------------------------------------------------------------
-def difference(
+def difference(gis,
                geometries,
                sr,
                geometry
                ):
     """
-    The difference operation is performed on a geometry service
-    resource. This operation constructs the set-theoretic difference
+    The difference function is performed on a geometry service
+    resource. This function constructs the set-theoretic difference
     between each element of an array of geometries and another geometry
     the so-called difference geometry. In other words, let B be the
     difference geometry. For each geometry, A, in the input geometry
@@ -293,7 +261,7 @@ def difference(
 
 
 # ----------------------------------------------------------------------
-def distance(
+def distance(gis,
              sr,
              geometry1,
              geometry2,
@@ -301,7 +269,7 @@ def distance(
              geodesic=False
              ):
     """
-    The distance operation is performed on a geometry service resource.
+    The distance function is performed on a geometry service resource.
     It reports the 2D Euclidean or geodesic distance between the two
     geometries.
 
@@ -327,10 +295,10 @@ def distance(
 
 
 # ----------------------------------------------------------------------
-def find_transformation( inSR, outSR, extentOfInterest=None, numOfResults=1):
+def find_transformation(gis, inSR, outSR, extentOfInterest=None, numOfResults=1):
     """
-    The findTransformations operation is performed on a geometry
-    service resource. This operation returns a list of applicable
+    The findTransformations function is performed on a geometry
+    service resource. This function returns a list of applicable
     geographic transformations you should use when projecting
     geometries from the input spatial reference to the output spatial
     reference. The transformations are in JSON format and are returned
@@ -347,9 +315,9 @@ def find_transformation( inSR, outSR, extentOfInterest=None, numOfResults=1):
     element with a value of false.
 
     Inputs:
-       inSR - The well-known ID (WKID) of the spatial reference or a
+       inSR - The well-known ID (gis,WKID) of the spatial reference or a
          spatial reference JSON object for the input geometries
-       outSR - The well-known ID (WKID) of the spatial reference or a
+       outSR - The well-known ID (gis,WKID) of the spatial reference or a
          spatial reference JSON object for the input geometries
        extentOfInterest -  The bounding box of the area of interest
          specified as a JSON envelope. If provided, the extent of
@@ -365,11 +333,11 @@ def find_transformation( inSR, outSR, extentOfInterest=None, numOfResults=1):
 
 
 # ----------------------------------------------------------------------
-def from_geo_coordinate_string( sr, strings,
+def from_geo_coordinate_string(gis, sr, strings,
                                conversionType, conversionMode=None):
     """
-    The from_geo_coordinate_string operation is performed on a geometry
-    service resource. The operation converts an array of well-known
+    The from_geo_coordinate_string function is performed on a geometry
+    service resource. The function converts an array of well-known
     strings into xy-coordinates based on the conversion type and
     spatial reference supplied by the user. An optional conversion mode
     parameter is available for some conversion types.
@@ -415,14 +383,14 @@ def from_geo_coordinate_string( sr, strings,
 
 
 # ----------------------------------------------------------------------
-def generalize(
+def generalize(gis,
                sr,
                geometries,
                maxDeviation,
                deviationUnit):
     """
-    The generalize operation is performed on a geometry service
-    resource. The generalize operation simplifies the input geometries
+    The generalize function is performed on a geometry service
+    resource. The generalize function simplifies the input geometries
     using the Douglas-Peucker algorithm with a specified maximum
     deviation distance. The output geometries will contain a subset of
     the original input vertices.
@@ -442,14 +410,14 @@ def generalize(
 
 
 # ----------------------------------------------------------------------
-def intersect(
+def intersect(gis,
               sr,
               geometries,
               geometry
               ):
     """
-    The intersect operation is performed on a geometry service
-    resource. This operation constructs the set-theoretic intersection
+    The intersect function is performed on a geometry service
+    resource. This function constructs the set-theoretic intersection
     between an array of geometries and another geometry. The dimension
     of each resultant geometry is the minimum dimension of the input
     geometry in the geometries array and the other geometry specified
@@ -469,13 +437,13 @@ def intersect(
 
 
 # ----------------------------------------------------------------------
-def label_points(
+def label_points(gis,
                  sr,
                  polygons,
                  ):
     """
-    The label_points operation is performed on a geometry service
-    resource. The labelPoints operation calculates an interior point
+    The label_points function is performed on a geometry service
+    resource. The labelPoints function calculates an interior point
     for each polygon specified in the input array. These interior
     points can be used by clients for labeling the polygons.
 
@@ -490,15 +458,15 @@ def label_points(
 
 
 # ----------------------------------------------------------------------
-def lengths(
+def lengths(gis,
             sr,
             polylines,
             lengthUnit,
             calculationType
             ):
     """
-    The lengths operation is performed on a geometry service resource.
-    This operation calculates the 2D Euclidean or geodesic lengths of
+    The lengths function is performed on a geometry service resource.
+    This function calculates the 2D Euclidean or geodesic lengths of
     each polyline specified in the input array.
 
     Inputs:
@@ -533,7 +501,7 @@ def lengths(
 
 
 # ----------------------------------------------------------------------
-def offset(
+def offset(gis,
            geometries,
            offsetDistance,
            offsetUnit,
@@ -543,8 +511,8 @@ def offset(
            sr=None,
            ):
     """
-    The offset operation is performed on a geometry service resource.
-    This operation constructs geometries that are offset from the
+    The offset function is performed on a geometry service resource.
+    This function constructs geometries that are offset from the
     given input geometries. If the offset parameter is positive, the
     constructed offset will be on the right side of the geometry. Left
     side offsets are constructed with negative parameters. Tracing the
@@ -589,25 +557,25 @@ def offset(
 
 
 # ----------------------------------------------------------------------
-def project(
+def project(gis,
             geometries,
             inSR,
             outSR,
             transformation="",
             transformFoward=False):
     """
-    The project operation is performed on a geometry service resource.
-    This operation projects an array of input geometries from the input
+    The project function is performed on a geometry service resource.
+    This function projects an array of input geometries from the input
     spatial reference to the output spatial reference.
 
     Inputs:
      geometries - The array of geometries to be projected.
-     inSR - The well-known ID (WKID) of the spatial reference or a
+     inSR - The well-known ID (gis,WKID) of the spatial reference or a
       spatial reference JSON object for the input geometries.
-     outSR - The well-known ID (WKID) of the spatial reference or a
+     outSR - The well-known ID (gis,WKID) of the spatial reference or a
       spatial reference JSON object for the input geometries.
      transformation - The WKID or a JSON object specifying the
-      geographic transformation (also known as datum transformation) to
+      geographic transformation (gis,also known as datum transformation) to
       be applied to the projected geometries. Note that a
       transformation is needed only if the output spatial reference
       contains a different geographic coordinate system than the input
@@ -622,15 +590,15 @@ def project(
 
 
 # ----------------------------------------------------------------------
-def relation(
+def relation(gis,
              geometries1,
              geometries2,
              sr,
              relation="esriGeometryRelationIntersection",
              relationParam=""):
     """
-    The relation operation is performed on a geometry service resource.
-    This operation determines the pairs of geometries from the input
+    The relation function is performed on a geometry service resource.
+    This function determines the pairs of geometries from the input
     geometry arrays that participate in the specified spatial relation.
     Both arrays are assumed to be in the spatial reference specified by
     sr, which is a required parameter. Geometry types cannot be mixed
@@ -659,13 +627,13 @@ def relation(
 
 
 # ----------------------------------------------------------------------
-def reshape(
+def reshape(gis,
             sr,
             target,
             reshaper
             ):
     """
-    The reshape operation is performed on a geometry service resource.
+    The reshape function is performed on a geometry service resource.
     It reshapes a polyline or polygon feature by constructing a
     polyline over the feature. The feature takes the shape of the
     reshaper polyline from the first place the reshaper intersects the
@@ -681,15 +649,15 @@ def reshape(
 
 
 # ----------------------------------------------------------------------
-def simplify(
+def simplify(gis,
              sr,
              geometries
              ):
     """
-    The simplify operation is performed on a geometry service resource.
+    The simplify function is performed on a geometry service resource.
     Simplify permanently alters the input geometry so that the geometry
     becomes topologically consistent. This resource applies the ArcGIS
-    simplify operation to each geometry in the input array.
+    simplify function to each geometry in the input array.
 
     Inputs:
     sr - The well-known ID of the spatial reference or a spatial
@@ -700,7 +668,7 @@ def simplify(
 
 
 # ----------------------------------------------------------------------
-def to_geo_coordinate_string(
+def to_geo_coordinate_string(gis,
                              sr,
                              coordinates,
                              conversionType,
@@ -710,8 +678,8 @@ def to_geo_coordinate_string(
                              addSpaces=True
                              ):
     """
-    The toGeoCoordinateString operation is performed on a geometry
-    service resource. The operation converts an array of
+    The toGeoCoordinateString function is performed on a geometry
+    service resource. The function converts an array of
     xy-coordinates into well-known strings based on the conversion type
     and spatial reference supplied by the user. Optional parameters are
     available for some conversion types. Note that if an optional
@@ -767,14 +735,14 @@ def to_geo_coordinate_string(
 
 
 # ----------------------------------------------------------------------
-def trim_extend(
+def trim_extend(gis,
                 sr,
                 polylines,
                 trimExtendTo,
                 extendHow=0):
     """
-    The trim_extend operation is performed on a geometry service
-    resource. This operation trims or extends each polyline specified
+    The trim_extend function is performed on a geometry service
+    resource. This function trims or extends each polyline specified
     in the input array, using the user-specified guide polylines. When
     trimming features, the part to the left of the oriented cutting
     line is preserved in the output, and the other part is discarded.
@@ -788,7 +756,7 @@ def trim_extend(
      trimExtendTo - A polyline that is used as a guide for trimming or
       extending input polylines.
      extendHow - A flag that is used along with the trimExtend
-      operation.
+      function.
       0 - By default, an extension considers both ends of a path. The
        old ends remain, and new points are added to the extended ends.
        The new points have attributes that are extrapolated from
@@ -810,12 +778,12 @@ def trim_extend(
 
 
 # ----------------------------------------------------------------------
-def union(
+def union(gis,
           sr,
           geometries):
     """
-    The union operation is performed on a geometry service resource.
-    This operation constructs the set-theoretic union of the geometries
+    The union function is performed on a geometry service resource.
+    This function constructs the set-theoretic union of the geometries
     in the input array. All inputs must be of the same type.
 
     Inputs:

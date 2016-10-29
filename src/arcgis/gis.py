@@ -20,7 +20,6 @@ from contextlib import contextmanager
 import arcgis._impl.portalpy as portalpy
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-from arcgis._impl.tools import _Tools
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -82,6 +81,9 @@ class GIS(object):
         If no url is provided, ArcGIS Online is used. If username/password
         or key/cert files are not provided, anonymous access is used.
         """
+
+        from arcgis._impl.tools import _Tools
+
         if url is None:
             url = "http://www.arcgis.com"
 
@@ -182,6 +184,7 @@ class GIS(object):
         to the specified zoomlevel.
         """
         from arcgis.mapping import MapView
+        from arcgis.geocoding import get_geocoders, geocode
 
         if isinstance(location, Item) and location.type == 'Web Map':
             mapwidget = MapView(gis=self, item=location)
@@ -190,9 +193,9 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
-                for geocoder in self._tools.geocoders:
-                    locations = geocoder.geocode(location, outSR=4326, maxLocations=1)
-                    if len(locations) == 1:
+                for geocoder in get_geocoders(self):
+                    locations = geocode(geocoder, location, out_sr=4326, max_locations=1)
+                    if len(locations) > 0:
                         if zoomlevel is not None:
                             loc = locations[0]['location']
                             mapwidget.center = loc['y'], loc['x']

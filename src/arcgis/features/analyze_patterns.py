@@ -60,7 +60,7 @@ def calculate_density(
     -------
     result_layer : layer (FeatureCollection)
     """
-    return gis._tools._analysis.analyze_patterns(
+    return gis._tools._analysis.calculate_density(
         input_layer,
         field,
         cell_size,
