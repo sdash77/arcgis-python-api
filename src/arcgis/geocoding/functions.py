@@ -1,7 +1,11 @@
+"""
+Types and functions for geocoding.
+"""
 from ..gis import _GISResource
 import logging
 
-_log = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
+
 
 class Geocoder(_GISResource):
     """
@@ -10,8 +14,21 @@ class Geocoder(_GISResource):
     or loaded as input for spatial analysis. It is also used to generate
     batch results for a set of addresses, as well as for reverse geocoding,
     i.e. determining the address at a particular x/y location.
+
+    A GIS includes one or more geocoders, that can be queried using `get_geocoders(gis)`.
+
+    Geocoders shared as Items in the GIS can be obtained using `Geocoder.fromitem(item)`.
+
+    Geocoders may also be created using the constructor by passing in their location, such as
+    a url to a Geocoding Service.
     """
-    def __init__(self, location, gis=None, dictdata=None):
+
+    def __init__(self, location, gis=None):
+        """
+        Creates a Geocoder from a location, such as a url to a Geocoding Service.
+        :param location: geocoder location, such as a url to a Geocoding Service.
+        :param gis: the gis to which the geocoder belongs
+        """
         super(Geocoder, self).__init__(location, gis)
         try:
             self._address_field = self.properties.singleLineAddressField.name
@@ -20,6 +37,11 @@ class Geocoder(_GISResource):
 
     @classmethod
     def fromitem(cls, item):
+        """
+        Creates a Geocoder from an Item in the GIS
+        :param item: an Item of type 'Geocoding Service'
+        :return: Geocoder
+        """
         if not item.type == 'Geocoding Service':
             raise TypeError("item must be a type of Geocoding Service, not " + item.type)
 
@@ -43,7 +65,12 @@ class Geocoder(_GISResource):
            address - Specifies the location to be geocoded. This can be a string
            containing the street address, place name, postal code, or POI.
 
-            Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding geocode service. These fields are listed in the addressFields property of the associated geocode service resource. For example, if the addressFields of a geocode service resource includes fields with the following names: Street, City, State and Zone, then the address argument is of the form:
+            Alternatively, this can be a dictionary containing the various address
+            fields accepted by the corresponding geocode service. These fields are
+            listed in the addressFields property of the associated geocoder.
+            For example, if the addressFields of a geocoder includes fields
+            with the following names: Street, City, State and Zone, then the address argument
+            is of the form:
             {
               Street: "1234 W Main St",
               City: "Small Town",
@@ -92,11 +119,11 @@ class Geocoder(_GISResource):
             results, in a database for example, you need to set this
             parameter to true.
         """
-        #self.url +
+        # self.url +
         url = self.url + "/findAddressCandidates"
 
         params = {
-            "f" : "json",
+            "f": "json",
         }
 
         if address is not None:
@@ -105,9 +132,10 @@ class Geocoder(_GISResource):
             elif isinstance(address, dict):
                 params.update(address)
             else:
-                print("address should be a string (single line address) or dictionary (with address fields as keys)")
+                print("address should be a string (single line address) or dictionary "
+                      "(with address fields as keys)")
 
-        #params['text'] = text
+        # params['text'] = text
 
         if not magic_key is None:
             params['magicKey'] = magic_key
@@ -140,7 +168,8 @@ class Geocoder(_GISResource):
         else:
             return []
 
-    def _reverse_geocode(self, location, distance=None, outSR=None, langCode=None, returnIntersection=False, forStorage=False):
+    def _reverse_geocode(self, location, distance=None, out_sr=None, lang_code=None,
+                         return_intersection=False, for_storage=False):
         """
         The reverseGeocode operation determines the address at a particular
         x/y location. You pass the coordinates of a point location to the
@@ -150,7 +179,7 @@ class Geocoder(_GISResource):
            location - a list defined as [X,Y] or a JSON Point
         """
         params = {
-            "f" : "json"
+            "f": "json"
         }
         url = self.url + "/reverseGeocode"
         if isinstance(location, list):
@@ -162,14 +191,14 @@ class Geocoder(_GISResource):
 
         if distance is not None:
             params['distance'] = distance
-        if outSR is not None:
-            params['outSR'] = outSR
-        if langCode is not None:
-            params['langCode'] = langCode
-        if returnIntersection:
-            params['returnIntersection'] = returnIntersection
-        if forStorage:
-            params['forStorage'] = forStorage
+        if out_sr is not None:
+            params['outSR'] = out_sr
+        if lang_code is not None:
+            params['langCode'] = lang_code
+        if return_intersection:
+            params['returnIntersection'] = return_intersection
+        if for_storage:
+            params['forStorage'] = for_storage
 
         resp = self._con.post(url, params, token=self._token)
 
@@ -177,11 +206,12 @@ class Geocoder(_GISResource):
 
     def _batch_geocode(self,
                        addresses,
-                       sourceCountry=None,
+                       source_country=None,
                        category=None,
-                       outSR=None):
+                       out_sr=None):
         """
-        The batch_geocode() method geocodes an entire list of addresses. Geocoding many addresses at once is also known as bulk geocoding.
+        The batch_geocode() method geocodes an entire list of addresses.
+        Geocoding many addresses at once is also known as bulk geocoding.
 
 
         Inputs:
@@ -228,37 +258,35 @@ class Geocoder(_GISResource):
             Geographic coordinate systems.
         """
         params = {
-            "f" : "json"
+            "f": "json"
         }
         url = self.url + "/geocodeAddresses"
-        if outSR is not None:
-            params['outSR'] = outSR
-        if sourceCountry is not None:
-            params['sourceCountry'] = sourceCountry
+        if out_sr is not None:
+            params['outSR'] = out_sr
+        if source_country is not None:
+            params['sourceCountry'] = source_country
         if category is not None:
             params['category'] = category
 
-
-
         addr_recordset = []
-        n = len(addresses)
 
         for index in range(len(addresses)):
             address = addresses[index]
 
-            attributes = { "OBJECTID" : index }
+            attributes = {"OBJECTID": index}
             if isinstance(address, str):
                 attributes[self._address_field] = address
             elif isinstance(address, dict):
                 attributes.update(address)
             else:
                 print("Unsupported address: " + str(address))
-                print("address should be a string (single line address) or dictionary (with address fields as keys)")
+                print("address should be a string (single line address) or dictionary "
+                      "(with address fields as keys)")
 
-            addr_rec = { "attributes" : attributes }
+            addr_rec = {"attributes": attributes}
             addr_recordset.append(addr_rec)
 
-        params['addresses'] = { "records" : addr_recordset }
+        params['addresses'] = {"records": addr_recordset}
 
         resp = self._con.post(url, params, token=self._token)
         if resp is not None:
@@ -268,16 +296,17 @@ class Geocoder(_GISResource):
 
     def _find_best_match(self,
                          address,
-                         searchExtent=None,
+                         search_extent=None,
                          location=None,
                          distance=None,
-                         outSR=None,
+                         out_sr=None,
                          category=None,
-                         outFields="*", magicKey=None,
-                         forStorage=False):
+                         out_fields="*",
+                         magic_key=None,
+                         for_storage=False):
         """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
-        candidates = self._geocode(address, searchExtent, location, distance,
-                                   outSR, category, outFields, 1, magicKey, forStorage)
+        candidates = self._geocode(address, search_extent, location, distance,
+                                   out_sr, category, out_fields, 1, magic_key, for_storage)
         if candidates:
             location = candidates[0]['location']
             return location['y'], location['x']
@@ -286,10 +315,9 @@ class Geocoder(_GISResource):
                  text,
                  location,
                  distance=None,
-                 category=None
-                 ):
+                 category=None):
         """
-        The suggest operation is performed on a geocode service resource.
+        The suggest operation is performed on a geocoder.
         The result of this operation is a resource representing a list of
         suggested matches for the input text. This resource provides the
         matching text as well as a unique ID value, which links a
@@ -344,8 +372,8 @@ class Geocoder(_GISResource):
             services published using StreetMap Premium locators.
         """
         params = {
-            "f" : "json",
-            "text" : text
+            "f": "json",
+            "text": text
         }
         url = self.url + "/suggest"
 
@@ -356,27 +384,32 @@ class Geocoder(_GISResource):
         if not category is None:
             params['category'] = category
         if not distance is None and \
-           isinstance(distance, (int, float)):
+                isinstance(distance, (int, float)):
             params['distance'] = distance
         resp = self._con.post(url, params, token=self._token)
         return resp
 
+
 def get_geocoders(gis):
+    """
+    A GIS includes one or more geocoders. The list of geocoders registered with the GIS
+    can be queried using get_geocoders.
+    :param gis: the GIS whose registered geocoders are to be queried
+    :return: list of geocoders registered with the GIS
+    """
     geocoders = []
     try:
         geocode_services = gis.properties['helperServices']['geocode']
         for geocode_service in geocode_services:
             try:
                 geocoders.append(Geocoder(geocode_service['url'], gis))
-            except RuntimeError as re:
-                _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
-                _log.warning(str(re))
+            except RuntimeError as runtime_error:
+                _LOGGER.warning('Unable to use Geocoder at ' + geocode_service['url'])
+                _LOGGER.warning(str(runtime_error))
     except KeyError:
         pass
     return geocoders
 
-def get_properties(geocoder):
-    return geocoder.properties
 
 def geocode(geocoder,
             address,
@@ -393,12 +426,16 @@ def geocode(geocoder,
     The geocode function geocodes one location per request.
 
     Inputs:
+
+       geocoder - the geocoder to be used
+
        address - Specifies the location to be geocoded. This can be a string
        containing the street address, place name, postal code, or POI.
 
-        Alternatively, this can be a dictionary containing the various address fields accepted by the corresponding 
-        geocoder. These fields are listed in the addressFields property of the associated geocoder. For example, if the
-        address_fields of a geocoder includes fields with the following names: Street, City, State and Zone, then the
+        Alternatively, this can be a dictionary containing the various address fields accepted
+        by the corresponding geocoder. These fields are listed in the addressFields property of
+        the associated geocoder. For example, if the address_fields of a geocoder includes fields
+        with the following names: Street, City, State and Zone, then the
         address argument is of the form:
         {
           Street: "1234 W Main St",
@@ -411,6 +448,7 @@ def geocode(geocoder,
         area to a specific region. This is especially useful for
         applications in which a user will search for places and
         addresses only within the current map extent.
+
        location - Defines an origin point location that is used with
         the distance parameter to sort geocoding candidates based upon
         their proximity to the location. The distance parameter
@@ -449,16 +487,16 @@ def geocode(geocoder,
         parameter to true.
     """
     return geocoder._geocode(
-            address,
-            search_extent,
-            location,
-            distance,
-            out_sr,
-            category,
-            out_fields,
-            max_locations,
-            magic_key,
-            for_storage)
+        address,
+        search_extent,
+        location,
+        distance,
+        out_sr,
+        category,
+        out_fields,
+        max_locations,
+        magic_key,
+        for_storage)
 
 
 def reverse_geocode(geocoder, location, distance=None, out_sr=None, lang_code=None,
@@ -470,11 +508,15 @@ def reverse_geocode(geocoder, location, distance=None, out_sr=None, lang_code=No
     geocoding service, and the service returns the address that is
     closest to the location.
     Input:
+
+       geocoder - the geocoder to be used
+
        location - a list defined as [X,Y] or a JSON Point
+
     """
     return geocoder._reverse_geocode(location, distance, out_sr, lang_code,
-                    return_intersection,
-                    for_storage)
+                                     return_intersection,
+                                     for_storage)
 
 
 def batch_geocode(geocoder,
@@ -488,6 +530,9 @@ def batch_geocode(geocoder,
 
 
     Inputs:
+
+       geocoder - the geocoder to be used
+
        addresses - A list of addresses to be geocoded.
        For passing in the location name as a single line of text —
        single field batch geocoding — use a string.
@@ -537,35 +582,11 @@ def batch_geocode(geocoder,
         out_sr)
 
 
-def find_best_match(geocoder,
-                    address,
-                    search_extent=None,
-                    location=None,
-                    distance=None,
-                    out_sr=None,
-                    category=None,
-                    out_fields="*",
-                    magic_key=None,
-                    for_storage=False):
-    """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
-    return geocoder._find_best_match(
-        address,
-        search_extent,
-        location,
-        distance,
-        out_sr,
-        category,
-        out_fields,
-        magic_key,
-        for_storage)
-
-
 def suggest(geocoder,
             text,
             location,
             distance=None,
-            category=None
-            ):
+            category=None):
     """
     The result of this operation is a resource representing a list of
     suggested matches for the input text. This resource provides the
@@ -589,9 +610,13 @@ def suggest(geocoder,
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
     Inputs:
+
+       geocoder - The geocoder to be used.
+
        text - The input text provided by a user that is used by the
         suggest operation to generate a list of possible matches. This
         is a required parameter.
+
        location -  Defines an origin point location that is used with
         the distance parameter to sort suggested candidates based on
         their proximity to the location. The distance parameter
@@ -606,6 +631,7 @@ def suggest(geocoder,
         distance. If distance is not specified, it defaults to 2000
         meters.
         The object can be an common.geometry.Point or X/Y list object
+
        distance - Specifies the radius around the point defined in the
         location parameter to create an area, which is used to boost
         the rank of suggested candidates so that candidates closest to

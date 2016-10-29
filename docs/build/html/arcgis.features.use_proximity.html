@@ -190,10 +190,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
 </ul>
 </li>
@@ -287,7 +288,7 @@
             
   <div class="section" id="module-arcgis.features.use_proximity">
 <span id="arcgis-features-use-proximity-module"></span><h1>arcgis.features.use_proximity module<a class="headerlink" href="#module-arcgis.features.use_proximity" title="Permalink to this headline">¶</a></h1>
-<p>These tools help you answer one of the most common questions posed in spatial analysis: &#8220;What is near what?&#8221;</p>
+<p>These functions help you answer one of the most common questions posed in spatial analysis: &#8220;What is near what?&#8221;</p>
 <p>connect_origins_to_destinations measures the travel time or distance between pairs of points.
 create_buffers create areas of equal distance from features.
 create_drive_time_areas finds areas around locations that can be reached within a time period.
@@ -297,11 +298,13 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 <h2>connect_origins_to_destinations<a class="headerlink" href="#connect-origins-to-destinations" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.connect_origins_to_destinations">
-<code class="descclassname">use_proximity.</code><code class="descname">connect_origins_to_destinations</code><span class="sig-paren">(</span><em>origins_layer</em>, <em>destinations_layer</em>, <em>measurement_type='DrivingTime'</em>, <em>origins_layer_route_id_field=None</em>, <em>destinations_layer_route_id_field=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.connect_origins_to_destinations" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">connect_origins_to_destinations</code><span class="sig-paren">(</span><em>gis</em>, <em>origins_layer</em>, <em>destinations_layer</em>, <em>measurement_type='DrivingTime'</em>, <em>origins_layer_route_id_field=None</em>, <em>destinations_layer_route_id_field=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.connect_origins_to_destinations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates routes between pairs of points.</p>
+<p>gis : The GIS used for running this analysis
+origins_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>The routes start from points in the origins layer.</div></blockquote>
 <dl class="docutils">
-<dt>origins_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>The routes start from points in the origins layer.</dd>
 <dt>destinations_layer</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>The routes end at points in the destinations layer.</dd>
 <dt>measurement_type</dt>
@@ -336,11 +339,13 @@ location of the origins.</dd>
 <h2>create_buffers<a class="headerlink" href="#create-buffers" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.create_buffers">
-<code class="descclassname">use_proximity.</code><code class="descname">create_buffers</code><span class="sig-paren">(</span><em>input_layer</em>, <em>distances=[]</em>, <em>field=None</em>, <em>units='Meters'</em>, <em>dissolve_type='None'</em>, <em>ring_type='Disks'</em>, <em>side_type='Full'</em>, <em>end_type='Round'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_buffers" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">create_buffers</code><span class="sig-paren">(</span><em>gis</em>, <em>input_layer</em>, <em>distances=[]</em>, <em>field=None</em>, <em>units='Meters'</em>, <em>dissolve_type='None'</em>, <em>ring_type='Disks'</em>, <em>side_type='Full'</em>, <em>end_type='Round'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_buffers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates buffer polygon(s) around input features.</p>
+<p>gis : The GIS used for running this analysis
+input_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>The input to be buffered.</div></blockquote>
 <dl class="docutils">
-<dt>input_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>The input to be buffered.</dd>
 <dt>distances</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of floats</span><dd>The distance(s) that will be buffered.</dd>
 <dt>field</dt>
@@ -368,8 +373,9 @@ location of the origins.</dd>
 <h2>create_drive_time_areas<a class="headerlink" href="#create-drive-time-areas" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.create_drive_time_areas">
-<code class="descclassname">use_proximity.</code><code class="descname">create_drive_time_areas</code><span class="sig-paren">(</span><em>input_layer, break_values=[5, 10, 15], break_units='Minutes', travel_mode='Driving', overlap_policy='Overlap', time_of_day=None, time_zone_for_time_of_day='GeoLocal', output_name=None, context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_drive_time_areas" title="Permalink to this definition">¶</a></dt>
-<dd><p>input_layer : Required layer (see Feature Input in documentation)</p>
+<code class="descclassname">use_proximity.</code><code class="descname">create_drive_time_areas</code><span class="sig-paren">(</span><em>gis, input_layer, break_values=[5, 10, 15], break_units='Minutes', travel_mode='Driving', overlap_policy='Overlap', time_of_day=None, time_zone_for_time_of_day='GeoLocal', output_name=None, context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_drive_time_areas" title="Permalink to this definition">¶</a></dt>
+<dd><p>gis : The GIS used for running this analysis
+input_layer : Required layer (see Feature Input in documentation)</p>
 <p>break_values : Optional list of floats</p>
 <p>break_units : Optional string</p>
 <p>travel_mode : Optional string</p>
@@ -390,13 +396,15 @@ location of the origins.</dd>
 <h2>find_nearest<a class="headerlink" href="#find-nearest" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.find_nearest">
-<code class="descclassname">use_proximity.</code><code class="descname">find_nearest</code><span class="sig-paren">(</span><em>analysis_layer</em>, <em>near_layer</em>, <em>measurement_type='StraightLine'</em>, <em>max_count=100</em>, <em>search_cutoff=2147483647</em>, <em>search_cutoff_units=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.find_nearest" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">find_nearest</code><span class="sig-paren">(</span><em>gis</em>, <em>analysis_layer</em>, <em>near_layer</em>, <em>measurement_type='StraightLine'</em>, <em>max_count=100</em>, <em>search_cutoff=2147483647</em>, <em>search_cutoff_units=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.find_nearest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to
 features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer
 containing the nearest features and a line layer that links the start locations to their nearest locations.</p>
+<p>gis : The GIS used for running this analysis
+analysis_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>For each feature in this layer, the task finds the nearest features from the nearLayer.</div></blockquote>
 <dl class="docutils">
-<dt>analysis_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>For each feature in this layer, the task finds the nearest features from the nearLayer.</dd>
 <dt>near_layer</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>The features from which the nearest locations are found.</dd>
 <dt>measurement_type</dt>
@@ -430,11 +438,12 @@ calculations based on traffic.</dd>
 <h2>plan_routes<a class="headerlink" href="#plan-routes" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.plan_routes">
-<code class="descclassname">use_proximity.</code><code class="descname">plan_routes</code><span class="sig-paren">(</span><em>stops_layer</em>, <em>route_count</em>, <em>max_stops_per_route</em>, <em>route_start_time</em>, <em>start_layer</em>, <em>start_layer_route_id_field=None</em>, <em>return_to_start=True</em>, <em>end_layer=None</em>, <em>end_layer_route_id_field=None</em>, <em>travel_mode='Driving'</em>, <em>stop_service_time=0</em>, <em>max_route_time=525600</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.plan_routes" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">plan_routes</code><span class="sig-paren">(</span><em>gis</em>, <em>stops_layer</em>, <em>route_count</em>, <em>max_stops_per_route</em>, <em>route_start_time</em>, <em>start_layer</em>, <em>start_layer_route_id_field=None</em>, <em>return_to_start=True</em>, <em>end_layer=None</em>, <em>end_layer_route_id_field=None</em>, <em>travel_mode='Driving'</em>, <em>stop_service_time=0</em>, <em>max_route_time=525600</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.plan_routes" title="Permalink to this definition">¶</a></dt>
 <dd><p>You provide a set of stops and the number of vehicles available to visit the stops, and Plan Routes determines how
 to efficiently assign the stops to the vehicles and route the vehicles to the stops.</p>
 <p>Use this tool to plan work for a mobile team of inspectors, appraisers, in-home support service providers, and
 others; deliver or pick up items from remote locations; or offer transportation services to people.</p>
+<p>gis : The GIS used for running this analysis</p>
 <p>stops_layer : Required layer (see Feature Input in documentation)</p>
 <p>route_count : Required int</p>
 <p>max_stops_per_route : Required int</p>

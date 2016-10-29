@@ -2947,13 +2947,18 @@ class _GISResource(object):
         dictdata = self._con.post(self.url, params, token=self._token)
         self.properties = PropertyMap(dictdata)
 
+    @property
+    def properties(self):
+        """The properties of this object"""
+        return self.properties
+
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
 
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
 
-    def invoke(self, method, **kwargs):
+    def _invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
         params = { "f" : "json"}

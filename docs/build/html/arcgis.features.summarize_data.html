@@ -193,10 +193,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
 </ul>
 </li>
@@ -292,7 +293,7 @@
             
   <div class="section" id="module-arcgis.features.summarize_data">
 <span id="arcgis-features-summarize-data-module"></span><h1>arcgis.features.summarize_data module<a class="headerlink" href="#module-arcgis.features.summarize_data" title="Permalink to this headline">¶</a></h1>
-<p>These tools calculate total counts, lengths, areas, and basic descriptive statistics of features and their attributes
+<p>These functions calculate total counts, lengths, areas, and basic descriptive statistics of features and their attributes
 within areas or near other features.</p>
 <p>aggregate_points calculates statistics about points that fall within specified areas.
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
@@ -301,13 +302,15 @@ summarize_within calculates statistics for area features and attributes that ove
 <h2>aggregate_points<a class="headerlink" href="#aggregate-points" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.summarize_data.aggregate_points">
-<code class="descclassname">summarize_data.</code><code class="descname">aggregate_points</code><span class="sig-paren">(</span><em>point_layer</em>, <em>polygon_layer</em>, <em>keep_boundaries_with_no_points=True</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_points=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.aggregate_points" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">aggregate_points</code><span class="sig-paren">(</span><em>gis</em>, <em>point_layer</em>, <em>polygon_layer</em>, <em>keep_boundaries_with_no_points=True</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_points=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.aggregate_points" title="Permalink to this definition">¶</a></dt>
 <dd><p>Aggregate points task allows you to aggregate or count the total number of points that are distributed within
 specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation
 calculations for attributes of the point layer to understand the general characteristics of aggregated points.</p>
+<p>gis : The GIS used for running this analysis
+point_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>Point layer to be aggregated</div></blockquote>
 <dl class="docutils">
-<dt>point_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Point layer to be aggregated</dd>
 <dt>polygon_layer</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Polygon layer to which the points should be aggregated.</dd>
 <dt>keep_boundaries_with_no_points</dt>
@@ -340,16 +343,18 @@ of points for each unique groupByField value is calculated.</dd>
 <h2>summarize_nearby<a class="headerlink" href="#summarize-nearby" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.summarize_data.summarize_nearby">
-<code class="descclassname">summarize_data.</code><code class="descname">summarize_nearby</code><span class="sig-paren">(</span><em>sum_nearby_layer</em>, <em>summary_layer</em>, <em>near_type='StraightLine'</em>, <em>distances=[]</em>, <em>units='Meters'</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>return_boundaries=True</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_nearby" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">summarize_nearby</code><span class="sig-paren">(</span><em>gis</em>, <em>sum_nearby_layer</em>, <em>summary_layer</em>, <em>near_type='StraightLine'</em>, <em>distances=[]</em>, <em>units='Meters'</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>return_boundaries=True</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_nearby" title="Permalink to this definition">¶</a></dt>
 <dd><p>The SummarizeNearby task finds features that are within a specified distance of features in the input layer.
 Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
 drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate
 the total population within five minutes of driving time of a proposed new store location.Calculate the number of
 freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of
 store accessibility.</p>
+<p>gis : The GIS used for running this analysis
+sum_nearby_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.</div></blockquote>
 <dl class="docutils">
-<dt>sum_nearby_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.</dd>
 <dt>summary_layer</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Point, line, or polygon features. Features in this layer that are within the specified distance to features in
 the sumNearbyLayer will be summarized.</dd>
@@ -408,17 +413,19 @@ shape (eg. length for lines) for each unique groupByField value is calculated.</
 <h2>summarize_within<a class="headerlink" href="#summarize-within" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.summarize_data.summarize_within">
-<code class="descclassname">summarize_data.</code><code class="descname">summarize_within</code><span class="sig-paren">(</span><em>sum_within_layer</em>, <em>summary_layer</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_within" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">summarize_within</code><span class="sig-paren">(</span><em>gis</em>, <em>sum_within_layer</em>, <em>summary_layer</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_within" title="Permalink to this definition">¶</a></dt>
 <dd><p>The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or
 portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer
 of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use
 type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average
 value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the
 total mileage of roads by road type within each county.</p>
+<p>gis : The GIS used for running this analysis
+sum_within_layer : Required layer (see Feature Input in documentation)</p>
+<blockquote>
+<div>A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below)
+that fall within the boundaries of these polygons will be summarized.</div></blockquote>
 <dl class="docutils">
-<dt>sum_within_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below)
-that fall within the boundaries of these polygons will be summarized.</dd>
 <dt>summary_layer</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Point, line, or polygon features that will be summarized for each polygon in the sumWithinLayer.</dd>
 <dt>sum_shape</dt>

@@ -192,10 +192,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
 </ul>
 </li>
@@ -460,34 +461,33 @@ Starting at 10.3, Image Service supports image coordinate systems.</p>
 <h2>areas_and_lengths<a class="headerlink" href="#areas-and-lengths" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.areas_and_lengths">
-<code class="descclassname">geometry.</code><code class="descname">areas_and_lengths</code><span class="sig-paren">(</span><em>polygons</em>, <em>lengthUnit</em>, <em>areaUnit</em>, <em>calculationType</em>, <em>sr=4326</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.areas_and_lengths" title="Permalink to this definition">¶</a></dt>
-<dd><p>The areasAndLengths operation is performed on a geometry service
-resource. This operation calculates areas and perimeter lengths
+<code class="descclassname">geometry.</code><code class="descname">areas_and_lengths</code><span class="sig-paren">(</span><em>gis</em>, <em>polygons</em>, <em>length_unit</em>, <em>area_unit</em>, <em>calculation_type</em>, <em>sr=4326</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.areas_and_lengths" title="Permalink to this definition">¶</a></dt>
+<dd><p>The areas_and_lengths function calculates areas and perimeter lengths
 for each polygon specified in the input array.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><dl class="first last docutils">
 <dt>polygons - The array of polygons whose areas and lengths are</dt>
 <dd>to be computed.</dd>
-<dt>lengthUnit - The length unit in which the perimeters of</dt>
-<dd>polygons will be calculated. If calculationType
-is planar, then lengthUnit can be any esriUnits
+<dt>length_unit - The length unit in which the perimeters of</dt>
+<dd>polygons will be calculated. If calculation_type
+is planar, then length_unit can be any esriUnits
 constant. If lengthUnit is not specified, the
 units are derived from sr. If calculationType is
 not planar, then lengthUnit must be a linear
 esriUnits constant, such as esriSRUnit_Meter or
-esriSRUnit_SurveyMile. If lengthUnit is not
+esriSRUnit_SurveyMile. If length_unit is not
 specified, the units are meters. For a list of
 valid units, see esriSRUnitType Constants and
 esriSRUnit2Type Constant.</dd>
-<dt>areaUnit - The area unit in which areas of polygons will be</dt>
-<dd>calculated. If calculationType is planar, then
-areaUnit can be any esriUnits constant. If
-areaUnit is not specified, the units are derived
-from sr. If calculationType is not planar, then
-areaUnit must be a linear esriUnits constant such
+<dt>area_unit - The area unit in which areas of polygons will be</dt>
+<dd>calculated. If calculation_type is planar, then
+area_unit can be any esriUnits constant. If
+area_unit is not specified, the units are derived
+from sr. If calculation_type is not planar, then
+area_unit must be a linear esriUnits constant such
 as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-areaUnit is not specified, then the units are
+area_unit is not specified, then the units are
 meters. For a list of valid units, see
 esriSRUnitType Constants and esriSRUnit2Type
 constant.
@@ -497,7 +497,7 @@ esriSquareYards | esriAcres | esriSquareMiles |
 esriSquareMillimeters | esriSquareCentimeters |
 esriSquareDecimeters | esriSquareMeters | esriAres
 | esriHectares | esriSquareKilometers.</dd>
-<dt>calculationType -  The type defined for the area and length</dt>
+<dt>calculation_type -  The type defined for the area and length</dt>
 <dd><p class="first">calculation of the input geometries. The
 type can be one of the following values:
 planar - Planar measurements use 2D</p>
@@ -538,8 +538,8 @@ is preserved.</dd>
 <h2>auto_complete<a class="headerlink" href="#auto-complete" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.auto_complete">
-<code class="descclassname">geometry.</code><code class="descname">auto_complete</code><span class="sig-paren">(</span><em>polygons=None</em>, <em>polylines=None</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.auto_complete" title="Permalink to this definition">¶</a></dt>
-<dd><p>The autoComplete operation simplifies the process of
+<code class="descclassname">geometry.</code><code class="descname">auto_complete</code><span class="sig-paren">(</span><em>gis</em>, <em>polygons=None</em>, <em>polylines=None</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.auto_complete" title="Permalink to this definition">¶</a></dt>
+<dd><p>The auto_complete function simplifies the process of
 constructing new polygons that are adjacent to other polygons.
 It constructs polygons that fill in the gaps between existing
 polygons and a set of polylines.</p>
@@ -556,15 +556,15 @@ sr - spatial reference of the input geometries WKID</dd>
 <h2>buffer<a class="headerlink" href="#buffer" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.buffer">
-<code class="descclassname">geometry.</code><code class="descname">buffer</code><span class="sig-paren">(</span><em>geometries</em>, <em>inSR</em>, <em>distances</em>, <em>unit</em>, <em>outSR=None</em>, <em>bufferSR=None</em>, <em>unionResults=True</em>, <em>geodesic=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.buffer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The buffer operation is performed on a geometry service resource
-The result of this operation is buffered polygons at the
+<code class="descclassname">geometry.</code><code class="descname">buffer</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>in_sr</em>, <em>distances</em>, <em>unit</em>, <em>out_sr=None</em>, <em>buffer_sr=None</em>, <em>union_results=True</em>, <em>geodesic=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The buffer function is performed on a geometry service resource
+The result of this function is buffered polygons at the
 specified distances for the input geometry array. Options are
 available to union buffers and to use geodesic distance.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><p class="first">geometries - The array of geometries to be buffered.
-isSR - The well-known ID of the spatial reference or a spatial</p>
+is_sr - The well-known ID of the spatial reference or a spatial</p>
 <blockquote>
 <div>reference JSON object for the input geometries.</div></blockquote>
 <dl class="last docutils">
@@ -573,12 +573,12 @@ isSR - The well-known ID of the spatial reference or a spatial</p>
 <dt>unit - The units for calculating each buffer distance. If unit</dt>
 <dd>is not specified, the units are derived from bufferSR. If
 bufferSR is not specified, the units are derived from inSR.</dd>
-<dt>outSR - The well-known ID of the spatial reference or a</dt>
+<dt>out_sr - The well-known ID of the spatial reference or a</dt>
 <dd>spatial reference JSON object for the input geometries.</dd>
-<dt>bufferSR - The well-known ID of the spatial reference or a</dt>
+<dt>buffer_sr - The well-known ID of the spatial reference or a</dt>
 <dd>spatial reference JSON object for the input geometries.</dd>
-<dt>unionResults -  If true, all geometries buffered at a given</dt>
-<dd>distance are unioned into a single (possibly multipart)
+<dt>union_results -  If true, all geometries buffered at a given</dt>
+<dd>distance are unioned into a single (gis,possibly multipart)
 polygon, and the unioned geometry is placed in the output
 array. The default is false</dd>
 <dt>geodesic - Set geodesic to true to buffer the input geometries</dt>
@@ -597,8 +597,8 @@ the geometry type, unit and bufferSR.</dd>
 <h2>convex_hull<a class="headerlink" href="#convex-hull" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.convex_hull">
-<code class="descclassname">geometry.</code><code class="descname">convex_hull</code><span class="sig-paren">(</span><em>geometries</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.convex_hull" title="Permalink to this definition">¶</a></dt>
-<dd><p>The convexHull operation is performed on a geometry service
+<code class="descclassname">geometry.</code><code class="descname">convex_hull</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.convex_hull" title="Permalink to this definition">¶</a></dt>
+<dd><p>The convex_hull function is performed on a geometry service
 resource. It returns the convex hull of the input geometry. The
 input geometry can be a point, multipoint, polyline, or polygon.
 The convex hull is typically a polygon but can also be a polyline
@@ -618,11 +618,11 @@ sr - The well-known ID or a spatial reference JSON object for</p>
 <h2>cut<a class="headerlink" href="#cut" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.cut">
-<code class="descclassname">geometry.</code><code class="descname">cut</code><span class="sig-paren">(</span><em>cutter</em>, <em>target</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.cut" title="Permalink to this definition">¶</a></dt>
-<dd><p>The cut operation is performed on a geometry service resource. This
-operation splits the target polyline or polygon where it&#8217;s crossed
+<code class="descclassname">geometry.</code><code class="descname">cut</code><span class="sig-paren">(</span><em>gis</em>, <em>cutter</em>, <em>target</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.cut" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cut function is performed on a geometry service resource. This
+function splits the target polyline or polygon where it&#8217;s crossed
 by the cutter polyline.
-At 10.1 and later, this operation calls simplify on the input
+At 10.1 and later, this function calls simplify on the input
 cutter and target geometries.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
@@ -649,9 +649,9 @@ sr.</dd>
 <h2>density<a class="headerlink" href="#density" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.density">
-<code class="descclassname">geometry.</code><code class="descname">density</code><span class="sig-paren">(</span><em>geometries</em>, <em>sr</em>, <em>maxSegmentLength</em>, <em>lengthUnit</em>, <em>geodesic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.density" title="Permalink to this definition">¶</a></dt>
-<dd><p>The densify operation is performed on a geometry service resource.
-This operation densifies geometries by plotting points between
+<code class="descclassname">geometry.</code><code class="descname">density</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>sr</em>, <em>max_segment_length</em>, <em>length_unit</em>, <em>geodesic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.density" title="Permalink to this definition">¶</a></dt>
+<dd><p>The densify function is performed using the GIS&#8217;s geometry engine.
+This function densifies geometries by plotting points between
 existing vertices.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
@@ -663,21 +663,21 @@ REST API.</dd>
 <dt>sr - The well-known ID or a spatial reference JSON object for</dt>
 <dd>the input polylines. For a list of valid WKID values, see
 Projected coordinate systems and Geographic coordinate systems.</dd>
-<dt>maxSegmentLength - All segments longer than maxSegmentLength are</dt>
+<dt>max_segment_length - All segments longer than maxSegmentLength are</dt>
 <dd>replaced with sequences of lines no longer than
 maxSegmentLength.</dd>
-<dt>lengthUnit - The length unit of maxSegmentLength. If geodesic is</dt>
+<dt>length_unit - The length unit of max_segment_length. If geodesic is</dt>
 <dd>set to false, then the units are derived from sr, and
-lengthUnit is ignored. If geodesic is set to true, then
-lengthUnit must be a linear unit. In a case where lengthUnit is
+length_unit is ignored. If geodesic is set to true, then
+length_unit must be a linear unit. In a case where length_unit is
 not specified and sr is a PCS, the units are derived from sr.
-In a case where lengthUnit is not specified and sr is a GCS,
+In a case where length_unit is not specified and sr is a GCS,
 then the units are meters.</dd>
 <dt>geodesic - If geodesic is set to true, then geodesic distance is</dt>
-<dd>used to calculate maxSegmentLength. Geodesic distance is the
+<dd>used to calculate max_segment_length. Geodesic distance is the
 shortest path between two points along the ellipsoid of the
 earth. If geodesic is set to false, then 2D Euclidean distance
-is used to calculate maxSegmentLength. The default is false.</dd>
+is used to calculate max_segment_length. The default is false.</dd>
 </dl>
 </dd>
 </dl>
@@ -688,9 +688,9 @@ is used to calculate maxSegmentLength. The default is false.</dd>
 <h2>difference<a class="headerlink" href="#difference" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.difference">
-<code class="descclassname">geometry.</code><code class="descname">difference</code><span class="sig-paren">(</span><em>geometries</em>, <em>sr</em>, <em>geometry</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.difference" title="Permalink to this definition">¶</a></dt>
-<dd><p>The difference operation is performed on a geometry service
-resource. This operation constructs the set-theoretic difference
+<code class="descclassname">geometry.</code><code class="descname">difference</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>sr</em>, <em>geometry</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.difference" title="Permalink to this definition">¶</a></dt>
+<dd><p>The difference function is performed on a geometry service
+resource. This function constructs the set-theoretic difference
 between each element of an array of geometries and another geometry
 the so-called difference geometry. In other words, let B be the
 difference geometry. For each geometry, A, in the input geometry
@@ -719,8 +719,8 @@ syntax is not supported.</dd>
 <h2>distance<a class="headerlink" href="#distance" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.distance">
-<code class="descclassname">geometry.</code><code class="descname">distance</code><span class="sig-paren">(</span><em>sr</em>, <em>geometry1</em>, <em>geometry2</em>, <em>distanceUnit=''</em>, <em>geodesic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.distance" title="Permalink to this definition">¶</a></dt>
-<dd><p>The distance operation is performed on a geometry service resource.
+<code class="descclassname">geometry.</code><code class="descname">distance</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>geometry1</em>, <em>geometry2</em>, <em>distanceUnit=''</em>, <em>geodesic=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>The distance function is performed on a geometry service resource.
 It reports the 2D Euclidean or geodesic distance between the two
 geometries.</p>
 <dl class="docutils">
@@ -752,9 +752,9 @@ false.</dd>
 <h2>find_transformation<a class="headerlink" href="#find-transformation" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.find_transformation">
-<code class="descclassname">geometry.</code><code class="descname">find_transformation</code><span class="sig-paren">(</span><em>inSR</em>, <em>outSR</em>, <em>extentOfInterest=None</em>, <em>numOfResults=1</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.find_transformation" title="Permalink to this definition">¶</a></dt>
-<dd><p>The findTransformations operation is performed on a geometry
-service resource. This operation returns a list of applicable
+<code class="descclassname">geometry.</code><code class="descname">find_transformation</code><span class="sig-paren">(</span><em>gis</em>, <em>inSR</em>, <em>outSR</em>, <em>extentOfInterest=None</em>, <em>numOfResults=1</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.find_transformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The findTransformations function is performed on a geometry
+service resource. This function returns a list of applicable
 geographic transformations you should use when projecting
 geometries from the input spatial reference to the output spatial
 reference. The transformations are in JSON format and are returned
@@ -772,9 +772,9 @@ element with a value of false.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><dl class="first last docutils">
-<dt>inSR - The well-known ID (WKID) of the spatial reference or a</dt>
+<dt>inSR - The well-known ID (gis,WKID) of the spatial reference or a</dt>
 <dd>spatial reference JSON object for the input geometries</dd>
-<dt>outSR - The well-known ID (WKID) of the spatial reference or a</dt>
+<dt>outSR - The well-known ID (gis,WKID) of the spatial reference or a</dt>
 <dd>spatial reference JSON object for the input geometries</dd>
 <dt>extentOfInterest -  The bounding box of the area of interest</dt>
 <dd>specified as a JSON envelope. If provided, the extent of
@@ -795,9 +795,9 @@ envelope.</dd>
 <h2>from_geo_coordinate_string<a class="headerlink" href="#from-geo-coordinate-string" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.from_geo_coordinate_string">
-<code class="descclassname">geometry.</code><code class="descname">from_geo_coordinate_string</code><span class="sig-paren">(</span><em>sr</em>, <em>strings</em>, <em>conversionType</em>, <em>conversionMode=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.from_geo_coordinate_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>The from_geo_coordinate_string operation is performed on a geometry
-service resource. The operation converts an array of well-known
+<code class="descclassname">geometry.</code><code class="descname">from_geo_coordinate_string</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>strings</em>, <em>conversionType</em>, <em>conversionMode=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.from_geo_coordinate_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>The from_geo_coordinate_string function is performed on a geometry
+service resource. The function converts an array of well-known
 strings into xy-coordinates based on the conversion type and
 spatial reference supplied by the user. An optional conversion mode
 parameter is available for some conversion types.</p>
@@ -863,9 +863,9 @@ utmNorthSouth - Uses north/south latitude indicators instead of</p>
 <h2>generalize<a class="headerlink" href="#generalize" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.generalize">
-<code class="descclassname">geometry.</code><code class="descname">generalize</code><span class="sig-paren">(</span><em>sr</em>, <em>geometries</em>, <em>maxDeviation</em>, <em>deviationUnit</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.generalize" title="Permalink to this definition">¶</a></dt>
-<dd><p>The generalize operation is performed on a geometry service
-resource. The generalize operation simplifies the input geometries
+<code class="descclassname">geometry.</code><code class="descname">generalize</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>geometries</em>, <em>maxDeviation</em>, <em>deviationUnit</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.generalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>The generalize function is performed on a geometry service
+resource. The generalize function simplifies the input geometries
 using the Douglas-Peucker algorithm with a specified maximum
 deviation distance. The output geometries will contain a subset of
 the original input vertices.</p>
@@ -894,9 +894,9 @@ geometry.</div></blockquote>
 <h2>intersect<a class="headerlink" href="#intersect" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.intersect">
-<code class="descclassname">geometry.</code><code class="descname">intersect</code><span class="sig-paren">(</span><em>sr</em>, <em>geometries</em>, <em>geometry</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.intersect" title="Permalink to this definition">¶</a></dt>
-<dd><p>The intersect operation is performed on a geometry service
-resource. This operation constructs the set-theoretic intersection
+<code class="descclassname">geometry.</code><code class="descname">intersect</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>geometries</em>, <em>geometry</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.intersect" title="Permalink to this definition">¶</a></dt>
+<dd><p>The intersect function is performed on a geometry service
+resource. This function constructs the set-theoretic intersection
 between an array of geometries and another geometry. The dimension
 of each resultant geometry is the minimum dimension of the input
 geometry in the geometries array and the other geometry specified
@@ -922,9 +922,9 @@ ArcGIS REST API.</dd>
 <h2>label_points<a class="headerlink" href="#label-points" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.label_points">
-<code class="descclassname">geometry.</code><code class="descname">label_points</code><span class="sig-paren">(</span><em>sr</em>, <em>polygons</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.label_points" title="Permalink to this definition">¶</a></dt>
-<dd><p>The label_points operation is performed on a geometry service
-resource. The labelPoints operation calculates an interior point
+<code class="descclassname">geometry.</code><code class="descname">label_points</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>polygons</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.label_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>The label_points function is performed on a geometry service
+resource. The labelPoints function calculates an interior point
 for each polygon specified in the input array. These interior
 points can be used by clients for labeling the polygons.</p>
 <dl class="docutils">
@@ -945,9 +945,9 @@ sr.</dd>
 <h2>lengths<a class="headerlink" href="#lengths" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.lengths">
-<code class="descclassname">geometry.</code><code class="descname">lengths</code><span class="sig-paren">(</span><em>sr</em>, <em>polylines</em>, <em>lengthUnit</em>, <em>calculationType</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.lengths" title="Permalink to this definition">¶</a></dt>
-<dd><p>The lengths operation is performed on a geometry service resource.
-This operation calculates the 2D Euclidean or geodesic lengths of
+<code class="descclassname">geometry.</code><code class="descname">lengths</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>polylines</em>, <em>lengthUnit</em>, <em>calculationType</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.lengths" title="Permalink to this definition">¶</a></dt>
+<dd><p>The lengths function is performed on a geometry service resource.
+This function calculates the 2D Euclidean or geodesic lengths of
 each polyline specified in the input array.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
@@ -994,9 +994,9 @@ geometry in its coordinate system is preserved.</dd>
 <h2>offset<a class="headerlink" href="#offset" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.offset">
-<code class="descclassname">geometry.</code><code class="descname">offset</code><span class="sig-paren">(</span><em>geometries</em>, <em>offsetDistance</em>, <em>offsetUnit</em>, <em>offsetHow='esriGeometryOffsetRounded'</em>, <em>bevelRatio=10</em>, <em>simplifyResult=False</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.offset" title="Permalink to this definition">¶</a></dt>
-<dd><p>The offset operation is performed on a geometry service resource.
-This operation constructs geometries that are offset from the
+<code class="descclassname">geometry.</code><code class="descname">offset</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>offsetDistance</em>, <em>offsetUnit</em>, <em>offsetHow='esriGeometryOffsetRounded'</em>, <em>bevelRatio=10</em>, <em>simplifyResult=False</em>, <em>sr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>The offset function is performed on a geometry service resource.
+This function constructs geometries that are offset from the
 given input geometries. If the offset parameter is positive, the
 constructed offset will be on the right side of the geometry. Left
 side offsets are constructed with negative parameters. Tracing the
@@ -1054,21 +1054,21 @@ geometries. The default is false.</dd>
 <h2>project<a class="headerlink" href="#project" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.project">
-<code class="descclassname">geometry.</code><code class="descname">project</code><span class="sig-paren">(</span><em>geometries</em>, <em>inSR</em>, <em>outSR</em>, <em>transformation=''</em>, <em>transformFoward=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.project" title="Permalink to this definition">¶</a></dt>
-<dd><p>The project operation is performed on a geometry service resource.
-This operation projects an array of input geometries from the input
+<code class="descclassname">geometry.</code><code class="descname">project</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries</em>, <em>inSR</em>, <em>outSR</em>, <em>transformation=''</em>, <em>transformFoward=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.project" title="Permalink to this definition">¶</a></dt>
+<dd><p>The project function is performed on a geometry service resource.
+This function projects an array of input geometries from the input
 spatial reference to the output spatial reference.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><p class="first">geometries - The array of geometries to be projected.
-inSR - The well-known ID (WKID) of the spatial reference or a</p>
+inSR - The well-known ID (gis,WKID) of the spatial reference or a</p>
 <blockquote>
 <div>spatial reference JSON object for the input geometries.</div></blockquote>
 <dl class="last docutils">
-<dt>outSR - The well-known ID (WKID) of the spatial reference or a</dt>
+<dt>outSR - The well-known ID (gis,WKID) of the spatial reference or a</dt>
 <dd>spatial reference JSON object for the input geometries.</dd>
 <dt>transformation - The WKID or a JSON object specifying the</dt>
-<dd>geographic transformation (also known as datum transformation) to
+<dd>geographic transformation (gis,also known as datum transformation) to
 be applied to the projected geometries. Note that a
 transformation is needed only if the output spatial reference
 contains a different geographic coordinate system than the input
@@ -1088,9 +1088,9 @@ parameter must also be specified. The default value is false.</dd>
 <h2>relation<a class="headerlink" href="#relation" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.relation">
-<code class="descclassname">geometry.</code><code class="descname">relation</code><span class="sig-paren">(</span><em>geometries1</em>, <em>geometries2</em>, <em>sr</em>, <em>relation='esriGeometryRelationIntersection'</em>, <em>relationParam=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.relation" title="Permalink to this definition">¶</a></dt>
-<dd><p>The relation operation is performed on a geometry service resource.
-This operation determines the pairs of geometries from the input
+<code class="descclassname">geometry.</code><code class="descname">relation</code><span class="sig-paren">(</span><em>gis</em>, <em>geometries1</em>, <em>geometries2</em>, <em>sr</em>, <em>relation='esriGeometryRelationIntersection'</em>, <em>relationParam=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.relation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The relation function is performed on a geometry service resource.
+This function determines the pairs of geometries from the input
 geometry arrays that participate in the specified spatial relation.
 Both arrays are assumed to be in the spatial reference specified by
 sr, which is a required parameter. Geometry types cannot be mixed
@@ -1128,8 +1128,8 @@ esriGeometryRelationWithin | esriGeometryRelationRelation</dd>
 <h2>reshape<a class="headerlink" href="#reshape" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.reshape">
-<code class="descclassname">geometry.</code><code class="descname">reshape</code><span class="sig-paren">(</span><em>sr</em>, <em>target</em>, <em>reshaper</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.reshape" title="Permalink to this definition">¶</a></dt>
-<dd><p>The reshape operation is performed on a geometry service resource.
+<code class="descclassname">geometry.</code><code class="descname">reshape</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>target</em>, <em>reshaper</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.reshape" title="Permalink to this definition">¶</a></dt>
+<dd><p>The reshape function is performed on a geometry service resource.
 It reshapes a polyline or polygon feature by constructing a
 polyline over the feature. The feature takes the shape of the
 reshaper polyline from the first place the reshaper intersects the
@@ -1151,9 +1151,9 @@ reshaper - The single-part polyline that does the reshaping.</p>
 <h2>to_geo_coordinate_string<a class="headerlink" href="#to-geo-coordinate-string" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.to_geo_coordinate_string">
-<code class="descclassname">geometry.</code><code class="descname">to_geo_coordinate_string</code><span class="sig-paren">(</span><em>sr</em>, <em>coordinates</em>, <em>conversionType</em>, <em>conversionMode='mgrsDefault'</em>, <em>numOfDigits=None</em>, <em>rounding=True</em>, <em>addSpaces=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.to_geo_coordinate_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>The toGeoCoordinateString operation is performed on a geometry
-service resource. The operation converts an array of
+<code class="descclassname">geometry.</code><code class="descname">to_geo_coordinate_string</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>coordinates</em>, <em>conversionType</em>, <em>conversionMode='mgrsDefault'</em>, <em>numOfDigits=None</em>, <em>rounding=True</em>, <em>addSpaces=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.to_geo_coordinate_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>The toGeoCoordinateString function is performed on a geometry
+service resource. The function converts an array of
 xy-coordinates into well-known strings based on the conversion type
 and spatial reference supplied by the user. Optional parameters are
 available for some conversion types. Note that if an optional
@@ -1227,9 +1227,9 @@ while the default value for both USNG and UTM is true.</dd>
 <h2>trim_extend<a class="headerlink" href="#trim-extend" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.trim_extend">
-<code class="descclassname">geometry.</code><code class="descname">trim_extend</code><span class="sig-paren">(</span><em>sr</em>, <em>polylines</em>, <em>trimExtendTo</em>, <em>extendHow=0</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.trim_extend" title="Permalink to this definition">¶</a></dt>
-<dd><p>The trim_extend operation is performed on a geometry service
-resource. This operation trims or extends each polyline specified
+<code class="descclassname">geometry.</code><code class="descname">trim_extend</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>polylines</em>, <em>trimExtendTo</em>, <em>extendHow=0</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.trim_extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>The trim_extend function is performed on a geometry service
+resource. This function trims or extends each polyline specified
 in the input array, using the user-specified guide polylines. When
 trimming features, the part to the left of the oriented cutting
 line is preserved in the output, and the other part is discarded.
@@ -1247,7 +1247,7 @@ trimExtendTo - A polyline that is used as a guide for trimming or</p>
 <div>extending input polylines.</div></blockquote>
 <dl class="last docutils">
 <dt>extendHow - A flag that is used along with the trimExtend</dt>
-<dd><p class="first">operation.
+<dd><p class="first">function.
 0 - By default, an extension considers both ends of a path. The</p>
 <blockquote>
 <div>old ends remain, and new points are added to the extended ends.
@@ -1278,9 +1278,9 @@ its attributes empty. Incompatible with esriKeepAttributes.</dd>
 <h2>union<a class="headerlink" href="#union" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geometry.union">
-<code class="descclassname">geometry.</code><code class="descname">union</code><span class="sig-paren">(</span><em>sr</em>, <em>geometries</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.union" title="Permalink to this definition">¶</a></dt>
-<dd><p>The union operation is performed on a geometry service resource.
-This operation constructs the set-theoretic union of the geometries
+<code class="descclassname">geometry.</code><code class="descname">union</code><span class="sig-paren">(</span><em>gis</em>, <em>sr</em>, <em>geometries</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geometry.union" title="Permalink to this definition">¶</a></dt>
+<dd><p>The union function is performed on a geometry service resource.
+This function constructs the set-theoretic union of the geometries
 in the input array. All inputs must be of the same type.</p>
 <p>Inputs:
 sr - The well-known ID of the spatial reference or a spatial</p>

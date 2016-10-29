@@ -191,10 +191,11 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geocoding.html">arcgis.geocoding module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#find-best-match">find_best_match</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
 </ul>
 </li>
@@ -521,10 +522,6 @@
 
       
   <dt><a href="arcgis.mapping.html#arcgis.mapping.MapView.center">center (arcgis.mapping.MapView attribute)</a>
-  </dt>
-
-      
-  <dt><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.choose_best_facilities">choose_best_facilities() (arcgis.features.find_locations method)</a>
   </dt>
 
       
@@ -916,10 +913,6 @@
   </dt>
 
       
-  <dt><a href="arcgis.geocoding.html#arcgis.geocoding.find_best_match">find_best_match() (arcgis.geocoding method)</a>
-  </dt>
-
-      
   <dt><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.find_existing_locations">find_existing_locations() (arcgis.features.find_locations method)</a>
   </dt>
 
@@ -937,12 +930,12 @@
   <dt><a href="arcgis.features.use_proximity.html#arcgis.features.use_proximity.find_nearest">find_nearest() (arcgis.features.use_proximity method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.find_similar_locations">find_similar_locations() (arcgis.features.find_locations method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.find_transformation">find_transformation() (arcgis.geometry method)</a>
   </dt>
@@ -997,6 +990,10 @@
   </dt>
 
         
+  <dt><a href="arcgis.geocoding.html#arcgis.geocoding.Geocoder.fromitem">(arcgis.geocoding.Geocoder class method)</a>
+  </dt>
+
+        
   <dt><a href="arcgis.gis.html#arcgis.gis.Layer.fromitem">(arcgis.gis.Layer class method)</a>
   </dt>
 
@@ -1029,6 +1026,10 @@
 
       
   <dt><a href="arcgis.geocoding.html#arcgis.geocoding.geocode">geocode() (arcgis.geocoding method)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.geocoding.html#arcgis.geocoding.Geocoder">Geocoder (class in arcgis.geocoding)</a>
   </dt>
 
       
@@ -1077,6 +1078,10 @@
       </dl></dd>
       
   <dt><a href="arcgis.gis.html#arcgis.gis.Item.get_data">get_data() (arcgis.gis.Item method)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.geocoding.html#arcgis.geocoding.get_geocoders">get_geocoders() (arcgis.geocoding method)</a>
   </dt>
 
       
@@ -1219,6 +1224,8 @@
   <dt><a href="arcgis.raster.html#arcgis.raster.interpolate">interpolate() (arcgis.raster method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.analyze_patterns.html#arcgis.features.analyze_patterns.interpolate_points">interpolate_points() (arcgis.features.analyze_patterns method)</a>
   </dt>
@@ -1231,30 +1238,6 @@
   <dt><a href="arcgis.gis.html#arcgis.gis.Group.invite_users">invite_users() (arcgis.gis.Group method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="arcgis.features.html#arcgis.features.FeatureLayer.invoke">invoke() (arcgis.features.FeatureLayer method)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayer.invoke">[1]</a>
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="arcgis.features.html#arcgis.features.FeatureLayerCollection.invoke">(arcgis.features.FeatureLayerCollection method)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayerCollection.invoke">[1]</a>
-  </dt>
-
-        
-  <dt><a href="arcgis.features.html#arcgis.features.Table.invoke">(arcgis.features.Table method)</a>, <a href="arcgis.features.toc.html#arcgis.features.Table.invoke">[1]</a>
-  </dt>
-
-        
-  <dt><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerCollectionManager.invoke">(arcgis.features.managers.FeatureLayerCollectionManager method)</a>
-  </dt>
-
-        
-  <dt><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerManager.invoke">(arcgis.features.managers.FeatureLayerManager method)</a>
-  </dt>
-
-      </dl></dd>
       
   <dt><a href="arcgis.gis.html#arcgis.gis.ContentManager.is_service_name_available">is_service_name_available() (arcgis.gis.ContentManager method)</a>
   </dt>
@@ -1453,22 +1436,46 @@
   <dt><a href="arcgis.geometry.html#arcgis.geometry.Polyline">Polyline (class in arcgis.geometry)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.project">project() (arcgis.geometry method)</a>
   </dt>
 
       
-  <dt><a href="arcgis.html#arcgis.GIS.properties">properties (arcgis.GIS attribute)</a>
+  <dt><a href="arcgis.features.html#arcgis.features.FeatureLayer.properties">properties (arcgis.features.FeatureLayer attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayer.properties">[1]</a>
   </dt>
 
       <dd><dl>
+        
+  <dt><a href="arcgis.html#arcgis.GIS.properties">(arcgis.GIS attribute)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.features.html#arcgis.features.FeatureLayerCollection.properties">(arcgis.features.FeatureLayerCollection attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayerCollection.properties">[1]</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.features.html#arcgis.features.Table.properties">(arcgis.features.Table attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.Table.properties">[1]</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerCollectionManager.properties">(arcgis.features.managers.FeatureLayerCollectionManager attribute)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerManager.properties">(arcgis.features.managers.FeatureLayerManager attribute)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.geocoding.html#arcgis.geocoding.Geocoder.properties">(arcgis.geocoding.Geocoder attribute)</a>
+  </dt>
+
         
   <dt><a href="arcgis.gis.html#arcgis.gis.GIS.properties">(arcgis.gis.GIS attribute)</a>
   </dt>
 
       </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.gis.html#arcgis.gis.Item.protect">protect() (arcgis.gis.Item method)</a>
   </dt>
