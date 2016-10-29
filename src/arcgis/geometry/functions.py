@@ -1,3 +1,6 @@
+"""
+Functions which take geometric types as parameters and return geometric type results.
+"""
 # https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer.
 
 # ----------------------------------------------------------------------
@@ -82,8 +85,7 @@ def areas_and_lengths(gis,
 def auto_complete(gis,
                   polygons=None,
                   polylines=None,
-                  sr=None
-                  ):
+                  sr=None):
     """
        The auto_complete function simplifies the process of
        constructing new polygons that are adjacent to other polygons.
@@ -95,7 +97,10 @@ def auto_complete(gis,
           polylines - list of Polyline objects
           sr - spatial reference of the input geometries WKID
     """
-    pass
+    return gis._tools._geometry.auto_complete(
+        polygons,
+        polylines,
+        sr)
 
 
 # ----------------------------------------------------------------------
@@ -107,8 +112,7 @@ def buffer(gis,
            out_sr=None,
            buffer_sr=None,
            union_results=True,
-           geodesic=True
-           ):
+           geodesic=True):
     """
        The buffer function is performed on a geometry service resource
        The result of this function is buffered polygons at the
@@ -123,7 +127,7 @@ def buffer(gis,
           buffered.
          unit - The units for calculating each buffer distance. If unit
           is not specified, the units are derived from bufferSR. If
-          bufferSR is not specified, the units are derived from inSR.
+          bufferSR is not specified, the units are derived from in_sr.
          out_sr - The well-known ID of the spatial reference or a
           spatial reference JSON object for the input geometries.
          buffer_sr - The well-known ID of the spatial reference or a
@@ -139,7 +143,15 @@ def buffer(gis,
           to buffer the input geometries. The default value depends on
           the geometry type, unit and bufferSR.
     """
-    pass
+    return gis._tools._geometry.buffer(
+        geometries,
+        in_sr,
+        distances,
+        unit,
+        out_sr,
+        buffer_sr,
+        union_results,
+        geodesic)
 
 
 # ----------------------------------------------------------------------
@@ -158,7 +170,9 @@ def convex_hull(gis,
        sr - The well-known ID or a spatial reference JSON object for
             the output geometry.
     """
-    pass
+    return gis._tools._geometry.convex_hull(
+        geometries,
+        sr)
 
 
 # ----------------------------------------------------------------------
@@ -187,7 +201,10 @@ def cut(gis,
        sr - The well-known ID or a spatial reference JSON object for
         the output geometry.
     """
-    pass
+    return gis._tools._geometry.cut(
+        cutter,
+        target,
+        sr)
 
 
 # ----------------------------------------------------------------------
@@ -196,8 +213,7 @@ def density(gis,
             sr,
             max_segment_length,
             length_unit,
-            geodesic=False,
-            ):
+            geodesic=False):
     """
     The densify function is performed using the GIS's geometry engine.
     This function densifies geometries by plotting points between
@@ -213,7 +229,7 @@ def density(gis,
         Projected coordinate systems and Geographic coordinate systems.
        max_segment_length - All segments longer than maxSegmentLength are
         replaced with sequences of lines no longer than
-        maxSegmentLength.
+        max_segment_length.
        length_unit - The length unit of max_segment_length. If geodesic is
         set to false, then the units are derived from sr, and
         length_unit is ignored. If geodesic is set to true, then
@@ -227,15 +243,19 @@ def density(gis,
         earth. If geodesic is set to false, then 2D Euclidean distance
         is used to calculate max_segment_length. The default is false.
     """
-    pass
+    return gis._tools._geometry.density(
+        geometries,
+        sr,
+        max_segment_length,
+        length_unit,
+        geodesic)
 
 
 # ----------------------------------------------------------------------
 def difference(gis,
                geometries,
                sr,
-               geometry
-               ):
+               geometry):
     """
     The difference function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
@@ -257,7 +277,10 @@ def difference(gis,
       sr - The well-known ID of the spatial reference or a spatial
        reference JSON object for the input geometries.
     """
-    pass
+    return gis._tools._geometry.difference(
+        geometries,
+        sr,
+        geometry)
 
 
 # ----------------------------------------------------------------------
@@ -265,9 +288,8 @@ def distance(gis,
              sr,
              geometry1,
              geometry2,
-             distanceUnit="",
-             geodesic=False
-             ):
+             distance_unit="",
+             geodesic=False):
     """
     The distance function is performed on a geometry service resource.
     It reports the 2D Euclidean or geodesic distance between the two
@@ -291,13 +313,18 @@ def distance(gis,
       specified, the planar distance is returned. The default value is
       false.
     """
-    pass
+    return gis._tools._geometry.distance(
+        sr,
+        geometry1,
+        geometry2,
+        distance_unit,
+        geodesic)
 
 
 # ----------------------------------------------------------------------
-def find_transformation(gis, inSR, outSR, extentOfInterest=None, numOfResults=1):
+def find_transformation(gis, in_sr, out_sr, extent_of_interest=None, num_of_results=1):
     """
-    The findTransformations function is performed on a geometry
+    The find_transformations function is performed on a geometry
     service resource. This function returns a list of applicable
     geographic transformations you should use when projecting
     geometries from the input spatial reference to the output spatial
@@ -315,26 +342,27 @@ def find_transformation(gis, inSR, outSR, extentOfInterest=None, numOfResults=1)
     element with a value of false.
 
     Inputs:
-       inSR - The well-known ID (gis,WKID) of the spatial reference or a
+       in_sr - The well-known ID (gis,WKID) of the spatial reference or a
          spatial reference JSON object for the input geometries
-       outSR - The well-known ID (gis,WKID) of the spatial reference or a
+       out_sr - The well-known ID (gis,WKID) of the spatial reference or a
          spatial reference JSON object for the input geometries
-       extentOfInterest -  The bounding box of the area of interest
+       extent_of_interest -  The bounding box of the area of interest
          specified as a JSON envelope. If provided, the extent of
          interest is used to return the most applicable geographic
          transformations for the area. If a spatial reference is not
-         included in the JSON envelope, the inSR is used for the
+         included in the JSON envelope, the in_sr is used for the
          envelope.
-       numOfResults - The number of geographic transformations to
-         return. The default value is 1. If numOfResults has a value of
+       num_of_results - The number of geographic transformations to
+         return. The default value is 1. If num_of_results has a value of
          -1, all applicable transformations are returned.
     """
-    pass
+    return gis._tools._geometry.find_transformation(in_sr, out_sr,
+                                                    extent_of_interest, num_of_results)
 
 
 # ----------------------------------------------------------------------
 def from_geo_coordinate_string(gis, sr, strings,
-                               conversionType, conversionMode=None):
+                               conversion_type, conversion_mode=None):
     """
     The from_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of well-known
@@ -346,11 +374,11 @@ def from_geo_coordinate_string(gis, sr, strings,
      sr - The well-known ID of the spatial reference or a spatial
       reference json object.
      strings - An array of strings formatted as specified by
-      conversionType.
+      conversion_type.
       Syntax: [<string1>,...,<stringN>]
       Example: ["01N AA 66021 00000","11S NT 00000 62155",
                 "31U BT 94071 65288"]
-     conversionType - The conversion type of the input strings.
+     conversion_type - The conversion type of the input strings.
       Valid conversion types are:
        MGRS - Military Grid Reference System
        USNG - United States National Grid
@@ -360,7 +388,7 @@ def from_geo_coordinate_string(gis, sr, strings,
        DMS - Degree Minute Second
        DDM - Degree Decimal Minute
        DD - Decimal Degree
-     conversionMode - Conversion options for MGRS, UTM and GARS
+     conversion_mode - Conversion options for MGRS, UTM and GARS
       conversion types.
       Conversion options for MGRS and UTM conversion types.
       Valid conversion modes for MGRS are:
@@ -379,15 +407,16 @@ def from_geo_coordinate_string(gis, sr, strings,
        utmNorthSouth - Uses north/south latitude indicators instead of
         zone numbers. Non-standard. Default is recommended
     """
-    pass
+    return gis._tools._geometry.from_geo_coordinate_string(sr, strings,
+                                                           conversion_type, conversion_mode)
 
 
 # ----------------------------------------------------------------------
 def generalize(gis,
                sr,
                geometries,
-               maxDeviation,
-               deviationUnit):
+               max_deviation,
+               deviation_unit):
     """
     The generalize function is performed on a geometry service
     resource. The generalize function simplifies the input geometries
@@ -399,22 +428,25 @@ def generalize(gis,
      sr - The well-known ID or a spatial reference JSON object for the
       input geometries.
      geometries - The array of geometries to be generalized.
-     maxDeviation - maxDeviation sets the maximum allowable offset,
+     max_deviation - max_deviation sets the maximum allowable offset,
       which will determine the degree of simplification. This value
       limits the distance the output geometry can differ from the input
       geometry.
-     deviationUnit - A unit for maximum deviation. If a unit is not
+     deviation_unit - A unit for maximum deviation. If a unit is not
       specified, the units are derived from sr.
     """
-    pass
+    return gis._tools._geometry.generalize(
+        sr,
+        geometries,
+        max_deviation,
+        deviation_unit)
 
 
 # ----------------------------------------------------------------------
 def intersect(gis,
               sr,
               geometries,
-              geometry
-              ):
+              geometry):
     """
     The intersect function is performed on a geometry service
     resource. This function constructs the set-theoretic intersection
@@ -433,14 +465,15 @@ def intersect(gis,
      geometry - A single geometry of any type with a dimension equal to
       or greater than the elements of geometries.
     """
-    pass
+    return gis._tools._geometry.intersect(sr,
+                                          geometries,
+                                          geometry)
 
 
 # ----------------------------------------------------------------------
 def label_points(gis,
                  sr,
-                 polygons,
-                 ):
+                 polygons):
     """
     The label_points function is performed on a geometry service
     resource. The labelPoints function calculates an interior point
@@ -454,16 +487,15 @@ def label_points(gis,
       computed. The spatial reference of the polygons is specified by
       sr.
     """
-    pass
+    return gis._tools._geometry.label_points(sr, polygons)
 
 
 # ----------------------------------------------------------------------
 def lengths(gis,
             sr,
             polylines,
-            lengthUnit,
-            calculationType
-            ):
+            length_unit,
+            calculation_type):
     """
     The lengths function is performed on a geometry service resource.
     This function calculates the 2D Euclidean or geodesic lengths of
@@ -474,15 +506,15 @@ def lengths(gis,
       reference JSON object for the input polylines.
      polylines - The array of polylines whose lengths are to be
       computed.
-     lengthUnit - The unit in which lengths of polylines will be
-      calculated. If calculationType is planar, then lengthUnit can be
-      any esriUnits constant. If calculationType is planar and
-      lengthUnit is not specified, then the units are derived from sr.
-      If calculationType is not planar, then lengthUnit must be a
+     length_unit - The unit in which lengths of polylines will be
+      calculated. If calculation_type is planar, then length_unit can be
+      any esriUnits constant. If calculation_type is planar and
+      length_unit is not specified, then the units are derived from sr.
+      If calculation_type is not planar, then length_unit must be a
       linear esriUnits constant such as esriSRUnit_Meter or
-      esriSRUnit_SurveyMile. If calculationType is not planar and
-      lengthUnit is not specified, then the units are meters.
-     calculationType - calculationType defines the length calculation
+      esriSRUnit_SurveyMile. If calculation_type is not planar and
+      length_unit is not specified, then the units are meters.
+     calculation_type - calculation_type defines the length calculation
       for the geometry. The type can be one of the following values:
         planar - Planar measurements use 2D Euclidean distance to
          calculate length. This type should only be used if the length
@@ -497,19 +529,22 @@ def lengths(gis,
          on the surface of the earth ellipsoid. The shape of the
          geometry in its coordinate system is preserved.
     """
-    pass
+    return gis._tools._geometry.lengths(
+        sr,
+        polylines,
+        length_unit,
+        calculation_type)
 
 
 # ----------------------------------------------------------------------
 def offset(gis,
            geometries,
-           offsetDistance,
-           offsetUnit,
-           offsetHow="esriGeometryOffsetRounded",
-           bevelRatio=10,
-           simplifyResult=False,
-           sr=None,
-           ):
+           offset_distance,
+           offset_unit,
+           offset_how="esriGeometryOffsetRounded",
+           bevel_ratio=10,
+           simplify_result=False,
+           sr=None):
     """
     The offset function is performed on a geometry service resource.
     This function constructs geometries that are offset from the
@@ -525,13 +560,13 @@ def offset(gis,
 
     Inputs:
      geometries -  The array of geometries to be offset.
-     offsetDistance - Specifies the distance for constructing an offset
-      based on the input geometries. If the offsetDistance parameter is
+     offset_distance - Specifies the distance for constructing an offset
+      based on the input geometries. If the offset_distance parameter is
       positive, the constructed offset will be on the right side of the
       curve. Left-side offsets are constructed with negative values.
-     offsetUnit - A unit for offset distance. If a unit is not
+     offset_unit - A unit for offset distance. If a unit is not
       specified, the units are derived from sr.
-     offsetHow - The offsetHow parameter determines how outer corners
+     offset_how - The offset_how parameter determines how outer corners
       between segments are handled. The three options are as follows:
        esriGeometryOffsetRounded - Rounds the corner between extended
         offsets.
@@ -541,28 +576,35 @@ def offset(gis,
         to naturally intersect, but if that intersection occurs too far
         from the corner, the corner is eventually bevelled off at a
         fixed distance.
-     bevelRatio - bevelRatio is multiplied by the offset distance, and
+     bevel_ratio - bevel_ratio is multiplied by the offset distance, and
       the result determines how far a mitered offset intersection can
       be located before it is bevelled. When mitered is specified,
-      bevelRatio is ignored and 10 is used internally. When bevelled is
-      specified, 1.1 will be used if bevelRatio is not specified.
-      bevelRatio is ignored for rounded offset.
-     simplifyResult - if simplifyResult is set to true, then self
+      bevel_ratio is ignored and 10 is used internally. When bevelled is
+      specified, 1.1 will be used if bevel_ratio is not specified.
+      bevel_ratio is ignored for rounded offset.
+     simplify_result - if simplify_result is set to true, then self
       intersecting loops will be removed from the result offset
       geometries. The default is false.
      sr - The well-known ID or a spatial reference JSON object for the
       input geometries.
     """
-    pass
+    return gis._tools._geometry.offset(
+        geometries,
+        offset_distance,
+        offset_unit,
+        offset_how,
+        bevel_ratio,
+        simplify_result,
+        sr)
 
 
 # ----------------------------------------------------------------------
 def project(gis,
             geometries,
-            inSR,
-            outSR,
+            in_sr,
+            out_sr,
             transformation="",
-            transformFoward=False):
+            transform_foward=False):
     """
     The project function is performed on a geometry service resource.
     This function projects an array of input geometries from the input
@@ -570,9 +612,9 @@ def project(gis,
 
     Inputs:
      geometries - The array of geometries to be projected.
-     inSR - The well-known ID (gis,WKID) of the spatial reference or a
+     in_sr - The well-known ID (gis,WKID) of the spatial reference or a
       spatial reference JSON object for the input geometries.
-     outSR - The well-known ID (gis,WKID) of the spatial reference or a
+     out_sr - The well-known ID (gis,WKID) of the spatial reference or a
       spatial reference JSON object for the input geometries.
      transformation - The WKID or a JSON object specifying the
       geographic transformation (gis,also known as datum transformation) to
@@ -580,13 +622,18 @@ def project(gis,
       transformation is needed only if the output spatial reference
       contains a different geographic coordinate system than the input
       spatial reference.
-     transformForward - A Boolean value indicating whether or not to
+     transform_forward - A Boolean value indicating whether or not to
       transform forward. The forward or reverse direction of
       transformation is implied in the name of the transformation. If
       transformation is specified, a value for the transformForward
       parameter must also be specified. The default value is false.
     """
-    pass
+    return gis._tools._geometry.project(
+        geometries,
+        in_sr,
+        out_sr,
+        transformation,
+        transform_foward)
 
 
 # ----------------------------------------------------------------------
@@ -594,12 +641,12 @@ def relation(gis,
              geometries1,
              geometries2,
              sr,
-             relation="esriGeometryRelationIntersection",
-             relationParam=""):
+             spatial_relation="esriGeometryRelationIntersection",
+             relation_param=""):
     """
-    The relation function is performed on a geometry service resource.
+    The spatial_relation function is performed on a geometry service resource.
     This function determines the pairs of geometries from the input
-    geometry arrays that participate in the specified spatial relation.
+    geometry arrays that participate in the specified spatial spatial_relation.
     Both arrays are assumed to be in the spatial reference specified by
     sr, which is a required parameter. Geometry types cannot be mixed
     within an array. The relations are evaluated in 2D. In other words,
@@ -612,7 +659,7 @@ def relation(gis,
      relations.
      sr - The well-known ID of the spatial reference or a spatial
       reference JSON object for the input geometries.
-     relation - The spatial relationship to be tested between the two
+     spatial_relation - The spatial relationship to be tested between the two
       input geometry arrays.
       Values: esriGeometryRelationCross | esriGeometryRelationDisjoint |
       esriGeometryRelationIn | esriGeometryRelationInteriorIntersection |
@@ -620,18 +667,22 @@ def relation(gis,
       esriGeometryRelationLineTouch | esriGeometryRelationOverlap |
       esriGeometryRelationPointTouch | esriGeometryRelationTouch |
       esriGeometryRelationWithin | esriGeometryRelationRelation
-     relationParam - The Shape Comparison Language string to be
+     relation_param - The Shape Comparison Language string to be
       evaluated.
     """
-    pass
+    return gis._tools._geometry.relation(
+        geometries1,
+        geometries2,
+        sr,
+        spatial_relation,
+        relation_param)
 
 
 # ----------------------------------------------------------------------
 def reshape(gis,
             sr,
             target,
-            reshaper
-            ):
+            reshaper):
     """
     The reshape function is performed on a geometry service resource.
     It reshapes a polyline or polygon feature by constructing a
@@ -645,14 +696,16 @@ def reshape(gis,
      target -  The polyline or polygon to be reshaped.
      reshaper - The single-part polyline that does the reshaping.
     """
-    pass
+    return gis._tools._geometry.reshape(
+        sr,
+        target,
+        reshaper)
 
 
 # ----------------------------------------------------------------------
 def simplify(gis,
              sr,
-             geometries
-             ):
+             geometries):
     """
     The simplify function is performed on a geometry service resource.
     Simplify permanently alters the input geometry so that the geometry
@@ -664,19 +717,18 @@ def simplify(gis,
       reference JSON object for the input geometries.
     geometries - The array of geometries to be simplified.
     """
-    pass
+    return gis._tools._geometry.simplify(sr, geometries)
 
 
 # ----------------------------------------------------------------------
 def to_geo_coordinate_string(gis,
                              sr,
                              coordinates,
-                             conversionType,
-                             conversionMode="mgrsDefault",
-                             numOfDigits=None,
+                             conversion_type,
+                             conversion_mode="mgrsDefault",
+                             num_of_digits=None,
                              rounding=True,
-                             addSpaces=True
-                             ):
+                             add_spaces=True):
     """
     The toGeoCoordinateString function is performed on a geometry
     service resource. The function converts an array of
@@ -691,7 +743,7 @@ def to_geo_coordinate_string(gis,
        reference json object.
       coordinates - An array of xy-coordinates in JSON format to be
        converted. Syntax: [[x1,y2],...[xN,yN]]
-      conversionType - The conversion type of the input strings.
+      conversion_type - The conversion type of the input strings.
        Allowed Values:
         MGRS - Military Grid Reference System
         USNG - United States National Grid
@@ -701,7 +753,7 @@ def to_geo_coordinate_string(gis,
         DMS - Degree Minute Second
         DDM - Degree Decimal Minute
         DD - Decimal Degree
-      conversionMode - Conversion options for MGRS and UTM conversion
+      conversion_mode - Conversion options for MGRS and UTM conversion
        types.
        Valid conversion modes for MGRS are:
         mgrsDefault - Default. Uses the spheroid from the given spatial
@@ -718,9 +770,9 @@ def to_geo_coordinate_string(gis,
         utmDefault - Default. No options.
         utmNorthSouth - Uses north/south latitude indicators instead of
          zone numbers. Non-standard. Default is recommended.
-      numOfDigits - The number of digits to output for each of the
+      num_of_digits - The number of digits to output for each of the
        numerical portions in the string. The default value for
-       numOfDigits varies depending on conversionType.
+       num_of_digits varies depending on conversion_type.
       rounding - If true, then numeric portions of the string are
        rounded to the nearest whole magnitude as specified by
        numOfDigits. Otherwise, numeric portions of the string are
@@ -731,15 +783,22 @@ def to_geo_coordinate_string(gis,
        types MGRS, USNG and UTM. The default value for MGRS is false,
        while the default value for both USNG and UTM is true.
     """
-    pass
+    return gis._tools._geometry.to_geo_coordinate_string(
+        sr,
+        coordinates,
+        conversion_type,
+        conversion_mode,
+        num_of_digits,
+        rounding,
+        add_spaces)
 
 
 # ----------------------------------------------------------------------
 def trim_extend(gis,
                 sr,
                 polylines,
-                trimExtendTo,
-                extendHow=0):
+                trim_extend_to,
+                extend_how=0):
     """
     The trim_extend function is performed on a geometry service
     resource. This function trims or extends each polyline specified
@@ -753,9 +812,9 @@ def trim_extend(gis,
      sr - The well-known ID of the spatial reference or a spatial
        reference json object.
      polylines - An array of polylines to be trimmed or extended.
-     trimExtendTo - A polyline that is used as a guide for trimming or
+     trim_extend_to - A polyline that is used as a guide for trimming or
       extending input polylines.
-     extendHow - A flag that is used along with the trimExtend
+     extend_how - A flag that is used along with the trimExtend
       function.
       0 - By default, an extension considers both ends of a path. The
        old ends remain, and new points are added to the extended ends.
@@ -774,7 +833,10 @@ def trim_extend(gis,
       8 - Do not extend the 'from' end of any path.
       16 - Do not extend the 'to' end of any path.
     """
-    pass
+    return gis._tools._geometry.trim_extend(sr,
+                                            polylines,
+                                            trim_extend_to,
+                                            extend_how)
 
 
 # ----------------------------------------------------------------------
@@ -791,4 +853,4 @@ def union(gis,
      reference json object.
     geometries - The array of geometries to be unioned.
     """
-    pass
+    return gis._tools._geometry.union(sr, geometries)
