@@ -1,3 +1,8 @@
+def is_supported(gis):
+    if gis._tools._geoanalytics is not None:
+        return True
+    else:
+        return False
 
 
 def aggregate_points(gis,

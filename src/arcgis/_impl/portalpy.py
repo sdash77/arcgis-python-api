@@ -853,6 +853,31 @@ class Portal(object):
         return self.con.post('community/groups/' + group_id + '/users',
                              self._postdata())
 
+    def get_org_roles(self, max_roles=1000):
+        """ Returns all roles within the portal organization.
+
+        Arguments
+            max_roles : optional int, the maximum number of users to return.
+
+        :return:
+            a list of dicts.  Each dict has the following keys:
+        """
+
+        # Execute the search and get back the results
+        count = 0
+        resp = self._roles_page(1, min(max_roles, 100))
+        resp_roles = resp.get('roles')
+        results = resp_roles
+        count += int(resp['num'])
+        nextstart = int(resp['nextStart'])
+        while count < max_roles and nextstart > 0:
+            resp = self._roles_page(nextstart, min(max_roles - count, 100))
+            resp_roles = resp.get('roles')
+            results.extend(resp_roles)
+            count += int(resp['num'])
+            nextstart = int(resp['nextStart'])
+
+        return results
 
     def get_org_users(self, max_users=1000):
         """ Returns all users within the portal organization.
@@ -2061,6 +2086,20 @@ class Portal(object):
         return self._version
 
 
+    def create_role(self, name, description):
+        """ Creates a custom role with specified name and description
+
+        :return:
+            role_id if role is created, else None
+        """
+        postdata = self._postdata()
+        postdata['name'] = name
+        postdata['description'] = description
+
+        resp = self.con.post('portals/self/createRole', postdata)
+        if resp and resp.get('success'):
+            return resp['id']
+
     def create_folder(self, owner, title):
         """ Creates a folder for the given user with the given title.
 
@@ -2204,6 +2243,14 @@ class Portal(object):
         postdata['start'] = start
         postdata['num'] = num
         return self.con.post('portals/self/users', postdata)
+
+    def _roles_page(self, start=1, num=10):
+        _log.info('Retrieving roles(start=' + str(start) \
+                  + ', num=' + str(num) + ')')
+        postdata = self._postdata()
+        postdata['start'] = start
+        postdata['num'] = num
+        return self.con.post('portals/self/roles', postdata)
 
 
     def _users_page(self, q=None, start=1, num=10, sortfield='', sortorder='asc'):

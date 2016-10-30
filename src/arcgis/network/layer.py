@@ -3,14 +3,13 @@ from arcgis.gis import Layer, _GISResource
 
 class NetworkLayer(Layer):
     """
-    The network layer resource represents a single network layer in
-    a network analysis service published by ArcGIS Server. It provides basic
+    NetworkLayer represents a single network layer. It provides basic
     information about the network layer such as its name, type, and network
     classes. Additionally, depending on the layer type, it provides different
     pieces of information.
 
-    It is a base class for RouteNetworkLayer, ServiceAreaNetworkLayer, and
-    ClosestFacilityNetworkLayer.
+    It is a base class for RouteLayer, ServiceAreaLayer, and
+    ClosestFacilityLayer.
     """
     def retrieve_travel_modes(self):
         """identify all the valid travel modes that have been defined on the
@@ -23,7 +22,7 @@ class NetworkLayer(Layer):
 
 class RouteLayer(NetworkLayer):
     """
-    The Route Network Layer which has common properties of Network Layer
+    The Route Layer which has common properties of Network Layer
     as well as some attributes unique to Route Network Layer only.
     """
     def solve(self,stops,
@@ -281,8 +280,8 @@ class RouteLayer(NetworkLayer):
 
 class ServiceAreaLayer(NetworkLayer):
     """
-    The Service Area Network Layer which has common properties of Network
-    Layer as well as some attributes unique to Service Area Network Layer
+    The Service Area Layer which has common properties of Network
+    Layer as well as some attributes unique to Service Area Layer
     only.
     """
     def solve_service_area(self,facilities,
@@ -541,7 +540,7 @@ class ServiceAreaLayer(NetworkLayer):
 class ClosestFacilityLayer(NetworkLayer):
     """
     The Closest Facility Network Layer which has common properties of Network
-    Layer as well as some attributes unique to Closest Facility Network Layer
+    Layer as well as some attributes unique to Closest Facility Layer
     only.
     """
     def solve_closest_facility(self,incidents,facilities,
@@ -802,13 +801,18 @@ class ClosestFacilityLayer(NetworkLayer):
         return self._con.post(path=url, postdata=params, token=self._token)
 
 
-class NetworkLayerCollection(_GISResource):
+class NetworkDataset(_GISResource):
+    """
+    A network dataset containing a collection of network layers including route layers,
+    service area layers and closest facility layers.
+    """
     def __init__(self, url, gis=None):
-        super(NetworkLayerCollection, self).__init__(url, gis)
+        super(NetworkDataset, self).__init__(url, gis)
         self._load_layers()
 
     @classmethod
     def fromitem(cls, item):
+        """Creates a network dataset from a 'Network Analysis Service' Item in the GIS"""
         if not item.type == 'Network Analysis Service':
             raise TypeError("item must be a type of Network Analysis Service, not " + item.type)
 
@@ -846,18 +850,21 @@ class NetworkLayerCollection(_GISResource):
     #----------------------------------------------------------------------
     @property
     def route_layers(self):
+        """List of route layers in this network dataset"""
         if self._routeLayers is None:
             self._load_layers()
         return self._routeLayers
     #----------------------------------------------------------------------
     @property
     def service_area_layers(self):
+        """List of service area layers in this network dataset"""
         if self._serviceAreaLayers is None:
             self._load_layers()
         return self._serviceAreaLayers
     #----------------------------------------------------------------------
     @property
     def closest_facility_layers(self):
+        """List of closest facility layers in this network dataset"""
         if self._closestFacilityLayers is None:
             self._load_layers()
         return self._closestFacilityLayers

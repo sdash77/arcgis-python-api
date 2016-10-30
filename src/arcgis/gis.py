@@ -671,8 +671,6 @@ class UserManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-
-
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
                provider='arcgis', idpUsername=None):
         """ This operation is used to pre-create built-in or enterprise accounts within the portal.
@@ -851,6 +849,101 @@ class UserManager(object):
             return User(self._gis, meuser['username'], meuser)
         else:
             return None
+
+    @property
+    def roles(self):
+        """Helper object to manage custom roles for users"""
+        return RoleManager()
+
+
+class RoleManager(object):
+    """Helper class to manage custom roles for users in a GIS"""
+
+    def __init__(self, gis):
+        """Creates helper object to manage custom roles in the GIS"""
+        self._gis = gis
+        self._portal = gis._portal
+
+
+    def create(self, name, description, privileges=None):
+        """Creates and returns a custom role with the specified parameters"""
+        role_id = self._portal.create_role(name, description)
+        if role_id is not None:
+            role_data = {
+              "id": role_id,
+              "name": name,
+              "description": description
+            }
+            role = Role(self._gis, role_id, role_data)
+            role.privileges = privileges
+            return role
+        else:
+            return None
+
+
+    def all(self, max_roles=1000):
+        """
+        Returns list of all roles in the GIS
+        :param max_roles: the maximum number of roles to be returned
+        :return: list of all roles in the GIS
+        """
+        roles = self._portal.get_org_roles(max_roles)
+        return [Role(self._gis, role['id'], role) for role in roles]
+
+
+    def get_role(self, role_id):
+        """
+        Returns the role with the specified role id. Returns list of all roles in the
+        GIS if a role_id is not specified
+        :param role_id: the role id of the role to get. Leave None to get all roles
+        :return: the role with the specified role id or a list of all roles
+        """
+        role = self._portal.con.post('portals/self/' + role_id, self._portal._postdata())
+        return Role(self._gis, role['id'], role)
+
+class Role(object):
+    """A custom role in the GIS"""
+    def __init__(self, gis, role_id, role):
+        """Create a custom role"""
+        self._gis = gis
+        self.role_id = role_id
+        if role is not None:
+            self._name = role['name']
+            self._description = role['description']
+
+    @property
+    def name(self):
+        """Name of the custom role"""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        """Name of the custom role"""
+        self._name = value
+
+    @property
+    def description(self):
+        """Description of the custom role"""
+        return self._description
+
+    @description.setter
+    def description(self, value):
+        """Description of the custom role"""
+        self._description = value
+
+    @property
+    def privileges(self):
+        """Privileges for the custom role"""
+        return self._privileges
+
+    @privileges.setter
+    def privileges(self, value):
+        """Privileges for the custom role"""
+        self._privileges = value
+
+    def delete(self):
+        """Deletes this role"""
+        pass
 
 
 class GroupManager(object):
@@ -1913,25 +2006,29 @@ class User(dict):
         return ret
 
     def update_role(self, role):
-        """ Updates this user's role to org_user, org_publisher, org_admin
+        """ Updates this user's role to org_user, org_publisher, org_admin or a custom role
 
         .. note::
-            There are three types of roles in Portal - user, publisher, and administrator.
+            There are four types of roles in Portal - user, publisher, administrator and custom roles
             A user can share items, create maps, create groups, etc.  A publisher can
             do everything a user can do and create hosted services.  An administrator can
-            do everything that is possible in Portal.
+            do everything that is possible in Portal. A custom roles privileges can be customized
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         role              required string, one of these values org_user,
                           org_publisher, org_admin
+                          OR
+                          Role object (from gis.users.roles)
         ================  ========================================================
 
         :return:
             a boolean, that indicates success
 
         """
+        if isinstance(role, Role):
+            role = role.role_id
         passed = self._portal.update_user_role(self.username, role)
         if passed:
             self.role = role
@@ -2098,7 +2195,7 @@ class Item(dict):
     def _populate_layers(self):
         from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection
         from arcgis.mapping import VectorTileLayer, DynamicMapLayer
-        from arcgis.network import NetworkLayerCollection
+        from arcgis.network import NetworkDataset
         from arcgis.raster import ImageLayer
 
         if self._has_layers():
@@ -2126,7 +2223,7 @@ class Item(dict):
                 layers.append(VectorTileLayer(self.url, self._gis))
 
             elif self.type == 'Network Analysis Service':
-                svc = NetworkLayerCollection.fromitem(self)
+                svc = NetworkDataset.fromitem(self)
 
                 # route laters, service area layers, closest facility layers
                 for lyr in svc.route_layers:
@@ -2842,6 +2939,7 @@ class Item(dict):
         else:
             print('Folder not found for given owner')
             return None
+
     def protect(self, enable=True):
         """ Enable or disable delete protection on the item
 

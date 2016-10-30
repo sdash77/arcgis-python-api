@@ -2,6 +2,11 @@
 raster analytics tools
 """
 
+def is_analysis_supported(gis):
+    if gis._tools._raster_analysis is not None:
+        return True
+    else:
+        return False
 
 def _create_output_image_service( output_name, task):
     pass
