@@ -132,7 +132,7 @@ class GeometryFactory(type):
                     return MultiPoint(**kwargs)
         return type.__call__(cls, iterable, **kwargs)
 
-###########################################################################
+
 class BaseGeometry(dict):
     """base geometry class"""
     #----------------------------------------------------------------------
@@ -177,15 +177,35 @@ class BaseGeometry(dict):
         return json.dumps(self)
     #----------------------------------------------------------------------
     __str__ = __repr__
-###########################################################################
+
+
 @add_metaclass(GeometryFactory)
 class Geometry(BaseGeometry):
+    """
+    The base class for all geometries.
+
+    You can create a Geometry even when you don't know the exact type. The Geometry constructor is able
+    to figure out the geometry type and returns the correct type as the example below demonstrates:
+
+    .. code-block:: python
+
+        geom = Geometry({
+          "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                      [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                      [-97.06326,32.759]]],
+          "spatialReference" : {"wkid" : 4326}
+        })
+        print (geom.type) # POLYGON
+        print (isinstance(geom, Polygon) # True
+
+    """
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
         super(Geometry, self).__init__(iterable)
         self.update(kwargs)
-###########################################################################
+
+
 class SpatialReference(Geometry):
     """
     A spatial reference can be defined using a well-known ID (wkid) or
@@ -230,7 +250,8 @@ class SpatialReference(Geometry):
     @property
     def type(self):
         return self._type
-###########################################################################
+
+
 class Envelope(Geometry):
     """
     An envelope is a rectangle defined by a range of values for each
@@ -249,7 +270,8 @@ class Envelope(Geometry):
     @property
     def type(self):
         return self._type
-###########################################################################
+
+
 class Point(Geometry):
     """
     A point contains x and y fields along with a spatialReference field. A
@@ -258,16 +280,17 @@ class Point(Geometry):
     point has no location in space.
     """
     _type = "POINT"
-    def __init__(self, iterable=None,
-                 **kwargs):
+    def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
         super(Point, self).__init__(iterable)
         self.update(kwargs)
+
     @property
     def type(self):
         return self._type
-###########################################################################
+
+
 class MultiPoint(Geometry):
     """
     A multipoint contains an array of points, along with a spatialReference
@@ -297,7 +320,8 @@ class MultiPoint(Geometry):
     @property
     def type(self):
         return self._type
-###########################################################################
+
+
 class Polyline(Geometry):
     """
     A polyline contains an array of paths or curvePaths and a
@@ -322,7 +346,8 @@ class Polyline(Geometry):
     @property
     def type(self):
         return self._type
-###########################################################################
+
+
 class Polygon(Geometry):
     """
     A polygon contains an array of rings or curveRings and a
@@ -353,4 +378,3 @@ class Polygon(Geometry):
     @property
     def type(self):
         return self._type
-

@@ -920,13 +920,13 @@ JPEG, max size 1 MB</td>
 <dl class="method">
 <dt id="arcgis.gis.User.update_role">
 <code class="descname">update_role</code><span class="sig-paren">(</span><em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.User.update_role" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates this user&#8217;s role to org_user, org_publisher, org_admin</p>
+<dd><p>Updates this user&#8217;s role to org_user, org_publisher, org_admin or a custom role</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">There are three types of roles in Portal - user, publisher, and administrator.
+<p class="last">There are four types of roles in Portal - user, publisher, administrator and custom roles
 A user can share items, create maps, create groups, etc.  A publisher can
 do everything a user can do and create hosted services.  An administrator can
-do everything that is possible in Portal.</p>
+do everything that is possible in Portal. A custom roles privileges can be customized</p>
 </div>
 <table border="1" class="docutils">
 <colgroup>
@@ -939,7 +939,9 @@ do everything that is possible in Portal.</p>
 </tr>
 <tr class="row-even"><td>role</td>
 <td>required string, one of these values org_user,
-org_publisher, org_admin</td>
+org_publisher, org_admin
+OR
+Role object (from gis.users.roles)</td>
 </tr>
 </tbody>
 </table>
@@ -1772,6 +1774,12 @@ only required if the provider parameter is enterprise.</td>
 <dt id="arcgis.gis.UserManager.me">
 <code class="descname">me</code><a class="headerlink" href="#arcgis.gis.UserManager.me" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the logged in user</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.UserManager.roles">
+<code class="descname">roles</code><a class="headerlink" href="#arcgis.gis.UserManager.roles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper object to manage custom roles for users</p>
 </dd></dl>
 
 <dl class="method">

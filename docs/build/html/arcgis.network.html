@@ -296,13 +296,12 @@
 <dl class="class">
 <dt id="arcgis.network.NetworkLayer">
 <em class="property">class </em><code class="descclassname">arcgis.network.</code><code class="descname">NetworkLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.NetworkLayer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The network layer resource represents a single network layer in
-a network analysis service published by ArcGIS Server. It provides basic
+<dd><p>NetworkLayer represents a single network layer. It provides basic
 information about the network layer such as its name, type, and network
 classes. Additionally, depending on the layer type, it provides different
 pieces of information.</p>
-<p>It is a base class for RouteNetworkLayer, ServiceAreaNetworkLayer, and
-ClosestFacilityNetworkLayer.</p>
+<p>It is a base class for RouteLayer, ServiceAreaLayer, and
+ClosestFacilityLayer.</p>
 <dl class="method">
 <dt id="arcgis.network.NetworkLayer.retrieve_travel_modes">
 <code class="descname">retrieve_travel_modes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.NetworkLayer.retrieve_travel_modes" title="Permalink to this definition">¶</a></dt>
@@ -318,7 +317,7 @@ network dataset or in the portal if the GIS server is federated</p>
 <dl class="class">
 <dt id="arcgis.network.RouteLayer">
 <em class="property">class </em><code class="descclassname">arcgis.network.</code><code class="descname">RouteLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.RouteLayer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Route Network Layer which has common properties of Network Layer
+<dd><p>The Route Layer which has common properties of Network Layer
 as well as some attributes unique to Route Network Layer only.</p>
 <dl class="method">
 <dt id="arcgis.network.RouteLayer.solve">
@@ -474,8 +473,8 @@ The default is false.</dd>
 <dl class="class">
 <dt id="arcgis.network.ServiceAreaLayer">
 <em class="property">class </em><code class="descclassname">arcgis.network.</code><code class="descname">ServiceAreaLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.ServiceAreaLayer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Service Area Network Layer which has common properties of Network
-Layer as well as some attributes unique to Service Area Network Layer
+<dd><p>The Service Area Layer which has common properties of Network
+Layer as well as some attributes unique to Service Area Layer
 only.</p>
 <dl class="method">
 <dt id="arcgis.network.ServiceAreaLayer.solve_service_area">
@@ -631,7 +630,7 @@ of the service areas are staggered by time zone.</dd>
 <dt id="arcgis.network.ClosestFacilityLayer">
 <em class="property">class </em><code class="descclassname">arcgis.network.</code><code class="descname">ClosestFacilityLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.ClosestFacilityLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Closest Facility Network Layer which has common properties of Network
-Layer as well as some attributes unique to Closest Facility Network Layer
+Layer as well as some attributes unique to Closest Facility Layer
 only.</p>
 <dl class="method">
 <dt id="arcgis.network.ClosestFacilityLayer.solve_closest_facility">
@@ -794,6 +793,37 @@ The default is false.</dd>
 </div>
 <div class="section" id="networkdataset">
 <h2>NetworkDataset<a class="headerlink" href="#networkdataset" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.network.NetworkDataset">
+<em class="property">class </em><code class="descclassname">arcgis.network.</code><code class="descname">NetworkDataset</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.NetworkDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>A network dataset containing a collection of network layers including route layers,
+service area layers and closest facility layers.</p>
+<dl class="attribute">
+<dt id="arcgis.network.NetworkDataset.closest_facility_layers">
+<code class="descname">closest_facility_layers</code><a class="headerlink" href="#arcgis.network.NetworkDataset.closest_facility_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of closest facility layers in this network dataset</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="arcgis.network.NetworkDataset.fromitem">
+<em class="property">classmethod </em><code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.network.NetworkDataset.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a network dataset from a &#8216;Network Analysis Service&#8217; Item in the GIS</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.network.NetworkDataset.route_layers">
+<code class="descname">route_layers</code><a class="headerlink" href="#arcgis.network.NetworkDataset.route_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of route layers in this network dataset</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.network.NetworkDataset.service_area_layers">
+<code class="descname">service_area_layers</code><a class="headerlink" href="#arcgis.network.NetworkDataset.service_area_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of service area layers in this network dataset</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
