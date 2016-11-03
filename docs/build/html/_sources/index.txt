@@ -13,6 +13,7 @@ Contents:
    :caption: arcgis
 
    arcgis.gis
+   arcgis.env
    arcgis.features.toc
    arcgis.raster
    arcgis.network

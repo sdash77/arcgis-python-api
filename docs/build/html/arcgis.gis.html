@@ -34,7 +34,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
-        <link rel="next" title="arcgis.features module" href="arcgis.features.toc.html"/>
+        <link rel="next" title="arcgis.env module" href="arcgis.env.html"/>
         <link rel="prev" title="API Reference for the ArcGIS Python API" href="index.html"/> 
 
   
@@ -87,7 +87,6 @@
                 <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.gis module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#item">Item</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#user">User</a></li>
@@ -100,6 +99,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#groupmanager">GroupManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#datastoremanager">DatastoreManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#rolemanager">RoleManager</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -236,6 +240,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoprocessing.html">arcgis.geoprocessing module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#geoprocessingtool">GeoprocessingTool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#linearunit">LinearUnit</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
@@ -297,16 +302,6 @@
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.</p>
-<div class="section" id="active-gis">
-<h2>active_gis<a class="headerlink" href="#active-gis" title="Permalink to this headline">¶</a></h2>
-<dl class="data">
-<dt id="arcgis.gis.active_gis">
-<code class="descclassname">arcgis.gis.</code><code class="descname">active_gis</code><a class="headerlink" href="#arcgis.gis.active_gis" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<p>The currently active GIS, that is used for analysis functions, unless explicitly specified when calling the functions.
-Creating a new GIS object makes it active by default unless set_active=False is passed in the GIS constructor.</p>
-</div>
 <div class="section" id="gis">
 <h2>GIS<a class="headerlink" href="#gis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -2318,7 +2313,7 @@ GIS if a role_id is not specified
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.features.toc.html" class="btn btn-neutral float-right" title="arcgis.features module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="API Reference for the ArcGIS Python API" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

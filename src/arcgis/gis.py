@@ -3,14 +3,6 @@ The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.
-
-active_gis
-==========
-
-.. py:data:: active_gis
-The currently active GIS, that is used for analysis functions, unless explicitly specified when calling the functions.
-Creating a new GIS object makes it active unless set_active=False is passed in the GIS constructor.
-
 """
 from __future__ import absolute_import
 
