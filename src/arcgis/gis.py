@@ -26,6 +26,7 @@ import zipfile
 from contextlib import contextmanager
 
 import arcgis._impl.portalpy as portalpy
+import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from six.moves.urllib.error import HTTPError
@@ -57,10 +58,6 @@ def _lazy_property(fn):
         return getattr(self, attr_name)
     return _lazy_property
 
-#: The currently active GIS, that is used for analysis functions unless explicitly specified.
-#: Creating a new GIS object makes it active by default unless set_active=False is passed in the GIS constructor.
-active_gis = None
-
 class GIS(object):
     """
     .. _gis:
@@ -86,7 +83,6 @@ class GIS(object):
         If no url is provided, ArcGIS Online is used. If username/password
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
         """
-        global active_gis
         from arcgis._impl.tools import _Tools
 
         if url is None:
@@ -101,20 +97,18 @@ class GIS(object):
         self._con = None
         self._verify_cert = verify_cert
         self._datastores = None
-        self._tools = _Tools(self)
+        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
+                                       verify_cert=self._verify_cert)
 
-        if set_active:
-            active_gis = self
-
-        self.__enter__()
-
-    def __enter__(self):
-        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file, verify_cert=self._verify_cert)
-        
         if self._url.lower() == "pro":
             self._url = self._portal.url
 
         self._con = self._portal.con
+
+        self._tools = _Tools(self)
+        if set_active:
+            arcgis.env.active_gis = self
+            arcgis.env.active_geocoder = self._tools.geocoders[0]
 
     @_lazy_property
     def users(self):
@@ -1469,6 +1463,8 @@ class ContentManager(object):
                 query += ' (type:"web scene" NOT type:"CityEngine Web Scene")'
             elif item_type == "feature layer":
                 query += ' (type:"feature service")'
+            elif item_type == "geoprocessing tool":
+                query += ' (type:"geoprocessing service")'
             elif item_type == "feature layer collection":
                 query += ' (type:"feature service")'
             elif item_type == "image layer":

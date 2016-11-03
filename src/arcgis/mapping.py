@@ -25,18 +25,17 @@ from arcgis.geometry import SpatialReference, Polygon
 
 from arcgis.gis import Layer, _GISResource
 
-#from IPython.html import widgets
-#from IPython.utils.traitlets import Unicode, Int, List
-
 try:
     from ipywidgets import widgets
 except:
     from IPython.html import widgets
-#from IPython.html import widgets
+
 try:
     from traitlets import Unicode, Int, List, Bool
 except:
     from IPython.utils.traitlets import Unicode, Int, List, Bool
+
+from .features import FeatureSet
 
 __all__ = ["WebMap", "WebScene", "MapView", "DynamicMapLayer", "DynamicMapLayerManager", "VectorTileLayer"]
 

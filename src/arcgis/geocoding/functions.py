@@ -2,6 +2,7 @@
 Types and functions for geocoding.
 """
 from ..gis import _GISResource
+import arcgis.env
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -411,8 +412,7 @@ def get_geocoders(gis):
     return geocoders
 
 
-def geocode(geocoder,
-            address,
+def geocode(address,
             search_extent=None,
             location=None,
             distance=None,
@@ -421,13 +421,12 @@ def geocode(geocoder,
             out_fields="*",
             max_locations=20,
             magic_key=None,
-            for_storage=False):
+            for_storage=False,
+            geocoder=None):
     """
     The geocode function geocodes one location per request.
 
     Inputs:
-
-       geocoder - the geocoder to be used
 
        address - Specifies the location to be geocoded. This can be a string
        containing the street address, place name, postal code, or POI.
@@ -455,20 +454,24 @@ def geocode(geocoder,
         specifies the radial distance from the location in meters. The
         priority of candidates within this radius is boosted relative
         to those outside the radius.
+
        distance - Specifies the radius of an area around a point
         location which is used to boost the rank of geocoding
         candidates so that candidates closest to the location are
         returned first. The distance value is in meters.
+
        out_sr - The spatial reference of the x/y coordinates returned by
         a geocode request. This is useful for applications using a map
         with a spatial reference different than that of the geocode
         service.
+
        category - A place or address type which can be used to filter
         find results. The parameter supports input of single category
         values or multiple comma-separated values. The category
         parameter can be passed in a request with or without the text
         parameter.
        out_fields - The list of fields to be returned in the response.
+
        maxLocation - The maximum number of locations to be returned by
         a search, up to the maximum number allowed by the service. If
         not specified, then one location will be returned.
@@ -485,7 +488,12 @@ def geocode(geocoder,
         temporarily displayed on a map for instance. If you store the
         results, in a database for example, you need to set this
         parameter to true.
+
+       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
+
     """
+    if geocoder is None:
+        geocoder = arcgis.env.active_geocoder
     return geocoder._geocode(
         address,
         search_extent,
@@ -499,9 +507,9 @@ def geocode(geocoder,
         for_storage)
 
 
-def reverse_geocode(geocoder, location, distance=None, out_sr=None, lang_code=None,
+def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
                     return_intersection=False,
-                    for_storage=False):
+                    for_storage=False, geocoder=None):
     """
     The reverse_geocode operation determines the address at a particular
     x/y location. You pass the coordinates of a point location to the
@@ -509,29 +517,28 @@ def reverse_geocode(geocoder, location, distance=None, out_sr=None, lang_code=No
     closest to the location.
     Input:
 
-       geocoder - the geocoder to be used
-
        location - a list defined as [X,Y] or a JSON Point
 
+       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """
+
+    if geocoder is None:
+        geocoder = arcgis.env.active_geocoder
     return geocoder._reverse_geocode(location, distance, out_sr, lang_code,
                                      return_intersection,
                                      for_storage)
 
 
-def batch_geocode(geocoder,
-                  addresses,
+def batch_geocode(addresses,
                   source_country=None,
                   category=None,
-                  out_sr=None):
+                  out_sr=None,
+                  geocoder=None):
     """
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
 
-
     Inputs:
-
-       geocoder - the geocoder to be used
 
        addresses - A list of addresses to be geocoded.
        For passing in the location name as a single line of text —
@@ -574,7 +581,11 @@ def batch_geocode(geocoder,
         reference json object for the returned addresses. For a list of
         valid WKID values, see Projected coordinate systems and
         Geographic coordinate systems.
+
+       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """
+    if geocoder is None:
+        geocoder = arcgis.env.active_geocoder
     return geocoder._batch_geocode(
         addresses,
         source_country,
@@ -582,11 +593,11 @@ def batch_geocode(geocoder,
         out_sr)
 
 
-def suggest(geocoder,
-            text,
+def suggest(text,
             location,
             distance=None,
-            category=None):
+            category=None,
+            geocoder=None):
     """
     The result of this operation is a resource representing a list of
     suggested matches for the input text. This resource provides the
@@ -610,8 +621,6 @@ def suggest(geocoder,
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
     Inputs:
-
-       geocoder - The geocoder to be used.
 
        text - The input text provided by a user that is used by the
         suggest operation to generate a list of possible matches. This
@@ -645,7 +654,11 @@ def suggest(geocoder,
         resulting candidates based on their distance from a location.
        category - The category parameter is only supported by geocode
         services published using StreetMap Premium locators.
+
+       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """
+    if geocoder is None:
+        geocoder = arcgis.env.active_geocoder
     return geocoder._suggest(
         text,
         location,
