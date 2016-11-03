@@ -3048,7 +3048,12 @@ class _GISResource(object):
     @property
     def properties(self):
         """The properties of this object"""
-        return self.properties
+        return self._properties
+
+
+    @properties.setter
+    def properties(self, value):
+        self._properties = value
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
