@@ -3,6 +3,14 @@ The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.
+
+active_gis
+==========
+
+.. py:data:: active_gis
+The currently active GIS, that is used for analysis functions, unless explicitly specified when calling the functions.
+Creating a new GIS object makes it active unless set_active=False is passed in the GIS constructor.
+
 """
 from __future__ import absolute_import
 
@@ -57,22 +65,14 @@ class GIS(object):
     """
     .. _gis:
 
-    **************
-    The GIS object
-    **************
     A GIS is representative of ArcGIS Online or an ArcGIS Portal
-    site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources:
-    * users
-    * groups
-    * content
-    * datastores
+    site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
+    content, datastores, users and groups
 
-    Additionally, the GIS object has properties to query it's state:
-    * properties
+    Additionally, the GIS object has properties to query it's state, accessible using the properties attribute.
 
-    The GIS provides mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
-    as well as the results of your analysis. To create a new map, call the map method:
-    * map()
+    The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+    as well as the results of your analysis. To create a new map, call the map() method.
     """
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
@@ -122,6 +122,9 @@ class GIS(object):
         The resource manager for GIS users
         """
         return UserManager(self)
+        """
+        The resource manager for GIS users
+        """
 
     @_lazy_property
     def groups(self):

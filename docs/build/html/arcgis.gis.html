@@ -87,16 +87,19 @@
                 <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.gis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#item">Item</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#user">User</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#group">Group</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#datastore">Datastore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#role">Role</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#layer">Layer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contentmanager">ContentManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usermanager">UserManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#groupmanager">GroupManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#datastoremanager">DatastoreManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rolemanager">RoleManager</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -173,7 +176,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.schematics.html">arcgis.schematics module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematicslayer">SchematicsLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematiclayers">SchematicLayers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoanalytics.html">arcgis.geoanalytics module</a><ul>
@@ -294,22 +297,27 @@
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
 is the most important and provides the entry point into the GIS.</p>
+<div class="section" id="active-gis">
+<h2>active_gis<a class="headerlink" href="#active-gis" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="arcgis.gis.active_gis">
+<code class="descclassname">arcgis.gis.</code><code class="descname">active_gis</code><a class="headerlink" href="#arcgis.gis.active_gis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The currently active GIS, that is used for analysis functions, unless explicitly specified when calling the functions.
+Creating a new GIS object makes it active by default unless set_active=False is passed in the GIS constructor.</p>
+</div>
 <div class="section" id="gis">
 <h2>GIS<a class="headerlink" href="#gis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.gis.GIS">
-<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
-<dd><p>A GIS is representative of ArcGIS Online or an ArcGIS Portal
-site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources:
-* users
-* groups
-* content
-* datastores</p>
-<p>Additionally, the GIS object has properties to query it&#8217;s state:
-* properties</p>
-<p>The GIS provides mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
-as well as the results of your analysis. To create a new map, call the map method:
-* map()</p>
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
+<dd><p id="id1">A GIS is representative of ArcGIS Online or an ArcGIS Portal
+site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
+content, datastores, users and groups</p>
+<p>Additionally, the GIS object has properties to query it&#8217;s state, accessible using the properties attribute.</p>
+<p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+as well as the results of your analysis. To create a new map, call the map() method.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.gis.GIS.content" title="Permalink to this definition">¶</a></dt>
@@ -1328,6 +1336,123 @@ is accessible to every server node in the site</p>
 </dd></dl>
 
 </div>
+<div class="section" id="role">
+<h2>Role<a class="headerlink" href="#role" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.gis.Role">
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">Role</code><span class="sig-paren">(</span><em>gis</em>, <em>role_id</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Role" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A custom role in the GIS</p>
+<dl class="method">
+<dt id="arcgis.gis.Role.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Role.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes this role and returns True if the operation was successful</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.Role.description">
+<code class="descname">description</code><a class="headerlink" href="#arcgis.gis.Role.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description of the custom role</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.Role.name">
+<code class="descname">name</code><a class="headerlink" href="#arcgis.gis.Role.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the custom role</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.Role.privileges">
+<code class="descname">privileges</code><a class="headerlink" href="#arcgis.gis.Role.privileges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Privileges for the custom role as a list of strings</p>
+<p>Supported privileges with predefined permissions are:
+Administrative Privileges:</p>
+<p>Members</p>
+<ul class="simple">
+<li>portal:admin:viewUsers: grants the ability to view full member account information within organization.</li>
+<li>portal:admin:updateUsers: grants the ability to update member account information within organization.</li>
+<li>portal:admin:deleteUsers: grants the ability to delete member accounts within organization.</li>
+<li>portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)</li>
+<li>portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.</li>
+<li>portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.</li>
+<li>portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.</li>
+<li>portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.</li>
+</ul>
+<p>Groups</p>
+<ul class="simple">
+<li>portal:admin:viewGroups: grants the ability to view all groups within organization.</li>
+<li>portal:admin:updateGroups: grants the ability to update groups within organization.</li>
+<li>portal:admin:deleteGroups: grants the ability to delete groups within organization.</li>
+<li>portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.</li>
+<li>portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.</li>
+<li>portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to Portal for ArcGIS.)</li>
+</ul>
+<p>Content</p>
+<ul class="simple">
+<li>portal:admin:viewItems: grants the ability to view all content within organization.</li>
+<li>portal:admin:updateItems: grants the ability to update content within organization.</li>
+<li>portal:admin:deleteItems: grants the ability to delete content within organization.</li>
+<li>portal:admin:reassignItems: grants the ability to reassign content to other members within organization.</li>
+<li>portal:admin:shareToGroup: grants the ability to share other member&#8217;s content to groups the user belongs to.</li>
+<li>portal:admin:shareToOrg: grants the ability to share other member&#8217;s content to organization.</li>
+<li>portal:admin:shareToPublic: grants the ability to share other member&#8217;s content to all users of the portal.</li>
+</ul>
+<p>ArcGIS Marketplace Subscriptions</p>
+<ul class="simple">
+<li>marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)</li>
+<li>marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)</li>
+<li>marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)</li>
+</ul>
+<p>Publisher Privileges:</p>
+<p>Content</p>
+<ul class="simple">
+<li>portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.</li>
+<li>portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.</li>
+<li>portal:publisher:publishScenes: grants the ability to publish hosted scene layers.</li>
+</ul>
+<p>User Privileges:</p>
+<p>Groups</p>
+<ul class="simple">
+<li>portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.</li>
+<li>portal:user:joinGroup: grants the ability to join groups within organization.</li>
+<li>portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)</li>
+</ul>
+<p>Content</p>
+<ul class="simple">
+<li>portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.</li>
+</ul>
+<p>Sharing</p>
+<ul class="simple">
+<li>portal:user:shareToGroup: grants the ability to share content to groups.</li>
+<li>portal:user:shareToOrg: grants the ability to share content to organization.</li>
+<li>portal:user:shareToPublic: grants the ability to share content to all users of portal.</li>
+<li>portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.</li>
+<li>portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.</li>
+</ul>
+<p>Premium Content</p>
+<ul class="simple">
+<li>premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.</li>
+<li>premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.</li>
+<li>premium:user:geoenrichment: grants the ability to geoenrich features.</li>
+<li>premium:user:demographics: grants the ability to make use of premium demographic data.</li>
+<li>premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.</li>
+<li>premium:user:elevation: grants the ability to perform analytical tasks on elevation data.</li>
+</ul>
+<p>Features</p>
+<ul class="simple">
+<li>features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.</li>
+<li>features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.</li>
+</ul>
+<p>Open Data</p>
+<ul class="simple">
+<li>opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)</li>
+<li>opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)</li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="layer">
 <h2>Layer<a class="headerlink" href="#layer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -2146,6 +2271,39 @@ id - A filter to search by the ID of the item</p>
 you need to make sure that the path (for file shares) or connection string (for databases)
 is accessible to every server node in the site. To validate all registered data items all
 at once, you can invoke this operation.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="rolemanager">
+<h2>RoleManager<a class="headerlink" href="#rolemanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.gis.RoleManager">
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">RoleManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Helper class to manage custom roles for users in a GIS</p>
+<dl class="method">
+<dt id="arcgis.gis.RoleManager.all">
+<code class="descname">all</code><span class="sig-paren">(</span><em>max_roles=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all roles in the GIS
+:param max_roles: the maximum number of roles to be returned
+:return: list of all roles in the GIS</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.RoleManager.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>description</em>, <em>privileges=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns a custom role with the specified parameters</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.RoleManager.get_role">
+<code class="descname">get_role</code><span class="sig-paren">(</span><em>role_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.get_role" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the role with the specified role id. Returns list of all roles in the
+GIS if a role_id is not specified
+:param role_id: the role id of the role to get. Leave None to get all roles
+:return: the role with the specified role id or a list of all roles</p>
 </dd></dl>
 
 </dd></dl>

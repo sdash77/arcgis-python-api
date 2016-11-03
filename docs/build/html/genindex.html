@@ -86,16 +86,19 @@
                 <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#user">User</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#group">Group</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastore">Datastore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#role">Role</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#layer">Layer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#contentmanager">ContentManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#usermanager">UserManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#groupmanager">GroupManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastoremanager">DatastoreManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#rolemanager">RoleManager</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -172,7 +175,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.schematics.html">arcgis.schematics module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematicslayer">SchematicsLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematiclayers">SchematicLayers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoanalytics.html">arcgis.geoanalytics module</a><ul>
@@ -319,6 +322,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="arcgis.gis.html#arcgis.gis.active_gis">active_gis (in module arcgis.gis)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.features.managers.html#arcgis.features.managers.AttachmentManager.add">add() (arcgis.features.managers.AttachmentManager method)</a>
   </dt>
 
@@ -381,6 +388,10 @@
 
       </dl></dd>
       
+  <dt><a href="arcgis.gis.html#arcgis.gis.RoleManager.all">all() (arcgis.gis.RoleManager method)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.html#module-arcgis">arcgis (module)</a>
   </dt>
 
@@ -392,12 +403,12 @@
   <dt><a href="arcgis.features.analyze_patterns.html#module-arcgis.features.analyze_patterns">arcgis.features.analyze_patterns (module)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.enrich_data.html#module-arcgis.features.enrich_data">arcgis.features.enrich_data (module)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.find_locations.html#module-arcgis.features.find_locations">arcgis.features.find_locations (module)</a>
   </dt>
@@ -608,6 +619,10 @@
   </dt>
 
         
+  <dt><a href="arcgis.gis.html#arcgis.gis.RoleManager.create">(arcgis.gis.RoleManager method)</a>
+  </dt>
+
+        
   <dt><a href="arcgis.gis.html#arcgis.gis.UserManager.create">(arcgis.gis.UserManager method)</a>
   </dt>
 
@@ -700,6 +715,10 @@
   </dt>
 
         
+  <dt><a href="arcgis.gis.html#arcgis.gis.Role.delete">(arcgis.gis.Role method)</a>
+  </dt>
+
+        
   <dt><a href="arcgis.gis.html#arcgis.gis.User.delete">(arcgis.gis.User method)</a>
   </dt>
 
@@ -748,6 +767,14 @@
 
       
   <dt><a href="arcgis.geoanalytics.html#arcgis.geoanalytics.describe_dataset">describe_dataset() (arcgis.geoanalytics method)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.gis.html#arcgis.gis.Role.description">description (arcgis.gis.Role attribute)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers.diagrams">diagrams (arcgis.schematics.SchematicLayers attribute)</a>
   </dt>
 
       
@@ -942,16 +969,22 @@
   <dt><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.find_similar_locations">find_similar_locations() (arcgis.features.find_locations method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.find_transformation">find_transformation() (arcgis.geometry method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.gis.html#arcgis.gis.User.folders">folders (arcgis.gis.User attribute)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers.folders">(arcgis.schematics.SchematicLayers attribute)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="arcgis.features.html#arcgis.features.Feature.from_dict">from_dict() (arcgis.features.Feature class method)</a>, <a href="arcgis.features.toc.html#arcgis.features.Feature.from_dict">[1]</a>
   </dt>
@@ -1124,6 +1157,10 @@
 
       
   <dt><a href="arcgis.gis.html#arcgis.gis.Item.get_metadata">get_metadata() (arcgis.gis.Item method)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.gis.html#arcgis.gis.RoleManager.get_role">get_role() (arcgis.gis.RoleManager method)</a>
   </dt>
 
       
@@ -1306,6 +1343,10 @@
   <dt><a href="arcgis.gis.html#arcgis.gis.Layer">Layer (class in arcgis.gis)</a>
   </dt>
 
+      
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers.layers">layers (arcgis.schematics.SchematicLayers attribute)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
@@ -1395,11 +1436,15 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="arcgis.network.html#arcgis.network.NetworkDataset">NetworkDataset (class in arcgis.network)</a>
+  <dt><a href="arcgis.gis.html#arcgis.gis.Role.name">name (arcgis.gis.Role attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="arcgis.network.html#arcgis.network.NetworkDataset">NetworkDataset (class in arcgis.network)</a>
+  </dt>
+
       
   <dt><a href="arcgis.network.html#arcgis.network.NetworkLayer">NetworkLayer (class in arcgis.network)</a>
   </dt>
@@ -1452,6 +1497,10 @@
 
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.Polyline">Polyline (class in arcgis.geometry)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.gis.html#arcgis.gis.Role.privileges">privileges (arcgis.gis.Role attribute)</a>
   </dt>
 
       
@@ -1596,12 +1645,12 @@
   <dt><a href="arcgis.gis.html#arcgis.gis.Item.related_items">related_items() (arcgis.gis.Item method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.relation">relation() (arcgis.geometry method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.mapping.html#arcgis.mapping.MapView.remove_layers">remove_layers() (arcgis.mapping.MapView method)</a>
   </dt>
@@ -1627,6 +1676,14 @@
   </dt>
 
       
+  <dt><a href="arcgis.gis.html#arcgis.gis.Role">Role (class in arcgis.gis)</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.gis.html#arcgis.gis.RoleManager">RoleManager (class in arcgis.gis)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.gis.html#arcgis.gis.UserManager.roles">roles (arcgis.gis.UserManager attribute)</a>
   </dt>
 
@@ -1649,6 +1706,10 @@
   </dt>
 
       
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers">SchematicLayers (class in arcgis.schematics)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.gis.html#arcgis.gis.ContentManager.search">search() (arcgis.gis.ContentManager method)</a>
   </dt>
 
@@ -1666,6 +1727,10 @@
   </dt>
 
       </dl></dd>
+      
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers.search_diagrams">search_diagrams() (arcgis.schematics.SchematicLayers method)</a>
+  </dt>
+
       
   <dt><a href="arcgis.raster.html#arcgis.raster.segment_mean_shift">segment_mean_shift() (arcgis.raster method)</a>
   </dt>
@@ -1694,12 +1759,12 @@
   <dt><a href="arcgis.gis.html#arcgis.gis.UserManager.signup">signup() (arcgis.gis.UserManager method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.network.html#arcgis.network.RouteLayer.solve">solve() (arcgis.network.RouteLayer method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.network.html#arcgis.network.ClosestFacilityLayer.solve_closest_facility">solve_closest_facility() (arcgis.network.ClosestFacilityLayer method)</a>
   </dt>
@@ -1766,6 +1831,10 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.html#arcgis.features.Table">Table (class in arcgis.features)</a>, <a href="arcgis.features.toc.html#arcgis.features.Table">[1]</a>
+  </dt>
+
+      
+  <dt><a href="arcgis.schematics.html#arcgis.schematics.SchematicLayers.templates">templates (arcgis.schematics.SchematicLayers attribute)</a>
   </dt>
 
       

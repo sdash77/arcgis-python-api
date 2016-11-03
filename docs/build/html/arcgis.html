@@ -85,16 +85,19 @@
                 <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#user">User</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#group">Group</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastore">Datastore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#role">Role</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#layer">Layer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#contentmanager">ContentManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#usermanager">UserManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#groupmanager">GroupManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#datastoremanager">DatastoreManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#rolemanager">RoleManager</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -171,7 +174,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.schematics.html">arcgis.schematics module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematicslayer">SchematicsLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.schematics.html#schematiclayers">SchematicLayers</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoanalytics.html">arcgis.geoanalytics module</a><ul>
@@ -325,19 +328,14 @@
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arcgis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.GIS">
-<em class="property">class </em><code class="descclassname">arcgis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.GIS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A GIS is representative of ArcGIS Online or an ArcGIS Portal
-site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources:
-* users
-* groups
-* content
-* datastores</p>
-<p>Additionally, the GIS object has properties to query it&#8217;s state:
-* properties</p>
-<p>The GIS provides mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
-as well as the results of your analysis. To create a new map, call the map method:
-* map()</p>
+<p id="gis">A GIS is representative of ArcGIS Online or an ArcGIS Portal
+site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
+content, datastores, users and groups</p>
+<p>Additionally, the GIS object has properties to query it&#8217;s state, accessible using the properties attribute.</p>
+<p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+as well as the results of your analysis. To create a new map, call the map() method.</p>
 <dl class="attribute">
 <dt id="arcgis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.GIS.content" title="Permalink to this definition">¶</a></dt>
