@@ -582,6 +582,7 @@ class Portal(object):
 
         if resp:
             return resp.get('success')
+
     def protect_item(self, item_id, owner, folder=None, enable=True):
         """ Enable or disable delete protection on the item
 
@@ -614,6 +615,7 @@ class Portal(object):
         resp = self.con.post(path, postdata)
         if resp:
             return resp
+
     def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
 

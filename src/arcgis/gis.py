@@ -49,6 +49,10 @@ def _lazy_property(fn):
         return getattr(self, attr_name)
     return _lazy_property
 
+#: The currently active GIS, that is used for analysis functions unless explicitly specified.
+#: Creating a new GIS object makes it active by default unless set_active=False is passed in the GIS constructor.
+active_gis = None
+
 class GIS(object):
     """
     .. _gis:
@@ -71,17 +75,18 @@ class GIS(object):
     * map()
     """
 
-    def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None, verify_cert=True):
+    def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
+                 verify_cert=True, set_active=True):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
         pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
-        PKI and Anonymous access.
+        PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
 
         If no url is provided, ArcGIS Online is used. If username/password
-        or key/cert files are not provided, anonymous access is used.
+        or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
         """
-
+        global active_gis
         from arcgis._impl.tools import _Tools
 
         if url is None:
@@ -97,6 +102,10 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._datastores = None
         self._tools = _Tools(self)
+
+        if set_active:
+            active_gis = self
+
         self.__enter__()
 
     def __enter__(self):
@@ -853,7 +862,7 @@ class UserManager(object):
     @property
     def roles(self):
         """Helper object to manage custom roles for users"""
-        return RoleManager()
+        return RoleManager(self._gis)
 
 
 class RoleManager(object):
@@ -898,18 +907,26 @@ class RoleManager(object):
         :param role_id: the role id of the role to get. Leave None to get all roles
         :return: the role with the specified role id or a list of all roles
         """
-        role = self._portal.con.post('portals/self/' + role_id, self._portal._postdata())
+        role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
+
 
 class Role(object):
     """A custom role in the GIS"""
     def __init__(self, gis, role_id, role):
         """Create a custom role"""
         self._gis = gis
+        self._portal = gis._portal
         self.role_id = role_id
         if role is not None:
             self._name = role['name']
             self._description = role['description']
+
+    def __repr__(self):
+        return '<Role name: ' + self.name + ', description: ' + self.description + '>'
+
+    def ___str___(self):
+        return 'Custom Role name: ' + self.name + ', description: ' + self.description
 
     @property
     def name(self):
@@ -920,30 +937,142 @@ class Role(object):
     def name(self, value):
         """Name of the custom role"""
         self._name = value
+        self._update_role()
 
     @property
     def description(self):
         """Description of the custom role"""
         return self._description
+        self._update_role()
 
     @description.setter
     def description(self, value):
         """Description of the custom role"""
         self._description = value
 
+    def _update_role(self):
+        """Updates the name or description of this role"""
+        postdata = self._portal._postdata()
+        postdata['name'] = self._name
+        postdata['description'] = self._description
+
+        resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/update', postdata)
+        if resp:
+            return resp.get('success')
+
     @property
     def privileges(self):
-        """Privileges for the custom role"""
-        return self._privileges
+        """
+        Privileges for the custom role as a list of strings
+
+        Supported privileges with predefined permissions are:
+        Administrative Privileges:
+
+        Members
+
+        - portal:admin:viewUsers: grants the ability to view full member account information within organization.
+        - portal:admin:updateUsers: grants the ability to update member account information within organization.
+        - portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
+        - portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
+        - portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
+        - portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
+        - portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
+        - portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
+
+        Groups
+
+        - portal:admin:viewGroups: grants the ability to view all groups within organization.
+        - portal:admin:updateGroups: grants the ability to update groups within organization.
+        - portal:admin:deleteGroups: grants the ability to delete groups within organization.
+        - portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
+        - portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
+        - portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to Portal for ArcGIS.)
+
+        Content
+
+        - portal:admin:viewItems: grants the ability to view all content within organization.
+        - portal:admin:updateItems: grants the ability to update content within organization.
+        - portal:admin:deleteItems: grants the ability to delete content within organization.
+        - portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
+        - portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
+        - portal:admin:shareToOrg: grants the ability to share other member's content to organization.
+        - portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
+
+        ArcGIS Marketplace Subscriptions
+
+        - marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+        - marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+        - marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+
+        Publisher Privileges:
+
+        Content
+
+        - portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
+        - portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
+        - portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
+
+        User Privileges:
+
+        Groups
+
+        - portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
+        - portal:user:joinGroup: grants the ability to join groups within organization.
+        - portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
+
+        Content
+
+        - portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
+
+        Sharing
+
+        - portal:user:shareToGroup: grants the ability to share content to groups.
+        - portal:user:shareToOrg: grants the ability to share content to organization.
+        - portal:user:shareToPublic: grants the ability to share content to all users of portal.
+        - portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
+        - portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
+
+        Premium Content
+
+        - premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
+        - premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
+        - premium:user:geoenrichment: grants the ability to geoenrich features.
+        - premium:user:demographics: grants the ability to make use of premium demographic data.
+        - premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
+        - premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
+
+        Features
+
+        - features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
+        - features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
+
+        Open Data
+
+        - opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
+        - opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
+
+        """
+        resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/privileges', self._portal._postdata())
+        if resp:
+            return resp.get('privileges')
+        else:
+            return None
 
     @privileges.setter
     def privileges(self, value):
-        """Privileges for the custom role"""
-        self._privileges = value
+        """Privileges for the custom role as a list of strings"""
+        postdata = self._portal._postdata()
+        postdata['privileges'] = { 'privileges' : value }
+
+        resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/setPrivileges', postdata)
+        if resp:
+            return resp.get('success')
 
     def delete(self):
-        """Deletes this role"""
-        pass
+        """Deletes this role and returns True if the operation was successful"""
+        resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/delete', self._portal._postdata())
+        if resp:
+            return resp.get('success')
 
 
 class GroupManager(object):
