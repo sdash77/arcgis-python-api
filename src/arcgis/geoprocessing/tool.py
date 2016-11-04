@@ -16,6 +16,7 @@ def _camelCase_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+
 class LinearUnit(object):
     """
     A data object containing a linear distance, used as input to some Geoprocessing tools
@@ -556,6 +557,7 @@ class Toolbox(_AsyncResource):
             spec = []
             name_type = {}
             name_type[fnname] = task
+            return_values = []
             for param in task_params:
 
                 param_name = param['name']
@@ -567,8 +569,8 @@ class Toolbox(_AsyncResource):
                 param_rqrd = param['parameterType']
 
                 param_choices = param.get('choiceList', None)
-                #if param_type == 'GPFeatureRecordSetLayer':
-                #    param_dval = None
+                if param_type == 'GPFeatureRecordSetLayer':
+                    param_dval = None
 
                 py_param_type_ = param_type
                 if param_type == 'GPBoolean':
@@ -596,16 +598,6 @@ class Toolbox(_AsyncResource):
                 else:
                     py_param_type_ = str
 
-
-                """
-                "GPDataFile	DataFile
-                "GPFeatureRecordSetLayer	FeatureSet
-                "GPLinearUnit	LinearUnit
-                "GPRasterData	RasterData
-                "GPRasterLayer	RasterData
-                "GPRecordSet	FeatureSet
-                """
-
                 if param_drtn == 'esriGPParameterDirectionInput':
                     name_type[param_name] = py_param_type_
                     # print("\n   " + param_name + " : " + str(py_param_type_))
@@ -616,7 +608,7 @@ class Toolbox(_AsyncResource):
                     param_spec = ( param_name , param_dval )
                     spec.append(param_spec)
 
-                    helpstring = helpstring + "\n   " + param_name + ": " + param['displayName']  + " (" + py_param_type_.__name__ + ")"
+                    helpstring = helpstring + "\n\n   " + param_name + ": " + param['displayName']  + " (" + py_param_type_.__name__ + ")."
                     if param_rqrd == 'esriGPParameterTypeOptional':
                         helpstring = helpstring + " Optional parameter. "
                     elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
@@ -625,16 +617,25 @@ class Toolbox(_AsyncResource):
                     if 'description' in param:
                         helpstring = helpstring + ' ' + param['description']
 
-                    if param_choices is not None:
+                    if param_choices is not None and len(param_choices) > 0:
                         helpstring = helpstring + '\n      Choice list:' + str(param_choices)
 
                 elif param_drtn == 'esriGPParameterDirectionOutput':
+                    name_type[param_name] = py_param_type_
                     name_type['return'] = py_param_type_
                     name_type['return_name'] = param_name
 
-                    helpstring = helpstring + "\nReturns " + param['displayName'] + " (" + py_param_type_.__name__ + ")"
+                    return_values.append({"name":param_name, "type":py_param_type_})
 
-                helpstring = helpstring + "\n"
+            if len(return_values) == 1:
+                helpstring = helpstring + "\n\nReturns " + name_type['return_name'] + " (" + name_type['return'].__name__ + ")"
+            else:
+                name_type['return'] = dict # for method spec, type hinting
+                helpstring = helpstring + "\n\nReturns a dict with the following keys and types:"
+                for retval in return_values:
+                    helpstring = helpstring + '\n   ' + retval['name'] + ' (' + retval['type'].__name__ + ')'
+
+            helpstring = helpstring + "\n"
 
             if 'helpUrl' in taskprops:
                 helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
@@ -666,25 +667,47 @@ class Toolbox(_AsyncResource):
         params.update({ "f" : "json" })
 
         #---------------------in---------------------#
-        """
-        for k, v in params.items():
+
+        for key, value in params.items():
             #print(k + " = " + str(v))
-            if k in name_type:
-                py_type = name_type[k]
-                if py_type == 'GPFeatureRecordSetLayer':
-                    # if passed in geometries but require featureset, create one
-                    geometry = v
-                    val = {}
-                    val['geometryType'] = 'esriGeometryPoint'
-                    val['features'] = [{"geometry" : geometry}]
-                    val['sr'] = {"wkid":102100,"latestWkid":3857}
-                    params[k] = val
-        """
+            if key in name_type:
+                py_type = name_type[key]
+
+                if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                    if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                        params[key] = value.to_dict()
+
         #--------------------------------------------#
         resp = None
 
         if self.properties.executionType == 'esriExecutionTypeSynchronous':
             resp = self._con.post(url, params, token=self._token)
+
+            output_dict = {}
+
+            for result in resp['results']:
+                ret_param_name = result['paramName']
+                ret_type = name_type[ret_param_name]
+
+                ret_val = None
+                if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                    jsondict = result['value']
+                    result_obj = ret_type.from_dict(jsondict)
+                    result_obj._con = self._con
+                    result_obj._token = self._token
+                    ret_val = result_obj
+                else:
+                    ret_val = result['value']
+
+                output_dict[ret_param_name] = ret_val
+
+
+            num_returns = len(resp['results'])
+            if num_returns == 1:
+                return output_dict[name_type['return_name']]
+            else:
+                return output_dict
+
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
@@ -695,37 +718,29 @@ class Toolbox(_AsyncResource):
 
             job_info = super()._analysis_job_status(task_url, job_info)
             resp = super()._analysis_job_results(task_url, job_info)
-            #print('***'+str(resp))
+            # print('***'+str(resp))
 
-            ret_type = name_type['return']
-            ret_name = name_type['return_name']
+            output_dict = {}
+            for ret_param_name in resp.keys():
+                ret_type = name_type[ret_param_name]
+                ret_val = None
+                if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                    jsondict = resp[ret_param_name]
+                    result = ret_type.from_dict(jsondict)
+                    result._con = self._con
+                    result._token = self._token
+                    ret_val =  result
+                else:
+                    ret_val = resp[ret_param_name]
 
-            if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                jsondict = resp[ret_name]
-                result = ret_type.from_dict(jsondict)
-                result._con = self._con
-                result._token = self._token
-                return result
+                output_dict[ret_param_name] = ret_val
+
+            num_returns = len(resp)
+            if num_returns == 1:
+                return output_dict[name_type['return_name']]
             else:
-                return resp[ret_name]
-        #--------------------------------------------#
+                return output_dict
 
-        ret_type = name_type['return']
-        #try:
-        if 1==1:
-            geometries = []
-
-            #--------------------out---------------------#
-            # if FeatureSet, return FeatureSet... and let map.draw draw features from featureset
-            if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                value = resp['results'][0]['value']
-                result = ret_type.from_dict(value)
-                result._con = self._con
-                result._token = self._token
-                return result
-
-
-            return resp['results'][0]['value']
 
     def execute(self, task, input,
                 outSR=None,

@@ -178,7 +178,7 @@ class Feature(object):
 
 class FeatureSet(object):
     """
-    A FeatureSet is a collection of Features.
+    A set of features with information about their fields, field aliases, geometry type, spatial reference etc.
 
     FeatureSets are commonly used as input/output with several Geoprocessing
     Tools, and can be the obtained through the query() methods of feature layers.
@@ -379,13 +379,15 @@ class FeatureSet(object):
         if self._global_id_field_name is not None:
             val["globalIdFieldName"] = self._global_id_field_name
         if self._spatial_reference is not None:
-            val["sr"] = self._spatial_reference
+            val["spatialReference"] = self._spatial_reference
         if self._geometry_type is not None:
             val["geometryType"] = self._geometry_type
         if self._has_z:
             val["hasZ"] = self._has_z
         if self._has_m:
             val["hasM"] = self._has_m
+        if self._fields is not None:
+            val["fields"] = self._fields
 
         return val
 
@@ -406,6 +408,10 @@ class FeatureSet(object):
     def to_json(self):
         """converts the object to JSON"""
         return json.dumps(self.value, default=_date_handler)
+
+    def to_dict(self):
+        """converts the object to Python dictionary"""
+        return self.value
 
     # ----------------------------------------------------------------------
     def __iter__(self):

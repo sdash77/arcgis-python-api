@@ -192,7 +192,7 @@ class GIS(object):
             # Geocode the location
             if isinstance(location, str):
                 for geocoder in get_geocoders(self):
-                    locations = geocode(geocoder, location, out_sr=4326, max_locations=1)
+                    locations = geocode(location, out_sr=4326, max_locations=1, geocoder=geocoder)
                     if len(locations) > 0:
                         if zoomlevel is not None:
                             loc = locations[0]['location']
