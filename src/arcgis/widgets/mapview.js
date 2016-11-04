@@ -170,6 +170,7 @@ define('mapview', [
      "jupyter-js-widgets",
      "esri/map",
      "esri/config",
+     "esri/Color",
      "esri/dijit/LayerSwipe",
      "esri/graphic",
      "esri/TimeExtent",
@@ -203,6 +204,7 @@ define('mapview', [
      widgets,
      Map,
      esriConfig,
+     Color,
      LayerSwipe,
      Graphic,
      TimeExtent,
@@ -461,7 +463,7 @@ define('mapview', [
                 this.map.removeAllLayers();
             } else if (this.model.get('mode').indexOf("{") > -1) {
 
-                console.log("***mode=draw_geometry%%%");
+                console.log("***mode=draw_geometry***");
                 var drawgraphic = JSON.parse(this.model.get('mode'));
                 var gfx = new Graphic(drawgraphic);
 
@@ -471,9 +473,13 @@ define('mapview', [
 
                         gfx.symbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new dojo.Color([255, 0, 0, 0.5]), 3);
                     } else if (gfx.geometry.type === 'polygon') {
-                        console.log("GEOM TYPE POLYGON");
+                        console.log("GEOM TYPE POLYGON***");
 
-                        gfx.symbol = new SimpleFillSymbol();
+                        var polySymbol = new SimpleFillSymbol();
+                        polySymbol.setOutline(new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new dojo.Color([0, 0, 0, 0.5]), 1));
+                        polySymbol.setColor(new Color([255, 127, 0, 0.7]));
+
+                        gfx.symbol = polySymbol;
                     } else if (gfx.geometry.type === 'point') {
                         console.log("GEOM TYPE POINT");
 
