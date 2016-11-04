@@ -389,7 +389,7 @@ class Datastore(dict):
 
 class DatastoreManager(object):
     """
-    Manager class for managing the GIS data stores in on-premises ArcGIS Portals.
+    Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
     This class is not created by users directly.
     An instance of a list of this class, called 'datastores', is available as a property of the GIS object.
     Users call methods on members of this 'datastores' list to manage the datastores in a site federated with the portal.
@@ -661,7 +661,7 @@ class DatastoreManager(object):
 
 class UserManager(object):
     """
-    Manager class for managing GIS users. This class is not created by users directly.
+    Helper class for managing GIS users. This class is not created by users directly.
     An instance of this class, called 'users', is available as a property of the Gis object.
     Users call methods on this 'users' object to manipulate (create, get, search...) users.
     """
@@ -1066,7 +1066,7 @@ class Role(object):
 
 class GroupManager(object):
     """
-    Manager class for manipulating GIS groups. This class is not created by users directly.
+    Helper class for managing GIS groups. This class is not created by users directly.
     An instance of this class, called 'groups', is available as a property of the Gis object.
     Users call methods on this 'groups' object to manipulate (create, get, search...) users.
     """
@@ -1212,7 +1212,7 @@ def _is_shapefile(data):
 
 class ContentManager(object):
     """
-    Manager class for manipulating GIS content. This class is not created by users directly.
+    Helper class for managing GIS content. This class is not created by users directly.
     An instance of this class, called 'content', is available as a property of the Gis object.
     Users call methods on this 'content' object to manipulate (create, get, search...) items.
     """
@@ -2419,6 +2419,7 @@ class Item(dict):
             return dict.__getitem__(self, k)
 
     def download(self, save_path):
+        """Downloads the data to the specified folder or a tempoary folder if a folder isn't provided"""
         data_path = 'content/items/' + self.itemid + '/data'
         if not save_path:
             save_path = self._workdir

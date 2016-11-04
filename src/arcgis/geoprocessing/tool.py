@@ -4,9 +4,13 @@ import datetime
 import inspect
 import json
 import re
+import time
 import types
+import tempfile
 
-from arcgis.features import FeatureSet
+from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
+from ..gis import _GISResource, Item, Layer
+from .._impl.common._mixins import PropertyMap
 
 def _camelCase_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -36,6 +40,11 @@ class LinearUnit(object):
     def to_dict(self):
         return {"distance": self.distance, "units": self.units}
 
+    def __repr__(self):
+        return '<%s "%d %s">' % (type(self).__name__, self.distance, self.units)
+
+    def __str__(self):
+        return '<%s "%d %s">' % (type(self).__name__, self.distance, self.units)
 
     @classmethod
     def from_dict(cls, datadict):
@@ -72,6 +81,12 @@ class DataFile(object):
             datafile['itemID'] = self.item_id
         return datafile
 
+    def __repr__(self):
+        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+
+    def __str__(self):
+        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+
 
     @classmethod
     def from_dict(cls, datadict):
@@ -80,6 +95,17 @@ class DataFile(object):
         item_id = datadict.get('item_id', None)
 
         return cls(url, item_id)
+
+
+    def download(self, save_path=None):
+        """Downloads the data to the specified folder or a tempoary folder if a folder isn't provided"""
+        data_path = self.url
+        if not save_path:
+            save_path = tempfile.gettempdir()
+        if data_path:
+            filename = data_path.split('/')[-1]
+            return self._con.get(path=data_path, file_name=filename,
+                                        out_folder=save_path, try_json=False, token=self._token)
 
 
 class RasterData(object):
@@ -116,6 +142,12 @@ class RasterData(object):
             rasterdata['format'] = self.format
 
         return rasterdata
+
+    def __repr__(self):
+        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+
+    def __str__(self):
+        return '<%s "%s">' % (type(self).__name__, self.to_dict())
 
     @classmethod
     def from_dict(cls, datadict):
@@ -193,34 +225,324 @@ def _call_generator(fnname, spec):
                               {"__builtins__": __builtins__},
                               argdefs=defaults)
 
-class Toolbox(collections.OrderedDict):
+
+class _AsyncResource(_GISResource):
+    def __init__(self, url, gis):
+        super(_AsyncResource, self).__init__(url, gis)
+
+    def _refresh(self):
+        params = {"f": "json"}
+        dictdata = self._con.get(path=self.url, params=params, token=self._token)
+        self.properties = PropertyMap(dictdata)
+
+    def _analysis_job(self, task, params):
+        """ Submits an Analysis job and returns the job URL for monitoring the job
+            status in addition to the json response data for the submitted job."""
+
+        # Unpack the Analysis job parameters as a dictionary and add token and
+        # formatting parameters to the dictionary. The dictionary is used in the
+        # HTTP POST request. Headers are also added as a dictionary to be included
+        # with the POST.
+        #
+        # print("Submitting analysis job...")
+
+        task_url = "{}/{}".format(self.url, task)
+        submit_url = "{}/submitJob".format(task_url)
+
+        params["f"] = "json"
+
+        resp = self._con.post(submit_url, params, token=self._token)
+        # print(resp)
+        return task_url, resp
+
+    def _analysis_job_status(self, task_url, job_info):
+        """ Tracks the status of the submitted Analysis job."""
+
+        if "jobId" in job_info:
+            # Get the id of the Analysis job to track the status.
+            #
+            job_id = job_info.get("jobId")
+            job_url = "{}/jobs/{}".format(task_url, job_id)
+            params = {"f": "json"}
+            job_response = self._con.post(job_url, params, token=self._token)
+
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+
+            if "jobStatus" in job_response:
+                while not job_response.get("jobStatus") == "esriJobSucceeded":
+                    time.sleep(5)
+
+                    job_response = self._con.post(job_url, params, token=self._token)
+                    # print(job_response)
+                    messages = job_response['messages'] if 'messages' in job_response else []
+                    num = len(messages)
+                    if num > num_messages:
+                        for index in range(num_messages, num):
+                            msg = messages[index]
+                            if msg['type'] == 'esriJobMessageTypeInformative':
+                                print(msg['description'])
+                            else:
+                                print(msg['description'])  # ,file = sys.stderr)
+                        num_messages = num
+
+                    if job_response.get("jobStatus") == "esriJobFailed":
+                        raise Exception("Job failed.")
+                    elif job_response.get("jobStatus") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("jobStatus") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
+
+                if "results" in job_response:
+                    return job_response
+            else:
+                raise Exception("No job results.")
+        else:
+            raise Exception("No job url.")
+
+    def _analysis_job_results(self, task_url, job_info):
+        """ Use the job result json to get information about the feature service
+            created from the Analysis job."""
+
+        # Get the paramUrl to get information about the Analysis job results.
+        #
+        if "jobId" in job_info:
+            job_id = job_info.get("jobId")
+            if "results" in job_info:
+                results = job_info.get("results")
+                result_values = {}
+                for key in list(results.keys()):
+                    param_value = results[key]
+                    if "paramUrl" in param_value:
+                        param_url = param_value.get("paramUrl")
+                        result_url = "{}/jobs/{}/{}".format(task_url,
+                                                            job_id,
+                                                            param_url)
+
+                        params = {"f": "json"}
+                        param_result = self._con.post(result_url, params, token=self._token)
+
+                        job_value = param_result.get("value")
+                        result_values[key] = job_value
+                return result_values
+            else:
+                raise Exception("Unable to get analysis job results.")
+        else:
+            raise Exception("Unable to get analysis job results.")
+
+    def _feature_input(self, input_layer):
+
+        point_fs = {
+            "layerDefinition": {
+                "currentVersion": 10.11,
+                "copyrightText": "",
+                "defaultVisibility": True,
+                "relationships": [
+
+                ],
+                "isDataVersioned": False,
+                "supportsRollbackOnFailureParameter": True,
+                "supportsStatistics": True,
+                "supportsAdvancedQueries": True,
+                "geometryType": "esriGeometryPoint",
+                "minScale": 0,
+                "maxScale": 0,
+                "objectIdField": "OBJECTID",
+                "templates": [
+
+                ],
+                "type": "Feature Layer",
+                "displayField": "TITLE",
+                "visibilityField": "VISIBLE",
+                "name": "startDrawPoint",
+                "hasAttachments": False,
+                "typeIdField": "TYPEID",
+                "capabilities": "Query",
+                "allowGeometryUpdates": True,
+                "htmlPopupType": "",
+                "hasM": False,
+                "hasZ": False,
+                "globalIdField": "",
+                "supportedQueryFormats": "JSON",
+                "hasStaticData": False,
+                "maxRecordCount": -1,
+                "indexes": [
+
+                ],
+                "types": [
+
+                ],
+                "fields": [
+                    {
+                        "alias": "OBJECTID",
+                        "name": "OBJECTID",
+                        "type": "esriFieldTypeOID",
+                        "editable": False
+                    },
+                    {
+                        "alias": "Title",
+                        "name": "TITLE",
+                        "length": 50,
+                        "type": "esriFieldTypeString",
+                        "editable": True
+                    },
+                    {
+                        "alias": "Visible",
+                        "name": "VISIBLE",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True
+                    },
+                    {
+                        "alias": "Description",
+                        "name": "DESCRIPTION",
+                        "length": 1073741822,
+                        "type": "esriFieldTypeString",
+                        "editable": True
+                    },
+                    {
+                        "alias": "Type ID",
+                        "name": "TYPEID",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True
+                    }
+                ]
+            },
+            "featureSet": {
+                "features": [
+                    {
+                        "geometry": {
+                            "x": 80.27032792000051,
+                            "y": 13.085227147000467,
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326
+                            }
+                        },
+                        "attributes": {
+                            "description": "blayer desc",
+                            "title": "blayer",
+                            "OBJECTID": 0,
+                            "VISIBLE": 1
+                        },
+                        "symbol": {
+                            "angle": 0,
+                            "xoffset": 0,
+                            "yoffset": 8.15625,
+                            "type": "esriPMS",
+                            "url": "https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
+                            "imageData": "iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
+                            "contentType": "image/png",
+                            "width": 15.75,
+                            "height": 21.75
+                        }
+                    }
+                ],
+                "geometryType": "esriGeometryPoint"
+            },
+            "nextObjectId": 1
+        }
+
+        input_layer_url = ""
+        if isinstance(input_layer, Item):
+            if input_layer.type.lower() == 'feature service':
+                input_param = {"url": input_layer.layers[0].url}
+            elif input_layer.type.lower() == 'feature collection':
+                fcdict = input_layer.get_data()
+                fc = FeatureCollection(fcdict['layers'][0])
+                input_param = fc.layer
+            else:
+                raise TypeError("item type must be feature service or feature collection")
+
+        elif isinstance(input_layer, FeatureLayerCollection):
+            input_layer_url = input_layer.layers[0].url  # ["url"]
+            input_param = {"url": input_layer_url}
+        elif isinstance(input_layer, FeatureCollection):
+            input_param = input_layer.properties
+        elif isinstance(input_layer, Layer):
+            input_layer_url = input_layer.url
+            input_param = {"url": input_layer_url}
+        elif isinstance(input_layer, tuple):  # geocoding location, convert to point featureset
+            input_param = point_fs
+            input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
+            input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+        elif isinstance(input_layer, dict):  # could add support for geometry one day using geometry -> featureset
+            input_param = input_layer
+            """
+            res = gis.analysis.trace_downstream({"layerDefinition":
+                {
+                    "geometryType":"esriGeometryPoint",
+                    "fields":[{"alias":"OBJECTID","name":"OBJECTID","type":"esriFieldTypeOID","editable":False},
+                              {"alias":"Title","name":"TITLE","length":50,"type":"esriFieldTypeString","editable":True},
+                              {"alias":"Visible","name":"VISIBLE","type":"esriFieldTypeInteger","editable":True},
+                              {"alias":"Description","name":"DESCRIPTION","length":1073741822,"type":"esriFieldTypeString","editable":True},
+                              {"alias":"Type ID","name":"TYPEID","type":"esriFieldTypeInteger","editable":True}]
+                },
+                "featureSet":{
+                    "features":[
+                        {
+                            "geometry":{
+                                "x":8913583.679975435,
+                                "y":1460497.641278398,
+                                "spatialReference":{"wkid":102100,"latestWkid":3857}
+                            },
+                            "attributes":{"description":"blayer desc","title":"blayer","OBJECTID":0,"VISIBLE":1},
+
+                        }
+                    ],
+                    "geometryType":"esriGeometryPoint"
+                },
+                "nextObjectId":1
+            })
+            """
+        elif isinstance(input_layer, str):
+            input_layer_url = input_layer
+            input_param = {"url": input_layer_url}
+        else:
+            raise Exception(
+                "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+
+        return input_param
+
+    def _raster_input(self, input_raster):
+        if isinstance(input_raster, Item):
+            if input_raster.type.lower() == 'image service':
+                input_param = {"itemId": input_raster.itemid}
+            else:
+                raise TypeError("item type must be image service")
+        elif isinstance(input_raster, str):
+            input_param = {"url": input_raster}
+        elif isinstance(input_raster, dict):
+            input_param = input_raster
+        else:
+            raise Exception(
+                "Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported")
+
+        return input_param
+
+
+class Toolbox(_AsyncResource):
     "A collection of geoprocessing tools."
-    def __init__(self, item):
+
+    def __init__(self, url, gis):
         """
-        Constructs a collection of Geoprocessing tools given an item of type 'geoprocessing service'
+        Constructs a Geoprocessing toolbox
         """
-        if item.type.lower() != 'geoprocessing service':
-            raise TypeError("item type must be geoprocessing service")
-        self.item = item
-        self.url = self.item.url
+        super(Toolbox, self).__init__(url, gis)
+
+
         self._taskurls = {}
         self._method_params = {}
 
-        # print("URL: " + self.url)
-        params = {
-            "f" : "json"
-        }
-        svcprops = self.item._portal.con.post(self.url, params,  use_ordered_dict=True)
-        collections.OrderedDict.__init__(self, svcprops)
-        for task in svcprops['tasks']:
+        for task in self.properties.tasks:
             fnname = _camelCase_to_underscore(task)
-            print("Function: " + fnname)
+            # print("Function: " + fnname)
 
             taskurl = self.url + "/" + task
 
             self._taskurls[fnname] = taskurl + "/execute"
 
-            taskprops = self.item._portal.con.post(taskurl, params)
+            taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']
 
@@ -228,7 +550,7 @@ class Toolbox(collections.OrderedDict):
             if 'docstring' in taskprops:
                 helpstring = helpstring + ". " + taskprops['docstring']
 
-            helpstring = helpstring + "\n\nParameters:\n"
+            helpstring = helpstring + "\n\n\nParameters:\n"
 
 
             spec = []
@@ -244,8 +566,9 @@ class Toolbox(collections.OrderedDict):
 
                 param_rqrd = param['parameterType']
 
-                if param_type == 'GPFeatureRecordSetLayer':
-                    param_dval = None
+                param_choices = param.get('choiceList', None)
+                #if param_type == 'GPFeatureRecordSetLayer':
+                #    param_dval = None
 
                 py_param_type_ = param_type
                 if param_type == 'GPBoolean':
@@ -285,27 +608,31 @@ class Toolbox(collections.OrderedDict):
 
                 if param_drtn == 'esriGPParameterDirectionInput':
                     name_type[param_name] = py_param_type_
-                    print("   " + param_name + " : " + str(py_param_type_))
+                    # print("\n   " + param_name + " : " + str(py_param_type_))
                     #if param_dval is not None and param_dval != '':
                     #    print(" = " + str(param_dval))
-                    if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
-                        print(" = None")
+                    #if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
+                    #    print(" = None")
                     param_spec = ( param_name , param_dval )
                     spec.append(param_spec)
 
-                    helpstring = helpstring + "   " + param_name + ": " + param['displayName']  + " (" + str(py_param_type_) + ")"
+                    helpstring = helpstring + "\n   " + param_name + ": " + param['displayName']  + " (" + py_param_type_.__name__ + ")"
                     if param_rqrd == 'esriGPParameterTypeOptional':
                         helpstring = helpstring + " Optional parameter. "
-                    elif param_rqrd == 'esriGPParameterTypeRequired':
+                    elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
                         helpstring = helpstring + " Required parameter. "
 
                     if 'description' in param:
-                        helpstring = helpstring + param['description']
+                        helpstring = helpstring + ' ' + param['description']
+
+                    if param_choices is not None:
+                        helpstring = helpstring + '\n      Choice list:' + str(param_choices)
 
                 elif param_drtn == 'esriGPParameterDirectionOutput':
                     name_type['return'] = py_param_type_
+                    name_type['return_name'] = param_name
 
-                    helpstring = helpstring + "\nReturns " + param['displayName'] + "(" + str(py_param_type_) + ")"
+                    helpstring = helpstring + "\nReturns " + param['displayName'] + " (" + py_param_type_.__name__ + ")"
 
                 helpstring = helpstring + "\n"
 
@@ -333,7 +660,8 @@ class Toolbox(collections.OrderedDict):
 
         name_type = self._method_params[caller_fnname]
 
-        url = self.url + "/" + name_type[caller_fnname] + "/execute"
+        task_name = name_type[caller_fnname]
+        url = self.url + "/" + task_name + "/execute"
 
         params.update({ "f" : "json" })
 
@@ -353,7 +681,33 @@ class Toolbox(collections.OrderedDict):
                     params[k] = val
         """
         #--------------------------------------------#
-        resp = self.item._portal.con.post(url, params)
+        resp = None
+
+        if self.properties.executionType == 'esriExecutionTypeSynchronous':
+            resp = self._con.post(url, params, token=self._token)
+        else:
+            task_url = "{}/{}".format(self.url, task_name)
+            submit_url = "{}/submitJob".format(task_url)
+
+            params["f"] = "json"
+
+            job_info = self._con.post(submit_url, params, token=self._token)
+
+            job_info = super()._analysis_job_status(task_url, job_info)
+            resp = super()._analysis_job_results(task_url, job_info)
+            #print('***'+str(resp))
+
+            ret_type = name_type['return']
+            ret_name = name_type['return_name']
+
+            if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                jsondict = resp[ret_name]
+                result = ret_type.from_dict(jsondict)
+                result._con = self._con
+                result._token = self._token
+                return result
+            else:
+                return resp[ret_name]
         #--------------------------------------------#
 
         ret_type = name_type['return']
@@ -366,32 +720,12 @@ class Toolbox(collections.OrderedDict):
             if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                 value = resp['results'][0]['value']
                 result = ret_type.from_dict(value)
+                result._con = self._con
+                result._token = self._token
                 return result
 
 
             return resp['results'][0]['value']
-        #except:
-        #    print("Error: " + str(resp))
-        #    return resp
-
-            """
-
-            if ret_type == FeatureSet:
-                #print("RESP IN GP:"+str(resp))
-                #resp = {"results":[{"paramName":"Output","dataType":"GPFeatureRecordSetLayer","value":{"geometryType":"esriGeometryPolyline","spatialReference":{"wkid":4326},"features":[{"attributes":{"FID":1,"FNODE_":0,"Shape_Length":32.794529279575883},"geometry":{"paths":[[[84.8748779296875,-5.9821438789367676],[85.697532653808594,-6.5506825447082448],[85.362907409667969,-7.493033885955807],[84.996139526367188,-8.423344612121582],[84.110282897949219,-8.8873043060302734],[83.259567260742188,-9.4129314422607422],[82.274673461914063,-9.5861167907714808],[81.274681091308594,-9.582554817199707],[80.277946472167969,-9.6632461547851562],[79.287498474121094,-9.8011550903320312],[78.3453369140625,-10.136309623718265],[77.481758117675781,-10.640528678894043],[76.563209533691406,-11.035839080810547],[75.613388061523438,-11.348619461059567],[74.674003601074219,-11.691491127014157],[73.757270812988281,-12.090988159179688],[72.79632568359375,-12.367743492126465],[71.802711486816406,-12.480551719665527],[70.901077270507813,-12.913044929504391],[70.1573486328125,-13.581530570983887],[69.268287658691406,-14.039313316345215],[68.351539611816406,-14.438780784606934],[67.512741088867188,-14.983222007751465],[66.603912353515625,-15.400397300720215],[65.611618041992188,-15.276482582092285],[64.64862060546875,-15.006984710693359],[63.674091339111328,-14.782718658447262],[62.679428100585938,-14.885892868041989],[61.699390411376953,-15.084704399108883],[60.713626861572266,-15.252829551696777],[59.714076995849609,-15.22271728515625],[58.786506652832031,-14.849072456359863],[57.924812316894531,-14.341644287109375],[57.436767578125,-13.838002204895016],[57.370742797851563,-13.777911186218258],[57.367759704589844,-13.775339126586911]]]}}],"exceededTransferLimit":False}}],"messages":[]}
-
-                value = resp['results'][0]['value']
-                featset = FeatureSet.from_dict(value)
-                return featset
-
-            elif ret_type == LinearUnit
-            elif ret_type == DataFile
-            elif ret_type == RasterData
-
-            elif ret_type == datetime.date:
-            else:
-                print("NOT FS")
-                """
 
     def execute(self, task, input,
                 outSR=None,
@@ -421,3 +755,229 @@ class Toolbox(collections.OrderedDict):
         return resp
 
 
+# class Toolbox(collections.OrderedDict):
+#     "A collection of geoprocessing tools."
+#     def __init__(self, item):
+#         """
+#         Constructs a collection of Geoprocessing tools given an item of type 'geoprocessing service'
+#         """
+#         if item.type.lower() != 'geoprocessing service':
+#             raise TypeError("item type must be geoprocessing service")
+#         self.item = item
+#         self.url = self.item.url
+#         self._taskurls = {}
+#         self._method_params = {}
+#
+#         # print("URL: " + self.url)
+#         params = {
+#             "f" : "json"
+#         }
+#         svcprops = self.item._portal.con.post(self.url, params,  use_ordered_dict=True)
+#         collections.OrderedDict.__init__(self, svcprops)
+#         for task in svcprops['tasks']:
+#             fnname = _camelCase_to_underscore(task)
+#             print("Function: " + fnname)
+#
+#             taskurl = self.url + "/" + task
+#
+#             self._taskurls[fnname] = taskurl + "/execute"
+#
+#             taskprops = self.item._portal.con.post(taskurl, params)
+#             execution_type = taskprops['executionType']
+#             task_params = taskprops['parameters']
+#
+#             helpstring = '\n'
+#             if 'docstring' in taskprops:
+#                 helpstring = helpstring + ". " + taskprops['docstring']
+#
+#             helpstring = helpstring + "\n\nParameters:\n"
+#
+#
+#             spec = []
+#             name_type = {}
+#             name_type[fnname] = task
+#             for param in task_params:
+#
+#                 param_name = param['name']
+#
+#                 param_type = param['dataType']
+#                 param_dval = param['defaultValue']
+#                 param_drtn = param['direction']
+#
+#                 param_rqrd = param['parameterType']
+#
+#                 if param_type == 'GPFeatureRecordSetLayer':
+#                     param_dval = None
+#
+#                 py_param_type_ = param_type
+#                 if param_type == 'GPBoolean':
+#                     py_param_type_ = bool
+#                 elif param_type == 'GPDouble':
+#                     py_param_type_ = float
+#                 elif param_type == 'GPLong':
+#                     py_param_type_ = int
+#                 elif param_type == 'GPString':
+#                     py_param_type_ = str
+#                 elif param_type == 'GPDate':
+#                     py_param_type_ = datetime.date
+#                 elif param_type == 'GPFeatureRecordSetLayer':
+#                     py_param_type_ = FeatureSet
+#                 elif param_type == 'GPRecordSet':
+#                     py_param_type_ = FeatureSet
+#                 elif param_type == 'GPLinearUnit':
+#                     py_param_type_ = LinearUnit
+#                 elif param_type == 'GPDataFile':
+#                     py_param_type_ = DataFile
+#                 elif param_type == 'GPRasterData':
+#                     py_param_type_ = RasterData
+#                 elif param_type == 'GPRasterLayer':
+#                     py_param_type_ = RasterData
+#                 else:
+#                     py_param_type_ = str
+#
+#
+#                 """
+#                 "GPDataFile	DataFile
+#                 "GPFeatureRecordSetLayer	FeatureSet
+#                 "GPLinearUnit	LinearUnit
+#                 "GPRasterData	RasterData
+#                 "GPRasterLayer	RasterData
+#                 "GPRecordSet	FeatureSet
+#                 """
+#
+#                 if param_drtn == 'esriGPParameterDirectionInput':
+#                     name_type[param_name] = py_param_type_
+#                     print("   " + param_name + " : " + str(py_param_type_))
+#                     #if param_dval is not None and param_dval != '':
+#                     #    print(" = " + str(param_dval))
+#                     if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
+#                         print(" = None")
+#                     param_spec = ( param_name , param_dval )
+#                     spec.append(param_spec)
+#
+#                     helpstring = helpstring + "   " + param_name + ": " + param['displayName']  + " (" + str(py_param_type_) + ")"
+#                     if param_rqrd == 'esriGPParameterTypeOptional':
+#                         helpstring = helpstring + " Optional parameter. "
+#                     elif param_rqrd == 'esriGPParameterTypeRequired':
+#                         helpstring = helpstring + " Required parameter. "
+#
+#                     if 'description' in param:
+#                         helpstring = helpstring + param['description']
+#
+#                 elif param_drtn == 'esriGPParameterDirectionOutput':
+#                     name_type['return'] = py_param_type_
+#
+#                     helpstring = helpstring + "\nReturns " + param['displayName'] + "(" + str(py_param_type_) + ")"
+#
+#                 helpstring = helpstring + "\n"
+#
+#             if 'helpUrl' in taskprops:
+#                 helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
+#
+#             generatedfn = _call_generator(task, spec)
+#             generatedfn.__annotations__ = name_type
+#             generatedfn.__doc__ = helpstring
+#
+#             setattr(self, fnname, types.MethodType(generatedfn, self))
+#
+#             self._method_params[fnname] = name_type
+#
+#         # http://www.arcgis.com/home/item.html?id=383c2039b89d43baa0010c3bf243b144
+#         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
+#
+#     def __str__(self):
+#          return '<Toolbox url:' + self.url + '>'
+#
+#     def _execute(self, params):
+#         caller_fnname = inspect.stack()[1][3]
+#
+#         #print("Will call " + url +  " with these parameters:")
+#
+#         name_type = self._method_params[caller_fnname]
+#
+#         url = self.url + "/" + name_type[caller_fnname] + "/execute"
+#
+#         params.update({ "f" : "json" })
+#
+#         #---------------------in---------------------#
+#         """
+#         for k, v in params.items():
+#             #print(k + " = " + str(v))
+#             if k in name_type:
+#                 py_type = name_type[k]
+#                 if py_type == 'GPFeatureRecordSetLayer':
+#                     # if passed in geometries but require featureset, create one
+#                     geometry = v
+#                     val = {}
+#                     val['geometryType'] = 'esriGeometryPoint'
+#                     val['features'] = [{"geometry" : geometry}]
+#                     val['sr'] = {"wkid":102100,"latestWkid":3857}
+#                     params[k] = val
+#         """
+#         #--------------------------------------------#
+#         resp = self.item._portal.con.post(url, params)
+#         #--------------------------------------------#
+#
+#         ret_type = name_type['return']
+#         #try:
+#         if 1==1:
+#             geometries = []
+#
+#             #--------------------out---------------------#
+#             # if FeatureSet, return FeatureSet... and let map.draw draw features from featureset
+#             if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+#                 value = resp['results'][0]['value']
+#                 result = ret_type.from_dict(value)
+#                 return result
+#
+#
+#             return resp['results'][0]['value']
+#         #except:
+#         #    print("Error: " + str(resp))
+#         #    return resp
+#
+#             """
+#
+#             if ret_type == FeatureSet:
+#                 #print("RESP IN GP:"+str(resp))
+#                 #resp = {"results":[{"paramName":"Output","dataType":"GPFeatureRecordSetLayer","value":{"geometryType":"esriGeometryPolyline","spatialReference":{"wkid":4326},"features":[{"attributes":{"FID":1,"FNODE_":0,"Shape_Length":32.794529279575883},"geometry":{"paths":[[[84.8748779296875,-5.9821438789367676],[85.697532653808594,-6.5506825447082448],[85.362907409667969,-7.493033885955807],[84.996139526367188,-8.423344612121582],[84.110282897949219,-8.8873043060302734],[83.259567260742188,-9.4129314422607422],[82.274673461914063,-9.5861167907714808],[81.274681091308594,-9.582554817199707],[80.277946472167969,-9.6632461547851562],[79.287498474121094,-9.8011550903320312],[78.3453369140625,-10.136309623718265],[77.481758117675781,-10.640528678894043],[76.563209533691406,-11.035839080810547],[75.613388061523438,-11.348619461059567],[74.674003601074219,-11.691491127014157],[73.757270812988281,-12.090988159179688],[72.79632568359375,-12.367743492126465],[71.802711486816406,-12.480551719665527],[70.901077270507813,-12.913044929504391],[70.1573486328125,-13.581530570983887],[69.268287658691406,-14.039313316345215],[68.351539611816406,-14.438780784606934],[67.512741088867188,-14.983222007751465],[66.603912353515625,-15.400397300720215],[65.611618041992188,-15.276482582092285],[64.64862060546875,-15.006984710693359],[63.674091339111328,-14.782718658447262],[62.679428100585938,-14.885892868041989],[61.699390411376953,-15.084704399108883],[60.713626861572266,-15.252829551696777],[59.714076995849609,-15.22271728515625],[58.786506652832031,-14.849072456359863],[57.924812316894531,-14.341644287109375],[57.436767578125,-13.838002204895016],[57.370742797851563,-13.777911186218258],[57.367759704589844,-13.775339126586911]]]}}],"exceededTransferLimit":False}}],"messages":[]}
+#
+#                 value = resp['results'][0]['value']
+#                 featset = FeatureSet.from_dict(value)
+#                 return featset
+#
+#             elif ret_type == LinearUnit
+#             elif ret_type == DataFile
+#             elif ret_type == RasterData
+#
+#             elif ret_type == datetime.date:
+#             else:
+#                 print("NOT FS")
+#                 """
+#
+#     def execute(self, task, input,
+#                 outSR=None,
+#                 processSR=None,
+#                 returnZ=False,
+#                 returnM=False):
+#
+#         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_Currents_World/GPServer/MessageInABottle/execute? Input_Point={"features":[{"geometry":{"x":0,"y":0}}]}& Days=50
+#         url = self.url + "/" + task + "/execute"
+#         params = {
+#             "f" : "json",
+#         }
+#
+#         if outSR is not None:
+#             params['outSR'] = outSR
+#         if processSR is not None:
+#             params['processSR'] = processSR
+#         if returnZ:
+#             params['returnZ'] = "true"
+#         if returnM:
+#             params['returnM'] = "true"
+#
+#         for k, v in input.items():
+#             params[k] = v
+#
+#         resp = self.item._portal.con.post(url, params)
+#         return resp
