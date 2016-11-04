@@ -3,15 +3,27 @@ arcgis.geoprocessing module
 
 .. automodule:: arcgis.geoprocessing
 
-GeoprocessingTool
+Toolbox
 --------------
-.. autoclass:: arcgis.geoprocessing.GeoprocessingTool
+.. autoclass:: arcgis.geoprocessing.Toolbox
     :members:
     :undoc-members:
 
 
+DataFile
+--------------
+.. autoclass:: arcgis.geoprocessing.DataFile
+    :members:
+    :undoc-members:
+
 LinearUnit
 --------------
 .. autoclass:: arcgis.geoprocessing.LinearUnit
+    :members:
+    :undoc-members:
+
+RasterData
+--------------
+.. autoclass:: arcgis.geoprocessing.RasterData
     :members:
     :undoc-members:

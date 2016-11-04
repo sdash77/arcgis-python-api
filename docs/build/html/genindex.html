@@ -238,8 +238,10 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoprocessing.html">arcgis.geoprocessing module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#geoprocessingtool">GeoprocessingTool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#toolbox">Toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#datafile">DataFile</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#linearunit">LinearUnit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
@@ -693,6 +695,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.DataFile">DataFile (class in arcgis.geoprocessing)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.gis.html#arcgis.gis.Datastore">Datastore (class in arcgis.gis)</a>
   </dt>
 
@@ -885,7 +891,7 @@
   </dt>
 
       
-  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.GeoprocessingTool.execute">execute() (arcgis.geoprocessing.GeoprocessingTool method)</a>
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.Toolbox.execute">execute() (arcgis.geoprocessing.Toolbox method)</a>
   </dt>
 
       
@@ -986,8 +992,6 @@
   <dt><a href="arcgis.geometry.html#arcgis.geometry.find_transformation">find_transformation() (arcgis.geometry method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.gis.html#arcgis.gis.User.folders">folders (arcgis.gis.User attribute)</a>
   </dt>
@@ -998,6 +1002,8 @@
   </dt>
 
       </dl></dd>
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.features.html#arcgis.features.Feature.from_dict">from_dict() (arcgis.features.Feature class method)</a>, <a href="arcgis.features.toc.html#arcgis.features.Feature.from_dict">[1]</a>
   </dt>
@@ -1005,6 +1011,18 @@
       <dd><dl>
         
   <dt><a href="arcgis.features.html#arcgis.features.FeatureSet.from_dict">(arcgis.features.FeatureSet static method)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureSet.from_dict">[1]</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.DataFile.from_dict">(arcgis.geoprocessing.DataFile class method)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.LinearUnit.from_dict">(arcgis.geoprocessing.LinearUnit class method)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.RasterData.from_dict">(arcgis.geoprocessing.RasterData class method)</a>
   </dt>
 
       </dl></dd>
@@ -1108,10 +1126,6 @@
   </dt>
 
       </dl></dd>
-      
-  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.GeoprocessingTool">GeoprocessingTool (class in arcgis.geoprocessing)</a>
-  </dt>
-
       
   <dt><a href="arcgis.features.managers.html#arcgis.features.managers.SyncManager.get">get() (arcgis.features.managers.SyncManager method)</a>
   </dt>
@@ -1619,6 +1633,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.RasterData">RasterData (class in arcgis.geoprocessing)</a>
+  </dt>
+
+      
   <dt><a href="arcgis.raster.html#arcgis.raster.rasterize">rasterize() (arcgis.raster method)</a>
   </dt>
 
@@ -1662,12 +1680,12 @@
   <dt><a href="arcgis.gis.html#arcgis.gis.Item.related_items">related_items() (arcgis.gis.Item method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.relation">relation() (arcgis.geometry method)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="arcgis.mapping.html#arcgis.mapping.MapView.remove_layers">remove_layers() (arcgis.mapping.MapView method)</a>
   </dt>
@@ -1867,9 +1885,19 @@
   </dt>
 
       
-  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.LinearUnit.to_dict">to_dict() (arcgis.geoprocessing.LinearUnit method)</a>
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.DataFile.to_dict">to_dict() (arcgis.geoprocessing.DataFile method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.LinearUnit.to_dict">(arcgis.geoprocessing.LinearUnit method)</a>
+  </dt>
+
+        
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.RasterData.to_dict">(arcgis.geoprocessing.RasterData method)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="arcgis.geometry.html#arcgis.geometry.to_geo_coordinate_string">to_geo_coordinate_string() (arcgis.geometry method)</a>
   </dt>
@@ -1880,6 +1908,10 @@
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.Toolbox">Toolbox (class in arcgis.geoprocessing)</a>
+  </dt>
+
       
   <dt><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.trace_downstream">trace_downstream() (arcgis.features.find_locations method)</a>
   </dt>

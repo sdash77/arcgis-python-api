@@ -8,7 +8,6 @@ import types
 
 from arcgis.features import FeatureSet
 
-
 def _camelCase_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
@@ -26,9 +25,6 @@ class LinearUnit(object):
         units             required string,  unit type of the linear distance,
                           such as "Meters", "Miles", "Kilometers" etc.
         ================  ========================================================
-
-        :return:
-            a boolean, indicating success
     """
     def __init__(self, distance, units):
         self.distance = distance
@@ -38,7 +34,98 @@ class LinearUnit(object):
             self.units = 'esri' + units
 
     def to_dict(self):
-        return { "distance": self.distance, "units": self.units }
+        return {"distance": self.distance, "units": self.units}
+
+
+    @classmethod
+    def from_dict(cls, datadict):
+        """Creates an instance of this class from its dict representation."""
+        distance = datadict.get('distance', None)
+        units = datadict.get('units', None)
+
+        return cls(distance, units)
+
+
+class DataFile(object):
+    """
+    A data object containing a data source, used as input/output by some Geoprocessing tools
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        url               optional string, URL to the location of the data file.
+
+        ----------------  --------------------------------------------------------
+        item_id           optional string,  The id of the uploaded file returned
+                          as a result of the upload operation.
+        ================  ========================================================
+    """
+    def __init__(self, url=None, item_id=None):
+        self.url = url
+        self.item_id = item_id
+
+    def to_dict(self):
+        datafile = {}
+        if self.url is not None:
+            datafile['url'] = self.url
+        if self.item_id is not None:
+            datafile['itemID'] = self.item_id
+        return datafile
+
+
+    @classmethod
+    def from_dict(cls, datadict):
+        """Creates an instance of this class from its dict representation."""
+        url = datadict.get('url', None)
+        item_id = datadict.get('item_id', None)
+
+        return cls(url, item_id)
+
+
+class RasterData(object):
+    """
+    A data object containing a raster data source,
+    used as input/output by some Geoprocessing tools
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        url               optional string, URL to the location of the raster data
+                          file.
+        ----------------  --------------------------------------------------------
+        item_id           optional string,  The id of the uploaded file returned
+                          as a result of the upload operation.
+        ----------------  --------------------------------------------------------
+        format            optional string, Specifies the format of the raster
+                          data, such as "jpg", "tif", etc.
+        ================  ========================================================
+    """
+    def __init__(self, url=None, format=None, item_id=None):
+        self.url = url
+        self.format = format
+        self.item_id = item_id
+
+    def to_dict(self):
+        """Converts an instance of this class to its dict representation."""
+        rasterdata = {}
+        if self.url is not None:
+            rasterdata['url'] = self.url
+        if self.item_id is not None:
+            rasterdata['itemID'] = self.item_id
+        if self.format is not None:
+            rasterdata['format'] = self.format
+
+        return rasterdata
+
+    @classmethod
+    def from_dict(cls, datadict):
+        """Creates an instance of this class from its dict representation."""
+        url = datadict.get('url', None)
+        item_id = datadict.get('item_id', None)
+        format = datadict.get('format', None)
+
+        return cls(url, format, item_id)
+
 
 def _call_generator(fnname, spec):
     """Generate GP function based on spec
@@ -102,19 +189,15 @@ def _call_generator(fnname, spec):
      * co_flags is an integer encoding a number of flags for the
     interpreter.
     """
-
-
-
-
     return types.FunctionType(new_code,
                               {"__builtins__": __builtins__},
                               argdefs=defaults)
 
-class GeoprocessingTool(collections.OrderedDict):
-    "A geoprocessing tool."
+class Toolbox(collections.OrderedDict):
+    "A collection of geoprocessing tools."
     def __init__(self, item):
         """
-        Constructs a Geoprocessing tool given it's item from the GIS
+        Constructs a collection of Geoprocessing tools given an item of type 'geoprocessing service'
         """
         if item.type.lower() != 'geoprocessing service':
             raise TypeError("item type must be geoprocessing service")
@@ -123,7 +206,7 @@ class GeoprocessingTool(collections.OrderedDict):
         self._taskurls = {}
         self._method_params = {}
 
-        print("URL: " + self.url)
+        # print("URL: " + self.url)
         params = {
             "f" : "json"
         }
@@ -131,7 +214,7 @@ class GeoprocessingTool(collections.OrderedDict):
         collections.OrderedDict.__init__(self, svcprops)
         for task in svcprops['tasks']:
             fnname = _camelCase_to_underscore(task)
-            print("Task: " + fnname)
+            print("Function: " + fnname)
 
             taskurl = self.url + "/" + task
 
@@ -141,9 +224,11 @@ class GeoprocessingTool(collections.OrderedDict):
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']
 
-            helpstring = fnname # taskprops["displayName"] + "\n"
+            helpstring = '\n'
             if 'docstring' in taskprops:
-                helpstring = helpstring + ". " + taskprops['docstring'] + "\nParameters:\n"
+                helpstring = helpstring + ". " + taskprops['docstring']
+
+            helpstring = helpstring + "\n\nParameters:\n"
 
 
             spec = []
@@ -179,22 +264,28 @@ class GeoprocessingTool(collections.OrderedDict):
                     py_param_type_ = FeatureSet
                 elif param_type == 'GPLinearUnit':
                     py_param_type_ = LinearUnit
+                elif param_type == 'GPDataFile':
+                    py_param_type_ = DataFile
+                elif param_type == 'GPRasterData':
+                    py_param_type_ = RasterData
+                elif param_type == 'GPRasterLayer':
+                    py_param_type_ = RasterData
                 else:
                     py_param_type_ = str
 
 
                 """
-                GPDataFile	DataFile
+                "GPDataFile	DataFile
                 "GPFeatureRecordSetLayer	FeatureSet
                 "GPLinearUnit	LinearUnit
-                GPRasterData	RasterData
-                GPRasterLayer	RasterData
+                "GPRasterData	RasterData
+                "GPRasterLayer	RasterData
                 "GPRecordSet	FeatureSet
                 """
 
                 if param_drtn == 'esriGPParameterDirectionInput':
                     name_type[param_name] = py_param_type_
-                    print(param_name + " : " + str(py_param_type_))
+                    print("   " + param_name + " : " + str(py_param_type_))
                     #if param_dval is not None and param_dval != '':
                     #    print(" = " + str(param_dval))
                     if param_rqrd is not None and param_rqrd == 'esriGPParameterTypeOptional':
@@ -233,7 +324,7 @@ class GeoprocessingTool(collections.OrderedDict):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-         return '<GeoprocessingTool url:' + self.url + '>'
+         return '<Toolbox url:' + self.url + '>'
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]
@@ -272,6 +363,19 @@ class GeoprocessingTool(collections.OrderedDict):
 
             #--------------------out---------------------#
             # if FeatureSet, return FeatureSet... and let map.draw draw features from featureset
+            if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+                value = resp['results'][0]['value']
+                result = ret_type.from_dict(value)
+                return result
+
+
+            return resp['results'][0]['value']
+        #except:
+        #    print("Error: " + str(resp))
+        #    return resp
+
+            """
+
             if ret_type == FeatureSet:
                 #print("RESP IN GP:"+str(resp))
                 #resp = {"results":[{"paramName":"Output","dataType":"GPFeatureRecordSetLayer","value":{"geometryType":"esriGeometryPolyline","spatialReference":{"wkid":4326},"features":[{"attributes":{"FID":1,"FNODE_":0,"Shape_Length":32.794529279575883},"geometry":{"paths":[[[84.8748779296875,-5.9821438789367676],[85.697532653808594,-6.5506825447082448],[85.362907409667969,-7.493033885955807],[84.996139526367188,-8.423344612121582],[84.110282897949219,-8.8873043060302734],[83.259567260742188,-9.4129314422607422],[82.274673461914063,-9.5861167907714808],[81.274681091308594,-9.582554817199707],[80.277946472167969,-9.6632461547851562],[79.287498474121094,-9.8011550903320312],[78.3453369140625,-10.136309623718265],[77.481758117675781,-10.640528678894043],[76.563209533691406,-11.035839080810547],[75.613388061523438,-11.348619461059567],[74.674003601074219,-11.691491127014157],[73.757270812988281,-12.090988159179688],[72.79632568359375,-12.367743492126465],[71.802711486816406,-12.480551719665527],[70.901077270507813,-12.913044929504391],[70.1573486328125,-13.581530570983887],[69.268287658691406,-14.039313316345215],[68.351539611816406,-14.438780784606934],[67.512741088867188,-14.983222007751465],[66.603912353515625,-15.400397300720215],[65.611618041992188,-15.276482582092285],[64.64862060546875,-15.006984710693359],[63.674091339111328,-14.782718658447262],[62.679428100585938,-14.885892868041989],[61.699390411376953,-15.084704399108883],[60.713626861572266,-15.252829551696777],[59.714076995849609,-15.22271728515625],[58.786506652832031,-14.849072456359863],[57.924812316894531,-14.341644287109375],[57.436767578125,-13.838002204895016],[57.370742797851563,-13.777911186218258],[57.367759704589844,-13.775339126586911]]]}}],"exceededTransferLimit":False}}],"messages":[]}
@@ -280,15 +384,14 @@ class GeoprocessingTool(collections.OrderedDict):
                 featset = FeatureSet.from_dict(value)
                 return featset
 
-                #    geometries.append(geometry)
+            elif ret_type == LinearUnit
+            elif ret_type == DataFile
+            elif ret_type == RasterData
+
+            elif ret_type == datetime.date:
             else:
                 print("NOT FS")
-
-            return resp['results'][0]['value']
-        #except:
-        #    print("Error: " + str(resp))
-        #    return resp
-
+                """
 
     def execute(self, task, input,
                 outSR=None,
