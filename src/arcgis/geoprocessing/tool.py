@@ -569,8 +569,6 @@ class Toolbox(_AsyncResource):
                 param_rqrd = param['parameterType']
 
                 param_choices = param.get('choiceList', None)
-                if param_type == 'GPFeatureRecordSetLayer':
-                    param_dval = None
 
                 py_param_type_ = param_type
                 if param_type == 'GPBoolean':
