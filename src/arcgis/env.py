@@ -1,6 +1,7 @@
 """
 The **env** module provides a shared environment used by the different modules.
 It stores globals such as the currently active GIS, the default geocoder and so on.
+It also stores environment settings that are common among all geoprocessing tools, such as the output spatial referemce.
 
 active_gis
 ==========
@@ -19,6 +20,39 @@ The currently active geocoder in the GIS, that is used for geocoding unless expl
 when calling the functions.
 Creating a new GIS object makes it's first available geocoder as the active geocoder
 unless set_active=False is passed in the GIS constructor.
+
+out_spatial_reference
+=====================
+
+.. py:data:: out_spatial_reference
+The spatial reference of the output geometries. If not specified, the output geometries are in the
+spatial reference of the input geometries. If process_spatial_reference is specified and out_spatial_reference
+is not specified, the output geometries are in the spatial reference of the process spatial reference.
+
+process_spatial_reference
+=========================
+
+.. py:data:: process_spatial_reference
+The spatial reference that the geoprocessor will use to perform geometry operations. If specified and
+out_spatial_reference is not specified, the output geometries are in the spatial reference of the
+process spatial reference.
+
+
+return_z
+========
+
+.. py:data:: return_z
+If true, Z values will be included in the geoprocessing results if the features have Z values.
+Otherwise Z values are not returned. The default is False.
+
+
+return_m
+========
+
+.. py:data:: return_m
+If true, M values will be included in the results if the features have M values.
+Otherwise M values are not returned. The default is False.
+
 """
 
 #: The currently active GIS, that is used for analysis functions unless explicitly specified.
@@ -29,3 +63,21 @@ active_gis = None
 #: Creating a new GIS object makes it's first available geocoder as the active geocoder
 #: unless set_active=False is passed in the GIS constructor.
 active_geocoder = None
+
+#: The spatial reference of the output geometries. If not specified, the output geometries are in the
+#: spatial reference of the input geometries. If process_spatial_reference is specified and out_spatial_reference
+#: is not specified, the output geometries are in the spatial reference of the process spatial reference.
+out_spatial_reference = None
+
+#: The spatial reference that the model will use to perform geometry operations. If specified and
+#: out_spatial_reference is not specified, the output geometries are in the spatial reference of the
+#: process spatial reference.
+process_spatial_reference = None
+
+#: If true, Z values will be included in the geoprocessing results if the features have Z values.
+#: Otherwise Z values are not returned. The default is False.
+return_z = False
+
+#: If true, M values will be included in the results if the features have M values.
+#: Otherwise M values are not returned. The default is False.
+return_m = False
