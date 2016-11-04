@@ -234,7 +234,7 @@ class FeatureSet(object):
             features = self._fc_to_features(dataset=features)
             if features is None:
                 raise AttributeError("Feature class could not be converted to a feature set")
-        elif isinstance(features, list):
+        elif isinstance(features, list) and len(features) > 0:
             feature = features[0]
             if isinstance(feature, Feature):
                 # features passed in as a list of Feature objects
@@ -258,59 +258,58 @@ class FeatureSet(object):
                 raise AttributeError("FeatureSet requires a list of features (as dicts or Feature objects)")
 
         self._features = features
-        if len(features) == 0:
-            raise AttributeError("FeatureSet requires a list of features")
-        feature_geom = None
-        feature = features[0]
+        if len(features) > 0:
+            feature_geom = None
+            feature = features[0]
 
-        if "geometry" in feature.as_dict: # can construct features out of tables with just attributes, no geometry
-                feat_geom = feature.geometry
-        elif isinstance(feature, dict):
-            if "geometry" in feature:
-                feat_geom = feature['geometry']
+            if "geometry" in feature.as_dict: # can construct features out of tables with just attributes, no geometry
+                    feat_geom = feature.geometry
+            elif isinstance(feature, dict):
+                if "geometry" in feature:
+                    feat_geom = feature['geometry']
 
-        if feat_geom is not None:
-            if spatial_reference is None:
-                if 'spatialReference' in feat_geom:
-                    self._spatialReference = feat_geom['spatialReference']
+            if feat_geom is not None:
+                if spatial_reference is None:
+                    if 'spatialReference' in feat_geom:
+                        self._spatialReference = feat_geom['spatialReference']
 
-            geometry = Geometry(feat_geom)
-            if geometry_type is None:
-                if isinstance(geometry, Polyline):
-                    self._geometryType = "esriGeometryPolyline"
-                elif isinstance(geometry, Polygon):
-                    self._geometryType = "esriGeometryPolygon"
-                elif isinstance(geometry, Point):
-                    self._geometryType = "esriGeometryPoint"
-                elif isinstance(geometry, MultiPoint):
-                    self._geometryType = "esriGeometryMultipoint"
-            # else:
-            #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
+                geometry = Geometry(feat_geom)
+                if geometry_type is None:
+                    if isinstance(geometry, Polyline):
+                        self._geometryType = "esriGeometryPolyline"
+                    elif isinstance(geometry, Polygon):
+                        self._geometryType = "esriGeometryPolygon"
+                    elif isinstance(geometry, Point):
+                        self._geometryType = "esriGeometryPoint"
+                    elif isinstance(geometry, MultiPoint):
+                        self._geometryType = "esriGeometryMultipoint"
+                # else:
+                #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
-        # Try to find the object ID field if not specified
-        if self._object_id_field_name is None:
-            # check to see if features a dict or feature object
-            if isinstance(feature, Feature):
-                # Look for OBJECTID first, if it does not exist, look for FID
-                if self._fields is None:
-                    self._fields = feature.fields  # get fields from first feature if not set
-                for field in feature.fields:
-                    if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                        self._objectIdFieldName = field
-                        break
-                for field in feature.fields:
-                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                        self._objectIdFieldName = field
-                        break
-            else:
-                for field, _ in feature.items():
-                    if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                        self._object_id_field_name = field
-                        break
-                for field, _ in feature.items():
-                    if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                        self._object_id_field_name = field
-                        break
+            # Try to find the object ID field if not specified
+            if self._object_id_field_name is None:
+                # check to see if features a dict or feature object
+                if isinstance(feature, Feature):
+                    # Look for OBJECTID first, if it does not exist, look for FID
+                    if self._fields is None:
+                        self._fields = feature.fields  # get fields from first feature if not set
+                    for field in feature.fields:
+                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                            self._objectIdFieldName = field
+                            break
+                    for field in feature.fields:
+                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                            self._objectIdFieldName = field
+                            break
+                else:
+                    for field, _ in feature.items():
+                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                            self._object_id_field_name = field
+                            break
+                    for field, _ in feature.items():
+                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                            self._object_id_field_name = field
+                            break
 
     # ----------------------------------------------------------------------
     def __str__(self):
