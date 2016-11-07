@@ -3138,8 +3138,14 @@ class _GISResource(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
+                if self._con._token is None:
+                    self._token = None
+                else:
+                    self._token = self._con.generate_portal_server_token(url)
                 self._refresh()
+            except HTTPError as httperror: # service maybe down
+                _log.error(httperror)
+                err = httperror
             except RuntimeError as e:
                 try:
                     # try as a public server
