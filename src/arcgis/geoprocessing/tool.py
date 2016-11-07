@@ -14,10 +14,13 @@ from ..gis import _GISResource, Item, Layer
 from .._impl.common._mixins import PropertyMap
 from .._impl.common._utils import _date_handler
 
+
 def _camelCase_to_underscore(name):
+    """PEP8ify name"""
+    if '_' in name:
+        return name.lower()
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
 
 class LinearUnit(object):
     """
@@ -535,6 +538,7 @@ class Toolbox(_AsyncResource):
 
 
         self._taskurls = {}
+        self._param_names = {} # mapping from fn to name-map (camel_case (PEP8ified) parameter name to GP_Param_Name)
         self._method_params = {}
 
         for task in self.properties.tasks:
@@ -558,11 +562,16 @@ class Toolbox(_AsyncResource):
 
             spec = []
             name_type = {}
+            name_name = {} # map from camel_case to GPParameterName
             name_type[fnname] = task
             return_values = []
             for param in task_params:
 
-                param_name = param['name']
+                gp_param_name = param['name']
+
+                param_name = _camelCase_to_underscore(gp_param_name)
+
+                name_name[param_name] = gp_param_name
 
                 param_type = param['dataType']
                 param_dval = param['defaultValue']
@@ -628,7 +637,7 @@ class Toolbox(_AsyncResource):
                     name_type['return_name'] = param_name
                     name_type['return_display_name'] = param['displayName']
 
-                    return_values.append({"name":param_name.lower(), "display_name": param['displayName'], "type":py_param_type_})
+                    return_values.append({"name":param_name, "display_name": param['displayName'], "type":py_param_type_})
 
             if len(return_values) == 1:
                 helpstring = helpstring + "\n\nReturns: " + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
@@ -650,6 +659,7 @@ class Toolbox(_AsyncResource):
             setattr(self, fnname, types.MethodType(generatedfn, self))
 
             self._method_params[fnname] = name_type
+            self._param_names[fnname] = name_name
 
         # http://www.arcgis.com/home/item.html?id=383c2039b89d43baa0010c3bf243b144
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
@@ -663,24 +673,10 @@ class Toolbox(_AsyncResource):
         # print("Will call " + url +  " with these parameters:")
 
         name_type = self._method_params[caller_fnname]
+        name_name = self._param_names[caller_fnname]
 
         task_name = name_type[caller_fnname]
         url = self.url + "/" + task_name + "/execute"
-
-        params.update({ "f" : "json" })
-
-        # copy environment variables if set
-        if 'env:outSR' not in params and arcgis.env.out_spatial_reference is not None:
-            params['env:outSR'] = arcgis.env.out_spatial_reference
-
-        if 'env:processSR' not in params and arcgis.env.process_spatial_reference is not None:
-            params['env:processSR'] = arcgis.env.process_spatial_reference
-
-        if 'returnZ' not in params and arcgis.env.return_z is not False:
-            params['returnZ'] = True
-
-        if 'returnM' not in params and arcgis.env.return_m is not False:
-            params['returnM'] = True
 
         #---------------------in---------------------#
 
@@ -695,10 +691,32 @@ class Toolbox(_AsyncResource):
                 elif py_type == datetime.datetime:
                     params[key] = _date_handler(params[key])
         #--------------------------------------------#
+
+        params.update({ "f" : "json" })
+
+        gp_params = {}
+
+        for param_name, param_value in params.items():
+            gp_param_name = name_name.get(param_name, param_name)
+            gp_params[gp_param_name] = param_value
+
+        # copy environment variables if set
+        if 'env:outSR' not in params and arcgis.env.out_spatial_reference is not None:
+            gp_params['env:outSR'] = arcgis.env.out_spatial_reference
+
+        if 'env:processSR' not in params and arcgis.env.process_spatial_reference is not None:
+            gp_params['env:processSR'] = arcgis.env.process_spatial_reference
+
+        if 'returnZ' not in params and arcgis.env.return_z is not False:
+            gp_params['returnZ'] = True
+
+        if 'returnM' not in params and arcgis.env.return_m is not False:
+            gp_params['returnM'] = True
+
         resp = None
 
         if self.properties.executionType == 'esriExecutionTypeSynchronous':
-            resp = self._con.post(url, params, token=self._token)
+            resp = self._con.post(url, gp_params, token=self._token)
 
             output_dict = {}
 
@@ -729,26 +747,27 @@ class Toolbox(_AsyncResource):
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
 
-            params["f"] = "json"
+            # arams["f"] = "json"
 
-            job_info = self._con.post(submit_url, params, token=self._token)
+            job_info = self._con.post(submit_url, gp_params, token=self._token)
 
             job_info = super()._analysis_job_status(task_url, job_info)
             resp = super()._analysis_job_results(task_url, job_info)
             # print('***'+str(resp))
 
             output_dict = {}
-            for ret_param_name in resp.keys():
+            for retParamName in resp.keys():
+                ret_param_name = _camelCase_to_underscore(retParamName)
                 ret_type = name_type[ret_param_name]
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                    jsondict = resp[ret_param_name]
+                    jsondict = resp[retParamName]
                     result = ret_type.from_dict(jsondict)
                     result._con = self._con
                     result._token = self._token
                     ret_val =  result
                 else:
-                    ret_val = resp[ret_param_name]
+                    ret_val = resp[retParamName]
 
                 output_dict[ret_param_name] = ret_val
 
