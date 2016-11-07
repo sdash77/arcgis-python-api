@@ -22,6 +22,7 @@ Contents:
    arcgis.geocoding
    arcgis.geometry
    arcgis.geoprocessing
+   arcgis.realtime
    arcgis.mapping
    
 

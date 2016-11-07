@@ -1,7 +1,8 @@
 """
 The **env** module provides a shared environment used by the different modules.
 It stores globals such as the currently active GIS, the default geocoder and so on.
-It also stores environment settings that are common among all geoprocessing tools, such as the output spatial referemce.
+It also stores environment settings that are common among all geoprocessing tools,
+such as the output spatial reference.
 
 active_gis
 ==========

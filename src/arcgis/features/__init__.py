@@ -1,5 +1,10 @@
 """
-Module for working with features and feature layers in the GIS.
+The arcgis.features module contains types and functions for working with features and feature layers in the GIS.
+
+Entities located in space with a geometrical representation (such as points, lines or polygons) and a set of properties
+can be represented as features. The arcgis.features module is used for working with feature data, feature layers and
+collections of feature layers in the GIS. It also contains the spatial analysis functions which operate against
+feature data.
 
 In the GIS, entities located in space with a set of properties can be represented as features.  Features are stored as
 feature classes, which represent a set of features located using a single spatial type (point, line, polygon) and a

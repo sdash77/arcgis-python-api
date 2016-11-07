@@ -34,7 +34,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
-        <link rel="prev" title="arcgis.geoprocessing module" href="arcgis.geoprocessing.html"/> 
+        <link rel="prev" title="arcgis.geoanalytics module" href="arcgis.realtime.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -103,6 +103,10 @@
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -244,6 +248,21 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.realtime.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.mapping module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#webmap">WebMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#webscene">WebScene</a></li>
@@ -299,6 +318,11 @@
             
   <div class="section" id="arcgis-mapping-module">
 <h1>arcgis.mapping module<a class="headerlink" href="#arcgis-mapping-module" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-arcgis.mapping"></span><p>The arcgis.mapping module provides components for visualizing GIS data and analysis.
+This module includes components such as MapView - an IPython Notebook widget for
+working with maps, as well as WebMap and WebScene components that enable 2D and 3D
+mapping and visualization in the GIS. This module also includes mapping layers like
+DynamicMapLayer and VectorTileLayer</p>
 <div class="section" id="webmap">
 <h2>WebMap<a class="headerlink" href="#webmap" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -992,7 +1016,7 @@ returned in PBF format. If a tile is not found, an error is returned.</p>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="arcgis.geoprocessing.html" class="btn btn-neutral" title="arcgis.geoprocessing module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.realtime.html" class="btn btn-neutral" title="arcgis.geoanalytics module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -2,9 +2,9 @@ from arcgis._impl.common._utils import local_time_to_online
 from arcgis.gis import Layer
 
 
-class ImageLayer(Layer):
+class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
-        super(ImageLayer, self).__init__(url, gis)
+        super(ImageryLayer, self).__init__(url, gis)
 
     @classmethod
     def fromitem(cls, item):

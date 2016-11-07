@@ -1,5 +1,5 @@
 """
-The arcgis.geocoding module provides functions for geocoding, batch geocoding and reverse geocoding.
+The arcgis.geocoding module provides types and functions for geocoding, batch geocoding and reverse geocoding.
 
 Geocoders can find point locations of addresses, business names, and so on.
 The output points can be visualized on a map, inserted as stops for a route,

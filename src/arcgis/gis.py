@@ -372,9 +372,10 @@ class Datastore(dict):
         res = self._portal.con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
 
-    def list_datasets(self):
+    @property
+    def datasets(self):
         """
-        Lists the datasets in a big data file share.
+        Returns the datasets in the data store (currently implemented for big data file shares.)
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -383,8 +384,9 @@ class Datastore(dict):
         }
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
 
-        for dataset in res['datasets']:
-            print(dataset['name'] + ' ('+ dataset['format']['extension'] + ')')
+        return res['datasets']
+        # for dataset in res['datasets']:
+        #     print(dataset['name'] + ' ('+ dataset['format']['extension'] + ')')
 
 
 class DatastoreManager(object):
@@ -2316,7 +2318,7 @@ class Item(dict):
         from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection
         from arcgis.mapping import VectorTileLayer, DynamicMapLayer
         from arcgis.network import NetworkDataset
-        from arcgis.raster import ImageLayer
+        from arcgis.raster import ImageryLayer
 
         if self._has_layers():
             layers = []
@@ -2325,7 +2327,7 @@ class Item(dict):
             params = {"f" : "json"}
 
             if self.type == 'Image Service': # service that is itself a layer
-                layers.append(ImageLayer(self.url, self._gis))
+                layers.append(ImageryLayer(self.url, self._gis))
 
             elif self.type == 'Feature Collection':
                 lyrs = self.get_data()['layers']

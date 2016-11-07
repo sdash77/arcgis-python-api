@@ -104,6 +104,10 @@
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -243,6 +247,21 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#datafile">DataFile</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#linearunit">LinearUnit</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.realtime.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#find-hot-spots">find_hot_spots</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
@@ -419,7 +438,8 @@ Returns True if the relationship was deleted</p>
 <dl class="method">
 <dt id="arcgis.gis.Item.download">
 <code class="descname">download</code><span class="sig-paren">(</span><em>save_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.download" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Downloads the data to the specified folder or a tempoary folder if a folder isn&#8217;t provided</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Item.download_metadata">
@@ -1478,7 +1498,7 @@ GIS. Layer objects can be obtained through the layers attribute on layer Items i
 <dl class="class">
 <dt id="arcgis.gis.ContentManager">
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">ContentManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.ContentManager" title="Permalink to this definition">¶</a></dt>
-<dd><p>Manager class for manipulating GIS content. This class is not created by users directly.
+<dd><p>Helper class for managing GIS content. This class is not created by users directly.
 An instance of this class, called &#8216;content&#8217;, is available as a property of the Gis object.
 Users call methods on this &#8216;content&#8217; object to manipulate (create, get, search...) items.</p>
 <dl class="method">
@@ -1812,7 +1832,7 @@ avgRating, numRatings, numComments, and numViews.</td>
 <dt id="arcgis.gis.UserManager">
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">UserManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.UserManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Manager class for managing GIS users. This class is not created by users directly.
+<p>Helper class for managing GIS users. This class is not created by users directly.
 An instance of this class, called &#8216;users&#8217;, is available as a property of the Gis object.
 Users call methods on this &#8216;users&#8217; object to manipulate (create, get, search...) users.</p>
 <dl class="method">
@@ -2014,7 +2034,7 @@ your org (default is False)</td>
 <dt id="arcgis.gis.GroupManager">
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GroupManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Manager class for manipulating GIS groups. This class is not created by users directly.
+<p>Helper class for managing GIS groups. This class is not created by users directly.
 An instance of this class, called &#8216;groups&#8217;, is available as a property of the Gis object.
 Users call methods on this &#8216;groups&#8217; object to manipulate (create, get, search...) users.</p>
 <dl class="method">
@@ -2141,7 +2161,7 @@ your org</td>
 <dt id="arcgis.gis.DatastoreManager">
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">DatastoreManager</code><span class="sig-paren">(</span><em>gis</em>, <em>admin_url</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.DatastoreManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Manager class for managing the GIS data stores in on-premises ArcGIS Portals.
+<p>Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
 This class is not created by users directly.
 An instance of a list of this class, called &#8216;datastores&#8217;, is available as a property of the GIS object.
 Users call methods on members of this &#8216;datastores&#8217; list to manage the datastores in a site federated with the portal.</p>

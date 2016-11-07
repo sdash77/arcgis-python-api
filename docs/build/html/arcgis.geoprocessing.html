@@ -34,7 +34,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 0.3 documentation" href="index.html"/>
-        <link rel="next" title="arcgis.mapping module" href="arcgis.mapping.html"/>
+        <link rel="next" title="arcgis.geoanalytics module" href="arcgis.realtime.html"/>
         <link rel="prev" title="arcgis.geometry module" href="arcgis.geometry.html"/> 
 
   
@@ -104,6 +104,10 @@
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -245,6 +249,21 @@
 <li class="toctree-l2"><a class="reference internal" href="#rasterdata">RasterData</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.realtime.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webmap">WebMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webscene">WebScene</a></li>
@@ -305,13 +324,8 @@
 <h2>Toolbox<a class="headerlink" href="#toolbox" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.geoprocessing.Toolbox">
-<em class="property">class </em><code class="descclassname">arcgis.geoprocessing.</code><code class="descname">Toolbox</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.Toolbox" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.geoprocessing.</code><code class="descname">Toolbox</code><span class="sig-paren">(</span><em>url</em>, <em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.Toolbox" title="Permalink to this definition">¶</a></dt>
 <dd><p>A collection of geoprocessing tools.</p>
-<dl class="method">
-<dt id="arcgis.geoprocessing.Toolbox.execute">
-<code class="descname">execute</code><span class="sig-paren">(</span><em>task</em>, <em>input</em>, <em>outSR=None</em>, <em>processSR=None</em>, <em>returnZ=False</em>, <em>returnM=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.Toolbox.execute" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </div>
@@ -341,6 +355,12 @@ as a result of the upload operation.</td>
 </tbody>
 </table>
 </div></blockquote>
+<dl class="method">
+<dt id="arcgis.geoprocessing.DataFile.download">
+<code class="descname">download</code><span class="sig-paren">(</span><em>save_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.DataFile.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads the data to the specified folder or a tempoary folder if a folder isn&#8217;t provided</p>
+</dd></dl>
+
 <dl class="classmethod">
 <dt id="arcgis.geoprocessing.DataFile.from_dict">
 <em class="property">classmethod </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>datadict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoprocessing.DataFile.from_dict" title="Permalink to this definition">¶</a></dt>
@@ -451,7 +471,7 @@ data, such as &#8220;jpg&#8221;, &#8220;tif&#8221;, etc.</td>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.mapping.html" class="btn btn-neutral float-right" title="arcgis.mapping module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.realtime.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="arcgis.geometry.html" class="btn btn-neutral" title="arcgis.geometry module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>

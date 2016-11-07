@@ -1,5 +1,7 @@
 """
-Represents the geometry objects to use with the GIS.
+The arcgis.geometry module defines useful geometry types for working with geographic information and GIS functionality.
+It provides functions which use geometric types as input and output as well as functions for easily converting
+geometries between different representations.
 
 Several functions accept geometries represented as dictionaries and the geometry objects in this module behave like them
 as well as support the '.' (dot) notation providing attribute access.

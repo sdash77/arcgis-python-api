@@ -1,5 +1,7 @@
 """
-Module for working with network layers
+The arcgis.network module contains classes and functions for network analysis. Network layers and analysis can be used
+for operations such as finding the closest facility, the best route for a vehicle, the best routes for a fleet of
+vehicles, locating facilities using location allocation, calculating an OD cost matrix, and generating service areas.
 """
 
 from .layer import NetworkLayer, NetworkDataset, ClosestFacilityLayer, ServiceAreaLayer, RouteLayer

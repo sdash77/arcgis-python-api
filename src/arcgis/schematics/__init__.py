@@ -1,6 +1,13 @@
+"""
+Schematics are simplified representations of networks, intended to explain their structure and make the way they operate
+understandable. The arcgis.schematics module contains the types and functions for working with schematic layers and
+datasets.
+
+"""
+
 from arcgis.gis import Layer
 
-
+"""This class provides access to diagrams and schematic layers, as well as diagram templates."""
 class SchematicLayers(Layer):
     def __init__(self, url, gis=None):
         super(SchematicLayers, self).__init__(url, gis)

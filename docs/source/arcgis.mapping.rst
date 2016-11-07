@@ -1,6 +1,8 @@
 arcgis.mapping module
 =================
 
+.. automodule:: arcgis.mapping
+
 WebMap
 -----------------
 .. autoclass:: arcgis.mapping.WebMap

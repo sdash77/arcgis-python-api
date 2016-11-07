@@ -104,6 +104,10 @@
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.features module</a><ul>
@@ -245,6 +249,21 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.realtime.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webmap">WebMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webscene">WebScene</a></li>
@@ -300,7 +319,11 @@
             
   <div class="section" id="module-arcgis.features">
 <span id="arcgis-features-module"></span><h1>arcgis.features module<a class="headerlink" href="#module-arcgis.features" title="Permalink to this headline">¶</a></h1>
-<p>Module for working with features and feature layers in the GIS.</p>
+<p>The arcgis.features module contains types and functions for working with features and feature layers in the GIS.</p>
+<p>Entities located in space with a geometrical representation (such as points, lines or polygons) and a set of properties
+can be represented as features. The arcgis.features module is used for working with feature data, feature layers and
+collections of feature layers in the GIS. It also contains the spatial analysis functions which operate against
+feature data.</p>
 <p>In the GIS, entities located in space with a set of properties can be represented as features.  Features are stored as
 feature classes, which represent a set of features located using a single spatial type (point, line, polygon) and a
 common set of properties.  This is the geographic extension of the classic tabular or relational representation for
@@ -1192,7 +1215,7 @@ not returned. The default is false.</dd>
 <dl class="class">
 <dt id="arcgis.features.FeatureSet">
 <em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">FeatureSet</code><span class="sig-paren">(</span><em>features</em>, <em>fields=None</em>, <em>has_z=False</em>, <em>has_m=False</em>, <em>geometry_type=None</em>, <em>spatial_reference=None</em>, <em>display_field_name=None</em>, <em>object_id_field_name=None</em>, <em>global_id_field_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>A FeatureSet is a collection of Features.</p>
+<dd><p>A set of features with information about their fields, field aliases, geometry type, spatial reference etc.</p>
 <p>FeatureSets are commonly used as input/output with several Geoprocessing
 Tools, and can be the obtained through the query() methods of feature layers.
 A FeatureSet can be combined with a layer definition to compose a FeatureCollection.</p>
@@ -1292,6 +1315,12 @@ outName - name of the table the data will be saved to</p>
 <dd><p>gets the featureset&#8217;s spatial reference</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.features.FeatureSet.to_dict">
+<code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts the object to Python dictionary</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="arcgis.features.FeatureSet.to_json">
 <code class="descname">to_json</code><a class="headerlink" href="#arcgis.features.FeatureSet.to_json" title="Permalink to this definition">¶</a></dt>
@@ -1313,7 +1342,7 @@ outName - name of the table the data will be saved to</p>
 <dt id="arcgis.features.FeatureCollection">
 <em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">FeatureCollection</code><span class="sig-paren">(</span><em>dictdata</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureCollection" title="Permalink to this definition">¶</a></dt>
 <dd><p>FeatureCollection is an object with a layer definition and a feature set.</p>
-<p>It is an in-memopry collection of features with rendering information.</p>
+<p>It is an in-memory collection of features with rendering information.</p>
 <p>Feature Collections can be stored as Items in the GIS, added as layers to a map or scene,
 passed as inputs to feature analysis tools, and returned as results from feature analysis tools
 if an output name for a feature layer is not specified when calling the tool.</p>

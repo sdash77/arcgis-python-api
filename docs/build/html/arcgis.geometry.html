@@ -104,6 +104,10 @@
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -245,6 +249,21 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.realtime.html">arcgis.geoanalytics module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#aggregate-points">aggregate_points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#describe-dataset">describe_dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#join-features">join_features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-buffers">create_buffers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#calculate-density">calculate_density</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#reconstruct-tracks">reconstruct_tracks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-space-time-cube">create_space_time_cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#create-panel-data">create_panel_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#copy-to-data-store">copy_to_data_store</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-attributes">summarize_attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#summarize-within">summarize_within</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.realtime.html#find-hot-spots">find_hot_spots</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.mapping.html">arcgis.mapping module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webmap">WebMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#webscene">WebScene</a></li>
@@ -300,7 +319,9 @@
             
   <div class="section" id="module-arcgis.geometry">
 <span id="arcgis-geometry-module"></span><h1>arcgis.geometry module<a class="headerlink" href="#module-arcgis.geometry" title="Permalink to this headline">¶</a></h1>
-<p>Represents the geometry objects to use with the GIS.</p>
+<p>The arcgis.geometry module defines useful geometry types for working with geographic information and GIS functionality.
+It provides functions which use geometric types as input and output as well as functions for easily converting
+geometries between different representations.</p>
 <p>Several functions accept geometries represented as dictionaries and the geometry objects in this module behave like them
 as well as support the &#8216;.&#8217; (dot) notation providing attribute access.</p>
 <p>Example:</p>

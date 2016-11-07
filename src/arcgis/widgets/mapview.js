@@ -608,7 +608,7 @@ define('mapview', [
                         });
                     }
                 }
-                else if (newlayer.type == "ImageLayer") {
+                else if (newlayer.type == "ImageryLayer") {
 
                     console.log("ArcGISImageServiceLayer " + newlayer.url);
                     var options = {};

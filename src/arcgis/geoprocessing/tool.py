@@ -626,16 +626,17 @@ class Toolbox(_AsyncResource):
                     name_type[param_name] = py_param_type_
                     name_type['return'] = py_param_type_
                     name_type['return_name'] = param_name
+                    name_type['return_display_name'] = param['displayName']
 
-                    return_values.append({"name":param_name, "type":py_param_type_})
+                    return_values.append({"name":param_name.lower(), "display_name": param['displayName'], "type":py_param_type_})
 
             if len(return_values) == 1:
-                helpstring = helpstring + "\n\nReturns " + name_type['return_name'] + " (" + name_type['return'].__name__ + ")"
+                helpstring = helpstring + "\n\nReturns: " + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
             else:
                 name_type['return'] = dict # for method spec, type hinting
-                helpstring = helpstring + "\n\nReturns a dict with the following keys and types:"
+                helpstring = helpstring + "\n\nReturns a named tuple with the following fields:"
                 for retval in return_values:
-                    helpstring = helpstring + '\n   ' + retval['name'] + ' (' + retval['type'].__name__ + ')'
+                    helpstring = helpstring + '\n   ' + retval['name'] + ' (' + retval['display_name'] + ' of type: ' + retval['type'].__name__ + ')'
 
             helpstring = helpstring + "\n"
 
@@ -756,6 +757,7 @@ class Toolbox(_AsyncResource):
                 return output_dict[name_type['return_name']]
             else:
                 return output_dict
+                return namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
 
 
     # def execute(self, task, input,

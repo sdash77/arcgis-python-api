@@ -633,7 +633,7 @@ class FeatureCollection(Layer):
     """
     FeatureCollection is an object with a layer definition and a feature set.
 
-    It is an in-memopry collection of features with rendering information.
+    It is an in-memory collection of features with rendering information.
 
     Feature Collections can be stored as Items in the GIS, added as layers to a map or scene,
     passed as inputs to feature analysis tools, and returned as results from feature analysis tools
