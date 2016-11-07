@@ -175,6 +175,8 @@ class Feature(object):
         """"""
         return json.dumps(self.as_dict)
 
+    __repr__ = __str__
+
 
 class FeatureSet(object):
     """
@@ -315,6 +317,8 @@ class FeatureSet(object):
     def __str__(self):
         """returns object as string"""
         return json.dumps(self.value)
+
+    __repr__ = __str__
 
     # noinspection PyUnresolvedReferences
     @staticmethod

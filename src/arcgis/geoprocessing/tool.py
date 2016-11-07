@@ -11,6 +11,7 @@ import logging
 import tempfile
 import arcgis.env
 from ..gis import _GISResource, Item, Layer
+from ..mapping import MapImageLayer
 from .._impl.common._mixins import PropertyMap
 from .._impl.common._utils import _date_handler
 from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
@@ -19,6 +20,8 @@ _log = logging.getLogger(__name__)
 
 def _camelCase_to_underscore(name):
     """PEP8ify name"""
+    if name[0].isdigit():
+        name = "execute_" + name
     name = name.replace(" ", "_")
     if '_' in name:
         return name.lower()
@@ -129,7 +132,6 @@ class DataFile(object):
             filename = data_path.split('/')[-1]
             return self._con.get(path=data_path, file_name=filename,
                                         out_folder=save_path, try_json=False, token=self._token)
-
 
 
 class RasterData(object):
@@ -563,6 +565,7 @@ class Toolbox(_AsyncResource):
         self._taskurls = {}
         self._param_names = {} # mapping from fn to name-map (camel_case (PEP8ified) parameter name to GP_Param_Name)
         self._method_params = {}
+        self._return_values = {}
 
         for task in self.properties.tasks:
             fnname = _camelCase_to_underscore(task)
@@ -580,14 +583,18 @@ class Toolbox(_AsyncResource):
             if 'docstring' in taskprops:
                 helpstring = helpstring + ". " + taskprops['docstring']
 
-            helpstring = helpstring + "\n\n\nParameters:\n"
-
+            helpstring = helpstring + "\n\nParameters:"
 
             spec = []
             name_type = {}
             name_name = {} # map from camel_case to GPParameterName
             name_type[fnname] = task
             return_values = []
+
+            # tools with output map service - add another output:
+            if self.properties.resultMapServerName != '':
+                return_values.append({"name": "result_layer", "display_name": "Result Layer", "type": MapImageLayer})
+
             for param in task_params:
 
                 gp_param_name = param['name']
@@ -653,20 +660,29 @@ class Toolbox(_AsyncResource):
                         helpstring = helpstring + '\n      Choice list:' + str(param_choices)
 
                 elif param_drtn == 'esriGPParameterDirectionOutput':
+
+                    if self.properties.resultMapServerName != '': # 6.3.4.7 Map Images as Geoprocessing Results
+                        if py_param_type_ in [FeatureSet, RasterData]:
+                            py_param_type_ = dict # map image
+
                     name_type[param_name] = py_param_type_
                     name_type['return'] = py_param_type_
                     name_type['return_name'] = param_name
                     name_type['return_display_name'] = param['displayName']
 
-                    return_values.append({"name":param_name, "display_name": param['displayName'], "type":py_param_type_})
+                    return_values.append({"name": param_name,
+                                          "display_name": param['displayName'],
+                                          "type": py_param_type_})
+
+
 
             if len(return_values) == 1:
                 helpstring = helpstring + "\n\nReturns: " + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
             else:
                 name_type['return'] = tuple # for method spec, type hinting
-                helpstring = helpstring + "\n\nReturns a named tuple with the following fields:"
+                helpstring = helpstring + "\n\nReturns the following as a named tuple:"
                 for retval in return_values:
-                    helpstring = helpstring + '\n   ' + retval['name'] + ' (' + retval['display_name'] + ' of type: ' + retval['type'].__name__ + ')'
+                    helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] + ' as a ' + retval['type'].__name__
 
             helpstring = helpstring + "\n"
 
@@ -681,6 +697,7 @@ class Toolbox(_AsyncResource):
 
             self._method_params[fnname] = name_type
             self._param_names[fnname] = name_name
+            self._return_values[fnname] = return_values
 
         # http://www.arcgis.com/home/item.html?id=383c2039b89d43baa0010c3bf243b144
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
@@ -695,6 +712,7 @@ class Toolbox(_AsyncResource):
 
         name_type = self._method_params[caller_fnname]
         name_name = self._param_names[caller_fnname]
+        return_values = self._return_values[caller_fnname]
 
         task_name = name_type[caller_fnname]
         url = self.url + "/" + task_name + "/execute"
@@ -754,21 +772,29 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = result['value']
-                    result_obj = ret_type.from_dict(jsondict)
-                    result_obj._con = self._con
-                    result_obj._token = self._token
-                    ret_val = result_obj
+                    if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
+                        ret_val = jsondict
+                    else:
+                        result_obj = ret_type.from_dict(jsondict)
+                        result_obj._con = self._con
+                        result_obj._token = self._token
+                        ret_val = result_obj
                 else:
                     ret_val = result['value']
 
                 output_dict[ret_param_name] = ret_val
 
-
             num_returns = len(resp['results'])
             if num_returns == 1:
                 return output_dict[name_type['return_name']]
             else:
-                return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
+                ret_names = []
+                for return_value in return_values:
+                    ret_names.append(return_value['name'])
+
+                NamedTuple = collections.namedtuple('ToolOutput', ret_names)
+                tool_output = NamedTuple(**output_dict) #TODO: preserve ordering
+                return tool_output
 
         else:
             task_url = "{}/{}".format(self.url, task_name)
@@ -789,20 +815,38 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = resp[retParamName]
-                    result = ret_type.from_dict(jsondict)
-                    result._con = self._con
-                    result._token = self._token
-                    ret_val =  result
+                    if 'mapImage' in jsondict:
+                        ret_val = jsondict
+                    else:
+                        result = ret_type.from_dict(jsondict)
+                        result._con = self._con
+                        result._token = self._token
+                        ret_val =  result
                 else:
                     ret_val = resp[retParamName]
 
                 output_dict[ret_param_name] = ret_val
 
+            # tools with output map service - add another output:
+            result_layer = self.properties.resultMapServerName
+            if result_layer != '':
+                job_id = job_info.get("jobId")
+                result_layer_url = self.url.replace('/GPServer', '/MapServer') + '/jobs/' + job_id
+
+                output_dict['result_layer'] = MapImageLayer(result_layer_url, self._gis)
+
             num_returns = len(resp)
             if num_returns == 1:
                 return output_dict[name_type['return_name']]
             else:
-                return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
+                ret_names = []
+                for return_value in return_values:
+                    ret_names.append(return_value['name'])
+
+                NamedTuple = collections.namedtuple('ToolOutput', ret_names)
+                tool_output = NamedTuple(**output_dict) #TODO: preserve ordering
+                return tool_output
+                #return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
 
 
     # def execute(self, task, input,
