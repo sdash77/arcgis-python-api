@@ -2316,7 +2316,7 @@ class Item(dict):
 
     def _populate_layers(self):
         from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection
-        from arcgis.mapping import VectorTileLayer, DynamicMapLayer
+        from arcgis.mapping import VectorTileLayer, MapImageLayer
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
 
@@ -2361,7 +2361,7 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == 'Map Service':
-                svc = DynamicMapLayer.fromitem(self)
+                svc = MapImageLayer.fromitem(self)
                 for lyr in svc.layers:
                     layers.append(lyr)
             else:

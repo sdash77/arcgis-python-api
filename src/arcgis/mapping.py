@@ -37,7 +37,7 @@ except:
 
 from .features import FeatureSet
 
-__all__ = ["WebMap", "WebScene", "MapView", "DynamicMapLayer", "DynamicMapLayerManager", "VectorTileLayer"]
+__all__ = ["WebMap", "WebScene", "MapView", "MapImageLayer", "MapImageLayerManager", "VectorTileLayer"]
 
 _log = logging.getLogger(__name__)
 
@@ -400,20 +400,13 @@ class VectorTileLayer(Layer):
                              params=params, token=self._token)
 
 
-class DynamicMapLayerManager(_GISResource):
-    """ allows administration (if access permits) of an ArcGIS Online hosted map service
-    A map service offer access to map and layer content.
-
-       The REST API administrative map service resource represents a map
-       service. This resource provides basic information about the map,
-       including the layers that it contains, whether the map is cached or
-       not, its spatial reference, initial and full extents, etc...  The
-       administrative map service resource maintains a set of operations
-       that manage the state and contents of the service.
+class MapImageLayerManager(_GISResource):
+    """ allows administration (if access permits) of an ArcGIS Online hosted map image layers.
+    A map image layer offers access to map and layer content.
     """
-    def __init__(self, url, gis=None, ms=None):
-        super(DynamicMapLayerManager, self).__init__(url, gis)
-        self._ms = ms
+    def __init__(self, url, gis=None, map_img_lyr=None):
+        super(MapImageLayerManager, self).__init__(url, gis)
+        self._ms = map_img_lyr
 
     #----------------------------------------------------------------------
     def refresh(self, serviceDefinition=True):
@@ -429,7 +422,7 @@ class DynamicMapLayerManager(_GISResource):
 
         res =  self._con.post(self._url, params)
 
-        super(DynamicMapLayerManager, self)._refresh()
+        super(MapImageLayerManager, self)._refresh()
 
         self._ms._refresh()
 
@@ -500,11 +493,26 @@ class DynamicMapLayerManager(_GISResource):
         return self._con.post(url, params)
 
 
-class DynamicMapLayer(Layer):
-    """ a dynamic map layer """
+class MapImageLayer(Layer):
+    """
+    MapImageLayer allows you to display and analyze data from sublayers defined in a map service, exporting images
+    instead of features. Map service images are dynamically generated on the server based on a request, which includes
+    an LOD (level of detail), a bounding box, dpi, spatial reference and other options. The exported image is of the
+    entire map extent specified.
+
+    MapImageLayer does not display tiled images. To display tiled map service layers, see TileLayer.
+    """
 
     def __init__(self, url, gis=None):
-        super(DynamicMapLayer, self).__init__(url, gis)
+        """
+        .. Creates a map image layer given a URL. The URL will typically look like the following.
+
+            https://<hostname>/arcgis/rest/services/<service-name>/MapServer
+
+        :param url: the layer location
+        :param gis: the GIS to which this layer belongs
+        """
+        super(MapImageLayer, self).__init__(url, gis)
 
         self._populate_layers()
         self._admin = None
@@ -545,7 +553,7 @@ class DynamicMapLayer(Layer):
             part2 = url[res[1]:]
             adminURL = "%s%s%s" % (part1, addText, part2)
 
-            self._admin = DynamicMapLayerManager(adminURL, self._gis, self)
+            self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
     #----------------------------------------------------------------------
