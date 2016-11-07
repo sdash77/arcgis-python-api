@@ -3,20 +3,23 @@ import collections
 import datetime
 import inspect
 import json
+import sys
 import re
 import time
 import types
+import logging
 import tempfile
-
 import arcgis.env
-from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
 from ..gis import _GISResource, Item, Layer
 from .._impl.common._mixins import PropertyMap
 from .._impl.common._utils import _date_handler
+from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
 
+_log = logging.getLogger(__name__)
 
 def _camelCase_to_underscore(name):
     """PEP8ify name"""
+    name = name.replace(" ", "_")
     if '_' in name:
         return name.lower()
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
@@ -33,24 +36,27 @@ class LinearUnit(object):
 
         ----------------  --------------------------------------------------------
         units             required string,  unit type of the linear distance,
-                          such as "Meters", "Miles", "Kilometers" etc.
+                          such as "Meters", "Miles", "Kilometers", "Inches",
+                          "Points", "Feet", "Yards", "NauticalMiles",
+                          "Millimeters", "Centimeters", "DecimalDegrees",
+                          "Decimeters"
         ================  ========================================================
     """
     def __init__(self, distance, units):
         self.distance = distance
         if units.startswith('esri'):
-            self.units = units
+            self.units = units.title()
         else:
-            self.units = 'esri' + units
+            self.units = 'esri' + units.title()
 
     def to_dict(self):
         return {"distance": self.distance, "units": self.units}
 
     def __repr__(self):
-        return '<%s "%d %s">' % (type(self).__name__, self.distance, self.units)
+        """returns object as string"""
+        return json.dumps(self.to_dict())
 
-    def __str__(self):
-        return '<%s "%d %s">' % (type(self).__name__, self.distance, self.units)
+    __str__ = __repr__
 
     @classmethod
     def from_dict(cls, datadict):
@@ -59,6 +65,12 @@ class LinearUnit(object):
         units = datadict.get('units', None)
 
         return cls(distance, units)
+
+    @classmethod
+    def from_str(cls, how_far):
+        """Creates a linear unit from a string like '5 miles'."""
+        dist, units = how_far.split()
+        return cls(float(dist), units.title())
 
 
 class DataFile(object):
@@ -88,11 +100,10 @@ class DataFile(object):
         return datafile
 
     def __repr__(self):
-        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+        """returns object as string"""
+        return json.dumps(self.to_dict())
 
-    def __str__(self):
-        return '<%s "%s">' % (type(self).__name__, self.to_dict())
-
+    __str__ = __repr__
 
     @classmethod
     def from_dict(cls, datadict):
@@ -101,6 +112,12 @@ class DataFile(object):
         item_id = datadict.get('item_id', None)
 
         return cls(url, item_id)
+
+
+    @classmethod
+    def from_str(cls, url):
+        """Creates a data file from a url."""
+        return cls(url, None)
 
 
     def download(self, save_path=None):
@@ -112,6 +129,7 @@ class DataFile(object):
             filename = data_path.split('/')[-1]
             return self._con.get(path=data_path, file_name=filename,
                                         out_folder=save_path, try_json=False, token=self._token)
+
 
 
 class RasterData(object):
@@ -150,10 +168,10 @@ class RasterData(object):
         return rasterdata
 
     def __repr__(self):
-        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+        """returns object as string"""
+        return json.dumps(self.to_dict())
 
-    def __str__(self):
-        return '<%s "%s">' % (type(self).__name__, self.to_dict())
+    __str__ = __repr__
 
     @classmethod
     def from_dict(cls, datadict):
@@ -288,9 +306,14 @@ class _AsyncResource(_GISResource):
                         for index in range(num_messages, num):
                             msg = messages[index]
                             if msg['type'] == 'esriJobMessageTypeInformative':
-                                print(msg['description'])
+                                _log.info(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeWarning':
+                                _log.warn(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeError':
+                                _log.error(msg['description'])
+                                print(msg['description'], file=sys.stderr)
                             else:
-                                print(msg['description'])  # ,file = sys.stderr)
+                                _log.warn(msg['description'])  # ,file = sys.stderr)
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
@@ -530,7 +553,7 @@ class _AsyncResource(_GISResource):
 class Toolbox(_AsyncResource):
     "A collection of geoprocessing tools."
 
-    def __init__(self, url, gis):
+    def __init__(self, url, gis=None):
         """
         Constructs a Geoprocessing toolbox
         """
@@ -600,9 +623,7 @@ class Toolbox(_AsyncResource):
                     py_param_type_ = LinearUnit
                 elif param_type == 'GPDataFile':
                     py_param_type_ = DataFile
-                elif param_type == 'GPRasterData':
-                    py_param_type_ = RasterData
-                elif param_type == 'GPRasterLayer':
+                elif param_type in ['GPRasterData', 'GPRasterLayer', 'GPRasterDataLayer']:
                     py_param_type_ = RasterData
                 elif param_type.startswith('GPMultiValue'):
                     py_param_type_ = list
@@ -688,8 +709,14 @@ class Toolbox(_AsyncResource):
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
+                    elif type(value) == str:
+                        try:
+                            klass = type[value]
+                            params[key] = klass.from_str(value)
+                        except:
+                            pass
                 elif py_type == datetime.datetime:
-                    params[key] = _date_handler(params[key])
+                    params[key] = _date_handler(value)
         #--------------------------------------------#
 
         params.update({ "f" : "json" })
@@ -721,9 +748,9 @@ class Toolbox(_AsyncResource):
             output_dict = {}
 
             for result in resp['results']:
-                ret_param_name = result['paramName']
+                retParamName = result['paramName']
+                ret_param_name = _camelCase_to_underscore(retParamName)
                 ret_type = name_type[ret_param_name]
-
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = result['value']
@@ -741,7 +768,7 @@ class Toolbox(_AsyncResource):
             if num_returns == 1:
                 return output_dict[name_type['return_name']]
             else:
-                return output_dict
+                return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
 
         else:
             task_url = "{}/{}".format(self.url, task_name)
