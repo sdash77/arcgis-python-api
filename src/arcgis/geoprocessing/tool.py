@@ -633,7 +633,7 @@ class Toolbox(_AsyncResource):
             if len(return_values) == 1:
                 helpstring = helpstring + "\n\nReturns: " + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
             else:
-                name_type['return'] = dict # for method spec, type hinting
+                name_type['return'] = tuple # for method spec, type hinting
                 helpstring = helpstring + "\n\nReturns a named tuple with the following fields:"
                 for retval in return_values:
                     helpstring = helpstring + '\n   ' + retval['name'] + ' (' + retval['display_name'] + ' of type: ' + retval['type'].__name__ + ')'
@@ -756,8 +756,7 @@ class Toolbox(_AsyncResource):
             if num_returns == 1:
                 return output_dict[name_type['return_name']]
             else:
-                return output_dict
-                return namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
+                return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
 
 
     # def execute(self, task, input,
