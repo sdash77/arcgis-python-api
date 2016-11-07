@@ -39,8 +39,7 @@ import unittest
 import sys
 
 
-def module(
-    pathName):
+def module(pathName):
     """
     Return the module pointed to by *pathName*.
     """
@@ -48,16 +47,14 @@ def module(
     return imp.load_source(moduleName, pathName)
 
 
-def load_test_suite_from_file(
-    pathName):
+def load_test_suite_from_file(pathName):
     """
     Return a test suite containing the test cases in *pathName*, if any.
     """
     return unittest.defaultTestLoader.loadTestsFromModule(module(pathName))
 
 
-def load_test_suite_from_directory(
-    pathName):
+def load_test_suite_from_directory(pathName):
     """
     Return list with test suites of all Python modules in the directory tree
     rooted at *pathName*.
@@ -69,9 +66,7 @@ def load_test_suite_from_directory(
     return [load_test_suite_from_file(pathName) for pathName in modulePathNames]
 
 
-def remove_tests_to_skip(
-    tests,
-    test_suite_names_to_skip):
+def remove_tests_to_skip(tests, test_suite_names_to_skip):
     """
     Remove tests given the names passed in.
     """
@@ -114,14 +109,26 @@ if __name__ == "__main__":
                         "folowing syntax: <module name>[.<class name>[.<test case name>]].")
     parser.add_argument("--coverage", dest="coverage", required=False,
                         help="Output a coverage report to the specified path.")
+    parser.add_argument("--run_on_src", dest="run_on_src", default=True, type=bool, required=False,
+                        help="Run tests on source code found in src instead of on conda pkg")
     arguments = parser.parse_args()
     test_names_to_skip = arguments.skip
     names = arguments.names
     coverage_path = arguments.coverage
+    run_on_src = arguments.run_on_src
 
-    # Update module path, because otherwise loadTestsFromame cannot find the
+    # Update module path, because otherwise loadTestsFromname cannot find the
     # modules to import.
-    sys.path = [os.getcwd()] + sys.path
+    from pathlib import Path
+    current_file_path = Path(os.path.realpath(__file__))
+
+    if run_on_src:
+        src_path = current_file_path.parent.parent.joinpath("src")
+        print(src_path.__str__())
+        sys.path = [src_path.__str__()] + sys.path
+
+    unittest_path = current_file_path.parent
+    sys.path = [unittest_path] + sys.path
 
     suites = []
     for name in names:
@@ -147,4 +154,3 @@ if __name__ == "__main__":
     if coverage_path:
         cov.stop()
         cov.html_report(directory=coverage_path)
-
