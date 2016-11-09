@@ -10,6 +10,7 @@ import types
 import logging
 import tempfile
 import arcgis.env
+from types import MethodType
 from ..gis import _GISResource, Item, Layer
 from ..mapping import MapImageLayer
 from .._impl.common._mixins import PropertyMap
@@ -876,4 +877,8 @@ class Toolbox(_AsyncResource):
     #     resp = self.item._portal.con.post(url, params)
     #     return resp
 
-
+    @property
+    def tools(self):
+        """List of tools in this toolbox"""
+        return [x for x, y in self.__dict__.items() if type(y) == MethodType]
+    
