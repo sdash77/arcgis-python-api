@@ -20,7 +20,6 @@ representation and user experience - on a map, in a 3D scene, as entities with a
 
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
-from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
 from . import analyze_patterns
 from . import enrich_data
 from . import find_locations
