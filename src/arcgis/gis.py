@@ -135,15 +135,16 @@ class GIS(object):
             return self._datastores
 
         self._datastores = []
-        
-        res = self._portal.con.post("portals/self/servers", {"f": "json"})
+        try:
+            res = self._portal.con.post("portals/self/servers", {"f": "json"})
 
-        servers = res['servers']
-        admin_url = None
-        for server in servers:
-            admin_url = server['adminUrl'] + '/admin'
-            self._datastores.append(DatastoreManager(self, admin_url))
-
+            servers = res['servers']
+            admin_url = None
+            for server in servers:
+                admin_url = server['adminUrl'] + '/admin'
+                self._datastores.append(DatastoreManager(self, admin_url))
+        except:
+            pass
         return self._datastores
 
     @_lazy_property
