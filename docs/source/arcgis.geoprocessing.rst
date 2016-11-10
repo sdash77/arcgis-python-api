@@ -3,12 +3,10 @@ arcgis.geoprocessing module
 
 .. automodule:: arcgis.geoprocessing
 
-Toolbox
---------------
-.. autoclass:: arcgis.geoprocessing.Toolbox
-    :members:
-    :undoc-members:
 
+import_toolbox
+--------------
+.. automethod:: arcgis.geoprocessing.import_toolbox
 
 DataFile
 --------------

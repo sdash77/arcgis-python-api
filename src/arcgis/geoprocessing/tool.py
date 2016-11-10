@@ -86,6 +86,7 @@ class LinearUnit(object):
             self.units = 'esri' + units.title()
 
     def to_dict(self):
+        """Converts an instance of this class to its dict representation."""
         return {"distance": self.distance, "units": self.units}
 
     def __repr__(self):
@@ -128,6 +129,7 @@ class DataFile(object):
         self.item_id = item_id
 
     def to_dict(self):
+        """Converts an instance of this class to its dict representation."""
         datafile = {}
         if self.url is not None:
             datafile['url'] = self.url
@@ -918,9 +920,30 @@ class Toolbox(_AsyncResource):
         """List of tools in this toolbox"""
         return [x for x, y in self.__dict__.items() if type(y) == MethodType]
 
-def import_toolbox(url, gis=None):
+def import_toolbox(url_or_item, gis=None):
+    """
+    Imports geoprocessing toolboxes as native Python modules.
+    You can call the functions available in the imported module to invoke these tools.
+    :param url: location of toolbox, can be a geoprocessing server endpoint or Item of type: Geoprocessing Service
+    :param gis: the GIS used for running the tool
+    :return: module with functions for the various tools in the toolbox
 
-    tbx = Toolbox(url, gis)
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        url_or_item       location of toolbox, can be a geoprocessing server url
+                          or Item of type: Geoprocessing Service
+        ----------------  --------------------------------------------------------
+        gis               optional GIS, the GIS used for running the tool.
+                          arcgis.env.active_gis is used if not specified
+        ================  ========================================================
+    """
+    tbx = None
+    if isinstance(url_or_item, Item):
+        tbx = Toolbox.fromitem(url_or_item)
+    else:
+        tbx = Toolbox(url_or_item, gis)
+
     src_code = """import logging as _logging
 import datetime
 import arcgis

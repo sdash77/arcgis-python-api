@@ -243,7 +243,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geoprocessing.html">arcgis.geoprocessing module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#toolbox">Toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#import-toolbox">import_toolbox</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#datafile">DataFile</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#linearunit">LinearUnit</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geoprocessing.html#rasterdata">RasterData</a></li>
@@ -1303,16 +1303,16 @@ group are sorted.</td>
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">Datastore</code><span class="sig-paren">(</span><em>datastore</em>, <em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Datastore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">dict</span></code></p>
 <p>Represents a datastore (folder, database or bigdata fileshare) within the GIS&#8217;s data store</p>
+<dl class="attribute">
+<dt id="arcgis.gis.Datastore.datasets">
+<code class="descname">datasets</code><a class="headerlink" href="#arcgis.gis.Datastore.datasets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the datasets in the data store (currently implemented for big data file shares.)</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="arcgis.gis.Datastore.delete">
 <code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Datastore.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unregisters this data item from the data store</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="arcgis.gis.Datastore.list_datasets">
-<code class="descname">list_datasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Datastore.list_datasets" title="Permalink to this definition">¶</a></dt>
-<dd><p>Lists the datasets in a big data file share.</p>
 </dd></dl>
 
 <dl class="attribute">
