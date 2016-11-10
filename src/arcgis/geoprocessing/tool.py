@@ -17,6 +17,38 @@ from .._impl.common._mixins import PropertyMap
 from .._impl.common._utils import _date_handler
 from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
 
+def _import_code(code, name, add_to_sys_modules=False):
+    """
+    Import dynamically generated code as a module. code is the
+    object containing the code (a string, a file handle or an
+    actual compiled code object, same types as accepted by an
+    exec statement). The name is the name to give to the module,
+    and the final argument says wheter to add it to sys.modules
+    or not. If it is added, a subsequent import statement using
+    name will return this module. If it is not added to sys.modules
+    import will try to load it in the normal fashion.
+
+    import foo
+
+    is equivalent to
+
+    foofile = open("/path/to/foo.py")
+    foo = importCode(foofile,"foo",1)
+
+    Returns a newly generated module.
+    """
+    import sys,imp
+
+    module = imp.new_module(name)
+
+
+    # print(code)
+    exec(code, module.__dict__)
+    if add_to_sys_modules:
+        sys.modules[name] = module
+
+    return module
+
 _log = logging.getLogger(__name__)
 
 def _camelCase_to_underscore(name):
@@ -584,6 +616,9 @@ class Toolbox(_AsyncResource):
             if 'docstring' in taskprops:
                 helpstring = helpstring + ". " + taskprops['docstring']
 
+            if 'description' in taskprops:
+                helpstring += taskprops['description']
+
             helpstring = helpstring + "\n\nParameters:"
 
             spec = []
@@ -730,7 +765,7 @@ class Toolbox(_AsyncResource):
                         params[key] = value.to_dict()
                     elif type(value) == str:
                         try:
-                            klass = type[value]
+                            klass = py_type # type[value]
                             params[key] = klass.from_str(value)
                         except:
                             pass
@@ -838,7 +873,7 @@ class Toolbox(_AsyncResource):
 
             num_returns = len(resp)
             if num_returns == 1:
-                return output_dict[name_type['return_name']]
+                return output_dict[name_type['return_name']] # *** output_dict[return_values[0]['name']]
             else:
                 ret_names = []
                 for return_value in return_values:
@@ -848,6 +883,7 @@ class Toolbox(_AsyncResource):
                 tool_output = NamedTuple(**output_dict) #TODO: preserve ordering
                 return tool_output
                 #return collections.namedtuple('GeoprocessingResults', output_dict.keys())(**output_dict)
+
 
 
     # def execute(self, task, input,
@@ -881,4 +917,244 @@ class Toolbox(_AsyncResource):
     def tools(self):
         """List of tools in this toolbox"""
         return [x for x, y in self.__dict__.items() if type(y) == MethodType]
-    
+
+def import_toolbox(url, gis=None):
+
+    tbx = Toolbox(url, gis)
+    src_code = """import logging as _logging
+import datetime
+import arcgis
+from arcgis.features import FeatureSet
+from arcgis.mapping import MapImageLayer
+from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
+from arcgis.geoprocessing._support import _execute_gp_tool
+
+_log = _logging.getLogger(__name__)
+    """
+
+    execution_type = tbx.properties.executionType
+
+    use_async = True
+    if execution_type == 'esriExecutionTypeSynchronous':
+        use_async = False
+
+    src_code += '\n_url = "' + url + '"'
+    src_code += '\n_use_async = ' + str(use_async) + '\n\n'
+
+    for task in tbx.properties.tasks:
+        src_code += _generate_fn(task, tbx)
+
+    return _import_code(src_code, 'name')
+    #print(src_code)
+
+def _generate_fn(task, tbx):
+    fnname = _camelCase_to_underscore(task)
+
+
+    taskurl = tbx.url + "/" + task
+    taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+
+    # execution_type = taskprops['executionType']
+    #
+    # use_async = True
+    # if  execution_type == 'esriExecutionTypeSynchronous':
+    #     use_async = False
+
+    uses_map_as_result = tbx.properties.resultMapServerName != ''
+
+    helpstring, name_name, name_type, return_values, spec, name_param = _inspect_tool(taskprops, uses_map_as_result)
+
+    src_code = 'def ' + fnname + '('
+    num_spaces = len(src_code)
+    param_name, param_dval = spec[0]
+    param_type = name_type[param_name]
+
+    src_code += _generate_param(name_param, param_dval, param_name, param_type)
+
+    for param_name_dval in spec[1:]: # [ (param_name, param_dval) ]
+        param_name, param_dval = param_name_dval
+        param_type = name_type[param_name]
+        src_code += ',\n' + ' '*num_spaces
+        src_code += _generate_param(name_param, param_dval, param_name, param_type)
+
+
+    src_code += ',\n' + ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
+
+    src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
+
+    src_code += '\tkwargs = locals()\n\n'
+    src_code += '\tparam_db = { '
+
+    for param_name_dval in spec: # [ (param_name, param_dval) ]
+        param_name, param_dval = param_name_dval
+        param_type = name_type[param_name]
+        gp_param_name = name_name[param_name]
+        src_code += '\n\t           "' + param_name + '": (' + param_type.__name__ + ', "' + gp_param_name +'"),'
+
+    # also add return params:
+    for retval in return_values:
+        src_code += '\n\t           "' + retval['name'] + '": (' + retval['type'].__name__ + ', "' + retval['display_name'] +'"),'
+
+    src_code += '\n\t           }'
+
+    src_code += '\n\treturn_values = ['
+    for retval in return_values:
+        src_code += '\n\t                 {"name":"' + retval['name'] + '", "display_name":"' + \
+                                            retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
+    src_code += '\n\t                ]\n\n'
+
+    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
+
+    src_code += '\n\n\n'
+    return src_code
+
+
+def _generate_param(name_param, param_dval, param_name, param_type):
+    param = name_param[param_name]
+    param_rqrd = param['parameterType']
+    optional = False
+    if (param_rqrd is not None) and param_rqrd == 'esriGPParameterTypeOptional':
+        optional = True
+
+    src_code = param_name + ':' + param_type.__name__
+    # if optional:
+    if param_dval is not None and param_dval != '':
+        if param_type == str:
+            src_code += '="""' + str(param_dval) + '"""'
+        else:
+            src_code += '=' + str(param_dval)
+    else:
+        src_code += '=None'
+    return src_code
+
+
+def _inspect_tool(taskprops, map_as_result):
+    # is map is a result, additional synthetic parameter is added
+    spec = []       # [ (param_name, param_dval) ]
+    name_type = {}  #
+    name_name = {}  # map from camel_case to GPParameterName
+    name_param = {}
+
+    return_values = []
+
+    # tools with output map service - add another output:
+    if map_as_result:
+        return_values.append({"name": "result_layer", "display_name": "Result Layer", "type": MapImageLayer})
+
+    helpstring = '\n'
+    if 'docstring' in taskprops:
+        helpstring += taskprops['docstring']
+    if 'description' in taskprops:
+        helpstring += taskprops['description']
+    helpstring = helpstring + "\n\nParameters:"
+
+    task_params = taskprops['parameters']
+    for param in task_params:
+        param_helpstring, param_name_mapping, param_name_type_mapping, param_spec, param_return_values, param_name_param = _process_parameter(param, map_as_result)
+        helpstring += param_helpstring
+        name_param.update(param_name_param)
+        if param_spec is not None:
+            spec.append(param_spec)
+
+        name_name.update(param_name_mapping)
+        name_type.update(param_name_type_mapping)
+
+        if param_return_values is not None:
+            return_values.append(param_return_values)
+
+    # gis=None
+    helpstring += '\n\ngis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
+
+    if len(return_values) == 1:
+        helpstring = helpstring + "\n\nReturns: " # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
+        for retval in return_values:
+            helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] \
+                         + ' as a ' + retval['type'].__name__
+
+    else:
+        name_type['return'] = tuple  # for method spec, type hinting
+        helpstring = helpstring + "\n\nReturns the following as a named tuple:"
+        for retval in return_values:
+            helpstring = helpstring + '\n   ' + retval['name'] + ' - ' + retval['display_name'] \
+                         + ' as a ' + retval['type'].__name__
+
+    helpstring = helpstring + "\n"
+
+    if 'helpUrl' in taskprops:
+        helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
+
+    return helpstring, name_name, name_type, return_values, spec, name_param
+
+
+def _process_parameter(param, map_as_result):
+
+    gp_param_name = param['name']
+    param_name = _camelCase_to_underscore(gp_param_name)
+    param_name_mapping = {param_name : gp_param_name}
+
+    name_param = { param_name : param }
+    param_name_type_mapping = {}
+    param_spec = None
+
+    helpstring = ""
+
+    #name_name[param_name] = gp_param_name
+    param_return_values = None
+    param_type = param['dataType']
+    param_dval = param['defaultValue']
+    param_drtn = param['direction']
+    param_rqrd = param['parameterType']
+    param_chcs = param.get('choiceList', None)
+    py_param_type = get_py_param_type(param_type)
+    if param_drtn == 'esriGPParameterDirectionInput':
+        param_name_type_mapping[param_name] = py_param_type
+        param_spec = (param_name, param_dval)
+
+        helpstring += "\n\n   " + param_name + ": " + param['displayName'] + " (" + py_param_type.__name__ + ")."
+        if param_rqrd == 'esriGPParameterTypeOptional':
+            helpstring = helpstring + " Optional parameter. "
+        #elif param_rqrd == 'esriGPParameterTypeRequired' and param_dval is None:
+        else:
+            helpstring = helpstring + " Required parameter. "
+
+        if 'description' in param:
+            helpstring = helpstring + ' ' + param['description']
+
+        if param_chcs is not None and len(param_chcs) > 0:
+            helpstring = helpstring + '\n      Choice list:' + str(param_chcs)
+
+    elif param_drtn == 'esriGPParameterDirectionOutput':
+
+        if map_as_result:  # 6.3.4.7 Map Images as Geoprocessing Results
+            if py_param_type in [FeatureSet, RasterData]:
+                py_param_type = dict  # map image
+
+        param_name_type_mapping[param_name] = py_param_type
+        param_name_type_mapping['return'] = py_param_type
+        #param_name_type_mapping['return_name'] = param_name
+        #param_name_type_mapping['return_display_name'] = param['displayName']
+
+        param_return_values = {"name": param_name,
+                              "display_name": param['displayName'],
+                              "type": py_param_type}
+
+    return helpstring, param_name_mapping, param_name_type_mapping, param_spec, param_return_values, name_param
+
+
+def get_py_param_type(param_type):
+    type_mapping = {
+        'GPBoolean' : bool,
+        'GPDouble': float,
+        'GPLong': int,
+        'GPString': str,
+        'GPDate': datetime.date,
+        'GPFeatureRecordSetLayer': FeatureSet,
+        'GPRecordSet': FeatureSet,
+        'GPLinearUnit': LinearUnit,
+        'GPDataFile': DataFile,
+        'GPRasterData': RasterData,
+        'GPRasterLayer': RasterData,
+        'GPRasterDataLayer': RasterData,
+        'GPMultiValue' : list
+    }
+    return type_mapping.get(param_type, str)
