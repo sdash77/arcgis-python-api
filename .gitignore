@@ -61,3 +61,6 @@ ___*
 src/.vscode/launch.json
 src/.vscode/settings.json
 *.bz2
+
+# Unittest outputs
+/unittests/test-results/

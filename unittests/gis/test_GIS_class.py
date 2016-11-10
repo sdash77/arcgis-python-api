@@ -9,6 +9,7 @@ from configparser import ConfigParser
 import datetime
 
 #region PreCondition check
+test_skip = False
 class_skip = False
 module_skip = False
 
@@ -25,7 +26,7 @@ else:
 
 # Import the module after Precondition checks pass
 try:
-    from arcgis import GIS
+    from arcgis.gis import GIS
 except ImportError:
     print("API import error. Quitting test")
     raise(exit())
@@ -92,11 +93,45 @@ class Test_GIS_ago(unittest.TestCase):
             self.assertIsNotNone(gis, "Cannot sign into portal")
 
         except AssertionError as assertErrorException:
+            test_skip = True
             raise assertErrorException
 
         except unittest.SkipTest as skipException:
             raise skipException
 
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Sign in failed. Skipping test case")
+    def test_datastores(self):
+        gis = GIS(self.portal_url, self.portal_username, self.portal_password)
+        try:
+            datastore_list = gis.datastores
+            self.assertIsNotNone(datastore_list, "gis.datastores returns None")
+            self.assertEqual(0, len(datastore_list), "len of gis.datastores not 0 for AGO portal")
+
+        except KeyError as ke:
+            self.fail("Accessing gis.datastores raises exception: " + str(ke))
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Sign in failed. Skipping test case")
+    def test_properties(self):
+        gis = GIS(self.portal_url, self.portal_username, self.portal_password)
+        try:
+            gis_properties = gis.properties
+            self.assertIsNotNone(gis_properties, "gis.properties returns None")
+            # weak assertion
+            self.assertGreaterEqual(len(gis_properties), 20, "gis.properties may not be fully hydrated")
+
+        except KeyError as ke:
+            self.fail("Accessing gis.properties raises exception: " + str(ke))
+
+        except unittest.SkipTest as skipException:
+            raise skipException
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 

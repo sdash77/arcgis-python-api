@@ -37,6 +37,7 @@ import imp
 import os
 import unittest
 import sys
+import xmlrunner
 
 
 def module(pathName):
@@ -123,12 +124,17 @@ if __name__ == "__main__":
     current_file_path = Path(os.path.realpath(__file__))
 
     if run_on_src:
+        # If run_on_src is True, then treat the test results as dev tests. No conda package is built. 'src' folder is
+        # added to system pythonpath env variable and the tests are run against that src.
+
         src_path = current_file_path.parent.parent.joinpath("src")
-        print(src_path.__str__())
-        sys.path = [src_path.__str__()] + sys.path
+        print('Running tests against src from git repo at: ', src_path.__str__())
+        sys.path.append(src_path.__str__())
+    else:
+        print('Running tests against installed conda package')
 
     unittest_path = current_file_path.parent
-    sys.path = [unittest_path] + sys.path
+    sys.path.append(unittest_path.__str__())
 
     suites = []
     for name in names:
@@ -148,8 +154,9 @@ if __name__ == "__main__":
         cov = coverage.coverage()
         cov.start()
 
-    unittest.TextTestRunner(verbosity=arguments.verbosity).run(
-        unittest.TestSuite(suites))
+    xmlrunner.XMLTestRunner(output='test-results').run(unittest.TestSuite(suites))
+    # unittest.TextTestRunner(verbosity=arguments.verbosity).run(
+    #     unittest.TestSuite(suites))
 
     if coverage_path:
         cov.stop()
