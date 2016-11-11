@@ -17,7 +17,7 @@ from .._impl.common._mixins import PropertyMap
 from .._impl.common._utils import _date_handler
 from ..features import FeatureSet, FeatureCollection, FeatureLayerCollection
 
-def _import_code(code, name, add_to_sys_modules=False):
+def _import_code(code, name, verbose=False, add_to_sys_modules=False):
     """
     Import dynamically generated code as a module. code is the
     object containing the code (a string, a file handle or an
@@ -41,8 +41,9 @@ def _import_code(code, name, add_to_sys_modules=False):
 
     module = imp.new_module(name)
 
+    if verbose:
+        print(code)
 
-    # print(code)
     exec(code, module.__dict__)
     if add_to_sys_modules:
         sys.modules[name] = module
@@ -920,7 +921,7 @@ class Toolbox(_AsyncResource):
         """List of tools in this toolbox"""
         return [x for x, y in self.__dict__.items() if type(y) == MethodType]
 
-def import_toolbox(url_or_item, gis=None):
+def import_toolbox(url_or_item, gis=None, verbose=False):
     """
     Imports geoprocessing toolboxes as native Python modules.
     You can call the functions available in the imported module to invoke these tools.
@@ -936,17 +937,21 @@ def import_toolbox(url_or_item, gis=None):
         ----------------  --------------------------------------------------------
         gis               optional GIS, the GIS used for running the tool.
                           arcgis.env.active_gis is used if not specified
+        ----------------  --------------------------------------------------------
+        verbose           optional bool, set to True to print the generated module
         ================  ========================================================
     """
     tbx = None
+    url = url_or_item
     if isinstance(url_or_item, Item):
         tbx = Toolbox.fromitem(url_or_item)
+        url = url_or_item.url
     else:
         tbx = Toolbox(url_or_item, gis)
 
     src_code = """import logging as _logging
-import datetime
 import arcgis
+from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
@@ -961,13 +966,14 @@ _log = _logging.getLogger(__name__)
     if execution_type == 'esriExecutionTypeSynchronous':
         use_async = False
 
+
     src_code += '\n_url = "' + url + '"'
     src_code += '\n_use_async = ' + str(use_async) + '\n\n'
 
     for task in tbx.properties.tasks:
         src_code += _generate_fn(task, tbx)
 
-    return _import_code(src_code, 'name')
+    return _import_code(src_code, 'name', verbose)
     #print(src_code)
 
 def _generate_fn(task, tbx):
@@ -1170,7 +1176,7 @@ def get_py_param_type(param_type):
         'GPDouble': float,
         'GPLong': int,
         'GPString': str,
-        'GPDate': datetime.date,
+        'GPDate': datetime.datetime,
         'GPFeatureRecordSetLayer': FeatureSet,
         'GPRecordSet': FeatureSet,
         'GPLinearUnit': LinearUnit,
