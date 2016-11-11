@@ -6,4 +6,7 @@ vehicles, locating facilities using location allocation, calculating an OD cost 
 
 from .layer import NetworkLayer, NetworkDataset, ClosestFacilityLayer, ServiceAreaLayer, RouteLayer
 
-__all__ = ['NetworkLayer', 'NetworkDataset', 'ClosestFacilityLayer', 'ServiceAreaLayer', 'RouteLayer']
+from .vrp import solve_vehicle_routing_problem
+
+__all__ = ['NetworkLayer', 'NetworkDataset', 'ClosestFacilityLayer', 'ServiceAreaLayer', 'RouteLayer',
+           'solve_vehicle_routing_problem']

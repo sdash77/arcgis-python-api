@@ -1,29 +1,4 @@
-﻿"""
-The arcgis.mapping module provides components for visualizing GIS data and analysis.
-This module includes components such as MapView - an IPython Notebook widget for
-working with maps, as well as WebMap and WebScene components that enable 2D and 3D
-mapping and visualization in the GIS. This module also includes mapping layers like
-DynamicMapLayer and VectorTileLayer
-"""
 from __future__ import absolute_import
-
-import collections
-import json
-import os
-import random
-import string
-import tempfile
-import logging
-
-from contextlib import contextmanager
-from re import search
-
-import arcgis.features
-import arcgis.gis
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis.geometry import SpatialReference, Polygon
-
-from arcgis.gis import Layer, _GISResource
 
 try:
     from ipywidgets import widgets
@@ -35,11 +10,27 @@ try:
 except:
     from IPython.utils.traitlets import Unicode, Int, List, Bool
 
-from .features import FeatureSet
+import collections
+import json
+import logging
+import os
+import random
+import string
+import tempfile
+from contextlib import contextmanager
+from re import search
 
-__all__ = ["WebMap", "WebScene", "MapView", "MapImageLayer", "MapImageLayerManager", "VectorTileLayer"]
+import arcgis.features
+import arcgis.gis
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis.features import FeatureSet
+from arcgis.geometry import SpatialReference, Polygon
+from arcgis.gis import Layer, _GISResource
+from ipywidgets import widgets
+from traitlets import Unicode, Int, List
 
 _log = logging.getLogger(__name__)
+
 
 @contextmanager
 def _tempinput(data):
@@ -49,13 +40,14 @@ def _tempinput(data):
     yield temp.name
     os.unlink(temp.name)
 
-# pylint: disable=fixme, line-too-long
+
 class WebMap(collections.OrderedDict):
     """
     Represents a webmap and provides access to it's basemaps and operational layers as well
     as functionality to visualize and interact with them.
     http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/
     """
+
     def __init__(self, webmapitem):
         """
         Constructs a Webmap object given it's item from ArcGIS Online or Portal.
@@ -67,15 +59,15 @@ class WebMap(collections.OrderedDict):
         self._con = self._gis._con
         webmapdict = self.item.get_data()
         collections.OrderedDict.__init__(self, webmapdict)
-        #dict.update(webmapdict)
+        # dict.update(webmapdict)
 
-    #def _repr_html_(self):
+    # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
-        #return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
+        # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
         mapwidget = MapView(gis=self._gis, item=self.item)
         return mapwidget._ipython_display_(**kwargs)
 
-    #def __repr__(self):
+    # def __repr__(self):
     #    dictrepr = collections.OrderedDict.__repr__(self)
     #    return '%s(%s)' % (type(self).__name__, dictrepr)
 
@@ -83,8 +75,9 @@ class WebMap(collections.OrderedDict):
         return json.dumps(self)
 
     def update(self):
-        #with _tempinput(self.__str__()) as tempfilename:
-        self.item.update({ 'text':self.__str__() })
+        # with _tempinput(self.__str__()) as tempfilename:
+        self.item.update({'text': self.__str__()})
+
 
 class WebScene(collections.OrderedDict):
     """
@@ -103,9 +96,9 @@ class WebScene(collections.OrderedDict):
         collections.OrderedDict.__init__(self, webscenedict)
 
     def _repr_html_(self):
-        return '<iframe width=960 height=600 src="'+"http://www.arcgis.com/home/webscene/viewer.html?webscene="+self.item.itemid+'"/>'
+        return '<iframe width=960 height=600 src="' + "http://www.arcgis.com/home/webscene/viewer.html?webscene=" + self.item.itemid + '"/>'
 
-    #def __repr__(self):
+    # def __repr__(self):
     #    dictrepr = dict.__repr__(self)
     #    return '%s(%s)' % (type(self).__name__, dictrepr)
 
@@ -113,14 +106,15 @@ class WebScene(collections.OrderedDict):
         return json.dumps(self)
 
     def update(self):
-        #with _tempinput(self.__str__()) as tempfilename:
-        self.item.update({ 'text':self.__str__() })
+        # with _tempinput(self.__str__()) as tempfilename:
+        self.item.update({'text': self.__str__()})
+
 
 class MapView(widgets.DOMWidget):
     _view_name = Unicode('MapView').tag(sync=True)
     _view_module = Unicode('mapview').tag(sync=True)
 
-    #value = Unicode('Hello World!').tag(sync=True)
+    # value = Unicode('Hello World!').tag(sync=True)
 
     basemap = Unicode('topo').tag(sync=True)
     width = Unicode('100%').tag(sync=True)
@@ -139,7 +133,7 @@ class MapView(widgets.DOMWidget):
     _swipe_div = Unicode('').tag(sync=True)
 
     def __init__(self, **kwargs):
-        """Constructor of Map widget. 
+        """Constructor of Map widget.
         Accepts the following keyword arguments:
         gis     The gis instance with which the map widget works, used for authentication, and adding secure layers and private items from that GIS
         item    webmap item from portal with which to initialize the map widget
@@ -150,20 +144,21 @@ class MapView(widgets.DOMWidget):
 
         self.on_msg(self._handle_map_msg)
 
-        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic", "terrain", "osm"]
-        self._swipe_div = 'swipeDiv' +''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        
+        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic",
+                         "terrain", "osm"]
+        self._swipe_div = 'swipeDiv' + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+
         self._gis = kwargs.pop('gis', None)
-        if self._gis is not None and self._gis._con._username is not None: # not anonymous
+        if self._gis is not None and self._gis._con._username is not None:  # not anonymous
             token_info = {
-                "server" : self._gis._con.baseurl.replace('http://', 'https://'),
-                "tokenurl" : (self._gis._con.baseurl + 
-                               'generateToken').replace('http://', 'https://'),
-                "username" : self._gis._con._username,
-                "password" : self._gis._con._password
+                "server": self._gis._con.baseurl.replace('http://', 'https://'),
+                "tokenurl": (self._gis._con.baseurl +
+                             'generateToken').replace('http://', 'https://'),
+                "username": self._gis._con._username,
+                "password": self._gis._con._password
             }
             self._token_info = json.dumps(token_info)
-            #if self._gis.properties.portalName != 'ArcGIS Online':
+            # if self._gis.properties.portalName != 'ArcGIS Online':
             self._arcgis_url = self._gis._con.baseurl + 'content/items'
 
         self.item = kwargs.pop('item', None)
@@ -193,30 +188,30 @@ class MapView(widgets.DOMWidget):
         associated with the graphic.
 
         """
-        if isinstance(shape, list) and len(shape) == 2: # [lat, long] pair
-            shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
-        elif isinstance(shape, tuple): # (lat, long) pair
-            shape = { 'x':shape[1], 'y':shape[0], "spatialReference": {"wkid":4326}, 'type':'point' }
+        if isinstance(shape, list) and len(shape) == 2:  # [lat, long] pair
+            shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
+        elif isinstance(shape, tuple):  # (lat, long) pair
+            shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
 
         if isinstance(shape, FeatureSet):
             fset = shape
             for feature in fset.features:
                 graphic = {
-                    "geometry" : feature.geometry,
-                    "infoTemplate" : popup,
-                    "symbol" : symbol,
-                    "attributes" : feature.attributes
+                    "geometry": feature.geometry,
+                    "infoTemplate": popup,
+                    "symbol": symbol,
+                    "attributes": feature.attributes
                 }
                 self.mode = json.dumps(graphic)
         elif isinstance(shape, dict):
             graphic = {
-                "geometry" : shape,
-                "infoTemplate" : popup,
-                "symbol" : symbol,
-                "attributes" : attributes
+                "geometry": shape,
+                "infoTemplate": popup,
+                "symbol": symbol,
+                "attributes": attributes
             }
             self.mode = json.dumps(graphic)
-            #print(json.dumps(graphic))
+            # print(json.dumps(graphic))
         else:
             self.mode = shape
 
@@ -227,23 +222,22 @@ class MapView(widgets.DOMWidget):
         if isinstance(item, Layer):
             js_layer = item._js_lyr
             if options is not None:
-                js_layer.update({ "options" : json.dumps(options) })
+                js_layer.update({"options": json.dumps(options)})
 
             self._addlayer = json.dumps(js_layer)
-        elif 'layers' in item: # items as well as services
+        elif 'layers' in item:  # items as well as services
             if item.layers is None:
                 raise RuntimeError('No layers accessible/available in this item or service')
             for lyr in item.layers:
                 js_layer = lyr._js_lyr
                 if options is not None:
-                    js_layer.update({ "options" : json.dumps(options) })
+                    js_layer.update({"options": json.dumps(options)})
                 self._addlayer = json.dumps(js_layer)
-        else: # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
+        else:  # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
             if options is not None:
-                item.update({ "options" : json.dumps(options) })
+                item.update({"options": json.dumps(options)})
 
             self._addlayer = json.dumps(item)
-
 
     def clear_graphics(self):
         self.mode = "###clear_graphics"
@@ -287,7 +281,7 @@ class MapView(widgets.DOMWidget):
             Set to true to remove the callback from the list of callbacks."""
         self._draw_end_handlers.register_callback(callback, remove=remove)
 
-    #def _handle_map_msg(self, _, content):
+    # def _handle_map_msg(self, _, content):
     def _handle_map_msg(self, _, content, buffers):
         """Handle a msg from the front-end.
 
@@ -356,9 +350,10 @@ class VectorTileLayer(Layer):
     @property
     def styles(self):
         url = "{url}/styles".format(url=self._url)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range):
         """This resource returns glyphs in PBF format. The template url for
         this fonts resource is represented in Vector Tile Style resource."""
@@ -369,7 +364,8 @@ class VectorTileLayer(Layer):
         params = {}
         return self._con.get(path=url,
                              params=params, force_bytes=True, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def vector_tile(self, level, row, column):
         """This resource represents a single vector tile for the map. The
         bytes for the tile at the specified level, row and column are
@@ -381,7 +377,8 @@ class VectorTileLayer(Layer):
         params = {}
         return self._con.get(path=url,
                              params=params, try_json=False, force_bytes=True, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def tile_sprite(self, out_format="sprite.json"):
         """
         This resource returns sprite image and metadata
@@ -390,45 +387,48 @@ class VectorTileLayer(Layer):
                                                    f=out_format)
         return self._con.get(path=url,
                              params={}, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def info(self):
         """This returns relative paths to a list of resource files"""
         url = "{url}/resources/info".format(url=self._url)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url,
                              params=params, token=self._token)
 
 
 class MapImageLayerManager(_GISResource):
-    """ allows administration (if access permits) of an ArcGIS Online hosted map image layers.
+    """ allows administration (if access permits) of ArcGIS Online hosted map image layers.
     A map image layer offers access to map and layer content.
     """
+
     def __init__(self, url, gis=None, map_img_lyr=None):
         super(MapImageLayerManager, self).__init__(url, gis)
         self._ms = map_img_lyr
 
-    #----------------------------------------------------------------------
-    def refresh(self, serviceDefinition=True):
+    # ----------------------------------------------------------------------
+    def refresh(self, service_definition=True):
         """
         The refresh operation refreshes a service, which clears the web
         server cache for the service.
         """
         url = self._url + "/MapServer/refresh"
         params = {
-            "f" : "json",
-            "serviceDefinition" : serviceDefinition
+            "f": "json",
+            "serviceDefinition": service_definition
         }
 
-        res =  self._con.post(self._url, params)
+        res = self._con.post(self._url, params)
 
         super(MapImageLayerManager, self)._refresh()
 
         self._ms._refresh()
 
         return res
-    #----------------------------------------------------------------------
-    def cancel_job(self, jobId):
+
+    # ----------------------------------------------------------------------
+    def cancel_job(self, job_id):
         """
         The cancel job operation supports cancelling a job while update
         tiles is running from a hosted feature service. The result of this
@@ -436,59 +436,61 @@ class MapImageLayerManager(_GISResource):
         code and description.
 
         Inputs:
-           jobId - jobId to cancel
+           job_id - job id to cancel
         """
-        url = self._url + "/jobs/%s/cancel" % jobId
+        url = self._url + "/jobs/%s/cancel" % job_id
         params = {
-            "f" : "json"
+            "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def job_statistics(self, jobId):
+
+    # ----------------------------------------------------------------------
+    def job_statistics(self, job_id):
         """
         Returns the job statistics for the given jobId
 
         """
-        url = self._url + "/jobs/%s" % jobId
+        url = self._url + "/jobs/%s" % job_id
         params = {
-            "f" : "json"
+            "f": "json"
         }
         return self._post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def edit_tile_service(self,
-                        serviceDefinition=None,
-                        minScale=None,
-                        maxScale=None,
-                        sourceItemId=None,
-                        exportTilesAllowed=False,
-                        maxExportTileCount=100000):
+                          service_definition=None,
+                          min_scale=None,
+                          max_scale=None,
+                          source_item_id=None,
+                          export_tiles_allowed=False,
+                          max_export_tile_count=100000):
         """
         This operation updates a Tile Service's properties
 
         Inputs:
-           serviceDefinition - updates a service definition
-           minScale - sets the services minimum scale for caching
-           maxScale - sets the service's maximum scale for caching
-           sourceItemId - The Source Item ID is the GeoWarehouse Item ID of the map service
-           exportTilesAllowed - sets the value to let users export tiles
-           maxExportTileCount - sets the maximum amount of tiles to be exported
+           service_definition - updates a service definition
+           min_scale - sets the services minimum scale for caching
+           max_scale - sets the service's maximum scale for caching
+           source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
+           export_tiles_allowed - sets the value to let users export tiles
+           max_export_tile_count - sets the maximum amount of tiles to be exported
              from a single call.
         """
         params = {
-            "f" : "json",
+            "f": "json",
         }
-        if not serviceDefinition is None:
-            params["serviceDefinition"] = serviceDefinition
-        if not minScale is None:
-            params['minScale'] = float(minScale)
-        if not maxScale is None:
-            params['maxScale'] = float(maxScale)
-        if not sourceItemId is None:
-            params["sourceItemId"] = sourceItemId
-        if not exportTilesAllowed is None:
-            params["exportTilesAllowed"] = exportTilesAllowed
-        if not maxExportTileCount is None:
-            params["maxExportTileCount"] = int(maxExportTileCount)
+        if not service_definition is None:
+            params["serviceDefinition"] = service_definition
+        if not min_scale is None:
+            params['minScale'] = float(min_scale)
+        if not max_scale is None:
+            params['maxScale'] = float(max_scale)
+        if not source_item_id is None:
+            params["sourceItemId"] = source_item_id
+        if not export_tiles_allowed is None:
+            params["exportTilesAllowed"] = export_tiles_allowed
+        if not max_export_tile_count is None:
+            params["maxExportTileCount"] = int(max_export_tile_count)
         url = self._url + "/edit"
         return self._con.post(url, params)
 
@@ -522,21 +524,23 @@ class MapImageLayer(Layer):
         tables = []
 
         for lyr in self.properties.layers:
-            lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureLayerCollection(self.url, self._gis))
+            lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis,
+                                               arcgis.features.FeatureLayerCollection(self.url, self._gis))
             layers.append(lyr)
 
         for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, arcgis.features.FeatureLayerCollection(self.url, self._gis))
+            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis,
+                                        arcgis.features.FeatureLayerCollection(self.url, self._gis))
             tables.append(lyr)
 
-        #fsurl = self.url + '/layers'
-        #params = { "f" : "json" }
-        #allayers = self._con.post(fsurl, params, token=self._token)
+        # fsurl = self.url + '/layers'
+        # params = { "f" : "json" }
+        # allayers = self._con.post(fsurl, params, token=self._token)
 
-        #for layer in allayers['layers']:
+        # for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
 
-        #for table in allayers['tables']:
+        # for table in allayers['tables']:
         #    tables.append(FeatureLayer(self.url + '/' + str(table['id']), self._gis))
 
         self.layers = layers
@@ -556,41 +560,45 @@ class MapImageLayer(Layer):
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def kml(self):
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
-        return self._con.get(url, {"f" : 'json'},
+        return self._con.get(url, {"f": 'json'},
                              file_name="mapImage.kmz",
                              out_folder=tempfile.gettempdir(), token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
-    def itemInfo(self):
+    def item_info(self):
         """returns the service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(url, params, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
         """returns the service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(url, params, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
         """"""
         if out_path is None:
             out_path = tempfile.gettempdir()
         url = "{url}/info/thumbnail".format(url=self._url)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         if out_path is None:
             out_path = tempfile.gettempdir()
         return self._con.get(url,
                              params,
                              out_folder=out_path,
                              file_name="thumbnail.png", token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def identify(self,
                  geometry,
                  mapExtent,
@@ -720,13 +728,13 @@ class MapImageLayer(Layer):
             gdbVersion - Switch map layers to point to an alternate geodatabase version.
         """
 
-        params= {'f': 'json',
-                 'geometry': geometry,
-                 'geometryType': geometryType,
-                 'tolerance': tolerance,
-                 'mapExtent': mapExtent,
-                 'imageDisplay': imageDisplay
-                 }
+        params = {'f': 'json',
+                  'geometry': geometry,
+                  'geometryType': geometryType,
+                  'tolerance': tolerance,
+                  'mapExtent': mapExtent,
+                  'imageDisplay': imageDisplay
+                  }
         if not returnGeometry is None:
             params['returnGeometry'] = returnGeometry
         if returnZ:
@@ -755,7 +763,8 @@ class MapImageLayer(Layer):
 
         identifyURL = "{url}/identify".format(url=self._url)
         return self._con.get(identifyURL, params, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def find(self, searchText, layers,
              contains=True, searchFields="",
              sr="", layerDefs="",
@@ -765,24 +774,25 @@ class MapImageLayer(Layer):
         """ performs the map service find operation """
         url = "{url}/find".format(url=self._url)
         params = {
-            "f" : "json",
-            "searchText" : searchText,
-            "contains" : contains,
+            "f": "json",
+            "searchText": searchText,
+            "contains": contains,
             "searchFields": searchFields,
-            "sr" : sr,
-            "layerDefs" : layerDefs,
-            "returnGeometry" : returnGeometry,
-            "maxAllowableOffset" : maxAllowableOffset,
-            "geometryPrecision" : geometryPrecision,
-            "dynamicLayers" : dynamicLayers,
-            "returnZ" : returnZ,
-            "returnM" : returnM,
-            "gdbVersion" : gdbVersion,
-            "layers" : layers
+            "sr": sr,
+            "layerDefs": layerDefs,
+            "returnGeometry": returnGeometry,
+            "maxAllowableOffset": maxAllowableOffset,
+            "geometryPrecision": geometryPrecision,
+            "dynamicLayers": dynamicLayers,
+            "returnZ": returnZ,
+            "returnM": returnM,
+            "gdbVersion": gdbVersion,
+            "layers": layers
         }
         res = self._con.get(url, params, token=self._token)
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def generate_kml(self, save_location, docName, layers, layerOptions="composite"):
         """
            The generateKml operation is performed on a map service resource.
@@ -809,29 +819,30 @@ class MapImageLayer(Layer):
                                      nonComposite
         """
         kmlURL = self._url + "/generateKml"
-        params= {
-            "f" : "json",
-            'docName' : docName,
-            'layers' : layers,
+        params = {
+            "f": "json",
+            'docName': docName,
+            'layers': layers,
             'layerOptions': layerOptions}
         return self._con.get(kmlURL, params,
                              out_folder=save_location, token=self._token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export_map(self,
-                  bbox,
-                  bboxSR=None,
-                  size="600,550",
-                  dpi=200,
-                  imageSR=None,
-                  image_format="png",
-                  layerDefFilter=None,
-                  layers=None,
-                  transparent=False,
-                  timeFilter=None,
-                  layerTimeOptions=None,
-                  dynamicLayers=None,
-                  mapScale=None
-                  ):
+                   bbox,
+                   bboxSR=None,
+                   size="600,550",
+                   dpi=200,
+                   imageSR=None,
+                   image_format="png",
+                   layerDefFilter=None,
+                   layers=None,
+                   transparent=False,
+                   timeFilter=None,
+                   layerTimeOptions=None,
+                   dynamicLayers=None,
+                   mapScale=None
+                   ):
         """
            The export operation is performed on a map service resource.
            The result of this operation is a map image resource. This
@@ -895,7 +906,7 @@ class MapImageLayer(Layer):
            Image of the map.
         """
         params = {
-            "f" : "json"
+            "f": "json"
         }
         params['bbox'] = bbox
         if bboxSR:
@@ -905,7 +916,7 @@ class MapImageLayer(Layer):
         if size is not None:
             params['size'] = size
         if imageSR is not None and \
-           isinstance(imageSR, SpatialReference):
+                isinstance(imageSR, SpatialReference):
             params['imageSR'] = {'wkid': imageSR.wkid}
         if image_format is not None:
             params['format'] = image_format
@@ -926,14 +937,14 @@ class MapImageLayer(Layer):
         exportURL = self._url + "/export"
         return self._con.get(exportURL, params, token=self._token)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def estimate_export_tiles_size(self,
-                                exportBy,
-                                levels,
-                                tilePackage=False,
-                                exportExtent="DEFAULTEXTENT",
-                                areaOfInterest=None,
-                                async=True):
+                                   exportBy,
+                                   levels,
+                                   tilePackage=False,
+                                   exportExtent="DEFAULTEXTENT",
+                                   areaOfInterest=None,
+                                   async=True):
         """
         The estimateExportTilesSize operation is an asynchronous task that
         allows estimation of the size of the tile package or the cache data
@@ -987,11 +998,11 @@ class MapImageLayer(Layer):
         import time
         url = self._url + "/estimateExportTilesSize"
         params = {
-            "f" : "json",
-            "levels" : levels,
-            "exportBy" : exportBy,
-            "tilePackage" : tilePackage,
-            "exportExtent" : exportExtent
+            "f": "json",
+            "levels": levels,
+            "exportBy": exportBy,
+            "tilePackage": tilePackage,
+            "exportExtent": exportExtent
         }
         params["levels"] = levels
         if not areaOfInterest is None:
@@ -1004,7 +1015,7 @@ class MapImageLayer(Layer):
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
-            params = { "f" : "json" }
+            params = {"f": "json"}
             job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
@@ -1015,9 +1026,9 @@ class MapImageLayer(Layer):
                     job_response = self._con.post(path, params, token=self._token)
                     status = job_response.get("status")
                     if status in ['esriJobFailed',
-                              'esriJobCancelling',
-                              'esriJobCancelled',
-                              'esriJobTimedOut']:
+                                  'esriJobCancelling',
+                                  'esriJobCancelled',
+                                  'esriJobTimedOut']:
                         print(str(job_response['messages']))
                         raise Exception('Job Failed with status ' + status)
             else:
@@ -1025,17 +1036,17 @@ class MapImageLayer(Layer):
 
             return job_response['results']
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def export_tiles(self,
-                    levels,
-                    exportBy="LevelID",
-                    tilePackage=False,
-                    exportExtent="DEFAULT",
-                    optimizeTilesForSize=True,
-                    compressionQuality=0,
-                    areaOfInterest=None,
-                    async=False
-                    ):
+                     levels,
+                     exportBy="LevelID",
+                     tilePackage=False,
+                     exportExtent="DEFAULT",
+                     optimizeTilesForSize=True,
+                     compressionQuality=0,
+                     areaOfInterest=None,
+                     async=False
+                     ):
         """
         The exportTiles operation is performed as an asynchronous task and
         allows client applications to download map tiles from a server for
@@ -1115,21 +1126,21 @@ class MapImageLayer(Layer):
         """
         import time
         params = {
-            "f" : "json",
-            "tilePackage" : tilePackage,
-            "exportExtent" : exportExtent,
-            "optimizeTilesForSize" : optimizeTilesForSize,
-            "compressionQuality" : compressionQuality,
-            "exportBy" : exportBy,
-            "levels" : levels
+            "f": "json",
+            "tilePackage": tilePackage,
+            "exportExtent": exportExtent,
+            "optimizeTilesForSize": optimizeTilesForSize,
+            "compressionQuality": compressionQuality,
+            "exportBy": exportBy,
+            "levels": levels
         }
         url = self._url + "/exportTiles"
         if isinstance(areaOfInterest, Polygon):
             geom = areaOfInterest.asDictionary()
-            template = { "features": [geom]}
+            template = {"features": [geom]}
             params["areaOfInterest"] = template
         elif isinstance(areaOfInterest, dict):
-            params["areaOfInterest"] = { "features": [areaOfInterest]}
+            params["areaOfInterest"] = {"features": [areaOfInterest]}
         if async == True:
             return self._con.get(path=url, params=params, token=self._token)
         else:
@@ -1138,7 +1149,7 @@ class MapImageLayer(Layer):
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
-            params = { "f" : "json" }
+            params = {"f": "json"}
             job_response = self._con.post(path, params, token=self._token)
 
             if "status" in job_response:
@@ -1147,11 +1158,12 @@ class MapImageLayer(Layer):
                     time.sleep(5)
 
                     job_response = self._con.post(path, params, token=self._token)
-                    status = job_response.get("status")
+                    sta
+                    tus = job_response.get("status")
                     if status in ['esriJobFailed',
-                              'esriJobCancelling',
-                              'esriJobCancelled',
-                              'esriJobTimedOut']:
+                                  'esriJobCancelling',
+                                  'esriJobCancelled',
+                                  'esriJobTimedOut']:
                         print(str(job_response['messages']))
                         raise Exception('Job Failed with status ' + status)
             else:
@@ -1159,11 +1171,11 @@ class MapImageLayer(Layer):
 
             allResults = job_response['results']
 
-            for k,v in allResults.items():
+            for k, v in allResults.items():
                 if k == "out_service_url":
                     value = v.value
                     params = {
-                        "f" : "json"
+                        "f": "json"
                     }
                     gpRes = self._con.get(path=value, params=params, token=self._token)
                     if tilePackage == True:

@@ -224,7 +224,11 @@ class RasterData(object):
 def _call_generator(fnname, spec):
     """Generate GP function based on spec
     """
-    varnames, defaults = zip(*spec)
+    varnames = ()
+    defaults = ()
+    if len(spec)>0:
+        varnames, defaults = zip(*spec)
+
     varnames = ('self', ) + varnames
 
 
@@ -947,7 +951,13 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
         tbx = Toolbox.fromitem(url_or_item)
         url = url_or_item.url
     else:
-        tbx = Toolbox(url_or_item, gis)
+        url = url_or_item
+        if url_or_item.endswith('/GPServer'):
+            url = url_or_item
+        else:
+            idx = url_or_item.index('/GPServer')
+            url = url_or_item[0:idx + len('/GPServer')]
+        tbx = _AsyncResource(url, gis)
 
     src_code = """import logging as _logging
 import arcgis
@@ -966,12 +976,12 @@ _log = _logging.getLogger(__name__)
     if execution_type == 'esriExecutionTypeSynchronous':
         use_async = False
 
-
     src_code += '\n_url = "' + url + '"'
     src_code += '\n_use_async = ' + str(use_async) + '\n\n'
 
     for task in tbx.properties.tasks:
-        src_code += _generate_fn(task, tbx)
+        fn_src = _generate_fn(task, tbx)
+        src_code += fn_src
 
     return _import_code(src_code, 'name', verbose)
     #print(src_code)
@@ -995,19 +1005,22 @@ def _generate_fn(task, tbx):
 
     src_code = 'def ' + fnname + '('
     num_spaces = len(src_code)
-    param_name, param_dval = spec[0]
-    param_type = name_type[param_name]
 
-    src_code += _generate_param(name_param, param_dval, param_name, param_type)
-
-    for param_name_dval in spec[1:]: # [ (param_name, param_dval) ]
-        param_name, param_dval = param_name_dval
+    if len(spec) > 0:
+        param_name, param_dval = spec[0]
         param_type = name_type[param_name]
-        src_code += ',\n' + ' '*num_spaces
+
         src_code += _generate_param(name_param, param_dval, param_name, param_type)
 
+        for param_name_dval in spec[1:]: # [ (param_name, param_dval) ]
+            param_name, param_dval = param_name_dval
+            param_type = name_type[param_name]
+            src_code += ',\n' + ' '*num_spaces
+            src_code += _generate_param(name_param, param_dval, param_name, param_type)
 
-    src_code += ',\n' + ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
+        src_code += ',\n' \
+
+    src_code += ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
 
     src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
 

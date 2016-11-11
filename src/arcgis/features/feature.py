@@ -261,11 +261,11 @@ class FeatureSet(object):
 
         self._features = features
         if len(features) > 0:
-            feature_geom = None
+            feat_geom = None
             feature = features[0]
 
             if "geometry" in feature.as_dict: # can construct features out of tables with just attributes, no geometry
-                    feat_geom = feature.geometry
+                feat_geom = feature.geometry
             elif isinstance(feature, dict):
                 if "geometry" in feature:
                     feat_geom = feature['geometry']
