@@ -18,6 +18,7 @@ import time
 from contextlib import contextmanager
 
 import arcgis.gis
+from arcgis.gis import Item
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
