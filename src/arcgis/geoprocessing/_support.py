@@ -124,6 +124,11 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
 
                     except sys.Error as e:
                         pass
+
+                elif isinstance(param_value, arcgis.gis.Layer):
+
+                    gp_params[gp_param_name] = { 'url': param_value.url }
+
             elif py_type == datetime.datetime:
                 gp_params[gp_param_name] = _date_handler(param_value)
     # --------------------------------------------#
@@ -211,6 +216,8 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
         jsondict = output_val
         if 'mapImage' in jsondict:  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
             ret_val = jsondict
+        elif ret_type == FeatureSet and 'url' in jsondict:
+            ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
         else:
             result = ret_type.from_dict(jsondict)
             result._con = gptool._con

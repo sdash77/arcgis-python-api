@@ -16,7 +16,7 @@ def aggregate_points(point_layer: FeatureSet,
                      bin_type: str = None,
                      bin_size: float = None,
                      bin_size_unit: str = None,
-                     polygon_layer: FeatureSet = {},
+                     polygon_layer: FeatureSet = None,
                      time_step_interval: int = None,
                      time_step_interval_unit: str = None,
                      time_step_repeat_interval: int = None,
@@ -73,6 +73,11 @@ Returns:
     """
     kwargs = locals()
 
+    params = {}
+    for key, value in kwargs.items():
+        if value is not None and key is not 'gis':
+            params[key] = value
+
     param_db = {
         "point_layer": (FeatureSet, "pointLayer"),
         "bin_type": (str, "binType"),
@@ -93,7 +98,12 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": FeatureSet},
     ]
 
-    return _execute_gp_tool(gis, "AggregatePoints", kwargs, param_db, return_values, _use_async, _url)
+
+    if gis is None:
+        gis = arcgis.env.active_gis
+    url = gis.properties.helperServices.geoanalytics.url
+
+    return _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url)
 
 
 def describe_dataset(input_layer: FeatureSet = {},

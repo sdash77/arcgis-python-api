@@ -5,4 +5,5 @@ These GeoAnalytics tools work with big data registered in the GIS’s datastores
 Use arcgis.geoanalytics.is_analysis_supported(gis) to check if geoanalytics is supported in your GIS.
 """
 
-from .tools import *
+# from .tools import *
+from .all import *

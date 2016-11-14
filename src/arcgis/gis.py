@@ -493,6 +493,10 @@ class DatastoreManager(object):
         output = None
         path = self._admin_url + "/data/registerItem"
 
+        pattern = r'\\\\[a-zA-Z]+'
+        if re.match(pattern, server_path) is not None:  # starts with double backslash, double the backslashes
+            server_path = server_path.replace('\\', '\\\\')
+
         path_str = '{"path":"' + server_path + '"}'
         params = {
             'f': 'json',
