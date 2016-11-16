@@ -21,6 +21,7 @@ import arcgis._impl.portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
+# from .features import FeatureCollection
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -1548,6 +1549,7 @@ class ContentManager(object):
 
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
+        from arcgis.features import FeatureCollection
         path = "content/features/analyze"
 
         postdata = {
@@ -1560,7 +1562,8 @@ class ContentManager(object):
                 "sourceLocale":"en-us",
                 #"locationType":"address",
                 "sourceCountry":"",
-                "sourceCountryHint":""
+                "sourceCountryHint":"",
+                "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
             }
         }
 

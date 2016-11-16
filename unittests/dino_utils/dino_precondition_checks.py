@@ -91,3 +91,55 @@ class PreconditionChecks():
                 return False
         except urllib.error.URLError:
             return False
+
+class PortalUtils():
+    """
+    Class to set a base state on the portal. Utilities to search, delete old outputs on portals can be found here.
+    Add more utilities as need arises.
+    """
+    @staticmethod
+    def search_portal_item(gis, item_name, item_type):
+        """
+        Utility to search content on portal
+        :param gis: The GIS connection object to the portal
+        :param item_name: Name of the item to be searched
+        :param item_type: `type` property of the item to be searched
+        :return: `arcgis.gis.Item` / None
+        """
+        try:
+            search_result = gis.content.search(item_name, item_type)
+            if len(search_result) > 0:
+                return search_result[0]
+            else:
+                return None
+
+        except Exception as search_Ex:
+            print("Exception occurred : ", search_Ex.__str__())
+            return None
+
+    @staticmethod
+    def delete_portal_item(gis, item):
+        """
+        Utility to delete the portal item. Validates the item is deleted by searching for it after delete.
+        :param gis: `arcgis.gis.GIS` object to the portal
+        :param item: `arcgis.gis.Item` object to be deleted
+        :return: (bool, str) Tuple representing if delete passed or failed.
+        """
+        try:
+            delete_result = item.delete()
+            if not delete_result:
+                return (False, "Delete method returned False")
+
+            search_result = None
+            try:
+                search_result = gis.content.get(item.itemid)
+                if search_result is not None:
+                    return (False, "Deleted item can still be found on portal")
+                else:
+                    return (True, None)
+            except RuntimeError:
+                return (True, None) #Item not found after deletion
+
+        except Exception as delete_ex:
+            print("Exception occurred : ", delete_ex.__str__())
+            return (False, "Exception: " + delete_ex.__str__())
