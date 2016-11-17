@@ -117,5 +117,5 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "CreateBuffers", kwargs, param_db, return_values, _use_async, url, True)
+    _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True)
     return output_service

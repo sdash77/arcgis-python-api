@@ -185,7 +185,7 @@ Returns:
         {"name": "output", "display_name": "Output JSON", "type": str},
     ]
 
-    return _execute_gp_tool(gis, "DescribeDataset", kwargs, param_db, return_values, _use_async, url, True)
+    return _execute_gp_tool(gis, "DescribeDataset", params, param_db, return_values, _use_async, url, True)
 
 
 def join_features(target_layer,
@@ -307,7 +307,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "JoinFeatures", kwargs, param_db, return_values, _use_async, url, True)
+    _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
     return output_service
 
 
@@ -409,7 +409,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "ReconstructTracks", kwargs, param_db, return_values, _use_async, url, True)
+    _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True)
     
     return output_service
 
@@ -487,7 +487,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "SummarizeAttributes", kwargs, param_db, return_values, _use_async, url, True)
+    _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
     return output_service
 
 
@@ -590,7 +590,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "SummarizeWithin", kwargs, param_db, return_values, _use_async, url, True)
+    _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
     return output_service
 
 
