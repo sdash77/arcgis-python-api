@@ -9,13 +9,48 @@ import collections
 
 import arcgis
 from arcgis.gis import GIS
-from arcgis.features import FeatureSet
+from arcgis.features import FeatureSet, FeatureCollection
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing.tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
 
 _log = logging.getLogger(__name__)
+
+def _feature_input(input_layer):
+    
+    input_param = input_layer
+    
+    input_layer_url = ""
+    if isinstance(input_layer, arcgis.gis.Item):
+        if input_layer.type.lower() == 'feature service':
+            input_param =  input_layer.layers[0]._lyr_dict
+        elif input_layer.type.lower() == 'feature collection':
+            fcdict = input_layer.get_data()
+            fc = FeatureCollection(fcdict['layers'][0])
+            input_param =  fc.layer
+        else:
+            raise TypeError("item type must be feature service or feature collection")
+
+    elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
+        input_param =  input_layer.layers[0]._lyr_dict
+
+    elif isinstance(input_layer, arcgis.features.FeatureCollection):
+        input_param =  input_layer.properties
+
+    elif isinstance(input_layer, arcgis.gis.Layer):
+        input_param = input_layer._lyr_dict
+
+    elif isinstance(input_layer, dict):
+        input_param =  input_layer
+
+    elif isinstance(input_layer, str):
+        input_param =  {"url": input_layer }
+
+    else:
+        raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+
+    return input_param
 
 def _analysis_job_status(gptool, task_url, job_info):
     """ Tracks the status of the submitted Analysis job."""
@@ -100,7 +135,7 @@ def _analysis_job_results(gptool, task_url, job_info):
         raise Exception("Unable to get analysis job results.")
 
 
-def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url):
+def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False):
     if gis is None:
         gis = arcgis.env.active_gis
 
@@ -112,8 +147,26 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         if param_name in param_db:
             py_type, gp_param_name = param_db[param_name]
             gp_params[gp_param_name] = param_value
-            if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-                if type(param_value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
+            if py_type == FeatureSet:
+                if webtool:
+                    gp_params[gp_param_name] = _feature_input(param_value)
+                    
+                else:
+                    if type(param_value) == FeatureSet:
+                        gp_params[gp_param_name] = param_value.to_dict()
+
+                    elif type(param_value) == str:
+
+                        try:
+                            klass = py_type
+                            gp_params[gp_param_name] = klass.from_str(param_value)
+
+                        except sys.Error as e:
+                            pass
+
+            
+            elif py_type in [LinearUnit, DataFile, RasterData]:
+                if type(param_value) in [LinearUnit, DataFile, RasterData]:
                     gp_params[gp_param_name] = param_value.to_dict()
 
                 elif type(param_value) == str:
@@ -126,8 +179,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                         pass
 
                 elif isinstance(param_value, arcgis.gis.Layer):
-
-                    gp_params[gp_param_name] = { 'url': param_value.url }
+                    gp_params[gp_param_name] = param_value._lyr_dict
 
             elif py_type == datetime.datetime:
                 gp_params[gp_param_name] = _date_handler(param_value)

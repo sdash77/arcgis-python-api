@@ -1,4 +1,4 @@
-﻿"""
+"""
 The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
@@ -21,7 +21,6 @@ import arcgis._impl.portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-# from .features import FeatureCollection
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -143,7 +142,7 @@ class GIS(object):
             admin_url = None
             for server in servers:
                 admin_url = server['adminUrl'] + '/admin'
-                self._datastores.append(DatastoreManager(self, admin_url))
+                self._datastores.append(DatastoreManager(self, admin_url, server))
         except:
             pass
         return self._datastores
@@ -398,10 +397,11 @@ class DatastoreManager(object):
     An instance of a list of this class, called 'datastores', is available as a property of the GIS object.
     Users call methods on members of this 'datastores' list to manage the datastores in a site federated with the portal.
     """
-    def __init__(self, gis, admin_url):
+    def __init__(self, gis, admin_url, server):
         self._gis = gis
         self._portal = gis._portal
         self._admin_url = admin_url
+        self._server = server
 
     def __str__(self):
         return '<%s for %s>' % (type(self).__name__, self._admin_url)
@@ -1549,7 +1549,6 @@ class ContentManager(object):
 
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
-        from arcgis.features import FeatureCollection
         path = "content/features/analyze"
 
         postdata = {
@@ -1562,8 +1561,7 @@ class ContentManager(object):
                 "sourceLocale":"en-us",
                 #"locationType":"address",
                 "sourceCountry":"",
-                "sourceCountryHint":"",
-                "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
+                "sourceCountryHint":""
             }
         }
 
@@ -2403,7 +2401,7 @@ class Item(dict):
 
     def __getattribute__ (self, name):
         if name == 'layers' or name == 'tables':
-            if self['layers'] == None:
+            if self['layers'] == None or self['layers'] == []:
                 try:
                     with _DisableLogger():
                         self._populate_layers()
@@ -3232,5 +3230,8 @@ class Layer(_GISResource):
         return item.layers[index]
 
     @property
-    def _js_lyr(self):
-        return { 'type' : type(self).__name__, 'url' : self.url }
+    def _lyr_dict(self):
+        lyr_dict =  { 'type' : type(self).__name__, 'url' : self.url }
+        if self._token is not None:
+            lyr_dict['serviceToken'] = self._token
+        return lyr_dict

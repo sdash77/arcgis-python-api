@@ -22,6 +22,12 @@ when calling the functions.
 Creating a new GIS object makes it's first available geocoder as the active geocoder
 unless set_active=False is passed in the GIS constructor.
 
+analysis_extent
+===============
+
+.. py:data:: analysis_extent
+The processing extent used by analysis tools, specified as an arcgis.geometry.Envelope.
+
 out_spatial_reference
 =====================
 
@@ -70,10 +76,13 @@ active_geocoder = None
 #: is not specified, the output geometries are in the spatial reference of the process spatial reference.
 out_spatial_reference = None
 
-#: The spatial reference that the model will use to perform geometry operations. If specified and
+#: The spatial reference that analysis and geoprocessing tools will use to perform geometry operations. If specified and
 #: out_spatial_reference is not specified, the output geometries are in the spatial reference of the
 #: process spatial reference.
 process_spatial_reference = None
+
+#: The processing extent used by analysis tools
+analysis_extent = None
 
 #: If true, Z values will be included in the geoprocessing results if the features have Z values.
 #: Otherwise Z values are not returned. The default is False.

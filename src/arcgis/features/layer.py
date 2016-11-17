@@ -45,6 +45,15 @@ class FeatureLayer(Layer):
         self._storage = container
         self.attachments = AttachmentManager(self)
 
+    @classmethod
+    def fromitem(cls, item, layer_id=0):
+        """
+        Creates a feature layer from a GIS Item.
+        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
+        The layer_id is the id of the layer in feature layer collection (feature service).
+        """
+        return FeatureLayerCollection.fromitem(item).layers[layer_id]
+    
     @property
     def manager(self):
         """

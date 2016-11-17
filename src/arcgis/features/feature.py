@@ -650,7 +650,7 @@ class FeatureCollection(Layer):
         self.layer = self.properties
 
     @property
-    def _js_lyr(self):
+    def _lyr_dict(self):
         return dict(self.properties)
 
     def __str__(self):
