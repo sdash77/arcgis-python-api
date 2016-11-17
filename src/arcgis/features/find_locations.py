@@ -13,14 +13,14 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
-
+import arcgis as _arcgis
 
 def find_existing_locations(
-        gis,
         input_layers=[],
         expressions=[],
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     The Find Existing Locations task selects features in the input layer that meet a query you specify.
     A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
@@ -30,8 +30,6 @@ def find_existing_locations(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layers : Required list of strings
         A list of layers that will be used in the expressions parameter.
     expressions : Required string
@@ -41,11 +39,15 @@ def find_existing_locations(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     result_layer : layer (FeatureCollection)
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.find_existing_locations(
         input_layers,
         expressions,
@@ -54,11 +56,11 @@ def find_existing_locations(
 
 
 def derive_new_locations(
-        gis,
         input_layers=[],
         expressions=[],
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is
     made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an
@@ -74,8 +76,6 @@ def derive_new_locations(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layers : Required list of strings
         A list of layers that will be used in the expressions parameter.
     expressions : Required string
@@ -85,11 +85,15 @@ def derive_new_locations(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     result_layer : layer (FeatureCollection)
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.derive_new_locations(
         input_layers,
         expressions,
@@ -98,21 +102,19 @@ def derive_new_locations(
 
 
 def find_similar_locations(
-        gis,
         input_layer,
         search_layer,
         analysis_fields=[],
         input_query=None,
         number_of_results=0,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Finds the locations that are most similar to one or more reference locations based on criteria that you specify.
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layer : Required layer (see Feature Input in documentation)
 
     search_layer : Required layer (see Feature Input in documentation)
@@ -134,6 +136,7 @@ def find_similar_locations(
        "similar_result_layer" : layer (FeatureCollection)
        "process_info" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.find_similar_locations(
         input_layer,
         search_layer,
@@ -153,7 +156,6 @@ def choose_best_facilities():
 """
 
 def create_viewshed(
-        gis,
         input_layer,
         dem_resolution="Finest",
         maximum_distance=None,
@@ -164,14 +166,13 @@ def create_viewshed(
         target_height_units="Meters",
         generalize=True,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Creates areas that are visible based on locations you specify.
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layer : Required layer (see Feature Input in documentation)
 
     dem_resolution : Optional string
@@ -194,11 +195,15 @@ def create_viewshed(
 
     context : Optional string
 
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
 
     Returns
     -------
     viewshed_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.create_viewshed(
         gis,
         input_layer,
@@ -215,21 +220,19 @@ def create_viewshed(
 
 
 def create_watersheds(
-        gis,
         input_layer,
         search_distance=None,
         search_units="Meters",
         source_database="FINEST",
         generalize=True,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Creates catchment areas based on locations you specify.
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layer : Required layer (see Feature Input in documentation)
 
     search_distance : Optional float
@@ -244,6 +247,9 @@ def create_watersheds(
 
     context : Optional string
 
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
 
     Returns
     -------
@@ -251,6 +257,7 @@ def create_watersheds(
        "snap_pour_pts_layer" : layer (FeatureCollection)
        "watershed_layer" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.create_watersheds(
         input_layer,
         search_distance,
@@ -262,7 +269,6 @@ def create_watersheds(
 
 
 def trace_downstream(
-        gis,
         input_layer,
         split_distance=None,
         split_units="Kilometers",
@@ -272,14 +278,13 @@ def trace_downstream(
         source_database=None,
         generalize=True,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Determine the flow paths in a downstream direction from the locations you specify.
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layer : Required layer (see Feature Input in documentation)
 
     split_distance : Optional float
@@ -300,11 +305,14 @@ def trace_downstream(
 
     context : Optional string
 
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     trace_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.trace_downstream(
         input_layer,
         split_distance,

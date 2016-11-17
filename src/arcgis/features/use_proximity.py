@@ -7,7 +7,7 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
-
+import arcgis as _arcgis
 
 def connect_origins_to_destinations(
         gis,
@@ -25,7 +25,6 @@ def connect_origins_to_destinations(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     origins_layer : Required layer (see Feature Input in documentation)
         The routes start from points in the origins layer.
     destinations_layer : Required layer (see Feature Input in documentation)
@@ -48,6 +47,8 @@ def connect_origins_to_destinations(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -56,6 +57,7 @@ def connect_origins_to_destinations(
        "unassigned_origins_layer" : layer (FeatureCollection)
        "unassigned_destinations_layer" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.connect_origins_to_destinations(
         origins_layer,
         destinations_layer,
@@ -85,7 +87,6 @@ def create_buffers(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The input to be buffered.
     distances : Optional list of floats
@@ -106,11 +107,14 @@ def create_buffers(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     buffer_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.create_buffers(
         input_layer,
         distances,
@@ -140,7 +144,6 @@ def create_drive_time_areas(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
 
     break_values : Optional list of floats
@@ -159,11 +162,14 @@ def create_drive_time_areas(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     drive_time_areas_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.create_drive_time_areas(
         input_layer,
         break_values,
@@ -195,7 +201,6 @@ def find_nearest(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     analysis_layer : Required layer (see Feature Input in documentation)
         For each feature in this layer, the task finds the nearest features from the nearLayer.
     near_layer : Required layer (see Feature Input in documentation)
@@ -217,6 +222,8 @@ def find_nearest(
         Additional properties such as output feature service name
     context : Optional string
         Additional settings such as processing extent and output spatial reference
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -224,6 +231,7 @@ def find_nearest(
        "nearest_layer" : layer (FeatureCollection)
        "connecting_lines_layer" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.find_nearest(
         analysis_layer,
         near_layer,
@@ -262,7 +270,6 @@ def plan_routes(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
 
     stops_layer : Required layer (see Feature Input in documentation)
 
@@ -292,6 +299,9 @@ def plan_routes(
 
     context : Optional string
 
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
 
     Returns
     -------
@@ -300,6 +310,7 @@ def plan_routes(
        "assigned_stops_layer" : layer (FeatureCollection)
        "unassigned_stops_layer" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.plan_routes(
         stops_layer,
         route_count,

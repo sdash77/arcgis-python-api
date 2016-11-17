@@ -6,8 +6,9 @@ enrich_layer retrieves information about the people, places, and businesses in a
 travel time or distance from a location.
 """
 
-def enrich_layer(gis,
-                 input_layer,
+import arcgis as _arcgis
+
+def enrich_layer(input_layer,
                  data_collections=[],
                  analysis_variables=[],
                  country=None,
@@ -15,7 +16,8 @@ def enrich_layer(gis,
                  distance=None,
                  units=None,
                  output_name=None,
-                 context=None):
+                 context=None,
+                 gis=None):
     """
     The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
     your data locations. For example: What kind of people live here? What do people like to do in this area? What are
@@ -24,8 +26,6 @@ def enrich_layer(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
-
     input_layer : Required layer (see Feature Input in documentation)
         Feature layer to enrich with new data
     data_collections : Optional list of strings
@@ -47,11 +47,15 @@ def enrich_layer(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     enriched_layer : layer (FeatureCollection)
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.enrich_layer(gis,
                  input_layer,
                  data_collections,

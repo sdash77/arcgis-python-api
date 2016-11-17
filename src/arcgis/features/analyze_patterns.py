@@ -6,8 +6,9 @@ find_hot_spots identifies statistically significant clustering in the spatial pa
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
 
+import arcgis as _arcgis
+
 def calculate_density(
-        gis,
         input_layer,
         field=None,
         cell_size=None,
@@ -19,7 +20,8 @@ def calculate_density(
         classification_type="EqualInterval",
         num_classes=10,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     The calculate_density function creates a density map from point or line features by spreading known quantities of
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
@@ -27,7 +29,6 @@ def calculate_density(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The point or line features from which to calculate density.
     field : Optional string
@@ -55,11 +56,15 @@ def calculate_density(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     result_layer : layer (FeatureCollection)
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.calculate_density(
         input_layer,
         field,
@@ -76,14 +81,14 @@ def calculate_density(
 
 
 def find_hot_spots(
-        gis,
         analysis_layer,
         analysis_field=None,
         divided_by_field=None,
         bounding_polygon_layer=None,
         aggregation_polygon_layer=None,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     The Find Hot Spots function finds statistically significant clusters of incident points, weighted points, or
     weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation.
@@ -108,6 +113,8 @@ def find_hot_spots(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -115,6 +122,8 @@ def find_hot_spots(
        "hot_spots_result_layer" : layer (FeatureCollection)
        "process_info" : list of messages
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.find_hot_spots(
         gis,
         analysis_layer,
@@ -127,7 +136,6 @@ def find_hot_spots(
 
 
 def interpolate_points(
-        gis,
         input_layer,
         field,
         interpolate_option="5",
@@ -138,7 +146,8 @@ def interpolate_points(
         bounding_polygon_layer=None,
         predict_at_point_layer=None,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     The Interpolate Points function allows you to predict values at new locations based on measurements from a
     collection of points. The function takes point data with values at each point and returns areas classified by
@@ -146,7 +155,6 @@ def interpolate_points(
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The point layer whose features will be interpolated.
     field : Required string
@@ -177,6 +185,8 @@ def interpolate_points(
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -185,6 +195,8 @@ def interpolate_points(
        "prediction_error" : layer (FeatureCollection)
        "predicted_point_layer" : layer (FeatureCollection)
     """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.interpolate_points(
         input_layer,
         field,

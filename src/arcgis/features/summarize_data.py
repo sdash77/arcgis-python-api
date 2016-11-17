@@ -6,6 +6,7 @@ aggregate_points calculates statistics about points that fall within specified a
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
+import arcgis as _arcgis
 
 def aggregate_points(gis,
                      point_layer,
@@ -24,7 +25,6 @@ def aggregate_points(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     point_layer : Required layer (see Feature Input in documentation)
         Point layer to be aggregated
     polygon_layer : Required layer (see Feature Input in documentation)
@@ -46,6 +46,8 @@ def aggregate_points(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -53,6 +55,7 @@ def aggregate_points(gis,
        "aggregated_layer" : layer (FeatureCollection)
        "group_summary" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.aggregate_points(
                      point_layer,
                      polygon_layer,
@@ -93,7 +96,6 @@ def summarize_nearby(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     sum_nearby_layer : Required layer (see Feature Input in documentation)
         Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.
     summary_layer : Required layer (see Feature Input in documentation)
@@ -141,6 +143,8 @@ def summarize_nearby(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -148,6 +152,7 @@ def summarize_nearby(gis,
        "result_layer" : layer (FeatureCollection)
        "group_by_summary" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.summarize_nearby(
                      sum_nearby_layer,
                      summary_layer,
@@ -188,7 +193,6 @@ def summarize_within(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     sum_within_layer : Required layer (see Feature Input in documentation)
         A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below)
         that fall within the boundaries of these polygons will be summarized.
@@ -217,6 +221,8 @@ def summarize_within(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
@@ -224,6 +230,7 @@ def summarize_within(gis,
        "result_layer" : layer (FeatureCollection)
        "group_by_summary" : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.summarize_within(
                      sum_within_layer,
                      summary_layer,

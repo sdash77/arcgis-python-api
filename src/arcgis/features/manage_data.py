@@ -7,7 +7,7 @@ merge_layers copies all the features from two or more existing layers into a new
 overlay_layers combines two or more layers into one single layer. You can think of overlay as peering through a stack of
 maps and creating a single map containing all the information found in the stack.
 """
-
+import arcgis as _arcgis
 
 def dissolve_boundaries(gis,
         input_layer,
@@ -20,7 +20,6 @@ def dissolve_boundaries(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The layer containing polygon features that will be dissolved.
     dissolve_fields : Optional list of strings
@@ -33,11 +32,14 @@ def dissolve_boundaries(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     dissolved_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.dissolve_boundaries(
         input_layer,
         dissolve_fields,
@@ -59,7 +61,6 @@ def extract_data(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layers : Required list of strings
         The layers from which you can extract features.
     extent : Optional string
@@ -72,11 +73,14 @@ def extract_data(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     content_id : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.extract_data(
         input_layers,
         extent,
@@ -97,7 +101,6 @@ def merge_layers(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
          The point, line, or polygon  features to merge with the mergeLayer.
     merge_layer : Required layer (see Feature Input in documentation)
@@ -110,11 +113,14 @@ def merge_layers(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     merged_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.merge_layers(
         input_layer,
         merge_layer,
@@ -137,7 +143,6 @@ def overlay_layers(gis,
 
     Parameters
     ----------
-    gis : The GIS used for running this analysis
     input_layer : Required layer (see Feature Input in documentation)
         The input analysis layer.
     overlay_layer : Required layer (see Feature Input in documentation)
@@ -156,11 +161,14 @@ def overlay_layers(gis,
         Additional properties such as output feature service name.
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
+    gis :
+        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
     Returns
     -------
     output_layer : layer (FeatureCollection)
     """
+    gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools._analysis.overlay_layers(
         input_layer,
         overlay_layer,
