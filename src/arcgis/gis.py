@@ -1561,7 +1561,7 @@ class ContentManager(object):
                 "sourceLocale":"en-us",
                 #"locationType":"address",
                 "sourceCountry":"",
-                "sourceCountryHint":""
+                "sourceCountryHint":"",
                 "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
             }
         }
