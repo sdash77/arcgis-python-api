@@ -1,4 +1,4 @@
-"""
+﻿"""
 The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
 (create, read, update and delete) GIS users, groups, content and datastores. This module
@@ -1562,6 +1562,7 @@ class ContentManager(object):
                 #"locationType":"address",
                 "sourceCountry":"",
                 "sourceCountryHint":""
+                "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
             }
         }
 
