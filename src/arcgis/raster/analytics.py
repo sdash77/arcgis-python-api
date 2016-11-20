@@ -84,6 +84,139 @@ def _create_output_image_service(gis, output_name, task):
     output_service.update(item_properties)
     return output_service
 
+def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics'):
+    ok = gis.content.is_service_name_available(output_name, 'Feature Service')
+    if not ok:
+        raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+
+    createParameters = {
+            "currentVersion": 10.2,
+            "serviceDescription": "",
+            "hasVersionedData": False,
+            "supportsDisconnectedEditing": False,
+            "hasStaticData": True,
+            "maxRecordCount": 2000,
+            "supportedQueryFormats": "JSON",
+            "capabilities": "Query",
+            "description": "",
+            "copyrightText": "",
+            "allowGeometryUpdates": False,
+            "syncEnabled": False,
+            "editorTrackingInfo": {
+                "enableEditorTracking": False,
+                "enableOwnershipAccessControl": False,
+                "allowOthersToUpdate": True,
+                "allowOthersToDelete": True
+            },
+            "xssPreventionInfo": {
+                "xssPreventionEnabled": True,
+                "xssPreventionRule": "InputOnly",
+                "xssInputRule": "rejectInvalid"
+            },
+            "tables": [],
+            "name": output_service_name.replace(' ', '_'),
+            "options": {
+                "dataSourceType": "spatiotemporal"
+            }
+        }
+
+    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
+    description = "Feature Service generated from running the " + task + " tool."
+    item_properties = {
+            "description" : description,
+            "tags" : "Analysis Result, " + task,
+            "snippet": output_service_name
+            }
+    output_service.update(item_properties)
+    return output_service
+
+# def monitor_vegetation(input_raster,
+#                        method_to_use='NDVI',
+#                        nir_band=1,
+#                        red_band=2,
+#                        options={},
+#                        output_name=None,
+#                        gis=None):
+#     """
+#
+#     :param input_raster: multiband raster layer. Make sure the input raster has the appropriate bands available.
+#
+#     :param method_to_use: one of NDVI, GEMI, GVI, PVI, SAVI, MSAVI2, TSAVI, SULTAN.
+#          the method used to create the vegetation index layer. The different vegetation indexes can help highlight
+#          certain features, or help reduce various noise.
+#
+#         * GEMI - Global Environmental Monitoring Index — GEMI is a nonlinear vegetation index for global environmental
+#             monitoring from satellite imagery. It is similar to NDVI, but it is less sensitive to atmospheric
+#             effects. It is affected by bare soil; therefore, it is not recommended for use in areas of sparse or
+#             moderately dense vegetation.
+#         * GVI - Green Vegetation Index - Landsat TM — GVI was originally designed from Landsat MSS imagery but has been
+#             modified for use with Landsat TM imagery. It is also known as the Landsat TM Tasseled Cap green
+#             vegetation index. This monitoring index can also be used with imagery whose bands share the same
+#             spectral characteristics.
+#         * MSAVI2 - Modified Soil Adjusted Vegetation Index — MSAVI2 is a vegetation index that tries to minimize bare soil
+#             influences of the SAVI method.
+#         * NDVI - Normalized Difference Vegetation Index — NDVI is a standardized index allowing you to generate an image
+#             displaying greenness, relative biomass. This index takes advantage of the contrast of the
+#             characteristics of two bands from a multispectral raster dataset; the chlorophyll pigment absorptions
+#             in the red band and the high reflectivity of plant materials in the near-infrared (NIR) band.
+#         * PVI - Perpendicular Vegetation Index — PVI is similar to a difference vegetation index; however, it is sensitive
+#             to atmospheric variations. When using this method to compare different images, it should only be used on
+#             images that have been atmospherically corrected. This information can be provided by your data vendor.
+#         * SAVI - Soil-Adjusted Vegetation Index — SAVI is a vegetation index that attempts to minimize soil brightness
+#             influences using a soil-brightness correction factor. This is often used in arid regions where
+#             vegetative cover is low.
+#         * SULTAN - Sultan's Formula — The Sultan's Formula process takes a six-band 8-bit image and applied a specific
+#             algorithm to it to produce a three-band 8-bit image. The resulting image highlights rock formations
+#             called ophiolites on coastlines. This formula was designed based on the TM and ETM bands of a Landsat 5
+#             or 7 scene.
+#         * TSAVI - Transformed Soil-Adjusted Vegetation Index — Transformed-SAVI is a vegetation index that attempts to
+#             minimize soil brightness influences by assuming the soil line has an arbitrary slope and intercept.
+#
+#     :param nir_band: the band indexes for the near-infrared (NIR) band.
+#     :param red_band: the band indexes for the Red band.
+#     :param options: additional parameters such as slope, intercept
+#         * intercept is the value of near infrared (NIR) when the reflection value of the red (Red) band is 0 for the particular soil lines.
+#         (a = NIR - sRed) , when Red is 0.
+#         This parameter is only valid for Transformed Soil-Adjusted Vegetation Index.
+#
+#         * slope - Slope of soil line
+#         The slope of the soil line. The slope is the approximate linear relationship between the NIR and red bands on a scatterplot.
+#         This parameter is only valid for Transformed Soil-Adjusted Vegetation Index.
+#
+#         *
+#     :param output_name:
+#     :param gis:
+#     :return:
+#     """
+#     NDVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 1, "BandIndexes": "1 2"}}
+#
+#     GEMI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 5, "BandIndexes": "1 2 3 4 5 6"}}
+#
+#     GVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 7, "BandIndexes": "1 2"}}
+#
+#     MSAVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 4, "BandIndexes": "1 2"}}
+#
+#     PVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 6, "BandIndexes": "1 2 111 222"}}
+#
+#     SAVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 2, "BandIndexes": "1 2 111"}}
+#
+#     SULTAN
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 8, "BandIndexes": "1 2 3 4 5 6"}}
+#
+#     TSAVI
+#     {"rasterFunction": "BandArithmetic", "rasterFunctionArguments": {"Method": 3, "BandIndexes": "1 2 111 222 333"}}
+#
+#     raster_function = {"rasterFunction":"BandArithmetic","rasterFunctionArguments":{"Method":1,"BandIndexes":"1 2"}}
+#
+#     function_args = {'Raster': _layer_input(input_raster)}
+#
+#     return generate_raster(raster_function, function_args, output_name=output_name, gis=gis)
 
 def generate_raster(raster_function,
                     function_arguments=None,
@@ -99,7 +232,7 @@ def generate_raster(raster_function,
 
     function_arguments : Optional,  for specifying input Raster alone, portal Item can be passed
 
-    output_raster_properties : Optional string
+    output_raster_properties : Optional
     
     output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster. 
         You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -222,7 +355,7 @@ def convert_feature_to_raster(input_feature,
 
     params = {}
 
-    params["inputFeature"] = input_feature
+    params["inputFeature"] = _layer_input(input_feature)
 
 
     output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
@@ -305,7 +438,7 @@ def copy_raster(input_raster,
     output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
-    params["inputRaster"] = input_raster
+    params["inputRaster"] = _layer_input(input_raster)
 
     if output_cellsize is not None:
         params["outputCellsize"] = output_cellsize
@@ -450,15 +583,20 @@ def convert_raster_to_feature(input_raster,
     ----------
     input_raster : Required string
 
-    field : Optional string
+    field : Optional string - field that specifies which value will be used for the conversion.
+        It can be any integer or text value.
+        A field containing floating-point values can only be used if the output is to a point dataset.
+        The default choice is to use the Value field, which contains the value in each raster cell.
 
     output_type : Optional string
         One of the following: ['Point', 'Line', 'Polygon']
+
     simplify_lines_or_polygons : Optional bool
 
-    output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-        You can pass in an existing Image Service Item from your GIS to use that instead.
-        Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+    output_name : Optional. If not provided, an Feature layer is created by the method and used as the output .
+        You can pass in an existing Feature Service Item from your GIS to use that instead.
+        Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+        to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -477,11 +615,17 @@ def convert_raster_to_feature(input_raster,
 
     params = {}
 
-    params["inputRaster"] = input_raster
+    params["inputRaster"] = _layer_input(input_raster)
 
-    output_service = _create_output_image_service(gis, output_name, task)
+    if output_name is None:
+        output_service_name = 'Calculate Density Analysis_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
 
-    params["outputName"] = _json.dumps({"serviceProperties": {"name": output_name, "serviceUrl": output_service.url},
+    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Convert Raster To Feature')
+
+    params["outputName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                        "itemProperties": {"itemId": output_service.itemid}})
     if field is not None:
         params["field"] = field
@@ -515,19 +659,65 @@ def calculate_density(input_point_or_line_features,
                       output_name=None,
                       gis=None):
     """
+    Density analysis takes known quantities of some phenomenon and creates a density map by spreading
+    these quantities across the map. You can use this tool, for example, to show concentrations of
+    lightning strikes or tornadoes, access to health care facilities, and population densities.
 
+    This tool creates a density map from point or line features by spreading known quantities of some
+    phenomenon (represented as attributes of the points or lines) across the map. The result is a
+    layer of areas classified from least dense to most dense.
+
+    For point input, each point should represent the location of some event or incident, and the
+    result layer represents a count of the incident per unit area. A larger density value in a new
+    location means that there are more points near that location. In many cases, the result layer can
+    be interpreted as a risk surface for future events. For example, if the input points represent
+    locations of lightning strikes, the result layer can be interpreted as a risk surface for future
+    lightning strikes.
+
+    For line input, the line density surface represents the total amount of line that is near each
+    location. The units of the calculated density values are the length of line-per-unit area.
+    For example, if the lines represent rivers, the result layer will represent the total length
+    of rivers that are within the search radius. This result can be used to identify areas that are
+    hospitable to grazing animals.
+
+    Other use cases of this tool include the following:
+
+    *   Creating crime density maps to help police departments properly allocate resources to high crime
+        areas.
+    *   Calculating densities of hospitals within a county. The result layer will show areas with
+        high and low accessibility to hospitals, and this information can be used to decide where
+        new hospitals should be built.
+    *   Identifying areas that are at high risk of forest fires based on historical locations of
+        forest fires.
+    *   Locating communities that are far from major highways in order to plan where new roads should
+        be constructed.
 
     Parameters
     ----------
-    input_point_or_line_features : Required FeatureSet
+    input_point_or_line_features : Required feature layer - The input point or line layer that will be used to calculate
+        the density layer.
 
-    count_field : Optional string
+    count_field : Optional string - count field
+        Provide a field specifying the number of incidents at each location. For example, if you have points that
+        represent cities, you can use a field representing the population of the city as the count field, and the
+        resulting population density layer will calculate larger population densities near cities with
+        larger populations. If the default choice of None is used, then each location will be assumed to represent a
+        single count.
 
-    search_distance : Optional LinearUnit
+    search_distance : Optional LinearUnit - Search distance
+        Enter a distance specifying how far to search to find point or line features when calculating density values.
+        For example, if you provide a search distance of 10,000 meters, the density of any location in the output layer
+        is calculated based on features that are within 10,000 meters of the location. Any location that does not have
+        any incidents within 10,000 meters will receive a density value of zero.
+        If no distance is provided, a default will be calculated that is based on the locations of the input features
+        and the values in the count field (if a count field is provided).
 
-    output_area_units : Optional string
+    output_area_units : Optional string - Output area units
+        Specify the output area unit. Density is count divided by area, and this parameter specifies the unit of the
+        area in the density calculation. The available areal units are Square Miles and Square Kilometers.
 
-    output_cell_size : Optional LinearUnit
+    output_cell_size : Optional LinearUnit - Output cell size
+        Enter the cell size and unit for the output rasters.
 
     output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
         You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -566,7 +756,7 @@ def calculate_density(input_point_or_line_features,
     params["outputName"] = output_raster
 
 
-    params["inputPointOrLineFeatures"] = input_point_or_line_features
+    params["inputPointOrLineFeatures"] = _layer_input(input_point_or_line_features)
 
     if count_field is not None:
         params["countField"] = count_field
@@ -686,8 +876,8 @@ def create_viewshed(input_elevation_surface,
     params["outputName"] = output_raster
 
 
-    params["inputElevationSurface"] = input_elevation_surface
-    params["inputObserverFeatures"] = input_observer_features
+    params["inputElevationSurface"] = _layer_input(input_elevation_surface)
+    params["inputObserverFeatures"] = _layer_input(input_observer_features)
 
     if optimize_for is not None:
         params["optimizeFor"] = optimize_for
@@ -955,7 +1145,7 @@ def classify(input_raster,
     params["outputName"] = output_raster
 
 
-    params["inputRaster"] = input_raster
+    params["inputRaster"] = _layer_input(input_raster)
     params["inputClassifierDefinition"] = input_classifier_definition
 
     if additional_input_raster is not None:
@@ -1038,7 +1228,7 @@ def segment(input_raster,
     params["outputName"] = output_raster
 
 
-    params["inputRaster"] = input_raster
+    params["inputRaster"] = _layer_input(input_raster)
 
     params["spectralDetail"] = spectral_detail
     params["spatialDetail"] = spatial_detail
@@ -1098,7 +1288,7 @@ def train_classifier(input_raster,
 
     params = {}
 
-    params["inputRaster"] = input_raster
+    params["inputRaster"] = _layer_input(input_raster)
     params["inputTrainingSampleJSON"] = input_training_sample_json
     if segmented_raster is not None:
         params["segmentedRaster"] = segmented_raster
