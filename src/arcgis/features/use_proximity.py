@@ -58,7 +58,7 @@ def connect_origins_to_destinations(
        "unassigned_destinations_layer" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.connect_origins_to_destinations(
+    return gis._tools.featureanalysis.connect_origins_to_destinations(
         origins_layer,
         destinations_layer,
         measurement_type,
@@ -115,7 +115,7 @@ def create_buffers(
     buffer_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.create_buffers(
+    return gis._tools.featureanalysis.create_buffers(
         input_layer,
         distances,
         field,
@@ -170,7 +170,7 @@ def create_drive_time_areas(
     drive_time_areas_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.create_drive_time_areas(
+    return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
         break_values,
         break_units,
@@ -232,7 +232,7 @@ def find_nearest(
        "connecting_lines_layer" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.find_nearest(
+    return gis._tools.featureanalysis.find_nearest(
         analysis_layer,
         near_layer,
         measurement_type,
@@ -311,7 +311,7 @@ def plan_routes(
        "unassigned_stops_layer" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.plan_routes(
+    return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,
         max_stops_per_route,

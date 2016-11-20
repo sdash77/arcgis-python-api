@@ -65,7 +65,7 @@ def calculate_density(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.calculate_density(
+    return gis._tools.featureanalysis.calculate_density(
         input_layer,
         field,
         cell_size,
@@ -124,7 +124,7 @@ def find_hot_spots(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.find_hot_spots(
+    return gis._tools.featureanalysis.find_hot_spots(
         gis,
         analysis_layer,
         analysis_field,
@@ -197,7 +197,7 @@ def interpolate_points(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.interpolate_points(
+    return gis._tools.featureanalysis.interpolate_points(
         input_layer,
         field,
         interpolate_option,

@@ -56,7 +56,7 @@ def enrich_layer(input_layer,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.enrich_layer(gis,
+    return gis._tools.featureanalysis.enrich_layer(gis,
                  input_layer,
                  data_collections,
                  analysis_variables,

@@ -56,7 +56,7 @@ def aggregate_points(gis,
        "group_summary" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.aggregate_points(
+    return gis._tools.featureanalysis.aggregate_points(
                      point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points,
@@ -153,7 +153,7 @@ def summarize_nearby(gis,
        "group_by_summary" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.summarize_nearby(
+    return gis._tools.featureanalysis.summarize_nearby(
                      sum_nearby_layer,
                      summary_layer,
                      near_type,
@@ -231,7 +231,7 @@ def summarize_within(gis,
        "group_by_summary" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.summarize_within(
+    return gis._tools.featureanalysis.summarize_within(
                      sum_within_layer,
                      summary_layer,
                      sum_shape,

@@ -40,7 +40,7 @@ def dissolve_boundaries(gis,
     dissolved_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.dissolve_boundaries(
+    return gis._tools.featureanalysis.dissolve_boundaries(
         input_layer,
         dissolve_fields,
         summary_fields,
@@ -81,7 +81,7 @@ def extract_data(gis,
     content_id : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.extract_data(
+    return gis._tools.featureanalysis.extract_data(
         input_layers,
         extent,
         clip,
@@ -121,7 +121,7 @@ def merge_layers(gis,
     merged_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.merge_layers(
+    return gis._tools.featureanalysis.merge_layers(
         input_layer,
         merge_layer,
         merging_attributes,
@@ -169,7 +169,7 @@ def overlay_layers(gis,
     output_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.overlay_layers(
+    return gis._tools.featureanalysis.overlay_layers(
         input_layer,
         overlay_layer,
         overlay_type,

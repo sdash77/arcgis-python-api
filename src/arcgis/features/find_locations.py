@@ -48,7 +48,7 @@ def find_existing_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.find_existing_locations(
+    return gis._tools.featureanalysis.find_existing_locations(
         input_layers,
         expressions,
         output_name,
@@ -94,7 +94,7 @@ def derive_new_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.derive_new_locations(
+    return gis._tools.featureanalysis.derive_new_locations(
         input_layers,
         expressions,
         output_name,
@@ -137,7 +137,7 @@ def find_similar_locations(
        "process_info" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.find_similar_locations(
+    return gis._tools.featureanalysis.find_similar_locations(
         input_layer,
         search_layer,
         analysis_fields,
@@ -204,7 +204,7 @@ def create_viewshed(
     viewshed_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.create_viewshed(
+    return gis._tools.featureanalysis.create_viewshed(
         gis,
         input_layer,
         dem_resolution,
@@ -258,7 +258,7 @@ def create_watersheds(
        "watershed_layer" : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.create_watersheds(
+    return gis._tools.featureanalysis.create_watersheds(
         input_layer,
         search_distance,
         search_units,
@@ -313,7 +313,7 @@ def trace_downstream(
     trace_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools._analysis.trace_downstream(
+    return gis._tools.featureanalysis.trace_downstream(
         input_layer,
         split_distance,
         split_units,
