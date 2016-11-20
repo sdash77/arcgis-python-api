@@ -330,17 +330,17 @@ class _AsyncService(_GISService):
                 input_param =  {"url": input_layer.layers[0].url }
             elif input_layer.type.lower() == 'feature collection':
                 fcdict = input_layer.get_data()
-                fc = FeatureCollection(fcdict['layers'][0])
+                fc = arcgis.features.FeatureCollection(fcdict['layers'][0])
                 input_param =  fc.layer
             else:
                 raise TypeError("item type must be feature service or feature collection")
 
-        elif isinstance(input_layer, arcgis.tools.FeatureService):
+        elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
             input_layer_url = input_layer.layers[0].url #["url"]
             input_param =  {"url": input_layer_url }
-        elif isinstance(input_layer, FeatureCollection):
+        elif isinstance(input_layer, arcgis.features.FeatureCollection):
             input_param =  input_layer.properties
-        elif isinstance(input_layer, Layer):
+        elif isinstance(input_layer, arcgis.gis.Layer):
             input_layer_url = input_layer.url
             input_param =  {"url": input_layer_url }
         elif isinstance(input_layer, tuple): # geocoding location, convert to point featureset
@@ -495,9 +495,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            aggregated_layer = FeatureCollection(job_values['aggregatedLayer'])
+            aggregated_layer = arcgis.features.FeatureCollection(job_values['aggregatedLayer'])
 
-            group_summary = FeatureCollection(job_values['groupSummary'])
+            group_summary = arcgis.features.FeatureCollection(job_values['groupSummary'])
             return { "aggregated_layer":aggregated_layer, "group_summary":group_summary, }
 
 
@@ -566,7 +566,7 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            hot_spots_result_layer = FeatureCollection(job_values['hotSpotsResultLayer'])
+            hot_spots_result_layer = arcgis.features.FeatureCollection(job_values['hotSpotsResultLayer'])
 
             process_info = job_values['processInfo']
             return { "hot_spots_result_layer":hot_spots_result_layer, "process_info":process_info, }
@@ -649,7 +649,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['bufferLayer'])
+            return arcgis.features.FeatureCollection(job_values['bufferLayer'])
 
 
     def create_drive_time_areas(self,
@@ -724,7 +724,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['driveTimeAreasLayer'])
+            return arcgis.features.FeatureCollection(job_values['driveTimeAreasLayer'])
 
 
     def dissolve_boundaries(self,
@@ -779,7 +779,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['dissolvedLayer'])
+            return arcgis.features.FeatureCollection(job_values['dissolvedLayer'])
 
 
     def merge_layers(self,
@@ -833,7 +833,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['mergedLayer'])
+            return arcgis.features.FeatureCollection(job_values['mergedLayer'])
 
 
     def summarize_within(self,
@@ -915,9 +915,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            result_layer = FeatureCollection(job_values['resultLayer'])
+            result_layer = arcgis.features.FeatureCollection(job_values['resultLayer'])
 
-            group_by_summary = FeatureCollection(job_values['groupBySummary'])
+            group_by_summary = arcgis.features.FeatureCollection(job_values['groupBySummary'])
             return { "result_layer":result_layer, "group_by_summary":group_by_summary, }
 
 
@@ -993,7 +993,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['enrichedLayer'])
+            return arcgis.features.FeatureCollection(job_values['enrichedLayer'])
 
 
     def overlay_layers(self,
@@ -1062,7 +1062,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['outputLayer'])
+            return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
 
     def extract_data(self,
@@ -1168,7 +1168,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['resultLayer'])
+            return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
 
     def derive_new_locations(self,
@@ -1217,7 +1217,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['resultLayer'])
+            return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
 
     def field_calculator(self,
@@ -1266,7 +1266,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['resultLayer'])
+            return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
 
     def interpolate_points(self,
@@ -1354,11 +1354,11 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            result_layer = FeatureCollection(job_values['resultLayer'])
+            result_layer = arcgis.features.FeatureCollection(job_values['resultLayer'])
 
-            prediction_error = FeatureCollection(job_values['predictionError'])
+            prediction_error = arcgis.features.FeatureCollection(job_values['predictionError'])
 
-            predicted_point_layer = FeatureCollection(job_values['predictedPointLayer'])
+            predicted_point_layer = arcgis.features.FeatureCollection(job_values['predictedPointLayer'])
             return { "result_layer":result_layer, "prediction_error":prediction_error, "predicted_point_layer":predicted_point_layer, }
 
 
@@ -1449,7 +1449,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['resultLayer'])
+            return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
 
     def summarize_nearby(self,
@@ -1560,9 +1560,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            result_layer = FeatureCollection(job_values['resultLayer'])
+            result_layer = arcgis.features.FeatureCollection(job_values['resultLayer'])
 
-            group_by_summary = FeatureCollection(job_values['groupBySummary'])
+            group_by_summary = arcgis.features.FeatureCollection(job_values['groupBySummary'])
             return { "result_layer":result_layer, "group_by_summary":group_by_summary, }
 
 
@@ -1648,7 +1648,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['viewshedLayer'])
+            return arcgis.features.FeatureCollection(job_values['viewshedLayer'])
 
 
     def find_similar_locations(self,
@@ -1714,9 +1714,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            similar_result_layer = FeatureCollection(job_values['similarResultLayer'])
+            similar_result_layer = arcgis.features.FeatureCollection(job_values['similarResultLayer'])
 
-            process_info = FeatureCollection(job_values['processInfo'])
+            process_info = arcgis.features.FeatureCollection(job_values['processInfo'])
             return { "similar_result_layer":similar_result_layer, "process_info":process_info, }
 
 
@@ -1785,9 +1785,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            snap_pour_pts_layer = FeatureCollection(job_values['snapPourPtsLayer'])
+            snap_pour_pts_layer = arcgis.features.FeatureCollection(job_values['snapPourPtsLayer'])
 
-            watershed_layer = FeatureCollection(job_values['watershedLayer'])
+            watershed_layer = arcgis.features.FeatureCollection(job_values['watershedLayer'])
             return { "snap_pour_pts_layer":snap_pour_pts_layer, "watershed_layer":watershed_layer, }
 
 
@@ -1869,9 +1869,9 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            nearest_layer = FeatureCollection(job_values['nearestLayer'])
+            nearest_layer = arcgis.features.FeatureCollection(job_values['nearestLayer'])
 
-            connecting_lines_layer = FeatureCollection(job_values['connectingLinesLayer'])
+            connecting_lines_layer = arcgis.features.FeatureCollection(job_values['connectingLinesLayer'])
             return { "nearest_layer":nearest_layer, "connecting_lines_layer":connecting_lines_layer, }
 
 
@@ -1972,11 +1972,11 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            routes_layer = FeatureCollection(job_values['routesLayer'])
+            routes_layer = arcgis.features.FeatureCollection(job_values['routesLayer'])
 
-            assigned_stops_layer = FeatureCollection(job_values['assignedStopsLayer'])
+            assigned_stops_layer = arcgis.features.FeatureCollection(job_values['assignedStopsLayer'])
 
-            unassigned_stops_layer = FeatureCollection(job_values['unassignedStopsLayer'])
+            unassigned_stops_layer = arcgis.features.FeatureCollection(job_values['unassignedStopsLayer'])
             return { "routes_layer":routes_layer, "assigned_stops_layer":assigned_stops_layer, "unassigned_stops_layer":unassigned_stops_layer, }
 
 
@@ -2057,7 +2057,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return item
         else:
             # Feature Collection
-            return FeatureCollection(job_values['traceLayer'])
+            return arcgis.features.FeatureCollection(job_values['traceLayer'])
 
 
     def connect_origins_to_destinations(self,
@@ -2134,11 +2134,11 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            routes_layer = FeatureCollection(job_values['routesLayer'])
+            routes_layer = arcgis.features.FeatureCollection(job_values['routesLayer'])
 
-            unassigned_origins_layer = FeatureCollection(job_values['unassignedOriginsLayer'])
+            unassigned_origins_layer = arcgis.features.FeatureCollection(job_values['unassignedOriginsLayer'])
 
-            unassigned_destinations_layer = FeatureCollection(job_values['unassignedDestinationsLayer'])
+            unassigned_destinations_layer = arcgis.features.FeatureCollection(job_values['unassignedDestinationsLayer'])
             return { "routes_layer":routes_layer, "unassigned_origins_layer":unassigned_origins_layer, "unassigned_destinations_layer":unassigned_destinations_layer, }
 
 
@@ -3155,7 +3155,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def describe_dataset(self,
@@ -3219,7 +3219,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output_json'])
+            return arcgis.features.FeatureCollection(job_values['output_json'])
 
 
     def join_features(self,
@@ -3352,7 +3352,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def create_buffers(self,
@@ -3466,7 +3466,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def calculate_density(self,
@@ -3600,7 +3600,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def reconstruct_tracks(self,
@@ -3703,7 +3703,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def create_space_time_cube(self,
@@ -3809,7 +3809,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['outputCube'])
+            return arcgis.features.FeatureCollection(job_values['outputCube'])
 
 
     def create_panel_data(self,
@@ -3926,7 +3926,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['out_features'])
+            return arcgis.features.FeatureCollection(job_values['out_features'])
 
 
     def generate_manifest(self,
@@ -3995,7 +3995,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['manifest'])
+            return arcgis.features.FeatureCollection(job_values['manifest'])
 
 
     def create_sample(self,
@@ -4063,7 +4063,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['outputLayer'])
+            return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
 
     def copy_to_data_store(self,
@@ -4134,7 +4134,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def summarize_attributes(self,
@@ -4218,7 +4218,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def summarize_within(self,
@@ -4348,7 +4348,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     def find_hot_spots(self,
@@ -4461,7 +4461,7 @@ class _GeoanalyticsTools(_AsyncService):
             return output_service
         else:
             # Feature Collection
-            return FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values['output'])
 
 
     # def find_similar_locations(self):

@@ -108,9 +108,6 @@ class GIS(object):
         The resource manager for GIS users
         """
         return UserManager(self)
-        """
-        The resource manager for GIS users
-        """
 
     @_lazy_property
     def groups(self):
@@ -1549,6 +1546,8 @@ class ContentManager(object):
 
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
+        from .features import FeatureCollection
+
         path = "content/features/analyze"
 
         postdata = {
@@ -3232,7 +3231,12 @@ class Layer(_GISResource):
 
     @property
     def _lyr_dict(self):
-        lyr_dict =  { 'type' : type(self).__name__, 'url' : self.url }
+        url = self.url
+        if self._token is not None:
+            url += '?token=' + self._token
+
+        lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
         if self._token is not None:
             lyr_dict['serviceToken'] = self._token
+
         return lyr_dict

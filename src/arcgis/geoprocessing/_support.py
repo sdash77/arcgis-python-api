@@ -17,6 +17,37 @@ from arcgis._impl.common._utils import _date_handler
 
 _log = logging.getLogger(__name__)
 
+
+def _layer_input(input_layer):
+    input_param = input_layer
+
+    input_layer_url = ""
+    if isinstance(input_layer, arcgis.gis.Item):
+        if 'layers' in input_layer:
+            input_param = input_layer.layers[0]._lyr_dict
+        else:
+            raise TypeError("No layers in input layer Item")
+
+    elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
+        input_param = input_layer.layers[0]._lyr_dict
+
+    elif isinstance(input_layer, arcgis.features.FeatureCollection):
+        input_param = input_layer.properties
+
+    elif isinstance(input_layer, arcgis.gis.Layer):
+        input_param = input_layer._lyr_dict
+
+    elif isinstance(input_layer, dict):
+        input_param = input_layer
+
+    elif isinstance(input_layer, str):
+        input_param = {"url": input_layer}
+
+    else:
+        raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
+
+    return input_param
+
 def _feature_input(input_layer):
     
     input_param = input_layer
@@ -51,6 +82,27 @@ def _feature_input(input_layer):
         raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
 
     return input_param
+
+
+def _analysis_job(gptool, task, params):
+    """ Submits an Analysis job and returns the job URL for monitoring the job
+        status in addition to the json response data for the submitted job."""
+
+    # Unpack the Analysis job parameters as a dictionary and add token and
+    # formatting parameters to the dictionary. The dictionary is used in the
+    # HTTP POST request. Headers are also added as a dictionary to be included
+    # with the POST.
+    #
+    # print("Submitting analysis job...")
+
+    task_url = "{}/{}".format(gptool.url, task)
+    submit_url = "{}/submitJob".format(task_url)
+
+    params["f"] = "json"
+
+    resp = gptool._con.post(submit_url, params, token=gptool._token)
+    # print(resp)
+    return task_url, resp
 
 def _analysis_job_status(gptool, task_url, job_info):
     """ Tracks the status of the submitted Analysis job."""
