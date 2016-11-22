@@ -6,6 +6,5 @@ MapImageLayer and VectorTileLayer
 """
 
 from .types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer
-from arcgis.widgets import MapView
 
 __all__ = ['WebMap', 'WebScene', 'MapImageLayer', 'MapImageLayerManager', 'VectorTileLayer']
