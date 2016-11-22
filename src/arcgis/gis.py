@@ -151,9 +151,6 @@ class GIS(object):
         """
         return PropertyMap(self._get_properties())
 
-    def __exit__(self, typ, value, traceback):
-        self._portal.logout()
-
     def __str__(self):
         return 'GIS @ ' + self._url
 
@@ -167,10 +164,6 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    #def usage(self, startTime, endTime, period, vars, etype, stype, groupby, appId=None):
-    #    """Usage statistics for the GIS"""
-    #    return self._portal.usage(startTime, endTime, period, vars, etype, stype, groupby, appId)
-
     def map(self, location=None, zoomlevel=None):
         """Creates a map widget centered at the location (Address or (lat, long) tuple)
         with the specified zoom-level(integer). If an Address is provided, it is geocoded
@@ -179,7 +172,7 @@ class GIS(object):
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
         """
-        from arcgis.mapping import MapView
+        from arcgis.widgets import MapView
         from arcgis.geocoding import get_geocoders, geocode
 
         if isinstance(location, Item) and location.type == 'Web Map':
