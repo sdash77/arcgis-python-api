@@ -781,7 +781,14 @@ class UserManager(object):
         :return:
             None if the user is not found and returns a user object if the user is found
         """
-        user = self._portal.get_user(username)
+        try:
+            user = self._portal.get_user(username)
+        except RuntimeError as re:
+            if re.args[0].__contains__("User does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
+
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
@@ -1151,7 +1158,14 @@ class GroupManager(object):
         :return:
             None if the group is not found and returns a group object if the group is found
         """
-        group = self._portal.get_group(groupid)
+        try:
+            group = self._portal.get_group(groupid)
+        except RuntimeError as re:
+            if re.args[0].__contains__("Group does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
+
         if group is not None:
             return Group(self._gis, groupid, group)
         return None
