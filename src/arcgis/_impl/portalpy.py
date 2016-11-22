@@ -681,7 +681,7 @@ class Portal(object):
         path = 'content/users/' + owner
         if folder :
             path += '/' + folder
-        path += 'items/' + item_id + '/unshare'
+        path += '/items/' + item_id + '/unshare'
 
         postdata = self._postdata()
         postdata['groups'] = groups
