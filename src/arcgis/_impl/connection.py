@@ -420,6 +420,7 @@ class _ArcGISConnection(object):
                 newtoken = self.generate_token(username, password, expiration)
                 if newtoken:
                     self._token = newtoken
+                    return newtoken
 
             resp = self.post('', { 'f': 'json' }, add_token=False) # probe portal to find auth scheme
                                                   # if basic, digest, NTLM or Kerberos, etc is being used
@@ -464,10 +465,8 @@ class _ArcGISConnection(object):
             
             
     #----------------------------------------------------------------------
-    def relogin(self, expiration=None):
+    def relogin(self, expiration=60):
         """ Re-authenticates with the portal using the same username/password. """
-        if not expiration:
-            expiration = self._expiration
         return self.login(self._username, self._password, expiration)
     #----------------------------------------------------------------------
     def logout(self):
