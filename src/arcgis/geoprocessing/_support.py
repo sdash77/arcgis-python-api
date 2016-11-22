@@ -56,6 +56,8 @@ def _feature_input(input_layer):
     if isinstance(input_layer, arcgis.gis.Item):
         if input_layer.type.lower() == 'feature service':
             input_param =  input_layer.layers[0]._lyr_dict
+        elif input_layer.type.lower() == 'big data file share':
+            input_param =  input_layer.layers[0]._lyr_dict
         elif input_layer.type.lower() == 'feature collection':
             fcdict = input_layer.get_data()
             fc = FeatureCollection(fcdict['layers'][0])
@@ -201,7 +203,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             gp_params[gp_param_name] = param_value
             if py_type == FeatureSet:
                 if webtool:
-                    gp_params[gp_param_name] = _feature_input(param_value)
+                    gp_params[gp_param_name] = _layer_input(param_value)
                     
                 else:
                     if type(param_value) == FeatureSet:
