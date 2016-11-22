@@ -239,14 +239,16 @@ class FeatureSet(object):
         elif isinstance(features, list) and len(features) > 0:
             feature = features[0]
             if isinstance(feature, Feature):
+                pass
                 # features passed in as a list of Feature objects
-                if "attributes" in feature.as_dict:
-                    if "geometry" in feature.as_dict:
-                        features = [Feature(feat.as_dict['geometry'], feat.as_dict['attributes']) for feat in features]
-                    else:
-                        features = [Feature(None, feat.as_dict['attributes']) for feat in features]
-                elif "geometry" in feature.as_dict:
-                    features = [Feature(feat.as_dict['geometry'], None) for feat in features]
+
+                # if "attributes" in feature.as_dict:
+                #     if "geometry" in feature.as_dict:
+                #         features = [Feature(feat.as_dict['geometry'], feat.as_dict['attributes']) for feat in features]
+                #     else:
+                #         features = [Feature(None, feat.as_dict['attributes']) for feat in features]
+                # elif "geometry" in feature.as_dict:
+                #     features = [Feature(feat.as_dict['geometry'], None) for feat in features]
             elif isinstance(feature, dict):
                 # features passed in as a list of dicts
                 if "attributes" in feature:
@@ -416,6 +418,19 @@ class FeatureSet(object):
     def to_dict(self):
         """converts the object to Python dictionary"""
         return self.value
+
+    @property
+    def df(self):
+        """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
+        try:
+            from pandas.io.json import json_normalize
+
+            df = json_normalize(self.value['features'])
+            df.columns = df.columns.str.replace('attributes.', '')
+            df.set_index([self._object_id_field_name], inplace=True)
+            return df
+        except ImportError:
+            raise ImportError("pandas not found, please install it")
 
     # ----------------------------------------------------------------------
     def __iter__(self):

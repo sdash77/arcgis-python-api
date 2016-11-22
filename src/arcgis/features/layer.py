@@ -3,7 +3,7 @@ Feature Layers and Tables provide the primary interface for working with feature
 
 Users create, import, export, analyze, edit, and visualize features, i.e. “entities in space” as feature layers.
 
-A FeatureDataset is a collection of feature layers and tables, with the associated relationships among the entities.
+A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
 import json
 import os
@@ -13,7 +13,6 @@ import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._spatial import scratchGDB, scratchFolder, json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
 
 from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
@@ -155,14 +154,12 @@ class FeatureLayer(Layer):
               return_geometry=True,
               return_count_only=False,
               return_ids_only=False,
-              return_feature_class=False,
               return_distinct_values=False,
               return_extent_only=False,
               group_by_fields_for_statistics=None,
               statistic_filter=None,
               result_offset=None,
               result_record_count=None,
-              out_fc=None,
               object_ids=None,
               distance=None,
               units=None,
@@ -177,8 +174,6 @@ class FeatureLayer(Layer):
               multipatch_option=None,
               quanitization_parameters=None,
               return_centroid=False,
-              as_obj=False,
-              as_dict=False,
               **kwargs):
         """ queries a feature service based on a sql statement
             Inputs:
@@ -291,27 +286,14 @@ class FeatureLayer(Layer):
                                  associated with each feature returned. If
                                  true, the result includes the geometry
                                  centroid. The default is false.
-                as_obj - If true, the query will return the results as a
-                         collections.mapping object that provides attribute-style access.
-                         This object can be converted to a dict using dict(obj)
-                          The default is False.
-                as_dict - If true, the query will return the results as a dict.
-                          The default is False
-                returnFeatureClass - If true and arcpy is installed, the
-                                     script will attempt to save the result
-                                     of the query to a feature class.
-                out_fc - only valid if returnFeatureClass is set to True.
-                         Output location of query. If out_fc is set to None,
-                         then the feature class will be saved to the scratch
-                         File Geodatabase with a random name.
                kwargs - optional parameters that can be passed to the Query
                  function.  This will allow users to pass additional
                  parameters not explicitly implemented on the function. A
                  complete list of functions available is documented on the
                  Query REST API.
             Output:
-               A list of Feature Objects (default) or a path to the output featureclass if
-               returnFeatureClass is set to True.
+               A FeatureSet containing the features matching the query
+               unless another return type is specified, such as return
          """
         url = self._url + "/query"
         params = {"f": "json"}
@@ -383,31 +365,11 @@ class FeatureLayer(Layer):
 
         if return_count_only:
             return result['count']
-        elif as_obj:
-            return PropertyMap(result)
-        elif return_ids_only or as_dict:
+        elif return_ids_only:
             return result
-        elif return_feature_class and \
-                not return_count_only and \
-                not return_ids_only:
-            uid = _utils.create_uid()
-            if out_fc is None:
-                out_fc = os.path.join(scratchGDB(),
-                                      "a{fid}".format(fid=uid))
-            text = json.dumps(result)
-            temp = scratchFolder() + os.sep + uid + ".json"
-            with open(temp, 'wb') as writer:
-                if six.PY3:
-                    text = bytes(text, 'UTF-8')
-                writer.write(text)
-                writer.flush()
-                del writer
-            feat_cls = json_to_featureclass(json_file=temp,
-                                            out_fc=out_fc)
-            os.remove(temp)
-            return feat_cls
         else:
-            return result['features']
+            return FeatureSet.from_dict(result)
+            #['features']
             # df = json_normalize(result['features'])
             # df.columns = df.columns.str.replace('attributes.', '')
             # return df
@@ -760,7 +722,7 @@ class FeatureLayerCollection(_GISResource):
               return_m=False,
               out_sr=None):
         """
-           The Query operation is performed on a feature service resource
+           queries the feature layer collection
         """
         qurl = self._url + "/query"
         params = {"f": "json",
@@ -808,7 +770,7 @@ class FeatureLayerCollection(_GISResource):
             # df.columns = df.columns.str.replace('attributes.', '')
             # return df
         else:
-            return results
+            return FeatureSet.from_dict(results)
 
     # ----------------------------------------------------------------------
     def query_related_records(self,
