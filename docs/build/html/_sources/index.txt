@@ -15,15 +15,16 @@ Contents:
    arcgis.gis
    arcgis.env
    arcgis.features.toc
-   arcgis.raster
-   arcgis.network
-   arcgis.schematics
-   arcgis.geoanalytics
+   arcgis.raster.toc
+   arcgis.network.toc
+   arcgis.geoanalytics.toc
    arcgis.geocoding
    arcgis.geometry
    arcgis.geoprocessing
-   arcgis.realtime
    arcgis.mapping
+   arcgis.realtime
+   arcgis.schematics
+   arcgis.widgets
    
 
 Indices and tables

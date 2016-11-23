@@ -12,7 +12,7 @@ from arcgis.gis import GIS
 from arcgis.features import FeatureSet, FeatureCollection
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing.tool import _camelCase_to_underscore
+from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
 
 _log = logging.getLogger(__name__)

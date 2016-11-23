@@ -8,4 +8,4 @@ batch results for a set of addresses, as well as for reverse geocoding,
 i.e. determining the address at a particular x/y location.
 """
 
-from .functions import *
+from ._functions import *

@@ -1,10 +1,6 @@
 import logging as _logging
 import arcgis
-from datetime import datetime
-from arcgis.features import FeatureSet
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
+
 
 _log = _logging.getLogger(__name__)
 
@@ -14,7 +10,7 @@ _use_async = False
 def export_map(web_map_as_json: str = None,
                format: str = """PDF""",
                layout_template: str = """MAP_ONLY""",
-               gis=None) -> DataFile:
+               gis=None):
     """
 
 
@@ -43,6 +39,10 @@ Returns:
 
 See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/ExportWebMapTask.htm for additional help.
     """
+
+    from arcgis.geoprocessing import DataFile
+    from arcgis.geoprocessing._support import _execute_gp_tool
+
     kwargs = locals()
 
     param_db = {
@@ -60,7 +60,7 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
 
     url = gis.properties.helperServices.printTask.url[:-len('/Export%20Web%20Map%20Task')]
 
-    return _execute_gp_tool(gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, _url)
+    return _execute_gp_tool(gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url)
 
 
 def get_layout_templates(gis=None) -> str:
@@ -79,6 +79,9 @@ Returns:
 
 See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
     """
+    from arcgis.geoprocessing import DataFile
+    from arcgis.geoprocessing._support import _execute_gp_tool
+
     kwargs = locals()
 
     param_db = {

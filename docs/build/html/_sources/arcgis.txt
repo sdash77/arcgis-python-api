@@ -37,6 +37,9 @@ arcgis.geoprocessing module
 arcgis.mapping module
 -----------------
    
+arcgis.widgets module
+-----------------
+   
    
 Module contents
 ---------------

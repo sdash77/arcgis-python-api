@@ -17,23 +17,16 @@ WebScene
     :undoc-members:
     :show-inheritance:
 
-MapView
-------------------
-.. autoclass:: arcgis.mapping.MapView
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-DynamicMapLayer
+MapImageLayer
 -----------------
-.. autoclass:: arcgis.mapping.DynamicMapLayer
+.. autoclass:: arcgis.mapping.MapImageLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
-DynamicMapLayerManager
+MapImageLayerManager
 -------------------
-.. autoclass:: arcgis.mapping.DynamicMapLayerManager
+.. autoclass:: arcgis.mapping.MapImageLayerManager
     :members:
     :undoc-members:
     :show-inheritance:
@@ -45,3 +38,10 @@ VectorTileLayer
     :undoc-members:
     :show-inheritance:
 
+export_map
+------------
+.. automethod:: arcgis.mapping.export_map
+    
+get_layout_templates
+-----------
+.. automethod:: arcgis.mapping.get_layout_templates

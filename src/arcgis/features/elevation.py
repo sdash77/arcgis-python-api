@@ -1,3 +1,7 @@
+"""
+These functions help you use elevation analysis
+"""
+
 import logging as _logging
 import arcgis
 from datetime import datetime

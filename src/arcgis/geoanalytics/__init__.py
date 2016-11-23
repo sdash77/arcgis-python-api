@@ -33,5 +33,3 @@ def is_supported(gis=None):
     else:
         return False
 
-
-

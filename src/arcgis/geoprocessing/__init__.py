@@ -4,5 +4,6 @@ toolboxes as native Python modules. You can call the functions available in the 
 The module also provides simple types that can be used as parameters for these tools along with native Python types.
 """
 
-from .tool import LinearUnit, RasterData, DataFile, import_toolbox
+from arcgis.geoprocessing._types import LinearUnit, DataFile, RasterData
+from arcgis.geoprocessing._tool import import_toolbox
 
