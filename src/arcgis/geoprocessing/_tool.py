@@ -360,9 +360,7 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     """
     Imports geoprocessing toolboxes as native Python modules.
     You can call the functions available in the imported module to invoke these tools.
-    :param url: location of toolbox, can be a geoprocessing server endpoint or Item of type: Geoprocessing Service
-    :param gis: the GIS used for running the tool
-    :return: module with functions for the various tools in the toolbox
+
 
         ================  ========================================================
         **Argument**      **Description**
@@ -375,6 +373,9 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
         ----------------  --------------------------------------------------------
         verbose           optional bool, set to True to print the generated module
         ================  ========================================================
+
+    Returns module with functions for the various tools in the toolbox
+
     """
     tbx = None
     url = url_or_item
