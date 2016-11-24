@@ -105,6 +105,9 @@ class MapView(widgets.DOMWidget):
             shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
         elif isinstance(shape, tuple):  # (lat, long) pair
             shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
+        elif isinstance(shape, dict) and 'location' in shape: # geocoded location
+            shape = {'x': shape['location']['x'], 'y': shape['location']['y'],
+                     "spatialReference": {"wkid": 4326}, 'type': 'point'}
 
         if isinstance(shape, FeatureSet):
             fset = shape
