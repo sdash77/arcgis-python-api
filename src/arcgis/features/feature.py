@@ -424,10 +424,16 @@ class FeatureSet(object):
         """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
         try:
             from pandas.io.json import json_normalize
-
+            #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
             df = json_normalize(self.value['features'])
             df.columns = df.columns.str.replace('attributes.', '')
-            df.set_index([self._object_id_field_name], inplace=True)
+            if self._object_id_field_name is not None:
+                df.set_index([self._object_id_field_name], inplace=True)
+            else:
+                if 'OBJECTID' in df.columns:
+                    df.set_index(['OBJECTID'], inplace=True)
+                elif 'FID' in df.columns:
+                    df.set_index(['FID'], inplace=True)
             return df
         except ImportError:
             raise ImportError("pandas not found, please install it")
@@ -676,14 +682,11 @@ class FeatureCollection(Layer):
 
     def query(self):
         """
-        Returns the data in this feature collection. Filtering by where clause is not supported for feature collections
+        Returns the data in this feature collection as a FeatureSet.
+        Filtering by where clause is not supported for feature collections
         """
         if 'layers' in self.properties:
-            # df = json_normalize(self.properties['layers'][0]['featureSet']['features'])
-            return self.properties['layers'][0]['featureSet']['features']
+            return FeatureSet.from_dict(self.properties['layers'][0]['featureSet'])
         else:
-            return self.properties['featureSet']['features']
-            # df = json_normalize(self.properties['featureSet']['features'])
+            return FeatureSet.from_dict(self.properties['featureSet'])
 
-            # df.columns = df.columns.str.replace('attributes.', '')
-            # return df
