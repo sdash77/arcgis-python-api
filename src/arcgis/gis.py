@@ -196,6 +196,15 @@ class GIS(object):
             # Center the map at the location
             elif isinstance(location, (tuple, list)):
                 mapwidget.center = location
+
+            elif isinstance(location, dict): # geocode result
+                if 'extent' in location and zoomlevel is None:
+                    mapwidget.extent = location['extent']
+                elif 'location' in location:
+                    mapwidget.center = location['y'], location['x']
+                    if zoomlevel is not None:
+                        mapwidget.zoom = zoomlevel
+
             elif location is not None:
                 print("location must be an address(string) or (lat, long) pair as a tuple")
 
