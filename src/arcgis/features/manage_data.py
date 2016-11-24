@@ -9,12 +9,13 @@ maps and creating a single map containing all the information found in the stack
 """
 import arcgis as _arcgis
 
-def dissolve_boundaries(gis,
+def dissolve_boundaries(
         input_layer,
         dissolve_fields=[],
         summary_fields=[],
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Dissolve features based on specified fields.
 
@@ -48,13 +49,14 @@ def dissolve_boundaries(gis,
         context)
 
 
-def extract_data(gis,
+def extract_data(
         input_layers,
         extent=None,
         clip=False,
         data_format=None,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Select and download data for a specified area of interest. Layers that you select will be added to a zip file or
     layer package.
@@ -90,12 +92,13 @@ def extract_data(gis,
         context)
 
 
-def merge_layers(gis,
+def merge_layers(
         input_layer,
         merge_layer,
         merging_attributes=[],
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Combines two inputs of the same feature data type into a new output.
 
@@ -129,7 +132,7 @@ def merge_layers(gis,
         context)
 
 
-def overlay_layers(gis,
+def overlay_layers(
         input_layer,
         overlay_layer,
         overlay_type="Intersect",
@@ -137,7 +140,8 @@ def overlay_layers(gis,
         output_type="Input",
         tolerance=None,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
 

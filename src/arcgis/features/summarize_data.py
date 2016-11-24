@@ -7,8 +7,9 @@ summarize_nearby calculates statistics for features and their attributes that ar
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
 import arcgis as _arcgis
+from arcgis._impl.common._utils import _date_handler
 
-def aggregate_points(gis,
+def aggregate_points(
                      point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points=True,
@@ -17,7 +18,8 @@ def aggregate_points(gis,
                      minority_majority=False,
                      percent_points=False,
                      output_name=None,
-                     context=None):
+                     context=None,
+                     gis=None):
     """
     Aggregate points task allows you to aggregate or count the total number of points that are distributed within
     specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation
@@ -69,8 +71,7 @@ def aggregate_points(gis,
 
 
 
-def summarize_nearby(gis,
-                     sum_nearby_layer,
+def summarize_nearby(sum_nearby_layer,
                      summary_layer,
                      near_type="StraightLine",
                      distances=[],
@@ -85,7 +86,8 @@ def summarize_nearby(gis,
                      minority_majority=False,
                      percent_shape=False,
                      output_name=None,
-                     context=None):
+                     context=None,
+                     gis=None):
     """
     The SummarizeNearby task finds features that are within a specified distance of features in the input layer.
     Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
@@ -107,7 +109,7 @@ def summarize_nearby(gis,
         An array of double values that defines the search distance for creating areas mentioned above
     units : Optional string
         The linear unit for distances parameter above. Eg. Miles, Kilometers, Minutes Seconds etc
-    time_of_day : Optional datetime.date
+    time_of_day : Optional datetime.datetime
         For timeOfDay, set the time and day according to the number of milliseconds elapsed since the Unix epoc
         (January 1, 1970 UTC). When specified and if relevant for the nearType parameter, the traffic conditions during
         the time of the day will be considered.
@@ -159,7 +161,7 @@ def summarize_nearby(gis,
                      near_type,
                      distances,
                      units,
-                     time_of_day,
+                     _date_handler(time_of_day),
                      time_zone_for_time_of_day,
                      return_boundaries,
                      sum_shape,
@@ -172,8 +174,7 @@ def summarize_nearby(gis,
                      context)
 
 
-def summarize_within(gis,
-                     sum_within_layer,
+def summarize_within(sum_within_layer,
                      summary_layer,
                      sum_shape=True,
                      shape_units=None,
@@ -182,7 +183,8 @@ def summarize_within(gis,
                      minority_majority=False,
                      percent_shape=False,
                      output_name=None,
-                     context=None):
+                     context=None,
+                     gis=None):
     """
     The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or
     portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer
