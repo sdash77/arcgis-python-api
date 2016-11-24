@@ -474,6 +474,8 @@ class _AsyncResource(_GISResource):
                     if num > num_messages:
                         for index in range(num_messages, num):
                             msg = messages[index]
+                            if arcgis.env.verbose:
+                                print(msg['description'])
                             if msg['type'] == 'esriJobMessageTypeInformative':
                                 _log.info(msg['description'])
                             elif msg['type'] == 'esriJobMessageTypeWarning':

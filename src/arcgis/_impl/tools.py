@@ -11,18 +11,21 @@ from __future__ import print_function
 import json
 import logging
 import os
+import sys
 import random
 import string
 import tempfile
 import time
 from contextlib import contextmanager
 
+import arcgis
 import arcgis.gis
 from arcgis.gis import Item
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
+from arcgis.features import Feature, FeatureSet, FeatureCollection
 
 _log = logging.getLogger(__name__)
 
@@ -42,7 +45,7 @@ class _GISService(object):
         err = None
 
         if gis is None:
-            gis = GIS()
+            gis = arcgis.gis.GIS()
             self._gis = gis
             self._con = gis._con
             self._token = None
@@ -162,10 +165,17 @@ class _AsyncService(_GISService):
                     if num > num_messages:
                         for index in range(num_messages, num):
                             msg = messages[index]
-                            if msg['type'] == 'esriJobMessageTypeInformative':
+                            if arcgis.env.verbose:
                                 print(msg['description'])
+                            if msg['type'] == 'esriJobMessageTypeInformative':
+                                _log.info(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeWarning':
+                                _log.warn(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeError':
+                                _log.error(msg['description'])
+                                print(msg['description'], file=sys.stderr)
                             else:
-                                print(msg['description'])#,file = sys.stderr)
+                                _log.warn(msg['description'])
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
@@ -348,34 +358,24 @@ class _AsyncService(_GISService):
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
         elif isinstance(input_layer, dict): # could add support for geometry one day using geometry -> featureset
-            input_param =  input_layer
-            """
-            res = gis.analysis.trace_downstream({"layerDefinition":
-                {
-                    "geometryType":"esriGeometryPoint",
-                    "fields":[{"alias":"OBJECTID","name":"OBJECTID","type":"esriFieldTypeOID","editable":False},
-                              {"alias":"Title","name":"TITLE","length":50,"type":"esriFieldTypeString","editable":True},
-                              {"alias":"Visible","name":"VISIBLE","type":"esriFieldTypeInteger","editable":True},
-                              {"alias":"Description","name":"DESCRIPTION","length":1073741822,"type":"esriFieldTypeString","editable":True},
-                              {"alias":"Type ID","name":"TYPEID","type":"esriFieldTypeInteger","editable":True}]
-                },
-                "featureSet":{
-                    "features":[
-                        {
-                            "geometry":{
-                                "x":8913583.679975435,
-                                "y":1460497.641278398,
-                                "spatialReference":{"wkid":102100,"latestWkid":3857}
-                            },
-                            "attributes":{"description":"blayer desc","title":"blayer","OBJECTID":0,"VISIBLE":1},
-
-                        }
-                    ],
-                    "geometryType":"esriGeometryPoint"
-                },
-                "nextObjectId":1
-            })
-            """
+            if 'location' in input_layer: # geocoder result
+                geom = arcgis.geometry.Geometry(input_layer['location'])
+                fset = FeatureSet([Feature(geom)])
+                featcoll = {'layerDefinition': {
+                        "geometryType": "esriGeometryPoint",
+                        "objectIdField": "OBJECTID",
+                        "fields": [
+                            {
+                                "alias": "OBJECTID",
+                                "name": "OBJECTID",
+                                "type": "esriFieldTypeOID",
+                                "editable": False
+                            }
+                        ]
+                    }, 'featureSet': fset.to_dict()}
+                input_param = featcoll
+            else:
+                input_param =  input_layer
         elif isinstance(input_layer, str):
             input_layer_url = input_layer
             input_param =  {"url": input_layer_url }

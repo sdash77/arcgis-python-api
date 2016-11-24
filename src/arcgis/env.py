@@ -60,6 +60,13 @@ return_m
 If true, M values will be included in the results if the features have M values.
 Otherwise M values are not returned. The default is False.
 
+verbose
+========
+
+.. py:data:: verbose
+#: If True, messages from geoprocessing tools will be printed to stdout.
+#: In any case, all geoprocessing messages are available through Python logging module.
+
 """
 
 #: The currently active GIS, that is used for analysis functions unless explicitly specified.
@@ -84,10 +91,13 @@ process_spatial_reference = None
 #: The processing extent used by analysis tools
 analysis_extent = None
 
-#: If true, Z values will be included in the geoprocessing results if the features have Z values.
+#: If True, Z values will be included in the geoprocessing results if the features have Z values.
 #: Otherwise Z values are not returned. The default is False.
 return_z = False
 
-#: If true, M values will be included in the results if the features have M values.
+#: If True, M values will be included in the results if the features have M values.
 #: Otherwise M values are not returned. The default is False.
 return_m = False
+
+#: If True, messages from geoprocessing tools will be printed to stdout
+verbose = True

@@ -132,6 +132,8 @@ def _analysis_job_status(gptool, task_url, job_info):
                 if num > num_messages:
                     for index in range(num_messages, num):
                         msg = messages[index]
+                        if arcgis.env.verbose:
+                            print(msg['description'])
                         if msg['type'] == 'esriJobMessageTypeInformative':
                             _log.info(msg['description'])
                         elif msg['type'] == 'esriJobMessageTypeWarning':
@@ -140,7 +142,7 @@ def _analysis_job_status(gptool, task_url, job_info):
                             _log.error(msg['description'])
                             print(msg['description'], file=sys.stderr)
                         else:
-                            _log.warn(msg['description'])  # ,file = sys.stderr)
+                            _log.warn(msg['description'])
                     num_messages = num
 
                 if job_response.get("jobStatus") == "esriJobFailed":
