@@ -25,5 +25,6 @@ from . import enrich_data
 from . import find_locations
 from . import manage_data
 from . import summarize_data
+from . import use_proximity
 
 __all__ = ['Feature', 'FeatureSet', 'FeatureCollection', 'FeatureLayer', 'Table', 'FeatureLayerCollection']
