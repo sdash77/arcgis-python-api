@@ -493,7 +493,7 @@ def geocode(address,
 
     """
     if geocoder is None:
-        geocoder = arcgis.env.active_geocoder
+        geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._geocode(
         address,
         search_extent,
@@ -523,7 +523,7 @@ def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
     """
 
     if geocoder is None:
-        geocoder = arcgis.env.active_geocoder
+        geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._reverse_geocode(location, distance, out_sr, lang_code,
                                      return_intersection,
                                      for_storage)
@@ -585,7 +585,7 @@ def batch_geocode(addresses,
        geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """
     if geocoder is None:
-        geocoder = arcgis.env.active_geocoder
+        geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._batch_geocode(
         addresses,
         source_country,
@@ -658,7 +658,7 @@ def suggest(text,
        geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """
     if geocoder is None:
-        geocoder = arcgis.env.active_geocoder
+        geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._suggest(
         text,
         location,

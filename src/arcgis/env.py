@@ -13,15 +13,6 @@ when calling the functions.
 Creating a new GIS object makes it active unless set_active=False is passed in the GIS constructor.
 
 
-active_geocoder
-===============
-
-.. py:data:: active_geocoder
-The currently active geocoder in the GIS, that is used for geocoding unless explicitly specified
-when calling the functions.
-Creating a new GIS object makes it's first available geocoder as the active geocoder
-unless set_active=False is passed in the GIS constructor.
-
 analysis_extent
 ===============
 
@@ -72,11 +63,6 @@ verbose
 #: The currently active GIS, that is used for analysis functions unless explicitly specified.
 #: Creating a new GIS object makes it active by default unless set_active=False is passed in the GIS constructor.
 active_gis = None
-
-#: The currently active geocoder, that is used for geocoding unless explicitly specified.
-#: Creating a new GIS object makes it's first available geocoder as the active geocoder
-#: unless set_active=False is passed in the GIS constructor.
-active_geocoder = None
 
 #: The spatial reference of the output geometries. If not specified, the output geometries are in the
 #: spatial reference of the input geometries. If process_spatial_reference is specified and out_spatial_reference

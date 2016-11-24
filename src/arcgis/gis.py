@@ -100,7 +100,6 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-            arcgis.env.active_geocoder = self._tools.geocoders[0]
 
     @_lazy_property
     def users(self):
@@ -946,12 +945,12 @@ class Role(object):
     def description(self):
         """Description of the custom role"""
         return self._description
-        self._update_role()
 
     @description.setter
     def description(self, value):
         """Description of the custom role"""
         self._description = value
+        self._update_role()
 
     def _update_role(self):
         """Updates the name or description of this role"""
