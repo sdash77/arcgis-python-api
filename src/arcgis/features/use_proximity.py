@@ -8,9 +8,9 @@ find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
 import arcgis as _arcgis
+from arcgis._impl.common._utils import _date_handler
 
 def connect_origins_to_destinations(
-        gis,
         origins_layer,
         destinations_layer,
         measurement_type="DrivingTime",
@@ -19,7 +19,8 @@ def connect_origins_to_destinations(
         time_of_day=None,
         time_zone_for_time_of_day="GeoLocal",
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Calculates routes between pairs of points.
 
@@ -36,7 +37,7 @@ def connect_origins_to_destinations(
         The field in the origins layer containing the IDs that are used to match an origin with a destination.
     destinations_layer_route_id_field : Optional string
         The field in the destinations layer containing the IDs that are used to match an origin with a destination.
-    time_of_day : Optional datetime.date
+    time_of_day : Optional datetime.datetime
         When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
         calculations based on traffic. WalkingTime and TruckingTime measurementType do not support calculations
         based on traffic.
@@ -64,14 +65,13 @@ def connect_origins_to_destinations(
         measurement_type,
         origins_layer_route_id_field,
         destinations_layer_route_id_field,
-        time_of_day,
+        _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
         context)
 
 
 def create_buffers(
-        gis,
         input_layer,
         distances=[],
         field=None,
@@ -81,7 +81,8 @@ def create_buffers(
         side_type="Full",
         end_type="Round",
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Creates buffer polygon(s) around input features.
 
@@ -129,7 +130,6 @@ def create_buffers(
 
 
 def create_drive_time_areas(
-        gis,
         input_layer,
         break_values=[5, 10, 15],
         break_units="Minutes",
@@ -138,7 +138,8 @@ def create_drive_time_areas(
         time_of_day=None,
         time_zone_for_time_of_day="GeoLocal",
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
 
 
@@ -154,7 +155,7 @@ def create_drive_time_areas(
 
     overlap_policy : Optional string
 
-    time_of_day : Optional datetime.date
+    time_of_day : Optional datetime.datetime
 
     time_zone_for_time_of_day : Optional string
 
@@ -176,14 +177,13 @@ def create_drive_time_areas(
         break_units,
         travel_mode,
         overlap_policy,
-        time_of_day,
+        _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
         context)
 
 
 def find_nearest(
-        gis,
         analysis_layer,
         near_layer,
         measurement_type="StraightLine",
@@ -193,7 +193,8 @@ def find_nearest(
         time_of_day=None,
         time_zone_for_time_of_day="GeoLocal",
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to
     features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer
@@ -213,7 +214,7 @@ def find_nearest(
         Limits the search range to this value
     search_cutoff_units : Optional string
         The units for the value specified as searchCutoff
-    time_of_day : Optional datetime.date
+    time_of_day : Optional datetime.datetime
         When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
         calculations based on traffic.
     time_zone_for_time_of_day : Optional string
@@ -239,14 +240,13 @@ def find_nearest(
         max_count,
         search_cutoff,
         search_cutoff_units,
-        time_of_day,
+        _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
         context)
 
 
 def plan_routes(
-        gis,
         stops_layer,
         route_count,
         max_stops_per_route,
@@ -260,7 +260,8 @@ def plan_routes(
         stop_service_time=0,
         max_route_time=525600,
         output_name=None,
-        context=None):
+        context=None,
+        gis=None):
     """
     You provide a set of stops and the number of vehicles available to visit the stops, and Plan Routes determines how
     to efficiently assign the stops to the vehicles and route the vehicles to the stops.
@@ -277,7 +278,7 @@ def plan_routes(
 
     max_stops_per_route : Required int
 
-    route_start_time : Required datetime.date
+    route_start_time : Required datetime.datetime
 
     start_layer : Required layer (see Feature Input in documentation)
 
@@ -315,7 +316,7 @@ def plan_routes(
         stops_layer,
         route_count,
         max_stops_per_route,
-        route_start_time,
+        _date_handler(route_start_time),
         start_layer,
         start_layer_route_id_field,
         return_to_start,
