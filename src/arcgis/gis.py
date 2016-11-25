@@ -1477,6 +1477,8 @@ class ContentManager(object):
                 query += ' (type:"feature service")'
             elif item_type == "geoprocessing tool":
                 query += ' (type:"geoprocessing service")'
+            elif item_type == "geoprocessing toolbox":
+                query += ' (type:"geoprocessing service")'
             elif item_type == "feature layer collection":
                 query += ' (type:"feature service")'
             elif item_type == "image layer":
@@ -2597,6 +2599,18 @@ class Item(dict):
         icon = self._portal.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
         return icon
 
+    def _ux_item_type(self):
+        item_type= self.type
+        if self.type == 'Geoprocessing Service':
+            item_type = 'Geoprocessing Toolbox'
+        elif self.type.lower() == 'feature service':
+            item_type = 'Feature Layer Collection'
+        elif self.type.lower() == 'map service':
+            item_type = 'Map Image Layer'
+        elif self.type.lower().endswith('service'):
+            item_type = self.type.replace('Service', 'Layer')
+        return item_type
+
     def _repr_html_(self):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
@@ -2623,7 +2637,7 @@ class Item(dict):
                     <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
-                        <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self.type + """ by """ + self.owner + """
+                        <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self._ux_item_type() + """ by """ + self.owner + """
                         <br/>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
                         <br/>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
