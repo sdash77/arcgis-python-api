@@ -150,7 +150,7 @@ class Geocoder(_GISResource):
         if not distance is None:
             params['distance'] = distance
         if not out_sr is None:
-            params['out_sr'] = out_sr
+            params['outSr'] = out_sr
         if not category is None:
             params['category'] = category
         if out_fields is None:
@@ -517,7 +517,19 @@ def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
     closest to the location.
     Input:
 
-       location - a list defined as [X,Y] or a JSON Point
+       location - a list defined as [X,Y] or a Point Geometry object
+
+       distance - allows you to specify a radial distance in meters to search for an address from the specified location.
+                  If no distance value is specified then the value is assumed to be 100 meters.
+
+       out_sr - spatial reference of the x/y coordinates returned.
+
+       lang_code - sets the language in which reverse-geocoded addresses are returned.
+
+       return_intersection - Boolean which specifies whether the service should return the nearest street intersection
+                             or the nearest address to the input location
+
+       for_storage - specifies whether the results of the operation will be persisted
 
        geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
     """

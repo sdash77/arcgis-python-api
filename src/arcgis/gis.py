@@ -200,7 +200,7 @@ class GIS(object):
                 if 'extent' in location and zoomlevel is None:
                     mapwidget.extent = location['extent']
                 elif 'location' in location:
-                    mapwidget.center = location['y'], location['x']
+                    mapwidget.center = location['location']['y'], location['location']['x']
                     if zoomlevel is not None:
                         mapwidget.zoom = zoomlevel
 
