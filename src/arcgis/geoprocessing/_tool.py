@@ -224,6 +224,9 @@ def _generate_param(name_param, param_dval, param_name, param_type):
     return src_code
 
 
+def _strip_html(text):
+    return re.sub("&lt; */? *\w+ */?\ *&gt;", "", text)
+
 def _inspect_tool(taskprops, map_as_result):
     # is map is a result, additional synthetic parameter is added
     spec = []       # [ (param_name, param_dval) ]
@@ -237,11 +240,12 @@ def _inspect_tool(taskprops, map_as_result):
     if map_as_result:
         return_values.append({"name": "result_layer", "display_name": "Result Layer", "type": MapImageLayer})
 
-    helpstring = '\n'
+    helpstring = ' \n\t\n'
     if 'docstring' in taskprops:
-        helpstring += taskprops['docstring']
+        helpstring += _strip_html(taskprops['docstring'])
     if 'description' in taskprops:
-        helpstring += taskprops['description']
+        helpstring += _strip_html(taskprops['description'])
+
     helpstring = helpstring + "\n\nParameters:"
 
     task_params = taskprops['parameters']
@@ -259,7 +263,7 @@ def _inspect_tool(taskprops, map_as_result):
             return_values.append(param_return_values)
 
     # gis=None
-    helpstring += '\n\ngis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
+    helpstring += '\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
 
     if len(return_values) == 1:
         helpstring = helpstring + "\n\nReturns: " # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
@@ -750,10 +754,14 @@ class Toolbox(_AsyncResource):
 
             helpstring = '\n'
             if 'docstring' in taskprops:
-                helpstring = helpstring + ". " + taskprops['docstring']
+                docstring = taskprops['docstring']
+                text_docstring = re.sub("&lt; */? *\w+ */?\ *&gt;", "", docstring)
+                helpstring = helpstring + ". " + text_docstring
 
             if 'description' in taskprops:
-                helpstring += taskprops['description']
+                description = taskprops['description']
+                text_description = re.sub("&lt; */? *\w+ */?\ *&gt;", "", description)
+                helpstring += ' \n \n' + text_description
 
             helpstring = helpstring + "\n\nParameters:"
 
