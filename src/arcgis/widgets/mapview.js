@@ -518,7 +518,7 @@ define('mapview', [
             var that = this;
             if (this.model.get('_addlayer').indexOf("{") > -1) {
 
-                console.log("***addlayer");
+                console.log("***###***addlayer");
 
                 var newlayer = JSON.parse(this.model.get('_addlayer'));
                 console.log(newlayer);
@@ -537,6 +537,138 @@ define('mapview', [
                         "outFields": ["*"]
                     });
 
+                    
+                    
+                    
+                    
+                    
+                    if (newlayer.options != null) {
+                        var lyr_options = JSON.parse(newlayer.options);
+
+                        
+                        
+                        if (lyr_options.opacity != null) {
+                            console.log('***opacity:' + lyr_options.opacity)
+                            layer.setOpacity(lyr_options.opacity);
+                        }
+
+                        if (lyr_options.definition_expression != null) {
+                            console.log("***DEF EXP");
+                            console.log(lyr_options.definition_expression);
+                            layer.setDefinitionExpression(lyr_options.definition_expression);
+                        }
+
+                        if (lyr_options.renderer == "HeatmapRenderer") {
+                            var heatmapRenderer = new HeatmapRenderer();
+                            layer.setRenderer(heatmapRenderer);
+                        }
+                        
+
+                        console.log("ClassedSizeRend0:" + lyr_options.renderer);
+                        console.log("ClassedSizeRend:" + lyr_options.field_name);
+
+                        if (lyr_options.renderer == "HeatmapRenderer") {
+                            var heatmapRenderer = new HeatmapRenderer();
+                            var hmoptions = {};
+
+                            if (lyr_options.field_name != null) {
+                                hmoptions = {
+                                    field: lyr_options.field_name,
+                                };
+                            }
+                            var heatmapRenderer = new HeatmapRenderer(hmoptions);
+
+                            layer.setRenderer(heatmapRenderer);
+                        }
+
+
+                        if (lyr_options.renderer == "ClassedSizeRenderer") {
+                            console.log("ClassedSizeRenderer...");
+                            setTimeout(function () { createClassedSizeRenderer(lyr_options); }, 500);
+                            /*layer.on("load", function () {
+                                console.log("AAA");
+                                 createClassedSizeRenderer(lyr_options.field_name);
+                             });*/
+                        }
+
+                        if (lyr_options.renderer == "ClassedColorRenderer") {
+                            setTimeout(function () { createClassedColorRenderer(lyr_options); }, 500);
+                            /*layer.on("load", function () {
+                                console.log("BBB");
+                                 createClassedColorRenderer(lyr_options.field_name);
+                             });
+                             */
+                        }
+
+                        function createClassedColorRenderer(lyr_options) {
+                            //smart mapping functionality begins
+                            var default_properties = {
+                                layer: layer,
+                                field: lyr_options.field_name,
+                                basemap: that.map.getBasemap(),
+                                classificationMethod: "quantile"
+                            };
+                            
+                            var renderer_properties = Object.assign(default_properties, lyr_options);
+                            
+                            console.log(renderer_properties);
+                            
+                            smartMapping.createClassedColorRenderer(renderer_properties).then(function (response) {
+                                layer.setRenderer(response.renderer);
+                                layer.redraw();
+                                //createLegend(map, layer, field);
+                            });
+                        }
+
+
+                        function createClassedSizeRenderer(lyr_options) {
+                            console.log("ClassedSizeRend2");
+                            //smart mapping functionality begins
+                            var default_properties = {
+                                layer: layer,
+                                field: lyr_options.field_name,
+                                basemap: that.map.getBasemap(),
+                                classificationMethod: "quantile"
+                            };
+                            
+                            var renderer_properties = Object.assign(default_properties, lyr_options);
+                            
+                            console.log(renderer_properties);
+                            
+                            smartMapping.createClassedSizeRenderer(renderer_properties).then(function (response) {
+                                layer.setRenderer(response.renderer);
+                                layer.redraw();
+                                //createLegend(map, layer, field);
+                            });
+                        }
+                        
+
+                        
+                    }
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     if (newlayer.opacity != null) {
                         layer.setOpacity(newlayer.opacity);
                     }
