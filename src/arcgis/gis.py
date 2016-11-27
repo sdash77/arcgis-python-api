@@ -2934,21 +2934,29 @@ class Item(dict):
         import time
         """
         Publishes a hosted service based on an existing source item (this item).
-        Publishers can create feature services as well as tiled map services.
+        Publishers can create feature, tiled map, vector tile and scene services.
+
         Feature services can be created using input files of type csv, shapefile, serviceDefinition, featureCollection, and fileGeodatabase.
         CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
+
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+
+        Vector tile services can be created from vector tile package (*.vtpk) files.
+
+        Scene services can be created from scene layer package (*.spk, *.slpk) files.
+
+        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
+        as well as its packaged data together with the definition of the geo-service to be created.
 
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
-
         """
-
 
         params = {
             "f" : "json"
         }
+        buildInitialCache = False
+
         if self['type'] == 'Service Definition':
             fileType = 'serviceDefinition'
         elif self['type'] == 'Feature Collection':
@@ -2959,6 +2967,12 @@ class Item(dict):
             fileType = 'shapefile'
         elif self['type'] == 'File Geodatabase':
             fileType = 'fileGeodatabase'
+        elif self['type'] == 'Vector Tile Package':
+            fileType = 'vectortilepackage'
+        elif self['type'] == 'Scene Package':
+            fileType = 'scenePackage'
+        elif self['type'] == 'Tile Package':
+            fileType = 'tilePackage'
 
         try:
             folder = self.ownerFolder
@@ -2996,6 +3010,22 @@ class Item(dict):
                 # use csv title for service name, after replacing non-alphanumeric characters with _
                 service_name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters.update({"name": service_name})
+
+            elif fileType == 'vectortilepackage':
+                name = re.sub(r'[\W_]+', '_', self['title'])
+                publish_parameters = {'name': name, 'maxRecordCount':2000}
+                output_type = 'VectorTiles'
+
+            elif fileType == 'scenePackage':
+                name = re.sub(r'[\W_]+', '_', self['title'])
+                publish_parameters = {'name': name, 'maxRecordCount':2000}
+                output_type = 'sceneService'
+
+            elif fileType == 'tilePackage':
+                name = re.sub(r'[\W_]+', '_', self['title'])
+                publish_parameters = {'name': name, 'maxRecordCount':2000}
+                buildInitialCache = True
+
             else:
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
@@ -3024,7 +3054,8 @@ class Item(dict):
             publish_parameters =  res['publishParameters']
             publish_parameters.update(publish_parameters_orig)
 
-        ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite, self.owner, folder)
+        ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite,
+                                        self.owner, folder, buildInitialCache)
 
         try:
             serviceitem_id = ret[0]['serviceItemId']

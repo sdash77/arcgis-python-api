@@ -318,7 +318,8 @@ class Portal(object):
         if resp and resp.get('success'):
             return resp['id']
 
-    def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None, outputType=None, overwrite=False, owner=None, folder=None):
+    def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None,
+                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False):
         """
         Publishes a hosted service based on an existing source item.
         Publishers can create feature services as well as tiled map services.
@@ -347,7 +348,7 @@ class Portal(object):
 
         postdata['overwrite'] = overwrite
 
-        postdata['buildInitialCache'] = False
+        postdata['buildInitialCache'] = buildInitialCache
 
         # Build the files list (tuples)
         files = []
