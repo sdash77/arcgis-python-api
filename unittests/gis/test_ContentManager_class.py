@@ -50,10 +50,6 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
     """
     Test to check if a ContentManager object works with builtin portal
     """
-    # portal_url = ""
-    # portal_username = ""
-    # portal_password = ""
-
     @classmethod
     def setUpClass(cls):
         """

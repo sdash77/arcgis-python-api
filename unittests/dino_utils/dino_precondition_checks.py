@@ -143,3 +143,352 @@ class PortalUtils():
         except Exception as delete_ex:
             print("Exception occurred : ", delete_ex.__str__())
             return (False, "Exception: " + delete_ex.__str__())
+
+    @staticmethod
+    def create_sample_users(gis):
+        """
+        Creates the following users in the portal
+        1. arcgis_portal_api / sharing.1
+        2. publisher1 / sharing.1
+        3. publisher2 / sharing.1
+        4. user1 / sharing.1
+        5. user2 / sharing.1
+        If users are already present, it skips over
+        :param gis: The GIS connection object with admin privileges
+        :return: True on success. False on any failure and prints error
+        """
+        # Create user data
+        user_names = ['arcgis_python_api', 'publisher1', 'publisher2', 'user1', 'user2']
+        user_password = 'sharing.1'
+        last_name = 'dino'
+        role_list = ['org_admin', 'org_publisher', 'org_publisher', 'org_user', 'org_user']
+        email = "amani@esri.com"
+
+        # Check if user is present, else create
+        index = 0
+        return_value = True
+        for user in user_names:
+            try:
+                print("Creating user: " + user, end= " ")
+                user_obj_list = gis.users.get(user)
+                if user_obj_list is None:
+                    created_user = gis.users.create(user, user_password, user, last_name, email, role = role_list[index])
+                    if created_user is not None:
+                        print("Created new user: " + user)
+                    else:
+                        print("Error: cannot create new user: " + user)
+                else:
+                    print(user + " already exists in this portal")
+            except Exception as ex:
+                print("Error running create_sample_users: " + ex.__str__())
+                return_value = False
+            index += 1
+        return return_value
+
+    @staticmethod
+    def create_sample_groups(gis):
+        """
+        Creates the following groups in the portal
+        1. group1
+        2. group2
+        3. group3
+        :param gis: The GIS connection object to the portal
+        :return: True on success. False on any failure and prints error
+        """
+        group_names = ['group1', 'group2', 'group3']
+        tags = 'arcgis_python_api,automation,dino_tests'
+        return_value = True
+
+        for group in group_names:
+            try:
+                print("Creating ", group, end=" ")
+                search_result = gis.groups.search(group, max_groups = 1)
+                if len(search_result) > 0 and search_result[0].title == group:
+                    print(" already exists..")
+                    continue
+                else:
+                    created_group = gis.groups.create(group, tags)
+                    if created_group is not None:
+                        print(" succeeded")
+                    else:
+                        print("  error creating group")
+                        return_value = False
+            except Exception as group_ex:
+                print(" error: " + group_ex.__str__())
+                return_value = False
+        return return_value
+
+    @staticmethod
+    def add_users_to_groups(gis):
+        """
+        Adds known users to known groups
+        :param gis:
+        :return: bool
+        """
+        user_names = ['arcgis_python_api', 'publisher1', 'publisher2', 'user1', 'user2']
+        group_names = ['group1', 'group2', 'group3']
+        return_value = True
+
+        for group in group_names[:2]: #only adding users to group1, group2
+            group_search = gis.groups.search('title : ' + group, max_groups = 1)
+            if group_search is not None and len(group_search) > 0:
+                group_obj = group_search[0]
+
+                for user in user_names:
+                    try:
+                        add_result = group_obj.add_users([user])
+                        print(str(add_result))
+                    except:
+                        return_value = False
+                        continue
+        return return_value
+
+    @staticmethod
+    def create_sample_content_set1(gis, base_path):
+        """
+        Create set 1 content on portal. Use this with publisher 1 and create_sample_content_set2 for publisher2
+        :param gis: GIS connection obj for publisher1
+        :return: True on success. False on any failure and prints error
+        """
+        import pathlib
+        from glob import glob1
+
+        # function to add and publish
+        def add_and_publish(file, gis, item_properties = {}, publish_item = False, folder=None, publish_parameters = {}):
+            # check if such an item exists
+            file_name = pathlib.Path(file).stem #gives file name without extension
+            file_name_wextn = pathlib.Path(file).name
+
+            print("Adding " + file_name_wextn, end= " ")
+            sr = gis.content.search('title:' + file_name, max_items=1)
+            if sr is not None and len(sr) > 0:
+                print(" already exists")
+                return True
+            else:
+                # Add item
+                try:
+                    added_item = gis.content.add(item_properties, file, folder=folder)
+                except Exception as addEx:
+                    print(addEx.__str__())
+                    return False
+                if added_item is not None:
+                    if publish_item:
+                        try:
+                            published_item = added_item.publish()
+                        except Exception as pubEx:
+                            print(pubEx.__str__())
+                            return False
+
+                        if published_item is not None:
+                            print(" published")
+                            return True
+                        else:
+                            print(" added but cannot be published")
+                            return False
+                    else:
+                        print(" added successfully")
+                        return True
+                else:
+                    print(" error adding as item")
+                    return False
+
+        # add and publish csv files
+        print("Adding CSV files")
+        file_path = os.path.join(base_path, "csv")
+        file_list = glob1(file_path, "set1*.csv")
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+        print('-----------------------------------------------------------')
+
+        # add and publish fgdb
+        print("Adding fgdb")
+        file_path = os.path.join(base_path, "fgdb")
+        file_list = glob1(file_path, "set1*.zip")
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+        print('-----------------------------------------------------------')
+
+        # add and publish geojson
+        print("Adding geojson files")
+        file_path = os.path.join(base_path, "geojson")
+        file_list = glob1(file_path, "set1*.json")
+        item_properties = {'type':'GeoJson'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add some image files (jpeg, png etc)
+        print("Adding image files - illustrating how a user would have project files in a folder")
+        file_path = os.path.join(base_path, "images")
+        file_list = glob1(file_path, "set1*.png")
+        item_properties = {'type': 'Image'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False, folder="f1_english")
+        print('-----------------------------------------------------------')
+
+        # Add some KML
+        print("Adding KML files")
+        file_path = os.path.join(base_path, "kml")
+        file_list = glob1(file_path, "set1*.kml")
+        item_properties = {'type': 'KML'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False, folder='f1_english')
+        print('-----------------------------------------------------------')
+
+        # Add some Locators
+        print("Adding Locator files")
+        file_path = os.path.join(base_path, "Locators")
+        file_list = glob1(file_path, "set1*.zip")
+        item_properties = {'type': 'Locator Package'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False, folder='f1_english')
+        print('-----------------------------------------------------------')
+
+        # Add some layer files
+        print("Adding layer files")
+        file_path = os.path.join(base_path, "lyr")
+        file_list = glob1(file_path, "set1*")
+        item_properties = {'type': 'KML'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False, folder='f1_english')
+        print('-----------------------------------------------------------')
+
+        # Add some map documents
+        print("Adding map doc files")
+        file_path = os.path.join(base_path, "mxd")
+        file_list = glob1(file_path, "set1*.mxd")
+        item_properties = {'type': 'Map Document'}
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add some office files
+        print("Adding office files")
+        file_path = os.path.join(base_path, "office")
+        file_list = glob1(file_path, "set1*")
+
+        for file in file_list:
+            extn = os.path.splitext(file)[1]
+            if extn == '.docx':
+                item_properties = {'type': 'Microsoft Word'}
+            elif extn == '.pptx':
+                item_properties = {'type': 'Microsoft Powerpoint'}
+            elif extn == '.pdf':
+                item_properties = {'type': 'PDF'}
+            elif extn == '.xlsx':
+                item_properties = {'type': 'Microsoft Excel'}
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add some packages
+        print("Adding arcgis packages")
+        file_path = os.path.join(base_path, "packages")
+        file_list = glob1(file_path, "set1*")
+
+        for file in file_list:
+            extn = os.path.splitext(file)[1]
+            if extn == '.lpk':
+                item_properties = {'type': 'Layer Package'}
+            elif extn == '.mmpk':
+                item_properties = {'type': 'Mobile Map Package'}
+            elif extn == '.gpk':
+                item_properties = {'type': 'Geoprocessing Package'}
+            elif extn == '.spk' or extn == '.slpk':
+                item_properties = {'type': 'Scene Package'}
+            elif extn == '.spk' or extn == '.tpk':
+                item_properties = {'type': 'Tile Package'}
+            elif extn == '.spk' or extn == '.vtpk':
+                item_properties = {'type': 'Vector Tile Package'}
+            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
+                            publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add some hosted SD files
+        print("Adding SD files")
+        temp_path = os.path.join(base_path, "SDs")
+        file_path = os.path.join(temp_path, "set1")
+        file_list = glob1(file_path, "W*.sd")
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+        print('-----------------------------------------------------------')
+
+        # Add some hosted shape files
+        print("Adding shape files")
+        file_path = os.path.join(base_path, "shp")
+        file_list = glob1(file_path, "set1*.zip")
+        for file in file_list:
+            add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+        print('-----------------------------------------------------------')
+
+    @staticmethod
+    def create_sample_content_set2(gis):
+        """
+        Create set 2 content on portal.
+        :param gis: GIS connection obj for publisher2
+        :return: True on success. False on any failure and prints error
+        """
+        pass
+
+    @staticmethod
+    def create_sample_folders_set1(gis):
+        """
+        Creates the following folders:
+        1. f1_english
+        2. f2_敏感性增加
+        3. f3_Kompatibilität
+        :param gis: The GIS connection object for which these folders need to be created
+        :return: True on success. False on any failure and prints error
+        """
+        # Search if folder already exists
+        new_folder_list = ['f1_english', 'f2_敏感性增加', 'f3_Kompatibilität']
+
+        return_value = True
+        for folder in new_folder_list:
+            print("Creating : " + folder, end= " ")
+            try:
+                create_result = gis.content.create_folder(folder)
+                if create_result is not None:
+                    print("created")
+                else:
+                    print(" error")
+                    return_value = False
+            except Exception as folder_ex:
+                print("error: " + folder_ex.__str__())
+                return_value = False
+                continue
+        return return_value
+
+    @staticmethod
+    def create_sample_folders_set2(gis):
+        """
+        Creates the following folders:
+        1. f1_english
+        2. f2_كامتالتصويلح
+        3. f3_совместимость
+        :param gis:The GIS connection object for which these folders need to be created
+        :return: True on success. False on any failure and prints error
+        """
+        new_folder_list = ['f1_english', 'f2_كامتالتصويلح', 'f3_совместимость']
+
+        return_value = True
+        for folder in new_folder_list:
+            print("Creating : " + folder, end=" ")
+            try:
+                create_result = gis.content.create_folder(folder)
+                if create_result is not None:
+                    print("created")
+                else:
+                    print(" error")
+                    return_value = False
+            except Exception as folder_ex:
+                print("error: " + folder_ex.__str__())
+                return_value = False
+                continue
+        return return_value
