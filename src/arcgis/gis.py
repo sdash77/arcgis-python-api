@@ -194,7 +194,16 @@ class GIS(object):
 
             # Center the map at the location
             elif isinstance(location, (tuple, list)):
-                mapwidget.center = location
+                if all(isinstance(el, list) for el in location):
+                    extent = {
+                        'xmin': location[0][0],
+                        'ymin': location[0][1],
+                        'xmax': location[1][0],
+                        'ymax': location[1][1]
+                    }
+                    mapwidget.extent = extent
+                else:
+                    mapwidget.center = location
 
             elif isinstance(location, dict): # geocode result
                 if 'extent' in location and zoomlevel is None:
@@ -2380,9 +2389,13 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == 'Feature Service':
-                svc = FeatureLayerCollection.fromitem(self)
-                for lyr in svc.layers:
-                    layers.append(lyr)
+                m = re.search(r'\d+$', self.url)
+                if m is not None:  # ends in digit - it's a single layer from a Feature Service
+                    layers.append(FeatureLayer(self.url, self._gis))
+                else:
+                    svc = FeatureLayerCollection.fromitem(self)
+                    for lyr in svc.layers:
+                        layers.append(lyr)
 
             elif self.type == 'Map Service':
                 svc = MapImageLayer.fromitem(self)
