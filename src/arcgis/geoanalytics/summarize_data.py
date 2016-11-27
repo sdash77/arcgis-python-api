@@ -83,13 +83,7 @@ Parameters:
 
    output_name: Output Features Name (str). Optional parameter.
         
-   out_sr : Optional int
-
-   process_sr : Optional int
-
-   out_extent : Optional string
-
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
