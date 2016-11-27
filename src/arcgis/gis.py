@@ -783,7 +783,8 @@ class UserManager(object):
             None if the user is not found and returns a user object if the user is found
         """
         try:
-            user = self._portal.get_user(username)
+            with _DisableLogger():
+                user = self._portal.get_user(username)
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
                 return None
