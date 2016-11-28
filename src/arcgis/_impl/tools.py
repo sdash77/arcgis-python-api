@@ -5804,7 +5804,7 @@ class _Tools(object):
             try:
                 svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
             except:
-                print("This GIS does not support raster analysis")
+                print("This GIS does not support raster analysis.")
                 return None
 
             self._raster_analysis = _RasterAnalysisTools(svcurl, self._gis)
@@ -5821,7 +5821,7 @@ class _Tools(object):
             try:
                 svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
             except:
-                print("This GIS does not support geoanalytics")
+                print("This GIS does not support geoanalytics.")
                 return None
 
             self._geoanalytics = _GeoanalyticsTools(svcurl, self._gis)
@@ -5838,7 +5838,10 @@ class _Tools(object):
             try:
                 svcurl = self._gis.properties['helperServices']['analysis']['url']
             except:
-                print("This GIS does not support spatial analysis")
+                if self._gis._con.token is None:
+                    print("You need to be signed in to use spatial analysis.")
+                else:
+                    print("This GIS does not support spatial analysis.")
                 return None
 
             self._analysis = _FeatureAnalysisTools(svcurl, self._gis)
