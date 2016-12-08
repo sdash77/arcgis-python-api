@@ -110,7 +110,10 @@ class Feature(object):
     def geometry(self):
         """returns the feature geometry"""
         if self._geom is None:
-            self._geom = self._dict['geometry']
+            if 'geometry' in self._dict.keys():
+                self._geom = self._dict['geometry']
+            else:
+                return None
         return self._geom
 
     @geometry.setter
