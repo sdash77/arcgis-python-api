@@ -414,13 +414,12 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password. """
-        
+        newtoken = None
         try:
             if self._is_arcpy: # PRO authentication
                 newtoken = self.generate_token(username, password, expiration)
                 if newtoken:
                     self._token = newtoken
-                    return newtoken
 
             resp = self.post('', { 'f': 'json' }, add_token=False) # probe portal to find auth scheme
                                                   # if basic, digest, NTLM or Kerberos, etc is being used
@@ -445,18 +444,17 @@ class _ArcGISConnection(object):
                 if authhdr is not None:
                     if authhdr.lower().startswith('basic'):
                         self._auth = "BASIC"
-                        return None
                     elif authhdr.lower().startswith('digest'):
                         self._auth = "DIGEST"
-                        return None
                     elif authhdr.lower().startswith('ntlm'):
                         self._auth = "IWA"
-                        return None
                     elif authhdr.lower().startswith('negotiate'):
                         self._auth = "IWA"
-                        return None
                     else:
                         _log.warn('Unsupported authentication scheme: ' + authhdr)
+
+                    return newtoken
+
             else:
                 raise
         except ValueError as ve:
