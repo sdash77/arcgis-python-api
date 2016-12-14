@@ -111,6 +111,8 @@ require.config({
         "text": nbextensionPath + "/requirejs/text"
     },
 
+    urlArgs: "client=gsrs",
+
     // Use RequireJS text plugin instead of dojo/text plugin.
     // Any module that requires dojo/text plugin will use RequireJS
     // text plugin instead.
