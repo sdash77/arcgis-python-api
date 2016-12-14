@@ -2186,6 +2186,7 @@ class User(dict):
             role = role.role_id
         passed = self._portal.update_user_role(self.username, role)
         if passed:
+            self._hydrate()
             self.role = role
         return passed
 
