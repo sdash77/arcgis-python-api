@@ -5,7 +5,7 @@
 
 package:
     name: arcgis
-    version: '0.9'
+    version: '1.0'
 source:
     path: ../../src
 build:
@@ -31,5 +31,5 @@ test:
         - arcgis.gis
 about:
     home: https://developers.arcgis.com/python
-    license: Esri License
-    summary: ArcGIS Python API (Pre-release)
+    license: Esri Master License Agreement (MLA)
+    summary: ArcGIS Python API
