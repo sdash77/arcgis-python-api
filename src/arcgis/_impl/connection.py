@@ -435,8 +435,10 @@ class _ArcGISConnection(object):
                     self._expiration = expiration
                     
                     return newtoken
-            elif self._auth == "PRO":
+
+            elif self._is_arcpy:
                 return newtoken
+
             else:
                 self._auth = "ANON"
 
