@@ -1498,6 +1498,8 @@ class ContentManager(object):
                 query += ' (type:"feature service")'
             elif item_type == "image layer":
                 query += ' (type:"image service")'
+            elif item_type == "imagery layer":
+                query += ' (type:"image service")'
             elif item_type == "layer":
                 query += ' (type:"layer" NOT type:"layer package" NOT type:"Explorer Layer")'
             elif item_type == "feature collection":
