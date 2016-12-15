@@ -1156,6 +1156,10 @@ class GroupManager(object):
         """
         thumbnail = dict.pop("thumbnail", None)
 
+        if 'tags' in dict:
+            if type(dict['tags']) is list:
+                dict['tags'] = ",".join(dict['tags'])
+
         group = self._portal.create_group_from_dict(dict, thumbnail)
         if group is not None:
             return Group(self._gis, group['id'], group)
