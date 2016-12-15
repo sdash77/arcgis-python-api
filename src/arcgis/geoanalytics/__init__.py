@@ -15,7 +15,7 @@ def get_datastores(gis=None):
     import arcgis
     gis = arcgis.env.active_gis if gis is None else gis
     
-    for ds in gis.datastores:
+    for ds in gis._datastores:
         if ds._server['serverFunction'] == 'GeoAnalytics':
             return ds
     

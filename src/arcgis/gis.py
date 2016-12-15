@@ -56,7 +56,7 @@ class GIS(object):
 
     A GIS is representative of ArcGIS Online or an ArcGIS Portal
     site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
-    content, datastores, users and groups
+    content, users and groups
 
     Additionally, the GIS object has properties to query it's state, accessible using the properties attribute.
 
@@ -88,7 +88,7 @@ class GIS(object):
         self._portal = None
         self._con = None
         self._verify_cert = verify_cert
-        self._datastores = None
+        self._datastores_list = None
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
                                        verify_cert=self._verify_cert)
 
@@ -123,14 +123,14 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
-    def datastores(self):
+    def _datastores(self):
         """
         The list of datastores resource managers for sites federated with the GIS. 
         """
-        if self._datastores is not None:
-            return self._datastores
+        if self._datastores_list is not None:
+            return self._datastores_list
 
-        self._datastores = []
+        self._datastores_list = []
         try:
             res = self._portal.con.post("portals/self/servers", {"f": "json"})
 
@@ -138,10 +138,10 @@ class GIS(object):
             admin_url = None
             for server in servers:
                 admin_url = server['adminUrl'] + '/admin'
-                self._datastores.append(DatastoreManager(self, admin_url, server))
+                self._datastores_list.append(DatastoreManager(self, admin_url, server))
         except:
             pass
-        return self._datastores
+        return self._datastores_list
 
     @_lazy_property
     def properties(self):
@@ -401,8 +401,9 @@ class DatastoreManager(object):
     """
     Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
     This class is not created by users directly.
-    An instance of a list of this class, called 'datastores', is available as a property of the GIS object.
-    Users call methods on members of this 'datastores' list to manage the datastores in a site federated with the portal.
+    Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
+    arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
+    Users call methods on this 'datastores' object to manage the datastores in a site federated with the portal.
     """
     def __init__(self, gis, admin_url, server):
         self._gis = gis

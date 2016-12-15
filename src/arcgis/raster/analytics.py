@@ -14,7 +14,7 @@ def get_datastores(gis=None):
     """
     gis = _arcgis.env.active_gis if gis is None else gis
 
-    for ds in gis.datastores:
+    for ds in gis._datastores:
         if ds._server['serverFunction'] == 'RasterAnalytics':
             return ds
 
