@@ -9,7 +9,7 @@ package:
 source:
     path: ../../src
 build:
-    number: '3'
+    number: '1'
 requirements:
     build:
         - python
