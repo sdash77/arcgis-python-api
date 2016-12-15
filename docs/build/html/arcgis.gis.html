@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis module &mdash; arcgis 0.9 documentation</title>
+  <title>arcgis.gis module &mdash; arcgis 1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 0.9 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.0 documentation" href="index.html"/>
         <link rel="next" title="arcgis.env module" href="arcgis.env.html"/>
         <link rel="prev" title="API Reference for the ArcGIS Python API" href="index.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.9
+                1.0
               </div>
             
           
@@ -103,12 +103,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
@@ -380,18 +380,13 @@ is the most important and provides the entry point into the GIS.</p>
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p id="id1">A GIS is representative of ArcGIS Online or an ArcGIS Portal
 site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
-content, datastores, users and groups</p>
+content, users and groups</p>
 <p>Additionally, the GIS object has properties to query it&#8217;s state, accessible using the properties attribute.</p>
 <p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
 as well as the results of your analysis. To create a new map, call the map() method.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.gis.GIS.content" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="arcgis.gis.GIS.datastores">
-<code class="descname">datastores</code><a class="headerlink" href="#arcgis.gis.GIS.datastores" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2213,8 +2208,9 @@ your org</td>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
 This class is not created by users directly.
-An instance of a list of this class, called &#8216;datastores&#8217;, is available as a property of the GIS object.
-Users call methods on members of this &#8216;datastores&#8217; list to manage the datastores in a site federated with the portal.</p>
+Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
+arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
+Users call methods on this &#8216;datastores&#8217; object to manage the datastores in a site federated with the portal.</p>
 <dl class="method">
 <dt id="arcgis.gis.DatastoreManager.add">
 <code class="descname">add</code><span class="sig-paren">(</span><em>name</em>, <em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.DatastoreManager.add" title="Permalink to this definition">¶</a></dt>
@@ -2419,7 +2415,7 @@ GIS if a role_id is not specified
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.9',
+            VERSION:'1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

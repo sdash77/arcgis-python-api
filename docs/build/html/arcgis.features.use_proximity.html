@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features.use_proximity module &mdash; arcgis 0.9 documentation</title>
+  <title>arcgis.features.use_proximity module &mdash; arcgis 1.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 0.9 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.0 documentation" href="index.html"/>
         <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
         <link rel="next" title="arcgis.features.elevation module" href="arcgis.features.elevation.html"/>
         <link rel="prev" title="arcgis.features.summarize_data module" href="arcgis.features.summarize_data.html"/> 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                0.9
+                1.0
               </div>
             
           
@@ -104,12 +104,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.env.html">arcgis.env module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-gis">active_gis</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#active-geocoder">active_geocoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul class="current">
@@ -382,7 +382,7 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 <h2>connect_origins_to_destinations<a class="headerlink" href="#connect-origins-to-destinations" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.connect_origins_to_destinations">
-<code class="descclassname">use_proximity.</code><code class="descname">connect_origins_to_destinations</code><span class="sig-paren">(</span><em>gis</em>, <em>origins_layer</em>, <em>destinations_layer</em>, <em>measurement_type='DrivingTime'</em>, <em>origins_layer_route_id_field=None</em>, <em>destinations_layer_route_id_field=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.connect_origins_to_destinations" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">connect_origins_to_destinations</code><span class="sig-paren">(</span><em>origins_layer</em>, <em>destinations_layer</em>, <em>measurement_type='DrivingTime'</em>, <em>origins_layer_route_id_field=None</em>, <em>destinations_layer_route_id_field=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.connect_origins_to_destinations" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates routes between pairs of points.</p>
 <dl class="docutils">
 <dt>origins_layer</dt>
@@ -397,7 +397,7 @@ travel modes or by measuring straight line distance.</dd>
 <dt>destinations_layer_route_id_field</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The field in the destinations layer containing the IDs that are used to match an origin with a destination.</dd>
 <dt>time_of_day</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional datetime.date</span><dd>When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
+ <span class="classifier-delimiter">:</span> <span class="classifier">Optional datetime.datetime</span><dd>When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
 calculations based on traffic. WalkingTime and TruckingTime measurementType do not support calculations
 based on traffic.</dd>
 <dt>time_zone_for_time_of_day</dt>
@@ -423,7 +423,7 @@ location of the origins.</dd>
 <h2>create_buffers<a class="headerlink" href="#create-buffers" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.create_buffers">
-<code class="descclassname">use_proximity.</code><code class="descname">create_buffers</code><span class="sig-paren">(</span><em>gis</em>, <em>input_layer</em>, <em>distances=[]</em>, <em>field=None</em>, <em>units='Meters'</em>, <em>dissolve_type='None'</em>, <em>ring_type='Disks'</em>, <em>side_type='Full'</em>, <em>end_type='Round'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_buffers" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">create_buffers</code><span class="sig-paren">(</span><em>input_layer</em>, <em>distances=[]</em>, <em>field=None</em>, <em>units='Meters'</em>, <em>dissolve_type='None'</em>, <em>ring_type='Disks'</em>, <em>side_type='Full'</em>, <em>end_type='Round'</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_buffers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates buffer polygon(s) around input features.</p>
 <dl class="docutils">
 <dt>input_layer</dt>
@@ -457,13 +457,13 @@ location of the origins.</dd>
 <h2>create_drive_time_areas<a class="headerlink" href="#create-drive-time-areas" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.create_drive_time_areas">
-<code class="descclassname">use_proximity.</code><code class="descname">create_drive_time_areas</code><span class="sig-paren">(</span><em>gis, input_layer, break_values=[5, 10, 15], break_units='Minutes', travel_mode='Driving', overlap_policy='Overlap', time_of_day=None, time_zone_for_time_of_day='GeoLocal', output_name=None, context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_drive_time_areas" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">create_drive_time_areas</code><span class="sig-paren">(</span><em>input_layer, break_values=[5, 10, 15], break_units='Minutes', travel_mode='Driving', overlap_policy='Overlap', time_of_day=None, time_zone_for_time_of_day='GeoLocal', output_name=None, context=None, gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.create_drive_time_areas" title="Permalink to this definition">¶</a></dt>
 <dd><p>input_layer : Required layer (see Feature Input in documentation)</p>
 <p>break_values : Optional list of floats</p>
 <p>break_units : Optional string</p>
 <p>travel_mode : Optional string</p>
 <p>overlap_policy : Optional string</p>
-<p>time_of_day : Optional datetime.date</p>
+<p>time_of_day : Optional datetime.datetime</p>
 <p>time_zone_for_time_of_day : Optional string</p>
 <dl class="docutils">
 <dt>output_name</dt>
@@ -481,7 +481,7 @@ location of the origins.</dd>
 <h2>find_nearest<a class="headerlink" href="#find-nearest" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.find_nearest">
-<code class="descclassname">use_proximity.</code><code class="descname">find_nearest</code><span class="sig-paren">(</span><em>gis</em>, <em>analysis_layer</em>, <em>near_layer</em>, <em>measurement_type='StraightLine'</em>, <em>max_count=100</em>, <em>search_cutoff=2147483647</em>, <em>search_cutoff_units=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.find_nearest" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">find_nearest</code><span class="sig-paren">(</span><em>analysis_layer</em>, <em>near_layer</em>, <em>measurement_type='StraightLine'</em>, <em>max_count=100</em>, <em>search_cutoff=2147483647</em>, <em>search_cutoff_units=None</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.find_nearest" title="Permalink to this definition">¶</a></dt>
 <dd><p>Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to
 features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer
 containing the nearest features and a line layer that links the start locations to their nearest locations.</p>
@@ -499,7 +499,7 @@ containing the nearest features and a line layer that links the start locations 
 <dt>search_cutoff_units</dt>
  <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The units for the value specified as searchCutoff</dd>
 <dt>time_of_day</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional datetime.date</span><dd>When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
+ <span class="classifier-delimiter">:</span> <span class="classifier">Optional datetime.datetime</span><dd>When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
 calculations based on traffic.</dd>
 </dl>
 <p>time_zone_for_time_of_day : Optional string</p>
@@ -523,7 +523,7 @@ calculations based on traffic.</dd>
 <h2>plan_routes<a class="headerlink" href="#plan-routes" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.use_proximity.plan_routes">
-<code class="descclassname">use_proximity.</code><code class="descname">plan_routes</code><span class="sig-paren">(</span><em>gis</em>, <em>stops_layer</em>, <em>route_count</em>, <em>max_stops_per_route</em>, <em>route_start_time</em>, <em>start_layer</em>, <em>start_layer_route_id_field=None</em>, <em>return_to_start=True</em>, <em>end_layer=None</em>, <em>end_layer_route_id_field=None</em>, <em>travel_mode='Driving'</em>, <em>stop_service_time=0</em>, <em>max_route_time=525600</em>, <em>output_name=None</em>, <em>context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.plan_routes" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">use_proximity.</code><code class="descname">plan_routes</code><span class="sig-paren">(</span><em>stops_layer</em>, <em>route_count</em>, <em>max_stops_per_route</em>, <em>route_start_time</em>, <em>start_layer</em>, <em>start_layer_route_id_field=None</em>, <em>return_to_start=True</em>, <em>end_layer=None</em>, <em>end_layer_route_id_field=None</em>, <em>travel_mode='Driving'</em>, <em>stop_service_time=0</em>, <em>max_route_time=525600</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.use_proximity.plan_routes" title="Permalink to this definition">¶</a></dt>
 <dd><p>You provide a set of stops and the number of vehicles available to visit the stops, and Plan Routes determines how
 to efficiently assign the stops to the vehicles and route the vehicles to the stops.</p>
 <p>Use this tool to plan work for a mobile team of inspectors, appraisers, in-home support service providers, and
@@ -531,7 +531,7 @@ others; deliver or pick up items from remote locations; or offer transportation 
 <p>stops_layer : Required layer (see Feature Input in documentation)</p>
 <p>route_count : Required int</p>
 <p>max_stops_per_route : Required int</p>
-<p>route_start_time : Required datetime.date</p>
+<p>route_start_time : Required datetime.datetime</p>
 <p>start_layer : Required layer (see Feature Input in documentation)</p>
 <p>start_layer_route_id_field : Optional string</p>
 <p>return_to_start : Optional bool</p>
@@ -598,7 +598,7 @@ others; deliver or pick up items from remote locations; or offer transportation 
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.9',
+            VERSION:'1.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
