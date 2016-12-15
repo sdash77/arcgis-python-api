@@ -2629,6 +2629,8 @@ class Item(dict):
             item_type = 'Feature Layer Collection'
         elif self.type.lower() == 'map service':
             item_type = 'Map Image Layer'
+        elif self.type.lower() == 'image service':
+            item_type = 'Imagery Layer'
         elif self.type.lower().endswith('service'):
             item_type = self.type.replace('Service', 'Layer')
         return item_type
