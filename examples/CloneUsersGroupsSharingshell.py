@@ -72,13 +72,7 @@ def copy_group(target, source, group):
         target_group = {}
 
         for property_name in GROUP_COPY_PROPERTIES:
-            # fix to handle tags getting added as a List vs. a set of string values
-            if property_name == 'tags':
-                if type(group[property_name]) is list:
-                    tags = ",".join(group[property_name])
-                    target_group['tags'] = tags
-            else:
-                target_group[property_name] = group[property_name]
+            target_group[property_name] = group[property_name]
 
         if target_group['access'] == 'org' and target.properties['portalMode'] == 'singletenant':
             target_group['access'] = 'public'
