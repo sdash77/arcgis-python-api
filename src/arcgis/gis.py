@@ -1,7 +1,7 @@
 ﻿"""
 The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or an ArcGIS Portal. This module provides functionality to manage
-(create, read, update and delete) GIS users, groups, content and datastores. This module
+(create, read, update and delete) GIS users, groups and content. This module
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
@@ -56,7 +56,7 @@ class GIS(object):
 
     A GIS is representative of ArcGIS Online or an ArcGIS Portal
     site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
-    content, users and groups
+    content, users and groups.
 
     Additionally, the GIS object has properties to query it's state, accessible using the properties attribute.
 
