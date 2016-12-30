@@ -1584,7 +1584,7 @@ class Portal(object):
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_groups and nextstart > 0:
-            resp = self._groups_page(q, 1, min(max_groups - count,100),
+            resp = self._groups_page(q, nextstart, min(max_groups - count,100),
                                      sort_field, sort_order)
             resp_users = resp.get('results')
             results.extend(resp_users)
