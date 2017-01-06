@@ -3025,6 +3025,7 @@ class Item(dict):
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 output_type = 'VectorTiles'
+                buildInitialCache = True
 
             elif fileType == 'scenePackage':
                 name = re.sub(r'[\W_]+', '_', self['title'])
