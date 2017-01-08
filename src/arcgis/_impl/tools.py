@@ -4908,7 +4908,7 @@ class _GeometryService(_GISService):
             return results
         return self._process_results(results)
     #----------------------------------------------------------------------
-    def density(self,
+    def densify(self,
                 geometries,
                 sr,
                 maxSegmentLength,

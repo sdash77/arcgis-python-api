@@ -77,7 +77,7 @@ def areas_and_lengths(polygons,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.areasAndLengths(
+    return gis._tools.geometry.areas_and_lengths(
         polygons,
         length_unit,
         area_unit,
@@ -211,7 +211,7 @@ def cut(cutter,
         target,
         spatial_ref)
 
-def density(geometries,
+def densify(geometries,
             spatial_ref,
             max_segment_length,
             length_unit,
@@ -248,7 +248,7 @@ def density(geometries,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.density(
+    return gis._tools.geometry.densify(
         geometries,
         spatial_ref,
         max_segment_length,
@@ -652,9 +652,9 @@ def relation(geometries1,
              relation_param="",
              gis=None):
     """
-    The spatial_relation function is performed on a geometry service resource.
+    The relation function is performed on a geometry service resource.
     This function determines the pairs of geometries from the input
-    geometry arrays that participate in the specified spatial spatial_relation.
+    geometry arrays that participate in the specified spatial relation.
     Both arrays are assumed to be in the spatial reference specified by
     spatial_ref, which is a required parameter. Geometry types cannot be mixed
     within an array. The relations are evaluated in 2D. In other words,
@@ -741,7 +741,7 @@ def to_geo_coordinate_string(spatial_ref,
                              add_spaces=True,
                              gis=None):
     """
-    The toGeoCoordinateString function is performed on a geometry
+    The to_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of
     xy-coordinates into well-known strings based on the conversion type
     and spatial reference supplied by the user. Optional parameters are
