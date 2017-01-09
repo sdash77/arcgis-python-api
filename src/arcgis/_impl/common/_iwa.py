@@ -149,7 +149,7 @@ class KerberosSspiAuthHandler(BaseHandler):
             response = h.getresponse()
             return addinfourl(response, response.msg, req.get_full_url(), response.status)
         except:
-            e = sys.exc_info()[0]
-            _log.warning(str(e))
-            _log.warning('Failed Kerberos authentication')
+            # e = sys.exc_info()[0]
+            # _log.warning(str(e))
+            # _log.warning('Failed Kerberos authentication')
             return None
