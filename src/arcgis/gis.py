@@ -2378,6 +2378,8 @@ class Item(dict):
         self._hydrated = False
 
         if itemdict:
+            if 'size' in itemdict and itemdict['size'] == -1:
+                del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
             if self._has_layers():
