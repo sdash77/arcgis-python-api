@@ -686,8 +686,10 @@ class UserManager(object):
         self._portal = gis._portal
 
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
-               provider='arcgis', idpUsername=None):
-        """ This operation is used to pre-create built-in or enterprise accounts within the portal.
+               provider='arcgis', idp_username=None, level=2):
+        """ This operation is used to pre-create built-in or enterprise accounts within the portal,
+        or built-in users in an ArcGIS Online organization account.
+
         The provider parameter is used to indicate the type of user account. Only an administrator
         can call this method.
 
@@ -707,6 +709,8 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         password          required string, must be >= 8 characters. This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
+                          If creating an account in an ArcGIS Online org, it can be set as None to let
+                          the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
         firstname         required string, the first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -722,31 +726,69 @@ class UserManager(object):
         provider          The provider for the account. The default value is arcgis.
                           Values: arcgis | enterprise
         ----------------  -------------------------------------------------------------------------------
-        idpUsername       The name of the user as stored by the enterprise user store. This parameter is
+        idp_username       The name of the user as stored by the enterprise user store. This parameter is
                           only required if the provider parameter is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        level             The account level.
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ================  ===============================================================================
 
         :return:
             the user, if created, else None
 
         """
-        createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
-        #print(createuser_url)
-        params = {
-            'f': 'json',
-            'username' : username,
-            'password' : password,
-            'firstname' : firstname,
-            'lastname' : lastname,
-            'email' : email,
-            'description' : description,
-            'role' : role,
-            'provider' : provider,
-            'idpUsername' : idpUsername
-        }
+        if self._gis._portal.is_arcgisonline:
+            email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
+                         ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
+                         '''</p>
+<p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
+<p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
+<p>If you have difficulty signing in, please contact ''' + self._gis.properties.user.fullName + \
+                         '(' + self._gis.properties.user.email + '''). Be sure to include a description of the problem, the error message, and a screenshot.</p>
+<p>For your reference, you can access the home page of the organization here: <br>''' + self._gis.properties.user.fullName + '''</p>
+<p>This link will expire in two weeks.</p>
+<p style="color:gray;">This is an automated email. Please do not reply.</p>
+</body></html>'''
 
-        self._portal.con.post(createuser_url, params)
-        return self.get(username)
+            params = {
+                'f': 'json',
+                'invitationList' : {'invitations' : [ {
+                    'username': username,
+                    'firstname': firstname,
+                    'lastname': lastname,
+                    'fullname': firstname + ' ' + lastname,
+                    'email': email,
+                    'role': role,
+                    'level': level
+                } ] },
+                'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
+                'html' : email_text
+            }
+
+            if password is not None:
+                params['invitationList'][0]['password'] = password
+
+            resp = self._portal.con.post('portals/self/invite', params, ssl=True)
+            if resp and resp.get('success'):
+                return self.get(username)
+        else:
+            createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
+            #print(createuser_url)
+            params = {
+                'f': 'json',
+                'username' : username,
+                'password' : password,
+                'firstname' : firstname,
+                'lastname' : lastname,
+                'email' : email,
+                'description' : description,
+                'role' : role,
+                'provider' : provider,
+                'idpUsername' : idp_username,
+                'level' : level
+            }
+            self._portal.con.post(createuser_url, params)
+            return self.get(username)
 
 
     def signup(self, username, password, fullname, email):
