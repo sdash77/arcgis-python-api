@@ -103,22 +103,6 @@ class Test_GIS_ago(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Sign in failed. Skipping test case")
-    def test_datastores(self):
-        gis = GIS(self.portal_url, self.portal_username, self.portal_password)
-        try:
-            datastore_list = gis.datastores
-            self.assertIsNotNone(datastore_list, "gis.datastores returns None")
-            self.assertEqual(0, len(datastore_list), "len of gis.datastores not 0 for AGO portal")
-
-        except KeyError as ke:
-            self.fail("Accessing gis.datastores raises exception: " + str(ke))
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    @unittest.skipIf(test_skip, "Sign in failed. Skipping test case")
     def test_properties(self):
         gis = GIS(self.portal_url, self.portal_username, self.portal_password)
         try:
