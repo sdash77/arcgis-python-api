@@ -10,7 +10,7 @@ In the GIS, entities located in space with a set of properties can be represente
 feature classes, which represent a set of features located using a single spatial type (point, line, polygon) and a
 common set of properties.  This is the geographic extension of the classic tabular or relational representation for
 entities - a set of entities is modelled as rows in a table.  Tables represent entity classes with uniform
-properties.  In addition to working with “entities with location” as features, the system can also work with
+properties.  In addition to working with entities with location as features, the system can also work with
 non-spatial entities as rows in tables.  The system can also model relationships between entities using properties
 which act as primary and foreign keys.  A collection of feature classes and tables, with the associated
 relationships among the entities, is a feature layer collection. FeatureLayerCollections are one of the dataset types

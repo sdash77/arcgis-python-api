@@ -1,7 +1,7 @@
 """
 Feature Layers and Tables provide the primary interface for working with features in a GIS.
 
-Users create, import, export, analyze, edit, and visualize features, i.e. “entities in space” as feature layers.
+Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
@@ -25,7 +25,7 @@ class FeatureLayer(Layer):
     """
     The feature layer is the primary concept for working with features in a GIS.
 
-    Users create, import, export, analyze, edit, and visualize features, i.e. “entities in space” as feature layers.
+    Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
 
     Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
     tools.
@@ -52,7 +52,7 @@ class FeatureLayer(Layer):
         The layer_id is the id of the layer in feature layer collection (feature service).
         """
         return FeatureLayerCollection.fromitem(item).layers[layer_id]
-    
+
     @property
     def manager(self):
         """
@@ -632,7 +632,7 @@ class FeatureLayer(Layer):
 
 class Table(FeatureLayer):
     """
-    Tables represent entity classes with uniform properties. In addition to working with “entities with location” as
+    Tables represent entity classes with uniform properties. In addition to working with entities with location as
     features, the GIS can also work with non-spatial entities as rows in tables.
 
     Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
