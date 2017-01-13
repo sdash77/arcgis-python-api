@@ -766,7 +766,7 @@ class UserManager(object):
             }
 
             if password is not None:
-                params['invitationList'][0]['password'] = password
+                params['invitationList']['invitations'][0]['password'] = password
 
             resp = self._portal.con.post('portals/self/invite', params, ssl=True)
             if resp and resp.get('success'):
