@@ -518,6 +518,7 @@ class ServerConnection(object):
         contentType = resp.headers.get('content-type')
         contentLength = resp.headers.get('content-length')
         if maintype.lower() in ('image',
+                                'application',
                                 'application/x-zip-compressed') or \
            contentType == 'application/x-zip-compressed' or \
            (contentDisposition is not None and \
