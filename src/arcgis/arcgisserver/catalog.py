@@ -9,6 +9,34 @@ import json
 from ._common import BaseServer
 from ._service._layerfactory import LayerFactory, Layer
 from ._common import ServerConnection
+
+"""
+class Server
+
+  - users
+      - add/remove/update
+      - roles
+      - privileges
+
+  - content (catalog tree)
+      - add/get/list/search services
+      - folders and permissions
+
+      - Service
+        - start, stop, rename, delete, edit
+        - extensions (SOEs)
+
+  - datastores
+
+  - usage()
+
+  - logs, kml, info
+
+  - config
+      - config store
+      - properties
+      - directories
+"""
 ########################################################################
 class Server(BaseServer):
     """This object represents an ArcGIS Server instance"""
@@ -46,7 +74,10 @@ class Server(BaseServer):
                                 proxy_host=proxy_host,
                                 proxy_port=proxy_port,
                                 portal_connection=portal_connection)
-        super(Server, self).__init__(url=self._url, connection=con, initialize=initialize)
+
+        super(Server, self).__init__(url=self._url,
+                                     connection=con,
+                                     initialize=initialize)
         self._con = con
         self._location = self._url
         self._currentFolder = "root"
@@ -104,12 +135,12 @@ class Server(BaseServer):
         return self._url
     #----------------------------------------------------------------------
     @property
-    def admin(self):
+    def site_manager(self):
         """points to the adminstrative side of ArcGIS Server"""
-        from .admin.administration import AGSAdministration as admin
-        return admin(connection=self._con,
-                     url=self._adminUrl,
-                     initialize=False)
+        from .admin.administration import SiteManager
+        return SiteManager(connection=self._con,
+                           url=self._adminUrl,
+                           initialize=False)
     #----------------------------------------------------------------------
     @property
     def location(self):
@@ -117,7 +148,7 @@ class Server(BaseServer):
         return self._location
     #----------------------------------------------------------------------
     @property
-    def currentVersion(self):
+    def current_version(self):
         """gets the current version of arcgis server"""
         if self._currentVersion is None:
             self.init()
@@ -149,7 +180,7 @@ class Server(BaseServer):
             url = "{base}/{name}/{stype}".format(base=self._url,
                                                  name=s['name'],
                                                  stype=s['type'])
-            services.append(Layer(url=url, connection=self._con))
+            services.append(Layer(url=url, server=self))
         return services
     #----------------------------------------------------------------------
     @property
@@ -183,17 +214,4 @@ class Server(BaseServer):
             self._currentFolder = value
             self._location = "%s/%s" % (self.root, value)
             self.init(folder='root')
-    #----------------------------------------------------------------------
-    def healthCheck(self):
-        """
-        """
-        parsed = urlparse(self.url)
-        path = parsed.path.split('/')[1:][0]
-        url = "{scheme}://{url}/{wa}/rest/info/healthCheck".format(
-            scheme=parsed.scheme,
-            wa=path,
-            url=parsed.netloc)
-        connection = self._con
-        return connection.get(path=url, params={"f" : "json"})
-
 

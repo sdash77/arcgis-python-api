@@ -14,15 +14,13 @@ from . import _system
 from . import _uploads, _usagereports
 from . import _mode
 ########################################################################
-class AGSAdministration(BaseServer):
+class SiteManager(BaseServer):
     """
     Wrapper for the ArcGIS Server REST API
 
     Inputs:
        url - Administration REST URL
-       securityHandler - security handler object for ArcGIS Server
-       proxy_url - optional URL of a proxy
-       proxy_port - optional port of a proxy
+       connection - connection class to access arcgis server's admin api
        initialize - default is false.  False means the object does not make
                     any REST calls until the object is actually needed,
                     whereas True means the object's properties are
@@ -40,7 +38,7 @@ class AGSAdministration(BaseServer):
     def __init__(self, connection, url,
                  initialize=False):
         """Constructor"""
-        super(AGSAdministration, self).__init__(connection=connection,
+        super(SiteManager, self).__init__(connection=connection,
                                                 url=url)
         if url.lower().endswith('/admin') == False:
             url = "%s/admin" % url

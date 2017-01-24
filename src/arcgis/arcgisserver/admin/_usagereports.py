@@ -262,113 +262,6 @@ class UsageReport(BaseServer):
         if initialize:
             self.init()
     #----------------------------------------------------------------------
-    def init(self, connection=None):
-        """ populates server admin information """
-        params = {
-            "f" : "json"
-        }
-        if connection:
-            json_dict = connection.get(path=params,
-                                       params=params)
-        else:
-            json_dict = self._con.get(path=params,
-                                       params=params)
-        self._json_dict = json_dict
-        self._json = json.dumps(json_dict)
-        attributes = [attr for attr in dir(self)
-                      if not attr.startswith('__') and \
-                      not attr.startswith('_')]
-        for k,v in json_dict.items():
-            if k.lower() == "from":
-                self._from = v
-            elif k.lower() == "to":
-                self._to = v
-            elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
-            else:
-                setattr(self, k,v)
-            del k
-            del v
-    #----------------------------------------------------------------------
-    @property
-    def reportname(self):
-        """gets the report name"""
-        if self._reportname is None:
-            self.init()
-        return self._reportname
-    #----------------------------------------------------------------------
-    @property
-    def since(self):
-        """gets/sets the since value"""
-        if self._since is None:
-            self.init()
-        return self._since
-    #----------------------------------------------------------------------
-    @since.setter
-    def since(self, value):
-        """gets/sets the since value"""
-        self._since = value
-    #----------------------------------------------------------------------
-    @property
-    def fromValue(self):
-        """gets/sets the from value"""
-        if self._from is None:
-            self.init()
-        return self._from
-    #----------------------------------------------------------------------
-    @fromValue.setter
-    def fromValue(self, value):
-        """gets/sets the from value"""
-        self._from = value
-    #----------------------------------------------------------------------
-    @property
-    def toValue(self):
-        """gets/sets the toValue"""
-        if self._to is None:
-            self.init()
-        return self._to
-    #----------------------------------------------------------------------
-    @toValue.setter
-    def toValue(self, value):
-        """gets/sets the toValue"""
-        self._to = value
-    #----------------------------------------------------------------------
-    @property
-    def aggregationInterval(self):
-        """gets/sets the aggregationInterval value"""
-        if self._aggregationInterval is None:
-            self.init()
-        return self._aggregationInterval
-    #----------------------------------------------------------------------
-    @aggregationInterval.setter
-    def aggregationInterval(self, value):
-        """gets/sets the aggregationInterval value"""
-        self._aggregationInterval = value
-    #----------------------------------------------------------------------
-    @property
-    def queries(self):
-        """gets/sets the query values"""
-        if self._queries is None:
-            self.init()
-        return self._queries
-    #----------------------------------------------------------------------
-    @queries.setter
-    def queries(self, value):
-        """gets/sets the query values"""
-        self._queries = value
-    #----------------------------------------------------------------------
-    @property
-    def metadata(self):
-        """gets/sets the metadata value"""
-        if self._metadata is None:
-            self.init()
-        return self._metadata
-    #----------------------------------------------------------------------
-    @metadata.setter
-    def metadata(self, value):
-        """gets/sets the metadata value"""
-        self._metadata = value
-    #----------------------------------------------------------------------
     def edit(self):
         """
         Edits the usage report. To edit a usage report, you need to submit
@@ -410,7 +303,7 @@ class UsageReport(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def query(self, queryFilter):
+    def query(self, query_filter=None):
         """
         Retrieves server usage data for the report. This operation
         aggregates and filters server usage statistics for the entire
@@ -426,7 +319,7 @@ class UsageReport(BaseServer):
         were not logged for that metric in the corresponding time-slice.
 
         Inputs:
-           queryFilter - The report data can be filtered by the machine
+           query_filter - The report data can be filtered by the machine
              where the data is generated. The filter accepts a comma
              separated list of machine names; * represents all machines.
 
@@ -436,9 +329,11 @@ class UsageReport(BaseServer):
                # no filtering; all machines are accepted
                {"machines": "*"}
         """
+        if query_filter is None:
+            query_filter = {"machines": "*"}
         params = {
             "f" : "json",
-            "filter" : queryFilter
+            "filter" : query_filter
         }
         url = self._url + "/data"
         return self._con.post(path=url,

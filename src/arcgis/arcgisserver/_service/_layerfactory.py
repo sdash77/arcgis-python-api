@@ -5,36 +5,36 @@ Generates Layer Types from the given inputs.
 from __future__ import absolute_import
 import os
 from six import add_metaclass
+from arcgis.features.layer import FeatureLayer, Table, FeatureLayerCollection
+from arcgis.geocoding import Geocoder
+from arcgis.geoprocessing._tool import Toolbox
+from arcgis._impl.tools import _GeometryService as GeometryService
+from arcgis.network import NetworkDataset
+from arcgis.mapping import VectorTileLayer
+from arcgis.mapping import MapImageLayer
+from arcgis.raster import ImageryLayer
+from arcgis.schematics import SchematicLayers
 
-from ._featureservice import FeatureService
-from ._featureservice import FeatureLayer, TableLayer, RasterLayer, GroupLayer
-from ._mapservice import MapService
-#from .geoprocessing import GPService
-#from ._geocodeservice import GeocodeService
 from ._geodataservice import GeoData
-from ._geometry import GeometryService
 from ._globeservice import Globe, GlobeLayer
-from ._imageservice import ImageService
-
 from ._mobileservice import MobileService
-from ._networkservice import NetworkService
 from ._sceneservice import Scene
-from ._schematicservice import Schematics
-from ._vectortile import VectorTile
+
 class LayerFactory(type):
     """
     Generates a geometry object from a given set of
     JSON (dictionary or iterable)
     """
     def __call__(cls,
-                 connection=None,
                  url=None,
                  item=None,
+                 server=None,
                  initialize=False):
         """generates the proper type of layer from a given url"""
         hasLayer = False
         if url is None:
             url = item.url
+        connection = server._con
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))
@@ -42,72 +42,59 @@ class LayerFactory(type):
         if base_name.lower() == "mapserver":
             if hasLayer:
                 return FeatureLayer(url=url,
-                                   connection=connection,
-                                   initialize=initialize)
+                                    gis=server)
             else:
-                return MapService(url=url,
-                              connection=connection,
-                              initialize=initialize)
-        #elif base_name.lower() == "featureserver":
-            #if hasLayer:
-                #return FeatureLayer(item=item, url=url,
-                                   #connection=connection,
-                                   #initialize=initialize)
-            #else:
-                #return FeatureService(item=item, url=url,
-                                   #connection=connection,
-                                   #initialize=initialize)
+                return MapImageLayer(url=url,
+                                     gis=server)
+        elif base_name.lower() == "featureserver":
+            if hasLayer:
+                return FeatureLayer(url=url,
+                                   gis=server)
+            else:
+                return FeatureLayerCollection(url=url,
+                                              gis=server)
         elif base_name.lower() == "imageserver":
-            return ImageService(url=url,
-                                connection=connection,
-                                initialize=initialize)
-        #elif base_name.lower() == "gpserver":
-            #return GPService(item=item, url=url,
-                             #connection=connection,
-                             #initialize=initialize)
+            return ImageryLayer(url=url,
+                                gis=server)
+        elif base_name.lower() == "gpserver":
+            return Toolbox(url=url,
+                           gis=server)
         elif base_name.lower() == "geometryserver":
             return GeometryService(url=url,
-                             connection=connection,
-                             initialize=initialize)
+                                   gis=server)
         elif base_name.lower() == "mobileserver":
             return MobileService(url=url,
-                             connection=connection,
-                             initialize=initialize)
+                                 connection=connection,
+                                 initialize=initialize)
         elif base_name.lower() == "geocodeserver":
-            return GeocodeService(url=url,
-                             connection=connection,
-                             initialize=initialize)
+            return Geocoder(location=url,
+                            gis=server)
         elif base_name.lower() == "globeserver":
             if hasLayer:
                 return GlobeLayer( url=url,
-                             connection=connection,
-                             initialize=initialize)
-            return Globe( url=url,
-                          connection=connection,
-                          initialize=initialize)
+                                   connection=connection,
+                                   initialize=initialize)
+            return Globe(url=url,
+                         connection=connection,
+                         initialize=initialize)
         elif base_name.lower() == "geodataserver":
-            return GeoData(url=url,
-                           connection=connection,
-                           initialize=initialize)
+            return GeoData(url=url, connection=connection)
         elif base_name.lower() == "naserver":
-            return NetworkService(url=url,
-                                  connection=connection,
-                                  initialize=initialize)
+            return NetworkDataset(url=url, gis=server)
         elif base_name.lower() == "sceneserver":
             return Scene(url=url,
                          connection=connection,
                          initialize=initialize)
         elif base_name.lower() == "schematicsserver":
-            return Schematics( url=url,
-                               connection=connection,
-                               initialize=initialize)
+            return SchematicLayers( url=url,
+                                    gis=server)
         elif base_name.lower() == "vectortileserver":
-            return VectorTile( url=url,
-                              connection=connection,
-                              initialize=initialize)
+            print ("vector tile server not implemented")
+            return #VectorTileLayer(url=url, gis=server)
         else:
+            print ("")
             return None
-        return type.__call__(cls, url, connection, item, gis, initialize)
+        return type.__call__(cls, url, connection, item, initialize)
 ###########################################################################
 @add_metaclass(LayerFactory)
 class Layer(object):
@@ -118,24 +105,10 @@ class Layer(object):
 
     Inputs:
        url - internet address to the service
-       connection - connection object that performs the GET and POST calls
+       server - Server class
        item - Portal or AGOL Item class
-       initialize - states if you want to pre-load the service's properties
-
-    Anonymous Example:
-       >>> con = ServerConnection()
-       >>> service = Layer(
-       url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/911CallsHotspot/GPServer",
-       connection=con)
-       >>> print (type(service))
-       'GPService'
-       >>> service = Layer(
-        url="https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer",
-        connection=con)
-       >>> print (type(service))
-       MapService
     """
-    def __init__(self, url, connection=None, item=None, initialize=False):
+    def __init__(self, url, item=None, server=None):
         if iterable is None:
             iterable = ()
-        super(Layer, self).__init__(url, connection, item, initialize)
+        super(Layer, self).__init__(url, item, server)

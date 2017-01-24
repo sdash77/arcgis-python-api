@@ -9,6 +9,7 @@ import uuid
 import zlib
 import shutil
 import logging
+import datetime
 import tempfile
 import mimetypes
 import unicodedata
@@ -29,11 +30,11 @@ from six.moves.urllib.error import HTTPError
 from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
+from arcgis._impl.connection import _ArcGISConnection
 
-#from arcgis._impl.connection import _ArcGISConnection
 class Error(Exception): pass
 
-__version__ = '1.0'
+__version__ = '2.0'
 _log = logging.getLogger(__name__)
 ########################################################################
 class MultiPartForm(object):
@@ -213,6 +214,8 @@ class ServerConnection(object):
     _server_token = None
     _connection = None
     _portal_connection = None
+    _TOKEN_TIME = None
+    _REFRESH_WHEN = None
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
@@ -250,7 +253,7 @@ class ServerConnection(object):
         if not referer:
             referer = urlparse(baseurl).netloc
         self._referer = referer
-        self._useragent = 'serversaurus/' + __version__
+        self._useragent = 'geosaurus/' + __version__
 
         parsed_url = urlparse(self.baseurl)
         self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))
@@ -262,6 +265,9 @@ class ServerConnection(object):
             self._auth = "PKI"
         elif username is not None and password is not None:
             self._auth = "BUILTIN" # or "BASICAUTH" (LDAP) or NTLM or Kerberos (login sets this up)
+        elif portal_connection:
+            self._auth = "PORTAL_TOKEN"
+            self.token
         else:
             self._auth = "ANON"
 
@@ -296,37 +302,42 @@ class ServerConnection(object):
         return self._product
     #----------------------------------------------------------------------
     @property
-    def connection(self):
+    def portal_connection(self):
         """gets/sets an additional connection object to get a token from"""
-        return self._connection
+        return self._portal_connection
     #----------------------------------------------------------------------
-    @connection.setter
-    def connection(self, value):
+    @portal_connection.setter
+    def portal_connection(self, value):
         """gets/sets an additional connection object to get a token from"""
-        if self._connection != value:
-            self._connection = value
+        if self._portal_connection != value:
+            self._portal_connection = value
             self._token = None
             self._server_token = None
     #----------------------------------------------------------------------
     @property
     def token(self):
         """gets/sets the token"""
-        if self._connection and \
-           self._server_token is None:
-            #create a portalserver token
-            if self._connection.product == "AGO":
-                return self.connection.token
-            return self.generate_portal_server_token(
-                serverUrl=self.baseurl)
-        elif self._connection and self._server_token:
-            return self._server_token
-        elif self._connection is None and \
-             self.product == "FEDERATED_SERVER":
-            self._connection = ServerConnection(baseurl=self.baseurl,
-                                                 connection=self)
-            return self.token
-        elif self._token:
+        if self._token:
+            if datetime.datetime.now() > self._REFRESH_WHEN:
+                self._token = None
+                self.token
             return self._token
+        if self._portal_connection and \
+           self._server_token is None:
+            if self._portal_connection.product == "AGO":
+                return self._portal_connection.token
+            parsed = urlparse(self.baseurl)
+            adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
+            self._token = self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
+            self._REFRESH_WHEN = datetime.datetime.now() + datetime.timedelta(seconds=55)
+            return self._token#self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
+        elif self._portal_connection and self._server_token:
+            return self._server_token
+        elif self._portal_connection is None and \
+             self.product == "FEDERATED_SERVER":
+            self._portal_connection = ServerConnection(baseurl=self.baseurl,
+                                                       connection=self)
+            return self.token
         elif self._username and self._password:
             self.login(username=self._username,
                        password=self._password,
@@ -340,7 +351,7 @@ class ServerConnection(object):
         if self._token != value:
             self._token = value
     #----------------------------------------------------------------------
-    def generate_token(self, username, password, expiration=60):
+    def generate_token(self, username, password, expiration=60, serverURL=None):
         """ Generates and returns a new token, but doesn't re-login. """
         if self._is_arcpy and \
            self.product in ("PORTAL", "AGO"):
@@ -366,33 +377,22 @@ class ServerConnection(object):
                          'f': 'json' }
         elif self.product == "SERVER" and \
              self._portal_connection: #TODO: FEDERATED SERVER SECURITY
-            pass
+            print ("Federated Security")
+            parsed = urlparse(self.baseurl)
+            adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
+            t =  self.portal_token.generate_portal_server_token(serverUrl=adminURL)
+
+            print (t)
+            return t
+            postdata = {'serverURL':self.baseurl,
+                        'token': self._portal_connection.token,
+                        'expiration':expiration,
+                        'f': 'json',
+                        'request':'getToken'}
         else:
             postdata = { 'username': username, 'password': password,
                          'client': 'referer', 'referer': self._referer,
                          'expiration': expiration, 'f': 'json' }
-        if self._tokenurl is None:
-            if self.baseurl.endswith('/'):
-                resp = self.post('generateToken', postdata,
-                                 ssl=True, add_token=False)
-            else:
-                resp = self.post('/generateToken', postdata,
-                                 ssl=True, add_token=False)
-        else:
-            resp = self.post(path=self._tokenurl, postdata=postdata,
-                             ssl=True, add_token=False)
-        if resp:
-            return resp.get('token')
-    #----------------------------------------------------------------------
-    def generate_portal_server_token(self, serverUrl, expiration=1440):
-        """generates a server token using Portal token"""
-
-        postdata = {'serverURL':serverUrl,
-                    'token': self._connection.token,
-                    'expiration':str(expiration),
-                    'f': 'json',
-                    'request':'getToken',
-                    'referer':self._referer}
         if self._tokenurl is None:
             if self.baseurl.endswith('/'):
                 resp = self.post('generateToken', postdata,
@@ -600,7 +600,7 @@ class ServerConnection(object):
     def get(self, path, params=None, ssl=False,
             compress=True, try_json=True, is_retry=False,
             use_ordered_dict=False, out_folder=None,
-            file_name=None, force_bytes=False):
+            file_name=None, force_bytes=False, **kwargs):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
         url = path
         if url.lower().find("https://") > -1 or\
@@ -753,7 +753,8 @@ class ServerConnection(object):
         return handlers
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
-             is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True):
+             is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
+             token=None, **kwargs):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path

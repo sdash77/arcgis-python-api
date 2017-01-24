@@ -21,7 +21,7 @@ class Security(BaseServer):
     def __init__(self, url, connection,
                  initialize=False):
         """Constructor
-            Inputs:
+            Parameters:
                url - admin url
 
         """
@@ -37,13 +37,13 @@ class Security(BaseServer):
             self.init()
         return self._resources
     #----------------------------------------------------------------------
-    def addRole(self, name, description=""):
+    def add_role(self, name, description=""):
         """ Adds a role to the role store. This operation is available only
             when the role store is a read-write store such as the default
             ArcGIS Server store.
             If the name of the role exists in the role store, an error will
             be returned.
-            Input:
+            Parameters:
                rolename - The name of the role. The name must be unique in the
                       role store.
                description - An optional field to add comments or a
@@ -59,10 +59,10 @@ class Security(BaseServer):
         aURL = self._url + "/roles/add"
         return self._con.post(path=aURL, postdata=params)
     #----------------------------------------------------------------------
-    def addUser(self, username, password,
+    def add_user(self, username, password,
                 fullname=None, description=None, email=None):
         """ Add a user account to the user store
-           Input:
+           Parameters:
               username - The name of the user. The name must be unique in
                          the user store.
               password - The password for this user
@@ -85,7 +85,7 @@ class Security(BaseServer):
         aURL = self._url + "/users/add"
         return self._con.post(path=aURL, postdata=params)
     #----------------------------------------------------------------------
-    def addUsersToRole(self, rolename, users):
+    def add_users_to_role(self, rolename, users):
         """ Assigns a role to multiple users """
         params = {
             "f" : "json",
@@ -95,7 +95,7 @@ class Security(BaseServer):
         rURL = self._url + "/roles/addUsersToRole"
         return self._con.post(path=rURL, postdata=params)
     #----------------------------------------------------------------------
-    def assignPrivilege(self, rolename, privilege="ACCESS"):
+    def assign_privilege(self, rolename, privilege="ACCESS"):
         """
            Administrative access to ArcGIS Server is modeled as three broad
            tiers of privileges:
@@ -113,7 +113,7 @@ class Security(BaseServer):
            These privilege assignments are stored independent of ArcGIS
            Server's role store. As a result, you don't need to update your
            enterprise identity stores (like Active Directory).
-           Inputs:
+           Parameters:
               rolename - The name of the role.
               privilege - The capability to assign to the role. The default
                           capability is ACCESS.
@@ -130,14 +130,14 @@ class Security(BaseServer):
         return self._con.post(path=aURL,
                              postdata=params)
     #----------------------------------------------------------------------
-    def assignRoles(self, username, roles):
+    def assign_roles(self, username, roles):
         """
            You must use this operation to assign roles to a user account
            when working with an user and role store that supports reads and
            writes.
            By assigning a role to a user, the user account automatically
            inherits all the permissions that have been assigned to the role
-           Inputs:
+           Parameters:
               username - The name of the user.
               roles - A comma-separated list of role names. Each of role
                       names must exist in the role store.
@@ -152,7 +152,7 @@ class Security(BaseServer):
         uURL = self._url + "/users/assignRoles"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def disablePrimarySiteAdministrator(self):
+    def disable_primary_site_administrator(self):
         """
            You can use this operation to disable log in privileges for the
            primary site administrator account. This operation can only be
@@ -165,7 +165,7 @@ class Security(BaseServer):
         }
         return self._con.post(path=dURL, postdata=params)
     #----------------------------------------------------------------------
-    def enablePrimarySiteAdministrator(self):
+    def enable_primary_site_administrator(self):
         """
            You can use this operation to enable log in privileges for the
            primary site administrator account. This operation can only be
@@ -184,10 +184,10 @@ class Security(BaseServer):
         }
         return self._con.post(path=eURL, postdata=params)
     #----------------------------------------------------------------------
-    def getPrivilegeForRole(self, rolename):
+    def get_privilege_for_role(self, rolename):
         """
            Returns the privilege associated with a role.
-           Input:
+           Parameters:
               rolename - name of the role
            Output:
               JSON Messages
@@ -200,10 +200,10 @@ class Security(BaseServer):
         return self._con.post(path=pURL,
                               postdata=params)
     #----------------------------------------------------------------------
-    def getPrivilegeForUser(self, username):
+    def get_user_privileges(self, username):
         """
            Returns the privilege associated with a user
-           Input:
+           Parameters:
               username - name of the user
            Output:
               JSON message as dictionary
@@ -215,12 +215,12 @@ class Security(BaseServer):
         url = self._url + "/users/getPrivilege"
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def getRoles(self, startIndex=0, pageSize=10):
+    def list_roles(self, startIndex=0, pageSize=10):
         """ This operation gives you a pageable view of roles in the role
             store. It is intended for iterating through all available role
             accounts. To search for specific role accounts instead, use the
             Search Roles operation.
-            Inputs:
+            Parameters:
                startIndex - The starting index (zero-based) from the roles
                             list that must be returned in the result page.
                             The default is 0.
@@ -237,10 +237,10 @@ class Security(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def getRolesByPrivilege(self, privilege):
+    def get_roles_by_privilege(self, privilege):
         """
            Returns the roles associated with a pribilege.
-           Input:
+           Parameters:
               privilege - name of the privilege
            Output:
               JSON response as dictionary
@@ -252,11 +252,11 @@ class Security(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def getRolesForUser(self, username, filter=None, maxCount=None):
+    def get_user_roles(self, username, filter=None, maxCount=None):
         """
            This operation returns a list of role names that have been
            assigned to a particular user account.
-           Inputs:
+           Parameters:
               username - name of the user for whom the returned roles
               filter - filter to be applied to the resultant role set.
               maxCount - maximum number of results to return for this query
@@ -273,13 +273,13 @@ class Security(BaseServer):
             params['maxCount'] = maxCount
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def getUsers(self, startIndex=0, pageSize=10):
+    def list_users(self, startIndex=0, pageSize=10):
         """
            This operation gives you a pageable view of users in the user
            store. It is intended for iterating over all available user
            accounts. To search for specific user accounts instead, use the
            Search Users operation.
-           Inputs:
+           Parameters:
               startIndex - The starting index (zero-based) from the users
                            list that must be returned in the result page.
                            The default is 0.
@@ -297,11 +297,11 @@ class Security(BaseServer):
         return self._con.post(path=uURL,
                              postdata=params)
     #----------------------------------------------------------------------
-    def getUsersWithinRole(self, rolename, filter=None, maxCount=20):
+    def get_users_within_role(self, rolename, filter=None, maxCount=20):
         """
            You can use this operation to conveniently see all the user
            accounts to whom this role has been assigned.
-           Inputs:
+           Parameters:
               rolename - name of the role
               filter - filter to be applied to the resultant user set
               maxCount - maximum number of results to return
@@ -320,7 +320,7 @@ class Security(BaseServer):
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
     @property
-    def primarySiteAdministrator(self):
+    def get_primary_site_administrator(self):
         """ returns if the primary site admin has been disabled """
         params = {
             "f" : "json"
@@ -328,12 +328,12 @@ class Security(BaseServer):
         uURL = self._url + "/psa"
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def removeRole(self, rolename):
+    def delete_role(self, rolename):
         """
            Removes an existing role from the role store. This operation is
            available only when the role store is a read-write store such as
            the default ArcGIS Server store.
-           Input:
+           Parameters:
               rolename - name of role to remove
            Output:
               JSON message if any
@@ -346,12 +346,12 @@ class Security(BaseServer):
         return self._con.post(path=uURL,
                              postdata=params)
     #----------------------------------------------------------------------
-    def removeRoles(self, username, roles):
+    def remove_roles_from_user(self, username, roles):
         """
            This operation removes roles that have been previously assigned
            to a user account. This operation is supported only when the
            user and role store supports reads and writes.
-           Inputs:
+           Parameters:
               username - name of the user
               roles - comma seperated list of the role names
            Ouput:
@@ -365,10 +365,10 @@ class Security(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def removeUser(self, username):
+    def delete_user(self, username):
         """
            returns a username from the user store
-           Inputs:
+           Parameters:
               username - name of the user to remove
            Output:
               JSON message as dictionary
@@ -380,10 +380,10 @@ class Security(BaseServer):
         uURL = self._url + "/users/remove"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def removeUsersFromRole(self, rolename, users):
+    def remove_users_from_role(self, rolename, users):
         """
            Removes a role assignment from multiple users.
-           Inputs:
+           Parameters:
               rolename - name of the rolename
               users - comma seperated list of usernames.  They must exist
            Output:
@@ -408,12 +408,12 @@ class Security(BaseServer):
         uURL = self._url + "/roles"
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def searchRoles(self, filter="", maxCount=""):
+    def search_roles(self, filter="", maxCount=""):
         """
            You can use this operation to search a specific role or a group
            of roles from the role store. The size of the search results can
            be controlled with the maxCount parameter.
-           Inputs:
+           Parameters:
               filter - a filter string to search for the roles
               maxCount - maximum size of the result
            Ouput:
@@ -427,12 +427,12 @@ class Security(BaseServer):
         uURL = self._url + "/roles/search"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def searchUsers(self, filter="", maxCount=""):
+    def find_users(self, criteria=None, maxCount=10):
         """
            You can use this operation to search a specific user or a group
            of users from the user store. The size of the search result can
            be controlled with the maxCount parameter.
-           Inputs:
+           Parameters:
               filter - a filter string to search for the users
               maxCount - maximum size of the result
            Ouput:
@@ -440,16 +440,16 @@ class Security(BaseServer):
         """
         params = {
             "f" : "json",
-            "filter" : filter,
+            "filter" : criteria,
             "maxCount" : maxCount
         }
         uURL = self._url + "/users/search"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def updatePrimarySiteAdministrator(self, username, password):
+    def update_primary_site_administrator(self, username, password):
         """
            Updates account properties of the primary site administrator
-           Input:
+           Parameters:
               username - You can optionally provide a new name for the
               primary site administrator account.
               password - The password for the new primary site
@@ -467,9 +467,9 @@ class Security(BaseServer):
         uURL = self._url + "/psa/update"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def updateRole(self, rolename, description):
+    def update_role(self, rolename, description):
         """ Updates a role description in the role store
-           Input:
+           Parameters:
               rolename - the name of the role. The name must be unique in
                          the role store.
               description - an optional field to add comments or description
@@ -484,9 +484,9 @@ class Security(BaseServer):
         uURL = self._url + "/roles/update"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def updateUser(self, username, password, fullname, description, email):
+    def update_user(self, username, password, fullname, description, email):
         """ Updates a user account in the user store
-           Input:
+           Parameters:
               username - the name of the user. The name must be unique in
                          the user store.
               password - the password for this user.
