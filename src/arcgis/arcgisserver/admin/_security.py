@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-import json
+
 ########################################################################
 class Security(BaseServer):
     """ The security resource is a container for all resources and
@@ -252,13 +252,13 @@ class Security(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def get_user_roles(self, username, filter=None, maxCount=None):
+    def get_user_roles(self, username, user_filter=None, maxCount=None):
         """
            This operation returns a list of role names that have been
            assigned to a particular user account.
            Parameters:
               username - name of the user for whom the returned roles
-              filter - filter to be applied to the resultant role set.
+              user_filter - filter to be applied to the resultant role set.
               maxCount - maximum number of results to return for this query
         """
         uURL = self._url + "/roles/getRolesForUser"
@@ -266,10 +266,10 @@ class Security(BaseServer):
             "f" : "json",
             "username" : username
         }
-        if filter is not None:
-            params['filter'] = filter
+        if user_filter:
+            params['filter'] = user_filter
 
-        if maxCount is not None:
+        if maxCount:
             params['maxCount'] = maxCount
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
@@ -297,13 +297,13 @@ class Security(BaseServer):
         return self._con.post(path=uURL,
                              postdata=params)
     #----------------------------------------------------------------------
-    def get_users_within_role(self, rolename, filter=None, maxCount=20):
+    def get_users_within_role(self, rolename, user_filter=None, maxCount=20):
         """
            You can use this operation to conveniently see all the user
            accounts to whom this role has been assigned.
            Parameters:
               rolename - name of the role
-              filter - filter to be applied to the resultant user set
+              user_filter - filter to be applied to the resultant user set
               maxCount - maximum number of results to return
            Output:
               JSON Message as dictionary
@@ -314,9 +314,9 @@ class Security(BaseServer):
             "rolename" : rolename,
             "maxCount" : maxCount
         }
-        if filter is not None and \
-           isinstance(filter, str):
-            params['filter'] = filter
+        if user_filter and \
+           isinstance(user_filter, str):
+            params['filter'] = user_filter
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
     @property
@@ -408,20 +408,20 @@ class Security(BaseServer):
         uURL = self._url + "/roles"
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def search_roles(self, filter="", maxCount=""):
+    def search_roles(self, role_filter=None, maxCount=10):
         """
            You can use this operation to search a specific role or a group
            of roles from the role store. The size of the search results can
            be controlled with the maxCount parameter.
            Parameters:
-              filter - a filter string to search for the roles
+              role_filter - a filter string to search for the roles
               maxCount - maximum size of the result
            Ouput:
               JSON message as dictionary
         """
         params = {
             "f" : "json",
-            "filter" : filter,
+            "filter" : role_filter,
             "maxCount" : maxCount
         }
         uURL = self._url + "/roles/search"

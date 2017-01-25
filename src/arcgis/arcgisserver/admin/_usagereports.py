@@ -45,7 +45,7 @@ class UsageReports(BaseServer):
         self._reports = []
         if isinstance(self._metrics, list):
             for r in self._metrics:
-                url = self._url + "/%s" % six.moves.urllib.parse.quote_plus(r['reportname'])
+                url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
                 self._reports.append(UsageReport(url=url,
                                                  connection=self._con))
                 del url

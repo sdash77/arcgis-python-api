@@ -333,11 +333,11 @@ class ServerConnection(object):
             return self._token#self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
         elif self._portal_connection and self._server_token:
             return self._server_token
-        elif self._portal_connection is None and \
-             self.product == "FEDERATED_SERVER":
-            self._portal_connection = ServerConnection(baseurl=self.baseurl,
-                                                       connection=self)
-            return self.token
+        #elif self._portal_connection is None and \
+             #self.product == "FEDERATED_SERVER":
+            #self._portal_connection = ServerConnection(baseurl=self.baseurl,
+                                                       #connection=self)
+            #return self.token
         elif self._username and self._password:
             self.login(username=self._username,
                        password=self._password,
@@ -376,19 +376,11 @@ class ServerConnection(object):
                          'expiration': expiration,
                          'f': 'json' }
         elif self.product == "SERVER" and \
-             self._portal_connection: #TODO: FEDERATED SERVER SECURITY
-            print ("Federated Security")
+             self._portal_connection:
             parsed = urlparse(self.baseurl)
             adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
             t =  self.portal_token.generate_portal_server_token(serverUrl=adminURL)
-
-            print (t)
             return t
-            postdata = {'serverURL':self.baseurl,
-                        'token': self._portal_connection.token,
-                        'expiration':expiration,
-                        'f': 'json',
-                        'request':'getToken'}
         else:
             postdata = { 'username': username, 'password': password,
                          'client': 'referer', 'referer': self._referer,
@@ -780,6 +772,8 @@ class ServerConnection(object):
         if add_token:
             if self.is_logged_in:
                 postdata['token'] = self.token
+        if token:
+            postdata['token'] = token
         if _log.isEnabledFor(logging.DEBUG):
             msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:

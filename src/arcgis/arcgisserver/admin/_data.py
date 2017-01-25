@@ -118,7 +118,7 @@ class Data(BaseServer):
                               files=files)
     #----------------------------------------------------------------------
     def bigDataFileShareHints(self,
-                              dateItemName,
+                              dataItemName,
                               download=True,
                               read=True):
         """
@@ -142,7 +142,7 @@ class Data(BaseServer):
                              params=params)
     #---------------------------------------------------------------------
     def bigDataFileShareHintsUpdate(self,
-                              dateItemName,
+                              dataItemName,
                               hints):
         """
         Upload a hints file for a big data file share item. This will
@@ -206,7 +206,7 @@ class Data(BaseServer):
     #----------------------------------------------------------------------
     def editRelationalDataStoreType(self,
                                     relationalDatastoreTypeName,
-                                    type):
+                                    datastore_type):
         """
         Edit a registered relational data store type to update its
         properties. Before proceeding with any edit, make a backup copy of
@@ -217,13 +217,13 @@ class Data(BaseServer):
 
         Paramters:
          :relationalDatastoreTypeName: relational datastore type name
-         :type: The JSON object representing the relational data store type
+         :datastore_type: The JSON object representing the relational data store type
         """
         url = "{u}/relationalDatastoreTypes/{r}/edit".format(u=self._url,
                                                              r=relationalDatastoreTypeName)
         params = {
             "f" : "json",
-            "type" : type
+            "type" : datastore_type
         }
         return self._con.post(path=url,
                               postdata=params)

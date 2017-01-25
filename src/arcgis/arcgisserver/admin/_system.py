@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-import json
+
 ########################################################################
 class System(BaseServer):
     """

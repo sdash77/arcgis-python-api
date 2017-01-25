@@ -49,7 +49,7 @@ class BaseServer(OrderedDict):
     @connection.setter
     def connection(self, value):
         """gets/sets the connection object"""
-        if isinstance(value, SiteConnection):
+        if isinstance(value, ServerConnection):
             self._con = value
             self.refresh()
         else:

@@ -1,7 +1,7 @@
 """
    Front end controls to the server.
 """
-from .catalog import Server
+from ._view import Server
 from .admin.administration import SiteManager
 ########################################################################
 class ServerManager(object):

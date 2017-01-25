@@ -28,7 +28,7 @@ class Clusters(BaseServer):
                  connection,
                  initialize=False):
         """Constructor"""
-        super(Clusters, self).__init__(connection=connect,
+        super(Clusters, self).__init__(connection=connection,
                                        url=url)
         self._con = connection
         self._url = url

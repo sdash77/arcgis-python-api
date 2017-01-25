@@ -1,11 +1,11 @@
 from __future__ import print_function
 from __future__ import division
-import os
+
 import six
-import json
+
 import time
 import uuid
-import tempfile
+
 import datetime
 #----------------------------------------------------------------------
 def create_uid():

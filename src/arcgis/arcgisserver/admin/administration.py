@@ -4,7 +4,7 @@
 
 """
 from __future__ import absolute_import
-import json
+
 from .._common import BaseServer
 from . import _machines, _clusters
 from . import _data, _info
@@ -262,7 +262,7 @@ class SiteManager(BaseServer):
          :runAsync: A flag to indicate if the operation needs to be run
           asynchronously. The default value is false.
         """
-        url = url + "/upgrade"
+        url = self._url + "/upgrade"
         params = {
             "f" : "json",
             "runAsync" : runAsync

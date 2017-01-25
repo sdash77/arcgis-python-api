@@ -6,37 +6,9 @@ user/developer would.
 from __future__ import absolute_import
 from six.moves.urllib_parse import urlparse
 import json
-from ._common import BaseServer
-from ._service._layerfactory import LayerFactory, Layer
-from ._common import ServerConnection
-
-"""
-class Server
-
-  - users
-      - add/remove/update
-      - roles
-      - privileges
-
-  - content (catalog tree)
-      - add/get/list/search services
-      - folders and permissions
-
-      - Service
-        - start, stop, rename, delete, edit
-        - extensions (SOEs)
-
-  - datastores
-
-  - usage()
-
-  - logs, kml, info
-
-  - config
-      - config store
-      - properties
-      - directories
-"""
+from .._common import BaseServer
+from .._service._layerfactory import Layer
+from .._common import ServerConnection
 ########################################################################
 class Server(BaseServer):
     """This object represents an ArcGIS Server instance"""
@@ -137,7 +109,7 @@ class Server(BaseServer):
     @property
     def site_manager(self):
         """points to the adminstrative side of ArcGIS Server"""
-        from .admin.administration import SiteManager
+        from ..admin.administration import SiteManager
         return SiteManager(connection=self._con,
                            url=self._adminUrl,
                            initialize=False)
