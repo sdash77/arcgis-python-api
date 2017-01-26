@@ -291,7 +291,12 @@ class Geocoder(_GISResource):
 
         resp = self._con.post(url, params, token=self._token)
         if resp is not None:
-            return resp['locations']
+            matches = [None] * len(addresses)
+            locations = resp['locations']
+            for location in locations:
+                matches[location['attributes']['ResultID']] = location
+
+            return matches
         else:
             return []
 
