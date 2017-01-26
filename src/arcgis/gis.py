@@ -79,7 +79,7 @@ class GIS(object):
 
         if url is None:
             url = "http://www.arcgis.com"
-
+        self._server_list = None
         self._url = url
         self._username = username
         self._password = password
@@ -122,6 +122,27 @@ class GIS(object):
         """
         return ContentManager(self)
 
+    @_lazy_property
+    def hosting_servers(self):
+        """
+        The list of datastores resource managers for sites federated with the GIS.
+        """
+        from arcgis.arcgisserver import ServerManager
+        if self._server_list:
+            return self._server_list
+
+        self._server_list = []
+        try:
+            res = self._portal.con.post("portals/self/servers", {"f": "json"})
+            servers = res['servers']
+            admin_url = None
+            for server in servers:
+                admin_url = server['adminUrl']
+                self._server_list.append(ServerManager(url=admin_url,
+                                                       portal_connection=self._con))
+        except:
+            pass
+        return self._server_list
     @_lazy_property
     def _datastores(self):
         """

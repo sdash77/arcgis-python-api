@@ -223,6 +223,7 @@ class ServerConnection(object):
                  proxy_host=None, proxy_port=None,
                  portal_connection=None):
         """ The ServerConnection constructor. Requires URL and optionally username/password. """
+        self._expiration = expiration
         self._is_arcpy = baseurl.lower() == "pro"
         if self._is_arcpy:
             try:
@@ -318,7 +319,8 @@ class ServerConnection(object):
     def token(self):
         """gets/sets the token"""
         if self._token:
-            if datetime.datetime.now() > self._REFRESH_WHEN:
+            if self._REFRESH_WHEN and \
+               datetime.datetime.now() > self._REFRESH_WHEN:
                 self._token = None
                 self.token
             return self._token
@@ -329,19 +331,15 @@ class ServerConnection(object):
             parsed = urlparse(self.baseurl)
             adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
             self._token = self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
-            self._REFRESH_WHEN = datetime.datetime.now() + datetime.timedelta(seconds=55)
-            return self._token#self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
+            self._REFRESH_WHEN = datetime.datetime.now() + datetime.timedelta(seconds=self._expiration)
+            return self._token
         elif self._portal_connection and self._server_token:
             return self._server_token
-        #elif self._portal_connection is None and \
-             #self.product == "FEDERATED_SERVER":
-            #self._portal_connection = ServerConnection(baseurl=self.baseurl,
-                                                       #connection=self)
-            #return self.token
         elif self._username and self._password:
             self.login(username=self._username,
                        password=self._password,
                        expiration=60)
+            self._REFRESH_WHEN = datetime.datetime.now() + datetime.timedelta(seconds=self._expiration)
             return self._token
         return None
     #----------------------------------------------------------------------
@@ -403,6 +401,7 @@ class ServerConnection(object):
         try:
             newtoken = self.generate_token(username,
                                            password, expiration)
+            self._REFRESH_WHEN = datetime.datetime.now() + datetime.timedelta(seconds=expiration)
             if newtoken:
                 self._token = newtoken
                 self._username = username
