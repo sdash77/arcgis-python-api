@@ -11,8 +11,13 @@ from arcgis.data.geodataset.base import BaseSpatialPandas
 from arcgis.data.geodataset.geoseries import GeoSeries
 from six import PY2, PY3
 from six import string_types
+import arcpy
 from arcpy import Geometry
 GEO_COLUMN_DEFAULT = "SHAPE"
+GEOM_TYPES = (arcpy.Point, arcpy.Polygon,
+              arcpy.Geometry, arcpy.PointGeometry,
+              arcpy.Polyline, arcpy.Multipatch,
+              arcpy.Multipoint)
 
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
@@ -166,7 +171,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             level.sr = sr
 
         # Check that we are using a listlike of geometries
-        if not all(isinstance(item, Geometry) or not item for item in level):
+        if not all(isinstance(item, GEOM_TYPES) or not item for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name

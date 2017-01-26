@@ -170,8 +170,11 @@ class Server(BaseServer):
     @folder.setter
     def folder(self, value):
         """gets/sets the current folder name"""
+        lfolders = [f.lower() for f in self.folders]
         if value in self.folders:
-            if value.lower() not in ['root', '/', '']:
+            if value.lower() not in ['root', '/', ''] and \
+               value.lower() in [f.lower() for f in self._folders]:
+                value = self._folders[lfolders.index(value.lower())]
                 self._currentFolder = value
                 self._location = "%s/%s" % (self.root, value)
             else:

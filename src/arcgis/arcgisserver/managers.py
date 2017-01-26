@@ -115,6 +115,13 @@ class ServerManager(object):
         return self._sm.kml
     #----------------------------------------------------------------------
     @property
+    def logged_in_user(self):
+        """
+        returns the current logged in user
+        """
+        return self._sm.info.loggedInUser
+    #----------------------------------------------------------------------
+    @property
     def info(self):
         """
 
