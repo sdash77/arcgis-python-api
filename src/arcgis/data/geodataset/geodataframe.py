@@ -98,7 +98,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         from arcgis.data.geodataset.io import from_featureclass
         return from_featureclass(filename=filename, **kwargs)
     #----------------------------------------------------------------------
-    def to_featureclass(self, df, out_location, out_name, overwrite=True):
+    def to_featureclass(self, out_location, out_name, overwrite=True):
         """converts a SpatialDataFrame to a feature class"""
         from arcgis.data.geodataset.io import to_featureclass
         return to_featureclass(df=self,
