@@ -311,7 +311,9 @@ class BaseSpatialPandas(object):
     @property
     def geometry_type(self):
         """The geometry type: polygon, polyline, point, multipoint, multipatch, dimension, or annotation"""
-        if isinstance(self['SHAPE'][0], arcpy.Point):
+        if 'SHAPE' in self.columns and \
+           len(self['SHAPE']) > 0 and \
+           isinstance(self['SHAPE'][0], arcpy.Point):
             return "point"
         return _call_property(this=self, op="type").all()
     #----------------------------------------------------------------------

@@ -4,6 +4,7 @@ GeoDataFrame Object
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from six import string_types, integer_types
 import pandas as pd
 from pandas import DataFrame, Series, Index
 import numpy
@@ -36,9 +37,20 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
-        self.sr = sr
+
+        if isinstance(sr, integer_types):
+            self.sr = arcpy.SpatialReference(sr)
+        elif isinstance(sr, string_types):
+            self.sr = arcpy.SpatialReference(text=sr)
+        else:
+            self.sr = sr
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
+
+        if self.sr is None:
+            geom_sr = self.spatialReference.all()
+            if geom_sr:
+                self.sr = geom_sr
         self._delete_index()
     #----------------------------------------------------------------------
     @property
@@ -67,7 +79,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """sets the geometry for the panda's dataframe"""
         if isinstance(col, (GeoSeries, list, numpy.array, numpy.ndarray, Series)):
             self.set_geometry(col, inplace=True)
-        #TODO: load data from a feature class in here
         else:
             raise ValueError("Must be a list, np.array, or Series")
     #----------------------------------------------------------------------
