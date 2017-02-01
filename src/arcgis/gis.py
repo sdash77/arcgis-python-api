@@ -693,6 +693,8 @@ class UserManager(object):
         The provider parameter is used to indicate the type of user account. Only an administrator
         can call this method.
 
+        To create a viewer account, choose role='org_viewer' and level=1
+
         .. note:
             When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
             into portal using their enterprise credentials. By default, new installations of Portal for
@@ -721,7 +723,7 @@ class UserManager(object):
         description       An optional description string for the user account.
         ----------------  -------------------------------------------------------------------------------
         role              The role for the user account. The default value is org_user.
-                          Values: org_user | org_publisher | org_admin
+                          Values: org_user | org_publisher | org_admin | org_viewer
         ----------------  -------------------------------------------------------------------------------
         provider          The provider for the account. The default value is arcgis.
                           Values: arcgis | enterprise
@@ -737,6 +739,10 @@ class UserManager(object):
             the user, if created, else None
 
         """
+        #map role parameter of a viewer to the internal value for org viewer.
+        if role == 'org_viewer':
+            role = 'iAAAAAAAAAAAAAAA'
+
         if self._gis._portal.is_arcgisonline:
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                          ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
