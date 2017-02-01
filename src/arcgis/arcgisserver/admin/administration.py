@@ -271,7 +271,7 @@ class SiteManager(BaseServer):
                               postdata=params)
     #----------------------------------------------------------------------
     @property
-    def publicKey(self):
+    def public_key(self):
         """gets the public key"""
         url = self._url + "/publicKey"
         params = {
