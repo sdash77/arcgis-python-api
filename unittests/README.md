@@ -172,6 +172,7 @@ unittest.ini file contents
 
 ## Utilities
 dino_utils:
+
 	- Statefinder: get initial state of a system. Such as
 		- user list
 		- groups list
@@ -191,8 +192,9 @@ dino_utils:
 
 # Jenkins settings
 A Jenkins server running on a VM performs the continuous integration testing. Details below:
+
     - Server: teton.esri.com:8080 [need to be on VPN to access this machine]
-    - URL: [https://teton.esri.com:8080/jenkins](https://teton.esri.com:8080/jenkins)
+    - URL: [http://teton.esri.com:8080/jenkins](http://teton.esri.com:8080/jenkins)
     - credentials: contact Atma
     - Jenkins job: [run_master_tests](http://teton:8080/jenkins/job/run_master_tests/lastCompletedBuild/testReport/)
         - This job has a sub job called `pull_geosaurus_master` which 
@@ -202,6 +204,8 @@ A Jenkins server running on a VM performs the continuous integration testing. De
         are posted to `#dino_tests` channel of [geosaurus.slack.com](http://geosaurus.slack.com)
     - Future plans include building a conda package for each checkin and 
     spinning up a docker container, installing the package and testing it.
+    
+In case teton.esri.com had to be restarted, you can resume Jenkins by running `C:\work\tomcat9\bin\startup.bat`
 
 # Testing pattern
 The `PortalUtils` creates two set of users. Use set1 content in test asset location

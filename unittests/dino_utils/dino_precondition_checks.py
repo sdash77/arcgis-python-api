@@ -219,6 +219,39 @@ class PortalUtils():
         return return_value
 
     @staticmethod
+    def create_sample_groups_150(gis):
+        """
+        Creates the following groups in the portal
+        1. group_150_1
+        2. group_150_2
+        3. group_150_3.. etc until 150
+        :param gis: The GIS connection object to the portal
+        :return: True on success. False on any failure and prints error
+        """
+        tags = 'arcgis_python_api,dino_tests,stress_tests'
+        return_value = True
+
+        for group_index in range(1,151):
+            try:
+                print("Creating ", str(group_index), end=" ")
+                group_name = "group_150_" + str(group_index)
+                search_result = gis.groups.search(group_name, max_groups=1)
+                if len(search_result) > 0 and search_result[0].title == group_name:
+                    print(" already exists..")
+                    continue
+                else:
+                    created_group = gis.groups.create(group_name, tags)
+                    if created_group is not None:
+                        print(" succeeded")
+                    else:
+                        print("  error creating group")
+                        return_value = False
+            except Exception as group_ex:
+                print(" error: " + group_ex.__str__())
+                return_value = False
+        return return_value
+
+    @staticmethod
     def add_users_to_groups(gis):
         """
         Adds known users to known groups
@@ -231,6 +264,32 @@ class PortalUtils():
 
         for group in group_names[:2]: #only adding users to group1, group2
             group_search = gis.groups.search('title : ' + group, max_groups = 1)
+            if group_search is not None and len(group_search) > 0:
+                group_obj = group_search[0]
+
+                for user in user_names:
+                    try:
+                        add_result = group_obj.add_users([user])
+                        print(str(add_result))
+                    except:
+                        return_value = False
+                        continue
+        return return_value
+
+    @staticmethod
+    def add_users_to_150groups(gis):
+        """
+        Adds known users to known 150 groups
+        :param gis:
+        :return: bool
+        """
+        user_names = ['arcgis_python_api', 'publisher1','user1',]
+        group_index = range(1,151)
+        return_value = True
+
+        for group in group_index:  # only adding users to group1, group2
+            group_name = "group_150_" + str(group)
+            group_search = gis.groups.search('title : ' + group_name, max_groups=1)
             if group_search is not None and len(group_search) > 0:
                 group_obj = group_search[0]
 
