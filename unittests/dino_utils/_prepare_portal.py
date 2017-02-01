@@ -13,6 +13,11 @@ from arcgis.gis import GIS
 def populate_portal_users_groups(gis):
     print("Creating Groups")
     create_groups_result = PortalUtils.create_sample_groups(gis)
+    print("create groups result: " + str(create_groups_result))
+    print("=============================================================")
+
+    create_150groups_result = PortalUtils.create_sample_groups_150(gis)
+    print("create 150 groups result: " + str(create_150groups_result))
     print("=============================================================")
 
     print("Creating users")
@@ -21,7 +26,13 @@ def populate_portal_users_groups(gis):
     print("=============================================================")
 
     print("adding users to groups")
-    PortalUtils.add_users_to_groups(gis)
+    add_result = PortalUtils.add_users_to_groups(gis)
+    print("add users to groups result: " + str(add_result))
+    print("=============================================================")
+
+    print("adding users to 150 groups")
+    add_result_150 = PortalUtils.add_users_to_150groups(gis)
+    print("add users to 150 groups result: " + str(add_result_150))
     print("=============================================================")
 
 def populate_portal_content_1(gis, data_path):
