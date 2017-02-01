@@ -247,7 +247,7 @@ class _ArcGISConnection(object):
         self.proxy_port = proxy_port
         self.token = None
         self._server_token = None
-        self._connection = connection # second connection
+        #self._connection = connection # second connection
 
         self._verify_cert = verify_cert
 
@@ -300,54 +300,19 @@ class _ArcGISConnection(object):
         if self._product is None:
             self._product = self._check_product()
         return self._product
-    #----------------------------------------------------------------------
-    @property
-    def connection(self):
-        """gets/sets an additional connection object to get a token from"""
-        return self._connection
-    #----------------------------------------------------------------------
-    @connection.setter
-    def connection(self, value):
-        """gets/sets an additional connection object to get a token from"""
-        if self._connection != value:
-            self._connection = value
-            self._token = None
-            self._server_token = None
+
     #----------------------------------------------------------------------
     @property
     def token(self):
         """gets/sets the token"""
-        if self.connection and self.service_url:
-            return self.connection.generate_portal_server_token(serverUrl=self.service_url)
-        elif self._connection and self._server_token is None:
-            #create a portalserver token
-            if self._connection.product == "AGO":
-                return self.connection.token
-            return self.generate_portal_server_token(serverUrl=self.baseurl)
-        elif self._connection and self._server_token:
-            return self._server_token
-        elif self._connection is None and self.product == "FEDERATED_SERVER":
-            self._connection = _ArcGISConnection(baseurl=self.baseurl, connection=self)
-            return self.token
-        elif self._token:
+        if self._token:
             return self._token
         elif self._username and self._password:
-            self.login(username=self._username, password=self._password, expiration=60)
+            self.login(username=self._username,
+                       password=self._password,
+                       expiration=60)
             return self._token
         return None
-    #----------------------------------------------------------------------
-    @property
-    def service_url(self):
-        """gets/sets the service url"""
-        return self._service_url
-    #----------------------------------------------------------------------
-    @service_url.setter
-    def service_url(self, value):
-        """gets/sets the service url"""
-        if value:
-            self._service_url = value
-        else:
-            self._service_url = None
     #----------------------------------------------------------------------
     @token.setter
     def token(self, value):
