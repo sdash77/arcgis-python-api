@@ -75,15 +75,15 @@ class SiteManager(BaseServer):
             self.init()
         return self._fullVersion
     #----------------------------------------------------------------------
-    def createSite(self,
-                   username,
-                   password,
-                   configStoreConnection,
-                   directories,
-                   cluster=None,
-                   logsSettings=None,
-                   runAsync=False
-                   ):
+    def create(self,
+               username,
+               password,
+               configStoreConnection,
+               directories,
+               cluster=None,
+               logsSettings=None,
+               runAsync=False
+               ):
         """
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:
@@ -132,7 +132,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def joinSite(self, adminURL, username, password):
+    def join(self, adminURL, username, password):
         """
         The Join Site operation is used to connect a server machine to an
         existing site. This is considered a 'push' mechanism, in which a
@@ -164,7 +164,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def deleteSite(self):
+    def delete(self):
         """
         Deletes the site configuration and releases all server resources.
         This is an unrecoverable operation. This operation is well suited
@@ -187,7 +187,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def exportSite(self, location=None):
+    def export(self, location=None):
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -210,7 +210,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def importSite(self, location):
+    def import_site(self, location):
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
