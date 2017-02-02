@@ -7,11 +7,26 @@ from __future__ import absolute_import
 from arcgis.data.geodataset.index.rtree import Rtree
 import pandas as pd
 import numpy as np
+from six import string_types, integer_types
+
+NUMERIC_TYPES = tuple(list(integer_types) + [
+    np.int, np.int16,
+    np.int32, np.integer,
+    np.float, np.float32,
+    np.float64, np.int8,
+    np.int64, np.short])
+
+STRING_TYPES = tuple(list(string_types) + \
+    [str, np.str, np.unicode, chr])
+
+
 
 def chunks(l, n):
     """yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
 
 def sjoin(left_df, right_df, how='inner', op='intersects',
           lsuffix='left', rsuffix='right'):
@@ -36,7 +51,7 @@ def sjoin(left_df, right_df, how='inner', op='intersects',
         Suffix to apply to overlapping column names (right GeoDataFrame).
 
     """
-    import rtree
+    from .index import rtree
 
     allowed_hows = ['left', 'right', 'inner']
     if how not in allowed_hows:

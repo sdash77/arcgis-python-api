@@ -4,12 +4,13 @@ Reads shapefiles, feature classes, table into a spatial dataframe
 from __future__ import print_function
 from __future__ import division
 import os
-import copy
-from datetime import datetime
-import pandas as pd
-import numpy as np
 import six
+import copy
+import numpy as np
+import pandas as pd
 from six import iteritems
+from datetime import datetime
+from ..utils import NUMERIC_TYPES, STRING_TYPES
 import arcpy
 from arcpy import da
 
@@ -51,22 +52,46 @@ def from_featureclass(filename, **kwargs):
     return sdf
 #--------------------------------------------------------------------------
 def to_featureclass(df, out_location, out_name, overwrite=True):
-    """converts a SpatialDataFrame to a feature class"""
+    """
+    converts a SpatialDataFrame to a feature class
+
+    Parameters:
+     :out_location: path to the workspace
+     :out_name: name of the output feature class table
+     :overwrite: True, the data will be erased then replaced, else the
+      table will be appended to an existing table.
+    Returns:
+     path to the feature class
+    """
+    if out_name.lower().endswith('.shp'):
+        cols = []
+        for col in df.columns:
+            if len(col) > 10:
+                col = col[:10]
+            cols.append(col)
+        df.columns = cols
+    for  col in df.columns:
+        if df[col].dtype.type in NUMERIC_TYPES:
+            df[col] = df[col].fillna(0)
+        else:
+            df.loc[df[col].isnull(), col] = ""
     fc = os.path.join(out_location, out_name)
-    if arcpy.Exists(os.path.join(out_location, out_name)):
+    if arcpy.Exists(os.path.join(out_location, out_name)) and \
+       overwrite:
         arcpy.Delete_management(fc)
-    fc = arcpy.CreateFeatureclass_management(out_path=out_location, out_name=out_name,
+    fc = arcpy.CreateFeatureclass_management(out_path=out_location,
+                                             out_name=out_name,
                                              geometry_type=df.geometry_type.upper(),
                                              spatial_reference=df.sr)[0]
     oidField = arcpy.Describe(fc).oidFieldName
-    # add fields
     col_insert = copy.copy(df.columns).tolist()
+    lower_col_names = [f.lower() for f in col_insert]
     if "SHAPE" in df.columns:
         idx = col_insert.index("SHAPE")
         col_insert[idx] = "SHAPE@"
-    if oidField in col_insert:
-        del col_insert[col_insert.index(oidField)]
-        del df[oidField]
+    if oidField.lower() in lower_col_names:
+        val = col_insert.pop(lower_col_names.index(oidField.lower()))
+        del df[val]
     existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
     for col in col_insert:
         if col.lower().find('shape') == -1 and \
@@ -80,7 +105,6 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
     del icur
     return fc
 #--------------------------------------------------------------------------
-#TODO: REFERENCE NUMPY DOCUMENTATION TO ENSURE ALL NUMPY DTYPES ARE CAPTURED.
 def _infer_type(df, col):
     """
     internal function used to get the datatypes for the feature class if
