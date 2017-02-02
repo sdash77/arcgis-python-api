@@ -1396,7 +1396,7 @@ class ContentManager(object):
                 filetype = 'File Geodatabase'
             elif (extn in ('.SLPK', '.SPK')):
                 filetype = 'Scene Package'
-            elif (extn == '.LPK'):
+            elif (extn in ('.LPK', '.LPKX')):
                 filetype = 'Layer Package'
             elif (extn in ('.GPK', '.GPKX')):
                 filetype = 'Geoprocessing Package'
@@ -1404,12 +1404,18 @@ class ContentManager(object):
                 filetype = 'Locator Package'
             elif (extn == '.TPK'):
                 filetype = 'Tile Package'
-            elif (extn == '.MPK'):
+            elif (extn in ('.MPK', '.MPKX')):
                 filetype = 'Map Package'
+            elif (extn == '.MMPK'):
+                filetype = 'Mobile Map Package'
+            elif (extn == '.APTX'):
+                filetype = 'Project Template'
             elif (extn == '.VTPK'):
                 filetype = 'Vector Tile Package'
             elif (extn == '.PPKX'):
                 filetype = 'Project Package'
+            elif (extn == '.RPK'):
+                filetype = 'Rule Package'
             elif (extn == '.MAPX'):
                 filetype = 'Pro Map'
 
