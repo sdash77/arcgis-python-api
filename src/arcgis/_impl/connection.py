@@ -940,7 +940,7 @@ class _ArcGISConnection(object):
     def _handle_json_error(self, error, errorcode):
         errormessage = error.get('message', 'Unknown Error')
         _log.error(errormessage)
-        if 'details' in error:
+        if 'details' in error and error['details'] is not None:
             for errordetail in error['details']:
                 errormessage = errormessage + "\n" + errordetail
                 _log.error(errordetail)
