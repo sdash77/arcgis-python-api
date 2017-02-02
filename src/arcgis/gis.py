@@ -1487,7 +1487,7 @@ class ContentManager(object):
             -----------------  ----------------------------------------------------------------------------
             type               optional string, indicates type of item.  See URL 1 below for valid values.
             -----------------  ----------------------------------------------------------------------------
-            typeKeywords       optinal string list.  Lists all sub-types.  See URL 1 for valid values.
+            typeKeywords       optional string list.  Lists all sub-types.  See URL 1 for valid values.
             -----------------  ----------------------------------------------------------------------------
             description        optional string.  Description of the item.
             -----------------  ----------------------------------------------------------------------------
