@@ -1,5 +1,5 @@
 """
-GeoDataFrame Object
+SpatialDataFrame Object
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -33,7 +33,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     _geometry_column_name = GEO_COLUMN_DEFAULT
     #----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
-
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -46,17 +45,39 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             self.sr = sr
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-
-        if self.sr is None:
-            geom_sr = self.spatialReference.all()
-            if geom_sr:
-                self.sr = geom_sr
         self._delete_index()
     #----------------------------------------------------------------------
     @property
     def _constructor(self):
         """constructor for class as per Pandas' github page"""
         return SpatialDataFrame
+    #----------------------------------------------------------------------
+    def __geo_interface__(self):
+        """returns the object as an Feature Collection JSON string"""
+        template = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        geom_type = self.geometry_type
+        if geom_type.lower() == "point":
+            geom_type = "Point"
+        elif geom_type.lower() == "polyline":
+            geom_type = "LineString"
+        elif geom_type.lower() == "polygon":
+            geom_type = "Polygon"
+        df_copy = self.copy(deep=True)
+        df_copy['geom_json'] = self.geometry.JSON
+        df_copy['SHAPE'] = df_copy['geom_json']
+        del df_copy['geom_json']
+        for index, row in df_copy.iterrows():
+            geom = row['SHAPE']
+            del row['SHAPE']
+            template['features'].append(
+                {"type" : geom_type,
+                "geometry" : pd.json.loads(geom),
+                "attributes":row}
+            )
+        return pd.json.dumps(template)
     #----------------------------------------------------------------------
     def __getstate__(self):
         meta = {k: getattr(self, k, None) for k in self._metadata}
@@ -71,7 +92,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def _get_geometry(self):
         """returns the geometry series"""
-        if self._geometry_column_name not in self:
+        if self._geometry_column_name not in self.columns:
             raise AttributeError("Geometry Column Not Present: %s" % self._geometry_column_name)
         return self[self._geometry_column_name]
     #----------------------------------------------------------------------
@@ -80,12 +101,42 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if isinstance(col, (GeoSeries, list, numpy.array, numpy.ndarray, Series)):
             self.set_geometry(col, inplace=True)
         else:
-            raise ValueError("Must be a list, np.array, or Series")
+            raise ValueError("Must be a list, np.array, or GeoSeries")
     #----------------------------------------------------------------------
     geometry = property(fget=_get_geometry,
                         fset=_set_geometry,
                         fdel=None,
-                        doc="Gets/Sets for the DataFrame")
+                        doc="Get/Set the geometry data for SpatialDataFrame")
+    #----------------------------------------------------------------------
+    def __finalize__(self, other, method=None, **kwargs):
+        """propagate metadata from other to self """
+        # merge operation: using metadata of the left object
+        if method == 'merge':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.left, name, None))
+        # concat operation: using metadata of the first object
+        elif method == 'concat':
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+        else:
+            for name in self._metadata:
+                object.__setattr__(self, name, getattr(other, name, None))
+        return self
+    #----------------------------------------------------------------------
+    def copy(self, deep=True):
+        """
+        Make a copy of this SpatialDataFrame object
+        Parameters:
+
+        :deep: boolean, default True
+               Make a deep copy, i.e. also copy data
+        Returns:
+         :copy: of SpatialDataFrame
+        """
+        data = self._data
+        if deep:
+            data = data.copy()
+        return SpatialDataFrame(data).__finalize__(self)
     #----------------------------------------------------------------------
     #TODO: Write plot function
     def plot(self, *args, **kwargs):
@@ -97,7 +148,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     @classmethod
     def from_featureclass(filename, **kwargs):
         """
-        Returns a GeoDataFrame from a feature class.
+        Returns a SpatialDataFrame from a feature class.
         Inputs:
          filename: full path to the feature class
         Optional Parameters:
@@ -119,31 +170,25 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def set_geometry(self, col, drop=False, inplace=False, sr=None):
         """
-        Set the GeoDataFrame geometry using either an existing column or
+        Set the SpatialDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
 
         The original geometry column is replaced with the input.
 
-        Parameters
+        Parameters:
         ----------
-        keys : column label or array
-        drop : boolean, default True
-            Delete column to be used as the new geometry
-        inplace : boolean, default False
-            Modify the GeoDataFrame in place (do not create a new object)
+        keys: column label or array
+        drop: boolean, default True
+         Delete column to be used as the new geometry
+        inplace: boolean, default False
+         Modify the SpatialDataFrame in place (do not create a new object)
         sr : str/result of fion.get_sr (optional)
-            Coordinate system to use. If passed, overrides both DataFrame and
-            col's sr. Otherwise, tries to get sr from passed col values or
-            DataFrame.
-
-        Examples
-        --------
-        >>> df1 = df.set_geometry([Point(0,0), Point(1,1), Point(2,2)])
-        >>> df2 = df.set_geometry('geom1')
-
-        Returns
+         Coordinate system to use. If passed, overrides both DataFrame and
+         col's sr. Otherwise, tries to get sr from passed col values or
+         DataFrame.
+        Returns:
         -------
-        geodataframe : GeoDataFrame
+        SpatialDataFrame
         """
         # Most of the code here is taken from DataFrame.set_index()
         if inplace:
@@ -190,12 +235,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         frame._delete_index()
         if not inplace:
             return frame
+        self = frame
     #----------------------------------------------------------------------
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
-        GeoDataFrame.
+        SpatialDataFrame.
         """
         result = super(SpatialDataFrame, self).__getitem__(key)
         geo_col = self._geometry_column_name
@@ -303,3 +349,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         gs = GeoSeries([geom])
         gs.sr = geom.spatialReference.factoryCode or None
         return SpatialDataFrame(geometry=gs, data=[])
+###########################################################################
+def _dataframe_set_geometry(self, col, drop=False, inplace=False, sr=None):
+    if inplace:
+        raise ValueError("Can't do inplace setting when converting from"
+                         " DataFrame to SpatialDataFrame")
+    gf = SpatialDataFrame(self)
+    # this will copy so that BlockManager gets copied
+    return gf.set_geometry(col, drop=drop, inplace=False, sr=crs)
+
+if PY3:
+    DataFrame.set_geometry = _dataframe_set_geometry
+else:
+    import types
+    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
+                                              DataFrame)

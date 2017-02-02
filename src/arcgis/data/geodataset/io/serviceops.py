@@ -3,46 +3,45 @@
 """
 from __future__ import print_function
 from __future__ import division
-import arcgis.data.geodataset as gm
+from .. import SpatialDataFrame
+from arcgis.features.layer import FeatureLayer, Table
 from arcgis.data.geodataset.utils import chunks
 import json
 import warnings
-try:
-    import arcgis
-    HASARCGIS = True
-except ImportError:
-    warnings.warn("arcgis module is not installed cannot use this module")
-    HASARCGIS = False
 #--------------------------------------------------------------------------
-def from_layer(service):
+def from_layer(layer):
     """
     Converts a Feature Service Layer to a Pandas' DataFrame
-    """
-    if HASARCGIS and \
-       isinstance(service, arcgis.features.layer.FeatureLayer):
-        df = gm.SpatialDataFrame
-        count = service.query(return_count_only=True)
-        results = []
-        if count > 1000:
-            oids = service.query(return_ids_only=True)
-            for pt in chunks(oids, 750):
-                del pt
 
-        else:
-            vals = service.query()
-            print ('stop')
-        return gm.SpatialDataFrame.from_dict([])
+    Parameters:
+     :layer: FeatureLayer or Table object.  If the object is a FeatureLayer
+      the function will return a Spatial DataFrame, if the object is of
+      type Table, the function will return a Pandas' DataFrame
+
+    Usage:
+    >>> from arcgis.arcgisserver import Layer
+    >>> from arcgis import from_layer
+    >>> mylayer = Layer("https://sampleserver6.arcgisonline.com/arcgis/rest" +\
+                        "/services/CommercialDamageAssessment/FeatureServer/0")
+    >>> sdf = from_layer(mylayer)
+    >>> print(sdf)
+    """
+    if isinstance(layer, (Table, FeatureLayer)) == False:
+        raise ValueError("Invalid inputs: must be FeatureLayer or Table")
+    max_records = layer.properties['maxRecordCount']
+    service_count = layer.query(return_count_only=True)
+    if service_count > max_records:
+        frames = []
+        oid_info = layer.query(return_ids_only=True)
+        for ids in chunks(oid_info['objectIds'], max_records):
+            ids = [str(i) for i in ids]
+            sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
+                                  ",".join(ids))
+            print (sql)
+            frames.append(layer.query(where=sql).df)
+
+            print('stop')
+        res = pd.concat(frames, ignore_index=True)
     else:
-        raise ValueError("Input must be of type FeatureLayer")
-    raise NotImplementedError("from_layer not implemented")
-#--------------------------------------------------------------------------
-def to_layer(df, service):
-    """
-    Converts a Spatial DataFrame data and pushes it to a Feature Service
-    Layer
-    """
-    if HASARCGIS and \
-       isinstance(service, arcgis.features.layer.FeatureLayer) and \
-       isinstance(df, arcgis.SpatialDataFrame):
-        pass
-    raise NotImplementedError("to_layer not implemented")
+        res = layer.query().df
+    return res

@@ -426,17 +426,50 @@ class FeatureSet(object):
     def df(self):
         """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
         try:
+            try:
+                import arcpy
+                arcpy_found = True
+            except:
+                arcpy_found = False
             from pandas.io.json import json_normalize
-            #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
-            df = json_normalize(self.value['features'])
-            df.columns = df.columns.str.replace('attributes.', '')
-            if self._object_id_field_name is not None:
-                df.set_index([self._object_id_field_name], inplace=True)
+            from arcgis import SpatialDataFrame
+            if arcpy_found and \
+               self.geometry_type is not None:
+                if 'wkt' in self.spatial_reference.keys():
+                    sr = arcpy.SpatialReference(text=self.spatial_reference['wkt'])
+                elif 'wkid' in self.spatial_reference:
+                    sr = arcpy.SpatialReference(self.spatial_reference['wkid'])
+                else:
+                    sr = None
+                geoms = []
+                attributes = []
+                for feat in self.features:
+                    attributes.append(feat.attributes)
+                    gg = Geometry(feat.geometry)
+                    if gg.type in ("POINT", "LINE", "POLYLINE",
+                                   "POLYGON", "MULTIPOINT"):
+                        g = arcpy.AsShape(str(gg), esri_json=True)
+                        if sr:
+                            g = g.projectAs(sr)
+
+                        geoms.append(g)
+                    del gg
+                    del feat
+                df = json_normalize(attributes)
+                df.columns = df.columns.str.replace('attributes.', '')
+
+                return SpatialDataFrame(df, geometry=geoms, sr=sr)
             else:
-                if 'OBJECTID' in df.columns:
-                    df.set_index(['OBJECTID'], inplace=True)
-                elif 'FID' in df.columns:
-                    df.set_index(['FID'], inplace=True)
+                #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
+                df = json_normalize(self.value['features'])
+                df.columns = df.columns.str.replace('attributes.', '')
+                if self._object_id_field_name is not None:
+                    df.set_index([self._object_id_field_name], inplace=True)
+                else:
+                    if 'OBJECTID' in df.columns:
+                        df.set_index(['OBJECTID'], inplace=True)
+                    elif 'FID' in df.columns:
+                        df.set_index(['FID'], inplace=True)
             return df
         except ImportError:
             raise ImportError("pandas not found, please install it")

@@ -5,20 +5,22 @@ Generates Layer Types from the given inputs.
 from __future__ import absolute_import
 import os
 from six import add_metaclass
+from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, Table, FeatureLayerCollection
 from arcgis.geocoding import Geocoder
 from arcgis.geoprocessing._tool import Toolbox
+from .._common import ServerConnection
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-
 from ._geodataservice import GeoData
 from ._globeservice import Globe, GlobeLayer
 from ._mobileservice import MobileService
 from ._sceneservice import Scene
+from six.moves.urllib_parse import urlparse
 
 class LayerFactory(type):
     """
@@ -31,10 +33,25 @@ class LayerFactory(type):
                  server=None,
                  initialize=False):
         """generates the proper type of layer from a given url"""
+        from .. import ServerManager
         hasLayer = False
-        if url is None:
+        if url is None and \
+           item is None:
+            raise ValueError("A URL to the service or an arcgis.Item is required.")
+        elif url is None and item is not None:
             url = item.url
-        connection = server._con
+
+        if isinstance(server, ServerConnection):
+            connection = server
+        elif isinstance(server, (ServerManager, GIS)):
+            connection = server._con
+        else:
+            parsed = urlparse(url)
+            site_url = "{scheme}://{nl}/{wa}".format(scheme=parsed.scheme,
+                                                     nl=parsed.netloc,
+                                                     wa=parsed.path[1:].split('/')[0])
+            connection = ServerConnection(baseurl=site_url) # anonymous connection
+
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))
