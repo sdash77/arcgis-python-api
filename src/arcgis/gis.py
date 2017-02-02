@@ -1450,7 +1450,7 @@ class ContentManager(object):
                        wkid=102100,
                        create_params=None,
                        service_type="imageService",
-                       owner=None, folder=None, common_params=None):
+                       owner=None, folder=None, item_properties=None):
         """ Creates a service in the Portal
 
         Arguments
@@ -1474,7 +1474,42 @@ class ContentManager(object):
 
             owner                   optional string, the username of the owner
             folder                  optional string, name of folder in which to create the service
-            common_params           optional dict, containing item parameters from http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r30000009v000000
+            item_properties         optional dict, see below for the keys and values
+
+            =================  ============================================================================
+             **Key**            **Value**
+            -----------------  ----------------------------------------------------------------------------
+            type               optional string, indicates type of item.  See URL 1 below for valid values.
+            -----------------  ----------------------------------------------------------------------------
+            typeKeywords       optinal string list.  Lists all sub-types.  See URL 1 for valid values.
+            -----------------  ----------------------------------------------------------------------------
+            description        optional string.  Description of the item.
+            -----------------  ----------------------------------------------------------------------------
+            title              optional string.  Name of the item.
+            -----------------  ----------------------------------------------------------------------------
+            url                optional string.  URL to item that are based on URLs.
+            -----------------  ----------------------------------------------------------------------------
+            tags               optional string of comma-separated values, or list of strings.
+                               Used for searches on items.
+            -----------------  ----------------------------------------------------------------------------
+            snippet            optional string.  Provides a very short summary of the what the item is.
+            -----------------  ----------------------------------------------------------------------------
+            extent             optional string with comma separated values for min x, min y, max x, max y.
+            -----------------  ----------------------------------------------------------------------------
+            spatialReference   optional string.  Coordinate system that the item is in.
+            -----------------  ----------------------------------------------------------------------------
+            accessInformation  optional string.  Information on the source of the content.
+            -----------------  ----------------------------------------------------------------------------
+            licenseInfo        optinal string, any license information or restrictions regarding content.
+            -----------------  ----------------------------------------------------------------------------
+            culture            optional string.  Locale, country and language information.
+            -----------------  ----------------------------------------------------------------------------
+            access             optional string.  Valid values: private, shared, org, or public.
+            -----------------  ----------------------------------------------------------------------------
+            commentsEnabled    optional boolean.  Default is true.  Controls whether comments are allowed.
+            -----------------  ----------------------------------------------------------------------------
+            culture            optional string.  Language and country information.
+            =================  ============================================================================
 
             :return:
                  The item for the service, if successfully created, None if unsuccessful.
@@ -1498,7 +1533,7 @@ class ContentManager(object):
                                              wkid,
                                              service_type,
                                              create_params,
-                                             owner, folder, common_params)
+                                             owner, folder, item_properties)
         if itemid is not None:
             return Item(self._gis, itemid)
         else:
