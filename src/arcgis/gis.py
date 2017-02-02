@@ -1284,13 +1284,16 @@ class GroupManager(object):
 
 
 def _is_shapefile(data):
-    if zipfile.is_zipfile(data):
-        zf = zipfile.ZipFile(data, 'r')
-        namelist = zf.namelist()
-        for name in namelist:
-            if name.endswith('.shp') or name.endswith('.SHP'):
-                return True
-    return False
+    try:
+        if zipfile.is_zipfile(data):
+            zf = zipfile.ZipFile(data, 'r')
+            namelist = zf.namelist()
+            for name in namelist:
+                if name.endswith('.shp') or name.endswith('.SHP'):
+                    return True
+        return False
+    except:
+        return False
 
 
 class ContentManager(object):
@@ -1383,17 +1386,41 @@ class ContentManager(object):
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
+
+            filetype = None
             if (extn == '.CSV'):
                 filetype = 'CSV'
             elif (extn == '.SD'):
                 filetype = 'Service Definition'
             elif title.upper().endswith('.GDB'):
                 filetype = 'File Geodatabase'
+            elif (extn in ('.SLPK', '.SPK')):
+                filetype = 'Scene Package'
+            elif (extn == '.LPK'):
+                filetype = 'Layer Package'
+            elif (extn in ('.GPK', '.GPKX')):
+                filetype = 'Geoprocessing Package'
+            elif (extn == '.GCPK'):
+                filetype = 'Locator Package'
+            elif (extn == '.TPK'):
+                filetype = 'Tile Package'
+            elif (extn == '.MPK'):
+                filetype = 'Map Package'
+            elif (extn == '.VTPK'):
+                filetype = 'Vector Tile Package'
+            elif (extn == '.PPKX'):
+                filetype = 'Project Package'
+            elif (extn == '.MAPX'):
+                filetype = 'Pro Map'
+
             if _is_shapefile(data):
                 filetype = 'Shapefile'
 
             if not 'type' in item_properties:
-                item_properties['type'] = filetype
+                if filetype is not None:
+                    item_properties['type'] = filetype
+                else:
+                    raise RuntimeError('Specify type in item_properties')
             if not 'title' in item_properties:
                 item_properties['title'] = title
 
