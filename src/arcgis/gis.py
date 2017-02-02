@@ -1423,7 +1423,8 @@ class ContentManager(object):
                        wkid=102100,
                        create_params=None,
                        service_type="imageService",
-                       owner=None, folder=None):
+                       owner=None, folder=None,
+                       common_params=None):
         """ Creates a service in the Portal
 
         Arguments
@@ -1447,6 +1448,7 @@ class ContentManager(object):
 
             owner                   optional string, the username of the owner
             folder                  optional string, name of folder in which to create the service
+            common_params           optional dict, containing item parameters from http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r30000009v000000
 
             :return:
                  The item for the service, if successfully created, None if unsuccessful.
@@ -1468,7 +1470,8 @@ class ContentManager(object):
                                              description,
                                              copyright_text,
                                              wkid,
-                                             service_type, create_params, owner, folder)
+                                             service_type,
+                                             create_params, owner, folder, common_params)
         if itemid is not None:
             return Item(self._gis, itemid)
         else:
