@@ -2542,7 +2542,7 @@ class Item(dict):
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
                         if self.type == 'Scene Service':
-                            lyr_url = svc.url + '/' + lyr.href
+                            lyr_url = svc.url + '/layers/' + str(lyr.id)
                         else:
                             lyr_url = svc.url+'/'+str(lyr.id)
                         lyr = Layer(lyr_url, self._gis)
