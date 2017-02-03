@@ -1581,7 +1581,7 @@ class ContentManager(object):
         ----------------  -----------------------------------------------------------------------------------
         query             required string, query string.  See notes.
         ----------------  -----------------------------------------------------------------------------------
-        item_type         optional string, set type of item to search
+        item_type         optional string, set type of item to search.
                           http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
         ----------------  -----------------------------------------------------------------------------------
         sort_field        optional string, valid values can be title, uploaded, type, owner, modified,
@@ -1619,6 +1619,10 @@ class ContentManager(object):
                 query += ' (type:"image service")'
             elif item_type == "imagery layer":
                 query += ' (type:"image service")'
+            elif item_type == "vector tile layer":
+                query += ' (type:"vector tile service")'
+            elif item_type == "scene layer":
+                query += ' (type:"scene service")'
             elif item_type == "layer":
                 query += ' (type:"layer" NOT type:"layer package" NOT type:"Explorer Layer")'
             elif item_type == "feature collection":
@@ -2477,7 +2481,7 @@ class Item(dict):
             self.type == 'Vector Tile Service'
 
     def _populate_layers(self):
-        from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection
+        from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection, Table
         from arcgis.mapping import VectorTileLayer, MapImageLayer
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
@@ -2537,11 +2541,18 @@ class Item(dict):
                 else:
                     svc = _GISResource(self.url, self._gis)
                     for lyr in svc.properties.layers:
-                        lyr = Layer(svc.url+'/'+str(lyr.id), self._gis)
+                        if self.type == 'Scene Service':
+                            lyr_url = svc.url + '/' + lyr.href
+                        else:
+                            lyr_url = svc.url+'/'+str(lyr.id)
+                        lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
-                    for lyr in svc.properties.tables:
-                        lyr = Layer(svc.url+'/'+str(lyr.id), self._gis)
-                        tables.append(lyr)
+                    try:
+                        for lyr in svc.properties.tables:
+                            lyr = Table(svc.url+'/'+str(lyr.id), self._gis)
+                            tables.append(lyr)
+                    except:
+                        pass
 
             self.layers = layers
             self.tables = tables

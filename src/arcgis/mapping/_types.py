@@ -319,6 +319,12 @@ class MapImageLayer(Layer):
         self._populate_layers()
         self._admin = None
 
+    @classmethod
+    def fromitem(cls, item):
+        if not item.type == 'Map Service':
+            raise TypeError("item must be a type of Map Service, not " + item.type)
+        return cls(item.url, item._gis)
+
     def _populate_layers(self):
         layers = []
         tables = []
