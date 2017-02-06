@@ -138,12 +138,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             data = data.copy()
         return SpatialDataFrame(data).__finalize__(self)
     #----------------------------------------------------------------------
-    #TODO: Write plot function
     def plot(self, *args, **kwargs):
-        raise NotImplementedError("Plot is not implemented yet.")
-        #return plot_dataframe(self, *args, **kwargs)
+        """ writes the spatial dataframe to a map """
+        from ...gis import GIS
+        from ...widgets import MapView
+        from ...features.feature import FeatureSet
+        themap = GIS().map()
+        if isinstance(themap, MapView): pass
+        fs = FeatureSet.from_dataframe(df=self)
+        themap.draw(shape=fs)
+        return themap
     #----------------------------------------------------------------------
-    #plot.__doc__ = plot_dataframe.__doc__
+    #plot.__doc__ = FeatureSet.__doc__
     #----------------------------------------------------------------------
     @classmethod
     def from_featureclass(filename, **kwargs):

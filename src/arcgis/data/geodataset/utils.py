@@ -5,9 +5,15 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from arcgis.data.geodataset.index.rtree import Rtree
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from six import string_types, integer_types
+
+DATETIME_TYPES = (datetime,
+                  np.datetime64,
+                  pd.datetime,
+                  pd.DatetimeIndex)
 
 NUMERIC_TYPES = tuple(list(integer_types) + [
     np.int, np.int16,

@@ -6,6 +6,8 @@ import copy
 import json
 import os
 import re
+import time
+import datetime
 import tempfile
 import uuid
 
@@ -15,6 +17,29 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
 from arcgis.gis import Layer
 
+
+#----------------------------------------------------------------------
+def _date_handler(obj):
+    if isinstance(obj, datetime.datetime):
+        return local_time_to_online(obj)
+    else:
+        return obj
+#----------------------------------------------------------------------
+def local_time_to_online(dt=None):
+    """
+       converts datetime object to a UTC timestamp for AGOL
+       Inputs:
+          dt - datetime object
+       Output:
+          Long value
+    """
+    if dt is None:
+        dt = datetime.datetime.now()
+
+    is_dst = time.daylight and time.localtime().tm_isdst > 0
+    utc_offset =  (time.altzone if is_dst else time.timezone)
+
+    return (time.mktime(dt.timetuple())  * 1000) + (utc_offset *1000)
 
 class Feature(object):
     """ Entities located in space with a set of properties can be represented as features. """
@@ -176,7 +201,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """"""
-        return json.dumps(self.as_dict)
+        return json.dumps(self.as_dict, default=_date_handler)
 
     __repr__ = __str__
 
@@ -317,11 +342,10 @@ class FeatureSet(object):
                         if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
-
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
-        return json.dumps(self.value)
+        return json.dumps(self.value, default=_date_handler)
 
     __repr__ = __str__
 
@@ -491,11 +515,42 @@ class FeatureSet(object):
         """returns a featureset from a JSON string"""
         return FeatureSet.from_dict(json.loads(json_str))
 
+    @staticmethod
+    def from_dataframe(df):
+        """returns a featureset from a Pandas' Data or Spatial DataFrame"""
+        from ..data.geodataset import SpatialDataFrame
+        import pandas as pd
+        features = []
+        index = 0
+        if isinstance(df, SpatialDataFrame):
+            df_rows = df.copy()
+            del df_rows['SHAPE']
+            geoms = df['SHAPE'].tolist()
+        elif isinstance(df, pd.DataFrame):
+            geoms = []
+            df_rows = df.copy().to_dict('records')
+        else:
+            raise ValueError("Invalid input type")
+        index = 0
+        for row in df_rows.to_dict('records'):
+            if len(geoms) > 0:
+                features.append(
+                    {
+                        "geometry": json.loads(geoms[index].JSON),
+                        "attributes": row
+                    })
+            else:
+                features.append(
+                    {
+                        "attributes": row
+                    })
+            index += 1
+        return FeatureSet.from_dict(featureset_dict={'features': features})
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_dict(featureset_dict):
         """returns a featureset from a dict"""
-
         features = []
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']

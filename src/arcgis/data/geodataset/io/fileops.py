@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from six import iteritems
 from datetime import datetime
-from ..utils import NUMERIC_TYPES, STRING_TYPES
+from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 import arcpy
 from arcpy import da
 
@@ -63,18 +63,28 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
     Returns:
      path to the feature class
     """
+    cols = []
+    dt_idx = []
+    idx = 0
     if out_name.lower().endswith('.shp'):
-        cols = []
         for col in df.columns:
+            col = arcpy.ValidateFieldName(col, workspace=out_location)
             if len(col) > 10:
                 col = col[:10]
-            cols.append(col)
-        df.columns = cols
+            cols.append(col)#col.replace(' ', "_"))
+    else:
+        for col in df.columns:
+            cols.append(arcpy.ValidateFieldName(col, workspace=out_location))#col.replace(" ", "_"))
+    df.columns = cols
+
     for  col in df.columns:
         if df[col].dtype.type in NUMERIC_TYPES:
             df[col] = df[col].fillna(0)
+        elif df[col].dtype.type in DATETIME_TYPES:
+            dt_idx.append(idx)
         else:
             df.loc[df[col].isnull(), col] = ""
+        idx += 1
     fc = os.path.join(out_location, out_name)
     if arcpy.Exists(os.path.join(out_location, out_name)) and \
        overwrite:
@@ -100,7 +110,14 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
                                       field_type=_infer_type(df, col))
     icur = da.InsertCursor(fc, col_insert)
     for index, row in df.iterrows():
-        icur.insertRow(row.tolist())
+        if len(dt_idx) > 0:
+            row = row.tolist()
+            for i in dt_idx:
+                row[i] = row[i].to_pydatetime()
+                del i
+            icur.insertRow(row)
+        else:
+            icur.insertRow(row.tolist())
         del row
     del icur
     return fc
