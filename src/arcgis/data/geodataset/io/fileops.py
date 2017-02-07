@@ -4,15 +4,44 @@ Reads shapefiles, feature classes, table into a spatial dataframe
 from __future__ import print_function
 from __future__ import division
 import os
+import re
 import six
 import copy
 import numpy as np
 import pandas as pd
-from six import iteritems
+from six import iteritems, integer_types
 from datetime import datetime
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 import arcpy
 from arcpy import da
+
+def sanitize_field_name(s, length=None, sub_value=None):
+    """
+    Modifies the string by replacing special characters by another value.
+    It can also shorten a string if length is specified.
+
+    Parmaters:
+     :s: string value
+     :length: optional integer value must be > 0
+     :sub_value: optional replacement value instead of empty string
+
+    Returns:
+     string
+
+    Usage:
+    >>> string2 = 'how much for the doggie in the window? $20.99?'
+    >>> print (sanitize_field_name(string2))
+    howmuchforthedoggieinthewindow2099
+    """
+    if sub_value is None:
+        sub_value = ""
+    s = re.sub('\W+', sub_value, s)
+    if isinstance(length, integer_types) and \
+       length > 0 and \
+       len(s) > length:
+        s = s[:length]
+    return s
+
 
 def from_featureclass(filename, **kwargs):
     """
@@ -66,18 +95,12 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
     cols = []
     dt_idx = []
     idx = 0
+    max_length = None
+    fc = os.path.join(out_location, out_name)
+    df = df.copy() # create a copy so we don't modify the source data.
     if out_name.lower().endswith('.shp'):
-        for col in df.columns:
-            col = arcpy.ValidateFieldName(col, workspace=out_location)
-            if len(col) > 10:
-                col = col[:10]
-            cols.append(col)#col.replace(' ', "_"))
-    else:
-        for col in df.columns:
-            cols.append(arcpy.ValidateFieldName(col, workspace=out_location))#col.replace(" ", "_"))
-    df.columns = cols
-
-    for  col in df.columns:
+        max_length = 10
+    for col in df.columns:
         if df[col].dtype.type in NUMERIC_TYPES:
             df[col] = df[col].fillna(0)
         elif df[col].dtype.type in DATETIME_TYPES:
@@ -85,14 +108,20 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
         else:
             df.loc[df[col].isnull(), col] = ""
         idx += 1
-    fc = os.path.join(out_location, out_name)
-    if arcpy.Exists(os.path.join(out_location, out_name)) and \
+        col = sanitize_field_name(s=col,
+                                  length=max_length)
+        cols.append(col)
+        del col
+    df.columns = cols
+
+    if arcpy.Exists(fc) and \
        overwrite:
         arcpy.Delete_management(fc)
-    fc = arcpy.CreateFeatureclass_management(out_path=out_location,
-                                             out_name=out_name,
-                                             geometry_type=df.geometry_type.upper(),
-                                             spatial_reference=df.sr)[0]
+    if arcpy.Exists(fc) ==  False:
+        fc = arcpy.CreateFeatureclass_management(out_path=out_location,
+                                                 out_name=out_name,
+                                                 geometry_type=df.geometry_type.upper(),
+                                                 spatial_reference=df.sr)[0]
     oidField = arcpy.Describe(fc).oidFieldName
     col_insert = copy.copy(df.columns).tolist()
     lower_col_names = [f.lower() for f in col_insert]

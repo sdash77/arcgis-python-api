@@ -142,14 +142,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """ writes the spatial dataframe to a map """
         from ...gis import GIS
         from ...widgets import MapView
-        from ...features.feature import FeatureSet
-        themap = GIS().map()
-        if isinstance(themap, MapView): pass
-        fs = FeatureSet.from_dataframe(df=self)
-        themap.draw(shape=fs)
-        return themap
-    #----------------------------------------------------------------------
-    #plot.__doc__ = FeatureSet.__doc__
+        raise NotImplementedError("plot is not implmented")
+        #from ...features.feature import FeatureSet
+        #themap = GIS().map()
+        #fs = FeatureSet.from_dataframe(df=self)
+        #for feat in fs:
+        #    themap.draw(shape=feat)
+        #return themap
     #----------------------------------------------------------------------
     @classmethod
     def from_featureclass(filename, **kwargs):
