@@ -4,45 +4,23 @@ Reads shapefiles, feature classes, table into a spatial dataframe
 from __future__ import print_function
 from __future__ import division
 import os
-import re
 import six
 import copy
+from warnings import warn
 import numpy as np
 import pandas as pd
 from six import iteritems, integer_types
 from datetime import datetime
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
-import arcpy
-from arcpy import da
-
-def sanitize_field_name(s, length=None, sub_value=None):
-    """
-    Modifies the string by replacing special characters by another value.
-    It can also shorten a string if length is specified.
-
-    Parmaters:
-     :s: string value
-     :length: optional integer value must be > 0
-     :sub_value: optional replacement value instead of empty string
-
-    Returns:
-     string
-
-    Usage:
-    >>> string2 = 'how much for the doggie in the window? $20.99?'
-    >>> print (sanitize_field_name(string2))
-    howmuchforthedoggieinthewindow2099
-    """
-    if sub_value is None:
-        sub_value = ""
-    s = re.sub('\W+', sub_value, s)
-    if isinstance(length, integer_types) and \
-       length > 0 and \
-       len(s) > length:
-        s = s[:length]
-    return s
-
-
+from ..utils import sanitize_field_name
+try:
+    import arcpy
+    from arcpy import da
+    HASARCPY = False#True
+except:
+    warn(message="ArcPy not found.")
+    HASARCPY = False
+#--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
     Returns a GeoDataFrame from a feature class.
@@ -54,33 +32,36 @@ def from_featureclass(filename, **kwargs):
      sr: spatial reference object
 
     """
-    from arcgis import SpatialDataFrame
-    sql_clause = kwargs.pop('sql_clause', (None,None))
-    where_clause = kwargs.pop('where_clause', None)
-    sr = kwargs.pop('sr', None)
+    if HASARCPY:
+        from arcgis import SpatialDataFrame
+        sql_clause = kwargs.pop('sql_clause', (None,None))
+        where_clause = kwargs.pop('where_clause', None)
+        sr = kwargs.pop('sr', None)
 
-    fields = [field.name for field in arcpy.ListFields(filename) \
-              if field.type not in ['Geometry']]
-    geom_fields = fields + ['SHAPE@']
-    flds = fields + ['SHAPE']
-    vals = []
-    with arcpy.da.SearchCursor(filename,
-                               field_names=geom_fields,
-                               where_clause=where_clause,
-                               sql_clause=sql_clause,
-                               spatial_reference=sr) as rows:
-        for row in rows:
-            vals.append(dict(zip(flds, row)))
-            del row
-        del rows
-    sdf = SpatialDataFrame.from_dict(data=vals)
-    if sr is None:
-        sdf.sr = sr
-    else:
-        sdf.sr = sdf.geometry[0].spatialReference
-    return sdf
+        fields = [field.name for field in arcpy.ListFields(filename) \
+                  if field.type not in ['Geometry']]
+        geom_fields = fields + ['SHAPE@']
+        flds = fields + ['SHAPE']
+        vals = []
+        with arcpy.da.SearchCursor(filename,
+                                   field_names=geom_fields,
+                                   where_clause=where_clause,
+                                   sql_clause=sql_clause,
+                                   spatial_reference=sr) as rows:
+            for row in rows:
+                vals.append(dict(zip(flds, row)))
+                del row
+            del rows
+        sdf = SpatialDataFrame.from_dict(data=vals)
+        if sr is None:
+            sdf.sr = sr
+        else:
+            sdf.sr = sdf.geometry[0].spatialReference
+        return sdf
+    return
+
 #--------------------------------------------------------------------------
-def to_featureclass(df, out_location, out_name, overwrite=True):
+def to_featureclass(df, out_location, out_name, overwrite=True, out_sr=None):
     """
     converts a SpatialDataFrame to a feature class
 
@@ -121,7 +102,7 @@ def to_featureclass(df, out_location, out_name, overwrite=True):
         fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                  out_name=out_name,
                                                  geometry_type=df.geometry_type.upper(),
-                                                 spatial_reference=df.sr)[0]
+                                                 spatial_reference=df.spatialReference)[0]
     oidField = arcpy.Describe(fc).oidFieldName
     col_insert = copy.copy(df.columns).tolist()
     lower_col_names = [f.lower() for f in col_insert]
@@ -174,7 +155,5 @@ def _infer_type(df, col):
             return "FLOAT"
         elif isinstance(val, datetime):
             return "DATE"
-        #else:
-        #    print type(val), val, col
     return "TEXT"
 

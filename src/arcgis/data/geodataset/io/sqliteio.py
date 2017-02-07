@@ -6,13 +6,15 @@ from __future__ import division
 import os
 import json
 import warnings
+from .fileops import to_featureclass
+SUPPORTED_FORMATS = []
 try:
     import arcpy
     HASARCPY = True
 except ImportError:
     HASARCPY = False
     warnings.warn("ArcPy Missing, cannot perform sqlite operations")
-from .fileops import to_featureclass
+
 #----------------------------------------------------------------------
 def to_sqlite(df,
               out_folder,

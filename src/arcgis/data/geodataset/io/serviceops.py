@@ -1,5 +1,5 @@
 """
-   Converts a Layer to a Pandas' DataFrame
+   Converts a Layer to a Spatial DataFrame
 """
 from __future__ import print_function
 from __future__ import division
@@ -37,10 +37,7 @@ def from_layer(layer):
             ids = [str(i) for i in ids]
             sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
                                   ",".join(ids))
-            print (sql)
             frames.append(layer.query(where=sql).df)
-
-            print('stop')
         res = pd.concat(frames, ignore_index=True)
     else:
         res = layer.query().df
