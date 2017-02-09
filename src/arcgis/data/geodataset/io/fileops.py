@@ -61,7 +61,8 @@ def from_featureclass(filename, **kwargs):
     return
 
 #--------------------------------------------------------------------------
-def to_featureclass(df, out_location, out_name, overwrite=True, out_sr=None):
+def to_featureclass(df, out_name, out_location=None,
+                    overwrite=True, out_sr=None):
     """
     converts a SpatialDataFrame to a feature class
 
@@ -77,6 +78,25 @@ def to_featureclass(df, out_location, out_name, overwrite=True, out_sr=None):
     dt_idx = []
     idx = 0
     max_length = None
+    if out_location:
+        if os.path.isdir(out_location) == False and \
+           out_location.lower().endswith('.gdb'):
+            out_location = arcpy.CreateFileGDB_management(out_folder_path=os.path.dirname(out_location),
+                                                         out_name=os.path.basename(out_location))[0]
+        elif os.path.isdir(out_location) == False and \
+             out_name.lower().endswith('.shp'):
+            os.makedirs(out_location)
+        elif os.path.isfile(out_location) == False and \
+             out_location.lower().endswith('.sde'):
+            raise ValueError("The sde connection file does not exist")
+    else:
+        if out_name.lower().endswith('.shp'):
+            out_location = tempfile.gettempdir()
+        elif HASARCPY:
+            out_location = arcpy.env.scratchGDB
+        else:
+            out_location = tempfile.gettempdir()
+            out_name = out_name + ".shp"
     fc = os.path.join(out_location, out_name)
     df = df.copy() # create a copy so we don't modify the source data.
     if out_name.lower().endswith('.shp'):
