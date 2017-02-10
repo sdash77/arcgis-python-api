@@ -6,6 +6,7 @@ from __future__ import division
 import os
 import six
 import copy
+import logging
 from warnings import warn
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ try:
 except:
     warn(message="ArcPy not found.")
     HASARCPY = False
+_log=logging.getLogger(__name__)
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
@@ -170,7 +172,10 @@ def to_featureclass(df, out_name, out_location=None,
 
         del row
     del icur
-    return fc, invalid_rows
+    if len(invalid_rows) > 0:
+        t = ",".join([str(r) for r in invalid_rows])
+        _log.warn('The following rows could not be written to the table: %s' % t)
+    return fc
 #--------------------------------------------------------------------------
 def _infer_type(df, col):
     """
