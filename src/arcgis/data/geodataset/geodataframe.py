@@ -150,7 +150,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         #    themap.draw(shape=feat)
         #return themap
     #----------------------------------------------------------------------
-    @classmethod
+    @staticmethod
     def from_featureclass(filename, **kwargs):
         """
         Returns a SpatialDataFrame from a feature class.
