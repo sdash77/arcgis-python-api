@@ -78,6 +78,10 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 "attributes":row}
             )
         return pd.json.dumps(template)
+    @property
+    def geoextent(self):
+        """returns the extent of the spatial dataframe"""
+        return self.series_extent
     #----------------------------------------------------------------------
     def __getstate__(self):
         meta = {k: getattr(self, k, None) for k in self._metadata}

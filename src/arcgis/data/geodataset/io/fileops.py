@@ -16,7 +16,7 @@ from ..utils import sanitize_field_name
 try:
     import arcpy
     from arcpy import da
-    HASARCPY = False#True
+    HASARCPY = True
 except:
     warn(message="ArcPy not found.")
     HASARCPY = False
