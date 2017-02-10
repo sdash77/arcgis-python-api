@@ -62,7 +62,8 @@ def from_featureclass(filename, **kwargs):
 
 #--------------------------------------------------------------------------
 def to_featureclass(df, out_name, out_location=None,
-                    overwrite=True, out_sr=None):
+                    overwrite=True, out_sr=None,
+                    skip_invalid=True):
     """
     converts a SpatialDataFrame to a feature class
 
@@ -71,11 +72,16 @@ def to_featureclass(df, out_name, out_location=None,
      :out_name: name of the output feature class table
      :overwrite: True, the data will be erased then replaced, else the
       table will be appended to an existing table.
+     :out_sr: if set, the data will try to reproject itself
+     :skip_invalid: if True, the cursor object will not raise an error on
+      insertion of invalid data, if False, the first occurence of invalid
+      data will raise an exception.
     Returns:
      path to the feature class
     """
     cols = []
     dt_idx = []
+    invalid_rows = []
     idx = 0
     max_length = None
     if out_location:
@@ -119,10 +125,13 @@ def to_featureclass(df, out_name, out_location=None,
        overwrite:
         arcpy.Delete_management(fc)
     if arcpy.Exists(fc) ==  False:
+        sr = df.sr
+        if sr is None:
+            sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()]
         fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                  out_name=out_name,
                                                  geometry_type=df.geometry_type.upper(),
-                                                 spatial_reference=df.spatialReference)[0]
+                                                 spatial_reference=sr)[0]
     oidField = arcpy.Describe(fc).oidFieldName
     col_insert = copy.copy(df.columns).tolist()
     lower_col_names = [f.lower() for f in col_insert]
@@ -145,12 +154,23 @@ def to_featureclass(df, out_name, out_location=None,
             for i in dt_idx:
                 row[i] = row[i].to_pydatetime()
                 del i
-            icur.insertRow(row)
+            try:
+                icur.insertRow(row)
+            except:
+                invalid_rows.append(index)
+                if skip_invalid == False:
+                    raise Exception("Invalid row detected at index: %s" % index)
         else:
-            icur.insertRow(row.tolist())
+            try:
+                icur.insertRow(row.tolist())
+            except:
+                invalid_rows.append(index)
+                if skip_invalid == False:
+                    raise Exception("Invalid row detected at index: %s" % index)
+
         del row
     del icur
-    return fc
+    return fc, invalid_rows
 #--------------------------------------------------------------------------
 def _infer_type(df, col):
     """

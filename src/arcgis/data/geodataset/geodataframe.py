@@ -165,13 +165,25 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         from arcgis.data.geodataset.io import from_featureclass
         return from_featureclass(filename=filename, **kwargs)
     #----------------------------------------------------------------------
-    def to_featureclass(self, out_location, out_name, overwrite=True):
-        """converts a SpatialDataFrame to a feature class"""
+    def to_featureclass(self,
+                        out_location, out_name,
+                        overwrite=True, skip_invalid=True):
+        """converts a SpatialDataFrame to a feature class
+
+        Parameters:
+         :out_location: save location workspace
+         :out_name: name of the feature class to save as
+         :overwrite: boolean. True means to erase and replace value, false
+          means to append
+         :skip_invalids: if True, any bad rows will be ignored.
+        Output:
+         tuple of feature class path and list of bad rows by index number.
+        """
         from arcgis.data.geodataset.io import to_featureclass
         return to_featureclass(df=self,
                                 out_location=out_location,
                                 out_name=out_name,
-                                overwrite=overwrite)
+                                overwrite=overwrite, skip_invalid=skip_invalid)
     #----------------------------------------------------------------------
     def set_geometry(self, col, drop=False, inplace=False, sr=None):
         """

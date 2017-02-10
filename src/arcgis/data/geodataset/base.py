@@ -312,10 +312,23 @@ class BaseSpatialPandas(object):
     def geometry_type(self):
         """The geometry type: polygon, polyline, point, multipoint, multipatch, dimension, or annotation"""
         if 'SHAPE' in self.columns and \
-           len(self['SHAPE']) > 0 and \
-           isinstance(self['SHAPE'][0], arcpy.Point):
-            return "point"
-        return _call_property(this=self, op="type").all()
+           len(self['SHAPE']) > 0:
+            val = self['SHAPE'].loc[self['SHAPE'].first_valid_index()]
+            if isinstance(val, (arcpy.Point, arcpy.PointGeometry)):
+                return "point"
+            elif isinstance(val, (arcpy.Polygon)):
+                return 'polygon'
+            elif isinstance(val, (arcpy.Polyline)):
+                return 'polyline'
+            elif isinstance(val, (arcpy.Multipatch)):
+                return 'multipatch'
+            elif isinstance(val, (arcpy.Multipoint)):
+                return 'multipoint'
+            elif isinstance(val, (arcpy.Dimension)):
+                return 'dimension'
+            elif isinstance(val, (arcpy.Annotation)):
+                return 'annotation'
+        return 'unknown'
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
