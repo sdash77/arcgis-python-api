@@ -32,29 +32,38 @@ def from_featureclass(filename, **kwargs):
      sql_clause: sql clause to parse data down
      where_clause: where statement
      sr: spatial reference object
-
+     fields: list of fields to extract from the table
     """
     if HASARCPY:
-        from arcgis import SpatialDataFrame
+        from .. import SpatialDataFrame
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
         sr = kwargs.pop('sr', None)
-
-        fields = [field.name for field in arcpy.ListFields(filename) \
-                  if field.type not in ['Geometry']]
+        fields = kwargs.pop('fields', None)
+        if not fields:
+            fields = [field.name for field in arcpy.ListFields(filename) \
+                      if field.type not in ['Geometry']]
         geom_fields = fields + ['SHAPE@']
         flds = fields + ['SHAPE']
         vals = []
+        frames = []
         with arcpy.da.SearchCursor(filename,
                                    field_names=geom_fields,
                                    where_clause=where_clause,
                                    sql_clause=sql_clause,
                                    spatial_reference=sr) as rows:
+            sdf = SpatialDataFrame(columns=flds)
             for row in rows:
                 vals.append(dict(zip(flds, row)))
+                if len(vals) == 25000:
+                    frames.append(SpatialDataFrame.from_dict(data=vals))
+                    vals = []
                 del row
             del rows
-        sdf = SpatialDataFrame.from_dict(data=vals)
+        if len(vals) > 0:
+            frames.append(SpatialDataFrame.from_dict(data=vals))
+        sdf = pd.concat(frames)
+        del frames
         if sr is None:
             sdf.sr = sr
         else:

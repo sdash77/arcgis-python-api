@@ -12,8 +12,13 @@ import arcpy
 
 from warnings import warn
 try:
-    from index.rtree import RTreeError, Rect
-    from index.si import SpatialIndex
+    from .index.quadtree import Index as QuadIndex
+    HAS_QUADINDEX = True
+except ImportError:
+    HAS_QUADINDEX = False
+try:
+    from .index.rtree import RTreeError, Rect
+    from .index.si import SpatialIndex
     HAS_SINDEX = True
 except ImportError:
     class RTreeError(Exception):
@@ -35,11 +40,11 @@ def _call_property(this, op, null_value=None, isGeoseries=False):
     raises: ValueError
     """
     if isGeoseries:
-        from geoseries import GeoSeries
-        return GeoSeries([getattr(geom, op, null_value) for geom in this.geometry],
+        from . import GeoSeries
+        return GeoSeries([getattr(geom, op, null_value) for geom in this.geometry if hasattr(geom, op)],
                       index=this.index)
     else:
-        a =  Series([getattr(geom, op, null_value) for geom in this.geometry],
+        a =  Series([getattr(geom, op, null_value) for geom in this.geometry if hasattr(geom, op)],
                       index=this.index)
         return a
     return null_value
@@ -183,12 +188,28 @@ class BaseSpatialPandas(object):
     """
     #index = None
     #geometry = None
-    #----------------------------------------------------------------------
+        #----------------------------------------------------------------------
     def _generate_sindex(self):
         self._sindex = None
-        if not HAS_SINDEX:
+        if not HAS_SINDEX and not HAS_QUADINDEX:
             warn("Cannot generate spatial index: Missing package 'rtree'.")
-        else:
+        elif HAS_QUADINDEX:
+            bbox = self.series_extent
+            qi = QuadIndex(bbox=bbox)
+            geometry_type = self.geometry_type.lower()
+            if geometry_type == 'point':
+                geometry_type = self.geometry[0].type.lower()
+            for i, (idx, item) in enumerate(self.geometry.iteritems()):
+                if pd.notnull(item) and item:
+                    if geometry_type in ('point', 'pointgeometry'):
+                        factor = .01
+                    else:
+                        factor = 0
+                    if geometry_type == 'pointgeometry':
+                        item = item.centroid
+                    qi.insert(item=idx, bbox=(item.extent.XMin - factor, item.extent.YMin - factor, item.extent.XMax + factor, item.extent.YMax + factor))
+            self._sindex = qi
+        elif HAS_SINDEX:
             #(xmin, ymin, xmax, ymax)
             if self.geometry_type.lower() == "point":
                 stream = ((i, (item.extent.XMin - .01, item.extent.YMin - .01, item.extent.XMax + .01, item.extent.YMax + .01), idx) for i, (idx, item) in
@@ -247,7 +268,7 @@ class BaseSpatialPandas(object):
     @property
     def extent(self):
         """the extent of the geometry"""
-        return _call_property(this=self, op="extent")
+        return _call_property(this=self, op="extent", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
     def firstPoint(self):

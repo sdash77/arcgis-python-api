@@ -44,6 +44,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         else:
             self.sr = sr
         if geometry is not None:
+            # Handles case when a user passes arcpy.Point objects instead of
+            # arcpy.PointGeometry.
+            if isinstance(geometry, (list, tuple)) and \
+               len(geometry) > 0:
+                g = geometry[0]
+                if isinstance(g, arcpy.Point):
+                    gtrans = []
+                    for g in geometry:
+                        if isinstance(g, arcpy.Point):
+                            g = arcpy.PointGeometry(g)
+                        gtrans.append(g)
+                    geometry = gtrans
             self.set_geometry(geometry, inplace=True)
         self._delete_index()
     #----------------------------------------------------------------------
