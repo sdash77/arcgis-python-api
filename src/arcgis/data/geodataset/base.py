@@ -68,7 +68,7 @@ def _call_function(this, op, second_geometry=None,
     raises: ValueError
 
     """
-    from geoseries import GeoSeries
+    from .geoseries import GeoSeries
     other = None
     if 'other' in kwargs and \
        second_geometry is None:

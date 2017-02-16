@@ -63,6 +63,7 @@ def from_featureclass(filename, **kwargs):
         if len(vals) > 0:
             frames.append(SpatialDataFrame.from_dict(data=vals))
         sdf = pd.concat(frames)
+        sdf.reset_index(drop=True, inplace=True)
         del frames
         if sr is None:
             sdf.sr = sr
