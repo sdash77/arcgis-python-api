@@ -39,7 +39,7 @@ class Clusters(BaseServer):
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
-    def createCluster(self, clusterName, machineNames="", tcpClusterPort=""):
+    def create_cluster(self, clusterName, machineNames="", tcpClusterPort=""):
         """
         Creating a new cluster involves defining a clustering protocol that
         will be shared by all server machines participating in the cluster.
@@ -73,7 +73,7 @@ class Clusters(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def getAvailableMachines(self):
+    def get_machines(self):
         """
         This operation lists all the server machines that don't participate
         in any cluster and are available to be added to a cluster.
@@ -214,7 +214,7 @@ class Cluster(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def servicesInCluster(self):
+    def cluster_services(self):
         """
         This resource lists all the services that are currently deployed to
         the cluster (of machines). A service deployed to a cluster runs on
@@ -229,7 +229,7 @@ class Cluster(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def machinesInCluster(self):
+    def cluster_machines(self):
         """
         This resource lists all the server machines that are currently
         participating in the cluster. Each server machine listing is
@@ -245,7 +245,7 @@ class Cluster(BaseServer):
         return self._con.get(path=url,
                             params=params)
     #----------------------------------------------------------------------
-    def addMachinesToCluster(self, machineNames):
+    def add_machines(self, machineNames):
         """
         Adds new server machines to the cluster. The server machines need
         to be registered with the site prior to this operation. When a
@@ -264,8 +264,8 @@ class Cluster(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def removeMachinesFromCluster(self,
-                                  machineNames):
+    def remove_machines(self,
+                        machineNames):
         """
         Removes server machines from the cluster. The server machines are
         returned back to the pool of registered server machines.
@@ -282,7 +282,7 @@ class Cluster(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def editProtocol(self, clusterProtocolObj):
+    def edit_protocol(self, clusterProtocolObj):
         """
         Updates the Cluster Protocol. This will cause the cluster to be
         restarted with updated protocol configuration.

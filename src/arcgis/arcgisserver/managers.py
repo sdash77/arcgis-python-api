@@ -128,3 +128,10 @@ class ServerManager(object):
         A read-only resource that returns meta information about the server
         """
         return self._sm.info
+    #----------------------------------------------------------------------
+    @property
+    def services(self):
+        """
+        Provides administrator access to the services on ArcGIS Server.
+        """
+        return self._sm.services

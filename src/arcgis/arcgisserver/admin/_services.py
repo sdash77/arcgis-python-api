@@ -45,12 +45,12 @@ class Services(BaseServer):
         return self._webEncrypted
     #----------------------------------------------------------------------
     @property
-    def folderName(self):
+    def folder(self):
         """ returns current folder """
         return self._folderName
     #----------------------------------------------------------------------
-    @folderName.setter
-    def folderName(self, folder):
+    @folder.setter
+    def folder(self, folder):
         """gets/set the current folder"""
 
         if folder == "" or\
@@ -199,7 +199,7 @@ class Services(BaseServer):
             url = self._url
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def canCreateService(self,
+    def can_create_service(self,
                          service,
                          options=None,
                          folderName=None,
@@ -236,7 +236,7 @@ class Services(BaseServer):
                               postdata=params)
 
     #----------------------------------------------------------------------
-    def addFolderPermission(self, principal, isAllowed=True, folder=None):
+    def add_folder_permission(self, principal, isAllowed=True, folder=None):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
@@ -258,7 +258,7 @@ class Services(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def listFolderPermissions(self,folderName):
+    def list_folder_permissions(self,folderName):
         """
            Lists principals which have permissions for the folder.
            Input:
@@ -272,7 +272,7 @@ class Services(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def cleanPermissions(self, principal):
+    def clean_permissions(self, principal):
         """
            Cleans all permissions that have been assigned to a role
            (principal). This is typically used when a role is deleted.
@@ -288,7 +288,7 @@ class Services(BaseServer):
         }
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def createFolder(self, folderName, description=""):
+    def create_folder(self, folderName, description=""):
         """
            Creates a unique folder name on AGS
            Inputs:
@@ -305,7 +305,7 @@ class Services(BaseServer):
         uURL = self._url + "/createFolder"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def deleteFolder(self, folderName):
+    def delete_folder(self, folderName):
         """
            deletes a folder on AGS
            Inputs:
@@ -322,7 +322,7 @@ class Services(BaseServer):
         else:
             return {"error" : "folder does not exist"}
     #----------------------------------------------------------------------
-    def deleteService(self, serviceName, serviceType, folder=None):
+    def delete_service(self, serviceName, serviceType, folder=None):
         """
            deletes a service from AGS
            Inputs:
@@ -418,7 +418,7 @@ class Services(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def unregisterExtension(self, extensionFilename):
+    def unregister_extension(self, extensionFilename):
         """
         Unregisters all the extensions from a previously registered server
         object extension (.SOE) file.
@@ -434,7 +434,7 @@ class Services(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def updateExtension(self, itemID):
+    def update_extension(self, itemID):
         """
         Updates extensions that have been previously registered with the
         server. All extensions in the new .SOE file must match with
@@ -476,7 +476,7 @@ class Services(BaseServer):
             uURL = self._url + "/%s/renameService" % folder
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def createService(self, service):
+    def create_service(self, service):
         """
         Creates a new GIS service in the folder. A service is created by
         submitting a JSON representation of the service to this operation.
@@ -492,7 +492,7 @@ class Services(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def stopServices(self, services ):
+    def stop_services(self, services ):
         """
         Stops serveral services on a single server
         Inputs:
@@ -528,7 +528,7 @@ class Services(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def startServices(self, services ):
+    def start_services(self, services ):
         """
         starts serveral services on a single server
         Inputs:
@@ -564,7 +564,7 @@ class Services(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def editFolder(self, description, webEncrypted=False):
+    def edit_folder(self, description, webEncrypted=False):
         """
         This operation allows you to change the description of an existing
         folder or change the web encrypted property.
@@ -1001,7 +1001,7 @@ class Service(BaseServer):
         uURL = self._url + "/iteminfo"
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def registerExtension(self, itemID):
+    def register_extension(self, itemID):
         """
         Registers a new server object extension file with the server.
         Before you register the file, you need to upload the .SOE file to
@@ -1023,7 +1023,7 @@ class Service(BaseServer):
                               postdata=params)
 
     #----------------------------------------------------------------------
-    def deleteItemInfo(self):
+    def delete_item_info(self):
         """
         Deletes the item information.
         """
@@ -1033,7 +1033,7 @@ class Service(BaseServer):
         uURL = self._url + "/iteminfo/delete"
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def itemInfoUpload(self, folder, filePath):
+    def upload_item_info(self, folder, filePath):
         """
         Allows for the upload of new itemInfo files such as metadata.xml
         Inputs:
@@ -1053,7 +1053,7 @@ class Service(BaseServer):
                           postdata=params,
                           files=files)
     #----------------------------------------------------------------------
-    def editItemInfo(self, json_dict):
+    def edit_item_info(self, json_dict):
         """
         Allows for the direct edit of the service's item's information.
         To get the current item information, pull the data by calling
@@ -1073,7 +1073,7 @@ class Service(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def serviceManifest(self, fileType="json"):
+    def service_manifest(self, fileType="json"):
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1096,7 +1096,7 @@ class Service(BaseServer):
                      file_name=os.path.basename(url))
         return open(f, 'r').read()
     #----------------------------------------------------------------------
-    def addPermission(self, principal, isAllowed=True):
+    def add_permission(self, principal, isAllowed=True):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
