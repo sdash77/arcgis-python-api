@@ -4,7 +4,7 @@
 from ._view import Server
 from .admin.administration import SiteManager
 ########################################################################
-class ServerManager(object):
+class Server(object):
     """
     Gains Access to the ArcGIS REST API
     """
@@ -15,14 +15,21 @@ class ServerManager(object):
     _sm = None
     #----------------------------------------------------------------------
     def __init__(self,
-                 url=None, tokenurl=None,
-                 username=None, password=None,
-                 key_file=None, cert_file=None,
-                 expiration=60, all_ssl=True,
-                 referer=None, proxy_host=None,
-                 proxy_port=None, portal_connection=None,
-                 initialize=True):
+                 url=None,
+                 tokenurl=None,
+                 username=None,
+                 password=None,
+                 portal_connection=None
+                 **kwargs):
         """Constructor"""
+        key_file = kwargs.pop('key_file')
+        cert_file = kwargs.pop('cert_file')
+        expiration = kwargs.pop('expiration', 60)
+        all_ssl = kwargs.pop('all_ssl', True)
+        referer = kwargs.pop('referer', None)
+        proxy_host = kwargs.pop('proxy_host', None)
+        proxy_port= kwargs.pop('proxy_port', None)
+        initialize = kwargs.pop('initialize', None)
         self._server = Server(url,
                               tokenurl,
                               username,
