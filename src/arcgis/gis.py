@@ -21,6 +21,7 @@ import arcgis._impl.portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
+from arcgis._impl.connection import _is_http_url
 from six.moves.urllib.error import HTTPError
 
 _log = logging.getLogger(__name__)
@@ -1759,6 +1760,277 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
+class ResourceManager(object):
+    """
+    Helper class for managing resource files of an item. This class is not created by users directly.
+    An instance of this class, called 'resources', is available as a property of the Item object.
+    Users call methods on this 'resources' object to manage (add, remove, update, list, get) item resources.
+    """
+
+    def __init__(self, item, gis):
+        self._gis = gis
+        self._portal = gis._portal
+        self._item = item
+
+    def add(self, file, folder_name=None, file_name=None, text=None, archive=False):
+        """The add resources operation adds new file resources to an existing item. For example, an image that is
+        used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
+        resources use storage space from your quota and are scanned for viruses. The item size is updated to
+        include the size of added resource files. Each file added should be no more than 25 Mb.
+
+        Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
+        Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
+        Statistical Data Collection, Scene Service, and Web Scene.
+
+        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, MP3, MP4, and ZIP.
+        This operation is only available to the item owner and the organization administrator.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              required string, path to the file that needs to be added
+        ----------------  ---------------------------------------------------------------
+        folder_name       optional string, provide a folder name if the file has to be
+                          added to a folder under resources
+        ----------------  ---------------------------------------------------------------
+        file_name         optional string, file name used to rename an existing file
+                          resource uploaded, or to be used together with text as file name for it.
+        ----------------  ---------------------------------------------------------------
+        text              optional string, text input to be added as a file resource,
+                          used together with file_name.
+        ----------------  ---------------------------------------------------------------
+        archive           optional bool, default = False.  If True, file resources
+                          added are extracted and files are uploaded to respective folders.
+        ================  ===============================================================
+
+        :return:
+            Python dict like the following if succeeded:
+            {
+                "success": True,
+                "itemId": "<item id>",
+                "owner": "<owner username>",
+                "folder": "<folder id>"
+            }
+
+            else like the following if it failed:
+            {"error": {
+                        "code": 400,
+                        "messageCode": "CONT_0093",
+                        "message": "File type not allowed for addResources",
+                        "details": []
+                        }
+            }
+        """
+
+        query_url = 'content/users/'+ self._item.owner +\
+                        '/items/' + self._item.itemid + '/addResources'
+
+        files = [] #create a list of named tuples to hold list of files
+        if not os.path.isfile(os.path.abspath(file)):
+            raise RuntimeError("File(" + file + ") not found.")
+        files.append(('file',file, os.path.basename(file)))
+
+        params = {}
+        params['f'] = 'json'
+
+        if folder_name is not None:
+            params['resourcesPrefix'] = folder_name
+        if file_name is not None:
+            params['fileName'] = file_name
+        if text is not None:
+            params['text'] = text
+        params['archive'] = 'true' if archive else 'false'
+
+        resp = self._portal.con.post(query_url, params, files=files, compress=False)
+        return resp
+
+    def update(self, file, folder_name=None, file_name=None, text=None):
+        """The update resources operation allows to update existing file resources of an item.
+        File resources use storage space from your quota and are scanned for viruses. The item size
+        is updated to include the size of updated resource files.
+
+        Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
+        This operation is only available to the item owner and the organization administrator.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              required string, path to the file on disk to be used for overwriting
+                          an existing file resource
+        ----------------  ---------------------------------------------------------------
+        folder_name       optional string, provide a folder name if the file resource
+                          being updated resides in a folder
+        ----------------  ---------------------------------------------------------------
+        file_name         optional string, destination name for the file used to update
+                          an existing resource, or to be used together with text parameter
+                          as file name for it.
+
+                          For example, you can use fileName=banner.png to update an existing
+                          resource banner.png with a file called billboard.png without
+                          renaming the file locally.
+        ----------------  ---------------------------------------------------------------
+        text              optional string, text input to be added as a file resource,
+                          used together with file_name.
+        ================  ===============================================================
+
+        :return:
+            Python dict like the following if succeeded:
+            {
+                "success": True,
+                "itemId": "<item id>",
+                "owner": "<owner username>",
+                "folder": "<folder id>"
+            }
+
+            else like the following if it failed:
+            {"error": {
+                        "code": 404,
+                        "message": "Resource does not exist or is inaccessible.",
+                        "details": []
+                        }
+            }
+        """
+
+        query_url = 'content/users/' + self._item.owner + \
+                    '/items/' + self._item.itemid + '/updateResources'
+
+        files = []  # create a list of named tuples to hold list of files
+        if not os.path.isfile(os.path.abspath(file)):
+            raise RuntimeError("File(" + file + ") not found.")
+        files.append(('file', file, os.path.basename(file)))
+
+        params = {}
+        params['f'] = 'json'
+
+        if folder_name is not None:
+            params['resourcesPrefix'] = folder_name
+        if file_name is not None:
+            params['fileName'] = file_name
+        if text is not None:
+            params['text'] = text
+
+        resp = self._portal.con.post(query_url, params, files=files)
+        return resp
+
+    def list(self):
+        """
+        Lists all file resources of an existing item. This resource is only available to
+        the item owner and the organization administrator.
+        :return:
+            A Python list of dictionaries of the form:
+            [
+                {
+                  "resource": "<resource1>"
+                },
+                {
+                  "resource": "<resource2>"
+                },
+                {
+                  "resource": "<resource3>"
+                }
+            ]
+        """
+        query_url = 'content/items/' + self._item.itemid + '/resources'
+        params = {'f':'json',
+                  'num': 1000}
+        resp = self._portal.con.get(query_url, params)
+        resp_resources = resp.get('resources')
+        count = int(resp.get('num'))
+        next_start = int(resp.get('nextStart'))
+
+        # loop through pages
+        while next_start > 0:
+            params2 = {'f':'json',
+                       'num':1000,
+                       'start':next_start + 1}
+
+            resp2 = self._portal.con.get(query_url, params2)
+            resp_resources.extend(resp2.get('resources'))
+            count += int(resp2.get('num'))
+            next_start = int(resp2.get('nextStart'))
+
+        return resp_resources
+
+    def get(self, file, try_json = True, out_folder = None, out_file_name = None):
+        """Gets a specific file resource of an existing item.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              required string, path to the file for download.
+                          For files in the root, just specify the file name. For files in
+                          folders (prefixes), specify using the format
+                          <foldername>/<foldername>./../<filename>
+        ----------------  ---------------------------------------------------------------
+        try_json          optional bool. If True, will attempt to convert JSON files to
+                          Python dictionary objects. Default is True.
+        ----------------  ---------------------------------------------------------------
+        out_folder        optional string. Specify the folder into which the file has to
+                          saved. Default is user's temporary directory.
+        ----------------  ---------------------------------------------------------------
+        out_file_name     optional string. Specify the name to use when downloading the
+                          file. Default is the resource file's name.
+        ================  ===============================================================
+
+        This operation is only available to the item owner and the organization administrator.
+
+        :return:
+            Path to the downloaded file if getting a binary file (like a jpeg or png file) or if
+             try_jon = False when getting a JSON file.
+
+            If file is a JSON, returns as a Python dictionary.
+        """
+
+        safe_file_format = file.replace(r'\\','/')
+        safe_file_format = safe_file_format.replace('//', '/')
+
+        query_url = 'content/items/' + self._item.itemid + '/resources/' + safe_file_format
+
+        return self._portal.con.get(query_url, try_json = try_json, out_folder=out_folder,
+                                    file_name = out_file_name)
+
+    def remove(self, file = None):
+        """Removes a single resource file or all resources. The item size is updated once resource files are deleted.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        file              optional string, path to the file for removal.
+                          For files in the root, just specify the file name. For files in
+                          folders (prefixes), specify using the format
+                          <foldername>/<foldername>./../<filename>
+
+                          If not specified, all resource files will be removed
+        ================  ===============================================================
+
+        This operation is only available to the item owner and the organization administrator.
+
+        :return:
+            If succeeded a Python dictionary of the form
+            { 'success': True }
+
+            else a dictionary with error info
+            {"error": {"code": 404,
+                        "message": "Resource does not exist or is inaccessible.",
+                        "details": []
+                      }
+            }
+        """
+        safe_file_format = ""
+        delete_all = 'false'
+        if file:
+            safe_file_format = file.replace(r'\\','/')
+            safe_file_format = safe_file_format.replace('//', '/')
+        else:
+            delete_all = 'true'
+
+        query_url = 'content/users/'+ self._item.owner +\
+                        '/items/' + self._item.itemid + '/removeResources'
+        params = {'f':'json',
+                  'resource': safe_file_format if safe_file_format else "",
+                  'deleteAll':delete_all}
+
+        return self._portal.con.post(query_url, postdata=params)
 
 class Group(dict):
     """
@@ -2457,6 +2729,7 @@ class Item(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         self._hydrated = False
+        self.resources = ResourceManager(self, self._gis)
 
         if itemdict:
             if 'size' in itemdict and itemdict['size'] == -1:
