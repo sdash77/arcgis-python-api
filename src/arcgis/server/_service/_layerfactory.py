@@ -12,7 +12,7 @@ from arcgis.geoprocessing._tool import Toolbox
 from .._common import ServerConnection
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
-from arcgis.mapping import VectorTileLayer
+from arcgis.mapping import VectorTileLayer, WebScene
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
@@ -99,15 +99,15 @@ class LayerFactory(type):
         elif base_name.lower() == "naserver":
             return NetworkDataset(url=url, gis=server)
         elif base_name.lower() == "sceneserver":
-            return Scene(url=url,
-                         connection=connection,
-                         initialize=initialize)
+            connection.token
+            return Scene(url=url, connection=server._con,
+                         initialize=True)
         elif base_name.lower() == "schematicsserver":
             return SchematicLayers( url=url,
                                     gis=server)
         elif base_name.lower() == "vectortileserver":
             print ("vector tile server not implemented")
-            return #VectorTileLayer(url=url, gis=server)
+            return VectorTileLayer(url=url, gis=server)
         else:
             print ("")
             return None
