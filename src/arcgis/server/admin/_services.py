@@ -38,13 +38,6 @@ class Services(BaseServer):
             self.init(connection)
     #----------------------------------------------------------------------
     @property
-    def webEncrypted(self):
-        """ returns if the server is web encrypted """
-        if self._webEncrypted is None:
-            self.init()
-        return self._webEncrypted
-    #----------------------------------------------------------------------
-    @property
     def folder(self):
         """ returns current folder """
         return self._folderName
@@ -81,25 +74,11 @@ class Services(BaseServer):
         return self._folders
     #----------------------------------------------------------------------
     @property
-    def foldersDetail(self):
-        """returns the folder's details"""
-        if self._foldersDetail is None:
-            self.init()
-        return self._foldersDetail
-    #----------------------------------------------------------------------
-    @property
     def description(self):
         """ returns the decscription """
         if self._description is None:
             self.init()
         return self._description
-    #----------------------------------------------------------------------
-    @property
-    def isDefault(self):
-        """ returns the is default property """
-        if self._isDefault is None:
-            self.init()
-        return self._isDefault
     #----------------------------------------------------------------------
     @property
     def services(self):
@@ -180,7 +159,7 @@ class Services(BaseServer):
             del folder
         return type_services
     #----------------------------------------------------------------------
-    def examineFolder(self, folder=None):
+    def examine_folder(self, folder=None):
         """
         A folder is a container for GIS services. ArcGIS Server supports a
         single level hierarchy of folders.
@@ -699,61 +678,15 @@ class Service(BaseServer):
             del k
             del v
     #----------------------------------------------------------------------
-    def refreshProperties(self):
+    def refresh(self):
         """refreshes the object's values by re-querying the service"""
         self.init()
     #----------------------------------------------------------------------
-    def jsonProperties(self):
+    def json_properties(self):
         """returns the jsonProperties"""
         if self._jsonProperties is None:
             self.init()
         return self._jsonProperties
-    #----------------------------------------------------------------------
-    @property
-    def frameworkProperties(self):
-        """returns the framework properties for an AGS instance"""
-        if self._frameworkProperties is None:
-            self.init()
-        return self._frameworkProperties
-    #----------------------------------------------------------------------
-    @property
-    def portalProperties(self):
-        """returns the service's portal properties"""
-        if self._portalProperties is None:
-            self.init()
-        return self._portalProperties
-    #----------------------------------------------------------------------
-    @property
-    def interceptor(self):
-        """returns the interceptor property"""
-        if self._interceptor is None:
-            self.init()
-        return self._interceptor
-    #----------------------------------------------------------------------
-    @property
-    def provider(self):
-        """returns the provider for the service"""
-        if self._provider is None:
-            self.init()
-        return self._provider
-    #----------------------------------------------------------------------
-    @property
-    def recycleInterval(self):
-        if self._recycleInterval is None:
-            self.init()
-        return self._recycleInterval
-    #----------------------------------------------------------------------
-    @property
-    def instancesPerContainer(self):
-        if self._instancesPerContainer is None:
-            self.init()
-        return self._instancesPerContainer
-    #----------------------------------------------------------------------
-    @property
-    def maxWaitTime(self):
-        if self._maxWaitTime is None:
-            self.init()
-        return self._maxWaitTime
     #----------------------------------------------------------------------
     @property
     def extensions(self):
@@ -776,7 +709,7 @@ class Service(BaseServer):
             self.init()
             return res
     #----------------------------------------------------------------------
-    def hasChildPermissionsConflict(self, principal, permission):
+    def has_child_permissions_conflict(self, principal, permission):
         """
         You can invoke this operation on the resource (folder or service)
         to determine if this resource has a child resource with opposing
@@ -809,133 +742,7 @@ class Service(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    @property
-    def minInstancesPerNode(self):
-        if self._minInstancesPerNode is None:
-            self.init()
-        return self._minInstancesPerNode
-    #----------------------------------------------------------------------
-    @property
-    def maxIdleTime(self):
-        if self._maxIdleTime is None:
-            self.init()
-        return self._maxIdleTime
-    #----------------------------------------------------------------------
-    @property
-    def maxUsageTime(self):
-        if self._maxUsageTime is None:
-            self.init()
-        return self._maxUsageTime
-    #----------------------------------------------------------------------
-    @property
-    def allowedUploadFileTypes(self):
-        if self._allowedUploadFileTypes is None:
-            self.init()
-        return self._allowedUploadFileTypes
-    #----------------------------------------------------------------------
-    @property
-    def datasets(self):
-        if self._datasets is None:
-            self.init()
-        return self._datasets
-    #----------------------------------------------------------------------
-    @property
-    def properties(self):
-        if self._properties is None:
-            self.init()
-        return self._properties
-    #----------------------------------------------------------------------
-    @property
-    def recycleStartTime(self):
-        if self._recycleStartTime is None:
-            self.init()
-        return self._recycleStartTime
-    #----------------------------------------------------------------------
-    @property
-    def clusterName(self):
-        if self._clusterName is None:
-            self.init()
-        return self._clusterName
-    #----------------------------------------------------------------------
-    @property
-    def description(self):
-        if self._description is None:
-            self.init()
-        return self._description
-    #----------------------------------------------------------------------
-    @property
-    def isDefault(self):
-        if self._isDefault is None:
-            self.init()
-        return self._isDefault
-    #----------------------------------------------------------------------
-    @property
-    def type(self):
-        if self._type is None:
-            self.init()
-        return self._type
-    #----------------------------------------------------------------------
-    @property
-    def maxUploadFileSize(self):
-        if self._maxUploadFileSize is None:
-            self.init()
-        return self._maxUploadFileSize
-    #----------------------------------------------------------------------
-    @property
-    def keepAliveInterval(self):
-        if self._keepAliveInterval is None:
-            self.init()
-        return self._keepAliveInterval
-    #----------------------------------------------------------------------
-    @property
-    def maxInstancesPerNode(self):
-        if self._maxInstancesPerNode is None:
-            self.init()
-        return self._maxInstancesPerNode
-    #----------------------------------------------------------------------
-    @property
-    def private(self):
-        if self._private is None:
-            self.init()
-        return self._private
-    #----------------------------------------------------------------------
-    @property
-    def maxStartupTime(self):
-        if self._maxStartupTime is None:
-            self.init()
-        return self._maxStartupTime
-    #----------------------------------------------------------------------
-    @property
-    def loadBalancing(self):
-        if self._loadBalancing is None:
-            self.init()
-        return self._loadBalancing
-    #----------------------------------------------------------------------
-    @property
-    def configuredState(self):
-        if self._configuredState is None:
-            self.init()
-        return self._configuredState
-    #----------------------------------------------------------------------
-    @property
-    def capabilities(self):
-        if self._capabilities is None:
-            self.init()
-        return self._capabilities
-    #----------------------------------------------------------------------
-    @property
-    def isolationLevel(self):
-        if self._isolationLevel is None:
-            self.init()
-        return self._isolationLevel
-    #----------------------------------------------------------------------
-    @property
-    def serviceName(self):
-        if self._serviceName is None:
-            self.init()
-        return self._serviceName
-    #----------------------------------------------------------------------
-    def start_service(self):
+    def start(self):
         """ starts the specific service """
         params = {
             "f" : "json"
@@ -943,7 +750,7 @@ class Service(BaseServer):
         uURL = self._url + "/start"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def stop_service(self):
+    def stop(self):
         """ stops the current service """
         params = {
             "f" : "json"
@@ -951,13 +758,13 @@ class Service(BaseServer):
         uURL = self._url + "/stop"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def restart_services(self):
+    def restart(self):
         """ restarts the current service """
-        self.stop_service()
-        self.start_service()
+        self.stop()
+        self.start()
         return {'status': 'success'}
     #----------------------------------------------------------------------
-    def delete_service(self):
+    def delete(self):
         """deletes a service from arcgis server"""
         params = {
             "f" : "json",

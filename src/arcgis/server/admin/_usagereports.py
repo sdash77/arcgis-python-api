@@ -52,7 +52,7 @@ class UsageReports(BaseServer):
         return self._reports
     #----------------------------------------------------------------------
     @property
-    def usageReportSettings(self):
+    def usage_settings(self):
         """
         The usage reports settings are applied to the entire site. A GET
         request returns the current usage reports settings. When usage
@@ -73,7 +73,7 @@ class UsageReports(BaseServer):
         return self._con.get(path=url,
                             params=params)
     #----------------------------------------------------------------------
-    def editUsageReportSettings(self, samplingInterval,
+    def edit_settings(self, samplingInterval,
                                 enabled=True, maxHistory=0):
         """
         The usage reports settings are applied to the entire site. A POST
@@ -102,7 +102,7 @@ class UsageReports(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def createUsageReport(self,
+    def create_usage_report(self,
                           reportname,
                           queries,
                           metadata,
@@ -278,9 +278,9 @@ class UsageReport(BaseServer):
         """
 
         usagereport_dict = {
-            "reportname": self.reportname,
+            "reportname": self._reportname,
             "queries": self._queries,
-            "since": self.since,
+            "since": self._since,
             "metadata": self._metadata,
             "to" : self._to,
             "from" : self._from,

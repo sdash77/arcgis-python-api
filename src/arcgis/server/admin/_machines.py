@@ -204,90 +204,6 @@ class Machine(BaseServer):
             self.init(connection)
     #----------------------------------------------------------------------
     @property
-    def appServerMaxHeapSize(self):
-        """ returns the app server max heap size """
-        if self._appServerMaxHeapSize is None:
-            self.init()
-        return self._appServerMaxHeapSize
-    #----------------------------------------------------------------------
-    @property
-    def webServerSSLEnabled(self):
-        """ SSL enabled """
-        if self._webServerSSLEnabled is None:
-            self.init()
-        return self._webServerSSLEnabled
-    #----------------------------------------------------------------------
-    @property
-    def webServerMaxHeapSize(self):
-        """ returns the web server max heap size """
-        if self._webServerMaxHeapSize is None:
-            self.init()
-        return self._webServerMaxHeapSize
-    #----------------------------------------------------------------------
-    @property
-    def platform(self):
-        """ returns the platform information """
-        if self._platform is None:
-            self.init()
-        return self._platform
-    #----------------------------------------------------------------------
-    @property
-    def adminURL(self):
-        """ returns the administration URL """
-        if self._adminURL is None:
-            self.init()
-        return self._adminURL
-    #----------------------------------------------------------------------
-    @property
-    def machineName(self):
-        """ returns the machine name """
-        if self._machineName is None:
-            self.init()
-        return self._machineName
-    #----------------------------------------------------------------------
-    @property
-    def ServerStartTime(self):
-        """ returns the server start date/time """
-        if self._ServerStartTime is None:
-            self.init()
-        return self._ServerStartTime
-    #----------------------------------------------------------------------
-    @property
-    def webServerCertificateAlias(self):
-        """ returns the webserver cert alias"""
-        if self._webServerCertificateAlias is None:
-            self.init()
-        return self._webServerCertificateAlias
-    #----------------------------------------------------------------------
-    @property
-    def socMaxHeapSize(self):
-        """ returns the soc's max heap size """
-        if self._socMaxHeapSize is None:
-            self.init()
-        return self._socMaxHeapSize
-    #----------------------------------------------------------------------
-    @property
-    def synchronize(self):
-        """synchronize value"""
-        if self._synchronize is None:
-            self.init()
-        return self._synchronize
-    #----------------------------------------------------------------------
-    @property
-    def ports(self):
-        """ returns the used ports """
-        if self._ports is None:
-            self.init()
-        return self._ports
-    #----------------------------------------------------------------------
-    @property
-    def configuredState(self):
-        """ returns the configured state """
-        if self._configuredState is None:
-            self.init()
-        return self._configuredState
-    #----------------------------------------------------------------------
-    @property
     def status(self):
         """ returns the state """
         uURL = self._url + "/status"
@@ -296,7 +212,7 @@ class Machine(BaseServer):
         }
         return self._con.get(path=uURL, params=params)
     #----------------------------------------------------------------------
-    def startMachine(self):
+    def start(self):
         """ Starts the server machine """
         params = {
             "f" : "json"
@@ -304,7 +220,7 @@ class Machine(BaseServer):
         uURL = self._url + "/start"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def stopMachine(self):
+    def stop(self):
         """ Stops the server machine """
         params = {
             "f" : "json"
@@ -312,7 +228,7 @@ class Machine(BaseServer):
         uURL = self._url + "/stop"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def unregisterMachine(self):
+    def unregister(self):
         """
            This operation causes the server machine to be deleted from the
            Site.
@@ -374,7 +290,7 @@ class Machine(BaseServer):
         url = self._url + "/sslcertificates/{cert}".format(cert=certificate)
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def exportCertificate(self, certificate):
+    def export_certificate(self, certificate):
         """
         A certificate represents a key pair that has been digitally signed
         and acknowledged by a Certifying Authority (CA). It is the most
@@ -391,10 +307,10 @@ class Machine(BaseServer):
          :certificate: name of the certificate to grab information for
         """
         params = {"f": "json"}
-        url = self._url + "/sslcertificates/export"
+        url = self._url + "/sslcertificates/%s/export" % certificate
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def generateCSR(self, certificate):
+    def generate_CSR(self, certificate):
         """
         This operation generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
@@ -406,7 +322,7 @@ class Machine(BaseServer):
         url = self._url + "/sslcertificates/{cert}/generateCSR".format(cert=certificate)
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def importCASignedCertificate(self,
+    def import_CA_signed_certificate(self,
                                   certificate,
                                   caSignedCertificate):
         """
@@ -421,7 +337,7 @@ class Machine(BaseServer):
         files = {"caSignedCertificate" : caSignedCertificate}
         return self._con.post(path=url, postdata=params, files=files)
     #----------------------------------------------------------------------
-    def importExistingServerCertificate(self, alias,
+    def import_existing_server_certificate(self, alias,
                                         certPassword,
                                         certFile):
         """
@@ -452,7 +368,7 @@ class Machine(BaseServer):
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    def importRootCertificate(self,
+    def import_root_certificate(self,
                               alias,
                               rootCACertificate):
         """

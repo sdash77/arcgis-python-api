@@ -43,7 +43,7 @@ class System(BaseServer):
                                 initialize=True)
     #----------------------------------------------------------------------
     @property
-    def serverDirectories(self):
+    def server_directories(self):
         """returns the server directory object in a list"""
         directs = []
         url = self._url + "/directories"
@@ -59,7 +59,7 @@ class System(BaseServer):
                                 initialize=True))
         return directs
     #----------------------------------------------------------------------
-    def getDirectory(self, name):
+    def get_directory(self, name):
         """
         Gets a single directory registered with ArcGIS Server
 
@@ -130,7 +130,7 @@ class System(BaseServer):
                             postdata=params)
     #----------------------------------------------------------------------
     @property
-    def Jobs(self):
+    def jobs(self):
         """get the Jobs object"""
         url = self._url + "/jobs"
         return Jobs(url=url,
@@ -138,7 +138,7 @@ class System(BaseServer):
                     initialize=True)
     #----------------------------------------------------------------------
     @property
-    def webAdaptors(self):
+    def web_adaptors(self):
         """
         This property lists all the Web Adaptors that have been registered
         with the site. The server will trust all these Web Adaptors and
@@ -155,7 +155,7 @@ class System(BaseServer):
                              params=params)
     #----------------------------------------------------------------------
     @property
-    def webAdaptorsConfiguration(self):
+    def web_adaptors_configuration(self):
         """
         The Web Adaptors configuration is a resource for all the
         configuration parameters shared across all the Web Adaptors in the
@@ -170,7 +170,7 @@ class System(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def updateWebAdaptorsConfiguration(self, webAdaptorConfig):
+    def update_web_adaptors_configuration(self, webAdaptorConfig):
         """
         You can use this operation to change the configuration parameters
         and shared key.
@@ -187,7 +187,7 @@ class System(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def updateWebAdaptor(self,
+    def update_web_adaptor(self,
                          wa_id,
                          description,
                          httpPort,
@@ -217,7 +217,7 @@ class System(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def unregisterWebAdaptor(self, wa_id):
+    def unregister_webadaptor(self, wa_id):
         """
         Unregistering a Web Adaptor removes the Web Adaptor from the
         server's trusted list. The Web Adaptor can no longer submit requests
@@ -232,14 +232,14 @@ class System(BaseServer):
                               postdata=params)
     #----------------------------------------------------------------------
     @property
-    def configurationStore(self):
+    def configuration_store(self):
         """returns the ConfigurationStore object for this site"""
         url = self._url + "/configstore"
 
         return ConfigurationStore(url=url,
                                   connection=self._con)
     #----------------------------------------------------------------------
-    def clearRestCache(self):
+    def clear_rest_cache(self):
         """
         This operation clears the cache on all REST handlers in the system.
         While the server typically manages the REST cache for you, use this
@@ -281,7 +281,7 @@ class System(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def editServicesDirectory(self,
+    def edit_services_directory(self,
                               allowedOrigins,
                               arcgis_com_map,
                               arcgis_com_map_text,
@@ -349,7 +349,7 @@ class System(BaseServer):
                              params=params)
     #----------------------------------------------------------------------
     @property
-    def restHandler(self):
+    def rest_handler(self):
         """
         Provides a list of resources accessible throught the REST API
         """
@@ -494,7 +494,7 @@ class Jobs(BaseServer):
             self.init()
         return self._jobs
     #----------------------------------------------------------------------
-    def getJob(self, jobId):
+    def get_job(self, jobId):
         """
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.
@@ -680,55 +680,6 @@ class ServerDirectory(BaseServer):
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
-    @property
-    def name(self):
-        """gets the directory name"""
-        if self._name is None:
-            self.init()
-        return self._name
-    #----------------------------------------------------------------------
-    @property
-    def physicalPath(self):
-        """gets the physical path"""
-        if self._physicalPath is None:
-            self.init()
-        return self._physicalPath
-    #----------------------------------------------------------------------
-    @property
-    def directoryType(self):
-        """gets the directoryType value"""
-        if self._directoryType is None:
-            self.init()
-        return self._directoryType
-    #----------------------------------------------------------------------
-    @property
-    def cleanupMode(self):
-        """gets the cleanupMode value"""
-        if self._cleanupMode is None:
-            self.init()
-        return self._cleanupMode
-    #----------------------------------------------------------------------
-    @property
-    def maxFileAge(self):
-        """gets the maxFileAge value"""
-        if self._maxFileAge is None:
-            self.init()
-        return self._maxFileAge
-    #----------------------------------------------------------------------
-    @property
-    def description(self):
-        """gets the description value"""
-        if self._description is None:
-            self.init()
-        return self._description
-    #----------------------------------------------------------------------
-    @property
-    def virtualPath(self):
-        """gets the virtualPath value"""
-        if self._virtualPath is None:
-            self.init()
-        return self._virtualPath
-    #----------------------------------------------------------------------
     def edit(self,
              physicalPath,
              cleanupMode,
@@ -783,7 +734,7 @@ class ServerDirectory(BaseServer):
         return self._con.post(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
-    def recoverDirectory(self):
+    def recover_directory(self):
         """
         If the shared server directories for a site are unavailable, a site
         in read-only mode will operate in a degraded capacity that allows

@@ -117,7 +117,7 @@ class Uploads(BaseServer):
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    def uploadByPart(self,
+    def upload_by_part(self,
                      itemId,
                      partNumber,
                      partFile):

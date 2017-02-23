@@ -123,11 +123,11 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
-    def hosting_servers(self):
+    def servers(self):
         """
         The list of datastores resource managers for sites federated with the GIS.
         """
-        from arcgis.arcgisserver import ServerManager
+        from arcgis.server import Server
         if self._server_list:
             return self._server_list
 
@@ -138,8 +138,8 @@ class GIS(object):
             admin_url = None
             for server in servers:
                 admin_url = server['adminUrl']
-                self._server_list.append(ServerManager(url=admin_url,
-                                                       portal_connection=self._con))
+                self._server_list.append(Server(url=admin_url,
+                                                portal_connection=self._con))
         except:
             pass
         return self._server_list

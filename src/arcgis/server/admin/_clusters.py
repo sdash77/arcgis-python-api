@@ -165,7 +165,7 @@ class Cluster(BaseServer):
         return self._configuredState
     #----------------------------------------------------------------------
     @property
-    def machineNames(self):
+    def machine_names(self):
         """returns a list of machines in cluster"""
         if self._machineNames is None:
             self.init()

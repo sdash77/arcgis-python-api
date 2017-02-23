@@ -10,7 +10,7 @@ from .._common import BaseServer
 from .._service._layerfactory import Layer
 from .._common import ServerConnection
 ########################################################################
-class Server(BaseServer):
+class ServerManager(BaseServer):
     """This object represents an ArcGIS Server instance"""
     _url = None
     _con = None
@@ -47,7 +47,7 @@ class Server(BaseServer):
                                 proxy_port=proxy_port,
                                 portal_connection=portal_connection)
 
-        super(Server, self).__init__(url=self._url,
+        super(ServerManager, self).__init__(url=self._url,
                                      connection=con,
                                      initialize=initialize)
         self._con = con

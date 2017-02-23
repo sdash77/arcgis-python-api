@@ -40,7 +40,7 @@ class Data(BaseServer):
         self._json_dict = {}
     #----------------------------------------------------------------------
     @property
-    def datastoreConfiguration(self):
+    def datastore_configuration(self):
         """
            The data store configuration properties affect the behavior of
            the data holdings of the server. The properties include:
@@ -58,7 +58,7 @@ class Data(BaseServer):
         dURL = self._url + "/config"
         return self._con.get(path=dURL, params=params)
     #----------------------------------------------------------------------
-    def updateDatastoreConfiguration(self, datastoreConfig=None):
+    def update_datastore_configuration(self, datastoreConfig=None):
         """
            This operation allows you to update the data store configuration
            You can use this to allow or block the automatic copying of data
@@ -78,7 +78,7 @@ class Data(BaseServer):
         url = self._url + "/config/update"
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def bigDataFileShareManifest(self, dataItemName, download=True):
+    def bigdata_fileshare_manifest(self, dataItemName, download=True):
         """
         This returns the manifest resource for a big data file share
 
@@ -93,7 +93,7 @@ class Data(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def bigDataFileShareManifestUpdate(self, dataItemName, manifest, fileData=None):
+    def update_bigdata_fileshare_manifest(self, dataItemName, manifest, fileData=None):
         """
         Upload a manifest for a big data file share item. This will replace
         the existing manifest for the big data file share item.
@@ -117,7 +117,7 @@ class Data(BaseServer):
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    def bigDataFileShareHints(self,
+    def bigdata_fileshare_hints(self,
                               dataItemName,
                               download=True,
                               read=True):
@@ -141,7 +141,7 @@ class Data(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #---------------------------------------------------------------------
-    def bigDataFileShareHintsUpdate(self,
+    def update_big_data_file_sharehints(self,
                               dataItemName,
                               hints):
         """
@@ -168,7 +168,7 @@ class Data(BaseServer):
                              files=files,
                              postdata=params)
     #----------------------------------------------------------------------
-    def computeTotalRefCount(self, path):
+    def get_total_refcount(self, path):
         """
            Computes the total number of references to a given data item
            that exist on the server. You can use this operation to
@@ -186,7 +186,7 @@ class Data(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def editDataItem(self, dataItemType, dataItemName, item):
+    def edit_data_item(self, dataItemType, dataItemName, item):
         """
         Edit an existing dataItem to update its connection information.
 
@@ -204,7 +204,7 @@ class Data(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def editRelationalDataStoreType(self,
+    def edit_relational_datastore_type(self,
                                     relationalDatastoreTypeName,
                                     datastore_type):
         """
@@ -228,7 +228,7 @@ class Data(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def makeDataStoreMachinePrimary(self,
+    def make_datastore_machine_primary(self,
                                     dataStoreItemName,
                                     machineName):
         """
@@ -246,7 +246,7 @@ class Data(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def relationalDataStoreType(self, relationalDatastoreTypeID):
+    def get_relational_datastore_type(self, relationalDatastoreTypeID):
         """
         This resource lists the properties of a registered relational data
         store type. The properties returned are those that client
@@ -263,7 +263,7 @@ class Data(BaseServer):
                              params=params)
     #----------------------------------------------------------------------
     @property
-    def relationalDataStoreTypes(self, relationalDatastoreTypeID):
+    def relational_datastore_types(self):
         """
         This resource lists the relational data store types that have been
         registered with the server. Each registered relational data store
@@ -280,8 +280,8 @@ class Data(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def findDataItems(self, parentPath=None, ancestorPath=None,
-                      types=None, id=None):
+    def find_data_items(self, parentPath=None, ancestorPath=None,
+                      types=None, itemid=None):
         """
            You can use this operation to search through the various data
            items registered in the server's data store.
@@ -290,7 +290,7 @@ class Data(BaseServer):
               ancestorPath - The path of the ancestor under which to find
                              items.
               types - A filter for the type of the items
-              id - A filter to search by the ID of the item
+              itemid - A filter to search by the ID of the item
            Output:
               dictionary
         """
@@ -304,11 +304,11 @@ class Data(BaseServer):
         if types is not None:
             params['types'] = types
         if id is not None:
-            params['id'] = id
+            params['id'] = itemid
         url = self._url + "/findItems"
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def registerDataItem(self, item):
+    def register_data_item(self, item):
         """
            Registers a new data item with the server's data store.
            Input
@@ -325,7 +325,7 @@ class Data(BaseServer):
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
     @property
-    def rootDataItems(self):
+    def root_data_items(self):
         """ This resource lists data items that are the root of all other
             data items in the data store.
         """
@@ -336,14 +336,14 @@ class Data(BaseServer):
         return self._con.get(path=url,
                             params=params)
     #----------------------------------------------------------------------
-    def validateAllDataItems(self):
+    def validate_all_dataitems(self):
         """ validates all the items in the datastore """
         params = {
         "f" : "json"}
         url = self._url + "/validateAllDataItems"
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def validateDataItem(self, item):
+    def validate_data_item(self, item):
         """
            In order for a data item to be registered and used successfully
            within the server's data store, you need to make sure that the
@@ -366,7 +366,7 @@ class Data(BaseServer):
         url = self._url + "/validateDataItem"
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def makePrimary(self, dataStoreName, machineName):
+    def make_primary(self, dataStoreName, machineName):
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
@@ -378,7 +378,7 @@ class Data(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def removeDataStoreMachine(self, dataStoreItemName, machineName):
+    def remove_datastore(self, dataStoreItemName, machineName):
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
@@ -393,7 +393,7 @@ class Data(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def startDataStoreMachine(self, dataStoreItemName, machineName):
+    def start_datastore(self, dataStoreItemName, machineName):
         """
         Starts the database instance running on the Data Store machine.
 
@@ -407,7 +407,7 @@ class Data(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def stopDataStoreMachine(self, dataStoreItemName, machineName):
+    def stop_datastore(self, dataStoreItemName, machineName):
         """
         Stop the database instance running on the Data Store machine.
 
@@ -440,7 +440,7 @@ class Data(BaseServer):
         }
         return self._con.post(path=url,postdata=params)
     #----------------------------------------------------------------------
-    def validateDataStore(self, dataStoreName, machineName):
+    def validate_datastore(self, dataStoreName, machineName):
         """
         Checks the status of ArcGIS Data Store and provides a health check
         response.

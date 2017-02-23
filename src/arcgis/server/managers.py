@@ -1,7 +1,8 @@
 """
    Front end controls to the server.
 """
-from ._view import Server
+import ssl
+from ._view import ServerManager
 from .admin.administration import SiteManager
 ########################################################################
 class Server(object):
@@ -19,18 +20,21 @@ class Server(object):
                  tokenurl=None,
                  username=None,
                  password=None,
-                 portal_connection=None
+                 verify_cert=False,
+                 portal_connection=None,
                  **kwargs):
         """Constructor"""
-        key_file = kwargs.pop('key_file')
-        cert_file = kwargs.pop('cert_file')
+        if verify_cert == False:
+            ssl._create_default_https_context = ssl._create_unverified_context
+        key_file = kwargs.pop('key_file', None)
+        cert_file = kwargs.pop('cert_file', None)
         expiration = kwargs.pop('expiration', 60)
         all_ssl = kwargs.pop('all_ssl', True)
         referer = kwargs.pop('referer', None)
         proxy_host = kwargs.pop('proxy_host', None)
         proxy_port= kwargs.pop('proxy_port', None)
         initialize = kwargs.pop('initialize', None)
-        self._server = Server(url,
+        self._server = ServerManager(url,
                               tokenurl,
                               username,
                               password,
@@ -92,12 +96,27 @@ class Server(object):
         return self._server
     #----------------------------------------------------------------------
     @property
-    def config(self):
+    def data(self):
         """
-        TODO: This property will provide the ability to control and manipulate
-        a Site's datastores.
+        This resource provides information about the data holdings of the
+        server. Data items are used by ArcGIS for Desktop and other clients
+        to validate data paths referenced by GIS services.
+        You can register new data items with the server by using the
+        Register Data Item operation. Use the Find Data Items operation to
+        search through the hierarchy of data items.
+        A relational data store type represents a database platform that
+        has been registered for use on a portal's hosting server by the
+        ArcGIS Server administrator. Each relational data store type
+        describes the properties ArcGIS Server requires in order to connect
+        to an instance of a database for a particular platform. At least
+        one registered relational data store type is required before client
+        applications such as Insights for ArcGIS can create Relational
+        Database Connection portal items.
+        The Compute Ref Count operation counts and lists all references to
+        a specific data item. This operation helps you determine if a
+        particular data item can be safely deleted or refreshed.
         """
-        return
+        return self._sm.datastore
     #----------------------------------------------------------------------
     @property
     def logs(self):

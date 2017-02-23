@@ -341,7 +341,7 @@ class ServerConnection(object):
              self._portal_connection:
             parsed = urlparse(self.baseurl)
             adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
-            token =  self.portal_token.generate_portal_server_token(serverUrl=adminURL)
+            token =  self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
             return token
         else: # Assume username/password BUITIN
             postdata = { 'username': username, 'password': password,
@@ -976,7 +976,7 @@ class ServerConnection_old(object):
              self._portal_connection:
             parsed = urlparse(self.baseurl)
             adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
-            t =  self.portal_token.generate_portal_server_token(serverUrl=adminURL)
+            t =  self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
             return t
         else:
             postdata = { 'username': username, 'password': password,

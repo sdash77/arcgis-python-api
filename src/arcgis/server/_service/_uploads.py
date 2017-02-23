@@ -21,9 +21,10 @@ class Uploads(object):
     _con = None
     _json_dict = None
     #----------------------------------------------------------------------
-    def __init__(self, connection, url, initialize=False):
+    def __init__(self, connection, url, **kwargs):
         self._url = url
         self._con = connection
+        initialize = kwargs.pop('initialize', True)
     #----------------------------------------------------------------------
     @property
     def info(self):

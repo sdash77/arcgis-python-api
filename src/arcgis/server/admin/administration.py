@@ -48,14 +48,14 @@ class SiteManager(BaseServer):
             self.init(connection=connection)
     #----------------------------------------------------------------------
     @property
-    def acceptLanguage(self):
+    def accept_language(self):
         """returns the accepted lanaguage"""
         if self._acceptLanguage is None:
             self.init()
         return self._acceptLanguage
     #----------------------------------------------------------------------
     @property
-    def currentVersion(self):
+    def current_version(self):
         """returns the current version"""
         if self._currentVersion is None:
             self.init()
@@ -69,7 +69,7 @@ class SiteManager(BaseServer):
         return self._resources
     #----------------------------------------------------------------------
     @property
-    def fullVersion(self):
+    def full_version(self):
         """returns the full version of the arcgis server software"""
         if self._fullVersion is None:
             self.init()
@@ -82,8 +82,7 @@ class SiteManager(BaseServer):
                directories,
                cluster=None,
                logsSettings=None,
-               runAsync=False
-               ):
+               runAsync=False):
         """
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:

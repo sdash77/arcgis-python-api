@@ -35,31 +35,9 @@ class Mode(BaseServer):
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
-    @property
-    def siteMode(self):
-        """The current mode of the site. Response can be READ_ONLY or EDITABLE."""
-        if self._siteMode is None:
-            self.init()
-        return self._siteMode
-    #----------------------------------------------------------------------
-    @property
-    def copyConfigLocal(self):
-        """Whether the site configuration files will be copied to the local
-        repository upon switching to READ_ONLY. Response can be true or false."""
-        if self._copyConfigLocal is None:
-            self.init()
-        return self._copyConfigLocal
-    #----------------------------------------------------------------------
-    @property
-    def lastModified(self):
-        """Time stamp indicating the last time the site mode was modified."""
-        if self._lastModified is None:
-            self.init()
-        return self._lastModified
-    #----------------------------------------------------------------------
-    def updateSiteMode(self,
-                       siteMode,
-                       runAsync=False):
+    def update(self,
+               siteMode,
+               runAsync=False):
         """
         The update operation is used to move between the two types of site
         modes. Switching to READ_ONLY mode will restart all your services

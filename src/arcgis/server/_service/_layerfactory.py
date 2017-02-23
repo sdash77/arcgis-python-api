@@ -33,7 +33,7 @@ class LayerFactory(type):
                  server=None,
                  initialize=False):
         """generates the proper type of layer from a given url"""
-        from .. import ServerManager
+        from .. import Server
         hasLayer = False
         if url is None and \
            item is None:
@@ -43,7 +43,7 @@ class LayerFactory(type):
 
         if isinstance(server, ServerConnection):
             connection = server
-        elif isinstance(server, (ServerManager, GIS)):
+        elif isinstance(server, (Server, GIS)):
             connection = server._con
         else:
             parsed = urlparse(url)

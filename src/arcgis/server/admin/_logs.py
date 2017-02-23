@@ -3,7 +3,6 @@ from __future__ import print_function
 from .._common import BaseServer
 from datetime import datetime
 import csv
-import json
 ########################################################################
 class Log(BaseServer):
     """ Log of a server """
@@ -42,7 +41,7 @@ class Log(BaseServer):
             self.init()
         return self._resources
     #----------------------------------------------------------------------
-    def countErrorReports(self, machine="*"):
+    def count_error_reports(self, machine="*"):
         """ This operation counts the number of error reports (crash
             reports) that have been generated on each machine.
             Input:
@@ -69,7 +68,7 @@ class Log(BaseServer):
                               postdata=params)
     #----------------------------------------------------------------------
     @property
-    def logSettings(self):
+    def settings(self):
         """ returns the current log settings """
         params = {
             "f" : "json"
@@ -81,11 +80,11 @@ class Log(BaseServer):
         except:
             return ""
     #----------------------------------------------------------------------
-    def editLogSettings(self,
-                        logLevel="WARNING",
-                        logDir=None,
-                        maxLogFileAge=90,
-                        maxErrorReportsCount=10):
+    def edit_settings(self,
+                      logLevel="WARNING",
+                      logDir=None,
+                      maxLogFileAge=90,
+                      maxErrorReportsCount=10):
         """
            The log settings are for the entire site.
            Inputs:
@@ -99,7 +98,7 @@ class Log(BaseServer):
         """
         url = self._url + "/settings/edit"
         allowed_levels =  ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
-        currentSettings= self.logSettings
+        currentSettings= self.settings
         currentSettings["f"] ="json"
 
         if logLevel.upper() in allowed_levels:
@@ -124,8 +123,8 @@ class Log(BaseServer):
               services="*",
               machines="*",
               server="*",
-              codes=[],
-              processIds=[],
+              codes=None,
+              processIds=None,
               export=False,
               exportType="CSV", #CSV or TAB
               out_path=None
@@ -136,6 +135,10 @@ class Log(BaseServer):
            Inputs:
 
         """
+        if codes is None:
+            codes = []
+        if processIds is None:
+            processIds = []
         allowed_levels = ("SEVERE", "WARNING", "INFO",
                           "FINE", "VERBOSE", "DEBUG")
         qFilter = {
