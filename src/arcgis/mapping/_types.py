@@ -97,48 +97,9 @@ class WebScene(collections.OrderedDict):
 
 
 class VectorTileLayer(Layer):
+
     def __init__(self, url, gis=None):
-        self._token = None
-
-        self.url = url
-        self._url = url
-
-        err = None
-
-        if gis is None:
-            gis = arcgis.gis.GIS()
-            self._gis = gis
-            self._con = gis._con
-            self._token = None
-        else:
-            self._gis = gis
-            self._con = gis._con
-            try:
-                # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except RuntimeError as e:
-                if 'Unable to generate token' in e.args[0]:
-                    try:
-                        # try as a public server
-                        self._token = None
-                        self._refresh()
-                    except HTTPError as httperror:
-                        _log.error(httperror)
-                        err = httperror
-                    except RuntimeError as e:
-                        if 'Token Required' in e.args[0]:
-                            # try token in the provided gis
-                            self._token = self._con.token
-                            self._refresh()
-
-        if err is not None:
-            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
-
-    def _refresh(self):
-        params = {"f": "json"}
-        dictdata = self._con.get(self.url, params, token=self._token)
-        self.properties = PropertyMap(dictdata)
+        super(VectorTileLayer, self).__init__(url, gis)
 
     @classmethod
     def fromitem(cls, item):

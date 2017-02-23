@@ -670,6 +670,7 @@ class FeatureCollection(Layer):
 
     # noinspection PyMissingConstructor
     def __init__(self, dictdata):
+        self._hydrated = True
         self.properties = PropertyMap(dictdata)
         self.layer = self.properties
 

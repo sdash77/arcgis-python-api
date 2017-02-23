@@ -3661,7 +3661,7 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    self._lazy_token = self._con.generate_portal_server_token(url)
+                    self._lazy_token = self._con.generate_portal_server_token(self._url)
 
                 self._refresh()
 
