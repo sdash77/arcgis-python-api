@@ -77,7 +77,6 @@ class GIS(object):
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
         """
         from arcgis._impl.tools import _Tools
-
         if url is None:
             url = "http://www.arcgis.com"
 
@@ -3615,49 +3614,17 @@ class _GISResource(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None):
-        self._token = None
-
+        self._hydrated = False
         self.url = url
         self._url = url
-
-        err = None
 
         if gis is None:
             gis = GIS()
             self._gis = gis
             self._con = gis._con
-            self._token = None
         else:
             self._gis = gis
             self._con = gis._con
-
-        with _DisableLogger():
-            try:
-                # try as a federated server
-                if self._con._token is None:
-                    self._token = None
-                else:
-                    self._token = self._con.generate_portal_server_token(url)
-                self._refresh()
-            except HTTPError as httperror: # service maybe down
-                _log.error(httperror)
-                err = httperror
-            except RuntimeError as e:
-                try:
-                    # try as a public server
-                    self._token = None
-                    self._refresh()
-                except HTTPError as httperror:
-                    _log.error(httperror)
-                    err = httperror
-                except RuntimeError as e:
-                    if 'Token Required' in e.args[0]:
-                        # try token in the provided gis
-                        self._token = self._con.token
-                        self._refresh()
-
-        if err is not None:
-            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
 
     @classmethod
     def fromitem(cls, item):
@@ -3667,18 +3634,68 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._token)
-        self.properties = PropertyMap(dictdata)
+        dictdata = self._con.post(self.url, params, token=self._lazy_token)
+        self._lazy_properties = PropertyMap(dictdata)
 
     @property
     def properties(self):
         """The properties of this object"""
-        return self._properties
-
+        if self._hydrated:
+            return self._lazy_properties
+        else:
+            self._hydrate()
+            return self._lazy_properties
 
     @properties.setter
     def properties(self, value):
-        self._properties = value
+        self._lazy_properties = value
+
+    def _hydrate(self):
+        """Fetches properties and deduces token while doing so"""
+        self._lazy_token = None
+        err = None
+
+        with _DisableLogger():
+            try:
+                # try as a federated server
+                if self._con._token is None:
+                    self._lazy_token = None
+                else:
+                    self._lazy_token = self._con.generate_portal_server_token(url)
+
+                self._refresh()
+
+            except HTTPError as httperror:  # service maybe down
+                _log.error(httperror)
+                err = httperror
+            except RuntimeError as e:
+                try:
+                    # try as a public server
+                    self._lazy_token = None
+                    self._refresh()
+
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._lazy_token = self._con.token
+                        self._refresh()
+
+        if err is not None:
+            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
+
+        self._hydrated = True
+
+    @property
+    def _token(self):
+        if self._hydrated:
+            return self._lazy_token
+        else:
+            self._hydrate()
+            return self._lazy_token
+
 
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self.url)
