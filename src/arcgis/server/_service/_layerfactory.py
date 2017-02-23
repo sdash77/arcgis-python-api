@@ -12,7 +12,7 @@ from arcgis.geoprocessing._tool import Toolbox
 from .._common import ServerConnection
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
-from arcgis.mapping import VectorTileLayer, WebScene
+from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers

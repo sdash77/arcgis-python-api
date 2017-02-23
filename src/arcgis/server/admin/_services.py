@@ -694,8 +694,8 @@ class Service(BaseServer):
             self.init()
         return self._extensions
     #----------------------------------------------------------------------
-    def modifyExtensions(self,
-                         extensionObjects=None):
+    def modify_extensions(self,
+                          extensionObjects=None):
         """
         enables/disables a service extension type based on the name
         """
