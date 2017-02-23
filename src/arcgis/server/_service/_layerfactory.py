@@ -106,10 +106,10 @@ class LayerFactory(type):
             return SchematicLayers( url=url,
                                     gis=server)
         elif base_name.lower() == "vectortileserver":
-            print ("vector tile server not implemented")
             return VectorTileLayer(url=url, gis=server)
         else:
-            print ("")
+            import warnings
+            warnings.warn("The following url does not have a server type defined: %s" % url)
             return None
         return type.__call__(cls, url, connection, item, initialize)
 ###########################################################################

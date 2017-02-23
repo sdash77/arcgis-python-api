@@ -111,11 +111,14 @@ class VectorTileLayer(Layer):
             self._con = gis._con
             self._token = None
         else:
+
             self._gis = gis
             self._con = gis._con
             try:
                 # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
+                from ..server._view import catalog
+                if isinstance(self._gis, catalog.ServerManager):
+                    self._token = self._con.token
                 self._refresh()
             except RuntimeError as e:
                 if 'Unable to generate token' in e.args[0]:
