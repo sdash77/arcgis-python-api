@@ -72,7 +72,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
 
         cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
         cls.qalab_data_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
-        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
+        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_Item_cls']
         #endregion
 
         #region precondition checks and sign in
@@ -273,6 +273,42 @@ class Test_Item_portal_builtin(unittest.TestCase):
                 # # validate service item has layers
                 # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Map Service")
                 print("Passed: TPK successfully published as WTL")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_resources_property(self):
+
+        #create a vector tile service item
+        item_properties_dict = {'title':self.namePrefix + self._testMethodName,
+                                'type':'Vector Tile Service',
+                                'snippet':'For unit test to check adding resource files',
+                                'tags':'unittest',
+                                'url':r'https://basemaps.arcgis.com/v1/arcgis/rest/services/World_Basemap/VectorTileServer'}
+        try:
+            added_item = self.gis.content.add(item_properties_dict)
+            if added_item is not None:
+                print("Vector tile service item created")
+
+        except:
+            print('Unable to create a new item to test adding resources')
+            raise unittest.SkipTest
+
+        #get resources property of this item
+        try:
+            res_mgr = added_item.resources
+
+            self.assertIsInstance(res_mgr, arcgis.gis.ResourceManager, "item.resources does not return"
+                                                                       "an object of type arcgis.gis.ResourceManager. "
+                                                                       "Instead returns " + str(type(res_mgr)))
 
         except AssertionError as assertErrorException:
             test_skip = True
