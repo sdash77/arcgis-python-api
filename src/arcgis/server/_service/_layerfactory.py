@@ -22,7 +22,7 @@ from ._mobileservice import MobileService
 from ._sceneservice import Scene
 from six.moves.urllib_parse import urlparse
 
-class LayerFactory(type):
+class ServiceFactory(type):
     """
     Generates a geometry object from a given set of
     JSON (dictionary or iterable)
@@ -114,8 +114,8 @@ class LayerFactory(type):
             return None
         return type.__call__(cls, url, connection, item, initialize)
 ###########################################################################
-@add_metaclass(LayerFactory)
-class Layer(object):
+@add_metaclass(ServiceFactory)
+class Service(object):
     """
     The Layer class allows users to pass a url, connection or other object
     to the class and get back properties and functions specifically related

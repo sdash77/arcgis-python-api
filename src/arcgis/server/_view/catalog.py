@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from six.moves.urllib_parse import urlparse
 import json
 from .._common import BaseServer
-from .._service._layerfactory import Layer
+from .._service._layerfactory import Service
 from .._common import ServerConnection
 ########################################################################
 class ServerManager(BaseServer):
@@ -152,7 +152,7 @@ class ServerManager(BaseServer):
             url = "{base}/{name}/{stype}".format(base=self._url,
                                                  name=s['name'],
                                                  stype=s['type'])
-            services.append(Layer(url=url, server=self))
+            services.append(Service(url=url, server=self))
         return services
     #----------------------------------------------------------------------
     @property

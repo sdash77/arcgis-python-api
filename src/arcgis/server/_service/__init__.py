@@ -2,7 +2,7 @@
 Classes for ArcGIS Services
 """
 from __future__ import absolute_import
-from ._layerfactory import Layer
+from ._layerfactory import Service
 
 __version__ = "1.0"
-__all__ = ['Layer']
+__all__ = ['Service']
