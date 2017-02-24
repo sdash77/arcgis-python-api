@@ -14,6 +14,7 @@ class Server(object):
     _adminUrl = None
     _server = None
     _sm = None
+    _con = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url=None,
@@ -47,8 +48,14 @@ class Server(object):
                               proxy_port,
                               portal_connection,
                               initialize)
+        self._con = self._server.connection
         self._sm = self._server.site_manager
         self._info = self._server.info
+    #----------------------------------------------------------------------
+    @property
+    def connection(self):
+        """gets server the connection object"""
+        return self._server.connection
     #----------------------------------------------------------------------
     @property
     def users(self):
