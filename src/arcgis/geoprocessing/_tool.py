@@ -429,7 +429,7 @@ class _AsyncResource(_GISResource):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.get(path=self.url, params=params, token=self._token)
+        dictdata = self._con.get(path=self.url, params=params, token=self._con.token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):

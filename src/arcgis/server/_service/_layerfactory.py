@@ -34,6 +34,7 @@ class LayerFactory(type):
                  initialize=False):
         """generates the proper type of layer from a given url"""
         from .. import Server
+        from .._view.catalog import ServerManager
         hasLayer = False
         if url is None and \
            item is None:
@@ -43,7 +44,7 @@ class LayerFactory(type):
 
         if isinstance(server, ServerConnection):
             connection = server
-        elif isinstance(server, (Server, GIS)):
+        elif isinstance(server, (Server, GIS, ServerManager)):
             connection = server._con
         else:
             parsed = urlparse(url)
