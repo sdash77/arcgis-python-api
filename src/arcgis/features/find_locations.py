@@ -205,7 +205,6 @@ def create_viewshed(
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.create_viewshed(
-        gis,
         input_layer,
         dem_resolution,
         maximum_distance,
