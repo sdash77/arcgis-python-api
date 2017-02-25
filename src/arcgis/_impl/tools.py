@@ -45,7 +45,7 @@ class _GISService(object):
         err = None
 
         if gis is None:
-            gis = arcgis.gis.GIS()
+            gis = arcgis.gis.GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
             self._token = None

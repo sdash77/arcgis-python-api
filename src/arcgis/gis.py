@@ -3619,7 +3619,7 @@ class _GISResource(object):
         self._url = url
 
         if gis is None:
-            gis = GIS()
+            gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
         else:
