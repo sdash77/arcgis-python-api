@@ -198,7 +198,7 @@ class BaseSpatialPandas(object):
             qi = QuadIndex(bbox=bbox)
             geometry_type = self.geometry_type.lower()
             if geometry_type == 'point':
-                geometry_type = self.geometry[0].type.lower()
+                geometry_type = self.geometry[self.geometry.index[0]].type.lower()
             for i, (idx, item) in enumerate(self.geometry.iteritems()):
                 if pd.notnull(item) and item:
                     if geometry_type in ('point', 'pointgeometry'):
