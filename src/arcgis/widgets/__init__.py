@@ -136,7 +136,7 @@ class MapView(widgets.DOMWidget):
         Adds layers from the provided item
         """
         if isinstance(item, Layer):
-            js_layer = item._lyr_dict
+            js_layer = item._lyr_json
             if options is not None:
                 js_layer.update({"options": json.dumps(options)})
 
@@ -145,7 +145,7 @@ class MapView(widgets.DOMWidget):
             if item.layers is None:
                 raise RuntimeError('No layers accessible/available in this item or service')
             for lyr in item.layers:
-                js_layer = lyr._lyr_dict
+                js_layer = lyr._lyr_json
                 if options is not None:
                     js_layer.update({"options": json.dumps(options)})
                 self._addlayer = json.dumps(js_layer)

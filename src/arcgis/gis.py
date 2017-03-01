@@ -3739,11 +3739,23 @@ class Layer(_GISResource):
     @property
     def _lyr_dict(self):
         url = self.url
-        if self._token is not None:
-            url += '?token=' + self._token
+        # if self._token is not None:   # causing geoanalytics Invalid URL error
+        #    url += '?token=' + self._token
 
         lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
         if self._token is not None:
             lyr_dict['serviceToken'] = self._token
+
+        return lyr_dict
+
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += '?token=' + self._token
+
+        lyr_dict = {'type': type(self).__name__, 'url': url}
+        #if self._token is not None:
+        #    lyr_dict['serviceToken'] = self._token
 
         return lyr_dict
