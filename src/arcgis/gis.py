@@ -3726,6 +3726,10 @@ class Layer(_GISResource):
     GIS. Layer objects can be obtained through the layers attribute on layer Items in the GIS.
     """
 
+    def __init__(self, url, gis=None):
+        super(Layer, self).__init__(url, gis)
+        self.filter = None
+
     @classmethod
     def fromitem(cls, item, index=0):
         """
@@ -3739,12 +3743,13 @@ class Layer(_GISResource):
     @property
     def _lyr_dict(self):
         url = self.url
-        # if self._token is not None:   # causing geoanalytics Invalid URL error
-        #    url += '?token=' + self._token
 
         lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
         if self._token is not None:
             lyr_dict['serviceToken'] = self._token
+
+        if self.filter is not None:
+            lyr_dict['filter'] = self.filter
 
         return lyr_dict
 
@@ -3755,7 +3760,5 @@ class Layer(_GISResource):
             url += '?token=' + self._token
 
         lyr_dict = {'type': type(self).__name__, 'url': url}
-        #if self._token is not None:
-        #    lyr_dict['serviceToken'] = self._token
 
         return lyr_dict
