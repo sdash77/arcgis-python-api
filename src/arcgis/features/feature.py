@@ -675,6 +675,10 @@ class FeatureCollection(Layer):
         self.layer = self.properties
 
     @property
+    def _lyr_json(self):
+        return dict(self.properties)
+
+    @property
     def _lyr_dict(self):
         return dict(self.properties)
 
