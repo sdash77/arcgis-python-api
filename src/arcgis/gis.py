@@ -150,6 +150,16 @@ class GIS(object):
         """
         return PropertyMap(self._get_properties())
 
+    def update_properties(self, properties_dict):
+        """Updates the GIS's properties from those in properties_dict"""
+        postdata = self._portal._postdata()
+        postdata.update(properties_dict)
+
+        resp = self._portal.con.post('portals/self/update', postdata)
+        if resp:
+            delattr(self, '_lazy_properties') # force refresh of properties when queried next
+            return resp.get('success')
+
     def __str__(self):
         return 'GIS @ ' + self._url
 
@@ -3131,7 +3141,11 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, groups)
+
+        if self.access == 'public' and not everyone and not org:
+            return self._portal.share_item_as_group_admin(self.itemid, groups)
+        else:
+            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, groups)
 
     def unshare(self, groups):
         """ Stops sharing the item with the specified list of groups
@@ -3153,7 +3167,11 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.unshare_item(self.itemid, self.owner, folder, groups)
+
+        if self.access == 'public':
+            return self._portal.unshare_item_as_group_owner(self.itemid, groups)
+        else:
+            return self._portal.unshare_item(self.itemid, self.owner, folder, groups)
 
     def delete(self):
         """ Deletes an item.

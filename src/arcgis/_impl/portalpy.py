@@ -625,6 +625,60 @@ class Portal(object):
         if resp:
             return resp
 
+    def share_item_as_group_admin(self, item_id, groups=""):
+        """ Shares public item with the specified list of groups belonging to caller
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        groups            optional string,
+                          comma-separated list of group IDs with which the item will be shared.
+        ================  ========================================================
+
+        :return:
+            dict with key "notSharedWith" containing array of groups with which the item could not be shared.
+
+
+
+        """
+        return self.con.post('content/items/' + item_id, self._postdata())
+        path = 'content/items/' + item_id + '/share'
+        postdata = self._postdata()
+        postdata['groups'] = groups
+        resp = self.con.post(path, postdata)
+
+        if resp:
+            return resp
+
+    def unshare_item_as_group_admin(self, item_id, groups=""):
+        """ Stops sharing public item with the specified list of groups belonging to caller
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        groups            optional string,
+                          comma-separated list of group IDs with which the item will be unshared.
+        ================  ========================================================
+
+        :return:
+            dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
+
+
+
+        """
+        return self.con.post('content/items/' + item_id, self._postdata())
+        path = 'content/items/' + item_id + '/unshare'
+        postdata = self._postdata()
+        postdata['groups'] = groups
+        resp = self.con.post(path, postdata)
+
+        if resp:
+            return resp
+
     def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups=""):
         """ Shares an item with the specified list of groups
 
