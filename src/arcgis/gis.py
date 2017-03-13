@@ -148,7 +148,7 @@ class GIS(object):
         """
         The properties of the GIS
         """
-        return PropertyMap(self._get_properties())
+        return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
         """Updates the GIS's properties from those in properties_dict"""
