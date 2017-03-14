@@ -66,7 +66,7 @@ class GIS(object):
     """
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
-                 verify_cert=True, set_active=True):
+                 verify_cert=True, set_active=True, client_id=None):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
@@ -88,9 +88,10 @@ class GIS(object):
         self._portal = None
         self._con = None
         self._verify_cert = verify_cert
+        self._client_id = client_id
         self._datastores_list = None
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
-                                       verify_cert=self._verify_cert)
+                                       verify_cert=self._verify_cert, client_id=self._client_id)
 
         if self._url.lower() == "pro":
             self._url = self._portal.url

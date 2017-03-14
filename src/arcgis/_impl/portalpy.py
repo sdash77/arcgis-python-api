@@ -79,7 +79,7 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True):
+                 tokenurl=None, verify_cert=True, client_id=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
         if url.endswith('/home'): # be permissive in accepting home app urls
             url = url[:-5]
@@ -156,7 +156,8 @@ class Portal(object):
                                              referer=referer,
                                              proxy_host=proxy_host,
                                              proxy_port=proxy_port, 
-                                             verify_cert=verify_cert)
+                                             verify_cert=verify_cert,
+                                             client_id=client_id)
         #self.get_version(True)
         self.get_properties(True)
 

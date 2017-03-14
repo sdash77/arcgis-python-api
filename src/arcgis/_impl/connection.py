@@ -211,16 +211,19 @@ class _ArcGISConnection(object):
     _auth = None
     _tokenurl = None
     _token = None
+    _refresh_token = None   # oauth
     _server_token = None
     _connection = None
     _portal_connection = None
     _service_url = None
+
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
                  proxy_host=None, proxy_port=None,
-                 connection=None, verify_cert=True):
+                 connection=None, verify_cert=True,
+                 client_id=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
         if baseurl is None:
             self._is_arcpy = False
@@ -263,7 +266,11 @@ class _ArcGISConnection(object):
         self._username = username
         self._password = password
 
-        if cert_file is not None and key_file is not None:
+        self._client_id = client_id
+
+        if client_id is not None:
+            self._auth = 'OAUTH'
+        elif cert_file is not None and key_file is not None:
             self._auth = "PKI"
         elif username is not None and password is not None:
             self._auth = "BUILTIN" # or BASIC (LDAP) or DIGEST
@@ -271,7 +278,7 @@ class _ArcGISConnection(object):
             self._auth = "ANON" # or IWA (NTLM or Kerberos) (self.login sets this up)
             
         if cert_file is None and key_file is None:
-            self.login(username, password, expiration)
+            self.login(username, password, expiration, client_id)
 
     #----------------------------------------------------------------------
     def _validate_url(self, url):
@@ -350,7 +357,7 @@ class _ArcGISConnection(object):
         if self._token != value:
             self._token = value
     #----------------------------------------------------------------------
-    def generate_token(self, username, password, expiration=60):
+    def generate_token(self, username, password, expiration=60, client_id=None):
         """ Generates and returns a new token, but doesn't re-login. """
         if self._is_arcpy and \
            self.product in ("PORTAL", "AGO"):
@@ -377,18 +384,71 @@ class _ArcGISConnection(object):
             postdata = { 'username': username, 'password': password,
                          'client': 'referer', 'referer': self._referer,
                          'expiration': expiration, 'f': 'json' }
-        if self._tokenurl is None:
-            if self.baseurl.endswith('/'):
-                resp = self.post('generateToken', postdata,
-                                 ssl=True, add_token=False)
-            else:
-                resp = self.post('/generateToken', postdata,
-                                 ssl=True, add_token=False)
+        if client_id is not None:
+            return self.oauth_authenticate(client_id)
+
         else:
-            resp = self.post(path=self._tokenurl, postdata=postdata,
-                             ssl=True, add_token=False)
-        if resp:
-            return resp.get('token')
+            if self._tokenurl is None:
+                if self.baseurl.endswith('/'):
+                    resp = self.post('generateToken', postdata,
+                                     ssl=True, add_token=False)
+                else:
+                    resp = self.post('/generateToken', postdata,
+                                     ssl=True, add_token=False)
+            else:
+                resp = self.post(path=self._tokenurl, postdata=postdata,
+                                 ssl=True, add_token=False)
+            if resp:
+                return resp.get('token')
+
+    def oauth_authenticate(self, client_id):
+
+        postdata = {
+            'client_id': client_id,
+            'response_type': 'code',
+            'expiration': -1,
+            'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
+        }
+        content = self.get('oauth2/authorize', postdata, ssl=True, try_json=False, add_token=False)
+        import re
+        import json
+        from bs4 import BeautifulSoup
+        pattern = re.compile('var oAuthInfo = ({.*?});', re.DOTALL)
+        soup = BeautifulSoup(content, 'html.parser')
+        for script in soup.find_all('script'):
+            script_code = str(script.string).strip()
+            matches = pattern.search(script_code)
+            if not matches is None:
+                js_object = matches.groups()[0]
+                oauth_info = json.loads(js_object)
+                break
+        parameters = {
+            'user_orgkey': '',
+            'username': self._username,
+            'password': self._password,
+            'oauth_state': oauth_info['oauth_state']
+        }
+        content = self.post('oauth2/signin', parameters, ssl=True, try_json=False, add_token=False)
+        soup = BeautifulSoup(content, 'html.parser')
+        code = ""
+        if soup.title is not None:
+            if 'SUCCESS' in soup.title.string:
+                code = soup.title.string[len('SUCCESS code='):]
+        # print('***code=' + code)
+        parameters = {
+            'client_id': client_id,
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
+        }
+        token_info = self.post('oauth2/token', parameters, ssl=True, add_token=False)
+        # print('******' + str(token_info))
+
+        self._refresh_token = token_info['refresh_token']
+        self._token = token_info['access_token']
+
+        return self._token
+
     #----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
         """generates a server token using Portal token"""
@@ -412,7 +472,7 @@ class _ArcGISConnection(object):
         if resp:
             return resp.get('token')
     #----------------------------------------------------------------------
-    def login(self, username, password, expiration=60):
+    def login(self, username, password, expiration=60, client_id=None):
         """ Logs into the portal using username/password. """
         newtoken = None
         try:
@@ -426,7 +486,7 @@ class _ArcGISConnection(object):
                                                   # except handler will catch it and set self._auth appropriately
 
             if username is not None and password is not None:
-                newtoken = self.generate_token(username, password, expiration)
+                newtoken = self.generate_token(username, password, expiration, client_id)
 
                 if newtoken:
                     self._token = newtoken
@@ -469,7 +529,19 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def relogin(self, expiration=60):
         """ Re-authenticates with the portal using the same username/password. """
-        return self.login(self._username, self._password, expiration)
+        if self._refresh_token is not None and self._client_id is not None: # oauth2
+            parameters = {
+                'client_id': self._client_id,
+                'grant_type': 'refresh_token',
+                'refresh_token': self._refresh_token,
+                'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
+            }
+            token_info = self.post('oauth2/token', parameters, ssl=True, add_token=False)
+            self._token = token_info['access_token']
+
+            return self._token
+        else:
+            return self.login(self._username, self._password, expiration)
     #----------------------------------------------------------------------
     def logout(self):
         """ Logs out of the portal. """
@@ -839,7 +911,7 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
-             token=DEFAULT_TOKEN):
+             token=DEFAULT_TOKEN, try_json=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         path = quote(path, ':/')
         url = path
@@ -923,6 +995,10 @@ class _ArcGISConnection(object):
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + resp_data)
         #print(resp_data);
+
+        if not try_json:
+            return resp_data
+
         if use_ordered_dict:
             resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
         else:
