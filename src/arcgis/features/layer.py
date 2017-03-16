@@ -540,8 +540,11 @@ class FeatureLayer(Layer):
             elif isinstance(adds[0], PropertyMap):
                 params['adds'] = json.dumps([dict(f) for f in adds],
                                             default=_date_handler)
+            elif isinstance(adds[0], Feature):
+                params['adds'] = json.dumps([f.as_dict for f in adds],
+                                               default=_date_handler)
             else:
-                print('pass in features as dict or PropertyMap')
+                print('pass in features as list of Features, dicts or PropertyMap')
         if isinstance(updates, FeatureSet):
             params['updates'] = json.dumps([f.as_dict for f in updates.features],
                                            default=_date_handler)
@@ -556,7 +559,7 @@ class FeatureLayer(Layer):
                 params['updates'] = json.dumps([f.as_dict for f in updates],
                                                default=_date_handler)
             else:
-                print('pass in features as dict or PropertyMap')
+                print('pass in features as list of Features, dicts or PropertyMap')
         if deletes is not None and \
                 isinstance(deletes, str):
             params['deletes'] = deletes
