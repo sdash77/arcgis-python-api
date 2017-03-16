@@ -787,7 +787,12 @@ class UserManager(object):
 
             resp = self._portal.con.post('portals/self/invite', params, ssl=True)
             if resp and resp.get('success'):
-                return self.get(username)
+                if username in resp['notInvited']:
+                    print('Unable to create ' + username)
+                    _log.error('Unable to create ' + username)
+                    return None
+                else:
+                    return self.get(username)
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             #print(createuser_url)
