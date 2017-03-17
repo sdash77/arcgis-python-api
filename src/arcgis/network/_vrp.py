@@ -12,7 +12,7 @@ _url = "https://logistics.arcgis.com/arcgis/rest/services/World/VehicleRoutingPr
 _use_async = True
 
 
-def solve_vehicle_routing_problem(orders: FeatureSet = {
+default_orders = {
     'fields': [{'alias': 'ObjectID', 'name': 'ObjectID', 'type': 'esriFieldTypeOID'},
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
                {'alias': 'ServiceTime', 'name': 'ServiceTime', 'type': 'esriFieldTypeDouble'},
@@ -34,8 +34,10 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                {'alias': 'Sequence', 'name': 'Sequence', 'type': 'esriFieldTypeInteger'},
                {'alias': 'CurbApproach', 'name': 'CurbApproach', 'type': 'esriFieldTypeInteger'}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  depots: FeatureSet = {
+    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    
+    
+default_depots = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                   'length': 128},
@@ -55,8 +57,8 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                  {'alias': 'NavLatency', 'name': 'NavLatency',
                                                   'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPoint',
                                       'displayFieldName': '', 'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  routes: FeatureSet = {
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}   
+default_routes = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                   'length': 128}, {'alias': 'StartDepotName', 'name': 'StartDepotName',
@@ -97,8 +99,9 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeString', 'length': 128},
                                                  {'alias': 'AssignmentRule', 'name': 'AssignmentRule',
                                                   'type': 'esriFieldTypeInteger'}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False},
-                                  breaks: FeatureSet = {
+                                      'displayFieldName': '', 'exceededTransferLimit': False}
+                                      
+default_breaks = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'RouteName', 'name': 'RouteName',
                                                   'type': 'esriFieldTypeString', 'length': 128},
@@ -119,15 +122,8 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                  {'alias': 'IsPaid', 'name': 'IsPaid', 'type': 'esriFieldTypeInteger'},
                                                  {'alias': 'Sequence', 'name': 'Sequence',
                                                   'type': 'esriFieldTypeInteger'}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False},
-                                  time_units: str = """Minutes""",
-                                  distance_units: str = """Miles""",
-                                  analysis_region: str = None,
-                                  default_date: datetime = None,
-                                  uturn_policy: str = """ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY""",
-                                  time_window_factor: str = """Medium""",
-                                  spatially_cluster_routes: bool = True,
-                                  route_zones: FeatureSet = {
+                                      'displayFieldName': '', 'exceededTransferLimit': False}                                      
+default_route_zones = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'RouteName', 'name': 'RouteName',
                                                   'type': 'esriFieldTypeString', 'length': 128},
@@ -139,8 +135,9 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeDouble'}],
                                       'geometryType': 'esriGeometryPolygon', 'displayFieldName': '',
                                       'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  route_renewals: FeatureSet = {
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                      
+
+default_route_renewals = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'RouteName', 'name': 'RouteName',
                                                   'type': 'esriFieldTypeString', 'length': 128},
@@ -150,8 +147,9 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeDouble'},
                                                  {'alias': 'Sequences', 'name': 'Sequences',
                                                   'type': 'esriFieldTypeString', 'length': 128}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False},
-                                  order_pairs: FeatureSet = {
+                                      'displayFieldName': '', 'exceededTransferLimit': False}
+
+default_order_pairs = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'FirstOrderName', 'name': 'FirstOrderName',
                                                   'type': 'esriFieldTypeString', 'length': 128},
@@ -159,9 +157,9 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeString', 'length': 128},
                                                  {'alias': 'MaxTransitTime', 'name': 'MaxTransitTime',
                                                   'type': 'esriFieldTypeDouble'}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False},
-                                  excess_transit_factor: str = """Medium""",
-                                  point_barriers: FeatureSet = {
+                                      'displayFieldName': '', 'exceededTransferLimit': False}                                      
+
+default_point_barriers = {
                                       'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                   'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -174,16 +172,18 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeSmallInteger'}],
                                       'geometryType': 'esriGeometryPoint', 'displayFieldName': '',
                                       'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  line_barriers: FeatureSet = {
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
+default_line_barriers = {
                                       'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                   'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
                                                                    'type': 'esriFieldTypeDouble'}],
                                       'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
                                       'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  polygon_barriers: FeatureSet = {
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
+default_polygon_barriers = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                   'length': 128}, {'alias': 'BarrierType', 'name': 'BarrierType',
@@ -198,10 +198,11 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                   'type': 'esriFieldTypeDouble'}],
                                       'geometryType': 'esriGeometryPolygon', 'displayFieldName': '',
                                       'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                  use_hierarchy_in_analysis: bool = True,
-                                  restrictions: str = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']""",
-                                  attribute_parameter_values: FeatureSet = {
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
+default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
+
+default_param_values = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'AttributeName', 'name': 'AttributeName',
                                                   'type': 'esriFieldTypeString', 'length': 255},
@@ -484,16 +485,41 @@ def solve_vehicle_routing_problem(orders: FeatureSet = {
                                                                                                                       'AttributeName': 'Width Restriction',
                                                                                                                       'ParameterValue': '0',
                                                                                                                       'ParameterName': 'Vehicle Width (meters)'}}],
-                                      'displayFieldName': '', 'exceededTransferLimit': False},
-                                  populate_route_lines: bool = True,
-                                  route_line_simplification_tolerance: LinearUnit = {'distance': 10,
-                                                                                     'units': 'esriMeters'},
-                                  populate_directions: bool = False,
-                                  directions_language: str = """en""",
-                                  directions_style_name: str = """NA Desktop""",
-                                  travel_mode: str = """Custom""",
-                                  impedance: str = """Drive Time""",
-                                  gis=None) -> tuple:
+                                      'displayFieldName': '', 'exceededTransferLimit': False}
+                                      
+default_tolerance = {'distance': 10,
+    'units': 'esriMeters'}
+                                                                                     
+def solve_vehicle_routing_problem(
+    orders = default_orders,
+    depots = default_depots,
+    routes = default_routes,
+    breaks = default_breaks,
+    time_units = """Minutes""",
+    distance_units = """Miles""",
+    analysis_region = None,
+    default_date = None,
+    uturn_policy = """ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY""",
+    time_window_factor = """Medium""",
+    spatially_cluster_routes = True,
+    route_zones = default_route_zones,
+    route_renewals = default_route_renewals,
+    order_pairs = default_order_pairs,
+    excess_transit_factor = """Medium""",
+    point_barriers = default_point_barriers,
+    line_barriers = default_line_barriers,
+    polygon_barriers = default_polygon_barriers,
+    use_hierarchy_in_analysis = True,
+    restrictions = default_restrictions,
+    attribute_parameter_values = default_param_values,
+    populate_route_lines = True,
+    route_line_simplification_tolerance = default_tolerance,
+    populate_directions = False,
+    directions_language = """en""",
+    directions_style_name = """NA Desktop""",
+    travel_mode = """Custom""",
+    impedance = """Drive Time""",
+    gis = None):
     """
 
 
@@ -505,8 +531,8 @@ any time windows while keeping the overall operating and investment costs for ea
 constraints are to complete the routes with available resources and within the time limits imposed by driver work
 shifts, driving speeds, and customer commitments., This service can be used to determine solutions for such complex
 fleet management tasks. Consider an example of delivering goods to grocery stores from a central warehouse location.
-A fleet of three trucks is available at the warehouse. The warehouse operates only within a certain time window—from
-8:00 a.m. to 5:00 p.m.—during which all trucks must return back to the warehouse. Each truck has a capacity of 15,000
+A fleet of three trucks is available at the warehouse. The warehouse operates only within a certain time window-from
+8:00 a.m. to 5:00 p.m.-during which all trucks must return back to the warehouse. Each truck has a capacity of 15,000
 pounds, which limits the amount of goods it can carry. Each store has a demand for a specific amount of goods (
 in pounds) that needs to be delivered, and each store has time windows that confine when deliveries should be made.
 Furthermore, the driver can work only eight hours per day, requires a break for lunch, and is paid for the time spent
@@ -641,7 +667,7 @@ Parameters:
             the numeric values with a space. For instance, if you are recording
             the weight and volume of a delivery that weighs 2,000 pounds and
             has a volume of 100 cubic feet, enter 2000 100. Again, you need to
-            remember the units—in this case, pounds and cubic feet. You also
+            remember the units-in this case, pounds and cubic feet. You also
             need to remember the sequence in which the values and their corresponding
             units are entered.
 
@@ -671,8 +697,8 @@ Parameters:
             In the case of an exchange visit, an order can have
             both delivery and pickup quantities.
            Revenue: The income generated if the order is included in a
-            solution. This field can contain a null value—a null value
-            indicates zero revenue—but it can't have a negative
+            solution. This field can contain a null value-a null value
+            indicates zero revenue-but it can't have a negative
             value.
 
             Revenue is included in optimizing the objective
@@ -703,10 +729,10 @@ Parameters:
            AssignmentRule: This field specifies the rule for assigning the order to a
             route. It is constrained by a domain of values, which are listed
             below (use the numeric code, not the name in parentheses).
-                0 (Exclude)—The order is to be excluded from the
+                0 (Exclude)-The order is to be excluded from the
                 subsequent solve operation.
 
-                1 (Preserve route and relative sequence)—The solver must
+                1 (Preserve route and relative sequence)-The solver must
                 always assign the order to the preassigned route and at the
                 preassigned relative sequence during the solve operation. If this
                 assignment rule can't be followed, it results in an order
@@ -720,13 +746,13 @@ Parameters:
                 between, or after A and B. However, B cannot be sequenced before
                 A.
 
-                2 (Preserve route)—The solver must always assign the
+                2 (Preserve route)-The solver must always assign the
                 order to the preassigned route during the solve operation. A valid
                 sequence must also be set even though the sequence may or may not
                 be preserved. If the order can't be assigned to the specified
                 route, it results in an order violation.
 
-                3 (Override)—The solver tries to preserve the route
+                3 (Override)-The solver tries to preserve the route
                 and sequence preassignment for the order during the solve
                 operation. However, a new route or sequence for the order may
                 be assigned if it helps minimize the overall value of the objective
@@ -737,12 +763,12 @@ Parameters:
            CurbApproach:  Specifies the direction a vehicle may arrive at and depart
             from the order. The field value is specified as one of the
             following integers shown in the parentheses (use the numeric code, not the name in parentheses):
-            0 (Either side of vehicle)—The vehicle can approach and depart the order in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and desirable for your vehicle to turn around at the order. This decision may depend on the width of the road and the amount of traffic or whether the order has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)—When the vehicle approaches and departs the order, the order must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the right-hand side.
-                2 (Left side of vehicle)—When the vehicle approaches and departs
+            0 (Either side of vehicle)-The vehicle can approach and depart the order in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and desirable for your vehicle to turn around at the order. This decision may depend on the width of the road and the amount of traffic or whether the order has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)-When the vehicle approaches and departs the order, the order must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the right-hand side.
+                2 (Left side of vehicle)-When the vehicle approaches and departs
                 the order, the curb must be on the left side of the vehicle. A
                 U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the left-hand side.
 
-                3 (No U-Turn)—When
+                3 (No U-Turn)-When
                 the vehicle approaches the order, the curb can be on either side
                 of the vehicle; however, the vehicle must depart without turning
                 around.
@@ -833,12 +859,12 @@ Parameters:
            CurbApproach:  Specifies the direction a vehicle may arrive at and depart
             from the depot. The field value is specified as one of the
             following integers shown in the parentheses (use the numeric code, not the name in parentheses):
-            0 (Either side of vehicle)—The vehicle can approach and depart the depot in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and desirable for your vehicle to turn around at the depot. This decision may depend on the width of the road and the amount of traffic or whether the depot has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)—When the vehicle approaches and departs the depot, the depot must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the right-hand side.
-                2 (Left side of vehicle)—When the vehicle approaches and departs
+            0 (Either side of vehicle)-The vehicle can approach and depart the depot in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and desirable for your vehicle to turn around at the depot. This decision may depend on the width of the road and the amount of traffic or whether the depot has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)-When the vehicle approaches and departs the depot, the depot must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the right-hand side.
+                2 (Left side of vehicle)-When the vehicle approaches and departs
                 the depot, the curb must be on the left side of the vehicle. A
                 U-turn is prohibited. This is typically used for vehicles like buses that must arrive with the bus stop on the left-hand side.
 
-                3 (No U-Turn)—When
+                3 (No U-Turn)-When
                 the vehicle approaches the depot, the curb can be on either side
                 of the vehicle; however, the vehicle must depart without turning
                 around.
@@ -869,7 +895,7 @@ Parameters:
 
             A value of 30 means that when Network Analyst attempts to
             add a network location on an edge, a range of acceptable bearing
-            values is generated 15º to either side of the edge (left and
+            values is generated 15 degrees to either side of the edge (left and
             right) and in both digitized directions of the edge.
             For more information, see the Bearing and Bearing Tolerance topic in the ArcGIS help system (http://links.esri.com/bearing-and-bearing-tolerance). NavLatency: This field is only used in the solve process if Bearing
             and BearingTol also have values; however, entering a NavLatency
@@ -1000,12 +1026,12 @@ Parameters:
             that is, three drivers would need to separately find parking places
             and enter the same building. However, if the orders could be
             serviced by just one route instead, only one driver would need to
-            park and enter the building—only one arrive/depart delay would be
+            park and enter the building-only one arrive/depart delay would be
             incurred. Since the VRP solver tries to minimize cost, it will try
             to limit the arrive/depart delays and thus choose the single-route
             option. (Note that multiple routes may need to be sent when other
-            constraints—such as specialties, time windows, or
-            capacities—require it.)
+            constraints-such as specialties, time windows, or
+            capacities-require it.)
             The unit for this field value is specified by the time_units parameter. Capacities: The maximum capacity of the vehicle. You can specify
             capacity in any dimension you want, such as weight, volume, or
             quantity. You can even specify multiple dimensions, for example,
@@ -1063,13 +1089,13 @@ Parameters:
             field can contain null values; a null value indicates zero fixed
             cost. This cost is part of the total route operating
             cost.
-           CostPerUnitTime: The monetary cost incurred—per unit of work time—for the
+           CostPerUnitTime: The monetary cost incurred-per unit of work time-for the
             total route duration, including travel times as well as service
             times and wait times at orders, depots, and breaks. This field
             can't contain a null value and has a default value of
             1.0.
-            The unit for this field value is specified by the time_units parameter. CostPerUnitDistance: The monetary cost incurred—per unit of distance
-            traveled—for the route length (total travel distance). This field
+            The unit for this field value is specified by the time_units parameter. CostPerUnitDistance: The monetary cost incurred-per unit of distance
+            traveled-for the route length (total travel distance). This field
             can contain null values; a null value indicates zero
             cost.
             The unit for this field value is specified by the distance_units parameter. OvertimeStartTime: The duration of regular work time before overtime
@@ -1128,10 +1154,10 @@ Parameters:
             solving the problem. This field is constrained by a domain of
             values, which are listed below (use the numeric code, not the name in parentheses).
 
-                1 (Include)—The route is included in the solve operation.
+                1 (Include)-The route is included in the solve operation.
                 This is the default value.
 
-                2 (Exclude)—The route is excluded from the solve
+                2 (Exclude)-The route is excluded from the solve
                 operation.
 
    breaks: Breaks (FeatureSet). Required parameter.  These are the rest periods, or breaks, for the routes in a given
@@ -1312,20 +1338,20 @@ Parameters:
             of day without including a date. You can find these time fields in various input parameters, such as the ServiceTime attributes in the orders and breaks parameters.
 
    uturn_policy: UTurn at Junctions (str). Optional parameter.  Use this parameter to restrict or permit the service area to make U-turns at junctions. In order to understand the parameter values, consider for a moment the following terminology: a junction is a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is a point where exactly two streets connect to one another; an intersection is a point where three or more streets connect; and a  dead-end is where one street segment ends without connecting to another. Given this information, the parameter can have the following values:
-                ALLOW_UTURNS—U-turns are permitted everywhere. Allowing
+                ALLOW_UTURNS-U-turns are permitted everywhere. Allowing
                 U-turns implies that the vehicle can turn around at any junction and
                 double back on the same street. This is the default value.
 
-                NO_UTURNS—U-turns are prohibited at all junctions: pseudo-junctions, intersections, and dead-ends.
+                NO_UTURNS-U-turns are prohibited at all junctions: pseudo-junctions, intersections, and dead-ends.
                 Note, however, that U-turns may be permitted even when this option is chosen. To prevent U-turns at incidents and facilities, set
                 the CurbApproach field value to
                 prohibit U-turns.
 
-                ALLOW_DEAD_ENDS_ONLY—U-turns are prohibited at all
+                ALLOW_DEAD_ENDS_ONLY-U-turns are prohibited at all
                 junctions, except those that have only one connected street feature (a dead
                 end).
 
-                ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY—U-turns are prohibited at
+                ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY-U-turns are prohibited at
                 pseudo-junctions where exactly two adjacent streets meet, but U-turns are permitted
                 at intersections and dead ends. This prevents turning around in the middle of the road where one length of road happened to be digitized as two street features.
                The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
@@ -1333,16 +1359,16 @@ Parameters:
 
    time_window_factor: Time Window Factor (str). Optional parameter.  Rates the importance of honoring time windows. There are
             three options described below.
-                High—Places more importance on arriving at stops on time
+                High-Places more importance on arriving at stops on time
                 than on minimizing drive times. Organizations that make
                 time-critical deliveries or that are very concerned with customer
                 service would choose High.
 
-                Medium—This is the default value. Balances the importance
+                Medium-This is the default value. Balances the importance
                 of minimizing drive times and arriving within time
                 windows.
 
-                Low—Places more importance on minimizing drive times and
+                Low-Places more importance on minimizing drive times and
                 less on arriving at stops on time. You may want to use this setting
                 if you have a growing backlog of service requests. For the purpose
                 of servicing more orders in a day and reducing the backlog, you can
@@ -1350,14 +1376,14 @@ Parameters:
                 late arrivals.
       Choice list:['High', 'Medium', 'Low']
 
-   spatially_cluster_routes: Spatially Cluster Routes (bool). Optional parameter.  CLUSTER (True)—Dynamic seed points are automatically created for
+   spatially_cluster_routes: Spatially Cluster Routes (bool). Optional parameter.  CLUSTER (True)-Dynamic seed points are automatically created for
                 all routes and the orders assigned to an individual
                 route are spatially clustered. Clustering orders tends to keep
                 routes in smaller areas and reduce how often different route lines
                 intersect one another; yet, clustering also tends to increase
                 overall travel times.
 
-                NO_CLUSTER (False) —Dynamic seed points aren't
+                NO_CLUSTER (False) -Dynamic seed points aren't
                 created. Choose this option if route zones are
                 specified.
 
@@ -1499,18 +1525,18 @@ Parameters:
             Excess time can be caused by driver breaks or travel to
             intermediate orders and depots. Listed below are the three values
             you can choose from.
-                High—The solver tries to find a solution with the least
+                High-The solver tries to find a solution with the least
                 excess transit time between paired orders at the expense of
                 increasing the overall travel costs. It makes sense to use this
                 setting if you are transporting people between paired orders and
                 you want to shorten their ride time. This is characteristic of taxi
                 services.
 
-                Medium—This is the default setting. The solver looks for
+                Medium-This is the default setting. The solver looks for
                 a balance between reducing excess transit time and reducing the
                 overall solution cost.
 
-                Low—The solver tries to find a solution that minimizes
+                Low-The solver tries to find a solution that minimizes
                 overall solution cost, regardless of excess transit time. This
                 setting is commonly used with courier services. Since couriers
                 transport packages as opposed to people, they don't need to worry
@@ -1533,11 +1559,11 @@ Parameters:
             for this attribute is specified as one of the following
             integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits travel through the barrier. The barrier
+                0 (Restriction)-Prohibits travel through the barrier. The barrier
                 is referred to as a restriction point barrier since it acts as a
                 restriction.
 
-                2 (Added Cost)—Traveling through the barrier increases the travel
+                2 (Added Cost)-Traveling through the barrier increases the travel
                 time or distance by the amount specified in the
                 Additional_Time or Additional_Distance field. This barrier type is
                 referred to as an added-cost point barrier.
@@ -1581,13 +1607,13 @@ Parameters:
             or scales the time or distance for traveling through it. The field
             value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits traveling through any part of the barrier.
+                0 (Restriction)-Prohibits traveling through any part of the barrier.
                 The barrier is referred to as a restriction polygon barrier since it
                 prohibits traveling on streets intersected by the barrier. One use
                 of this type of barrier is to model floods covering areas of the
                 street that make traveling on those streets impossible.
 
-                1 (Scaled Cost)—Scales the time or distance required to travel the
+                1 (Scaled Cost)-Scales the time or distance required to travel the
                 underlying streets by a factor specified using the ScaledTimeFactor
                 or ScaledDistanceFactor fields. If the streets are partially
                 covered by the barrier, the travel time or distance is apportioned
@@ -1610,7 +1636,7 @@ Parameters:
 
    use_hierarchy_in_analysis: Use Hierarchy (bool). Optional parameter.  Specify whether hierarchy should be used when finding the best
             routes.
-                Checked (True)—Use hierarchy when finding routes. When
+                Checked (True)-Use hierarchy when finding routes. When
                 hierarchy is used, the tool prefers higher-order streets, such as
                 freeways, to lower-order streets, such as local roads, and can be used
                 to simulate the driver preference of traveling on freeways instead
@@ -1619,7 +1645,7 @@ Parameters:
                 especially for long-distance routes, as the tool has to select the
                 best route from a relatively smaller subset of streets.
 
-                Unchecked (False)—Do not use hierarchy when finding routes. If
+                Unchecked (False)-Do not use hierarchy when finding routes. If
                 hierarchy is not used, the tool considers all the streets and doesn't
                 prefer higher-order streets when finding the route. This is often
                 used when finding short-distance routes within a city.
@@ -1644,114 +1670,114 @@ Parameters:
               restriction to be correctly used when finding traversable roads.
              Some restrictions are supported only in certain countries; their availability is stated by region in the list below. Of the restrictions that have limited availability within a region, you can check whether the restriction is available in a particular country by looking at the table in the Country List section of the Data coverage for network analysis services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select availability in the region is supported in that country. If you specify restriction names that are not available in the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
             The tool supports the following restrictions:
-                  Any Hazmat Prohibited—The results will not include roads
+                  Any Hazmat Prohibited-The results will not include roads
                   where transporting any kind of hazardous material is
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Avoid Carpool Roads—The results will avoid roads that are
+                  Avoid Carpool Roads-The results will avoid roads that are
                   designated exclusively for carpool (high-occupancy)
                   vehicles.
                  Availability: All countries
-                  Avoid Express Lanes—The results will avoid roads designated
+                  Avoid Express Lanes-The results will avoid roads designated
                   as express lanes.
-                 Availability: All countries Avoid Ferries—The results will avoid ferries.  Availability: All countries
-                  Avoid Gates—The results will avoid roads where there are
+                 Availability: All countries Avoid Ferries-The results will avoid ferries.  Availability: All countries
+                  Avoid Gates-The results will avoid roads where there are
                   gates such as keyed access or guard-controlled
                   entryways.
                  Availability: All countries
-                  Avoid Limited Access Roads—The results will avoid roads
+                  Avoid Limited Access Roads-The results will avoid roads
                   that are limited access highways.
                  Availability: All countries
-                  Avoid Private Roads—The results will avoid roads that are
+                  Avoid Private Roads-The results will avoid roads that are
                   not publicly owned and maintained.
                  Availability: All countries
-                  Avoid Toll Roads—The results will avoid toll
+                  Avoid Toll Roads-The results will avoid toll
                   roads.
                  Availability: All countries
-                  Avoid Unpaved Roads—The results will avoid roads that are
+                  Avoid Unpaved Roads-The results will avoid roads that are
                   not paved (for example, dirt, gravel, and so on).
                  Availability: All countries
-                  Axle Count Restriction—The results will not include roads
+                  Axle Count Restriction-The results will not include roads
                   where trucks with the specified number of axles are prohibited. The
                   number of axles can be specified using the Number of Axles
                   restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Driving a Bus—The results will not include roads where
+                  Driving a Bus-The results will not include roads where
                   buses are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Delivery Vehicle—The results will not include
+                  Driving a Delivery Vehicle-The results will not include
                   roads where delivery vehicles are prohibited. Using this restriction
                   will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Driving a Taxi—The results will not include roads where
+                  Driving a Taxi-The results will not include roads where
                   taxis are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Truck—The results will not include roads where
+                  Driving a Truck-The results will not include roads where
                   trucks are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Automobile—The results will not include roads
+                  Driving an Automobile-The results will not include roads
                   where automobiles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Emergency Vehicle—The results will not include
+                  Driving an Emergency Vehicle-The results will not include
                   roads where emergency vehicles are prohibited. Using this
                   restriction will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Height Restriction—The results will not include roads
+                  Height Restriction-The results will not include roads
                   where the vehicle height exceeds the maximum allowed height for the
                   road. The vehicle height can be specified using the Vehicle Height
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Kingpin to Rear Axle Length Restriction—The results will
+                  Kingpin to Rear Axle Length Restriction-The results will
                   not include roads where the vehicle length exceeds the maximum
                   allowed kingpin to rear axle for all trucks on the road. The length
                   between the vehicle kingpin and the rear axle can be specified
                   using the Vehicle Kingpin to Rear Axle Length (meters) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Length Restriction—The results will not include roads
+                  Length Restriction-The results will not include roads
                   where the vehicle length exceeds the maximum allowed length for the
                   road. The vehicle length can be specified using the Vehicle Length
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Riding a Motorcycle—The results will not include roads
+                  Riding a Motorcycle-The results will not include roads
                   where motorcycles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Roads Under Construction Prohibited—The results will not
+                  Roads Under Construction Prohibited-The results will not
                   include roads that are under construction.
                  Availability: All countries
-                  Semi or Tractor with One or More Trailers Prohibited—The
+                  Semi or Tractor with One or More Trailers Prohibited-The
                   results will not include roads where semis or tractors with one or
                   more trailers are prohibited.
                  Availability: Select countries in North America and Europe
-                  Single Axle Vehicles Prohibited—The results will not
+                  Single Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with single axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Tandem Axle Vehicles Prohibited—The results will not
+                  Tandem Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with tandem axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Through Traffic Prohibited—The results will not include
+                  Through Traffic Prohibited-The results will not include
                   roads where through traffic (non local) is prohibited.
                  Availability: All countries
-                  Truck with Trailers Restriction—The results will not
+                  Truck with Trailers Restriction-The results will not
                   include roads where trucks with the specified number of trailers on
                   the truck are prohibited. The number of trailers on the truck can
                   be specified using the Number of Trailers on Truck restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Hazmat Routes—The results will prefer roads
+                  Use Preferred Hazmat Routes-The results will prefer roads
                   that are designated for transporting any kind of hazardous
                   materials.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Truck Routes—The results will prefer roads
+                  Use Preferred Truck Routes-The results will prefer roads
                   that are designated as truck routes, such as the roads that are
                   part of the national network as specified by the National Surface
                   Transportation Assistance Act in the United States, or roads that
@@ -1759,21 +1785,21 @@ Parameters:
                   that are preferred by the trucks when driving in an
                   area.
                  Availability: Select countries in North America and Europe
-                  Walking—The results will not include roads where
+                  Walking-The results will not include roads where
                   pedestrians are prohibited.
                  Availability: All countries
-                  Weight Restriction—The results will not include roads
+                  Weight Restriction-The results will not include roads
                   where the vehicle weight exceeds the maximum allowed weight for the
                   road. The vehicle weight can be specified using the Vehicle Weight
                   (kilograms) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Weight per Axle Restriction—The results will not include
+                  Weight per Axle Restriction-The results will not include
                   roads where the vehicle weight per axle exceeds the maximum allowed
                   weight per axle for the road. The vehicle weight per axle can be
                   specified using the Vehicle Weight per Axle (kilograms) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Width Restriction—The results will not include roads where
+                  Width Restriction-The results will not include roads where
                   the vehicle width exceeds the maximum allowed width for the road.
                   The vehicle width can be specified using the Vehicle Width (meters)
                   restriction parameter.
@@ -1808,29 +1834,29 @@ Parameters:
             preferred. The Restriction Usage ParameterName can be assigned any of
             the following string values or their equivalent numeric values
             listed within the parentheses:
-                PROHIBITED (-1)—Travel on the roads using the restriction is completely
+                PROHIBITED (-1)-Travel on the roads using the restriction is completely
                 prohibited.
 
-                AVOID_HIGH (5)—It
+                AVOID_HIGH (5)-It
                 is highly unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                AVOID_MEDIUM (2)—It
+                AVOID_MEDIUM (2)-It
                 is unlikely for the tool to include in the route the roads that are
                 associated with the restriction.
 
-                AVOID_LOW (1.3)—It
+                AVOID_LOW (1.3)-It
                 is somewhat unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_LOW (0.8)—It
+                PREFER_LOW (0.8)-It
                 is somewhat likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_MEDIUM (0.5)—It is likely for the tool to include in the route the roads that
+                PREFER_MEDIUM (0.5)-It is likely for the tool to include in the route the roads that
                 are associated with the restriction.
 
-                PREFER_HIGH (0.2)—It is highly likely for the tool to include in the route the roads
+                PREFER_HIGH (0.2)-It is highly likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
             In most cases, you can use the default value, PROHIBITED,
@@ -1857,10 +1883,10 @@ Parameters:
             farther the tool will go out of its way to travel on the roads
             associated with the restriction.
 
-   populate_route_lines: Populate Route Lines (bool). Optional parameter.  Checked (True)—The output routes will have the
+   populate_route_lines: Populate Route Lines (bool). Optional parameter.  Checked (True)-The output routes will have the
                 exact shape of the underlying streets.
 
-                Unchecked (False)—No shape is generated for the
+                Unchecked (False)-No shape is generated for the
                 output routes, yet the routes will still contain tabular information about the solution. You won't be able to generate driving directions if
                 route lines aren't created.
 
@@ -1901,14 +1927,14 @@ Parameters:
             driving directions.
            This parameter is used only when the populate_directions parameter is checked, or set to True.
             The parameter value can be
-            specified using one of the following two- or five-character language codes:  ar—Arabic cs—Czech  de—German el—Greek  en—English  es—Spanish et—Estonian  fr—French  he—Hebrew  it—Italian  ja—Japanese  ko—Korean  lt—Lithuanian lv—Latvian  nl—Dutch  pl—Polish
-                pt-BR—Brazilian
+            specified using one of the following two- or five-character language codes:  ar-Arabic cs-Czech  de-German el-Greek  en-English  es-Spanish et-Estonian  fr-French  he-Hebrew  it-Italian  ja-Japanese  ko-Korean  lt-Lithuanian lv-Latvian  nl-Dutch  pl-Polish
+                pt-BR-Brazilian
                 Portuguese
 
-                pt-PT—European
+                pt-PT-European
                 Portuguese
-                ru—Russian  sv—Swedish  th—Thai tr—Turkish
-                zh-CN—Simplified
+                ru-Russian  sv-Swedish  th-Thai tr-Turkish
+                zh-CN-Simplified
                 Chinese
 
             If an unsupported language code is specified, the tool
@@ -1943,7 +1969,7 @@ Parameters:
 
    impedance: Impedance (str). Optional parameter.  Specify the
             impedance, which is a value that represents the effort or cost of traveling along road segments or on other parts of the transportation network.
-           Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance. Travel times can vary by travel mode—a pedestrian may take more than 20 minutes to walk the same mile—so it is important to choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time—Models travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time—Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time—Models travel times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
+           Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance. Travel times can vary by travel mode-a pedestrian may take more than 20 minutes to walk the same mile-so it is important to choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time-Models travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time-Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
       Choice list:['Drive Time', 'Truck Time', 'Walk Time']
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -2010,3 +2036,34 @@ Parameters:
     url = gis.properties.helperServices.asyncVRP.url[:-len('/SolveVehicleRoutingProblem')]
 
     return _execute_gp_tool(gis, "SolveVehicleRoutingProblem", kwargs, param_db, return_values, _use_async, url)
+
+solve_vehicle_routing_problem.__annotations__ = {
+    'orders': FeatureSet,
+    'depots': FeatureSet,
+    'routes': FeatureSet,
+    'breaks': FeatureSet,
+    'time_units': str,
+    'distance_units': str,
+    'analysis_region': str,
+    'default_date': datetime,
+    'uturn_policy': str,
+    'time_window_factor': str,
+    'spatially_cluster_routes': bool,
+    'route_zones': FeatureSet,
+    'route_renewals': FeatureSet,
+    'order_pairs': FeatureSet,
+    'excess_transit_factor': str,
+    'point_barriers': FeatureSet,
+    'line_barriers': FeatureSet,
+    'polygon_barriers': FeatureSet,
+    'use_hierarchy_in_analysis': bool,
+    'restrictions': str,
+    'attribute_parameter_values': FeatureSet,
+    'populate_route_lines': bool,
+    'route_line_simplification_tolerance': LinearUnit,
+    'populate_directions': bool,
+    'directions_language': str,
+    'directions_style_name': str,
+    'travel_mode': str,
+    'impedance': str,
+    'return': tuple}    

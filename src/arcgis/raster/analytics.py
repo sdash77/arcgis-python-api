@@ -145,31 +145,31 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
 #          the method used to create the vegetation index layer. The different vegetation indexes can help highlight
 #          certain features, or help reduce various noise.
 #
-#         * GEMI - Global Environmental Monitoring Index — GEMI is a nonlinear vegetation index for global environmental
+#         * GEMI - Global Environmental Monitoring Index - GEMI is a nonlinear vegetation index for global environmental
 #             monitoring from satellite imagery. It is similar to NDVI, but it is less sensitive to atmospheric
 #             effects. It is affected by bare soil; therefore, it is not recommended for use in areas of sparse or
 #             moderately dense vegetation.
-#         * GVI - Green Vegetation Index - Landsat TM — GVI was originally designed from Landsat MSS imagery but has been
+#         * GVI - Green Vegetation Index - Landsat TM - GVI was originally designed from Landsat MSS imagery but has been
 #             modified for use with Landsat TM imagery. It is also known as the Landsat TM Tasseled Cap green
 #             vegetation index. This monitoring index can also be used with imagery whose bands share the same
 #             spectral characteristics.
-#         * MSAVI2 - Modified Soil Adjusted Vegetation Index — MSAVI2 is a vegetation index that tries to minimize bare soil
+#         * MSAVI2 - Modified Soil Adjusted Vegetation Index - MSAVI2 is a vegetation index that tries to minimize bare soil
 #             influences of the SAVI method.
-#         * NDVI - Normalized Difference Vegetation Index — NDVI is a standardized index allowing you to generate an image
+#         * NDVI - Normalized Difference Vegetation Index - NDVI is a standardized index allowing you to generate an image
 #             displaying greenness, relative biomass. This index takes advantage of the contrast of the
 #             characteristics of two bands from a multispectral raster dataset; the chlorophyll pigment absorptions
 #             in the red band and the high reflectivity of plant materials in the near-infrared (NIR) band.
-#         * PVI - Perpendicular Vegetation Index — PVI is similar to a difference vegetation index; however, it is sensitive
+#         * PVI - Perpendicular Vegetation Index - PVI is similar to a difference vegetation index; however, it is sensitive
 #             to atmospheric variations. When using this method to compare different images, it should only be used on
 #             images that have been atmospherically corrected. This information can be provided by your data vendor.
-#         * SAVI - Soil-Adjusted Vegetation Index — SAVI is a vegetation index that attempts to minimize soil brightness
+#         * SAVI - Soil-Adjusted Vegetation Index - SAVI is a vegetation index that attempts to minimize soil brightness
 #             influences using a soil-brightness correction factor. This is often used in arid regions where
 #             vegetative cover is low.
-#         * SULTAN - Sultan's Formula — The Sultan's Formula process takes a six-band 8-bit image and applied a specific
+#         * SULTAN - Sultan's Formula - The Sultan's Formula process takes a six-band 8-bit image and applied a specific
 #             algorithm to it to produce a three-band 8-bit image. The resulting image highlights rock formations
 #             called ophiolites on coastlines. This formula was designed based on the TM and ETM bands of a Landsat 5
 #             or 7 scene.
-#         * TSAVI - Transformed Soil-Adjusted Vegetation Index — Transformed-SAVI is a vegetation index that attempts to
+#         * TSAVI - Transformed Soil-Adjusted Vegetation Index - Transformed-SAVI is a vegetation index that attempts to
 #             minimize soil brightness influences by assuming the soil line has an arbitrary slope and intercept.
 #
 #     :param nir_band: the band indexes for the near-infrared (NIR) band.
@@ -950,7 +950,7 @@ def interpolate_points(input_point_features,
     takes point data with values at each point and returns a raster of predicted values:
 
     * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
-        predict pollution levels at locations that don't have sensors, such as locations with at-risk populations—
+        predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
         schools or hospitals, for example.
     * Predict heavy metal concentrations in crops based on samples taken from individual plants.
     * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
