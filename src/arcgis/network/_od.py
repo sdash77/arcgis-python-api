@@ -10,16 +10,16 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-
-def generate_origin_destination_cost_matrix(origins: FeatureSet = {
+default_origins = {
     'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
                {'alias': 'Target Destination Count', 'name': 'TargetDestinationCount', 'type': 'esriFieldTypeInteger'},
                {'alias': 'Cutoff', 'name': 'Cutoff', 'type': 'esriFieldTypeDouble'},
                {'alias': 'Curb Approach', 'name': 'CurbApproach', 'type': 'esriFieldTypeSmallInteger'}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                                            destinations: FeatureSet = {'fields': [
+    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
+default_destinations = {'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Curb Approach', 'name': 'CurbApproach',
@@ -29,16 +29,9 @@ def generate_origin_destination_cost_matrix(origins: FeatureSet = {
                                                                         'exceededTransferLimit': False,
                                                                         'spatialReference': {'latestWkid': 4326,
                                                                                              'wkid': 4326},
-                                                                        'features': []},
-                                            travel_mode: str = """Custom""",
-                                            time_units: str = """Minutes""",
-                                            distance_units: str = """Kilometers""",
-                                            analysis_region: str = None,
-                                            number_of_destinations_to_find: int = None,
-                                            cutoff: float = None,
-                                            time_of_day: datetime = None,
-                                            time_zone_for_time_of_day: str = """Geographically Local""",
-                                            point_barriers: FeatureSet = {'fields': [
+                                                                        'features': []}
+
+default_point_barriers = {'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -54,8 +47,9 @@ def generate_origin_destination_cost_matrix(origins: FeatureSet = {
                                                                           'exceededTransferLimit': False,
                                                                           'spatialReference': {'latestWkid': 4326,
                                                                                                'wkid': 4326},
-                                                                          'features': []},
-                                            line_barriers: FeatureSet = {'fields': [
+                                                                          'features': []}
+
+default_line_barriers = {'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
@@ -65,8 +59,9 @@ def generate_origin_destination_cost_matrix(origins: FeatureSet = {
                                                                          'exceededTransferLimit': False,
                                                                          'spatialReference': {'latestWkid': 4326,
                                                                                               'wkid': 4326},
-                                                                         'features': []},
-                                            polygon_barriers: FeatureSet = {'fields': [
+                                                                         'features': []}
+
+default_polygon_barriers = {'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -83,11 +78,11 @@ def generate_origin_destination_cost_matrix(origins: FeatureSet = {
                                                                             'exceededTransferLimit': False,
                                                                             'spatialReference': {'latestWkid': 4326,
                                                                                                  'wkid': 4326},
-                                                                            'features': []},
-                                            uturn_at_junctions: str = """Allowed Only at Intersections and Dead Ends""",
-                                            use_hierarchy: bool = True,
-                                            restrictions: str = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']""",
-                                            attribute_parameter_values: FeatureSet = {'fields': [
+                                                                            'features': []}
+
+default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
+
+default_attributes = {'fields': [
                                                 {'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'AttributeName', 'name': 'AttributeName',
                                                  'type': 'esriFieldTypeString', 'length': 255},
@@ -96,10 +91,29 @@ def generate_origin_destination_cost_matrix(origins: FeatureSet = {
                                                 {'alias': 'ParameterValue', 'name': 'ParameterValue',
                                                  'type': 'esriFieldTypeString', 'length': 25}], 'features': [],
                                                                                       'displayFieldName': '',
-                                                                                      'exceededTransferLimit': False},
-                                            impedance: str = """Drive Time""",
-                                            origin_destination_line_shape: str = """None""",
-                                            gis=None) -> tuple:
+                                                                                      'exceededTransferLimit': False}
+                                                                                      
+def generate_origin_destination_cost_matrix(
+    origins = default_origins,
+    destinations = default_destinations,
+    travel_mode = """Custom""",
+    time_units = """Minutes""",
+    distance_units = """Kilometers""",
+    analysis_region = None,
+    number_of_destinations_to_find = None,
+    cutoff = None,
+    time_of_day = None,
+    time_zone_for_time_of_day = """Geographically Local""",
+    point_barriers = default_point_barriers,
+    line_barriers = default_line_barriers,
+    polygon_barriers = default_polygon_barriers,
+    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
+    use_hierarchy = True,
+    restrictions = default_restrictions,
+    attribute_parameter_values = default_attributes,
+    impedance = """Drive Time""",
+    origin_destination_line_shape = """None""",
+    gis = None):
     """
 
 
@@ -109,17 +123,17 @@ Parameters:
 
    origins: Origins (FeatureSet). Required parameter.  Specify locations that function as starting points in generating the paths to destinations. You can add up to 200 origins.
            When specifying the origins, you can set properties for each one, such as its name or the number of destinations to find from the origin, by using attributes. The origins can be specified with the following attributes
-            Name—The name of the origin. The name can be an unique identifier for the origin. The name is included in the output lines (as the OriginName field) and in the output origins (as the Name field) and can be used to join additional information from the tool outputs to the attributes of your origins.
-           If the name is not specified, a unique name prefixed with Location is automatically generated in the output origins. An auto-generated origin name is not included in the output lines.  TargetDestinationCount—The maximum number of destinations that must be found for the origin. If a value is not specified, the value from the Number of Destinations to Find parameter is used. Cutoff—Specify the travel time or travel distance value at which to stop searching for destinations from the origin. Any destination beyond the cutoff value will not be considered.  The value needs to be in the units specified by the Time Units parameter if the impedance attribute in your travel mode is time based or in the units specified by the Distance Units parameter if the impedance attribute in your travel mode is distance based. If a value is not specified, the value from the Cutoff parameter is used.
-            CurbApproach—Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-            0 (Either side of vehicle)—The vehicle can depart the origin in either direction, so a U-turn is allowed at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin. This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where vehicles can enter and turn around. 1 ( Right side of vehicle)—When the vehicle departs the origin, the origin must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the right-hand side. 2 (Left side of vehicle)—When the vehicle departs the origin, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the left-hand side. 3 (No U-Turn)—For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+            Name-The name of the origin. The name can be an unique identifier for the origin. The name is included in the output lines (as the OriginName field) and in the output origins (as the Name field) and can be used to join additional information from the tool outputs to the attributes of your origins.
+           If the name is not specified, a unique name prefixed with Location is automatically generated in the output origins. An auto-generated origin name is not included in the output lines.  TargetDestinationCount-The maximum number of destinations that must be found for the origin. If a value is not specified, the value from the Number of Destinations to Find parameter is used. Cutoff-Specify the travel time or travel distance value at which to stop searching for destinations from the origin. Any destination beyond the cutoff value will not be considered.  The value needs to be in the units specified by the Time Units parameter if the impedance attribute in your travel mode is time based or in the units specified by the Distance Units parameter if the impedance attribute in your travel mode is distance based. If a value is not specified, the value from the Cutoff parameter is used.
+            CurbApproach-Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
+            0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin. This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where vehicles can enter and turn around. 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the right-hand side. 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the left-hand side. 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
 
    destinations: Destinations (FeatureSet). Required parameter.  Specify locations that function as ending points in generating the paths from origins. You can add up to 200 destinations.
            When specifying the destinations, you can set properties for each one, such as its name, by using attributes. The destinations can be specified with the following attributes:
-            Name—The name of the destination. The name can be an unique identifier for the destination. The name is included in the output lines (as the DestinationName field) and in the output destinations (as the Name field) and can be used to join additional information from the tool outputs to the attributes of your destinations.
+            Name-The name of the destination. The name can be an unique identifier for the destination. The name is included in the output lines (as the DestinationName field) and in the output destinations (as the Name field) and can be used to join additional information from the tool outputs to the attributes of your destinations.
            If the name is not specified, a unique name prefixed with Location is automatically generated in the output destinations. An auto-generated destination name is not included in the output lines.
-            CurbApproach—Specifies the direction a vehicle may arrive at the destination. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-           0 (Either side of vehicle)—The vehicle can arrive the destination in either direction, so a U-turn is allowed at the destination. This setting can be chosen if it is possible and practical for your vehicle to turn around at the destination. This decision may depend on the width of the road and the amount of traffic or whether the destination has a parking lot where vehicles can enter and turn around. 1 ( Right side of vehicle)—When the vehicle arrives at the destination, the destination must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the right-hand side. 2 (Left side of vehicle)—When the vehicle arrives at the destination, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the left-hand side. 3 (No U-Turn)—For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a destination on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to arrive at the destination from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to arrive at the destination and not have a lane of traffic between the vehicle and the destination, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+            CurbApproach-Specifies the direction a vehicle may arrive at the destination. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
+           0 (Either side of vehicle)-The vehicle can arrive the destination in either direction, so a U-turn is allowed at the destination. This setting can be chosen if it is possible and practical for your vehicle to turn around at the destination. This decision may depend on the width of the road and the amount of traffic or whether the destination has a parking lot where vehicles can enter and turn around. 1 ( Right side of vehicle)-When the vehicle arrives at the destination, the destination must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the right-hand side. 2 (Left side of vehicle)-When the vehicle arrives at the destination, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the left-hand side. 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a destination on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to arrive at the destination from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to arrive at the destination and not have a lane of traffic between the vehicle and the destination, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
 
    travel_mode: Travel Mode (str). Optional parameter.  Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS Online and can be configured by the administrator of your
             organization to better reflect your organization's workflows. You need to specify the name of a travel mode supported by your organization.
@@ -187,11 +201,11 @@ Parameters:
             for this attribute is specified as one of the following
             integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits travel through the barrier. The barrier
+                0 (Restriction)-Prohibits travel through the barrier. The barrier
                 is referred to as a restriction point barrier since it acts as a
                 restriction.
 
-                2 (Added Cost)—Traveling through the barrier increases the travel
+                2 (Added Cost)-Traveling through the barrier increases the travel
                 time or distance by the amount specified in the
                 Additional_Time or Additional_Distance field. This barrier type is
                 referred to as an added-cost point barrier.
@@ -235,13 +249,13 @@ Parameters:
             or scales the time or distance for traveling through it. The field
             value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits traveling through any part of the barrier.
+                0 (Restriction)-Prohibits traveling through any part of the barrier.
                 The barrier is referred to as a restriction polygon barrier since it
                 prohibits traveling on streets intersected by the barrier. One use
                 of this type of barrier is to model floods covering areas of the
                 street that make traveling on those streets impossible.
 
-                1 (Scaled Cost)—Scales the time or distance required to travel the
+                1 (Scaled Cost)-Scales the time or distance required to travel the
                 underlying streets by a factor specified using the ScaledTimeFactor
                 or ScaledDistanceFactor fields. If the streets are partially
                 covered by the barrier, the travel time or distance is apportioned
@@ -264,7 +278,7 @@ Parameters:
 
    uturn_at_junctions: UTurn at Junctions (str). Optional parameter.  The U-Turn policy at junctions. Allowing U-turns implies the solver can turn around at a junction and double back on the same street.
 
-            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around at some junctions but not at others—it depends on whether the junction represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how many edges, or streets, connect to the junction, which is known as junction valency. The acceptable values for this parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
+            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around at some junctions but not at others-it depends on whether the junction represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how many edges, or streets, connect to the junction, which is known as junction valency. The acceptable values for this parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
            Allowed: U-turns are permitted at junctions with any number of connected edges, or streets. This is the default value.  Not Allowed: U-turns are prohibited at all junctions, regardless of junction valency. Allowed only at Dead Ends: U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end). Allowed only at Intersections and Dead Ends: U-turns are prohibited at junctions where exactly two adjacent edges meet but are permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly one adjacent edge).  Oftentimes, networks modeling streets have extraneous junctions in the middle of road segments. This option prevents vehicles from making U-turns at these locations. This parameter is ignored unless Travel Mode is set to Custom.
       Choice list:['Allowed', 'Not Allowed', 'Allowed Only at Dead Ends', 'Allowed Only at Intersections and Dead Ends']
 
@@ -300,114 +314,114 @@ Parameters:
               restriction to be correctly used when finding traversable roads.
              Some restrictions are supported only in certain countries; their availability is stated by region in the list below. Of the restrictions that have limited availability within a region, you can check whether the restriction is available in a particular country by looking at the table in the Country List section of the Data coverage for network analysis services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select availability in the region is supported in that country. If you specify restriction names that are not available in the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
             The tool supports the following restrictions:
-                  Any Hazmat Prohibited—The results will not include roads
+                  Any Hazmat Prohibited-The results will not include roads
                   where transporting any kind of hazardous material is
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Avoid Carpool Roads—The results will avoid roads that are
+                  Avoid Carpool Roads-The results will avoid roads that are
                   designated exclusively for carpool (high-occupancy)
                   vehicles.
                  Availability: All countries
-                  Avoid Express Lanes—The results will avoid roads designated
+                  Avoid Express Lanes-The results will avoid roads designated
                   as express lanes.
-                 Availability: All countries Avoid Ferries—The results will avoid ferries.  Availability: All countries
-                  Avoid Gates—The results will avoid roads where there are
+                 Availability: All countries Avoid Ferries-The results will avoid ferries.  Availability: All countries
+                  Avoid Gates-The results will avoid roads where there are
                   gates such as keyed access or guard-controlled
                   entryways.
                  Availability: All countries
-                  Avoid Limited Access Roads—The results will avoid roads
+                  Avoid Limited Access Roads-The results will avoid roads
                   that are limited access highways.
                  Availability: All countries
-                  Avoid Private Roads—The results will avoid roads that are
+                  Avoid Private Roads-The results will avoid roads that are
                   not publicly owned and maintained.
                  Availability: All countries
-                  Avoid Toll Roads—The results will avoid toll
+                  Avoid Toll Roads-The results will avoid toll
                   roads.
                  Availability: All countries
-                  Avoid Unpaved Roads—The results will avoid roads that are
+                  Avoid Unpaved Roads-The results will avoid roads that are
                   not paved (for example, dirt, gravel, and so on).
                  Availability: All countries
-                  Axle Count Restriction—The results will not include roads
+                  Axle Count Restriction-The results will not include roads
                   where trucks with the specified number of axles are prohibited. The
                   number of axles can be specified using the Number of Axles
                   restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Driving a Bus—The results will not include roads where
+                  Driving a Bus-The results will not include roads where
                   buses are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Delivery Vehicle—The results will not include
+                  Driving a Delivery Vehicle-The results will not include
                   roads where delivery vehicles are prohibited. Using this restriction
                   will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Driving a Taxi—The results will not include roads where
+                  Driving a Taxi-The results will not include roads where
                   taxis are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Truck—The results will not include roads where
+                  Driving a Truck-The results will not include roads where
                   trucks are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Automobile—The results will not include roads
+                  Driving an Automobile-The results will not include roads
                   where automobiles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Emergency Vehicle—The results will not include
+                  Driving an Emergency Vehicle-The results will not include
                   roads where emergency vehicles are prohibited. Using this
                   restriction will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Height Restriction—The results will not include roads
+                  Height Restriction-The results will not include roads
                   where the vehicle height exceeds the maximum allowed height for the
                   road. The vehicle height can be specified using the Vehicle Height
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Kingpin to Rear Axle Length Restriction—The results will
+                  Kingpin to Rear Axle Length Restriction-The results will
                   not include roads where the vehicle length exceeds the maximum
                   allowed kingpin to rear axle for all trucks on the road. The length
                   between the vehicle kingpin and the rear axle can be specified
                   using the Vehicle Kingpin to Rear Axle Length (meters) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Length Restriction—The results will not include roads
+                  Length Restriction-The results will not include roads
                   where the vehicle length exceeds the maximum allowed length for the
                   road. The vehicle length can be specified using the Vehicle Length
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Riding a Motorcycle—The results will not include roads
+                  Riding a Motorcycle-The results will not include roads
                   where motorcycles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Roads Under Construction Prohibited—The results will not
+                  Roads Under Construction Prohibited-The results will not
                   include roads that are under construction.
                  Availability: All countries
-                  Semi or Tractor with One or More Trailers Prohibited—The
+                  Semi or Tractor with One or More Trailers Prohibited-The
                   results will not include roads where semis or tractors with one or
                   more trailers are prohibited.
                  Availability: Select countries in North America and Europe
-                  Single Axle Vehicles Prohibited—The results will not
+                  Single Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with single axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Tandem Axle Vehicles Prohibited—The results will not
+                  Tandem Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with tandem axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Through Traffic Prohibited—The results will not include
+                  Through Traffic Prohibited-The results will not include
                   roads where through traffic (non local) is prohibited.
                  Availability: All countries
-                  Truck with Trailers Restriction—The results will not
+                  Truck with Trailers Restriction-The results will not
                   include roads where trucks with the specified number of trailers on
                   the truck are prohibited. The number of trailers on the truck can
                   be specified using the Number of Trailers on Truck restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Hazmat Routes—The results will prefer roads
+                  Use Preferred Hazmat Routes-The results will prefer roads
                   that are designated for transporting any kind of hazardous
                   materials.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Truck Routes—The results will prefer roads
+                  Use Preferred Truck Routes-The results will prefer roads
                   that are designated as truck routes, such as the roads that are
                   part of the national network as specified by the National Surface
                   Transportation Assistance Act in the United States, or roads that
@@ -415,21 +429,21 @@ Parameters:
                   that are preferred by the trucks when driving in an
                   area.
                  Availability: Select countries in North America and Europe
-                  Walking—The results will not include roads where
+                  Walking-The results will not include roads where
                   pedestrians are prohibited.
                  Availability: All countries
-                  Weight Restriction—The results will not include roads
+                  Weight Restriction-The results will not include roads
                   where the vehicle weight exceeds the maximum allowed weight for the
                   road. The vehicle weight can be specified using the Vehicle Weight
                   (kilograms) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Weight per Axle Restriction—The results will not include
+                  Weight per Axle Restriction-The results will not include
                   roads where the vehicle weight per axle exceeds the maximum allowed
                   weight per axle for the road. The vehicle weight per axle can be
                   specified using the Vehicle Weight per Axle (kilograms) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Width Restriction—The results will not include roads where
+                  Width Restriction-The results will not include roads where
                   the vehicle width exceeds the maximum allowed width for the road.
                   The vehicle width can be specified using the Vehicle Width (meters)
                   restriction parameter.
@@ -464,29 +478,29 @@ Parameters:
             preferred. The Restriction Usage ParameterName can be assigned any of
             the following string values or their equivalent numeric values
             listed within the parentheses:
-                PROHIBITED (-1)—Travel on the roads using the restriction is completely
+                PROHIBITED (-1)-Travel on the roads using the restriction is completely
                 prohibited.
 
-                AVOID_HIGH (5)—It
+                AVOID_HIGH (5)-It
                 is highly unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                AVOID_MEDIUM (2)—It
+                AVOID_MEDIUM (2)-It
                 is unlikely for the tool to include in the route the roads that are
                 associated with the restriction.
 
-                AVOID_LOW (1.3)—It
+                AVOID_LOW (1.3)-It
                 is somewhat unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_LOW (0.8)—It
+                PREFER_LOW (0.8)-It
                 is somewhat likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_MEDIUM (0.5)—It is likely for the tool to include in the route the roads that
+                PREFER_MEDIUM (0.5)-It is likely for the tool to include in the route the roads that
                 are associated with the restriction.
 
-                PREFER_HIGH (0.2)—It is highly likely for the tool to include in the route the roads
+                PREFER_HIGH (0.2)-It is highly likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
             In most cases, you can use the default value, PROHIBITED,
@@ -515,7 +529,7 @@ Parameters:
 
    impedance: Impedance (str). Optional parameter.  Specify the
             impedance, which is a value that represents the effort or cost of traveling along road segments or on other parts of the transportation network.
-           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes—a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode—a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time—Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. Truck Time—Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. This is the default value. Walk Time—Models travel times for a pedestrian. Travel Distance—Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
+           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes-a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode-a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time-Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. Truck Time-Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. This is the default value. Walk Time-Models travel times for a pedestrian. Travel Distance-Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
       Choice list:['Drive Time', 'Truck Time', 'Walk Time', 'Travel Distance']
 
    origin_destination_line_shape: Origin Destination Line Shape (str). Optional parameter.  The resulting lines of an OD cost matrix can be represented with either straight-line geometry or no geometry at all. In both cases, the route is always computed along the street network by minimizing the
@@ -579,3 +593,25 @@ See https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/
 
     return _execute_gp_tool(gis, "GenerateOriginDestinationCostMatrix", kwargs, param_db, return_values, _use_async,
                             url)
+
+generate_origin_destination_cost_matrix.__annotations__ = {
+    'origins': FeatureSet,
+    'destinations': FeatureSet,
+    'travel_mode': str,
+    'time_units': str,
+    'distance_units': str,
+    'analysis_region': str,
+    'number_of_destinations_to_find': int,
+    'cutoff': float,
+    'time_of_day': datetime,
+    'time_zone_for_time_of_day': str,
+    'point_barriers': FeatureSet,
+    'line_barriers': FeatureSet,
+    'polygon_barriers': FeatureSet,
+    'uturn_at_junctions': str,
+    'use_hierarchy': bool,
+    'restrictions': str,
+    'attribute_parameter_values': FeatureSet,
+    'impedance': str,
+    'origin_destination_line_shape': str,
+    'return': tuple}                            

@@ -14,9 +14,10 @@ from ._util import _id_generator, _feature_input, _set_context, _create_output_s
 _log = _logging.getLogger(__name__)
 
 _use_async = True
-def copy_to_data_store(input_layer,
-                       output_name: str = None,
-                       gis=None):
+def copy_to_data_store(
+    input_layer,
+    output_name = None,
+    gis = None):
     """
 
     Copies an input feature layer or table to an ArcGIS Data Store and creates a layer in your web GIS.
@@ -82,6 +83,8 @@ Returns:
     _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True)
     return output_service
 
+copy_to_data_store.__annotations__ = {
+    'output_name': str}
 
 
 

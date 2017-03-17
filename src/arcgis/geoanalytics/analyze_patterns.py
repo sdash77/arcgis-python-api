@@ -17,22 +17,23 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
-def calculate_density(input_layer,
-                      fields: str = None,
-                      weight: str = """Uniform""",
-                      bin_type: str = """Square""",
-                      bin_size: float = None,
-                      bin_size_unit: str = None,
-                      time_step_interval: int = None,
-                      time_step_interval_unit: str = None,
-                      time_step_repeat_interval: int = None,
-                      time_step_repeat_interval_unit: str = None,
-                      time_step_reference: _datetime = None,
-                      radius: float = None,
-                      radius_unit: str = None,
-                      area_units: str = """SquareKilometers""",
-                      output_name: str = None,
-                      gis=None):
+def calculate_density(
+    input_layer,
+    fields = None,
+    weight = """Uniform""",
+    bin_type = """Square""",
+    bin_size = None,
+    bin_size_unit = None,
+    time_step_interval = None,
+    time_step_interval_unit = None,
+    time_step_repeat_interval = None,
+    time_step_repeat_interval_unit = None,
+    time_step_reference = None,
+    radius = None,
+    radius_unit = None,
+    area_units = """SquareKilometers""",
+    output_name = None,
+    gis = None):                      
     """
 
 
@@ -135,20 +136,35 @@ Returns:
     _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
     return output_service
 
+calculate_density.__annotations__ = {
+    'fields': str,
+    'weight': str,
+    'bin_type': str,
+    'bin_size': float,
+    'bin_size_unit': str,
+    'time_step_interval': int,
+    'time_step_interval_unit': str,
+    'time_step_repeat_interval': int,
+    'time_step_repeat_interval_unit': str,
+    'time_step_reference': _datetime,
+    'radius': float,
+    'radius_unit': str,
+    'area_units': str,
+    'output_name': str}
 
 
-
-def find_hot_spots(point_layer,
-                   bin_size: float = 5,
-                   bin_size_unit: str = "Miles",
-                   neighborhood_distance: float = 5,
-                   neighborhood_distance_unit: str = "Miles",
-                   time_step_interval: int = None,
-                   time_step_interval_unit: str = None,
-                   time_step_alignment: str = None,
-                   time_step_reference: _datetime = None,
-                   output_name: str = None,
-                   gis=None):
+def find_hot_spots(
+    point_layer,
+    bin_size = 5,
+    bin_size_unit = "Miles",
+    neighborhood_distance = 5,
+    neighborhood_distance_unit = "Miles",
+    time_step_interval = None,
+    time_step_interval_unit = None,
+    time_step_alignment = None,
+    time_step_reference = None,
+    output_name = None,
+    gis = None):
     """
 
 
@@ -232,4 +248,13 @@ Returns:
     _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
     return output_service
 
-
+find_hot_spots.__annotations__ = {
+    'bin_size': float,
+    'bin_size_unit': str,
+    'neighborhood_distance': float,
+    'neighborhood_distance_unit': str,
+    'time_step_interval': int,
+    'time_step_interval_unit': str,
+    'time_step_alignment': str,
+    'time_step_reference': _datetime,
+    'output_name': str}

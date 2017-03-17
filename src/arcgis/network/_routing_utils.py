@@ -11,7 +11,8 @@ _log = _logging.getLogger(__name__)
 _use_async = False
 
 
-def get_travel_modes(gis=None) -> tuple:
+def get_travel_modes(
+    gis = None):
     """
 
 
@@ -46,10 +47,13 @@ See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Util
 
     return _execute_gp_tool(gis, "GetTravelModes", kwargs, param_db, return_values, _use_async, url)
 
-
-def get_tool_info(service_name: str = """asyncRoute""",
-                  tool_name: str = """FindRoutes""",
-                  gis=None) -> str:
+get_travel_modes.__annotations__ = {
+    'return': tuple}
+    
+def get_tool_info(
+    service_name = """asyncRoute""",
+    tool_name = """FindRoutes""",
+    gis = None):
     """
 
 
@@ -87,3 +91,8 @@ See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Util
 
     url = gis.properties.helperServices.routingUtilities.url
     return _execute_gp_tool(gis, "GetToolInfo", kwargs, param_db, return_values, _use_async, url)
+
+get_tool_info.__annotations__ = {
+    'service_name': str,
+    'tool_name': str,
+    'return': str}    

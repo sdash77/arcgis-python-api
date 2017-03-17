@@ -17,15 +17,16 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def find_similar_locations(input_layer,
-                           search_layer,
-                           analysis_fields: str,
-                           most_or_least_similar: str = """MostSimilar""",
-                           match_method: str = """AttributeValues""",
-                           number_of_results: int = 10,
-                           append_fields: str = None,
-                           output_name: str = None,
-                           gis=None):
+def find_similar_locations(
+    input_layer,
+    search_layer,
+    analysis_fields,
+    most_or_least_similar = """MostSimilar""",
+    match_method = """AttributeValues""",
+    number_of_results = 10,
+    append_fields = None,
+    output_name = None,
+    gis = None):
     """
 
     Based on criteria you specify, find similar locations by measuring the similarity of locations in your candidate search layer to one or more reference locations.
@@ -108,4 +109,10 @@ Returns:
     _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True)
     return output_service
 
+find_similar_locations.__annotations__ = {
+    'most_or_least_similar': str,
+    'match_method': str,
+    'number_of_results': int,
+    'append_fields': str,
+    'output_name': str}    
 

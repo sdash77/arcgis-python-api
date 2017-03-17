@@ -7,9 +7,9 @@ _log = _logging.getLogger(__name__)
 _use_async = False
 
 
-def export_map(web_map_as_json: str = None,
-               format: str = """PDF""",
-               layout_template: str = """MAP_ONLY""",
+def export_map(web_map_as_json = None,
+               format = """PDF""",
+               layout_template = """MAP_ONLY""",
                gis=None):
     """
 
@@ -62,8 +62,13 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
 
     return _execute_gp_tool(gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url)
 
-
-def get_layout_templates(gis=None) -> str:
+export_map.__annotations__ = {
+               'web_map_as_json': str,
+               'format': str,
+               'layout_template': str
+            }
+               
+def get_layout_templates(gis=None):
     """
 
 
@@ -98,3 +103,4 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
 
     return _execute_gp_tool(gis, "Get Layout Templates Info Task", kwargs, param_db, return_values, _use_async, url)
 
+get_layout_templates.__annotations__ = {'return': str}
