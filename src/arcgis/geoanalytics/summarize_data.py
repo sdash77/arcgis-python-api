@@ -24,17 +24,17 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 def aggregate_points(point_layer,
-                     bin_type: str = None,
-                     bin_size: float = None,
-                     bin_size_unit: str = None,
+                     bin_type = None,
+                     bin_size = None,
+                     bin_size_unit = None,
                      polygon_layer = None,
-                     time_step_interval: int = None,
-                     time_step_interval_unit: str = None,
-                     time_step_repeat_interval: int = None,
-                     time_step_repeat_interval_unit: str = None,
-                     time_step_reference: _datetime = None,
-                     summary_fields: str = None,
-                     output_name: str = None,
+                     time_step_interval = None,
+                     time_step_interval_unit = None,
+                     time_step_repeat_interval = None,
+                     time_step_repeat_interval_unit = None,
+                     time_step_reference = None,
+                     summary_fields = None,
+                     output_name = None,
                      gis=None):
     """
     Using a layer of point features and either a layer of area features or bins defined by a specified distance, this tool determines which points fall within each area or bin and calculates statistics about all the points within each area or bin. You may optionally apply time slicing with this tool.
@@ -140,10 +140,22 @@ Returns:
     return output_service
 
 
+aggregate_points.__annotations__ = {
+                     'bin_type': str,
+                     'bin_size': float,
+                     'bin_size_unit': str,
+                     'time_step_interval': int,
+                     'time_step_interval_unit': str,
+                     'time_step_repeat_interval': int,
+                     'time_step_repeat_interval_unit': str,
+                     'time_step_reference': _datetime,
+                     'summary_fields': str,
+                     'output_name': str
+                }
+    
 def _describe_dataset(input_layer,
-                     gis=None) -> str:
+                     gis=None):
     """
-
 
 
 Parameters:
@@ -181,21 +193,22 @@ Returns:
 
     return _execute_gp_tool(gis, "DescribeDataset", params, param_db, return_values, _use_async, url, True)
 
+_describe_dataset.__annotations__ = {'return': str}
 
 def join_features(target_layer,
                   join_layer,
-                  join_operation: str = """JoinOneToOne""",
-                  join_fields: str = None,
-                  summary_fields: str = None,
-                  spatial_relationship: str = None,
-                  spatial_near_distance: float = None,
-                  spatial_near_distance_unit: str = None,
-                  temporal_relationship: str = None,
-                  temporal_near_distance: int = None,
-                  temporal_near_distance_unit: str = None,
-                  attribute_relationship: str = None,
-                  join_condition: str = None,
-                  output_name: str = None,
+                  join_operation = """JoinOneToOne""",
+                  join_fields = None,
+                  summary_fields = None,
+                  spatial_relationship = None,
+                  spatial_near_distance = None,
+                  spatial_near_distance_unit = None,
+                  temporal_relationship = None,
+                  temporal_near_distance = None,
+                  temporal_near_distance_unit = None,
+                  attribute_relationship = None,
+                  join_condition = None,
+                  output_name = None,
                   gis=None):
     """
     Using either feature layers or tabular data, you can join features and records based on specific relationships between the input layers or tables. Joins will be determined by spatial, temporal, and attribute relationships, and summary statistics can be optionally calculated.
@@ -304,16 +317,28 @@ Returns:
     _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
     return output_service
 
-
+join_features.__annotations__ = {
+                  'join_operation': str,
+                  'join_fields': str,
+                  'summary_fields': str,
+                  'spatial_relationship': str,
+                  'spatial_near_distance': float,
+                  'spatial_near_distance_unit': str,
+                  'temporal_relationship': str,
+                  'temporal_near_distance': int,
+                  'temporal_near_distance_unit': str,
+                  'attribute_relationship': str,
+                  'join_condition': str,
+                  'output_name': str}
 
 def reconstruct_tracks(input_layer,
-                       track_fields:str,
-                       method: str = """Planar""",
-                       buffer_field: str = None,
-                       summary_fields: str = None,
-                       time_split: int = None,
-                       time_split_unit: str = None,
-                       output_name: str = None,
+                       track_fields,
+                       method = """Planar""",
+                       buffer_field = None,
+                       summary_fields = None,
+                       time_split = None,
+                       time_split_unit = None,
+                       output_name = None,
                        gis=None):
     """
 
@@ -329,8 +354,8 @@ def reconstruct_tracks(input_layer,
 
     Features in time-enabled layers can be represented in one of two ways:
 
-    Instant—A single moment in time
-    Interval—A start and end time
+    Instant-A single moment in time
+    Interval-A start and end time
     For example, suppose you have GPS measurements of hurricanes every 10 minutes. Each GPS measurement records the hurricane's name, location, time of recording, and wind speed. With this information, you could create tracks for each hurricane using the name for track identification, and tracks for each hurricane would be generated. Additionally, you could calculate statistics such as the mean, max, and minimum wind speed of each hurricane, as well as the count of measurements within each track.
 
     Using the same example, you could buffer your tracks by the wind speed. This would buffer each measurement by the wind speed field at that location, and join the buffered areas together, creating a polygon representative of the track path, as well as the changes in wind speed as the hurricanes progressed.
@@ -407,11 +432,19 @@ Returns:
     
     return output_service
 
+reconstruct_tracks.__annotations__ = {
+                       'track_fields':str,
+                       'method': str,
+                       'buffer_field': str,
+                       'summary_fields': str,
+                       'time_split': int,
+                       'time_split_unit': str,
+                       'output_name': str}	
 
 def summarize_attributes(input_layer,
-                         fields: str = None,
-                         summary_fields: str = None,
-                         output_name: str = None,
+                         fields = None,
+                         summary_fields = None,
+                         output_name = None,
                          gis=None):
     """
     Using either feature or tabular data, this tool summarizes statistics for specified fields.
@@ -484,17 +517,21 @@ Returns:
     _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
     return output_service
 
+summarize_attributes.__annotations__ = {
+                         'fields': str,
+                         'summary_fields': str,
+                         'output_name': str}
 
 def summarize_within(summary_polygons,
                      summarized_layer,
-                     bin_type: str = None,
-                     bin_size: float = None,
-                     bin_size_unit: str = None,
-                     standard_summary_fields: str = None,
-                     weighted_summary_fields: str = None,
-                     sum_shape: bool = True,
-                     shape_units: str = None,
-                     output_name: str = None,
+                     bin_type = None,
+                     bin_size = None,
+                     bin_size_unit = None,
+                     standard_summary_fields = None,
+                     weighted_summary_fields = None,
+                     sum_shape = True,
+                     shape_units = None,
+                     output_name = None,
                      gis=None):
     """
     Finds areas (and portions of areas) that overlap between two layers and calculates statistics about the overlap.
@@ -587,5 +624,14 @@ Returns:
     _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
     return output_service
 
-
+summarize_within.__annotations__ = {
+                     'bin_type': str,
+                     'bin_size': float,
+                     'bin_size_unit': str,
+                     'standard_summary_fields': str,
+                     'weighted_summary_fields': str,
+                     'sum_shape': bool,
+                     'shape_units': str,
+                     'output_name': str
+                }
 

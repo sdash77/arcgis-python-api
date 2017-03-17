@@ -217,10 +217,10 @@ class Geocoder(_GISResource):
 
         Inputs:
            addresses - A list of addresses to be geocoded.
-           For passing in the location name as a single line of text —
-           single field batch geocoding — use a string.
+           For passing in the location name as a single line of text -
+           single field batch geocoding - use a string.
            For passing in the location name as multiple lines of text
-           multifield batch geocoding — use the address fields described
+           multifield batch geocoding - use the address fields described
            in the Geocoder documentation.
             The maximum number of addresses that can be geocoded in a
             single request is limited to the SuggestedBatchSize property of
@@ -558,10 +558,10 @@ def batch_geocode(addresses,
     Inputs:
 
        addresses - A list of addresses to be geocoded.
-       For passing in the location name as a single line of text —
-       single field batch geocoding — use a string.
+       For passing in the location name as a single line of text -
+       single field batch geocoding - use a string.
        For passing in the location name as multiple lines of text
-       multifield batch geocoding — use the address fields described
+       multifield batch geocoding - use the address fields described
        in the Geocoder documentation.
         The maximum number of addresses that can be geocoded in a
         single request is limited to the SuggestedBatchSize property of
