@@ -15,26 +15,27 @@ class ImageryLayer(Layer):
 
     def export_image(self,
                      bbox,
-                     imageSR,
-                     bboxSR,
+                     image_sr=None,
+                     bbox_sr=None,
                      size=None,
                      time=None,
                      export_format="jpgpng",
-                     pixelType="UNKNOWN",
-                     noData=None,
-                     noDataInterpretation="esriNoDataMatchAny",
+                     pixel_type="UNKNOWN",
+                     no_data=None,
+                     no_data_interpretation="esriNoDataMatchAny",
                      interpolation=None,
                      compression=None,
-                     compressionQuality=75,
-                     bandIds=None,
-                     moasiacRule=None,
-                     renderingRule="",
+                     compression_quality=75,
+                     band_ids=None,
+                     moasiac_rule=None,
+                     rendering_rule="",
                      f="json",
-                     saveFolder=None,
-                     saveFile=None
+                     save_folder=None,
+                     save_file=None,
+                     compression_tolerance=None
                      ):
         """
-        The exportImage operation is performed on an image service resource
+        The export_image operation is performed on an imagery layer.
         The result of this operation is an image resource. This resource
         provides information about the exported image, such as its URL,
         extent, width, and height.
@@ -47,26 +48,39 @@ class ImageryLayer(Layer):
 
         Inputs:
            bbox - The extent (bounding box) of the exported image. Unless
-                  the bboxSR parameter has been specified, the bbox is
-                  assumed to be in the spatial reference of the image
-                  service.
-           imageSR - The spatial reference of the exported image.
-           bboxSR - The spatial reference of the bbox.
+                  the bbox_sr parameter has been specified, the bbox is
+                  assumed to be in the spatial reference of the imagery
+                  layer.
+
+                  The bbox should be specified as an arcgis.geometry.Envelope object, it's json representation or as
+                  a list or string with this format: '<xmin>, <ymin>, <xmax>, <ymax>'
+
+           image_sr - The spatial reference of the exported image.
+                  The spatial reference can be specified as either a well-known ID, it's json representation or as an
+                  arcgis.geometry.SpatialReference object.
+                  If the image_sr is not specified, the image will be exported in the spatial reference of the imagery layer.
+
+           bbox_sr - The spatial reference of the bbox.
+                  The spatial reference can be specified as either a well-known ID, it's json representation or as an
+                  arcgis.geometry.SpatialReference object.
+                  If the image_sr is not specified, bbox is assumed to be in the spatial reference of the imagery layer.
+
            size - The size (width * height) of the exported image in
                   pixels. If size is not specified, an image with a default
                   size of 400 * 400 will be exported.
+                  Format: list of [width, height]
            time - The time instant or the time extent of the exported image.
            export_format - The format of the exported image. The default format is
                     jpgpng.
                     Values: jpgpng | png | png8 | png24 | jpg | bmp | gif |
                             tiff | png32
-           pixelType - The pixel type, also known as data type, pertains to
+           pixel_type - The pixel type, also known as data type, pertains to
                        the type of values stored in the raster, such as
                        signed integer, unsigned integer, or floating point.
                        Integers are whole numbers, whereas floating points
                        have decimals.
-           noDate - The pixel value representing no information.
-           noDataInterpretation - Interpretation of the noData setting. The
+           no_date - The pixel value representing no information.
+           no_data_interpretation - Interpretation of the noData setting. The
                                default is esriNoDataMatchAny when noData is
                                a number, and esriNoDataMatchAll when noData
                                is a comma-delimited string:
@@ -78,44 +92,62 @@ class ImageryLayer(Layer):
            compression - Controls how to compress the image when exporting
                          to TIFF format: None, JPEG, LZ77. It does not
                          control compression on other formats.
-           compressionQuality - Controls how much loss the image will be
+           compression_quality - Controls how much loss the image will be
                                 subjected to by the compression algorithm.
                                 Valid value ranges of compression quality
                                 are from 0 to 100.
-           bandIds - If there are multiple bands, you can specify a single
+           band_ids - If there are multiple bands, you can specify a single
                      band to export, or you can change the band combination
                      (red, green, blue) by specifying the band number. Band
                      number is 0 based.
-           mosaicRule - Specifies the mosaic rule when defining how
+           mosaic_rule - Specifies the mosaic rule when defining how
                         individual images should be mosaicked. When a mosaic
                         rule is not specified, the default mosaic rule of
                         the image service will be used (as advertised in
                         the root resource: defaultMosaicMethod,
                         mosaicOperator, sortField, sortValue).
-           renderingRule - Specifies the rendering rule for how the
+           rendering_rule - Specifies the rendering rule for how the
                            requested image should be rendered.
            f - The response format.  default is json
                Values: json | image | kmz
+
+           compression_tolerance - Controls the tolerance of the lerc compression algorithm. The tolerance defines the
+               maximum possible error of pixel values in the compressed image. It's a double value.
+               Example: compression_tolerance=0.5 is loseless for 8 and 16 bit images, but has an accuracy of +-0.5 for
+               floating point data. The compression tolerance works for the LERC format only.
+
         """
         import datetime
 
-        params = {
-            "bbox": bbox,
-            "imageSR": imageSR,
-            "bboxSR": bboxSR,
-            "size": "%s %s" % (size[0], size[1]),
-            "pixelType": pixelType,
-            "compressionQuality": compressionQuality,
-
-        }
         if size is None:
             size = [400, 400]
+
+        params = {
+            "size": "%s,%s" % (size[0], size[1]),
+            "compressionQuality": compression_quality,
+        }
+
+        if type(bbox) == str:
+            params['bbox'] = bbox
+        elif type(bbox) == list:
+            params['bbox'] = "%s,%s,%s,%s" % (bbox[0], bbox[1], bbox[2], bbox[3])
+        else: # json dict or Geometry Envelope object
+            bbox = "%s,%s,%s,%s" % (bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax'])
+            params['bbox'] = bbox
+
+        if image_sr is not None:
+            params['imageSR'] = image_sr
+        if bbox_sr is not None:
+            params['bboxSR'] = bbox_sr
+        if pixel_type is not None:
+            params['pixelType'] = pixel_type
+
         url = self._url + "/exportImage"
         __allowedFormat = ["jpgpng", "png",
                            "png8", "png24",
                            "jpg", "bmp",
                            "gif", "tiff",
-                           "png32"]
+                           "png32", "bip", "bsq", "lerc"]
         __allowedPixelTypes = [
             "C128", "C64", "F32",
             "F64", "S16", "S32",
@@ -136,8 +168,8 @@ class ImageryLayer(Layer):
         __allowedCompression = [
             "JPEG", "LZ77"
         ]
-        if isinstance(moasiacRule, dict):
-            params["moasiacRule"] = moasiacRule
+        if isinstance(moasiac_rule, dict):
+            params["moasiacRule"] = moasiac_rule
         if export_format in __allowedFormat:
             params['format'] = export_format
         if isinstance(time, datetime.datetime):
@@ -146,33 +178,38 @@ class ImageryLayer(Layer):
                         interpolation in __allowedInterpolation and \
                 isinstance(interpolation, str):
             params['interpolation'] = interpolation
-        if pixelType is not None and \
-                        pixelType in __allowedPixelTypes:
-            params['pixelType'] = pixelType
-        if noDataInterpretation in __allowedInterpolation:
-            params['noDataInterpretation'] = noDataInterpretation
-        if noData is not None:
-            params['noData'] = noData
+        if pixel_type is not None and \
+                        pixel_type in __allowedPixelTypes:
+            params['pixelType'] = pixel_type
+        if no_data_interpretation in __allowedInterpolation:
+            params['noDataInterpretation'] = no_data_interpretation
+        if no_data is not None:
+            params['noData'] = no_data
         if compression is not None and \
                         compression in __allowedCompression:
             params['compression'] = compression
-        if bandIds is not None and \
-                isinstance(bandIds, list):
-            params['bandIds'] = ",".join(bandIds)
-        if renderingRule is not None:
-            params['renderingRule'] = renderingRule
+        if band_ids is not None and \
+                isinstance(band_ids, list):
+            params['bandIds'] = ",".join(band_ids)
+        if rendering_rule is not None:
+            params['renderingRule'] = rendering_rule
+
+        if compression_tolerance is not None:
+            params['compressionTolerance'] = compression_tolerance
         params["f"] = f
         if f == "json":
             return self._con.get(url, params, token=self._token)
         elif f == "image":
             result = self._con.get(url, params,
-                                   out_folder=saveFolder,
-                                   file_name=saveFile, token=self._token)
+                                   out_folder=save_folder, try_json=False,
+                                   file_name=save_file, token=self._token)
             return result
         elif f == "kmz":
             return self._con.get(url, params,
-                                 out_folder=saveFolder,
-                                 file_name=saveFile, token=self._token)
+                                 out_folder=save_folder,
+                                 file_name=save_file, token=self._token)
+        else:
+            print('Unsupported output format')
 
     # ----------------------------------------------------------------------
     def query(self,
