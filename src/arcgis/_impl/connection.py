@@ -385,7 +385,7 @@ class _ArcGISConnection(object):
                          'client': 'referer', 'referer': self._referer,
                          'expiration': expiration, 'f': 'json' }
         if client_id is not None:
-            return self.oauth_authenticate(client_id)
+            return self.oauth_authenticate(client_id, expiration)
 
         else:
             if self._tokenurl is None:
@@ -401,53 +401,73 @@ class _ArcGISConnection(object):
             if resp:
                 return resp.get('token')
 
-    def oauth_authenticate(self, client_id):
+    def oauth_authenticate(self, client_id, expiration):
 
-        postdata = {
+        parameters = {
             'client_id': client_id,
             'response_type': 'code',
-            'expiration': -1,
+            'expiration': -1, # we want refresh_token to work for the life of the script
             'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
         }
-        content = self.get('oauth2/authorize', postdata, ssl=True, try_json=False, add_token=False)
-        import re
-        import json
-        from bs4 import BeautifulSoup
-        pattern = re.compile('var oAuthInfo = ({.*?});', re.DOTALL)
-        soup = BeautifulSoup(content, 'html.parser')
-        for script in soup.find_all('script'):
-            script_code = str(script.string).strip()
-            matches = pattern.search(script_code)
-            if not matches is None:
-                js_object = matches.groups()[0]
-                oauth_info = json.loads(js_object)
-                break
-        parameters = {
-            'user_orgkey': '',
-            'username': self._username,
-            'password': self._password,
-            'oauth_state': oauth_info['oauth_state']
-        }
-        content = self.post('oauth2/signin', parameters, ssl=True, try_json=False, add_token=False)
-        soup = BeautifulSoup(content, 'html.parser')
-        code = ""
-        if soup.title is not None:
-            if 'SUCCESS' in soup.title.string:
-                code = soup.title.string[len('SUCCESS code='):]
-        # print('***code=' + code)
-        parameters = {
-            'client_id': client_id,
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
-        }
-        token_info = self.post('oauth2/token', parameters, ssl=True, add_token=False)
-        # print('******' + str(token_info))
 
-        self._refresh_token = token_info['refresh_token']
-        self._token = token_info['access_token']
+        code = None
 
-        return self._token
+        if self._username is not None and self._password is not None: # built-in user through OAUTH
+            content = self.get('oauth2/authorize', parameters, ssl=True, try_json=False, add_token=False)
+            import re
+            import json
+            from bs4 import BeautifulSoup
+            pattern = re.compile('var oAuthInfo = ({.*?});', re.DOTALL)
+            soup = BeautifulSoup(content, 'html.parser')
+            for script in soup.find_all('script'):
+                script_code = str(script.string).strip()
+                matches = pattern.search(script_code)
+                if not matches is None:
+                    js_object = matches.groups()[0]
+                    oauth_info = json.loads(js_object)
+                    break
+
+            parameters = {
+                'user_orgkey': '',
+                'username': self._username,
+                'password': self._password,
+                'oauth_state': oauth_info['oauth_state']
+            }
+            content = self.post('oauth2/signin', parameters, ssl=True, try_json=False, add_token=False)
+            soup = BeautifulSoup(content, 'html.parser')
+
+            if soup.title is not None:
+                if 'SUCCESS' in soup.title.string:
+                    code = soup.title.string[len('SUCCESS code='):]
+
+        if code is None: # try interactive signin
+            url = self.baseurl + 'oauth2/authorize'
+            paramstring = urlencode(parameters)
+            codeurl = "{}?{}".format(url, paramstring)
+
+            import webbrowser
+            import getpass
+
+            webbrowser.open_new(codeurl)
+            code = getpass.getpass("Enter code obtained on signing in using SAML: ")
+
+        if code is not None:
+            parameters = {
+                'client_id': client_id,
+                'grant_type': 'authorization_code',
+                'code': code,
+                'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
+            }
+            token_info = self.post('oauth2/token', parameters, ssl=True, add_token=False)
+            # print('******' + str(token_info))
+
+            self._refresh_token = token_info['refresh_token']
+            self._token = token_info['access_token']
+
+            return self._token
+        else:
+            print("Unable to sign in using OAUTH")
+            return None
 
     #----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
@@ -495,6 +515,10 @@ class _ArcGISConnection(object):
                     self._expiration = expiration
                     
                     return newtoken
+
+            elif client_id is not None:
+                newtoken = self.generate_token(username, password, expiration, client_id)
+                return newtoken
 
             elif self._is_arcpy:
                 return newtoken
