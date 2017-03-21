@@ -1,6 +1,6 @@
-from arcgis._impl.common._utils import local_time_to_online
+from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
-
+import datetime
 
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
@@ -20,19 +20,20 @@ class ImageryLayer(Layer):
                      size=None,
                      time=None,
                      export_format="jpgpng",
-                     pixel_type="UNKNOWN",
+                     pixel_type=None,
                      no_data=None,
                      no_data_interpretation="esriNoDataMatchAny",
                      interpolation=None,
                      compression=None,
-                     compression_quality=75,
+                     compression_quality=None,
                      band_ids=None,
                      moasiac_rule=None,
                      rendering_rule="",
                      f="json",
                      save_folder=None,
                      save_file=None,
-                     compression_tolerance=None
+                     compression_tolerance=None,
+                     adjust_aspect_ratio=None
                      ):
         """
         The export_image operation is performed on an imagery layer.
@@ -69,53 +70,82 @@ class ImageryLayer(Layer):
                   pixels. If size is not specified, an image with a default
                   size of 400 * 400 will be exported.
                   Format: list of [width, height]
+
            time - The time instant or the time extent of the exported image.
-           export_format - The format of the exported image. The default format is
-                    jpgpng.
-                    Values: jpgpng | png | png8 | png24 | jpg | bmp | gif |
-                            tiff | png32
+                    Time instant specified as datetime or timestamp in milliseconds since epoch
+                    Syntax: time=<timeInstant>
+
+                    Time extent specified as list of [<startTime>, <endTime>]
+                    For time extents one of <startTime> or <endTime> could be None. A None value specified for
+                    start time or end time will represent infinity for start or end time respectively.
+                    Syntax: time=[<startTime>, <endTime>] ; specified as datetime or timestamp in milliseconds
+
+           export_format - The format of the exported image. The default format is jpgpng.
+                    The jpgpng format returns a JPG if there are no transparent pixels in the requested extent;
+                    otherwise, it returns a PNG (png32).
+
+                    Values: jpgpng | png | png8 | png24 | jpg | bmp | gif | tiff | png32 | bip | bsq | lerc
+
            pixel_type - The pixel type, also known as data type, pertains to
                        the type of values stored in the raster, such as
                        signed integer, unsigned integer, or floating point.
                        Integers are whole numbers, whereas floating points
                        have decimals.
-           no_date - The pixel value representing no information.
-           no_data_interpretation - Interpretation of the noData setting. The
-                               default is esriNoDataMatchAny when noData is
-                               a number, and esriNoDataMatchAll when noData
+
+           no_data - The pixel value representing no information.
+
+           no_data_interpretation - Interpretation of the no_data setting. The
+                               default is esriNoDataMatchAny when no_data is
+                               a number, and esriNoDataMatchAll when no_data
                                is a comma-delimited string:
                                esriNoDataMatchAny | esriNoDataMatchAll.
+
            interpolation - The resampling process of extrapolating the
                            pixel values while transforming the raster
                            dataset when it undergoes warping or when it
                            changes coordinate space.
+
            compression - Controls how to compress the image when exporting
                          to TIFF format: None, JPEG, LZ77. It does not
                          control compression on other formats.
+
            compression_quality - Controls how much loss the image will be
                                 subjected to by the compression algorithm.
                                 Valid value ranges of compression quality
                                 are from 0 to 100.
+
            band_ids - If there are multiple bands, you can specify a single
                      band to export, or you can change the band combination
                      (red, green, blue) by specifying the band number. Band
-                     number is 0 based.
+                     number is 0 based. Specified as list of ints, eg [2,1,0]
+
            mosaic_rule - Specifies the mosaic rule when defining how
                         individual images should be mosaicked. When a mosaic
                         rule is not specified, the default mosaic rule of
                         the image service will be used (as advertised in
                         the root resource: defaultMosaicMethod,
                         mosaicOperator, sortField, sortValue).
+
            rendering_rule - Specifies the rendering rule for how the
                            requested image should be rendered.
+
            f - The response format.  default is json
                Values: json | image | kmz
+               If image format is chosen, the bytes of the exported image are returned unless save_folder and save_file
+               parameters are also passed, in which case the image is written to the specified file
+
+           save_folder - the folder in which the exported image is saved when f=image
+
+           save_file - the file in which the exported image is saved when f=image
 
            compression_tolerance - Controls the tolerance of the lerc compression algorithm. The tolerance defines the
                maximum possible error of pixel values in the compressed image. It's a double value.
                Example: compression_tolerance=0.5 is loseless for 8 and 16 bit images, but has an accuracy of +-0.5 for
                floating point data. The compression tolerance works for the LERC format only.
 
+            adjust_aspect_ratio -  indicates whether to adjust the aspect ratio or not. By default adjust_aspect_ratio is
+            true, that means the actual bbox will be adjusted to match the width/height ratio of size paramter, and the
+            response image has square pixels. Values: True | False
         """
         import datetime
 
@@ -124,7 +154,6 @@ class ImageryLayer(Layer):
 
         params = {
             "size": "%s,%s" % (size[0], size[1]),
-            "compressionQuality": compression_quality,
         }
 
         if type(bbox) == str:
@@ -170,40 +199,73 @@ class ImageryLayer(Layer):
         ]
         if isinstance(moasiac_rule, dict):
             params["moasiacRule"] = moasiac_rule
+
         if export_format in __allowedFormat:
             params['format'] = export_format
-        if isinstance(time, datetime.datetime):
-            params['time'] = local_time_to_online(time)
+
+        if time is not None:
+            if type(time) is list:
+                starttime = _date_handler(time[0])
+                endtime = _date_handler(time[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            else:
+                params['time'] = _date_handler(time)
+
         if interpolation is not None and \
                         interpolation in __allowedInterpolation and \
                 isinstance(interpolation, str):
             params['interpolation'] = interpolation
+
         if pixel_type is not None and \
                         pixel_type in __allowedPixelTypes:
             params['pixelType'] = pixel_type
+
         if no_data_interpretation in __allowedInterpolation:
             params['noDataInterpretation'] = no_data_interpretation
+
         if no_data is not None:
             params['noData'] = no_data
+
         if compression is not None and \
                         compression in __allowedCompression:
             params['compression'] = compression
+
         if band_ids is not None and \
                 isinstance(band_ids, list):
-            params['bandIds'] = ",".join(band_ids)
+            params['bandIds'] = ",".join([str(x) for x in band_ids])
+
         if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
 
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
+
+        if compression_quality is not None:
+            params['compressionQuality'] = compression_quality
+
+        if adjust_aspect_ratio is not None:
+            if adjust_aspect_ratio is True:
+                params['adjustAspectRatio'] = 'true'
+            else:
+                params['adjustAspectRatio'] = 'false'
+
         params["f"] = f
+
         if f == "json":
             return self._con.get(url, params, token=self._token)
         elif f == "image":
-            result = self._con.get(url, params,
+            if save_folder is not None and save_file is not None:
+                return self._con.get(url, params,
                                    out_folder=save_folder, try_json=False,
                                    file_name=save_file, token=self._token)
-            return result
+            else:
+                return self._con.get(url, params,
+                                     try_json=False, force_bytes=True,
+                                     token=self._token)
         elif f == "kmz":
             return self._con.get(url, params,
                                  out_folder=save_folder,
@@ -431,7 +493,7 @@ class ImageryLayer(Layer):
         values. This resource is supported if the hasColormap property of
         the service is true.
         """
-        if self.hasColormap:
+        if self.properties.hasColormap:
             url = self._url + "/colormap"
             params = {
                 "f": "json"
@@ -439,3 +501,136 @@ class ImageryLayer(Layer):
             return self._con.get(url, params, token=self._token)
         else:
             return None
+
+
+            # ----------------------------------------------------------------------
+
+    def compute_statistics_histograms(self, geometry, geometry_type, mosaic_rule=None,
+                                      rendering_rule=None, pixel_size=None):
+        """
+        The computeStatisticsHistograms operation is performed on an image service
+        resource. This operation is supported by any image service published with
+        mosaic datasets or a raster dataset. The result of this operation contains
+        both statistics and histograms computed from the given extent.
+        Inputs:
+        geometry - A geometry that defines the geometry within which the histogram
+         is computed. The geometry can be an envelope or a polygon. The structure of
+         the geometry is the same as the structure of the JSON geometry objects
+         returned by the ArcGIS REST API.
+        geometry_type - The type of geometry specified by the geometry parameter.
+         The geometry type can be an envelope or polygon.
+         Values: esriGeometryEnvelope | esriGeometryPolygon
+        mosaic_rule - Specifies the mosaic rule when defining how individual
+         images should be mosaicked. When a mosaic rule is not specified, the
+         default mosaic rule of the image service will be used (as advertised
+         in the root resource: defaultMosaicMethod, mosaicOperator, sortField,
+         sortValue).
+        rendering_rule - Specifies the rendering rule for how the requested
+         image should be rendered.
+        pixel_size - The pixel level being used (or the resolution being looked at).
+         If pixel size is not specified, then pixel_size will default to the base
+         resolution of the dataset. The raster at the specified pixel size in the
+         mosaic dataset will be used for histogram calculation.
+         The structure of the pixel_size parameter is the same as the structure of
+         the point object returned by the ArcGIS REST API. In addition to the JSON
+         structure, you can specify the pixel size with a simple comma-separated syntax.
+        """
+
+        url = self._url + "/computeStatisticsHistograms"
+        params = {
+            "f": "json",
+            "geometry": geometry,
+            "geometry_type": geometry_type
+        }
+
+        if not mosaic_rule is None:
+            params["mosaicRule"] = mosaic_rule
+        if not rendering_rule is None:
+            params["renderingRule"] = rendering_rule
+        if not pixel_size is None:
+            params["pixelSize"] = pixel_size
+
+        return self._con.get(url, params, token=self._token)
+
+        # ----------------------------------------------------------------------
+
+    def get_samples(self, geometry, geometry_type="esriGeometryPoint",
+                   sample_distance=None, sample_count=None, mosaic_rule=None,
+                   pixel_size=None, return_first_value_only=None, interpolation=None,
+                   out_fields=None):
+        """
+        The get_samples operation is supported by both mosaic dataset and raster
+        dataset imagery layers.
+        The result of this operation includes sample point locations, pixel
+        values, and corresponding spatial resolutions of the source data for a
+        given geometry. When the input geometry is a polyline, envelope, or
+        polygon, sampling is based on sample_count or sample_distance; when the
+        input geometry is a point or multipoint, the point or points are used
+        directly.
+        The number of sample locations in the response is based on the
+        sample_distance or sample_count parameter and cannot exceed the limit of
+        the image service (the default is 1000, which is an approximate limit).
+        Inputs:
+        geometry - A geometry that defines the location(s) to be sampled. The
+         structure of the geometry is the same as the structure of the JSON
+         geometry objects returned by the ArcGIS REST API. Applicable geometry
+         types are point, multipoint, polyline, polygon, and envelope. When
+         spatialReference is omitted in the input geometry, it will be assumed
+         to be the spatial reference of the image service.
+        geometry_type - The type of geometry specified by the geometry parameter.
+         The geometry type can be point, multipoint, polyline, polygon, or envelope.
+         Values: esriGeometryPoint | esriGeometryMultipoint | esriGeometryPolyline |
+         esriGeometryPolygon | esriGeometryEnvelope
+        sample_distance - The distance interval used to sample points from the
+         provided path. The unit is the same as the input geometry. If neither
+         sample_count nor sample_distance is provided, no densification can be done
+         for paths (polylines), and a default sample_count (100) is used for areas
+         (polygons or envelopes).
+        sample_count - The approximate number of sample locations from the provided
+         path. If neither sample_count nor sample_distance is provided, no
+         densification can be done for paths (polylines), and a default
+         sample_count (100) is used for areas (polygons or envelopes).
+        mosaic_rule - Specifies the mosaic rule defining the image sort order.
+         Additional filtering can be applied to the where clause and FIDs of a
+         mosaic rule.
+        pixel_size - The raster that is visible at the specified pixel size in the
+         mosaic dataset will be used for sampling. If pixel_size is not specified,
+         the service's pixel size is used.
+         The structure of the esri_codephpixelSize parameter is the same as the
+         structure of the point object returned by the ArcGIS REST API. In addition
+         to the JSON structure, you can specify the pixel size with a simple
+         comma-separated syntax.
+        return_first_value_only - Indicates whether to return all values at a point,
+         or return the first non-NoData value based on the current mosaic rule.
+         The default is true.
+        interpolation - This parameter was added at 10.3. The resampling method.
+         Default is nearest neighbor.
+        out_fields - This parameter was added at 10.3. The list of fields to be
+         included in the response. This list is a comma-delimited list of field
+         names. You can also specify the wildcard character (*) as the value of
+         this parameter to include all the field values in the results.
+        """
+
+        url = self._url + "/getSamples"
+        params = {
+            "f": "json",
+            "geometry": geometry,
+            "geometryType": geometry_type
+        }
+
+        if not sample_distance is None:
+            params["sampleDistance"] = sample_distance
+        if not sample_count is None:
+            params["sampleCount"] = sample_count
+        if not mosaic_rule is None:
+            params["mosaicRule"] = mosaic_rule
+        if not pixel_size is None:
+            params["pixelSize"] = pixel_size
+        if not return_first_value_only is None:
+            params["returnFirstValueOnly"] = return_first_value_only
+        if not interpolation is None:
+            params["interpolation"] = interpolation
+        if not out_fields is None:
+            params["outFields"] = out_fields
+
+        return self._con.get(url, params, token=self._token)
