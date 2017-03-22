@@ -93,6 +93,8 @@ class GIS(object):
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
                                        verify_cert=self._verify_cert, client_id=self._client_id)
 
+        self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
+
         if self._url.lower() == "pro":
             self._url = self._portal.url
 
