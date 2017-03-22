@@ -3127,7 +3127,7 @@ class Item(dict):
             self._hydrate() # refresh
             return resp
 
-    def share(self, everyone=False, org=False, groups=""):
+    def share(self, everyone=False, org=False, groups=None):
         """ Shares an item with the specified list of groups
 
         ================  ========================================================
@@ -3137,8 +3137,9 @@ class Item(dict):
         ----------------  --------------------------------------------------------
         org               optional boolean, share with the organization
         ----------------  --------------------------------------------------------
-        groups            optional string,
-                          comma-separated list of group IDs with which the item will be shared.
+        groups            optional list of group names as strings, or, list of
+                            arcgis.gis.Group objects
+                          You can also pass a comma-separated list of group IDs
         ================  ========================================================
 
         :return:
@@ -3150,10 +3151,31 @@ class Item(dict):
         except:
             folder = None
 
+        #get list of group IDs
+        group_ids = ''
+        if isinstance(groups, list):
+            for group in groups:
+                if isinstance(group, Group):
+                    group_ids = group_ids + "," + group.id
+
+                elif isinstance(group, str):
+                    #search for group using title
+                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
+                    if len(search_result) >0:
+                        group_ids = group_ids + "," + search_result[0].id
+                    else:
+                        raise Exception("Cannot find: " + group)
+                else:
+                    raise Exception("Invalid group(s)")
+
+        elif isinstance(groups, str):
+            #old API - groups sent as comma separated group ids
+            group_ids = groups
+
         if self.access == 'public' and not everyone and not org:
-            return self._portal.share_item_as_group_admin(self.itemid, groups)
+            return self._portal.share_item_as_group_admin(self.itemid, group_ids)
         else:
-            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, groups)
+            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids)
 
     def unshare(self, groups):
         """ Stops sharing the item with the specified list of groups
@@ -3161,25 +3183,44 @@ class Item(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        groups            optional string,
-                          comma-separated list of group IDs with which the item will be unshared.
+        groups            optional list of group names as strings, or, list of
+                            arcgis.gis.Group objects.
+                          You can also pass a comma-separated list of group IDs
         ================  ========================================================
 
         :return:
             dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
-
-
-
         """
         try:
             folder = self.ownerFolder
         except:
             folder = None
 
+        # get list of group IDs
+        group_ids = ''
+        if isinstance(groups, list):
+            for group in groups:
+                if isinstance(group, Group):
+                    group_ids = group_ids + "," + group.id
+
+                elif isinstance(group, str):
+                    # search for group using title
+                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
+                    if len(search_result) > 0:
+                        group_ids = group_ids + "," + search_result[0].id
+                    else:
+                        raise Exception("Cannot find: " + group)
+                else:
+                    raise Exception("Invalid group(s)")
+
+        elif isinstance(groups, str):
+            # old API - groups sent as comma separated group ids
+            group_ids = groups
+
         if self.access == 'public':
-            return self._portal.unshare_item_as_group_owner(self.itemid, groups)
+            return self._portal.unshare_item_as_group_owner(self.itemid, group_ids)
         else:
-            return self._portal.unshare_item(self.itemid, self.owner, folder, groups)
+            return self._portal.unshare_item(self.itemid, self.owner, folder, group_ids)
 
     def delete(self):
         """ Deletes an item.
