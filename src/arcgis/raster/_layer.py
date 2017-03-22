@@ -603,9 +603,9 @@ class ImageryLayer(Layer):
         return_first_value_only - Indicates whether to return all values at a point,
          or return the first non-NoData value based on the current mosaic rule.
          The default is true.
-        interpolation - This parameter was added at 10.3. The resampling method.
-         Default is nearest neighbor.
-        out_fields - This parameter was added at 10.3. The list of fields to be
+        interpolation - The resampling method. Default is nearest neighbor.
+         Values: RSP_BilinearInterpolation | RSP_CubicConvolution | RSP_Majority | RSP_NearestNeighbor
+        out_fields - The list of fields to be
          included in the response. This list is a comma-delimited list of field
          names. You can also specify the wildcard character (*) as the value of
          this parameter to include all the field values in the results.
@@ -633,4 +633,4 @@ class ImageryLayer(Layer):
         if not out_fields is None:
             params["outFields"] = out_fields
 
-        return self._con.get(url, params, token=self._token)
+        return self._con.get(url, params, token=self._token)['samples']
