@@ -634,3 +634,23 @@ class ImageryLayer(Layer):
             params["outFields"] = out_fields
 
         return self._con.get(url, params, token=self._token)['samples']
+
+    def key_properties(self, rendering_rule=None):
+        """
+        returns key properties of the imagery layer, such as band properties
+        :param rendering_rule: Specifies the rendering rule for how the requested image should be processed.
+        The response contains updated service information that reflects a custom processing as defined
+         by the rendering rule. For example, if renderingRule contains an attributeTable function,
+         the response will indicate "hasRasterAttributeTable": true; if the renderingRule contains
+          functions that alter the number of bands, the response will indicate correct bandCount.
+        :return: key properties of the imagery layer
+        """
+        url = self._url + "/keyProperties"
+        params = {
+            "f": "json"
+        }
+
+        if rendering_rule is not None:
+            params['renderingRule'] = rendering_rule
+
+        return self._con.get(url, params, token=self._token)
