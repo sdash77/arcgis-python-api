@@ -5,6 +5,7 @@ import time
 import uuid
 import zipfile
 import datetime
+from datetime import date
 import tempfile
 from contextlib import contextmanager
 
@@ -19,7 +20,7 @@ def create_uid():
         return uuid.uuid4().hex
 #----------------------------------------------------------------------
 def _date_handler(obj):
-    if isinstance(obj, datetime.datetime):
+    if isinstance(obj, datetime.datetime) or isinstance(obj, date):
         return local_time_to_online(obj)
     else:
         return obj
@@ -34,6 +35,9 @@ def local_time_to_online(dt=None):
     """
     if dt is None:
         dt = datetime.datetime.now()
+
+    if isinstance(dt, date):
+        dt = datetime.datetime.combine(dt, datetime.datetime.min.time())
 
     is_dst = time.daylight and time.localtime().tm_isdst > 0
     utc_offset =  (time.altzone if is_dst else time.timezone)
