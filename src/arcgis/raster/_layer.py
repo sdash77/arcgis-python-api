@@ -389,67 +389,67 @@ class ImageryLayer(Layer):
 
     # ----------------------------------------------------------------------
     def add_rasters(self,
-                    rasterType,
-                    itemIds=None,
-                    serviceUrl=None,
-                    computeStatistics=False,
-                    buildPyramids=False,
-                    buildThumbnail=False,
-                    minimumCellSizeFactor=None,
-                    maximumCellSizeFactor=None,
+                    raster_type,
+                    item_ids=None,
+                    service_url=None,
+                    compute_statistics=False,
+                    build_pyramids=False,
+                    build_thumbnail=False,
+                    minimum_cell_size_factor=None,
+                    maximum_cell_size_factor=None,
                     attributes=None,
-                    geodataTransforms=None,
-                    geodataTransformApplyMethod="esriGeodataTransformApplyAppend"
+                    geodata_transforms=None,
+                    geodata_transform_apply_method="esriGeodataTransformApplyAppend"
                     ):
         """
         This operation is supported at 10.1 and later.
         The Add Rasters operation is performed on an image service resource.
         The Add Rasters operation adds new rasters to an image service
         (POST only).
-        The added rasters can either be uploaded items, using the itemIds
-        parameter, or published services, using the serviceUrl parameter.
-        If itemIds is specified, uploaded rasters are copied to the image
-        service's dynamic image workspace location; if the serviceUrl is
+        The added rasters can either be uploaded items, using the item_ids
+        parameter, or published services, using the service_url parameter.
+        If item_ids is specified, uploaded rasters are copied to the image
+        service's dynamic image workspace location; if the service_url is
         specified, the image service adds the URL to the mosaic dataset no
-        raster files are copied. The serviceUrl is required input for the
+        raster files are copied. The service_url is required input for the
         following raster types: Image Service, Map Service, WCS, and WMS.
 
         Inputs:
 
-        itemIds - The upload items (raster files) to be added. Either
-         itemIds or serviceUrl is needed to perform this operation.
-            Syntax: itemIds=<itemId1>,<itemId2>
-            Example: itemIds=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+        item_ids - The upload items (raster files) to be added. Either
+         item_ids or service_url is needed to perform this operation.
+            Syntax: item_ids=<itemId1>,<itemId2>
+            Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
                              ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        serviceUrl - The URL of the service to be added. The image service
-         will add this URL to the mosaic dataset. Either itemIds or
-         serviceUrl is needed to perform this operation. The service URL is
+        service_url - The URL of the service to be added. The image service
+         will add this URL to the mosaic dataset. Either item_ids or
+         service_url is needed to perform this operation. The service URL is
          required for the following raster types: Image Service, Map
          Service, WCS, and WMS.
-            Example: serviceUrl=http://myserver/arcgis/services/Portland/ImageServer
-        rasterType - The type of raster files being added. Raster types
+            Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
+        raster_type - The type of raster files being added. Raster types
          define the metadata and processing template for raster files to be
          added. Allowed values are listed in image service resource.
             Example: Raster Dataset | CADRG/ECRG | CIB | DTED | Image Service | Map Service | NITF | WCS | WMS
-        computeStatistics - If true, statistics for the rasters will be
+        compute_statistics - If true, statistics for the rasters will be
          computed. The default is false.
             Values: false | true
-        buildPyramids - If true, builds pyramids for the rasters. The
+        build_pyramids - If true, builds pyramids for the rasters. The
          default is false.
                 Values: false | true
-        buildThumbnail	 - If true, generates a thumbnail for the rasters.
+        build_thumbnail	 - If true, generates a thumbnail for the rasters.
          The default is false.
                 Values: false | true
-        minimumCellSizeFactor - The factor (times raster resolution) used
+        minimum_cell_size_factor - The factor (times raster resolution) used
          to populate the MinPS field (maximum cell size above which the
          raster is visible).
-                Syntax: minimumCellSizeFactor=<minimumCellSizeFactor>
-                Example: minimumCellSizeFactor=0.1
-        maximumCellSizeFactor - The factor (times raster resolution) used
+                Syntax: minimum_cell_size_factor=<minimum_cell_size_factor>
+                Example: minimum_cell_size_factor=0.1
+        maximum_cell_size_factor - The factor (times raster resolution) used
          to populate MaxPS field (maximum cell size below which raster is
          visible).
-                Syntax: maximumCellSizeFactor=<maximumCellSizeFactor>
-                Example: maximumCellSizeFactor=10
+                Syntax: maximum_cell_size_factor=<maximum_cell_size_factor>
+                Example: maximum_cell_size_factor=10
         attributes - Any attribute for the added rasters.
                 Syntax:
                 {
@@ -463,7 +463,7 @@ class ImageryLayer(Layer):
                   "Year" : 2002,
                   "State" : "Florida"
                 }
-        geodataTransforms - The geodata transformations applied on the
+        geodata_transforms - The geodata transformations applied on the
          added rasters. A geodata transformation is a mathematical model
          that performs a geometric transformation on a raster; it defines
          how the pixels will be transformed when displayed or accessed.
@@ -484,7 +484,7 @@ class ImageryLayer(Layer):
          The syntax of the geodataTransformArguments property varies based
          on the specified geodataTransform name. See Geodata Transformations
          documentation for more details.
-        geodataTransformApplyMethod - This parameter defines how to apply
+        geodata_transform_apply_method - This parameter defines how to apply
          the provided geodataTransform. The default is
          esriGeodataTransformApplyAppend.
                 Values: esriGeodataTransformApplyAppend |
@@ -495,25 +495,25 @@ class ImageryLayer(Layer):
         params = {
             "f": "json"
         }
-        if itemIds is None and serviceUrl is None:
-            raise Exception("An itemId or serviceUrl must be provided")
-        if isinstance(itemIds, str):
-            itemIds = [itemIds]
-        if isinstance(serviceUrl, str):
-            serviceUrl = [serviceUrl]
-        params['geodataTransformApplyMethod'] = geodataTransformApplyMethod
-        params['rasterType'] = rasterType
-        params['buildPyramids'] = buildPyramids
-        params['buildThumbnail'] = buildThumbnail
-        params['minimumCellSizeFactor'] = minimumCellSizeFactor
-        params['computeStatistics'] = computeStatistics
-        params['maximumCellSizeFactor'] = maximumCellSizeFactor
+        if item_ids is None and service_url is None:
+            raise Exception("An itemId or service_url must be provided")
+        if isinstance(item_ids, str):
+            item_ids = [item_ids]
+        if isinstance(service_url, str):
+            service_url = [service_url]
+        params['geodataTransformApplyMethod'] = geodata_transform_apply_method
+        params['rasterType'] = raster_type
+        params['buildPyramids'] = build_pyramids
+        params['buildThumbnail'] = build_thumbnail
+        params['minimumCellSizeFactor'] = minimum_cell_size_factor
+        params['computeStatistics'] = compute_statistics
+        params['maximumCellSizeFactor'] = maximum_cell_size_factor
         params['attributes'] = attributes
-        params['geodataTransforms'] = geodataTransforms
-        if not itemIds is None:
-            params['itemIds'] = itemIds
-        if not serviceUrl is None:
-            params['serviceUrl'] = serviceUrl
+        params['geodataTransforms'] = geodata_transforms
+        if not item_ids is None:
+            params['itemIds'] = item_ids
+        if not service_url is None:
+            params['serviceUrl'] = service_url
         return self._con.post(url, params, token=self._token)
 
     # ----------------------------------------------------------------------
