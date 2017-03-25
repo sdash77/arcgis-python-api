@@ -238,7 +238,7 @@ class SpatialReference(Geometry):
     only the wkt property.
     Starting at 10.3, Image Service supports image coordinate systems.
     """
-    _type = "SPATIALREFERENCE"
+    _type = "SpatialReference"
     def __init__(self,
                  iterable=None,
                  **kwargs):
@@ -260,7 +260,7 @@ class Envelope(Geometry):
     in space and is defined by the presence of an xmin field a null value
     or a "NaN" string.
     """
-    _type = "ENVELOPE"
+    _type = "Envelope"
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
@@ -279,7 +279,7 @@ class Point(Geometry):
     field is present and has the value null or the string "NaN". An empty
     point has no location in space.
     """
-    _type = "POINT"
+    _type = "Point"
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
@@ -310,7 +310,7 @@ class MultiPoint(Geometry):
     An empty multipoint has a points field with no elements. Empty points
     are ignored.
     """
-    _type = "MULTIPOINT"
+    _type = "Multipoint"
     def __init__(self, iterable=None,
                  **kwargs):
         if iterable is None:
@@ -336,7 +336,7 @@ class Polyline(Geometry):
     field. Nulls and/or NaNs embedded in an otherwise defined coordinate
     stream for polylines/polygons is a syntax error.
     """
-    _type = "POLYLINE"
+    _type = "Polyline"
     def __init__(self, iterable=None,
                  **kwargs):
         if iterable is None:
@@ -368,7 +368,7 @@ class Polygon(Geometry):
     rule will guarantee that the polygon will draw correctly even if the
     ring orientation is not as described above.
     """
-    _type = "POLYGON"
+    _type = "Polygon"
     def __init__(self, iterable=None,
                  **kwargs):
         if iterable is None:
