@@ -203,8 +203,8 @@ class FeatureLayer(Layer):
                             the timeFilter should be as UTC timestampes in
                             milliseconds.  No checking occurs to see if they
                             are in the right format.
-                geometryFilter - a GeometryFilter object to parse down a given
-                               query by another spatial dataset.
+                geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                                with another geometry
                 maxAllowableOffset - This option can be used to specify the
                                      maxAllowableOffset to be used for
                                      generalizing geometries returned by
@@ -293,7 +293,7 @@ class FeatureLayer(Layer):
                  Query REST API.
             Output:
                A FeatureSet containing the features matching the query
-               unless another return type is specified, such as return
+               unless another return type is specified, such as count
          """
         url = self._url + "/query"
         params = {"f": "json"}
@@ -745,7 +745,9 @@ class FeatureLayerCollection(_GISResource):
             params['geometryType'] = geometry_filter['geometryType']
             params['spatialRel'] = geometry_filter['spatialRel']
             params['geometry'] = geometry_filter['geometry']
-            params['inSR'] = geometry_filter['inSR']
+            if 'inSR' in geometry_filter:
+                params['inSR'] = geometry_filter['inSR']
+
         if out_sr is not None and \
                 isinstance(out_sr, SpatialReference):
             params['outSR'] = out_sr
@@ -952,8 +954,8 @@ class FeatureLayerCollection(_GISResource):
             Example:
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometryFilter - Geospatial filter applied to the replica to
-            parse down data output.
+           geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                            with another geometry
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each

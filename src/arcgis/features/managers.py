@@ -146,8 +146,8 @@ class SyncManager(object):
             Example:
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometryFilter - Geospatial filter applied to the replica to
-            parse down data output.
+           geometryFilter - arcgis.geometry.filter to filter results by a spatial relationship
+                            with another geometry
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
