@@ -1,5 +1,6 @@
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
+from ..features import FeatureSet
 import datetime
 
 class ImageryLayer(Layer):
@@ -72,13 +73,13 @@ class ImageryLayer(Layer):
                   Format: list of [width, height]
 
            time - The time instant or the time extent of the exported image.
-                    Time instant specified as datetime or timestamp in milliseconds since epoch
+                    Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
                     Syntax: time=<timeInstant>
 
                     Time extent specified as list of [<startTime>, <endTime>]
                     For time extents one of <startTime> or <endTime> could be None. A None value specified for
                     start time or end time will represent infinity for start or end time respectively.
-                    Syntax: time=[<startTime>, <endTime>] ; specified as datetime or timestamp in milliseconds
+                    Syntax: time=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or timestamp
 
            export_format - The format of the exported image. The default format is jpgpng.
                     The jpgpng format returns a JPG if there are no transparent pixels in the requested extent;
@@ -277,85 +278,114 @@ class ImageryLayer(Layer):
     def query(self,
               where="1=1",
               out_fields="*",
-              timeFilter=None,
-              geometryFilter=None,
-              returnGeometry=True,
-              returnIdsOnly=False,
-              returnCountOnly=False,
-              pixelSize=None,
-              orderByFields=None,
-              returnDistinctValues=True,
-              outStatistics=None,
-              groupByFieldsForStatistics=None
+              time_filter=None,
+              geometry_filter=None,
+              return_geometry=True,
+              return_ids_only=False,
+              return_count_only=False,
+              pixel_size=None,
+              order_by_fields=None,
+              return_distinct_values=None,
+              out_statistics=None,
+              group_by_fields_for_statistics=None
               ):
-        """ queries a feature service based on a sql statement
+        """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
+         either a set of features or an array of raster IDs (if return_ids_only is set to True),
+         count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
+
             Inputs:
-               where - the selection sql statement
-               out_fields - the attribute fields to return
-               timeFilter - a TimeFilter object where either the start time
-                            or start and end time are defined to limit the
-                            search results for a given time.  The values in
-                            the timeFilter should be as UTC timestampes in
-                            milliseconds.  No checking occurs to see if they
-                            are in the right format.
-               geometryFilter - a GeometryFilter object to parse down a given
-                               query by another spatial dataset.
-               returnGeometry - true means a geometry will be returned,
+               where - the selection sql statement. Any legal SQL where clause operating on the fields in the raster
+                        catalog is allowed.
+               out_fields - the attribute fields to return, comma-delimited list of field names.
+               time_filter - The time instant or the time extent of the exported image.
+                    Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+                    Syntax: time_filter=<timeInstant>
+
+                    Time extent specified as list of [<startTime>, <endTime>]
+                    For time extents one of <startTime> or <endTime> could be None. A None value specified for
+                    start time or end time will represent infinity for start or end time respectively.
+                    Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
+                    timestamp in milliseconds
+               geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                                with another geometry
+               return_geometry - true means a geometry will be returned,
                                 else just the attributes
-               returnIdsOnly - false is default.  True means only OBJECTIDs
+               return_ids_only - false is default.  True means only OBJECTIDs
                                will be returned
-               returnCountOnly - if True, then an integer is returned only
+               return_count_only - if True, then an integer is returned only
                                  based on the sql statement
-               pixelSize-Query visible rasters at a given pixel size. If
-                         pixelSize is not specified, rasters at all
+               pixel_size-Query visible rasters at a given pixel size. If
+                         pixel_size is not specified, rasters at all
                          resolutions can be queried.
-               orderByFields-Order results by one or more field names. Use
+               order_by_fields-Order results by one or more field names. Use
                              ASC or DESC for ascending or descending order,
                              respectively
-               returnDistinctValues-  If true, returns distinct values
+               return_distinct_values-  If true, returns distinct values
                                     based on the fields specified in
                                     outFields. This parameter applies only
                                     if the supportsAdvancedQueries property
                                     of the image service is true.
-               outStatistics- the definitions for one or more field-based
+               out_statistics- the definitions for one or more field-based
                               statistics to be calculated.
-               groupByFieldsForStatistics-One or more field names using the
+               group_by_fields_for_statistics-One or more field names using the
                                          values that need to be grouped for
                                          calculating the statistics.
             Output:
-               A list of Feature Objects (default) or a path to the output featureclass if
-               returnFeatureClass is set to True.
+               A FeatureSet containing the footprints (features) matching the query when return_geometry is True,
+               else a dictionary containing the expected return type
          """
         params = {"f": "json",
                   "where": where,
                   "outFields": out_fields,
-                  "returnGeometry": returnGeometry,
-                  "returnIdsOnly": returnIdsOnly,
-                  "returnCountOnly": returnCountOnly,
+                  "returnGeometry": return_geometry,
+                  "returnIdsOnly": return_ids_only,
+                  "returnCountOnly": return_count_only,
                   }
-        if not groupByFieldsForStatistics is None:
-            params['groupByFieldsForStatistics'] = groupByFieldsForStatistics
-        if not outStatistics is None:
-            params['outStatistics'] = outStatistics
-        if not timeFilter is None and \
-                isinstance(timeFilter, dict):
-            params['time'] = timeFilter
-        if not geometryFilter is None and \
-                isinstance(geometryFilter, dict):
-            gf = geometryFilter
+        if not group_by_fields_for_statistics is None:
+            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
+        if not out_statistics is None:
+            params['outStatistics'] = out_statistics
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            else:
+                params['time'] = _date_handler(time_filter)
+
+        if not geometry_filter is None and \
+                isinstance(geometry_filter, dict):
+            gf = geometry_filter
             params['geometry'] = gf['geometry']
             params['geometryType'] = gf['geometryType']
-            params['spatialRelationship'] = gf['spatialRel']
-            params['inSR'] = gf['inSR']
-        if pixelSize is not None:
-            params['pixelSize'] = pixelSize
-        if orderByFields is not None:
-            params['orderByFields'] = orderByFields
-        if returnDistinctValues is not None:
-            params['returnDistinctValues'] = returnDistinctValues
+            params['spatialRel'] = gf['spatialRel']
+            if 'inSR' in gf:
+                params['inSR'] = gf['inSR']
+
+        if pixel_size is not None:
+            params['pixelSize'] = pixel_size
+        if order_by_fields is not None:
+            params['orderByFields'] = order_by_fields
+        if return_distinct_values is not None:
+            params['returnDistinctValues'] = return_distinct_values
 
         url = self._url + "/query"
-        return self._con.get(url, params, token=self._token)
+        result = self._con.get(url, params, token=self._token)
+
+        if 'error' in result:
+            raise ValueError(result)
+
+        if return_count_only:
+            return result['count']
+        elif return_geometry:
+            return FeatureSet.from_dict(result)
+        else:
+            return result
 
     # ----------------------------------------------------------------------
     def add_rasters(self,
@@ -505,21 +535,18 @@ class ImageryLayer(Layer):
 
             # ----------------------------------------------------------------------
 
-    def compute_statistics_histograms(self, geometry, geometry_type, mosaic_rule=None,
+    def compute_histograms(self, geometry, mosaic_rule=None,
                                       rendering_rule=None, pixel_size=None):
         """
-        The computeStatisticsHistograms operation is performed on an image service
-        resource. This operation is supported by any image service published with
+        The compute_histograms operation is performed on an imagery layer
+        resource. This operation is supported by any imagery layer published with
         mosaic datasets or a raster dataset. The result of this operation contains
         both statistics and histograms computed from the given extent.
         Inputs:
         geometry - A geometry that defines the geometry within which the histogram
          is computed. The geometry can be an envelope or a polygon. The structure of
          the geometry is the same as the structure of the JSON geometry objects
-         returned by the ArcGIS REST API.
-        geometry_type - The type of geometry specified by the geometry parameter.
-         The geometry type can be an envelope or polygon.
-         Values: esriGeometryEnvelope | esriGeometryPolygon
+         returned by the ArcGIS REST API, or an arcgis.geometry Geometry object
         mosaic_rule - Specifies the mosaic rule when defining how individual
          images should be mosaicked. When a mosaic rule is not specified, the
          default mosaic rule of the image service will be used (as advertised
@@ -536,12 +563,16 @@ class ImageryLayer(Layer):
          structure, you can specify the pixel size with a simple comma-separated syntax.
         """
 
-        url = self._url + "/computeStatisticsHistograms"
+        url = self._url + "/computeHistograms"
         params = {
             "f": "json",
             "geometry": geometry,
-            "geometry_type": geometry_type
         }
+
+        if 'xmin' in geometry:
+            params["geometryType"] = 'esriGeometryEnvelope'
+        else:
+            params["geometryType"] = 'esriGeometryPolygon'
 
         if not mosaic_rule is None:
             params["mosaicRule"] = mosaic_rule
