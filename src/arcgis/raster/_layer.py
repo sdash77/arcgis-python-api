@@ -6,6 +6,8 @@ import datetime
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
         super(ImageryLayer, self).__init__(url, gis)
+        self._spatial_filter = None
+        self._temporal_filter = None
 
     @classmethod
     def fromitem(cls, item):
@@ -13,6 +15,15 @@ class ImageryLayer(Layer):
             raise TypeError("item must be a type of Image Service, not " + item.type)
 
         return cls(item.url, item._gis)
+
+    def spatial_filter(self, fltr):
+        self._spatial_filter = fltr
+
+    def temporal_filter(self, fltr):
+        self._temporal_filter = fltr
+
+    def where_clause(self, where):
+        self._where_clause = where
 
     def export_image(self,
                      bbox,
@@ -204,6 +215,9 @@ class ImageryLayer(Layer):
         if export_format in __allowedFormat:
             params['format'] = export_format
 
+        if self._temporal_filter is not None:
+            time = self._temporal_filter
+
         if time is not None:
             if type(time) is list:
                 starttime = _date_handler(time[0])
@@ -346,6 +360,10 @@ class ImageryLayer(Layer):
         if not out_statistics is None:
             params['outStatistics'] = out_statistics
 
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
         if time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
@@ -357,6 +375,10 @@ class ImageryLayer(Layer):
                 params['time'] = "%s,%s" % (starttime, endtime)
             else:
                 params['time'] = _date_handler(time_filter)
+
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
 
         if not geometry_filter is None and \
                 isinstance(geometry_filter, dict):
