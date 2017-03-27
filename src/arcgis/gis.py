@@ -184,8 +184,12 @@ class GIS(object):
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
         """
-        from arcgis.widgets import MapView
-        from arcgis.geocoding import get_geocoders, geocode
+        try:
+            from arcgis.widgets import MapView
+            from arcgis.geocoding import get_geocoders, geocode
+        except Error as err:
+            _log.error("ipywidgets packages is required for the map widget.")
+            _log.error("Please install it:\n\tconda install ipywidgets")
 
         if isinstance(location, Item) and location.type == 'Web Map':
             mapwidget = MapView(gis=self, item=location)
