@@ -176,7 +176,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """"""
-        return json.dumps(self.as_dict)
+        return json.dumps(self.as_dict, default=_date_handler)
 
     __repr__ = __str__
 
@@ -280,7 +280,11 @@ class FeatureSet(object):
                     if 'spatialReference' in feat_geom:
                         self._spatialReference = feat_geom['spatialReference']
 
-                geometry = Geometry(feat_geom)
+                if isinstance(feat_geom, Geometry):
+                    geometry = feat_geom
+                else:
+                    geometry = Geometry(feat_geom)
+
                 if geometry_type is None:
                     if isinstance(geometry, Polyline):
                         self._geometryType = "esriGeometryPolyline"
@@ -321,7 +325,7 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
-        return json.dumps(self.value)
+        return json.dumps(self.value, default=_date_handler)
 
     __repr__ = __str__
 
@@ -426,18 +430,54 @@ class FeatureSet(object):
     def df(self):
         """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
         try:
+            try:
+                import arcpy
+                arcpy_found = True
+            except:
+                arcpy_found = False
             from pandas.io.json import json_normalize
-            #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
-            df = json_normalize(self.value['features'])
-            df.columns = df.columns.str.replace('attributes.', '')
-            if self._object_id_field_name is not None:
-                df.set_index([self._object_id_field_name], inplace=True)
+            from arcgis import SpatialDataFrame
+            if arcpy_found and \
+               self.geometry_type is not None:
+                if 'wkt' in self.spatial_reference.keys():
+                    sr = arcpy.SpatialReference(text=self.spatial_reference['wkt'])
+                elif 'wkid' in self.spatial_reference:
+                    sr = arcpy.SpatialReference(self.spatial_reference['wkid'])
+                else:
+                    sr = None
+                geoms = []
+                attributes = []
+                for feat in self.features:
+                    attributes.append(feat.attributes)
+                    geoms.append(Geometry(feat.geometry))
+                    del feat
+                #for feat in self.features:
+                    #attributes.append(feat.attributes)
+                    #gg = Geometry(feat.geometry)
+                    #if gg.type in ("POINT", "LINE", "POLYLINE",
+                                   #"POLYGON", "MULTIPOINT"):
+                        #g = arcpy.AsShape(str(gg), esri_json=True)
+                        #if sr:
+                            #g = g.projectAs(sr)
+
+                        #geoms.append(g)
+                    #del gg
+                    #del feat
+                df = json_normalize(attributes)
+                df.columns = df.columns.str.replace('attributes.', '')
+                return SpatialDataFrame(df, geometry=geoms, sr=sr)
             else:
-                if 'OBJECTID' in df.columns:
-                    df.set_index(['OBJECTID'], inplace=True)
-                elif 'FID' in df.columns:
-                    df.set_index(['FID'], inplace=True)
-            return df
+                #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
+                df = json_normalize(self.value['features'])
+                df.columns = df.columns.str.replace('attributes.', '')
+                if self._object_id_field_name is not None:
+                    df.set_index([self._object_id_field_name], inplace=True)
+                else:
+                    if 'OBJECTID' in df.columns:
+                        df.set_index(['OBJECTID'], inplace=True)
+                    elif 'FID' in df.columns:
+                        df.set_index(['FID'], inplace=True)
+                return df
         except ImportError:
             raise ImportError("pandas not found, please install it")
 
@@ -457,6 +497,38 @@ class FeatureSet(object):
     def from_json(json_str):
         """returns a featureset from a JSON string"""
         return FeatureSet.from_dict(json.loads(json_str))
+
+    @staticmethod
+    def from_dataframe(df):
+        """returns a featureset from a Pandas' Data or Spatial DataFrame"""
+        from ..data.geodataset import SpatialDataFrame
+        import pandas as pd
+        features = []
+        index = 0
+        if isinstance(df, SpatialDataFrame):
+            df_rows = df.copy()
+            del df_rows['SHAPE']
+            geoms = df['SHAPE'].tolist()
+        elif isinstance(df, pd.DataFrame):
+            geoms = []
+            df_rows = df.copy().to_dict('records')
+        else:
+            raise ValueError("Invalid input type")
+        index = 0
+        for row in df_rows.to_dict('records'):
+            if len(geoms) > 0:
+                features.append(
+                    {
+                        "geometry": json.loads(geoms[index].JSON),
+                        "attributes": row
+                    })
+            else:
+                features.append(
+                    {
+                        "attributes": row
+                    })
+            index += 1
+        return FeatureSet.from_dict(featureset_dict={'features': features})
 
     # ----------------------------------------------------------------------
     @staticmethod

@@ -4608,8 +4608,10 @@ class _GeometryService(_GISService):
                     "geometries" : []}
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-                if isinstance(g,dict):
+
+                if not isinstance(g, Geometry):
                     g = Geometry(g)
+
                 if isinstance(g, Polyline):
                     template['geometryType'] = "esriGeometryPolyline"
                 elif isinstance(g, Polygon):
@@ -4639,7 +4641,8 @@ class _GeometryService(_GISService):
         """
         template = {"geometryType": None,
                     "geometry" : None}
-        if isinstance(geometry, dict):
+
+        if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
         if isinstance(geometry, Polyline):
             template['geometryType'] = "esriGeometryPolyline"
@@ -4660,7 +4663,8 @@ class _GeometryService(_GISService):
         """ function to convert the geomtries to strings """
         listGeoms = []
         for g in geometries:
-            if isinstance(g, dict):
+
+            if not isinstance(g, Geometry):
                 g = Geometry(g)
             if isinstance(g, Point):
                 listGeoms.append(g)
@@ -4956,7 +4960,9 @@ class _GeometryService(_GISService):
         }
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-                g = Geometry(g)
+
+                if not isinstance(g, Geometry):
+                    g = Geometry(g)
                 if isinstance(g, Polyline):
                     template['geometryType'] = "esriGeometryPolyline"
                 elif isinstance(g, Polygon):
@@ -4967,7 +4973,10 @@ class _GeometryService(_GISService):
                 template['geometries'].append(g)
 
         elif isinstance(geometries, dict):
-            g = Geometry(geometries)
+
+            if not isinstance(geometries, Geometry):
+                g = Geometry(geometries)
+
             if isinstance(g, Polyline):
                 template['geometryType'] = "esriGeometryPolyline"
             elif isinstance(g, Polygon):
