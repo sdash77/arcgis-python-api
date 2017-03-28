@@ -1,7 +1,7 @@
 """
 Feature Layers and Tables provide the primary interface for working with features in a GIS.
 
-Users create, import, export, analyze, edit, and visualize features, i.e. "entities in space" as feature layers.
+Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
@@ -25,7 +25,7 @@ class FeatureLayer(Layer):
     """
     The feature layer is the primary concept for working with features in a GIS.
 
-    Users create, import, export, analyze, edit, and visualize features, i.e. "entities in space" as feature layers.
+    Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
 
     Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
     tools.
