@@ -130,12 +130,15 @@ class GIS(object):
         """
         The collaboration manager
         """
+        if self._con._auth.lower() == 'ANON'.lower() or \
+           self._con.auth is None:
+            return None
         return CollaborationManager(gis=self)
 
     @_lazy_property
     def _datastores(self):
         """
-        The list of datastores resource managers for sites federated with the GIS. 
+        The list of datastores resource managers for sites federated with the GIS.
         """
         if self._datastores_list is not None:
             return self._datastores_list
@@ -1283,7 +1286,7 @@ class DatastoreManager(object):
             'item' : json.dumps({
                 "path": "/bigDataFileShares/" + name,
                 "type": "bigDataFileShare",
-                
+
                 "info": {
                     "connectionString": path_str,
                     "connectionType": "fileShare"
@@ -1933,7 +1936,7 @@ class GroupManager(object):
         ----------------  ---------------------------------------------------------
         title             required string, name of the group
         ----------------  ---------------------------------------------------------
-        tags              required, comma-delimited list of tags, or list of tags 
+        tags              required, comma-delimited list of tags, or list of tags
                           as strings
         ----------------  ---------------------------------------------------------
         description       optional string, describes group in detail
@@ -2087,7 +2090,7 @@ class ContentManager(object):
 
 
             .. note::
-                That content can be a file (such as a service definition, shapefile, CSV, layer package, 
+                That content can be a file (such as a service definition, shapefile, CSV, layer package,
                 file geodatabase, geoprocessing package, map package) or it can be a URL (to an ArcGIS Server
                 service, WMS service, or an application).
 
@@ -2209,7 +2212,7 @@ class ContentManager(object):
         owner_name = owner
         if isinstance(owner, User):
             owner_name = owner.username
-        
+
         if 'tags' in item_properties:
             if type(item_properties['tags']) is list:
                 item_properties['tags'] = ",".join(item_properties['tags'])
@@ -2249,9 +2252,9 @@ class ContentManager(object):
             copyright_text          optional string, copyright information associated with the dataset.
             wkid                    optional int, the well known id of the spatial reference for the service.
                                     All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
-            
+
             create_params           optional dict, containing all create parameters. If this parameter is used, all the parameters above are ignored
-            
+
             service_type            optional string, the type of service to be created, imageService, featureService
 
             owner                   optional string, the username of the owner
@@ -2516,7 +2519,7 @@ class ContentManager(object):
         }
 
         res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
-        
+
         fc = FeatureCollection(res['featureCollection']['layers'][0])
         return fc
 
@@ -2859,7 +2862,7 @@ class Group(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/images/group-no-image.png' 
+            return self._portal.url + '/home/images/group-no-image.png'
         else:
             thumbnail_url_path = self._portal.con.baseurl + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
@@ -3201,7 +3204,7 @@ class User(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg' 
+            return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/community/users/' + self.username + '/info/' + thumbnail_file
             return thumbnail_url_path
@@ -3537,7 +3540,7 @@ class Item(dict):
         if self._has_layers():
             layers = []
             tables = []
-            
+
             params = {"f" : "json"}
 
             if self.type == 'Image Service': # service that is itself a layer
@@ -3554,7 +3557,7 @@ class Item(dict):
                     lyrurl = self.url + '/' + lyr['name']
                     layers.append(Layer(lyrurl, self._gis))
 
-            
+
             elif self.type == 'Vector Tile Service':
                 layers.append(VectorTileLayer(self.url, self._gis))
 
@@ -3786,13 +3789,13 @@ class Item(dict):
             if self._gis.properties.portalName == 'ArcGIS Online':
                 return 'http://static.arcgis.com/images/desktopapp.png'
             else:
-                return self._portal.url + '/portalimages/desktopapp.png' 
+                return self._portal.url + '/portalimages/desktopapp.png'
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     def get_metadata(self):
-        """ Returns the item metadata for the specified item. 
+        """ Returns the item metadata for the specified item.
             Returns None if the item does not have metadata.
             Items with metadata have 'Metadata' in their typeKeywords
         """
@@ -3809,7 +3812,7 @@ class Item(dict):
                 raise e
 
     def download_metadata(self, save_folder=None):
-        """ Downloads the item metadata for the specified item id, returns file path. 
+        """ Downloads the item metadata for the specified item id, returns file path.
             Returns None if the item does not have metadata.
             Items with metadata have 'Metadata' in their typeKeywords
         """
@@ -3874,7 +3877,7 @@ class Item(dict):
             icon = "mapsgray16.png"
         else:
             icon = "layers16.png"
-        
+
         icon = self._portal.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
         return icon
 
@@ -4378,7 +4381,7 @@ class Item(dict):
             serviceitem_id = ret[0]['serviceItemId']
         except KeyError as ke:
             raise RuntimeError(ret[0]['error']['message'])
-        
+
         if 'jobId' in ret[0]:
             job_id = ret[0]['jobId']
             path = 'content/users/' + self.owner
@@ -4422,7 +4425,7 @@ class Item(dict):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         folder            required string, the name of the folder to move the item to.
-                          Use '/' for the root folder. For other folders, pass in the 
+                          Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dict containing the folder 'id',
                           such as the dict obtained from the folders property.
         ================  ===============================================================
@@ -4435,8 +4438,8 @@ class Item(dict):
                "owner": "<owner username>",
                "folder": "<folder id>"
             }
-            
-        
+
+
         """
         owner_name = self._portal.logged_in_user()['username']
 
@@ -4466,7 +4469,7 @@ class Item(dict):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        enable            optional boolean, True to enable delete protection, False to 
+        enable            optional boolean, True to enable delete protection, False to
                           to disable it
         ================  ===============================================================
 
@@ -4475,8 +4478,8 @@ class Item(dict):
             {
                "success": true | false
             }
-            
-        
+
+
         """
         try:
             folder = self.ownerFolder
