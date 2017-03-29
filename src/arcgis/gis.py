@@ -99,7 +99,9 @@ class GIS(object):
             self._url = self._portal.url
 
         self._con = self._portal.con
-
+        if self._con._auth.lower() != 'ANON'.lower() or \
+               self._con.auth is not None:
+            self.collaborations = CollaborationManager(gis=self)
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
@@ -124,16 +126,6 @@ class GIS(object):
         The resource manager for GIS content
         """
         return ContentManager(self)
-
-    @_lazy_property
-    def collaborations(self):
-        """
-        The collaboration manager
-        """
-        if self._con._auth.lower() == 'ANON'.lower() or \
-           self._con.auth is None:
-            return None
-        return CollaborationManager(gis=self)
 
     @_lazy_property
     def _datastores(self):
