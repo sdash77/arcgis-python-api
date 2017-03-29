@@ -142,7 +142,7 @@ class Feature(object):
         """ returns a list of feature fields """
         if 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
-            return self._attributes.keys()
+            return list(self._attributes.keys())
         else:
             return []
 
