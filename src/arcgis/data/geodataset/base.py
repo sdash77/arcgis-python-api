@@ -305,9 +305,9 @@ class BaseSpatialPandas(object):
         return _call_property(this=self, op="hull_rectangle")
     #----------------------------------------------------------------------
     @property
-    def isMultipart(self):
+    def is_multipart(self):
         """True, if the number of parts for the geometry is more than 1"""
-        return _call_property(this=self, op="isMultipart")
+        return _call_property(this=self, op="is_multipart")
     #----------------------------------------------------------------------
     @property
     def label_point(self):
@@ -401,7 +401,7 @@ class BaseSpatialPandas(object):
     #  Geometry Methods
     #
     #----------------------------------------------------------------------
-    def angleAndDistanceTo(self, second_geometry, method="GEODESIC"):
+    def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
         measurement type.
@@ -419,7 +419,7 @@ class BaseSpatialPandas(object):
             raise ValueError("Input second_geometry must be of type: "\
                              "A arcgis.types.Geometry not %s" % type(second_geometry))
         return _call_function(this=self,
-                              op="angleAndDistanceTo",
+                              op="angle_distance_to",
                               second_geometry=other,
                               method=method)
     #----------------------------------------------------------------------
@@ -550,7 +550,7 @@ class BaseSpatialPandas(object):
         return _call_function(this=self, op='disjoint',
                               second_geometry=second_geometry)
     #----------------------------------------------------------------------
-    def distanceTo(self, second_geometry):
+    def distance_to(self, second_geometry):
         """
         Returns the minimum distance between two geometries. If the
         geometries intersect, the minimum distance is 0.
@@ -559,7 +559,7 @@ class BaseSpatialPandas(object):
         Paramters:
          :second_geometry: - a second geometry
         """
-        return _call_function(this=self, op='distanceTo',
+        return _call_function(this=self, op='distance_to',
                               second_geometry=second_geometry,
                               null_value=-1)
     #----------------------------------------------------------------------
@@ -586,7 +586,7 @@ class BaseSpatialPandas(object):
         return _call_function(this=self, op='generalize',
                               max_offset=max_offset, isGeoseries=True)
     #----------------------------------------------------------------------
-    def getArea(self, method, units=None):
+    def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
 
@@ -602,11 +602,11 @@ class BaseSpatialPandas(object):
           SQUAREMILLIMETERS | SQUAREYARDS
 
         """
-        return _call_function(this=self, op='getArea', method=method,
+        return _call_function(this=self, op='get_area', method=method,
                               units=units,
                               second_geometry=None)
     #----------------------------------------------------------------------
-    def getLength(self, method, units):
+    def get_length(self, method, units):
         """
         Returns the length of the feature using a measurement type.
 
@@ -621,10 +621,10 @@ class BaseSpatialPandas(object):
           MILLIMETERS | NAUTICALMILES | YARDS
 
         """
-        return _call_function(this=self, op='getLength',
+        return _call_function(this=self, op='get_length',
                               method=method, units=units)
     #----------------------------------------------------------------------
-    def getPart(self, index=None):
+    def get_part(self, index=None):
         """
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
@@ -632,7 +632,7 @@ class BaseSpatialPandas(object):
         Parameters:
          :index: - The index position of the geometry.
         """
-        return _call_function(this=self, op='getPart',
+        return _call_function(this=self, op='get_part',
                               index=index)
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension):
@@ -657,7 +657,7 @@ class BaseSpatialPandas(object):
                               second_geometry=other, isGeoseries=True,
                                dimension=dimension)
     #----------------------------------------------------------------------
-    def measureOnLine(self, second_geometry, as_percentage=False):
+    def measure_on_line(self, second_geometry, as_percentage=False):
         """
         Returns a measure from the start point of this line to the in_point.
 
@@ -667,7 +667,7 @@ class BaseSpatialPandas(object):
           distance; if True, the measure will be returned as a percentage.
         """
         in_point = second_geometry
-        return _call_function(this=self, op="measureOnLine",
+        return _call_function(this=self, op="measure_on_line",
                               in_point=in_point, as_percentage=as_percentage,
                               isGeoseries=False)
     #----------------------------------------------------------------------
@@ -686,7 +686,7 @@ class BaseSpatialPandas(object):
                               second_geometry=second_geometry,
                               isGeoseries=False)
     #----------------------------------------------------------------------
-    def pointFromAngleAndDistance(self, angle, distance, method='GEODESCIC'):
+    def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
@@ -701,13 +701,13 @@ class BaseSpatialPandas(object):
           an alternative, if desired.
         """
         return _call_function(this=self,
-                              op='pointFromAngleAndDistance',
+                              op='point_from_angle_and_distance',
                               angle=angle,
                               distance=distance,
                               method=method,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def positionAlongLine(self, value, use_percentage=False):
+    def position_along_line(self, value, use_percentage=False):
         """
         Returns a point on a line at a specified distance from the beginning
         of the line.
@@ -721,13 +721,13 @@ class BaseSpatialPandas(object):
           0.0 (0%) to 1.0 (100%).
         """
         return _call_function(this=self,
-                              op='positionAlongLine',
+                              op='position_along_line',
                               second_geometry=None,
                               isGeoseries=True,
                               value=value,
                               use_percentage=use_percentage)
     #----------------------------------------------------------------------
-    def projectAs(self, spatial_reference, transformation_name=None):
+    def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
 
@@ -738,13 +738,13 @@ class BaseSpatialPandas(object):
          :transformation_name: - The geotransformation name.
         """
         return _call_function(this=self,
-                              op='projectAs',
+                              op='project_as',
                               spatial_reference=spatial_reference,
                               transformation_name=transformation_name,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def queryPointAndDistance(self, second_geometry,
-                              use_percentage=False):
+    def query_point_and_distance(self, second_geometry,
+                                 use_percentage=False):
         """
         Finds the point on the polyline nearest to the in_point and the
         distance between those points. Also returns information about the
@@ -758,13 +758,13 @@ class BaseSpatialPandas(object):
         """
         in_point = second_geometry
         return _call_function(this=self,
-                              op='queryPointAndDistance',
+                              op='query_point_and_distance',
                               in_point=in_point,
                               use_percentage=use_percentage,
                               isGeoseries=False)
     #----------------------------------------------------------------------
-    def segmentAlongLine(self, start_measure,
-                         end_measure, use_percentage=False):
+    def segment_along_line(self, start_measure,
+                           end_measure, use_percentage=False):
         """
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
@@ -782,13 +782,13 @@ class BaseSpatialPandas(object):
           expressed as a double from 0.0 (0 percent) to 1.0 (100 percent).
         """
         return _call_function(this=self,
-                              op='segmentAlongLine',
+                              op='segment_along_line',
                               start_measure=start_measure,
                               end_measure=end_measure,
                               use_percentage=use_percentage,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def snapToLine(self, second_geometry):
+    def snap_to_line(self, second_geometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
@@ -797,11 +797,11 @@ class BaseSpatialPandas(object):
         """
         in_point = second_geometry
         return _call_function(this=self,
-                              op='snapToLine',
+                              op='snap_to_line',
                               in_point=in_point,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def symmetricDifference (self, second_geometry):
+    def symmetric_difference(self, second_geometry):
         """
         Constructs the geometry that is the union of two geometries minus
         the instersection of those geometries.
@@ -810,7 +810,7 @@ class BaseSpatialPandas(object):
          :second_geometry: - a second geometry
         """
         return _call_function(this=self,
-                              op='symmetricDifference',
+                              op='symmetric_difference',
                               second_geometry=second_geometry,
                               isGeoseries=True)
 

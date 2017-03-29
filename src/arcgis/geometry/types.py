@@ -411,7 +411,7 @@ class Geometry(BaseGeometry):
         return
     #----------------------------------------------------------------------
     @property
-    def isMultipart(self):
+    def is_multipart(self):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
@@ -487,7 +487,7 @@ class Geometry(BaseGeometry):
         return
     #Functions#############################################################
     #----------------------------------------------------------------------
-    def angleAndDistanceTo(self, second_geometry, method="GEODESIC"):
+    def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
         measurement type.
@@ -649,7 +649,7 @@ class Geometry(BaseGeometry):
             return self.as_arcpy.disjoint(second_geometry=second_geometry)
         return None
     #----------------------------------------------------------------------
-    def distanceTo(self, second_geometry):
+    def distance_to(self, second_geometry):
         """
         Returns the minimum distance between two geometries. If the
         geometries intersect, the minimum distance is 0.
@@ -690,7 +690,7 @@ class Geometry(BaseGeometry):
             return Geometry(self.as_arcpy.generalize(distance=max_offset))
         return None
     #----------------------------------------------------------------------
-    def getArea(self, method, units=None):
+    def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
 
@@ -711,7 +711,7 @@ class Geometry(BaseGeometry):
                                          units=units)
         return None
     #----------------------------------------------------------------------
-    def getLength(self, method, units):
+    def get_length(self, method, units):
         """
         Returns the length of the feature using a measurement type.
 
@@ -731,7 +731,7 @@ class Geometry(BaseGeometry):
                                          units=units)
         return None
     #----------------------------------------------------------------------
-    def getPart(self, index=None):
+    def get_part(self, index=None):
         """
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
@@ -767,7 +767,7 @@ class Geometry(BaseGeometry):
                                            dimension=dimension)
         return None
     #----------------------------------------------------------------------
-    def measureOnLine(self, second_geometry, as_percentage=False):
+    def measure_on_line(self, second_geometry, as_percentage=False):
         """
         Returns a measure from the start point of this line to the in_point.
 
@@ -799,7 +799,7 @@ class Geometry(BaseGeometry):
             return self.as_arcpy.overlaps(second_geometry=second_geometry)
         return None
     #----------------------------------------------------------------------
-    def pointFromAngleAndDistance(self, angle, distance, method='GEODESCIC'):
+    def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
@@ -819,7 +819,7 @@ class Geometry(BaseGeometry):
                                                     method=method))
         return None
     #----------------------------------------------------------------------
-    def positionAlongLine(self, value, use_percentage=False):
+    def position_along_line(self, value, use_percentage=False):
         """
         Returns a point on a line at a specified distance from the beginning
         of the line.
@@ -837,7 +837,7 @@ class Geometry(BaseGeometry):
                                                   use_percentage=use_percentage))
         return None
     #----------------------------------------------------------------------
-    def projectAs(self, spatial_reference, transformation_name=None):
+    def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
 
@@ -852,7 +852,7 @@ class Geometry(BaseGeometry):
                                            transformation_name=transformation_name))
         return None
     #----------------------------------------------------------------------
-    def queryPointAndDistance(self, second_geometry,
+    def query_point_and_distance(self, second_geometry,
                               use_percentage=False):
         """
         Finds the point on the polyline nearest to the in_point and the
@@ -872,7 +872,7 @@ class Geometry(BaseGeometry):
                                                use_percentage=use_percentage)
         return None
     #----------------------------------------------------------------------
-    def segmentAlongLine(self, start_measure,
+    def segment_along_line(self, start_measure,
                          end_measure, use_percentage=False):
         """
         Returns a Polyline between start and end measures. Similar to
@@ -896,7 +896,7 @@ class Geometry(BaseGeometry):
                                            use_percentage=use_percentage))
         return None
     #----------------------------------------------------------------------
-    def snapToLine(self, second_geometry):
+    def snap_to_line(self, second_geometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
@@ -909,7 +909,7 @@ class Geometry(BaseGeometry):
             return Geometry(self.as_arcpy.snapToLine(in_point=second_geometry))
         return None
     #----------------------------------------------------------------------
-    def symmetricDifference (self, second_geometry):
+    def symmetric_difference (self, second_geometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
