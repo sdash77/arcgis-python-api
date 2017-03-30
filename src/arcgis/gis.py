@@ -3640,9 +3640,9 @@ class Item(dict):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
-    def download(self, save_path = None):
+    def download(self, save_path=None):
         """
-        Downloads the data to the specified folder or a tempoary folder if a folder isn't provided
+        Downloads the data to the specified folder or a temporary folder if a folder isn't provided
         :param save_path: Optional, location to download the file as a string
         :return: Returns download path if data was available else None.
         """
@@ -4161,8 +4161,9 @@ class Item(dict):
 
     def get_data(self, try_json=True):
         """Returns the data for the item.
-        If the data is a file, it's downloaded and the path to the downloaded file is returned.
-        Else if try_json is True, the method tries to convert it to a Python dict and returns it.
+        Binary files are downloaded and the path to the downloaded file is returned.
+        For JSON/text files, if try_json is True, the method tries to convert it to a Python dict and returns it, else
+        returns the data as a string. Zero byte files will return None.
         To convert this dict to string use json.dumps(data).
         Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
         item_data = self._portal.get_item_data(self.itemid, try_json)
