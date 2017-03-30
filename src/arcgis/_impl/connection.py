@@ -838,6 +838,9 @@ class _ArcGISConnection(object):
             # If we couldnt parse the response to JSON, return it as is
             except ValueError:
                 return resp_data
+            except TypeError as te:
+                _log.info(te.args[0])
+                return resp_data
 
         # If we got an HTTPError when making the request check to see if it's
         # related to token timeout, in which case, regenerate a token

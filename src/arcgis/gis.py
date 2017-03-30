@@ -3640,14 +3640,22 @@ class Item(dict):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
-    def download(self, save_path):
-        """Downloads the data to the specified folder or a tempoary folder if a folder isn't provided"""
+    def download(self, save_path = None):
+        """
+        Downloads the data to the specified folder or a tempoary folder if a folder isn't provided
+        :param save_path: Optional, location to download the file as a string
+        :return: Returns download path if data was available else None.
+        """
         data_path = 'content/items/' + self.itemid + '/data'
         if not save_path:
             save_path = self._workdir
         if data_path:
-            return self._portal.con.get(path=data_path, file_name=self.name,
-                                        out_folder=save_path, try_json=False)
+            download_path = self._portal.con.get(path=data_path, file_name=self.name or self.title,
+                                        out_folder=save_path, try_json=False, force_bytes=False)
+            if download_path == '':
+                return None
+            else:
+                return download_path
 
     def export(self, title, export_format, parameters=None, wait=True):
         """
@@ -4155,9 +4163,23 @@ class Item(dict):
         """Returns the data for the item.
         If the data is a file, it's downloaded and the path to the downloaded file is returned.
         Else if try_json is True, the method tries to convert it to a Python dict and returns it.
-        To convert this dict to string using json.dumps(data).
+        To convert this dict to string use json.dumps(data).
         Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
-        return self._portal.get_item_data(self.itemid, try_json)
+        item_data = self._portal.get_item_data(self.itemid, try_json)
+
+        if item_data == '':
+            return None
+        elif type(item_data) == bytes:
+            try:
+                item_data_str = item_data.decode('utf-8')
+                if item_data_str == '':
+                    return None
+                else:
+                    return item_data
+            except:
+                return item_data
+        else:
+            return item_data
 
     def dependent_upon(self):
         """ Returns items and urls, etc that this items depends upon  """
