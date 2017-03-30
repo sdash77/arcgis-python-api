@@ -487,6 +487,72 @@ class FeatureLayer(Layer):
         return ""
 
     # ----------------------------------------------------------------------
+    def delete_features(self,
+                        deletes=None,
+                        where=None,
+                        geometry_filter=None,
+                        gdb_version=None,
+                        rollback_on_failure=True):
+        """
+           This operation deletes features in a feature layer or table
+           Inputs:
+              deletes - string of OIDs to remove from service
+              where -  A where clause for the query filter. 
+                       Any legal SQL where clause operating on the fields in 
+                       the layer is allowed. Features conforming to the specified 
+                       where clause will be deleted.
+              geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                                with another geometry
+              gdb_version - Geodatabase version to apply the edits.
+              rollback_on_failure - Optional parameter to specify if the
+                                  edits should be applied only if all
+                                  submitted edits succeed. If false, the
+                                  server will apply the edits that succeed
+                                  even if some of the submitted edits fail.
+                                  If true, the server will apply the edits
+                                  only if all edits succeed. The default
+                                  value is true.
+           Output:
+              dictionary of messages
+        """
+        delete_url = self._url + "/deleteFeatures"
+        params = {
+            "f": "json",
+            "rollbackOnFailure": rollback_on_failure
+        }
+        if gdb_version is not None:
+            params['gdbVersion'] = gdb_version
+
+        if deletes is not None and \
+                isinstance(deletes, str):
+            params['objectIds'] = deletes
+        elif deletes is not None and \
+                isinstance(deletes, PropertyMap):
+            print('pass in delete, unable to convert PropertyMap to string list of OIDs')
+
+        elif deletes is not None and \
+                isinstance(deletes, FeatureSet):
+            params['objectIds'] = ",".join(
+                [str(feat.get_value(field_name=deletes.object_id_field_name)) for feat in deletes.features])
+
+        if where is not None:
+            params['where'] = where
+
+        if geometry_filter is not None and \
+                isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter is not None and \
+                isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val
+
+        if 'objectIds' not in params and 'where' not in params and 'geometry' not in params:
+            print("Parameters not valid for delete_features")
+            return None
+        return self._con.post(path=delete_url, postdata=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     def edit_features(self,
                       adds=None,
                       updates=None,
