@@ -6,6 +6,7 @@ Instances of this class, are available as a properties of feature layers and mak
 import collections
 import json
 import tempfile
+import time
 
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
@@ -553,3 +554,64 @@ class FeatureLayerManager(_GISResource):
         res = self._con.post(u_url, params)
         self.refresh()
         return res
+
+    # ----------------------------------------------------------------------
+    def truncate(self,
+                 attachment_only=False,
+                 async=False,
+                 wait=True):
+        """
+           The truncate operation supports deleting all features or attachments 
+           in a hosted feature service layer. The result of this operation is a 
+           response indicating success or failure with error code and description.
+           See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
+           for additional information on this function.
+           Input:
+              attachment_only - Deletes all the attachments for this layer.
+                                None of the layer features will be deleted 
+                                when attachmentOnly=true.
+              async - Supports options for asynchronous processing. The 
+                      default format is false. It is recommended to set 
+                      async=true for larger datasets.
+              wait - if async, wait to pause the process until the async 
+                     operation is completed.
+
+           Output:
+              JSON Message as dictionary
+
+        """
+        params = {
+            "f": "json",
+            "attachmentOnly": attachment_only,
+            "async": async
+        }
+        u_url = self._url + "/truncate"
+
+        if async:
+            if wait:
+                job = self._con.post(u_url, params)
+                status = self._get_status(url=job['statusUrl'])
+                while status['status'].lower() != "completed":
+                    status = self._get_status(url=job['statusUrl'])
+                    if status['status'].lower() == "failed":
+                        return status
+                    #wait before checking again
+                    time.wait(2)
+
+                res = status
+                self.refresh()
+            else:
+                res = self._con.post(u_url, params)
+                #Leave calling refresh to user since wait is false
+        else:
+            res = self._con.post(u_url, params)
+            self.refresh()
+        return res
+
+    # ----------------------------------------------------------------------
+    def _get_status(self, url):
+        """gets the status when exported async set to True"""
+        params = {"f": "json"}
+        url += "/status"
+        return self._con.get(url, params)
+
