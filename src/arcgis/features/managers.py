@@ -558,7 +558,7 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def truncate(self,
                  attachment_only=False,
-                 async=False,
+                 asynchronous=False,
                  wait=True):
         """
            The truncate operation supports deleting all features or attachments 
@@ -570,7 +570,7 @@ class FeatureLayerManager(_GISResource):
               attachment_only - Deletes all the attachments for this layer.
                                 None of the layer features will be deleted 
                                 when attachmentOnly=true.
-              async - Supports options for asynchronous processing. The 
+              asynchronous - Supports options for asynchronous processing. The
                       default format is false. It is recommended to set 
                       async=true for larger datasets.
               wait - if async, wait to pause the process until the async 
@@ -583,11 +583,11 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "attachmentOnly": attachment_only,
-            "async": async
+            "async": asynchronous
         }
         u_url = self._url + "/truncate"
 
-        if async:
+        if asynchronous:
             if wait:
                 job = self._con.post(u_url, params)
                 status = self._get_status(url=job['statusUrl'])
