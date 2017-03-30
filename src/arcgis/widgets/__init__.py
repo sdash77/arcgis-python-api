@@ -137,19 +137,18 @@ class MapView(widgets.DOMWidget):
         """
         if isinstance(item, dict) and 'function_chain' in item:
             js_layer = item['layer']._lyr_json
-            js_layer.update({
-                "options": json.dumps({
+            options_dict = {
                     "imageServiceParameters": {
                         "renderingRule": item['function_chain']
                     }
-                })
-            })
-            self._addlayer = json.dumps(js_layer)
-        elif isinstance(item, ImageryLayer) and options is None:
-            js_layer = item._lyr_json
-            if item._fn is not None:
-                js_layer.update({"options": json.dumps({"imageServiceParameters" : { "renderingRule": item._fn}})})
+                }
 
+            if options is not None:
+                options_dict.update(options)
+
+            js_layer.update({
+                "options": json.dumps(options_dict)
+            })
             self._addlayer = json.dumps(js_layer)
         elif isinstance(item, Layer):
             js_layer = item._lyr_json
