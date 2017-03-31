@@ -484,13 +484,13 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.fail("Error during test: " + str(testException))
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_download_method_zero_data(self):
+    def test_download_method_zero_size_data(self):
         """
         When Item has no data or 0kb size - ensure Item.download() returns None
         :return: 
         """
         try:
-            JSON_item = self.gis.content.search("set1_emtpy_webapp","web mapping application")[0]
+            JSON_item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
             json_file = JSON_item.download()
             json_file_size = os.stat(json_file).st_size
             self.assertIsNotNone(json_file, "Calling download() on zero kb item returns None")
@@ -609,7 +609,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.fail("Error during test: " + str(testException))
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_get_data_method_zero_data_tryjson_False(self):
+    def test_get_data_method_zero_size_data_tryjson_False(self):
         """
         When Item has no data, calling Item.get_data() with try_json False, 
         should return None.
@@ -632,7 +632,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.fail("Error during test: " + str(testException))
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_get_data_method_zero_data_tryjson_True(self):
+    def test_get_data_method_zero_size_data_tryjson_True(self):
         """
         When Item has no data, calling Item.get_data() with try_json True, 
         should return None.
@@ -654,8 +654,31 @@ class Test_Item_portal_builtin(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-#     TODO download item size 0
-#       TODO get_data item size 0
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_empty_data_tryjson_True(self):
+        """
+        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True, 
+        should return None.
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            self.assertGreater(item.size, 0, "Invalid item for this testcase, its size is not greater than 0")
+
+            item_data = item.get_data(try_json=True)
+
+            self.assertIsNone(item_data,
+                              "Calling get_data() on empty item with tryjson False does not return None")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
