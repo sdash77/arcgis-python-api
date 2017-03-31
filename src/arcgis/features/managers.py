@@ -114,7 +114,7 @@ class SyncManager(object):
                transport_type="esriTransportTypeUrl",
                return_attachments=False,
                return_attachments_databy_url=False,
-               async=False,
+               asynchronous=False,
                attachments_sync_direction="none",
                sync_model="none",
                data_format="json",
@@ -174,7 +174,7 @@ class SyncManager(object):
             creating a replica. AttachmentsSyncDirection is currently a createReplica property
             and cannot be overridden during sync.
             Values: none, upload, bidirectional
-           async - If true, the request is processed as an asynchronous job, and a URL is
+           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
             returned that a client can visit to check the status of the job. See the topic on
             asynchronous usage for more information. The default is false.
            syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
@@ -199,7 +199,7 @@ class SyncManager(object):
                                         transport_type,
                                         return_attachments,
                                         return_attachments_databy_url,
-                                        async,
+                                        asynchronous,
                                         attachments_sync_direction,
                                         sync_model,
                                         data_format,
@@ -215,7 +215,7 @@ class SyncManager(object):
                     return_ids_for_adds=False,
                     edits=None,
                     return_attachment_databy_url=False,
-                    async=False,
+                    asynchronous=False,
                     sync_direction="snapshot",
                     sync_layers="perReplica",
                     edits_upload_id=None,
@@ -233,7 +233,7 @@ class SyncManager(object):
                                              return_ids_for_adds,
                                              edits,
                                              return_attachment_databy_url,
-                                             async,
+                                             asynchronous,
                                              sync_direction,
                                              sync_layers,
                                              edits_upload_id,
@@ -591,18 +591,16 @@ class FeatureLayerManager(_GISResource):
             if wait:
                 job = self._con.post(u_url, params)
                 status = self._get_status(url=job['statusUrl'])
-                while status['status'].lower() != "completed":
+                while status['status'] not in ("Completed", "CompletedWithErrors", "Failed"):
+                    # wait before checking again
+                    time.sleep(2)
                     status = self._get_status(url=job['statusUrl'])
-                    if status['status'].lower() == "failed":
-                        return status
-                    #wait before checking again
-                    time.wait(2)
 
                 res = status
                 self.refresh()
             else:
                 res = self._con.post(u_url, params)
-                #Leave calling refresh to user since wait is false
+                # Leave calling refresh to user since wait is false
         else:
             res = self._con.post(u_url, params)
             self.refresh()

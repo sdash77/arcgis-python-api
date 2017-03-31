@@ -3658,6 +3658,7 @@ class Item(dict):
                 return download_path
 
     def export(self, title, export_format, parameters=None, wait=True):
+        import time
         """
         Exports a service item (POST only) to the specified output format.
         Available only to users with an organizational subscription.
