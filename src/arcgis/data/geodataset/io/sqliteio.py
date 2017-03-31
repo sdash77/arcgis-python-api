@@ -50,10 +50,13 @@ def to_sqlite(df,
             raise ValueError("Save folder does not exist")
         if os.path.isfile(sqldb) and overwrite:
             os.remove(sqldb)
-        elif os.path.isfile(sqldb) and overwrite:
-            raise ValueError("SQLite database exists, please pick a different name")
-        db = arcpy.CreateSQLiteDatabase_management(out_database_name=sqldb,
-                                                   spatial_type=spatial_type)[0]
+            db = arcpy.CreateSQLiteDatabase_management(out_database_name=sqldb,
+                                                           spatial_type=spatial_type)[0]
+        elif os.path.isfile(sqldb) and overwrite == False:
+            db = sqldb
+        elif os.path.isfile(sqldb) == False:
+            db = arcpy.CreateSQLiteDatabase_management(out_database_name=sqldb,
+                                                       spatial_type=spatial_type)[0]
         return to_featureclass(df=df, out_location=db, out_name=table_name)
     else:
         raise ImportError("arcpy is required to perform this operation")

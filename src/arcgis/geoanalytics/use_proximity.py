@@ -15,18 +15,19 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def create_buffers(input_layer,
-                   distance: float = 1,
-                   distance_unit: str = "Miles",
-                   field: str = None,
-                   method: str = """Planar""",
-                   dissolve_option: str = """None""",
-                   dissolve_fields: str = None,
-                   summary_fields: str = None,
-                   multipart: bool = False,
-                   output_name: str = None,
-                   context: str = None,
-                   gis=None):
+def create_buffers(
+    input_layer,
+    distance = 1,
+    distance_unit = "Miles",
+    field = None,
+    method = """Planar""",
+    dissolve_option = """None""",
+    dissolve_fields = None,
+    summary_fields = None,
+    multipart = False,
+    output_name = None,
+    context = None,
+    gis = None):
     """
 
     A buffer is an area that covers a given distance from a point, line, or polygon feature.
@@ -119,3 +120,15 @@ Returns:
 
     _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True)
     return output_service
+
+create_buffers.__annotations__ = {
+    'distance': float,
+    'distance_unit': str,
+    'field': str,
+    'method': str,
+    'dissolve_option': str,
+    'dissolve_fields': str,
+    'summary_fields': str,
+    'multipart': bool,
+    'output_name': str,
+    'context': str}

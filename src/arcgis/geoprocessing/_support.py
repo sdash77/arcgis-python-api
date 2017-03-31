@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime
 
 import inspect
@@ -217,7 +218,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                             klass = py_type
                             gp_params[gp_param_name] = klass.from_str(param_value)
 
-                        except sys.Error as e:
+                        except:
                             pass
 
             
@@ -231,7 +232,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                         klass = py_type
                         gp_params[gp_param_name] = klass.from_str(param_value)
 
-                    except sys.Error as e:
+                    except:
                         pass
 
                 elif isinstance(param_value, arcgis.gis.Layer):

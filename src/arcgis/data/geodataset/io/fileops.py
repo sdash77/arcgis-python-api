@@ -7,6 +7,7 @@ import os
 import six
 import copy
 import logging
+import tempfile
 from warnings import warn
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from six import iteritems, integer_types
 from datetime import datetime
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 from ..utils import sanitize_field_name
+from ....geometry import types
 try:
     import arcpy
     from arcpy import da
@@ -46,32 +48,30 @@ def from_featureclass(filename, **kwargs):
         geom_fields = fields + ['SHAPE@']
         flds = fields + ['SHAPE']
         vals = []
-        frames = []
+        geoms = []
+        geom_idx = flds.index('SHAPE')
         with arcpy.da.SearchCursor(filename,
                                    field_names=geom_fields,
                                    where_clause=where_clause,
                                    sql_clause=sql_clause,
                                    spatial_reference=sr) as rows:
-            sdf = SpatialDataFrame(columns=flds)
+
             for row in rows:
-                vals.append(dict(zip(flds, row)))
-                if len(vals) == 25000:
-                    frames.append(SpatialDataFrame.from_dict(data=vals))
-                    vals = []
+                row = list(row)
+                geoms.append(types.Geometry(row.pop(geom_idx)))
+                vals.append(row)
                 del row
             del rows
-        if len(vals) > 0:
-            frames.append(SpatialDataFrame.from_dict(data=vals))
-        sdf = pd.concat(frames)
+        df = pd.DataFrame(data=vals, columns=fields)
+        sdf = SpatialDataFrame(data=df, geometry=geoms)
         sdf.reset_index(drop=True, inplace=True)
-        del frames
+        del df
         if sr is None:
             sdf.sr = sr
         else:
             sdf.sr = sdf.geometry[0].spatialReference
         return sdf
     return
-
 #--------------------------------------------------------------------------
 def to_featureclass(df, out_name, out_location=None,
                     overwrite=True, out_sr=None,
@@ -120,15 +120,16 @@ def to_featureclass(df, out_name, out_location=None,
     if out_name.lower().endswith('.shp'):
         max_length = 10
     for col in df.columns:
-        if df[col].dtype.type in NUMERIC_TYPES:
-            df[col] = df[col].fillna(0)
-        elif df[col].dtype.type in DATETIME_TYPES:
-            dt_idx.append(idx)
-        else:
-            df.loc[df[col].isnull(), col] = ""
-        idx += 1
-        col = sanitize_field_name(s=col,
-                                  length=max_length)
+        if col.lower() != 'shape':
+            if df[col].dtype.type in NUMERIC_TYPES:
+                df[col] = df[col].fillna(0)
+            elif df[col].dtype.type in DATETIME_TYPES:
+                dt_idx.append(idx)
+            else:
+                df.loc[df[col].isnull(), col] = ""
+            idx += 1
+            col = sanitize_field_name(s=col,
+                                      length=max_length)
         cols.append(col)
         del col
     df.columns = cols
@@ -139,20 +140,47 @@ def to_featureclass(df, out_name, out_location=None,
     if arcpy.Exists(fc) ==  False:
         sr = df.sr
         if sr is None:
-            sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()]
+            sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
         fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                  out_name=out_name,
                                                  geometry_type=df.geometry_type.upper(),
                                                  spatial_reference=sr)[0]
-    oidField = arcpy.Describe(fc).oidFieldName
+    desc = arcpy.Describe(fc)
+    oidField = desc.oidFieldName
     col_insert = copy.copy(df.columns).tolist()
     lower_col_names = [f.lower() for f in col_insert]
-    if "SHAPE" in df.columns:
-        idx = col_insert.index("SHAPE")
-        col_insert[idx] = "SHAPE@"
+    idx_shp = None
+
     if oidField.lower() in lower_col_names:
         val = col_insert.pop(lower_col_names.index(oidField.lower()))
         del df[val]
+        col_insert = copy.copy(df.columns).tolist()
+        lower_col_names = [f.lower() for f in col_insert]
+    if hasattr(desc, "areaFieldName") and \
+       desc.areaFieldName.lower() in lower_col_names:
+        val = col_insert.pop(lower_col_names.index(desc.areaFieldName.lower()))
+        del df[val]
+        col_insert = copy.copy(df.columns).tolist()
+        lower_col_names = [f.lower() for f in col_insert]
+    elif 'shape_area' in lower_col_names:
+        val = col_insert.pop(lower_col_names.index('shape_area'))
+        del df[val]
+        col_insert = copy.copy(df.columns).tolist()
+        lower_col_names = [f.lower() for f in col_insert]
+    if hasattr(desc, "lengthFieldName") and \
+       desc.lengthFieldName.lower() in lower_col_names:
+        val = col_insert.pop(lower_col_names.index(desc.lengthFieldName.lower()))
+        del df[val]
+        col_insert = copy.copy(df.columns).tolist()
+        lower_col_names = [f.lower() for f in col_insert]
+    elif 'shape_length' in lower_col_names:
+        val = col_insert.pop(lower_col_names.index('shape_length'))
+        del df[val]
+        col_insert = copy.copy(df.columns).tolist()
+        lower_col_names = [f.lower() for f in col_insert]
+    if "SHAPE" in df.columns:
+        idx_shp = col_insert.index("SHAPE")
+        col_insert[idx_shp] = "SHAPE@"
     existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
     for col in col_insert:
         if col.lower().find('shape') == -1 and \
@@ -167,6 +195,8 @@ def to_featureclass(df, out_name, out_location=None,
                 row[i] = row[i].to_pydatetime()
                 del i
             try:
+                if idx_shp:
+                    row[idx_shp] = row[idx_shp].as_arcpy
                 icur.insertRow(row)
             except:
                 invalid_rows.append(index)
@@ -174,7 +204,10 @@ def to_featureclass(df, out_name, out_location=None,
                     raise Exception("Invalid row detected at index: %s" % index)
         else:
             try:
-                icur.insertRow(row.tolist())
+                row = row.tolist()
+                if idx_shp:
+                    row[idx_shp] = row[idx_shp].as_arcpy
+                icur.insertRow(row)
             except:
                 invalid_rows.append(index)
                 if skip_invalid == False:

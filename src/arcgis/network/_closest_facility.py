@@ -13,7 +13,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
-def find_closest_facilities(incidents: FeatureSet = {
+default_incidents = {
     'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
                {'alias': 'ID', 'name': 'ID', 'type': 'esriFieldTypeString', 'length': 128},
@@ -21,8 +21,9 @@ def find_closest_facilities(incidents: FeatureSet = {
                {'alias': 'Additional Distance', 'name': 'AdditionalDistance', 'type': 'esriFieldTypeDouble'},
                {'alias': 'Curb Approach', 'name': 'CurbApproach', 'type': 'esriFieldTypeSmallInteger'}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                            facilities: FeatureSet = {
+    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    
+default_facilities = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                             'length': 128},
@@ -34,17 +35,9 @@ def find_closest_facilities(incidents: FeatureSet = {
                                            {'alias': 'Curb Approach', 'name': 'CurbApproach',
                                             'type': 'esriFieldTypeSmallInteger'}], 'geometryType': 'esriGeometryPoint',
                                 'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                            measurement_units: str = """Minutes""",
-                            analysis_region: str = None,
-                            number_of_facilities_to_find: int = 1,
-                            cutoff: float = None,
-                            travel_direction: str = """Incident to Facility""",
-                            use_hierarchy: bool = True,
-                            time_of_day: datetime = None,
-                            time_of_day_usage: str = """Start Time""",
-                            uturn_at_junctions: str = """Allowed Only at Intersections and Dead Ends""",
-                            point_barriers: FeatureSet = {
+                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
+default_point_barriers = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                             'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -56,16 +49,18 @@ def find_closest_facilities(incidents: FeatureSet = {
                                            {'alias': 'CurbApproach', 'name': 'CurbApproach',
                                             'type': 'esriFieldTypeSmallInteger'}], 'geometryType': 'esriGeometryPoint',
                                 'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                            line_barriers: FeatureSet = {
+                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                
+                                
+default_line_barriers = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                             'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
                                                              'type': 'esriFieldTypeDouble'}],
                                 'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
                                 'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                                'features': []},
-                            polygon_barriers: FeatureSet = {
+                                'features': []}                                
+                                
+default_polygon_barriers = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                             'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -79,9 +74,9 @@ def find_closest_facilities(incidents: FeatureSet = {
                                            {'alias': 'SHAPE_Area', 'name': 'SHAPE_Area',
                                             'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPolygon',
                                 'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                            restrictions: str = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']""",
-                            attribute_parameter_values: FeatureSet = {
+                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                
+                                
+default_attributes = {
                                 'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'AttributeName', 'name': 'AttributeName',
                                             'type': 'esriFieldTypeString', 'length': 255},
@@ -316,17 +311,46 @@ def find_closest_facilities(incidents: FeatureSet = {
                                                                                                             'AttributeName': 'Width Restriction',
                                                                                                             'ParameterValue': '0',
                                                                                                             'ParameterName': 'Vehicle Width (meters)'}}],
-                                'displayFieldName': '', 'exceededTransferLimit': False},
-                            route_shape: str = """True Shape""",
-                            route_line_simplification_tolerance: LinearUnit = {'distance': 10, 'units': 'esriMeters'},
-                            populate_directions: bool = False,
-                            directions_language: str = """en""",
-                            directions_distance_units: str = """Miles""",
-                            directions_style_name: str = """NA Desktop""",
-                            time_zone_for_time_of_day: str = """Geographically Local""",
-                            travel_mode: str = """Custom""",
-                            impedance: str = """Drive Time""",
-                            gis=None) -> tuple:
+                                'displayFieldName': '', 'exceededTransferLimit': False}                                
+                                
+default_tolerance = {'distance': 10, 'units': 'esriMeters'}                                
+                                
+                                
+                                
+def find_closest_facilities(
+    incidents = default_incidents,
+    facilities = default_facilities,
+    measurement_units = """Minutes""",
+    analysis_region = None,
+    number_of_facilities_to_find = 1,
+    cutoff = None,
+    travel_direction = """Incident to Facility""",
+    use_hierarchy = True,
+    time_of_day = None,
+    time_of_day_usage = """Start Time""",
+    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
+    point_barriers = default_point_barriers,
+    line_barriers = default_line_barriers,
+    polygon_barriers = default_polygon_barriers,
+    restrictions = """['Avoid Unpaved Roads',
+    'Avoid Private Roads',
+    'Driving an Automobile',
+    'Through Traffic Prohibited',
+    'Roads Under Construction Prohibited',
+    'Avoid Gates',
+    'Avoid Express Lanes',
+    'Avoid Carpool Roads']""",
+    attribute_parameter_values = default_attributes,
+    route_shape = """True Shape""",
+    route_line_simplification_tolerance = default_tolerance,
+    populate_directions = False,
+    directions_language = """en""",
+    directions_distance_units = """Miles""",
+    directions_style_name = """NA Desktop""",
+    time_zone_for_time_of_day = """Geographically Local""",
+    travel_mode = """Custom""",
+    impedance = """Drive Time""",
+    gis = None):
     """
 
 
@@ -337,20 +361,20 @@ Parameters:
    incidents: Incidents (FeatureSet). Required parameter.  Specify one or more incidents (up to 1,000). These are the locations from which the tool searches
             for the nearby locations.
            When specifying the incidents, you can set properties for each one, such as its name or service time, by using attributes. The incidents can be specified with the following attributes:
-            Name—The name of the incident. The name is used in the driving
+            Name-The name of the incident. The name is used in the driving
             directions. If the name is not specified, a unique name prefixed
             with Location is automatically generated in the output routes and
             directions.
-            ID—A unique identifier for the incident. The identifier is included in the output routes (as the IncidentID field) and can help join additional information from the output routes, such as the total travel time or total distance, to attributes from your incidents or vice versa. If the ID isn't specified, the service autogenerates a unique identifier for each incident.  AdditionalTime—The amount of time spent at the incident, which is added to the total time of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are time based. The default value is 0. If you are finding the closest fire stations from fire incidents to estimate response times, the AdditionalTime attribute can store the amount of time it takes firefighters to hook up their equipment at the location of the incident before they can begin fighting the fire.  AdditionalDistance—The extra distance traveled at the incident, which is added to the total distance of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are distance based. The default value is 0. Generally, the location of an incident, such as a home, isn't exactly on the streets; it is set back somewhat from the road. This attribute value can be used to model the distance between the actual incident location and its location on the street, if it is important to include that distance in the total travel distance.
-            CurbApproach—Specifies the direction a vehicle may arrive at and depart
+            ID-A unique identifier for the incident. The identifier is included in the output routes (as the IncidentID field) and can help join additional information from the output routes, such as the total travel time or total distance, to attributes from your incidents or vice versa. If the ID isn't specified, the service autogenerates a unique identifier for each incident.  AdditionalTime-The amount of time spent at the incident, which is added to the total time of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are time based. The default value is 0. If you are finding the closest fire stations from fire incidents to estimate response times, the AdditionalTime attribute can store the amount of time it takes firefighters to hook up their equipment at the location of the incident before they can begin fighting the fire.  AdditionalDistance-The extra distance traveled at the incident, which is added to the total distance of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are distance based. The default value is 0. Generally, the location of an incident, such as a home, isn't exactly on the streets; it is set back somewhat from the road. This attribute value can be used to model the distance between the actual incident location and its location on the street, if it is important to include that distance in the total travel distance.
+            CurbApproach-Specifies the direction a vehicle may arrive at and depart
             from the incident. The field value is specified as one of the
             following integers (use the numeric code, not the name in parentheses):
-            0 (Either side of vehicle)—The vehicle can approach and depart the incident in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and practical for your vehicle to turn around at the incident. This decision may depend on the width of the road and the amount of traffic or whether the incident has a parking lot where vehicles can pull in and turn around. 1 ( Right side of vehicle)—When the vehicle approaches and departs the incident, the incident must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side.
-                2 (Left side of vehicle)—When the vehicle approaches and departs
+            0 (Either side of vehicle)-The vehicle can approach and depart the incident in either direction, so a U-turn is allowed at the incident. This setting can be chosen if it is possible and practical for your vehicle to turn around at the incident. This decision may depend on the width of the road and the amount of traffic or whether the incident has a parking lot where vehicles can pull in and turn around. 1 ( Right side of vehicle)-When the vehicle approaches and departs the incident, the incident must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side.
+                2 (Left side of vehicle)-When the vehicle approaches and departs
                 the incident, the curb must be on the left side of the vehicle. A
                 U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the left-hand side.
 
-                3 (No U-Turn)—When
+                3 (No U-Turn)-When
                 the vehicle approaches the incident, the curb can be on either side
                 of the vehicle; however, the vehicle must depart without turning
                 around.
@@ -359,24 +383,24 @@ Parameters:
    facilities: Facilities (FeatureSet). Required parameter.  Specify one or more facilities (up to 1,000). These are the locations that are searched for when
             finding the closest location.
            When specifying the facilities, you can set properties for each one, such as its name or service time, by using attributes. The facilities can be specified with the following attributes:
-            Name—The name of the facility. The name is used in the driving
+            Name-The name of the facility. The name is used in the driving
             directions. If the name is not specified, a unique name prefixed
             with Location is automatically generated in the output routes and
             directions.
-            ID—A unique identifier for the facility. The identifier is included in the output routes (as the FacilityID field) and the output closest facilities as FacilityID fields. The FacilityID field can be used to join additional information from the output routes, such as the total travel time or total distance, to attributes from your facilities. If the ID isn't specified, the service autogenerates a unique identifier for each facility.  AdditionalTime—The amount of time spent at the facility, which is added to the total time of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are time based. The default value is 0.
+            ID-A unique identifier for the facility. The identifier is included in the output routes (as the FacilityID field) and the output closest facilities as FacilityID fields. The FacilityID field can be used to join additional information from the output routes, such as the total travel time or total distance, to attributes from your facilities. If the ID isn't specified, the service autogenerates a unique identifier for each facility.  AdditionalTime-The amount of time spent at the facility, which is added to the total time of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are time based. The default value is 0.
             If you are finding the closest fire stations to fire incidents, AdditionalTime can store the
             time it tends to takes a crew to don the appropriate protective equipment
             and exit the fire station.
-            AdditionalDistance—The extra distance traveled at the facility, which is added to the total distance of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are distance based. The default value is 0. Generally the location of a facility, such as a fire station, isn't exactly on a street; it is set back somewhat from the road. AdditionalDistance can model the distance between the actual facility location and its location on the street, if it is important to include that distance in the total travel distance.
+            AdditionalDistance-The extra distance traveled at the facility, which is added to the total distance of the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute value is included in the analysis only when the measurement units are distance based. The default value is 0. Generally the location of a facility, such as a fire station, isn't exactly on a street; it is set back somewhat from the road. AdditionalDistance can model the distance between the actual facility location and its location on the street, if it is important to include that distance in the total travel distance.
             CurbApproach:  Specifies the direction a vehicle may arrive at and depart
             from the facility. The field value is specified as one of the
             following integers (use the numeric code, not the name in parentheses):
-            0 (Either side of vehicle)—The vehicle can approach and depart the facility in either direction, so a U-turn is allowed at the facility. This setting can be chosen if it is possible and practical for your vehicle to turn around at the facility. This decision may depend on the width of the road and the amount of traffic or whether the facility has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)—When the vehicle approaches and departs the facility, the facility must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side.
-                2 (Left side of vehicle)—When the vehicle approaches and departs
+            0 (Either side of vehicle)-The vehicle can approach and depart the facility in either direction, so a U-turn is allowed at the facility. This setting can be chosen if it is possible and practical for your vehicle to turn around at the facility. This decision may depend on the width of the road and the amount of traffic or whether the facility has a parking lot where vehicles can pull in and turn around.  1 (Right side of vehicle)-When the vehicle approaches and departs the facility, the facility must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side.
+                2 (Left side of vehicle)-When the vehicle approaches and departs
                 the facility, the curb must be on the left side of the vehicle. A
                 U-turn is prohibited. This is typically used for vehicles such as buses that must arrive with the bus stop on the left-hand side.
 
-                3 (No U-Turn)—When
+                3 (No U-Turn)-When
                 the vehicle approaches the facility, the curb can be on either side
                 of the vehicle; however, the vehicle must depart without turning
                 around.
@@ -416,10 +440,10 @@ Parameters:
             facility as measured from the incident to the facility or from the
             facility to the incident.
 
-                Facility to Incident—Direction of travel is from
+                Facility to Incident-Direction of travel is from
                 facilities to incidents.
 
-                Incident to Facility—Direction of travel is from
+                Incident to Facility-Direction of travel is from
                 incidents to facilities.
 
             Using one of the parameter values can find different
@@ -441,7 +465,7 @@ Parameters:
    use_hierarchy: Use Hierarchy (bool). Optional parameter.  Specify whether hierarchy should be used when finding the best
             route between the facility and the incident.
 
-                Checked (True)—Use hierarchy when finding routes. When
+                Checked (True)-Use hierarchy when finding routes. When
                 hierarchy is used, the tool prefers higher-order streets (such as
                 freeways) to lower-order streets (such as local roads), and can be used
                 to simulate the driver preference of traveling on freeways instead
@@ -450,7 +474,7 @@ Parameters:
                 especially for long-distance routes, as the tool has to select the
                 best route from a relatively smaller subset of streets.
 
-                Unchecked (False)—Do not use hierarchy when finding routes. If
+                Unchecked (False)-Do not use hierarchy when finding routes. If
                 hierarchy is not used, the tool considers all the streets and doesn't
                 prefer higher-order streets when finding the route. This is often
                 used when finding short-distance routes within a city.
@@ -476,11 +500,11 @@ Parameters:
    time_of_day_usage: Time of Day Usage (str). Optional parameter.  Indicates whether the Time of Day parameter value
             represents the arrival or departure time for the routes.
 
-                Start Time—When this option is chosen, the tool finds
+                Start Time-When this option is chosen, the tool finds
                 the best route considering the Time of Day parameter value as the
                 departure time from the facility or incident.
 
-                End Time—When this option is chosen, the tool considers
+                End Time-When this option is chosen, the tool considers
                 the Time of Day parameter value as the arrival time at the facility
                 or incident. This option is useful if you want to know what time to
                 depart from a location so you arrive at the destination at the
@@ -489,8 +513,8 @@ Parameters:
 
    uturn_at_junctions: UTurn at Junctions (str). Optional parameter.  The U-Turn policy at junctions. Allowing U-turns implies the solver can turn around at a junction and double back on the same street.
 
-            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around at some junctions but not at others—it depends on whether the junction represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how many edges connect to the junction, which is known as junction valency. The acceptable values for this parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
-            Allowed—U-turns are permitted at junctions with any number of connected edges. This is the default value.  Not Allowed—U-turns are prohibited at all junctions, regardless of junction valency. Note, however, that U-turns are still permitted at network locations even when this setting is chosen; however, you can set the individual network locations' CurbApproach property to prohibit U-turns there as well.  Allowed only at Dead Ends—U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).  Allowed only at Intersections and Dead Ends—U-turns are prohibited at junctions where exactly two adjacent edges meet but are permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly one adjacent edge).  Oftentimes, networks have extraneous junctions in the middle of road segments. This option prevents vehicles from making U-turns at these locations.
+            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around at some junctions but not at others-it depends on whether the junction represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how many edges connect to the junction, which is known as junction valency. The acceptable values for this parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
+            Allowed-U-turns are permitted at junctions with any number of connected edges. This is the default value.  Not Allowed-U-turns are prohibited at all junctions, regardless of junction valency. Note, however, that U-turns are still permitted at network locations even when this setting is chosen; however, you can set the individual network locations' CurbApproach property to prohibit U-turns there as well.  Allowed only at Dead Ends-U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).  Allowed only at Intersections and Dead Ends-U-turns are prohibited at junctions where exactly two adjacent edges meet but are permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly one adjacent edge).  Oftentimes, networks have extraneous junctions in the middle of road segments. This option prevents vehicles from making U-turns at these locations.
       Choice list:['Allowed', 'Not Allowed', 'Allowed Only at Dead Ends', 'Allowed Only at Intersections and Dead Ends']
 
    point_barriers: Point Barriers (FeatureSet). Optional parameter.  Specify one or more points to act as temporary
@@ -507,11 +531,11 @@ Parameters:
             for this attribute is specified as one of the following
             integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits travel through the barrier. The barrier
+                0 (Restriction)-Prohibits travel through the barrier. The barrier
                 is referred to as a restriction point barrier since it acts as a
                 restriction.
 
-                2 (Added Cost)—Traveling through the barrier increases the travel
+                2 (Added Cost)-Traveling through the barrier increases the travel
                 time or distance by the amount specified in the
                 Additional_Time or Additional_Distance field. This barrier type is
                 referred to as an added-cost point barrier.
@@ -555,13 +579,13 @@ Parameters:
             or scales the time or distance for traveling through it. The field
             value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits traveling through any part of the barrier.
+                0 (Restriction)-Prohibits traveling through any part of the barrier.
                 The barrier is referred to as a restriction polygon barrier since it
                 prohibits traveling on streets intersected by the barrier. One use
                 of this type of barrier is to model floods covering areas of the
                 street that make traveling on those streets impossible.
 
-                1 (Scaled Cost)—Scales the time or distance required to travel the
+                1 (Scaled Cost)-Scales the time or distance required to travel the
                 underlying streets by a factor specified using the ScaledTimeFactor
                 or ScaledDistanceFactor fields. If the streets are partially
                 covered by the barrier, the travel time or distance is apportioned
@@ -593,114 +617,114 @@ Parameters:
               restriction to be correctly used when finding traversable roads.
              Some restrictions are supported only in certain countries; their availability is stated by region in the list below. Of the restrictions that have limited availability within a region, you can check whether the restriction is available in a particular country by looking at the table in the Country List section of the Data coverage for network analysis services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select availability in the region is supported in that country. If you specify restriction names that are not available in the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
             The tool supports the following restrictions:
-                  Any Hazmat Prohibited—The results will not include roads
+                  Any Hazmat Prohibited-The results will not include roads
                   where transporting any kind of hazardous material is
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Avoid Carpool Roads—The results will avoid roads that are
+                  Avoid Carpool Roads-The results will avoid roads that are
                   designated exclusively for carpool (high-occupancy)
                   vehicles.
                  Availability: All countries
-                  Avoid Express Lanes—The results will avoid roads designated
+                  Avoid Express Lanes-The results will avoid roads designated
                   as express lanes.
-                 Availability: All countries Avoid Ferries—The results will avoid ferries.  Availability: All countries
-                  Avoid Gates—The results will avoid roads where there are
+                 Availability: All countries Avoid Ferries-The results will avoid ferries.  Availability: All countries
+                  Avoid Gates-The results will avoid roads where there are
                   gates such as keyed access or guard-controlled
                   entryways.
                  Availability: All countries
-                  Avoid Limited Access Roads—The results will avoid roads
+                  Avoid Limited Access Roads-The results will avoid roads
                   that are limited access highways.
                  Availability: All countries
-                  Avoid Private Roads—The results will avoid roads that are
+                  Avoid Private Roads-The results will avoid roads that are
                   not publicly owned and maintained.
                  Availability: All countries
-                  Avoid Toll Roads—The results will avoid toll
+                  Avoid Toll Roads-The results will avoid toll
                   roads.
                  Availability: All countries
-                  Avoid Unpaved Roads—The results will avoid roads that are
+                  Avoid Unpaved Roads-The results will avoid roads that are
                   not paved (for example, dirt, gravel, and so on).
                  Availability: All countries
-                  Axle Count Restriction—The results will not include roads
+                  Axle Count Restriction-The results will not include roads
                   where trucks with the specified number of axles are prohibited. The
                   number of axles can be specified using the Number of Axles
                   restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Driving a Bus—The results will not include roads where
+                  Driving a Bus-The results will not include roads where
                   buses are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Delivery Vehicle—The results will not include
+                  Driving a Delivery Vehicle-The results will not include
                   roads where delivery vehicles are prohibited. Using this restriction
                   will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Driving a Taxi—The results will not include roads where
+                  Driving a Taxi-The results will not include roads where
                   taxis are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Truck—The results will not include roads where
+                  Driving a Truck-The results will not include roads where
                   trucks are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Automobile—The results will not include roads
+                  Driving an Automobile-The results will not include roads
                   where automobiles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Emergency Vehicle—The results will not include
+                  Driving an Emergency Vehicle-The results will not include
                   roads where emergency vehicles are prohibited. Using this
                   restriction will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Height Restriction—The results will not include roads
+                  Height Restriction-The results will not include roads
                   where the vehicle height exceeds the maximum allowed height for the
                   road. The vehicle height can be specified using the Vehicle Height
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Kingpin to Rear Axle Length Restriction—The results will
+                  Kingpin to Rear Axle Length Restriction-The results will
                   not include roads where the vehicle length exceeds the maximum
                   allowed kingpin to rear axle for all trucks on the road. The length
                   between the vehicle kingpin and the rear axle can be specified
                   using the Vehicle Kingpin to Rear Axle Length (meters) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Length Restriction—The results will not include roads
+                  Length Restriction-The results will not include roads
                   where the vehicle length exceeds the maximum allowed length for the
                   road. The vehicle length can be specified using the Vehicle Length
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Riding a Motorcycle—The results will not include roads
+                  Riding a Motorcycle-The results will not include roads
                   where motorcycles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Roads Under Construction Prohibited—The results will not
+                  Roads Under Construction Prohibited-The results will not
                   include roads that are under construction.
                  Availability: All countries
-                  Semi or Tractor with One or More Trailers Prohibited—The
+                  Semi or Tractor with One or More Trailers Prohibited-The
                   results will not include roads where semis or tractors with one or
                   more trailers are prohibited.
                  Availability: Select countries in North America and Europe
-                  Single Axle Vehicles Prohibited—The results will not
+                  Single Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with single axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Tandem Axle Vehicles Prohibited—The results will not
+                  Tandem Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with tandem axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Through Traffic Prohibited—The results will not include
+                  Through Traffic Prohibited-The results will not include
                   roads where through traffic (non local) is prohibited.
                  Availability: All countries
-                  Truck with Trailers Restriction—The results will not
+                  Truck with Trailers Restriction-The results will not
                   include roads where trucks with the specified number of trailers on
                   the truck are prohibited. The number of trailers on the truck can
                   be specified using the Number of Trailers on Truck restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Hazmat Routes—The results will prefer roads
+                  Use Preferred Hazmat Routes-The results will prefer roads
                   that are designated for transporting any kind of hazardous
                   materials.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Truck Routes—The results will prefer roads
+                  Use Preferred Truck Routes-The results will prefer roads
                   that are designated as truck routes, such as the roads that are
                   part of the national network as specified by the National Surface
                   Transportation Assistance Act in the United States, or roads that
@@ -708,21 +732,21 @@ Parameters:
                   that are preferred by the trucks when driving in an
                   area.
                  Availability: Select countries in North America and Europe
-                  Walking—The results will not include roads where
+                  Walking-The results will not include roads where
                   pedestrians are prohibited.
                  Availability: All countries
-                  Weight Restriction—The results will not include roads
+                  Weight Restriction-The results will not include roads
                   where the vehicle weight exceeds the maximum allowed weight for the
                   road. The vehicle weight can be specified using the Vehicle Weight
                   (kilograms) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Weight per Axle Restriction—The results will not include
+                  Weight per Axle Restriction-The results will not include
                   roads where the vehicle weight per axle exceeds the maximum allowed
                   weight per axle for the road. The vehicle weight per axle can be
                   specified using the Vehicle Weight per Axle (kilograms) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Width Restriction—The results will not include roads where
+                  Width Restriction-The results will not include roads where
                   the vehicle width exceeds the maximum allowed width for the road.
                   The vehicle width can be specified using the Vehicle Width (meters)
                   restriction parameter.
@@ -757,29 +781,29 @@ Parameters:
             preferred. The Restriction Usage ParameterName can be assigned any of
             the following string values or their equivalent numeric values
             listed within the parentheses:
-                PROHIBITED (-1)—Travel on the roads using the restriction is completely
+                PROHIBITED (-1)-Travel on the roads using the restriction is completely
                 prohibited.
 
-                AVOID_HIGH (5)—It
+                AVOID_HIGH (5)-It
                 is highly unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                AVOID_MEDIUM (2)—It
+                AVOID_MEDIUM (2)-It
                 is unlikely for the tool to include in the route the roads that are
                 associated with the restriction.
 
-                AVOID_LOW (1.3)—It
+                AVOID_LOW (1.3)-It
                 is somewhat unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_LOW (0.8)—It
+                PREFER_LOW (0.8)-It
                 is somewhat likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_MEDIUM (0.5)—It is likely for the tool to include in the route the roads that
+                PREFER_MEDIUM (0.5)-It is likely for the tool to include in the route the roads that
                 are associated with the restriction.
 
-                PREFER_HIGH (0.2)—It is highly likely for the tool to include in the route the roads
+                PREFER_HIGH (0.2)-It is highly likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
             In most cases, you can use the default value, PROHIBITED,
@@ -810,13 +834,13 @@ Parameters:
             tool. The parameter can be specified using one of the following
             values:
 
-                True Shape—Return the exact shape of the resulting route
+                True Shape-Return the exact shape of the resulting route
                 that is based on the underlying streets.
 
-                Straight Line—Return a straight line between the
+                Straight Line-Return a straight line between the
                 incident and the facility.
 
-                None—Do not return any shapes for the routes. This value
+                None-Do not return any shapes for the routes. This value
                 can be useful in cases where you are only interested in determining
                 the total travel time or travel distance between the closest
                 facility and the incident.
@@ -863,7 +887,7 @@ Parameters:
             Directions parameter is checked, or set to True.
 
             The parameter value can be
-            specified using one of the following two- or five-character language codes: ar—Arabic cs—Czech de—German el—Greek en—English es—Spanish et—Estonian fr—French he—Hebrew it—Italian ja—Japanese ko—Korean lt—Lithuanian lv—Latvian nl—Dutch pl—Polish pt-BR—Brazilian Portuguese pt-PT—European Portuguese ru—Russian sv—Swedish th—Thai tr—Turkish zh-CN—Simplified Chinese
+            specified using one of the following two- or five-character language codes: ar-Arabic cs-Czech de-German el-Greek en-English es-Spanish et-Estonian fr-French he-Hebrew it-Italian ja-Japanese ko-Korean lt-Lithuanian lv-Latvian nl-Dutch pl-Polish pt-BR-Brazilian Portuguese pt-PT-European Portuguese ru-Russian sv-Swedish th-Thai tr-Turkish zh-CN-Simplified Chinese
             If an unsupported language code is specified, the tool
             returns the directions using the default language,
             English.
@@ -924,7 +948,7 @@ Parameters:
 
    impedance: Impedance (str). Optional parameter.  Specify the
             impedance, which is a value that represents the effort or cost of traveling along road segments or on other parts of the transportation network.
-           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes—a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode—a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time—Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. This is the default value. Truck Time—Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time—Models travel times for a pedestrian. Travel Distance—Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
+           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes-a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode-a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time-Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. This is the default value. Truck Time-Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel times for a pedestrian. Travel Distance-Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
       Choice list:['Drive Time', 'Truck Time', 'Walk Time', 'Travel Distance']
 
 gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -985,3 +1009,31 @@ See http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Close
     url = gis.properties.helperServices.asyncVRP.url[:-len('/FindClosestFacilities')]
 
     return _execute_gp_tool(gis, "FindClosestFacilities", kwargs, param_db, return_values, _use_async, url)
+
+find_closest_facilities.__annotations__ = {
+    'incidents': FeatureSet,
+    'facilities': FeatureSet,
+    'measurement_units': str,
+    'analysis_region': str,
+    'number_of_facilities_to_find': int,
+    'cutoff': float,
+    'travel_direction': str,
+    'use_hierarchy': bool,
+    'time_of_day': datetime,
+    'time_of_day_usage': str,
+    'uturn_at_junctions': str,
+    'point_barriers': FeatureSet,
+    'line_barriers': FeatureSet,
+    'polygon_barriers': FeatureSet,
+    'restrictions': str,
+    'attribute_parameter_values': FeatureSet,
+    'route_shape': str,
+    'route_line_simplification_tolerance': LinearUnit,
+    'populate_directions': bool,
+    'directions_language': str,
+    'directions_distance_units': str,
+    'directions_style_name': str,
+    'time_zone_for_time_of_day': str,
+    'travel_mode': str,
+    'impedance': str,
+    'return': tuple}    

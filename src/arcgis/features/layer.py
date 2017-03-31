@@ -8,6 +8,7 @@ A FeatureLayerCollection is a collection of feature layers and tables, with the 
 import json
 import os
 from re import search
+import time
 
 import six
 from arcgis._impl.common import _utils
@@ -203,8 +204,8 @@ class FeatureLayer(Layer):
                             the timeFilter should be as UTC timestampes in
                             milliseconds.  No checking occurs to see if they
                             are in the right format.
-                geometryFilter - a GeometryFilter object to parse down a given
-                               query by another spatial dataset.
+                geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                                with another geometry
                 maxAllowableOffset - This option can be used to specify the
                                      maxAllowableOffset to be used for
                                      generalizing geometries returned by
@@ -293,7 +294,7 @@ class FeatureLayer(Layer):
                  Query REST API.
             Output:
                A FeatureSet containing the features matching the query
-               unless another return type is specified, such as return
+               unless another return type is specified, such as count
          """
         url = self._url + "/query"
         params = {"f": "json"}
@@ -487,6 +488,72 @@ class FeatureLayer(Layer):
         return ""
 
     # ----------------------------------------------------------------------
+    def delete_features(self,
+                        deletes=None,
+                        where=None,
+                        geometry_filter=None,
+                        gdb_version=None,
+                        rollback_on_failure=True):
+        """
+           This operation deletes features in a feature layer or table
+           Inputs:
+              deletes - string of OIDs to remove from service
+              where -  A where clause for the query filter. 
+                       Any legal SQL where clause operating on the fields in 
+                       the layer is allowed. Features conforming to the specified 
+                       where clause will be deleted.
+              geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                                with another geometry
+              gdb_version - Geodatabase version to apply the edits.
+              rollback_on_failure - Optional parameter to specify if the
+                                  edits should be applied only if all
+                                  submitted edits succeed. If false, the
+                                  server will apply the edits that succeed
+                                  even if some of the submitted edits fail.
+                                  If true, the server will apply the edits
+                                  only if all edits succeed. The default
+                                  value is true.
+           Output:
+              dictionary of messages
+        """
+        delete_url = self._url + "/deleteFeatures"
+        params = {
+            "f": "json",
+            "rollbackOnFailure": rollback_on_failure
+        }
+        if gdb_version is not None:
+            params['gdbVersion'] = gdb_version
+
+        if deletes is not None and \
+                isinstance(deletes, str):
+            params['objectIds'] = deletes
+        elif deletes is not None and \
+                isinstance(deletes, PropertyMap):
+            print('pass in delete, unable to convert PropertyMap to string list of OIDs')
+
+        elif deletes is not None and \
+                isinstance(deletes, FeatureSet):
+            params['objectIds'] = ",".join(
+                [str(feat.get_value(field_name=deletes.object_id_field_name)) for feat in deletes.features])
+
+        if where is not None:
+            params['where'] = where
+
+        if geometry_filter is not None and \
+                isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter is not None and \
+                isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val
+
+        if 'objectIds' not in params and 'where' not in params and 'geometry' not in params:
+            print("Parameters not valid for delete_features")
+            return None
+        return self._con.post(path=delete_url, postdata=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     def edit_features(self,
                       adds=None,
                       updates=None,
@@ -540,8 +607,11 @@ class FeatureLayer(Layer):
             elif isinstance(adds[0], PropertyMap):
                 params['adds'] = json.dumps([dict(f) for f in adds],
                                             default=_date_handler)
+            elif isinstance(adds[0], Feature):
+                params['adds'] = json.dumps([f.as_dict for f in adds],
+                                               default=_date_handler)
             else:
-                print('pass in features as dict or PropertyMap')
+                print('pass in features as list of Features, dicts or PropertyMap')
         if isinstance(updates, FeatureSet):
             params['updates'] = json.dumps([f.as_dict for f in updates.features],
                                            default=_date_handler)
@@ -556,7 +626,7 @@ class FeatureLayer(Layer):
                 params['updates'] = json.dumps([f.as_dict for f in updates],
                                                default=_date_handler)
             else:
-                print('pass in features as dict or PropertyMap')
+                print('pass in features as list of Features, dicts or PropertyMap')
         if deletes is not None and \
                 isinstance(deletes, str):
             params['deletes'] = deletes
@@ -632,6 +702,7 @@ class FeatureLayer(Layer):
 
 class Table(FeatureLayer):
     """
+    Tables represent entity classes with uniform properties. In addition to working with "entities with location" as
     Tables represent entity classes with uniform properties. In addition to working with entities with location as
     features, the GIS can also work with non-spatial entities as rows in tables.
 
@@ -742,7 +813,9 @@ class FeatureLayerCollection(_GISResource):
             params['geometryType'] = geometry_filter['geometryType']
             params['spatialRel'] = geometry_filter['spatialRel']
             params['geometry'] = geometry_filter['geometry']
+            if 'inSR' in geometry_filter:
             params['inSR'] = geometry_filter['inSR']
+
         if out_sr is not None and \
                 isinstance(out_sr, SpatialReference):
             params['outSR'] = out_sr
@@ -916,7 +989,7 @@ class FeatureLayerCollection(_GISResource):
                         transport_type="esriTransportTypeUrl",
                         return_attachments=False,
                         return_attachments_data_by_url=False,
-                        async=False,
+                        asynchronous=False,
                         attachments_sync_direction="none",
                         sync_model="none",
                         data_format="json",
@@ -949,8 +1022,8 @@ class FeatureLayerCollection(_GISResource):
             Example:
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometryFilter - Geospatial filter applied to the replica to
-            parse down data output.
+           geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
+                            with another geometry
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
@@ -976,7 +1049,7 @@ class FeatureLayerCollection(_GISResource):
             creating a replica. AttachmentsSyncDirection is currently a createReplica property
             and cannot be overridden during sync.
             Values: none, upload, bidirectional
-           async - If true, the request is processed as an asynchronous job, and a URL is
+           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
             returned that a client can visit to check the status of the job. See the topic on
             asynchronous usage for more information. The default is false.
            syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
@@ -1003,7 +1076,7 @@ class FeatureLayerCollection(_GISResource):
             "returnAttachments": return_attachments,
             "returnAttachmentsDatabyURL": return_attachments_data_by_url,
             "attachmentsSyncDirection": attachments_sync_direction,
-            "async": async,
+            "async": asynchronous,
             "syncModel": sync_model,
             "layers": layers
         }
@@ -1023,14 +1096,16 @@ class FeatureLayerCollection(_GISResource):
         if transport_type is not None:
             params['transportType'] = transport_type
 
-        if async:
+        if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params, token=self._token)
                 status = self._replica_status(url=export_job['statusUrl'])
-                while status['status'].lower() != "completed":
-                    status = self._replica_status(url=export_job['statusUrl'])
-                    if status['status'].lower() == "failed":
+                while status['status'] not in ("Completed", "CompletedWithErrors"):
+                    if status['status'] == "Failed":
                         return status
+                    # wait before checking again
+                    time.sleep(2)
+                    status = self._replica_status(url=export_job['statusUrl'])
 
                 res = status
 
@@ -1067,7 +1142,7 @@ class FeatureLayerCollection(_GISResource):
                              return_ids_for_adds=False,
                              edits=None,
                              return_attachment_databy_url=False,
-                             async=False,
+                             asynchronous=False,
                              sync_direction="snapshot",
                              sync_layers="perReplica",
                              edits_upload_id=None,
@@ -1093,8 +1168,8 @@ class FeatureLayerCollection(_GISResource):
             params['returnIdsForAdds'] = return_ids_for_adds
         if return_attachment_databy_url is not None:
             params['returnAttachmentDatabyURL'] = return_attachment_databy_url
-        if async is not None:
-            params['async'] = async
+        if asynchronous is not None:
+            params['async'] = asynchronous
         if sync_direction is not None:
             params['syncDirection'] = sync_direction
         if sync_layers is not None:

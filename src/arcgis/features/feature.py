@@ -6,8 +6,6 @@ import copy
 import json
 import os
 import re
-import time
-import datetime
 import tempfile
 import uuid
 
@@ -17,29 +15,6 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
 from arcgis.gis import Layer
 
-
-#----------------------------------------------------------------------
-def _date_handler(obj):
-    if isinstance(obj, datetime.datetime):
-        return local_time_to_online(obj)
-    else:
-        return obj
-#----------------------------------------------------------------------
-def local_time_to_online(dt=None):
-    """
-       converts datetime object to a UTC timestamp for AGOL
-       Inputs:
-          dt - datetime object
-       Output:
-          Long value
-    """
-    if dt is None:
-        dt = datetime.datetime.now()
-
-    is_dst = time.daylight and time.localtime().tm_isdst > 0
-    utc_offset =  (time.altzone if is_dst else time.timezone)
-
-    return (time.mktime(dt.timetuple())  * 1000) + (utc_offset *1000)
 
 class Feature(object):
     """ Entities located in space with a set of properties can be represented as features. """
@@ -167,7 +142,7 @@ class Feature(object):
         """ returns a list of feature fields """
         if 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
-            return self._attributes.keys()
+            return list(self._attributes.keys())
         else:
             return []
 
@@ -305,7 +280,11 @@ class FeatureSet(object):
                     if 'spatialReference' in feat_geom:
                         self._spatialReference = feat_geom['spatialReference']
 
-                geometry = Geometry(feat_geom)
+                if isinstance(feat_geom, Geometry):
+                    geometry = feat_geom
+                else:
+                    geometry = Geometry(feat_geom)
+
                 if geometry_type is None:
                     if isinstance(geometry, Polyline):
                         self._geometryType = "esriGeometryPolyline"
@@ -342,6 +321,7 @@ class FeatureSet(object):
                         if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
+
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
@@ -469,19 +449,22 @@ class FeatureSet(object):
                 attributes = []
                 for feat in self.features:
                     attributes.append(feat.attributes)
-                    gg = Geometry(feat.geometry)
-                    if gg.type in ("POINT", "LINE", "POLYLINE",
-                                   "POLYGON", "MULTIPOINT"):
-                        g = arcpy.AsShape(str(gg), esri_json=True)
-                        if sr:
-                            g = g.projectAs(sr)
-
-                        geoms.append(g)
-                    del gg
+                    geoms.append(Geometry(feat.geometry))
                     del feat
+                #for feat in self.features:
+                    #attributes.append(feat.attributes)
+                    #gg = Geometry(feat.geometry)
+                    #if gg.type in ("POINT", "LINE", "POLYLINE",
+                                   #"POLYGON", "MULTIPOINT"):
+                        #g = arcpy.AsShape(str(gg), esri_json=True)
+                        #if sr:
+                            #g = g.projectAs(sr)
+
+                        #geoms.append(g)
+                    #del gg
+                    #del feat
                 df = json_normalize(attributes)
                 df.columns = df.columns.str.replace('attributes.', '')
-
                 return SpatialDataFrame(df, geometry=geoms, sr=sr)
             else:
                 #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
@@ -494,7 +477,7 @@ class FeatureSet(object):
                         df.set_index(['OBJECTID'], inplace=True)
                     elif 'FID' in df.columns:
                         df.set_index(['FID'], inplace=True)
-            return df
+                return df
         except ImportError:
             raise ImportError("pandas not found, please install it")
 
@@ -551,6 +534,7 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """returns a featureset from a dict"""
+
         features = []
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']
@@ -761,6 +745,10 @@ class FeatureCollection(Layer):
         self._hydrated = True
         self.properties = PropertyMap(dictdata)
         self.layer = self.properties
+
+    @property
+    def _lyr_json(self):
+        return dict(self.properties)
 
     @property
     def _lyr_dict(self):

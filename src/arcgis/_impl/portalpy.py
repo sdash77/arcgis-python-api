@@ -79,7 +79,7 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True):
+                 tokenurl=None, verify_cert=True, client_id=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
         if url.endswith('/home'): # be permissive in accepting home app urls
             url = url[:-5]
@@ -156,7 +156,8 @@ class Portal(object):
                                              referer=referer,
                                              proxy_host=proxy_host,
                                              proxy_port=proxy_port, 
-                                             verify_cert=verify_cert)
+                                             verify_cert=verify_cert,
+                                             client_id=client_id)
         #self.get_version(True)
         self.get_properties(True)
 
@@ -622,6 +623,60 @@ class Portal(object):
             path += '/items/' + item_id + '/unprotect'
         postdata = self._postdata()
         resp = self.con.post(path, postdata)
+        if resp:
+            return resp
+
+    def share_item_as_group_admin(self, item_id, groups=""):
+        """ Shares public item with the specified list of groups belonging to caller
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        groups            optional string,
+                          comma-separated list of group IDs with which the item will be shared.
+        ================  ========================================================
+
+        :return:
+            dict with key "notSharedWith" containing array of groups with which the item could not be shared.
+
+
+
+        """
+        return self.con.post('content/items/' + item_id, self._postdata())
+        path = 'content/items/' + item_id + '/share'
+        postdata = self._postdata()
+        postdata['groups'] = groups
+        resp = self.con.post(path, postdata)
+
+        if resp:
+            return resp
+
+    def unshare_item_as_group_admin(self, item_id, groups=""):
+        """ Stops sharing public item with the specified list of groups belonging to caller
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        groups            optional string,
+                          comma-separated list of group IDs with which the item will be unshared.
+        ================  ========================================================
+
+        :return:
+            dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
+
+
+
+        """
+        return self.con.post('content/items/' + item_id, self._postdata())
+        path = 'content/items/' + item_id + '/unshare'
+        postdata = self._postdata()
+        postdata['groups'] = groups
+        resp = self.con.post(path, postdata)
+
         if resp:
             return resp
 

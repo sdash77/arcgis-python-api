@@ -6,6 +6,7 @@ from __future__ import division
 from .. import SpatialDataFrame
 from arcgis.features.layer import FeatureLayer, Table
 from arcgis.data.geodataset.utils import chunks
+import pandas as pd
 import json
 import warnings
 #--------------------------------------------------------------------------
@@ -39,6 +40,9 @@ def from_layer(layer):
                                   ",".join(ids))
             frames.append(layer.query(where=sql).df)
         res = pd.concat(frames, ignore_index=True)
+        res.reset_index(drop=True, inplace=True)
+
     else:
         res = layer.query().df
+        res.reset_index(drop=True, inplace=True)
     return res

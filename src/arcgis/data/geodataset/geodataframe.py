@@ -4,6 +4,7 @@ SpatialDataFrame Object
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import warnings
 from six import string_types, integer_types
 import pandas as pd
 from pandas import DataFrame, Series, Index
@@ -12,18 +13,29 @@ from arcgis.data.geodataset.base import BaseSpatialPandas
 from arcgis.data.geodataset.geoseries import GeoSeries
 from six import PY2, PY3
 from six import string_types
-import arcpy
-from arcpy import Geometry
+from arcgis.geometry import types
 GEO_COLUMN_DEFAULT = "SHAPE"
-GEOM_TYPES = (arcpy.Point, arcpy.Polygon,
-              arcpy.Geometry, arcpy.PointGeometry,
-              arcpy.Polyline, arcpy.Multipatch,
-              arcpy.Multipoint)
+GEOM_TYPES = (types.Point, types.MultiPoint,
+              types.Polygon,types.Geometry,
+              types.Polyline,
+              types.BaseGeometry)
+try:
+    import arcpy
+    from arcpy import Geometry
+    HASARCPY = True
+    GEOM_TYPES = [arcpy.Point, arcpy.Polygon,
+                  arcpy.Geometry, arcpy.PointGeometry,
+                  arcpy.Polyline, arcpy.Multipatch,
+                  arcpy.Multipoint] + list(GEOM_TYPES)
+    GEOM_TYPES = tuple(GEOM_TYPES)
+except ImportError:
+    # warning.warn("Missing Pro will cause functionality to be limited")
+    HASARCPY = False
 
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
-    Pandas dataframe extended to accept geo-spatial data.
+    Pandas dataframe designed to work with geospatial information
     """
     _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
                        'is_copy', '_subtyp', '_index',
@@ -33,6 +45,25 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     _geometry_column_name = GEO_COLUMN_DEFAULT
     #----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
+        """
+        A Spatial Dataframe is an object to manipulate, manage and translate
+        data into new forms of information for users.
+
+        Required Parameters:
+          None
+        Optional:
+          :data: panda's dataframe containing attribute information
+          :geometry: list/array/geoseries of arcgis.geometry objects
+          :sr: spatial reference of the dataframe
+          :gis: passing a gis.GIS object set to Pro will ensure arcpy is
+           installed and a full swatch of functionality is available to
+           the end user.
+        """
+        gis = kwargs.pop('gis', None)
+        if gis is None:
+            from ...env import active_gis
+            if active_gis == False:
+                warnings.warn("GIS is not ")
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -49,13 +80,27 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             if isinstance(geometry, (list, tuple)) and \
                len(geometry) > 0:
                 g = geometry[0]
+                gtrans = []
                 if isinstance(g, arcpy.Point):
-                    gtrans = []
+
                     for g in geometry:
                         if isinstance(g, arcpy.Point):
                             g = arcpy.PointGeometry(g)
-                        gtrans.append(g)
+                        gtrans.append(types.Geometry(g))
                     geometry = gtrans
+                elif isinstance(g, arcpy.Geometry):
+                    for g in geometry:
+                        gtrans.append(types.Geometry(g))
+                        del g
+                    geometry = gtrans
+
+            self.set_geometry(geometry, inplace=True)
+        elif 'SHAPE' in self.columns:
+            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
+                geometry = self['SHAPE'].tolist()
+                del self['SHAPE']
+                for idx, g in enumerate(geometry):
+                    geometry[idx] = types.Geometry(g)
             self.set_geometry(geometry, inplace=True)
         self._delete_index()
     #----------------------------------------------------------------------
@@ -159,12 +204,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         from ...gis import GIS
         from ...widgets import MapView
         raise NotImplementedError("plot is not implmented")
-        #from ...features.feature import FeatureSet
-        #themap = GIS().map()
-        #fs = FeatureSet.from_dataframe(df=self)
-        #for feat in fs:
-        #    themap.draw(shape=feat)
-        #return themap
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(filename, **kwargs):
@@ -209,7 +248,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         The original geometry column is replaced with the input.
 
         Parameters:
-        ----------
         keys: column label or array
         drop: boolean, default True
          Delete column to be used as the new geometry
@@ -220,10 +258,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
          col's sr. Otherwise, tries to get sr from passed col values or
          DataFrame.
         Returns:
-        -------
         SpatialDataFrame
         """
-        # Most of the code here is taken from DataFrame.set_index()
         if inplace:
             frame = self
         else:
@@ -296,24 +332,25 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         Reprojects a given dataframe into a new coordinate system.
 
         """
-        if isinstance(spatial_reference, arcpy.SpatialReference):
-            sr = spatial_reference
-        elif isinstance(spatial_reference, int):
-            sr = arcpy.SpatialReference(spatial_reference)
-        elif isinstance(spatial_reference, string_types):
-            sr = arcpy.SpatialReference(text=spatial_reference)
-        else:
-            raise ValueError("spatial_referernce must be of type: int, string or arcpy.SpatialReference")
+        if HASARCPY:
+            if isinstance(spatial_reference, arcpy.SpatialReference):
+                sr = spatial_reference
+            elif isinstance(spatial_reference, int):
+                sr = arcpy.SpatialReference(spatial_reference)
+            elif isinstance(spatial_reference, string_types):
+                sr = arcpy.SpatialReference(text=spatial_reference)
+            else:
+                raise ValueError("spatial_referernce must be of type: int, string or arcpy.SpatialReference")
 
-        if inplace:
-            df = self
-        else:
-            df = self.copy()
-        geom = df.geometry.projectAs(sr, transformation)
-        geom.sr = sr.factoryCode
-        df.geometry = geom
-        if inplace:
-            return df
+            if inplace:
+                df = self
+            else:
+                df = self.copy()
+            geom = df.geometry.projectAs(sr, transformation)
+            geom.sr = sr.factoryCode
+            df.geometry = geom
+            if inplace:
+                return df
     #----------------------------------------------------------------------
     def select_by_location(self, other, matches_only=True):
         """
@@ -369,19 +406,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             return df
         else:
             raise ValueError("Input must be of type arcpy.Geometry, not %s" % type(other))
-    #----------------------------------------------------------------------
-    def convex_hull(self):
-        """
-        Creates a Convex Hull for all Geometries.
-        Output:
-          SpatialDataFrame
-        """
-        geom = arcpy.MinimumBoundingGeometry_management(in_features=self.geometry.tolist(),
-                                                out_feature_class=Geometry(),
-                                                geometry_type="CONVEX_HULL")[0]
-        gs = GeoSeries([geom])
-        gs.sr = geom.spatialReference.factoryCode or None
-        return SpatialDataFrame(geometry=gs, data=[])
+
 ###########################################################################
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, sr=None):
     if inplace:
@@ -389,7 +414,7 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, sr=None):
                          " DataFrame to SpatialDataFrame")
     gf = SpatialDataFrame(self)
     # this will copy so that BlockManager gets copied
-    return gf.set_geometry(col, drop=drop, inplace=False, sr=crs)
+    return gf.set_geometry(col, drop=drop, inplace=False, sr=sr)
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry

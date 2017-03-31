@@ -5,6 +5,7 @@
 import sys
 import os
 import configparser
+import json
 
 class PreconditionChecks():
     """
@@ -484,6 +485,36 @@ class PortalUtils():
         file_list = glob1(file_path, "set1*.zip")
         for file in file_list:
             add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+        print('-----------------------------------------------------------')
+
+        # Add some web maps
+        print("Adding WebMaps")
+        file_path = os.path.join(base_path, "webmap")
+        file_list = glob1(file_path, "set1*.JSON")
+        for file in file_list:
+            with open(os.path.join(file_path, file)) as file_handle:
+                webmap_def = json.load(file_handle)
+                item_properties = {'title':'set1_' + file.split('.')[0],
+                                   'type': 'Web Map',
+                                   'text':json.dumps(webmap_def)}
+                add_and_publish(None, gis, item_properties=item_properties,
+                                publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add unstyled layer items
+        print("Adding unstyled layer items")
+        item_properties = {'title':'set1_unstyled_layer1',
+                           'type': 'Map Service',
+                           'url':'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'}
+        add_and_publish(None, gis, item_properties=item_properties, publish_item=False)
+        print('-----------------------------------------------------------')
+
+        # Add empty items
+        print("Adding emtpy web apps")
+        item_properties = {'title': 'set1_empty_webapp',
+                           'type': 'Web Mapping Application',
+                           'url': 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'}
+        add_and_publish(None, gis, item_properties=item_properties, publish_item=False)
         print('-----------------------------------------------------------')
 
     @staticmethod

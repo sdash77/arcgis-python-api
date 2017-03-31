@@ -618,7 +618,7 @@ def project(geometries,
     spatial reference to the output spatial reference.
 
     Inputs:
-     geometries - The array of geometries to be projected.
+     geometries - The list of geometries to be projected.
      in_sr - The well-known ID (gis,WKID) of the spatial reference or a
       spatial reference JSON object for the input geometries.
      out_sr - The well-known ID (gis,WKID) of the spatial reference or a
@@ -634,6 +634,14 @@ def project(geometries,
       transformation is implied in the name of the transformation. If
       transformation is specified, a value for the transformForward
       parameter must also be specified. The default value is false.
+
+    Example:
+     input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
+     result = project(geometries = input_geom, in_sr = 3857, out_sr = 4326)
+
+    returns:
+     a list of geometries in the out_sr coordinate system, for instance:
+     [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
     """
     if gis is None:
         gis = arcgis.env.active_gis

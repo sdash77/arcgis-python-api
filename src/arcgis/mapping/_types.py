@@ -711,7 +711,7 @@ class MapImageLayer(Layer):
                                    tilePackage=False,
                                    exportExtent="DEFAULTEXTENT",
                                    areaOfInterest=None,
-                                   async=True):
+                                   asynchronous=True):
         """
         The estimateExportTilesSize operation is an asynchronous task that
         allows estimation of the size of the tile package or the cache data
@@ -754,7 +754,7 @@ class MapImageLayer(Layer):
         Example: { "features": [{"geometry":{"rings":[[[-100,35],
              [-100,45],[-90,45],[-90,35],[-100,35]]],
              "spatialReference":{"wkid":4326}}}]}
-        async - (optional) the estimate function is run asynchronously
+        asynchronous - (optional) the estimate function is run asynchronously
          requiring the tool status to be checked manually to force it to
          run synchronously the tool will check the status until the
          estimation completes.  The default is True, which means the status
@@ -774,7 +774,7 @@ class MapImageLayer(Layer):
         params["levels"] = levels
         if not areaOfInterest is None:
             params['areaOfInterest'] = areaOfInterest
-        if async == True:
+        if asynchronous == True:
             return self._con.get(url, params, token=self._token)
         else:
             exportJob = self._con.get(url, params, token=self._token)
@@ -812,7 +812,7 @@ class MapImageLayer(Layer):
                      optimizeTilesForSize=True,
                      compressionQuality=0,
                      areaOfInterest=None,
-                     async=False
+                     asynchronous=False
                      ):
         """
         The exportTiles operation is performed as an asynchronous task and
@@ -887,7 +887,7 @@ class MapImageLayer(Layer):
         Example: { "features": [{"geometry":{"rings":[[[-100,35],
          [-100,45],[-90,45],[-90,35],[-100,35]]],
          "spatialReference":{"wkid":4326}}}]}
-        async - default True, this value ensures the returns are returned
+        asynchronous - default True, this value ensures the returns are returned
          to the user instead of the user having the check the job status
          manually.
         """
@@ -908,7 +908,7 @@ class MapImageLayer(Layer):
             params["areaOfInterest"] = template
         elif isinstance(areaOfInterest, dict):
             params["areaOfInterest"] = {"features": [areaOfInterest]}
-        if async == True:
+        if asynchronous == True:
             return self._con.get(path=url, params=params, token=self._token)
         else:
             exportJob = self._con.get(path=url, params=params, token=self._token)
@@ -925,8 +925,7 @@ class MapImageLayer(Layer):
                     time.sleep(5)
 
                     job_response = self._con.post(path, params, token=self._token)
-                    sta
-                    tus = job_response.get("status")
+                    status = job_response.get("status")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
                                   'esriJobCancelled',

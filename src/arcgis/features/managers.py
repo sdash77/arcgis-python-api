@@ -6,6 +6,7 @@ Instances of this class, are available as a properties of feature layers and mak
 import collections
 import json
 import tempfile
+import time
 
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
@@ -113,7 +114,7 @@ class SyncManager(object):
                transport_type="esriTransportTypeUrl",
                return_attachments=False,
                return_attachments_databy_url=False,
-               async=False,
+               asynchronous=False,
                attachments_sync_direction="none",
                sync_model="none",
                data_format="json",
@@ -146,8 +147,8 @@ class SyncManager(object):
             Example:
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometryFilter - Geospatial filter applied to the replica to
-            parse down data output.
+           geometryFilter - arcgis.geometry.filter to filter results by a spatial relationship
+                            with another geometry
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
@@ -173,7 +174,7 @@ class SyncManager(object):
             creating a replica. AttachmentsSyncDirection is currently a createReplica property
             and cannot be overridden during sync.
             Values: none, upload, bidirectional
-           async - If true, the request is processed as an asynchronous job, and a URL is
+           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
             returned that a client can visit to check the status of the job. See the topic on
             asynchronous usage for more information. The default is false.
            syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
@@ -198,7 +199,7 @@ class SyncManager(object):
                                         transport_type,
                                         return_attachments,
                                         return_attachments_databy_url,
-                                        async,
+                                        asynchronous,
                                         attachments_sync_direction,
                                         sync_model,
                                         data_format,
@@ -214,7 +215,7 @@ class SyncManager(object):
                     return_ids_for_adds=False,
                     edits=None,
                     return_attachment_databy_url=False,
-                    async=False,
+                    asynchronous=False,
                     sync_direction="snapshot",
                     sync_layers="perReplica",
                     edits_upload_id=None,
@@ -232,7 +233,7 @@ class SyncManager(object):
                                              return_ids_for_adds,
                                              edits,
                                              return_attachment_databy_url,
-                                             async,
+                                             asynchronous,
                                              sync_direction,
                                              sync_layers,
                                              edits_upload_id,
@@ -553,3 +554,62 @@ class FeatureLayerManager(_GISResource):
         res = self._con.post(u_url, params)
         self.refresh()
         return res
+
+    # ----------------------------------------------------------------------
+    def truncate(self,
+                 attachment_only=False,
+                 asynchronous=False,
+                 wait=True):
+        """
+           The truncate operation supports deleting all features or attachments 
+           in a hosted feature service layer. The result of this operation is a 
+           response indicating success or failure with error code and description.
+           See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
+           for additional information on this function.
+           Input:
+              attachment_only - Deletes all the attachments for this layer.
+                                None of the layer features will be deleted 
+                                when attachmentOnly=true.
+              asynchronous - Supports options for asynchronous processing. The
+                      default format is false. It is recommended to set 
+                      async=true for larger datasets.
+              wait - if async, wait to pause the process until the async 
+                     operation is completed.
+
+           Output:
+              JSON Message as dictionary
+
+        """
+        params = {
+            "f": "json",
+            "attachmentOnly": attachment_only,
+            "async": asynchronous
+        }
+        u_url = self._url + "/truncate"
+
+        if asynchronous:
+            if wait:
+                job = self._con.post(u_url, params)
+                status = self._get_status(url=job['statusURL'])
+                while status['status'] not in ("Completed", "CompletedWithErrors", "Failed"):
+                    # wait before checking again
+                    time.sleep(2)
+                    status = self._get_status(url=job['statusURL'])
+
+                res = status
+                self.refresh()
+            else:
+                res = self._con.post(u_url, params)
+                # Leave calling refresh to user since wait is false
+        else:
+            res = self._con.post(u_url, params)
+            self.refresh()
+        return res
+
+    # ----------------------------------------------------------------------
+    def _get_status(self, url):
+        """gets the status when exported async set to True"""
+        params = {"f": "json"}
+        url += "/status"
+        return self._con.get(url, params)
+

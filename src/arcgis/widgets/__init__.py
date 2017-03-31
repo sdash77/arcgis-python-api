@@ -7,9 +7,9 @@ import random
 import string
 
 from arcgis.features import FeatureSet
+from arcgis.raster import ImageryLayer
 from arcgis.gis import Layer
 from arcgis.mapping import WebMap
-
 
 try:
     from ipywidgets import widgets
@@ -135,8 +135,23 @@ class MapView(widgets.DOMWidget):
         """
         Adds layers from the provided item
         """
-        if isinstance(item, Layer):
-            js_layer = item._lyr_dict
+        if isinstance(item, dict) and 'function_chain' in item:
+            js_layer = item['layer']._lyr_json
+            options_dict = {
+                    "imageServiceParameters": {
+                        "renderingRule": item['function_chain']
+                    }
+                }
+
+            if options is not None:
+                options_dict.update(options)
+
+            js_layer.update({
+                "options": json.dumps(options_dict)
+            })
+            self._addlayer = json.dumps(js_layer)
+        elif isinstance(item, Layer):
+            js_layer = item._lyr_json
             if options is not None:
                 js_layer.update({"options": json.dumps(options)})
 
@@ -145,7 +160,7 @@ class MapView(widgets.DOMWidget):
             if item.layers is None:
                 raise RuntimeError('No layers accessible/available in this item or service')
             for lyr in item.layers:
-                js_layer = lyr._lyr_dict
+                js_layer = lyr._lyr_json
                 if options is not None:
                     js_layer.update({"options": json.dumps(options)})
                 self._addlayer = json.dumps(js_layer)

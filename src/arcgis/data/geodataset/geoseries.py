@@ -7,18 +7,23 @@ from warnings import warn
 from .index.rtree import Rect
 from .base import BaseSpatialPandas
 
-import arcpy
+try:
+    import arcpy
+    from arcpy import da
+    hasArcPy = True
+except:
+    hasArcPy = False
+
 import numpy as np
-from arcpy import da
 import pandas as pd
 from pandas import Series, DataFrame
 from pandas.core.indexing import _NDFrameIndexer
 from pandas.util.decorators import cache_readonly
-
+from ...geometry import types
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
 def _convert_array_args(args):
-    if len(args) == 1 and isinstance(args[0], arcpy.Geometry):
+    if len(args) == 1 and isinstance(args[0], (arcpy.Geometry, types.Geometry)):
         args = ([args[0]],)
     return args
 
@@ -50,8 +55,10 @@ def _is_empty(x):
         return False
 ########################################################################
 class GeoSeries(BaseSpatialPandas, Series):
-    """"""
-    _metadata = ['name', 'spatial_reference']
+    """
+    Represents a column containing geometries
+    """
+    _sindex = None
     #----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
         """Constructor"""
@@ -116,7 +123,6 @@ class GeoSeries(BaseSpatialPandas, Series):
         """Returns a GeoSeries as a python feature collection
         """
         #raise NotImplementedError()
-        #from geopandas import GeoDataFrame
         return DataFrame({'geometry': self}).__geo_interface__()
     @property
     def _constructor(self):

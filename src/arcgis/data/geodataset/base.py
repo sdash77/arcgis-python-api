@@ -5,11 +5,17 @@ spatial dataframes will inherit from.
 """
 from __future__ import print_function
 from __future__ import division
+from six import integer_types
 import numpy as np
 import pandas as pd
+from arcgis.geometry import types
 from pandas import DataFrame, Series
-import arcpy
-
+try:
+    import arcpy
+    HASARCPY = True
+    GEOTYPES = (arcpy.Geometry, types.Geometry)
+except ImportError:
+    GEOTYPES = (types.Geometry)
 from warnings import warn
 try:
     from .index.quadtree import Index as QuadIndex
@@ -41,12 +47,18 @@ def _call_property(this, op, null_value=None, isGeoseries=False):
     """
     if isGeoseries:
         from . import GeoSeries
-        return GeoSeries([getattr(geom, op, null_value) for geom in this.geometry if hasattr(geom, op)],
+        a = [getattr(geom, op, null_value) for geom in this.geometry \
+                 if hasattr(geom, op)]#hasattr(geom, 'as_arcpy') and \
+        return GeoSeries(a,
                       index=this.index)
+        #[getattr(geom, op, null_value) for geom in this.geometry if hasattr(geom.as_arcpy, op)],
     else:
-        a =  Series([getattr(geom, op, null_value) for geom in this.geometry if hasattr(geom, op)],
+        a = [getattr(geom, op, null_value) for geom in this.geometry \
+             if hasattr(geom, op)]
+        return Series(a,
                       index=this.index)
-        return a
+        #[getattr(geom.as_arcpy, op, null_value) for geom in this.geometry if hasattr(geom.as_arcpy, op)],
+
     return null_value
 #--------------------------------------------------------------------------
 def _call_function(this, op, second_geometry=None,
@@ -77,14 +89,14 @@ def _call_function(this, op, second_geometry=None,
         hasSecondGeom = False
         isGSeries = isinstance(other, BaseSpatialPandas)
         isPSeries = isinstance(other, Series)
-        isGeom = isinstance(other, arcpy.Geometry)
+        isGeom = isinstance(other, GEOTYPES)
     elif second_geometry is not None and \
          'other' not in kwargs:
         hasOther = False
         hasSecondGeom = True
         isPSeries = isinstance(second_geometry, Series)
         isSeries = isinstance(second_geometry, BaseSpatialPandas)
-        isGeom = isinstance(second_geometry, arcpy.Geometry)
+        isGeom = isinstance(second_geometry, GEOTYPES)
     elif 'other' in kwargs and second_geometry is not None:
         raise ValueError("Two geometries given as other and second_geometry, you can only have one")
     else: # default
@@ -115,9 +127,9 @@ def _call_function(this, op, second_geometry=None,
                     kwargs['other'] = other_geom
                     vals.append(fn(**kwargs))
                 elif key == 'second_geometry':
-                    val.append(fn(second_geometry=second_geometry, **kwargs))
+                    vals.append(fn(second_geometry=second_geometry, **kwargs))
                 else:
-                    val.append(fc(**kwargs))
+                    vals.append(fn(**kwargs))
                 del fn
                 del geom
                 del other_geom
@@ -160,7 +172,7 @@ def _call_function(this, op, second_geometry=None,
                 elif key == 'second_geometry':
                     vals.append(fn(second_geometry=other_geom, **kwargs))
                 else:
-                    vals.append(fc(**kwargs))
+                    vals.append(fn(**kwargs))
                 del fn
                 del geom
                 del other_geom
@@ -186,9 +198,8 @@ class BaseSpatialPandas(object):
     """
     Base object that the Series and DataFrame will inherit from.
     """
-    #index = None
-    #geometry = None
-        #----------------------------------------------------------------------
+
+    #----------------------------------------------------------------------
     def _generate_sindex(self):
         self._sindex = None
         if not HAS_SINDEX and not HAS_QUADINDEX:
@@ -246,23 +257,35 @@ class BaseSpatialPandas(object):
         return _call_property(this=self, op="JSON")
     #----------------------------------------------------------------------
     @property
+    def as_arcpy(self):
+        """Returns an Esri JSON representation of the geometry as a string."""
+        return _call_property(this=self, op="as_arcpy", isGeoseries=False)
+
+    #----------------------------------------------------------------------
+    @property
     def WKB(self):
-        """Returns the well-known binary (WKB) representation for OGC geometry. It provides a portable representation of a geometry value as a contiguous stream of bytes."""
+        """Returns the well-known binary (WKB) representation for OGC
+        geometry. It provides a portable representation of a geometry value
+        as a contiguous stream of bytes."""
         return _call_property(this=self, op="WKB")
     #----------------------------------------------------------------------
     @property
     def WKT(self):
-        """Returns the well-known text (WKT) representation for OGC geometry. It provides a portable representation of a geometry value as a text string."""
+        """Returns the well-known text (WKT) representation for OGC
+        geometry. It provides a portable representation of a geometry value
+        as a text string."""
         return _call_property(this=self, op="WKT")
     #----------------------------------------------------------------------
     @property
     def area(self):
-        """The area of a polygon feature. Empty for all other feature types."""
+        """The area of a polygon feature. Empty for all other feature
+        types."""
         return _call_property(this=self, op="area")
     #----------------------------------------------------------------------
     @property
     def centroid(self):
-        """The true centroid if it is within or on the feature; otherwise, the label point is returned. Returns a point object."""
+        """The true centroid if it is within or on the feature; otherwise,
+        the label point is returned. Returns a point object."""
         return _call_property(this=self, op="centroid", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
@@ -271,95 +294,114 @@ class BaseSpatialPandas(object):
         return _call_property(this=self, op="extent", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
-    def firstPoint(self):
+    def first_point(self):
         """The first coordinate point of the geometry."""
-        return _call_property(this=self, op="firstPoint", isGeoseries=True)
+        return _call_property(this=self, op="first_point", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
-    def hullRectangle(self):
-        """A space-delimited string of the coordinate pairs of the convex hull rectangle."""
-        return _call_property(this=self, op="hullRectangle")
+    def hull_rectangle(self):
+        """A space-delimited string of the coordinate pairs of the convex
+        hull rectangle."""
+        return _call_property(this=self, op="hull_rectangle")
     #----------------------------------------------------------------------
     @property
-    def isMultipart(self):
+    def is_multipart(self):
         """True, if the number of parts for the geometry is more than 1"""
-        return _call_property(this=self, op="isMultipart")
+        return _call_property(this=self, op="is_multipart")
     #----------------------------------------------------------------------
     @property
-    def labelPoint(self):
+    def label_point(self):
         """
-        The point at which the label is located. The labelPoint is always located within or on a feature.
+        The point at which the label is located. The labelPoint is always
+        located within or on a feature.
         """
-        return _call_property(this=self, op="labelPoint", isGeoseries=True)
+        return _call_property(this=self, op="label_point", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
-    def lastPoint(self):
+    def last_point(self):
         """
         The last coordinate of the feature.
         """
-        return _call_property(this=self, op="lastPoint", isGeoseries=True)
+        return _call_property(this=self, op="last_point", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
     def length(self):
-        """The length of the linear feature. Zero for point and multipoint feature types."""
+        """The length of the linear feature. Zero for point and multipoint
+        feature types."""
         return _call_property(this=self, op="length")
     #----------------------------------------------------------------------
     @property
     def length3D(self):
-        """The 3D length of the linear feature. Zero for point and multipoint feature types."""
+        """The 3D length of the linear feature. Zero for point and
+        multipoint feature types."""
         return _call_property(this=self, op="length3D")
     #----------------------------------------------------------------------
     @property
-    def partCount(self):
+    def part_count(self):
         """The number of geometry parts for the feature."""
-        return _call_property(this=self, op="partCount")
+        return _call_property(this=self, op="part_count")
     #----------------------------------------------------------------------
     @property
-    def pointCount(self):
+    def point_count(self):
         """The total number of points for the feature."""
-        return _call_property(this=self, op="pointCount")
+        return _call_property(this=self, op="point_count")
     #----------------------------------------------------------------------
     @property
-    def spatialReference(self):
+    def spatial_reference(self):
         """The spatial reference of the geometry."""
-        return _call_property(this=self, op="spatialReference")
+        return _call_property(this=self, op="spatial_reference")
     #----------------------------------------------------------------------
     @property
-    def trueCentroid(self):
+    def true_centroid(self):
         """The center of gravity for a feature."""
-        return _call_property(this=self, op="trueCentroid", isGeoseries=True)
+        return _call_property(this=self, op="true_centroid", isGeoseries=True)
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
         """The geometry type: polygon, polyline, point, multipoint, multipatch, dimension, or annotation"""
+        from . import GeoSeries
+
+        if isinstance(self, GeoSeries) and \
+           isinstance(self.first_valid_index(), integer_types) and \
+           self.first_valid_index() >= 0:
+            return self[self.first_valid_index()].type.lower()
         if 'SHAPE' in self.columns and \
            len(self['SHAPE']) > 0:
             val = self['SHAPE'].loc[self['SHAPE'].first_valid_index()]
-            if isinstance(val, (arcpy.Point, arcpy.PointGeometry)):
+            if HASARCPY and \
+               isinstance(val, (arcpy.Point, arcpy.PointGeometry)):
                 return "point"
-            elif isinstance(val, (arcpy.Polygon)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Polygon)):
                 return 'polygon'
-            elif isinstance(val, (arcpy.Polyline)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Polyline)):
                 return 'polyline'
-            elif isinstance(val, (arcpy.Multipatch)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Multipatch)):
                 return 'multipatch'
-            elif isinstance(val, (arcpy.Multipoint)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Multipoint)):
                 return 'multipoint'
-            elif isinstance(val, (arcpy.Dimension)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Dimension)):
                 return 'dimension'
-            elif isinstance(val, (arcpy.Annotation)):
+            elif HASARCPY and \
+                 isinstance(val, (arcpy.Annotation)):
                 return 'annotation'
+            elif hasattr(val, "geometry_type"):
+                return getattr(val, 'type')
         return 'unknown'
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
         """Return True for each empty geometry, False for non-empty"""
-        return _call_property(self, 'pointCount', null_value=False) == 0
+        return _call_property(self, 'point_count', null_value=False) == 0
     #
     #  Geometry Methods
     #
     #----------------------------------------------------------------------
-    def angleAndDistanceTo(self, second_geometry, method="GEODESIC"):
+    def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
         measurement type.
@@ -375,10 +417,10 @@ class BaseSpatialPandas(object):
         other = second_geometry
         if isinstance(other, BaseSpatialPandas):
             raise ValueError("Input second_geometry must be of type: "\
-                             "arcpy.Geometry not %s" % type(second_geometry))
+                             "A arcgis.types.Geometry not %s" % type(second_geometry))
         return _call_function(this=self,
-                              op="angleAndDistanceTo",
-                              other_geometry=other,
+                              op="angle_distance_to",
+                              second_geometry=other,
                               method=method)
     #----------------------------------------------------------------------
     def boundary(self):
@@ -424,12 +466,12 @@ class BaseSpatialPandas(object):
                               relation=relation,
                               second_geometry=second_geometry)
     #----------------------------------------------------------------------
-    def convexHull(self):
+    def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return _call_function(this=self, op="convexHull", isGeoseries=True)
+        return _call_function(this=self, op="convex_hull", isGeoseries=True)
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
@@ -453,13 +495,13 @@ class BaseSpatialPandas(object):
         Parameters:
          :cutter: - The cutting polyline geometry.
         """
-        if isinstance(cutter, arcpy.Polyline):
+        if isinstance(cutter, GEOTYPES):
             return _call_function(this=self,
                                   op='cut',
-                                  other=cutter,
+                                  second_geometry=cutter,
                                   isGeoseries=True)
         else:
-            raise ValueError("Invalid geometry given, must be of type arcpy.Polyline")
+            raise ValueError("Invalid geometry given, must be of type %s" % GEOTYPES)
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
@@ -495,7 +537,7 @@ class BaseSpatialPandas(object):
          :second_geometry: - a second geometry
         """
         return _call_function(this=self, op='difference',
-                              other=second_geometry, isGeoseries=True)
+                              second_geometry=second_geometry, isGeoseries=True)
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
@@ -508,7 +550,7 @@ class BaseSpatialPandas(object):
         return _call_function(this=self, op='disjoint',
                               second_geometry=second_geometry)
     #----------------------------------------------------------------------
-    def distanceTo(self, second_geometry):
+    def distance_to(self, second_geometry):
         """
         Returns the minimum distance between two geometries. If the
         geometries intersect, the minimum distance is 0.
@@ -517,8 +559,8 @@ class BaseSpatialPandas(object):
         Paramters:
          :second_geometry: - a second geometry
         """
-        return _call_function(this=self, op='distanceTo',
-                              other=second_geometry,
+        return _call_function(this=self, op='distance_to',
+                              second_geometry=second_geometry,
                               null_value=-1)
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
@@ -544,7 +586,7 @@ class BaseSpatialPandas(object):
         return _call_function(this=self, op='generalize',
                               max_offset=max_offset, isGeoseries=True)
     #----------------------------------------------------------------------
-    def getArea(self, method, units=None):
+    def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
 
@@ -560,11 +602,11 @@ class BaseSpatialPandas(object):
           SQUAREMILLIMETERS | SQUAREYARDS
 
         """
-        return _call_function(this=self, op='getArea', method=method,
+        return _call_function(this=self, op='get_area', method=method,
                               units=units,
                               second_geometry=None)
     #----------------------------------------------------------------------
-    def getLength(self, method, units):
+    def get_length(self, method, units):
         """
         Returns the length of the feature using a measurement type.
 
@@ -579,10 +621,10 @@ class BaseSpatialPandas(object):
           MILLIMETERS | NAUTICALMILES | YARDS
 
         """
-        return _call_function(this=self, op='getLength',
+        return _call_function(this=self, op='get_length',
                               method=method, units=units)
     #----------------------------------------------------------------------
-    def getPart(self, index=None):
+    def get_part(self, index=None):
         """
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
@@ -590,7 +632,7 @@ class BaseSpatialPandas(object):
         Parameters:
          :index: - The index position of the geometry.
         """
-        return _call_function(this=self, op='getPart',
+        return _call_function(this=self, op='get_part',
                               index=index)
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension):
@@ -612,10 +654,10 @@ class BaseSpatialPandas(object):
         """
         other = second_geometry
         return _call_function(this=self, op='intersect',
-                              second_geometry=None, isGeoseries=True,
-                              other=other, dimension=dimension)
+                              second_geometry=other, isGeoseries=True,
+                               dimension=dimension)
     #----------------------------------------------------------------------
-    def measureOnLine(self, second_geometry, as_percentage=False):
+    def measure_on_line(self, second_geometry, as_percentage=False):
         """
         Returns a measure from the start point of this line to the in_point.
 
@@ -625,7 +667,7 @@ class BaseSpatialPandas(object):
           distance; if True, the measure will be returned as a percentage.
         """
         in_point = second_geometry
-        return _call_function(this=self, op="measureOnLine",
+        return _call_function(this=self, op="measure_on_line",
                               in_point=in_point, as_percentage=as_percentage,
                               isGeoseries=False)
     #----------------------------------------------------------------------
@@ -644,7 +686,7 @@ class BaseSpatialPandas(object):
                               second_geometry=second_geometry,
                               isGeoseries=False)
     #----------------------------------------------------------------------
-    def pointFromAngleAndDistance(self, angle, distance, method='GEODESCIC'):
+    def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
@@ -659,13 +701,13 @@ class BaseSpatialPandas(object):
           an alternative, if desired.
         """
         return _call_function(this=self,
-                              op='pointFromAngleAndDistance',
+                              op='point_from_angle_and_distance',
                               angle=angle,
                               distance=distance,
                               method=method,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def positionAlongLine(self, value, use_percentage=False):
+    def position_along_line(self, value, use_percentage=False):
         """
         Returns a point on a line at a specified distance from the beginning
         of the line.
@@ -679,13 +721,13 @@ class BaseSpatialPandas(object):
           0.0 (0%) to 1.0 (100%).
         """
         return _call_function(this=self,
-                              op='positionAlongLine',
+                              op='position_along_line',
                               second_geometry=None,
                               isGeoseries=True,
                               value=value,
                               use_percentage=use_percentage)
     #----------------------------------------------------------------------
-    def projectAs(self, spatial_reference, transformation_name=None):
+    def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
 
@@ -696,13 +738,13 @@ class BaseSpatialPandas(object):
          :transformation_name: - The geotransformation name.
         """
         return _call_function(this=self,
-                              op='projectAs',
+                              op='project_as',
                               spatial_reference=spatial_reference,
                               transformation_name=transformation_name,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def queryPointAndDistance(self, second_geometry,
-                              use_percentage=False):
+    def query_point_and_distance(self, second_geometry,
+                                 use_percentage=False):
         """
         Finds the point on the polyline nearest to the in_point and the
         distance between those points. Also returns information about the
@@ -716,13 +758,13 @@ class BaseSpatialPandas(object):
         """
         in_point = second_geometry
         return _call_function(this=self,
-                              op='queryPointAndDistance',
+                              op='query_point_and_distance',
                               in_point=in_point,
                               use_percentage=use_percentage,
                               isGeoseries=False)
     #----------------------------------------------------------------------
-    def segmentAlongLine(self, start_measure,
-                         end_measure, use_percentage=False):
+    def segment_along_line(self, start_measure,
+                           end_measure, use_percentage=False):
         """
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
@@ -740,13 +782,13 @@ class BaseSpatialPandas(object):
           expressed as a double from 0.0 (0 percent) to 1.0 (100 percent).
         """
         return _call_function(this=self,
-                              op='segmentAlongLine',
+                              op='segment_along_line',
                               start_measure=start_measure,
                               end_measure=end_measure,
                               use_percentage=use_percentage,
                               isGeoseries=True)
     #----------------------------------------------------------------------
-    def snapToLine(self, second_geometry):
+    def snap_to_line(self, second_geometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
@@ -755,9 +797,23 @@ class BaseSpatialPandas(object):
         """
         in_point = second_geometry
         return _call_function(this=self,
-                              op='snapToLine',
+                              op='snap_to_line',
                               in_point=in_point,
                               isGeoseries=True)
+    #----------------------------------------------------------------------
+    def symmetric_difference(self, second_geometry):
+        """
+        Constructs the geometry that is the union of two geometries minus
+        the instersection of those geometries.
+        The two input geometries must be the same shape type.
+        Parameters:
+         :second_geometry: - a second geometry
+        """
+        return _call_function(this=self,
+                              op='symmetric_difference',
+                              second_geometry=second_geometry,
+                              isGeoseries=True)
+
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -784,7 +840,7 @@ class BaseSpatialPandas(object):
         return _call_function(this=self,
                               op='union',
                               isGeoseries=True,
-                              other=second_geometry)
+                              second_geometry=second_geometry)
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -793,7 +849,9 @@ class BaseSpatialPandas(object):
          :second_geometry: - a second geometry
          :relation: - The spatial relationship type.
           BOUNDARY  - Relationship has no restrictions for interiors or boundaries.
-          CLEMENTINI  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
+          CLEMENTINI  - Interiors of geometries must intersect. Specifying
+           CLEMENTINI is equivalent to specifying None. This is the
+           default.
           PROPER  - Boundaries of geometries must not intersect.
 
         """

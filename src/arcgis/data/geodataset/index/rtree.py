@@ -6,7 +6,7 @@ http://code.google.com/p/pyrtree/
 
 """
 
-__all__ = ['RTree', 'Rect', 'Rtree', 'RtreeError']
+__all__ = ['RTree', 'Rect', 'Rtree', 'RTreeError']
 
 MAXCHILDREN = 10
 MAX_KMEANS = 5

@@ -10,25 +10,17 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-
-def generate_service_areas(facilities: FeatureSet = {
+default_facilities = {
     'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                           break_values: str = """5 10 15""",
-                           break_units: str = """Minutes""",
-                           analysis_region: str = None,
-                           travel_direction: str = """Away From Facility""",
-                           time_of_day: datetime = None,
-                           use_hierarchy: bool = False,
-                           uturn_at_junctions: str = """Allowed Only at Intersections and Dead Ends""",
-                           polygons_for_multiple_facilities: str = """Overlapping""",
-                           polygon_overlap_type: str = """Rings""",
-                           detailed_polygons: bool = False,
-                           polygon_trim_distance: LinearUnit = {'distance': 100, 'units': 'esriMeters'},
-                           polygon_simplification_tolerance: LinearUnit = {'distance': 10, 'units': 'esriMeters'},
-                           point_barriers: FeatureSet = {
+    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    
+default_trim = {'distance': 100, 'units': 'esriMeters'}    
+    
+default_tolerance = {'distance': 10, 'units': 'esriMeters'}    
+    
+default_point_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                            'length': 128}, {'alias': 'BarrierType', 'name': 'BarrierType',
@@ -36,16 +28,18 @@ def generate_service_areas(facilities: FeatureSet = {
                                           {'alias': 'AdditionalCost', 'name': 'AdditionalCost',
                                            'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPoint',
                                'displayFieldName': '', 'exceededTransferLimit': False,
-                               'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []},
-                           line_barriers: FeatureSet = {
+                               'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}    
+    
+default_line_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                            'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
                                                             'type': 'esriFieldTypeDouble'}],
                                'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
                                'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                               'features': []},
-                           polygon_barriers: FeatureSet = {
+                               'features': []}    
+    
+default_polygon_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                            'length': 128}, {'alias': 'BarrierType', 'name': 'BarrierType',
@@ -57,9 +51,11 @@ def generate_service_areas(facilities: FeatureSet = {
                                           {'alias': 'Shape_Area', 'name': 'Shape_Area', 'type': 'esriFieldTypeDouble'}],
                                'geometryType': 'esriGeometryPolygon', 'displayFieldName': '',
                                'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                               'features': []},
-                           restrictions: str = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']""",
-                           attribute_parameter_values: FeatureSet = {
+                               'features': []}    
+    
+default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""    
+
+default_attributes = {
                                'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'AttributeName', 'name': 'AttributeName',
                                            'type': 'esriFieldTypeString', 'length': 255},
@@ -294,11 +290,31 @@ def generate_service_areas(facilities: FeatureSet = {
                                                                                                            'AttributeName': 'Width Restriction',
                                                                                                            'ParameterValue': '0',
                                                                                                            'ParameterName': 'Vehicle Width (meters)'}}],
-                               'displayFieldName': '', 'exceededTransferLimit': False},
-                           time_zone_for_time_of_day: str = """Geographically Local""",
-                           travel_mode: str = """Custom""",
-                           impedance: str = """Drive Time""",
-                           gis=None) -> tuple:
+                               'displayFieldName': '', 'exceededTransferLimit': False}    
+    
+def generate_service_areas(
+    facilities = default_facilities,
+    break_values = """5 10 15""",
+    break_units = """Minutes""",
+    analysis_region = None,
+    travel_direction = """Away From Facility""",
+    time_of_day = None,
+    use_hierarchy = False,
+    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
+    polygons_for_multiple_facilities = """Overlapping""",
+    polygon_overlap_type = """Rings""",
+    detailed_polygons = False,
+    polygon_trim_distance = default_trim,
+    polygon_simplification_tolerance = default_tolerance,
+    point_barriers = default_point_barriers,
+    line_barriers = default_line_barriers,
+    polygon_barriers = default_polygon_barriers,
+    restrictions = default_restrictions,
+    attribute_parameter_values = default_attributes,
+    time_zone_for_time_of_day = """Geographically Local""",
+    travel_mode = """Custom""",
+    impedance = """Drive Time""",
+    gis = None):
     """
 
 
@@ -343,10 +359,10 @@ Parameters:
             generate the service area polygons is toward or away from the
             facilities.
 
-                Away From Facility—The service area is generated in the
+                Away From Facility-The service area is generated in the
                 direction away from the facilities.
 
-                Towards Facility—The service area is created in the
+                Towards Facility-The service area is created in the
                 direction towards the facilities.
 
             The direction of travel may change the shape of the
@@ -378,18 +394,18 @@ Parameters:
 
    use_hierarchy: Use Hierarchy (bool). Optional parameter.  Specify whether hierarchy should be used when finding the best
             route between the facility and the incident.
-             Checked (True)—Use the hierarchy attribute for the analysis. Using a hierarchy results in the solver preferring higher-order edges to lower-order edges. Hierarchical solves are faster, and they can be used to simulate the preference of a driver who chooses to travel on freeways over local roads when possible—even if that means a longer trip.  Unchecked (False)—Do not use the hierarchy attribute for the analysis. Not using a hierarchy yields an accurate service area measured along all edges of the network dataset regardless of hierarchy level. Regardless of whether the Use Hierarchy parameter is checked (True), hierarchy is always used when the largest break value exceeds 240 minutes or 240 miles (386.24 kilometers).
+             Checked (True)-Use the hierarchy attribute for the analysis. Using a hierarchy results in the solver preferring higher-order edges to lower-order edges. Hierarchical solves are faster, and they can be used to simulate the preference of a driver who chooses to travel on freeways over local roads when possible-even if that means a longer trip.  Unchecked (False)-Do not use the hierarchy attribute for the analysis. Not using a hierarchy yields an accurate service area measured along all edges of the network dataset regardless of hierarchy level. Regardless of whether the Use Hierarchy parameter is checked (True), hierarchy is always used when the largest break value exceeds 240 minutes or 240 miles (386.24 kilometers).
 
    uturn_at_junctions: UTurn at Junctions (str). Optional parameter.  Use this parameter to restrict or permit the service area to make U-turns at junctions. In order to understand the parameter values, consider for a moment the following terminology: a junction is a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is a point where exactly two streets connect to one another; an intersection is a point where three or more streets connect; and a  dead-end is where one street segment ends without connecting to another. Given this information, the parameter can have the following values:
-                Allowed—U-turns are permitted everywhere. Allowing
+                Allowed-U-turns are permitted everywhere. Allowing
                 U-turns implies that the vehicle can turn around at any junction and
                 double back on the same street. This is the default value.
-                Not Allowed—U-turns are prohibited at all junctions: pseudo-junctions, intersections, and dead-ends.
-                Allowed only at Dead Ends—U-turns are prohibited at all
+                Not Allowed-U-turns are prohibited at all junctions: pseudo-junctions, intersections, and dead-ends.
+                Allowed only at Dead Ends-U-turns are prohibited at all
                 junctions, except those that have only one connected street feature (a dead
                 end).
 
-                Allowed only at Intersections and Dead Ends—U-turns are prohibited at
+                Allowed only at Intersections and Dead Ends-U-turns are prohibited at
                 pseudo-junctions where exactly two adjacent streets meet, but U-turns are permitted
                 at intersections and dead ends. This prevents turning around in the middle of the road where one length of road happened to be digitized as two street features.
       Choice list:['Allowed', 'Not Allowed', 'Allowed Only at Dead Ends', 'Allowed Only at Intersections and Dead Ends']
@@ -397,15 +413,15 @@ Parameters:
    polygons_for_multiple_facilities: Polygons for Multiple Facilities (str). Optional parameter.  Choose how service area polygons are generated when
             multiple facilities are present in the analysis.
 
-                Overlapping—Creates individual polygons for each facility.
+                Overlapping-Creates individual polygons for each facility.
                 The polygons can overlap each other. This is the default value.
 
-                Not Overlapping—Creates individual polygons such that a
+                Not Overlapping-Creates individual polygons such that a
                 polygon from one facility cannot overlap polygons from other
                 facilities; furthermore, any portion of the network can only be
                 covered by the service area of the nearest facility.
 
-                Merge by Break Value—Creates and joins the polygons of
+                Merge by Break Value-Creates and joins the polygons of
                 different facilities that have the same break value.
                When using Overlapping or Not Overlapping, all fields from the input facilities are included in the output polygons, with the exception that values from the input ObjectID field are transferred to the FacilityOID field of the output polygons. The FacilityOID field is null when merging by break value, and the input fields are not included in the output.
       Choice list:['Overlapping', 'Not Overlapping', 'Merge by Break Value']
@@ -414,14 +430,14 @@ Parameters:
             polygons as disks or rings. This option is applicable only when
             multiple break values are specified for the facilities.
 
-                Rings—The polygons representing larger breaks exclude the polygons of smaller breaks.
+                Rings-The polygons representing larger breaks exclude the polygons of smaller breaks.
                 This creates polygons going between consecutive breaks. Use this
                 option if you want to find the area from one break to another. For
                 instance, if you create 5- and 10-minute service areas, then the
                 10-minute service area polygon will exclude the area under the
                 5-minute service area polygon. This is the default value.
 
-                Disks—Creates polygons going from the facility to the
+                Disks-Creates polygons going from the facility to the
                 break. For instance, if you create 5- and 10-minute service areas,
                 then the 10-minute service area polygon will include the area under
                 the 5-minute service area polygon.
@@ -430,11 +446,11 @@ Parameters:
    detailed_polygons: Detailed Polygons (bool). Optional parameter.  Specifies the option to create detailed or generalized
             polygons.
 
-                Unchecked (False)—Creates generalized polygons, which are
+                Unchecked (False)-Creates generalized polygons, which are
                 generated quickly and are fairly accurate. This is the
                 default.
 
-                Checked (True)—Creates detailed polygons, which
+                Checked (True)-Creates detailed polygons, which
                 accurately model the service area lines and may contain islands of
                 unreached areas. This option is much slower than generating
                 generalized polygons. This option isn't supported when using
@@ -478,11 +494,11 @@ Parameters:
             for this attribute is specified as one of the following
             integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits travel through the barrier. The barrier
+                0 (Restriction)-Prohibits travel through the barrier. The barrier
                 is referred to as a restriction point barrier since it acts as a
                 restriction.
 
-                2 (Added Cost)—Traveling through the barrier increases the travel
+                2 (Added Cost)-Traveling through the barrier increases the travel
                 time or distance by the amount specified in the
                 Additional_Time or Additional_Distance field. This barrier type is
                 referred to as an added-cost point barrier.
@@ -526,13 +542,13 @@ Parameters:
             or scales the time or distance for traveling through it. The field
             value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                0 (Restriction)—Prohibits traveling through any part of the barrier.
+                0 (Restriction)-Prohibits traveling through any part of the barrier.
                 The barrier is referred to as a restriction polygon barrier since it
                 prohibits traveling on streets intersected by the barrier. One use
                 of this type of barrier is to model floods covering areas of the
                 street that make traveling on those streets impossible.
 
-                1 (Scaled Cost)—Scales the time or distance required to travel the
+                1 (Scaled Cost)-Scales the time or distance required to travel the
                 underlying streets by a factor specified using the ScaledTimeFactor
                 or ScaledDistanceFactor fields. If the streets are partially
                 covered by the barrier, the travel time or distance is apportioned
@@ -570,114 +586,114 @@ Parameters:
               restriction to be correctly used when finding traversable roads.
              Some restrictions are supported only in certain countries; their availability is stated by region in the list below. Of the restrictions that have limited availability within a region, you can check whether the restriction is available in a particular country by looking at the table in the Country List section of the Data coverage for network analysis services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select availability in the region is supported in that country. If you specify restriction names that are not available in the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
             The tool supports the following restrictions:
-                  Any Hazmat Prohibited—The results will not include roads
+                  Any Hazmat Prohibited-The results will not include roads
                   where transporting any kind of hazardous material is
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Avoid Carpool Roads—The results will avoid roads that are
+                  Avoid Carpool Roads-The results will avoid roads that are
                   designated exclusively for carpool (high-occupancy)
                   vehicles.
                  Availability: All countries
-                  Avoid Express Lanes—The results will avoid roads designated
+                  Avoid Express Lanes-The results will avoid roads designated
                   as express lanes.
-                 Availability: All countries Avoid Ferries—The results will avoid ferries.  Availability: All countries
-                  Avoid Gates—The results will avoid roads where there are
+                 Availability: All countries Avoid Ferries-The results will avoid ferries.  Availability: All countries
+                  Avoid Gates-The results will avoid roads where there are
                   gates such as keyed access or guard-controlled
                   entryways.
                  Availability: All countries
-                  Avoid Limited Access Roads—The results will avoid roads
+                  Avoid Limited Access Roads-The results will avoid roads
                   that are limited access highways.
                  Availability: All countries
-                  Avoid Private Roads—The results will avoid roads that are
+                  Avoid Private Roads-The results will avoid roads that are
                   not publicly owned and maintained.
                  Availability: All countries
-                  Avoid Toll Roads—The results will avoid toll
+                  Avoid Toll Roads-The results will avoid toll
                   roads.
                  Availability: All countries
-                  Avoid Unpaved Roads—The results will avoid roads that are
+                  Avoid Unpaved Roads-The results will avoid roads that are
                   not paved (for example, dirt, gravel, and so on).
                  Availability: All countries
-                  Axle Count Restriction—The results will not include roads
+                  Axle Count Restriction-The results will not include roads
                   where trucks with the specified number of axles are prohibited. The
                   number of axles can be specified using the Number of Axles
                   restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Driving a Bus—The results will not include roads where
+                  Driving a Bus-The results will not include roads where
                   buses are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Delivery Vehicle—The results will not include
+                  Driving a Delivery Vehicle-The results will not include
                   roads where delivery vehicles are prohibited. Using this restriction
                   will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Driving a Taxi—The results will not include roads where
+                  Driving a Taxi-The results will not include roads where
                   taxis are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving a Truck—The results will not include roads where
+                  Driving a Truck-The results will not include roads where
                   trucks are prohibited. Using this restriction will also ensure that
                   the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Automobile—The results will not include roads
+                  Driving an Automobile-The results will not include roads
                   where automobiles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Driving an Emergency Vehicle—The results will not include
+                  Driving an Emergency Vehicle-The results will not include
                   roads where emergency vehicles are prohibited. Using this
                   restriction will also ensure that the results will honor one-way
                   streets.
                  Availability: All countries
-                  Height Restriction—The results will not include roads
+                  Height Restriction-The results will not include roads
                   where the vehicle height exceeds the maximum allowed height for the
                   road. The vehicle height can be specified using the Vehicle Height
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Kingpin to Rear Axle Length Restriction—The results will
+                  Kingpin to Rear Axle Length Restriction-The results will
                   not include roads where the vehicle length exceeds the maximum
                   allowed kingpin to rear axle for all trucks on the road. The length
                   between the vehicle kingpin and the rear axle can be specified
                   using the Vehicle Kingpin to Rear Axle Length (meters) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Length Restriction—The results will not include roads
+                  Length Restriction-The results will not include roads
                   where the vehicle length exceeds the maximum allowed length for the
                   road. The vehicle length can be specified using the Vehicle Length
                   (meters) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Riding a Motorcycle—The results will not include roads
+                  Riding a Motorcycle-The results will not include roads
                   where motorcycles are prohibited. Using this restriction will also
                   ensure that the results will honor one-way streets.
                  Availability: All countries
-                  Roads Under Construction Prohibited—The results will not
+                  Roads Under Construction Prohibited-The results will not
                   include roads that are under construction.
                  Availability: All countries
-                  Semi or Tractor with One or More Trailers Prohibited—The
+                  Semi or Tractor with One or More Trailers Prohibited-The
                   results will not include roads where semis or tractors with one or
                   more trailers are prohibited.
                  Availability: Select countries in North America and Europe
-                  Single Axle Vehicles Prohibited—The results will not
+                  Single Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with single axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Tandem Axle Vehicles Prohibited—The results will not
+                  Tandem Axle Vehicles Prohibited-The results will not
                   include roads where vehicles with tandem axles are
                   prohibited.
                  Availability: Select countries in North America and Europe
-                  Through Traffic Prohibited—The results will not include
+                  Through Traffic Prohibited-The results will not include
                   roads where through traffic (non local) is prohibited.
                  Availability: All countries
-                  Truck with Trailers Restriction—The results will not
+                  Truck with Trailers Restriction-The results will not
                   include roads where trucks with the specified number of trailers on
                   the truck are prohibited. The number of trailers on the truck can
                   be specified using the Number of Trailers on Truck restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Hazmat Routes—The results will prefer roads
+                  Use Preferred Hazmat Routes-The results will prefer roads
                   that are designated for transporting any kind of hazardous
                   materials.
                  Availability: Select countries in North America and Europe
-                  Use Preferred Truck Routes—The results will prefer roads
+                  Use Preferred Truck Routes-The results will prefer roads
                   that are designated as truck routes, such as the roads that are
                   part of the national network as specified by the National Surface
                   Transportation Assistance Act in the United States, or roads that
@@ -685,21 +701,21 @@ Parameters:
                   that are preferred by the trucks when driving in an
                   area.
                  Availability: Select countries in North America and Europe
-                  Walking—The results will not include roads where
+                  Walking-The results will not include roads where
                   pedestrians are prohibited.
                  Availability: All countries
-                  Weight Restriction—The results will not include roads
+                  Weight Restriction-The results will not include roads
                   where the vehicle weight exceeds the maximum allowed weight for the
                   road. The vehicle weight can be specified using the Vehicle Weight
                   (kilograms) restriction parameter.
                  Availability: Select countries in North America and Europe
-                  Weight per Axle Restriction—The results will not include
+                  Weight per Axle Restriction-The results will not include
                   roads where the vehicle weight per axle exceeds the maximum allowed
                   weight per axle for the road. The vehicle weight per axle can be
                   specified using the Vehicle Weight per Axle (kilograms) restriction
                   parameter.
                  Availability: Select countries in North America and Europe
-                  Width Restriction—The results will not include roads where
+                  Width Restriction-The results will not include roads where
                   the vehicle width exceeds the maximum allowed width for the road.
                   The vehicle width can be specified using the Vehicle Width (meters)
                   restriction parameter.
@@ -734,29 +750,29 @@ Parameters:
             preferred. The Restriction Usage ParameterName can be assigned any of
             the following string values or their equivalent numeric values
             listed within the parentheses:
-                PROHIBITED (-1)—Travel on the roads using the restriction is completely
+                PROHIBITED (-1)-Travel on the roads using the restriction is completely
                 prohibited.
 
-                AVOID_HIGH (5)—It
+                AVOID_HIGH (5)-It
                 is highly unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                AVOID_MEDIUM (2)—It
+                AVOID_MEDIUM (2)-It
                 is unlikely for the tool to include in the route the roads that are
                 associated with the restriction.
 
-                AVOID_LOW (1.3)—It
+                AVOID_LOW (1.3)-It
                 is somewhat unlikely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_LOW (0.8)—It
+                PREFER_LOW (0.8)-It
                 is somewhat likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
-                PREFER_MEDIUM (0.5)—It is likely for the tool to include in the route the roads that
+                PREFER_MEDIUM (0.5)-It is likely for the tool to include in the route the roads that
                 are associated with the restriction.
 
-                PREFER_HIGH (0.2)—It is highly likely for the tool to include in the route the roads
+                PREFER_HIGH (0.2)-It is highly likely for the tool to include in the route the roads
                 that are associated with the restriction.
 
             In most cases, you can use the default value, PROHIBITED,
@@ -806,7 +822,7 @@ Parameters:
 
    impedance: Impedance (str). Optional parameter.  Specify the
             impedance, which is a value that represents the effort or cost of traveling along road segments or on other parts of the transportation network.
-           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes—a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode—a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time—Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. This is the default value. Truck Time—Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time—Models travel times for a pedestrian. Travel Distance—Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
+           Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. Travel distance in this sense is the same for all modes-a kilometer for a pedestrian is also a kilometer for a car. (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile along an empty road. Travel times can vary by travel mode-a pedestrian may take more than 20  minutes to walk the same mile, so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: Drive Time-Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where traffic data is available. This is the default value. Truck Time-Models travel times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel times for a pedestrian. Travel Distance-Stores  length measurements along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
       Choice list:['Drive Time', 'Truck Time', 'Walk Time', 'Travel Distance']
 
 gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -858,3 +874,26 @@ See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Serv
 
     return _execute_gp_tool(gis, "GenerateServiceAreas", kwargs, param_db, return_values, _use_async, url)
 
+generate_service_areas.__annotations__ = {
+    'facilities': FeatureSet,
+    'break_values': str,
+    'break_units': str,
+    'analysis_region': str,
+    'travel_direction': str,
+    'time_of_day': datetime,
+    'use_hierarchy': bool,
+    'uturn_at_junctions': str,
+    'polygons_for_multiple_facilities': str,
+    'polygon_overlap_type': str,
+    'detailed_polygons': bool,
+    'polygon_trim_distance': LinearUnit,
+    'polygon_simplification_tolerance': LinearUnit,
+    'point_barriers': FeatureSet,
+    'line_barriers': FeatureSet,
+    'polygon_barriers': FeatureSet,
+    'restrictions': str,
+    'attribute_parameter_values': FeatureSet,
+    'time_zone_for_time_of_day': str,
+    'travel_mode': str,
+    'impedance': str,
+    'return': tuple}

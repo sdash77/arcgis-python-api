@@ -56,10 +56,11 @@ geometry type and returns the correct type as the example below demonstrates:
                   [-97.06326,32.759]]],
       "spatialReference" : {"wkid" : 4326}
     })
-    print (geom.type) # POLYGON
+    print (geom.type) # Polygon
     print (isinstance(geom, Polygon) # True
 
 """
 
 from .types import *
 from .functions import *
+from . import fltr

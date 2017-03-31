@@ -747,8 +747,14 @@ define('mapview', [
                     console.log("ArcGISImageServiceLayer " + newlayer.url);
                     var options = {};
                     var swipelayer = false;
+                    var opacity = 0;
                     if (newlayer.options != null) {
                         var imgsvc_options = JSON.parse(newlayer.options);
+                        
+                        if (imgsvc_options.opacity) {
+                            opacity = imgsvc_options.opacity;
+                        }
+                        
                         if (imgsvc_options.swipelayer) {
                             swipelayer = imgsvc_options.swipelayer;
                         }
@@ -767,6 +773,11 @@ define('mapview', [
                     }
                     var layer = new ArcGISImageServiceLayer(newlayer.url, options);
 
+                    if (opacity != -1) {
+                        console.log("******Setting opacity ");
+                        layer.setOpacity(opacity);
+                    }
+                    
                     this.map.addLayer(layer);
 
                     if (swipelayer) {
