@@ -590,11 +590,11 @@ class FeatureLayerManager(_GISResource):
         if asynchronous:
             if wait:
                 job = self._con.post(u_url, params)
-                status = self._get_status(url=job['statusUrl'])
+                status = self._get_status(url=job['statusURL'])
                 while status['status'] not in ("Completed", "CompletedWithErrors", "Failed"):
                     # wait before checking again
                     time.sleep(2)
-                    status = self._get_status(url=job['statusUrl'])
+                    status = self._get_status(url=job['statusURL'])
 
                 res = status
                 self.refresh()
