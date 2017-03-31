@@ -9,6 +9,7 @@ from dino_utils.dino_precondition_checks import PortalUtils
 from dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
+import tempfile
 
 #region PreCondition check
 test_skip = False
@@ -172,7 +173,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
+            self.fail("Error during test: " + str(testException))
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_publish_spk(self):
@@ -319,6 +320,364 @@ class Test_Item_portal_builtin(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_empty_data(self):
+        """
+        When Item has no data, Item.download() should download to a file of size 0
+        :return: 
+        """
+        try:
+            chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                chicago_data = chicago_wfl_item.download(save_path=temp_dir)
+                chicago_data_size = os.stat(chicago_data).st_size
+
+            self.assertIsNotNone(chicago_data, "Calling download() on Item with empty resource throws error")
+            self.assertEqual(chicago_data_size, 0, 'File size of empty item is > 0')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_empty_data_nopath(self):
+        """
+        When Item has no data, Item.download() should download to a file of size 0
+        :return: 
+        """
+        try:
+            chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                chicago_data = chicago_wfl_item.download()
+                chicago_data_size = os.stat(chicago_data).st_size
+
+            self.assertIsNotNone(chicago_data, "Calling download() on Item with empty resource throws error")
+            self.assertEqual(chicago_data_size, 0, 'File size of empty item is > 0')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_txt_data_nopath(self):
+        """
+        When no path is provided, Item.download() downloads to sys temp dir
+        :return: 
+        """
+        try:
+            chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                chicago_data = chicago_csv_item.download()
+                chicago_data_size = os.stat(chicago_data).st_size
+
+            self.assertIsInstance(chicago_data, str, "Calling download() on csv item does not return download str path")
+            self.assertTrue(chicago_data.endswith("set1_Chicago.csv"), "Download file name does not match known input")
+            self.assertGreater(chicago_data_size,0,"Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_txt_data_outputpath(self):
+        """
+        When given a download path, ensure Item.download() downloads file into that path
+        :return: 
+        """
+        try:
+            chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                chicago_data = chicago_csv_item.download(save_path=temp_dir)
+                chicago_data_size = os.stat(chicago_data).st_size
+
+            self.assertIsInstance(chicago_data, str,
+                                  "Calling download() on csv item does not return download str path")
+            self.assertTrue(chicago_data.startswith(str(temp_dir)),
+                            "Download file name does not match known input")
+            self.assertGreater(chicago_data_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_JSON_data_outputpath(self):
+        """
+        When Item has JSON data, ensure Item.download() downloads file into that path instead
+        of returning parsed dict
+        :return: 
+        """
+        try:
+            JSON_item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                json_file = JSON_item.download(save_path=temp_dir)
+                json_file_size = os.stat(json_file).st_size
+
+            self.assertIsInstance(json_file, str,
+                                  "Calling download() on webmap item does not return download str path")
+            self.assertTrue(json_file.startswith(str(temp_dir)),
+                            "Download file name does not match known input")
+            self.assertGreater(json_file_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_binary_data_outputpath(self):
+        """
+        When Item has binary data - like layer packages, ensure Item.download() downloads file 
+        into that path instead of returning None or binary stream.
+        :return: 
+        """
+        try:
+            JSON_item = self.gis.content.search("set1_mmpk_usa", "Mobile Map Package")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                json_file = JSON_item.download(save_path=temp_dir)
+                json_file_size = os.stat(json_file).st_size
+
+            self.assertIsInstance(json_file, str,
+                                  "Calling download() on mmpk item does not return download str path")
+            self.assertTrue(json_file.startswith(str(temp_dir)),
+                            "Download file name does not match known input")
+            self.assertGreater(json_file_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_download_method_zero_size_data(self):
+        """
+        When Item has no data or 0kb size - ensure Item.download() returns None
+        :return: 
+        """
+        try:
+            JSON_item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
+            json_file = JSON_item.download()
+            json_file_size = os.stat(json_file).st_size
+            self.assertIsNotNone(json_file, "Calling download() on zero kb item returns None")
+            self.assertEqual(json_file_size, 0, "Downloaded file size is not 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_binary_data_tryjson_True(self):
+        """
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        into that path even if try_json is set to True
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_lpk", "Layer Package")[0]
+            item_data = item.get_data(try_json=True)
+            item_data_size = os.stat(item_data).st_size
+
+            self.assertIsInstance(item_data, str,
+                                  "Calling get_data() on lpk item does not return download str path")
+            self.assertTrue(item_data.startswith(str(tempfile.gettempdir())),
+                            "Download file name does not match known input")
+            self.assertGreater(item_data_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_binary_data_tryjson_False(self):
+        """
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        into that path when try_json is set to False
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_geometric", "Map Document")[0]
+            item_data = item.get_data(try_json=False)
+            item_data_size = os.stat(item_data).st_size
+
+            self.assertIsInstance(item_data, str,
+                                  "Calling get_data() on map doc item does not return download str path")
+            self.assertTrue(item_data.startswith(str(tempfile.gettempdir())),
+                            "Download file name does not match known input")
+            self.assertGreater(item_data_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_JSON_data_tryjson_False(self):
+        """
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json False, 
+        should return the data as str instead of dict
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+            item_data = item.get_data(try_json=False)
+
+            self.assertIsInstance(item_data, str,
+                                  "Calling get_data() on web map item does not return data as str with try_json is false")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_JSON_data_tryjson_True(self):
+        """
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json True, 
+        should return the data dict instead of str
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+            item_data = item.get_data(try_json=True)
+
+            self.assertIsInstance(item_data, dict,
+                                  "Calling get_data() on web map item does not return data as dict with try_json is true")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_zero_size_data_tryjson_False(self):
+        """
+        When Item has no data, calling Item.get_data() with try_json False, 
+        should return None.
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
+            item_data = item.get_data(try_json=False)
+
+            self.assertIsNone(item_data,
+                                  "Calling get_data() on empty item with tryjson False does not return None")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_zero_size_data_tryjson_True(self):
+        """
+        When Item has no data, calling Item.get_data() with try_json True, 
+        should return None.
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
+            item_data = item.get_data(try_json=True)
+
+            self.assertIsNone(item_data,
+                              "Calling get_data() on empty item with tryjson False does not return None")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_empty_data_tryjson_True(self):
+        """
+        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True, 
+        should return None.
+        :return: 
+        """
+        try:
+            item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            self.assertGreater(item.size, 0, "Invalid item for this testcase, its size is not greater than 0")
+
+            item_data = item.get_data(try_json=True)
+
+            self.assertIsNone(item_data,
+                              "Calling get_data() on empty item with tryjson False does not return None")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
 
 #TestModule
 def tearDownModule():

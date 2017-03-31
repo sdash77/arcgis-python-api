@@ -8,6 +8,7 @@ A FeatureLayerCollection is a collection of feature layers and tables, with the 
 import json
 import os
 from re import search
+import time
 
 import six
 from arcgis._impl.common import _utils
@@ -987,7 +988,7 @@ class FeatureLayerCollection(_GISResource):
                         transport_type="esriTransportTypeUrl",
                         return_attachments=False,
                         return_attachments_data_by_url=False,
-                        async=False,
+                        asynchronous=False,
                         attachments_sync_direction="none",
                         sync_model="none",
                         data_format="json",
@@ -1047,7 +1048,7 @@ class FeatureLayerCollection(_GISResource):
             creating a replica. AttachmentsSyncDirection is currently a createReplica property
             and cannot be overridden during sync.
             Values: none, upload, bidirectional
-           async - If true, the request is processed as an asynchronous job, and a URL is
+           asynchronous - If true, the request is processed as an asynchronous job, and a URL is
             returned that a client can visit to check the status of the job. See the topic on
             asynchronous usage for more information. The default is false.
            syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
@@ -1074,7 +1075,7 @@ class FeatureLayerCollection(_GISResource):
             "returnAttachments": return_attachments,
             "returnAttachmentsDatabyURL": return_attachments_data_by_url,
             "attachmentsSyncDirection": attachments_sync_direction,
-            "async": async,
+            "async": asynchronous,
             "syncModel": sync_model,
             "layers": layers
         }
@@ -1094,14 +1095,16 @@ class FeatureLayerCollection(_GISResource):
         if transport_type is not None:
             params['transportType'] = transport_type
 
-        if async:
+        if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params, token=self._token)
                 status = self._replica_status(url=export_job['statusUrl'])
-                while status['status'].lower() != "completed":
-                    status = self._replica_status(url=export_job['statusUrl'])
-                    if status['status'].lower() == "failed":
+                while status['status'] not in ("Completed", "CompletedWithErrors"):
+                    if status['status'] == "Failed":
                         return status
+                    # wait before checking again
+                    time.sleep(2)
+                    status = self._replica_status(url=export_job['statusUrl'])
 
                 res = status
 
@@ -1138,7 +1141,7 @@ class FeatureLayerCollection(_GISResource):
                              return_ids_for_adds=False,
                              edits=None,
                              return_attachment_databy_url=False,
-                             async=False,
+                             asynchronous=False,
                              sync_direction="snapshot",
                              sync_layers="perReplica",
                              edits_upload_id=None,
@@ -1164,8 +1167,8 @@ class FeatureLayerCollection(_GISResource):
             params['returnIdsForAdds'] = return_ids_for_adds
         if return_attachment_databy_url is not None:
             params['returnAttachmentDatabyURL'] = return_attachment_databy_url
-        if async is not None:
-            params['async'] = async
+        if asynchronous is not None:
+            params['async'] = asynchronous
         if sync_direction is not None:
             params['syncDirection'] = sync_direction
         if sync_layers is not None:

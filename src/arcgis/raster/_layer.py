@@ -8,6 +8,9 @@ class ImageryLayer(Layer):
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
         self._temporal_filter = None
+        self._where_clause = '1=1'
+        self._fn = None
+        self._filtered = False
 
     @classmethod
     def fromitem(cls, item):
@@ -16,14 +19,45 @@ class ImageryLayer(Layer):
 
         return cls(item.url, item._gis)
 
-    def spatial_filter(self, fltr):
+    def set_spatial_filter(self, fltr):
+        """Sets the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter """
         self._spatial_filter = fltr
+        self._filtered = True
+        return self
 
-    def temporal_filter(self, fltr):
+    def set_temporal_filter(self, fltr):
+        """Sets a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
+        Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+        Syntax: time_filter=<timeInstant>
+
+        Time extent specified as list of [<startTime>, <endTime>]
+        For time extents one of <startTime> or <endTime> could be None. A None value specified for
+        start time or end time will represent infinity for start or end time respectively.
+        Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
+        timestamp in milliseconds
+        """
         self._temporal_filter = fltr
+        self._filtered = True
+        return self
 
-    def where_clause(self, where):
+    def set_where_clause(self, where='1=1'):
+        """Sets a where clause on this layer to filter the imagery layer by the selection sql statement.
+        Any legal SQL where clause operating on the fields in the raster"""
         self._where_clause = where
+        self._filtered = True
+        return self
+
+    def filtered_rasters(self):
+        """The object ids of the filtered rasters in this imagery layer, by applying the where clause, spatial and
+        temporal filters"""
+        if self._filtered:
+            oids = self.query(where=self._where_clause,
+                  time_filter=self._temporal_filter,
+                  geometry_filter=self._spatial_filter,
+                  return_ids_only=True)['objectIds']
+            return ['$' + str(x) for x in oids]
+        else:
+            return '$$'
 
     def export_image(self,
                      bbox,
@@ -40,7 +74,7 @@ class ImageryLayer(Layer):
                      compression_quality=None,
                      band_ids=None,
                      moasiac_rule=None,
-                     rendering_rule="",
+                     rendering_rule=None,
                      f="json",
                      save_folder=None,
                      save_file=None,
@@ -255,6 +289,8 @@ class ImageryLayer(Layer):
 
         if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
 
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
@@ -290,7 +326,7 @@ class ImageryLayer(Layer):
 
     # ----------------------------------------------------------------------
     def query(self,
-              where="1=1",
+              where=None,
               out_fields="*",
               time_filter=None,
               geometry_filter=None,
@@ -349,12 +385,17 @@ class ImageryLayer(Layer):
                else a dictionary containing the expected return type
          """
         params = {"f": "json",
-                  "where": where,
                   "outFields": out_fields,
                   "returnGeometry": return_geometry,
                   "returnIdsOnly": return_ids_only,
                   "returnCountOnly": return_count_only,
                   }
+
+        if where is not None:
+            params['where'] = where
+        else:
+            params['where'] = self._where_clause
+
         if not group_by_fields_for_statistics is None:
             params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
         if not out_statistics is None:
@@ -404,6 +445,8 @@ class ImageryLayer(Layer):
 
         if return_count_only:
             return result['count']
+        elif return_ids_only:
+            return result
         elif return_geometry:
             return FeatureSet.from_dict(result)
         else:
@@ -598,8 +641,12 @@ class ImageryLayer(Layer):
 
         if not mosaic_rule is None:
             params["mosaicRule"] = mosaic_rule
+
         if not rendering_rule is None:
             params["renderingRule"] = rendering_rule
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
+
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
 
@@ -705,5 +752,7 @@ class ImageryLayer(Layer):
 
         if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
 
         return self._con.get(url, params, token=self._token)
