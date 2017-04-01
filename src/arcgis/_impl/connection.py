@@ -1021,7 +1021,7 @@ class _ArcGISConnection(object):
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + resp_data)
-        #print(resp_data);
+        # print(resp_data)
 
         if not try_json:
             return resp_data

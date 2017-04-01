@@ -747,7 +747,7 @@ define('mapview', [
                     console.log("ArcGISImageServiceLayer " + newlayer.url);
                     var options = {};
                     var swipelayer = false;
-                    var opacity = 0;
+                    var opacity = -1;
                     if (newlayer.options != null) {
                         var imgsvc_options = JSON.parse(newlayer.options);
                         
