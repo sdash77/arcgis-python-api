@@ -311,6 +311,16 @@ def aspect(raster):
 
 
 def band_arithmetic(raster, band_indexes=None, out_pixel_type=None, method=0):
+    """
+    The band_arithmetic function performs an arithmetic operation on the bands of a raster. For more information,
+    see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: band indexes or expression
+    :param out_pixel_type: output pixel type
+    :param method: int (0 = UserDefined, 1 = NDVI, 2 = SAVI, 3 = TSAVI, 4 = MSAVI, 5 = GEMI, 6 = PVI, 7 = GVITM, 8 = Sultan)
+    :return: band_arithmetic applied to the input raster
+    """
 
     layer, target_raster = _raster_input(raster)
 
@@ -333,30 +343,111 @@ def band_arithmetic(raster, band_indexes=None, out_pixel_type=None, method=0):
     }
 
 def ndvi(raster, band_indexes="4 3", out_pixel_type=None):
+    """
+    Normalized Difference Vegetation Index
+    NDVI = ((NIR - Red)/(NIR + Red))
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: Band Indexes "NIR Red", e.g., "4 3"
+    :param out_pixel_type: output pixel type
+    :return: Normalized Difference Vegetation Index raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 1)
 
 def savi(raster, band_indexes="4 3 0.33", out_pixel_type=None):
+    """
+    Soil-Adjusted Vegetation Index
+    SAVI = ((NIR - Red) / (NIR + Red + L)) x (1 + L)
+    where L represents amount of green vegetative cover, e.g., 0.5
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 2)
 
 def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", out_pixel_type=None):
+    """
+    Transformed Soil Adjusted Vegetation Index
+    TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 3)
 
 def msavi(raster, band_indexes="4 3", out_pixel_type=None):
+    """
+    Modified Soil Adjusted Vegetation Index
+    MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red", e.g., "4 3"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 4)
 
 def gemi(raster, band_indexes="4 3", out_pixel_type=None):
+    """
+    Global Environmental Monitoring Index
+    GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
+    where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 5)
 
 def pvi(raster, band_indexes="4 3 0.3 0.5", out_pixel_type=None):
+    """
+    Perpendicular Vegetation Index
+    PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
+    :param raster: the input raster / imagery layer
+    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 6)
 
 def gvitm(raster, band_indexes= "1 2 3 4 5 6", out_pixel_type=None):
+    """
+    Green Vegetation Index - Landsat TM
+    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
+    :param raster: the input raster / imagery layer
+    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 7)
 
 def sultan(raster, band_indexes="1 2 3 4 5 6", out_pixel_type=None):
+    """
+    Sultan's Formula (transform to 3 band 8 bit image)
+        Band 1 = (Band5 / Band6) x 100
+        Band 2 = (Band5 / Band1) x 100
+        Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6"
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    """
     return band_arithmetic(raster, band_indexes, out_pixel_type, 8)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", out_pixel_type=None):
+    """
+    Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
+    To identify the bands, prepend the band number with a B or b. For example: "BandIndexes":"(B1 + B2) / (B3 * B5)"
+    :param raster: the input raster / imagery layer
+    :param expression: the algebric formula
+    :param out_pixel_type: output pixel type
+    :return: output raster
+    :return:
+    """
     return band_arithmetic(raster, expression, out_pixel_type, 0)
 
 def classify(raster1, raster2, classifier_definition, out_pixel_type=None):
@@ -446,8 +537,7 @@ def colormap(raster, colormap_name=None, colormap=None, out_pixel_type=None):
         "rasterFunctionArguments": {
             "Raster": raster
         },
-        "variableName": "Rasters"
-
+        "variableName": "Raster"
     }
 
     if colormap_name is not None:
@@ -488,4 +578,143 @@ def composite_band(rasters, out_pixel_type=None):
         'layer' : layer,
         'function_chain' : template_dict
     }
+
+def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, out_pixel_type=None):
+    """
+    The ContrastBrightness function enhances the appearance of raster data (imagery) by modifying the brightness or
+    contrast within the image. This function works on 8-bit input raster only.
+    :param raster: input raster
+    :param contrast_offset: double, -100 to 100
+    :param brightness_offset: double, -100 to 100
+    :param out_pixel_type: pixel type of result raster
+    :return: output raster
+    """
+    layer, raster = _raster_input(raster)
+
+    template_dict = {
+      "rasterFunction" : "ContrastBrightness",
+      "rasterFunctionArguments" : {
+        "Raster": raster,
+        "ContrastOffset" : contrast_offset,
+        "BrightnessOffset" : brightness_offset
+      },
+      "variableName" : "Raster"
+    }
+
+    if out_pixel_type is not None:
+        template_dict["outputPixelType"] = out_pixel_type
+
+    return {
+        'layer': layer,
+        'function_chain': template_dict
+    }
+
+
+def convolution(raster, kernel=None, out_pixel_type=None):
+    """
+    The Convolution function performs filtering on the pixel values in an image, which can be used for sharpening an
+    image, blurring an image, detecting edges within an image, or other kernel-based enhancements. For more information,
+     see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
+
+    :param raster: input raster
+    :param kernel well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
+    :param out_pixel_type: pixel type of result raster
+    :return: output raster
+    """
+    layer, raster = _raster_input(raster)
+
+    template_dict = {
+      "rasterFunction" : "Convolution",
+      "rasterFunctionArguments" : {
+        "Raster": raster,
+      },
+      "variableName" : "Raster"
+    }
+
+    if out_pixel_type is not None:
+        template_dict["outputPixelType"] = out_pixel_type
+
+    if (isinstance(kernel, int)):
+        template_dict["rasterFunctionArguments"]['Type'] = kernel
+    elif (isinstance(kernel, list)):
+        numrows = len(kernel)
+        numcols = len(kernel[0])
+        flattened = [item for sublist in kernel for item in sublist]
+        template_dict["rasterFunctionArguments"]['Columns'] = numcols
+        template_dict["rasterFunctionArguments"]['Rows'] = numrows
+        template_dict["rasterFunctionArguments"]['Kernel'] = flattened
+    else:
+        raise RuntimeError('Invalid kernel type - pass int or list of list: [[][][]...]')
+
+    return {
+        'layer': layer,
+        'function_chain': template_dict
+    }
+
+
+def curvature(raster, curvature_type='standard', z_factor=1, out_pixel_type=None):
+    """
+    The Curvature function displays the shape or curvature of the slope. A part of a surface can be concave or convex;
+    you can tell that by looking at the curvature value. The curvature is calculated by computing the second derivative
+    of the surface. Refer to this conceptual help on how it works.
+
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/curvature-function.htm
+
+    :param raster: input raster
+    :param curvature_type: 'standard', 'planform', 'profile'
+    :param z_factor: double
+    :param out_pixel_type: output pixel type
+    :return: the output raster
+    """
+    layer, raster = _raster_input(raster)
+
+
+    curv_types = {
+        'standard': 0,
+        'planform': 1,
+        'profile': 2
+    }
+
+    in_curv_type = curv_types[curvature_type.lower()]
+
+    template_dict = {
+        "rasterFunction": "Curvature",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+            "Type": in_curv_type,
+            "ZFactor": z_factor
+        },
+        "variableName": "Raster"
+    }
+
+    if out_pixel_type is not None:
+        template_dict["outputPixelType"] = out_pixel_type
+
+    return {
+        'layer' : layer,
+        'function_chain' : template_dict
+    }
+
+
+def NDVI(raster, visible_band=2, ir_band=1, out_pixel_type=None):
+    layer, raster = _raster_input(raster)
+
+    template_dict = {
+      "rasterFunction" : "NDVI",
+      "rasterFunctionArguments" : {
+        "Raster": raster,
+        "VisibleBandID" : visible_band,
+        "InfraredBandID" : ir_band
+      },
+      "variableName" : "Raster"
+    }
+
+    if out_pixel_type is not None:
+        template_dict["outputPixelType"] = out_pixel_type
+
+    return {
+        'layer': layer,
+        'function_chain': template_dict
+    }
+
 
