@@ -2915,3 +2915,37 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
         'function_chain': template_dict
     }
 
+
+def apply(raster, fn_name, **kwargs):
+    """
+    Applies a server side raster function template defined by the imagery layer (image service)
+    The name of the raster function template is available in the imagery layer properties.rasterFunctionInfos.
+
+    Function arguments are optional; argument names and default values are created by the author of the raster function
+    template and are not known through the API. A client can simply provide the name of the raster function template
+    only or, optionally, provide arguments to overwrite the default values.
+    For more information about authoring server-side raster function templates, see
+    <a href="http://server.arcgis.com/en/server/latest/publish-services/windows/server-side-raster-functions.htm">Server-side raster functions</a>.
+
+    :param raster: the input raster, or imagery layer
+    :param fn_name: name of the server side raster function template, See imagery layer properties.rasterFunctionInfos
+    :param kwargs: keyword arguments to override the default values of the raster function template
+    :return: the output raster
+    """
+    layer, raster = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": fn_name,
+        "rasterFunctionArguments": {
+            "Raster": raster
+        },
+        "variableName": "Raster"
+    }
+
+    for key, value in kwargs.iteritems():
+        template_dict["rasterFunctionArguments"][key] = value
+
+    return {
+        'layer': layer,
+        'function_chain': template_dict
+    }
