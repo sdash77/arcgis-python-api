@@ -804,7 +804,7 @@ def mosaic(method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=N
     :param method:  determines how the selected rasters are ordered.
         str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
         required if method is: center | nadir | northwest | seamline,
-        optional otherwise. If method is passed "none" method is used, which uses the order of records to sort
+        optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
         If sort_by and optionally sort_val parameters are specified, "attribute" method is used
         If lock_raster_ids are specified, "lock-raster" method is used
         If a viewpt parameter is passed, "viewpoint" method is used.
