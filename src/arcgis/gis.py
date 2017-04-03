@@ -79,7 +79,7 @@ class GIS(object):
         from arcgis._impl.tools import _Tools
         if url is None:
             url = "http://www.arcgis.com"
-        self._server_list = None
+
         self._url = url
         self._username = username
         self._password = password
@@ -127,27 +127,6 @@ class GIS(object):
         """
         return ContentManager(self)
 
-    @_lazy_property
-    def servers(self):
-        """
-        The list of datastores resource managers for sites federated with the GIS.
-        """
-        from arcgis.server import Server
-        if self._server_list:
-            return self._server_list
-
-        self._server_list = []
-        try:
-            res = self._portal.con.post("portals/self/servers", {"f": "json"})
-            servers = res['servers']
-            admin_url = None
-            for server in servers:
-                admin_url = server['adminUrl']
-                self._server_list.append(Server(url=admin_url,
-                                                portal_connection=self._con))
-        except:
-            pass
-        return self._server_list
     @_lazy_property
     def _datastores(self):
         """
@@ -4603,12 +4582,11 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-
-                    self._lazy_token = self._con.token
+                    self._lazy_token = self._con.generate_portal_server_token(self._url)
 
                 self._refresh()
 
-            except HTTPError as httperror: # service maybe down
+            except HTTPError as httperror:  # service maybe down
                 _log.error(httperror)
                 err = httperror
             except RuntimeError as e:

@@ -9,21 +9,21 @@ from . import summarize_data, analyze_patterns, use_proximity, manage_data, find
 
 def get_datastores(gis=None):
     """
-    Returns a helper object to manage geoanalytics datastores in the GIS.
+    Returns a helper object to manage geoanalytics datastores in the GIS. 
     If a gis isn't specified, returns datastore manager of arcgis.env.active_gis
     """
     import arcgis
     gis = arcgis.env.active_gis if gis is None else gis
-
+    
     for ds in gis._datastores:
         if ds._server['serverFunction'] == 'GeoAnalytics':
             return ds
-
+    
     return None
-
+    
 def is_supported(gis=None):
     """
-    Returns True if the GIS supports geoanalytics. If a gis isn't specified,
+    Returns True if the GIS supports geoanalytics. If a gis isn't specified, 
     checks if arcgis.env.active_gis supports geoanalytics
     """
     import arcgis

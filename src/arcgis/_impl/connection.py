@@ -216,7 +216,6 @@ class _ArcGISConnection(object):
     _connection = None
     _portal_connection = None
     _service_url = None
-    _verify_cert = None
 
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
@@ -242,7 +241,7 @@ class _ArcGISConnection(object):
             self.baseurl = baseurl
         self._tokenurl = tokenurl
         '''_normalize_url(baseurl)'''
-
+        self._product = self._check_product()
         self.key_file = key_file
         self.cert_file = cert_file
         self.all_ssl = all_ssl
@@ -250,8 +249,8 @@ class _ArcGISConnection(object):
         self.proxy_port = proxy_port
         self.token = None
         self._server_token = None
-        #self._connection = connection # second connection
-
+        self._connection = connection # second connection
+        
         self._verify_cert = verify_cert
 
         # Setup the referer and user agent
@@ -266,8 +265,7 @@ class _ArcGISConnection(object):
 
         self._username = username
         self._password = password
-        self._product = self._check_product()
-        self.baseurl = self._validate_url(baseurl)
+
         self._client_id = client_id
 
         if client_id is not None:
@@ -278,7 +276,7 @@ class _ArcGISConnection(object):
             self._auth = "BUILTIN" # or BASIC (LDAP) or DIGEST
         else:
             self._auth = "ANON" # or IWA (NTLM or Kerberos) (self.login sets this up)
-
+            
         if cert_file is None and key_file is None:
             self.login(username, password, expiration, client_id)
 
@@ -288,7 +286,7 @@ class _ArcGISConnection(object):
         if self._is_arcpy:
             if not url[-1] == '/':
                 url += '/'
-            if url.lower().find("arcgis.com") > -1:
+            if url.lower().find("www.arcgis.com") > -1:
                 urlscheme = urlparse(url).scheme
                 return "{scheme}://www.arcgis.com/sharing/rest/".format(scheme=urlscheme)
             elif url.lower().endswith("sharing/"):
@@ -297,9 +295,6 @@ class _ArcGISConnection(object):
                 return url
             else:
                 return url + 'sharing/rest/'
-        if self._product == "PORTAL" and \
-           url.lower().find("sharing/rest") == 1:
-                return url + "/sharing/rest"
         return url
     #----------------------------------------------------------------------
     @property
@@ -307,19 +302,54 @@ class _ArcGISConnection(object):
         if self._product is None:
             self._product = self._check_product()
         return self._product
-
+    #----------------------------------------------------------------------
+    @property
+    def connection(self):
+        """gets/sets an additional connection object to get a token from"""
+        return self._connection
+    #----------------------------------------------------------------------
+    @connection.setter
+    def connection(self, value):
+        """gets/sets an additional connection object to get a token from"""
+        if self._connection != value:
+            self._connection = value
+            self._token = None
+            self._server_token = None
     #----------------------------------------------------------------------
     @property
     def token(self):
         """gets/sets the token"""
-        if self._token:
+        if self.connection and self.service_url:
+            return self.connection.generate_portal_server_token(serverUrl=self.service_url)
+        elif self._connection and self._server_token is None:
+            #create a portalserver token
+            if self._connection.product == "AGO":
+                return self.connection.token
+            return self.generate_portal_server_token(serverUrl=self.baseurl)
+        elif self._connection and self._server_token:
+            return self._server_token
+        elif self._connection is None and self.product == "FEDERATED_SERVER":
+            self._connection = _ArcGISConnection(baseurl=self.baseurl, connection=self)
+            return self.token
+        elif self._token:
             return self._token
         elif self._username and self._password:
-            self.login(username=self._username,
-                       password=self._password,
-                       expiration=60)
+            self.login(username=self._username, password=self._password, expiration=60)
             return self._token
         return None
+    #----------------------------------------------------------------------
+    @property
+    def service_url(self):
+        """gets/sets the service url"""
+        return self._service_url
+    #----------------------------------------------------------------------
+    @service_url.setter
+    def service_url(self, value):
+        """gets/sets the service url"""
+        if value:
+            self._service_url = value
+        else:
+            self._service_url = None
     #----------------------------------------------------------------------
     @token.setter
     def token(self, value):
@@ -358,18 +388,18 @@ class _ArcGISConnection(object):
             return self.oauth_authenticate(client_id, expiration)
 
         else:
-        if self._tokenurl is None:
-            if self.baseurl.endswith('/'):
-                resp = self.post('generateToken', postdata,
-                                 ssl=True, add_token=False)
+            if self._tokenurl is None:
+                if self.baseurl.endswith('/'):
+                    resp = self.post('generateToken', postdata,
+                                     ssl=True, add_token=False)
+                else:
+                    resp = self.post('/generateToken', postdata,
+                                     ssl=True, add_token=False)
             else:
-                resp = self.post('/generateToken', postdata,
+                resp = self.post(path=self._tokenurl, postdata=postdata,
                                  ssl=True, add_token=False)
-        else:
-            resp = self.post(path=self._tokenurl, postdata=postdata,
-                             ssl=True, add_token=False)
-        if resp:
-            return resp.get('token')
+            if resp:
+                return resp.get('token')
 
     def oauth_authenticate(self, client_id, expiration):
 
@@ -483,7 +513,7 @@ class _ArcGISConnection(object):
                     self._username = username
                     self._password = password
                     self._expiration = expiration
-
+                    
                     return newtoken
 
             elif client_id is not None:
@@ -497,7 +527,7 @@ class _ArcGISConnection(object):
                 self._auth = "ANON"
 
         except HTTPError as err:
-            if err.code == 401:
+            if err.code == 401: 
                 authhdr = err.headers.get('WWW-Authenticate')
                 if authhdr is not None:
                     if authhdr.lower().startswith('basic'):
@@ -518,8 +548,8 @@ class _ArcGISConnection(object):
         except ValueError as ve:
             if str(ve) == "AbstractBasicAuthHandler does not support the following scheme: 'Negotiate'":
                 self._auth = "IWA"
-
-
+            
+            
     #----------------------------------------------------------------------
     def relogin(self, expiration=60):
         """ Re-authenticates with the portal using the same username/password. """
@@ -535,7 +565,7 @@ class _ArcGISConnection(object):
 
             return self._token
         else:
-        return self.login(self._username, self._password, expiration)
+            return self.login(self._username, self._password, expiration)
     #----------------------------------------------------------------------
     def logout(self):
         """ Logs out of the portal. """
@@ -575,7 +605,7 @@ class _ArcGISConnection(object):
             params = {"f" : "json"}
             for pt in parts:
                 try:
-                    res = self.get(path=root + pt, params=params, add_token=False)
+                    res = self.get(path=root + pt, params=params)
                     if self._tokenurl is None and \
                        res is not None and \
                        'authInfo' in res and \
@@ -725,8 +755,8 @@ class _ArcGISConnection(object):
             params = {}
         if try_json:
             params['f'] = 'json'
-
-
+        
+        
         if add_token:
             if token != DEFAULT_TOKEN: # use the provided token, if any
                 if token is not None:
@@ -780,8 +810,8 @@ class _ArcGISConnection(object):
                                 _log.info('Token expired during get request, ' \
                                           + 'fetching a new token and retrying')
                                 newtoken = self.relogin()
-
-
+                                
+                                
                                 self.token = newtoken
 
                                 if token != DEFAULT_TOKEN: # was provided a FEDERATED SERVER token, that has expired
@@ -856,7 +886,7 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
         handlers = []
-
+        
         if self._auth == "BASIC": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
@@ -877,10 +907,10 @@ class _ArcGISConnection(object):
             if os.name == 'nt':
                 try:
                     from .common._iwa import NtlmSspiAuthHandler, KerberosSspiAuthHandler
-
+                
                     auth_NTLM = NtlmSspiAuthHandler()
                     auth_krb = KerberosSspiAuthHandler()
-
+                
                     handlers.append(auth_NTLM)
                     handlers.append(auth_krb)
 
@@ -890,7 +920,7 @@ class _ArcGISConnection(object):
                     _log.error(str(err))
             else:
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
-
+            
         elif self._auth == "PKI":
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
@@ -996,13 +1026,10 @@ class _ArcGISConnection(object):
         if not try_json:
             return resp_data
 
-        try:
-            if use_ordered_dict:
-                resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
-            else:
-                resp_json = json.loads(resp_data)
-        except:
-            return resp_data
+        if use_ordered_dict:
+            resp_json = json.loads(resp_data, object_pairs_hook=OrderedDict)
+        else:
+            resp_json = json.loads(resp_data)
 
 
         # Check for errors, and handle the case where the token timed out

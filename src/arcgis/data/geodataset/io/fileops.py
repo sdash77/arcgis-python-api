@@ -148,7 +148,9 @@ def to_featureclass(df, out_name, out_location=None,
     desc = arcpy.Describe(fc)
     oidField = desc.oidFieldName
     col_insert = copy.copy(df.columns).tolist()
-    lower_col_names = [f.lower() for f in col_insert]
+    col_insert = [f for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid', desc.oidFieldName.lower()]]
+    df_cols = col_insert.copy()
+    lower_col_names = [f.lower() for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid']]
     idx_shp = None
 
     if oidField.lower() in lower_col_names:
@@ -188,7 +190,7 @@ def to_featureclass(df, out_name, out_location=None,
             arcpy.AddField_management(in_table=fc, field_name=col,
                                       field_type=_infer_type(df, col))
     icur = da.InsertCursor(fc, col_insert)
-    for index, row in df.iterrows():
+    for index, row in df[df_cols].iterrows():
         if len(dt_idx) > 0:
             row = row.tolist()
             for i in dt_idx:
@@ -205,7 +207,7 @@ def to_featureclass(df, out_name, out_location=None,
         else:
             try:
                 row = row.tolist()
-                if idx_shp:
+                if isinstance(idx_shp, int):
                     row[idx_shp] = row[idx_shp].as_arcpy
                 icur.insertRow(row)
             except:
@@ -217,7 +219,7 @@ def to_featureclass(df, out_name, out_location=None,
     del icur
     if len(invalid_rows) > 0:
         t = ",".join([str(r) for r in invalid_rows])
-        _log.warn('The following rows could not be written to the table: %s' % t)
+        _log.warning('The following rows could not be written to the table: %s' % t)
     return fc
 #--------------------------------------------------------------------------
 def _infer_type(df, col):

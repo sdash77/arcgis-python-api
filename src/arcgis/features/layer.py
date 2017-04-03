@@ -53,7 +53,7 @@ class FeatureLayer(Layer):
         The layer_id is the id of the layer in feature layer collection (feature service).
         """
         return FeatureLayerCollection.fromitem(item).layers[layer_id]
-
+    
     @property
     def manager(self):
         """
@@ -703,7 +703,6 @@ class FeatureLayer(Layer):
 class Table(FeatureLayer):
     """
     Tables represent entity classes with uniform properties. In addition to working with "entities with location" as
-    Tables represent entity classes with uniform properties. In addition to working with entities with location as
     features, the GIS can also work with non-spatial entities as rows in tables.
 
     Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
@@ -814,7 +813,7 @@ class FeatureLayerCollection(_GISResource):
             params['spatialRel'] = geometry_filter['spatialRel']
             params['geometry'] = geometry_filter['geometry']
             if 'inSR' in geometry_filter:
-            params['inSR'] = geometry_filter['inSR']
+                params['inSR'] = geometry_filter['inSR']
 
         if out_sr is not None and \
                 isinstance(out_sr, SpatialReference):
