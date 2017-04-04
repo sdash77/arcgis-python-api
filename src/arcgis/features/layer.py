@@ -498,9 +498,9 @@ class FeatureLayer(Layer):
            This operation deletes features in a feature layer or table
            Inputs:
               deletes - string of OIDs to remove from service
-              where -  A where clause for the query filter. 
-                       Any legal SQL where clause operating on the fields in 
-                       the layer is allowed. Features conforming to the specified 
+              where -  A where clause for the query filter.
+                       Any legal SQL where clause operating on the fields in
+                       the layer is allowed. Features conforming to the specified
                        where clause will be deleted.
               geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
                                 with another geometry
