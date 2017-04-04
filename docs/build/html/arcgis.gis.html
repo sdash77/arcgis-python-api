@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis module &mdash; arcgis 1.0.1 documentation</title>
+  <title>arcgis.gis module &mdash; arcgis 1.2.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.0.1 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
         <link rel="next" title="arcgis.env module" href="arcgis.env.html"/>
         <link rel="prev" title="API Reference for the ArcGIS API for Python" href="index.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.2.0
               </div>
             
           
@@ -179,6 +179,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#mosaic">mosaic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -194,6 +195,128 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#convert-feature-to-raster">convert_feature_to_raster</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#convert-raster-to-feature">convert_raster_to_feature</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#copy-raster">copy_raster</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.raster.functions.html">arcgis.raster.functions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#abs">abs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#acos">acos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#acosh">acosh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#apply">apply</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-max">arg_max</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-median">arg_median</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-min">arg_min</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-statistics">arg_statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arithmetic">arithmetic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#asin">asin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#asinh">asinh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#aspect">aspect</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atan">atan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atan2">atan2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atanh">atanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#band-arithmetic">band_arithmetic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-and">bitwise_and</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-left-shift">bitwise_left_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-not">bitwise_not</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-or">bitwise_or</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-right-shift">bitwise_right_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-xor">bitwise_xor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-and">boolean_and</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-not">boolean_not</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-or">boolean_or</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-xor">boolean_xor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#classify">classify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#clip">clip</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap">colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#composite-band">composite_band</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#con">con</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#contrast-brightness">contrast_brightness</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#convolution">convolution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#cos">cos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#cosh">cosh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#curvature">curvature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#divide">divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#duration">duration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#elevation-void-fill">elevation_void_fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#equal-to">equal_to</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp">exp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp10">exp10</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp2">exp2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#expression">expression</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#extract-band">extract_band</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float">float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float-divide">float_divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#floor-divide">floor_divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gemi">gemi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#geometric">geometric</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than">greater_than</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than-equal">greater_than_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gvitm">gvitm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#hillshade">hillshade</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#is-null">is_null</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than">less_than</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than-equal">less_than_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ln">ln</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#local">local</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#log10">log10</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#log2">log2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#majority">majority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#majority-ignore-no-data">majority_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mask">mask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#max">max</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#max-ignore-no-data">max_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mean">mean</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mean-ignore-no-data">mean_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#med">med</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#med-ignore-no-data">med_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#min">min</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#min-ignore-no-data">min_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minority">minority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minority-ignore-no-data">minority_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minus">minus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ml-classify">ml_classify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mod">mod</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mode">mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#msavi">msavi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#multiply">multiply</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ndvi">ndvi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#negate">negate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#not-equal">not_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#plus">plus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#power">power</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pvi">pvi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#range">range</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#range-ignore-no-data">range_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#remap">remap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#resample">resample</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#round-down">round_down</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#round-up">round_up</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#savi">savi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#segment-mean-shift">segment_mean_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#set-null">set_null</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#shaded-relief">shaded_relief</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sin">sin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sinh">sinh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#slope">slope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sqrt">sqrt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#square">square</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#statistics">statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std">std</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std-ignore-no-data">std_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#stretch">stretch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sultan">sultan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum">sum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum-ignore-no-data">sum_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tan">tan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tanh">tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#threshold">threshold</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#times">times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#transpose-bits">transpose_bits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tsavi">tsavi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#unit-conversion">unit_conversion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety">variety</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety-ignore-no-data">variety_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field-renderer">vector_field_renderer</a></li>
 </ul>
 </li>
 </ul>
@@ -377,7 +500,7 @@ is the most important and provides the entry point into the GIS.</p>
 <h2>GIS<a class="headerlink" href="#gis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.gis.GIS">
-<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p id="id1">A GIS is representative of ArcGIS Online or an ArcGIS Portal
 site. The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as
 content, users and groups.</p>
@@ -409,6 +532,12 @@ to the specified zoomlevel.</p>
 <dt id="arcgis.gis.GIS.properties">
 <code class="descname">properties</code><a class="headerlink" href="#arcgis.gis.GIS.properties" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.GIS.update_properties">
+<code class="descname">update_properties</code><span class="sig-paren">(</span><em>properties_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS.update_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the GIS&#8217;s properties from those in properties_dict</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.users">
@@ -482,14 +611,16 @@ Returns True if the relationship was deleted</p>
 
 <dl class="method">
 <dt id="arcgis.gis.Item.download">
-<code class="descname">download</code><span class="sig-paren">(</span><em>save_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.download" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads the data to the specified folder or a tempoary folder if a folder isn&#8217;t provided</p>
+<code class="descname">download</code><span class="sig-paren">(</span><em>save_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads the data to the specified folder or a temporary folder if a folder isn&#8217;t provided
+:param save_path: Optional, location to download the file as a string
+:return: Returns download path if data was available else None.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Item.download_metadata">
 <code class="descname">download_metadata</code><span class="sig-paren">(</span><em>save_folder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.download_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads the item metadata for the specified item id, returns file path. 
+<dd><p>Downloads the item metadata for the specified item id, returns file path.
 Returns None if the item does not have metadata.
 Items with metadata have &#8216;Metadata&#8217; in their typeKeywords</p>
 </dd></dl>
@@ -501,19 +632,25 @@ Items with metadata have &#8216;Metadata&#8217; in their typeKeywords</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="arcgis.gis.Item.export">
+<code class="descname">export</code><span class="sig-paren">(</span><em>title</em>, <em>export_format</em>, <em>parameters=None</em>, <em>wait=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.export" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="arcgis.gis.Item.get_data">
 <code class="descname">get_data</code><span class="sig-paren">(</span><em>try_json=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.get_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the data for the item.
-If the data is a file, it&#8217;s downloaded and the path to the downloaded file is returned.
-Else if try_json is True, the method tries to convert it to a Python dict and returns it.
-To convert this dict to string using json.dumps(data).
+Binary files are downloaded and the path to the downloaded file is returned.
+For JSON/text files, if try_json is True, the method tries to convert it to a Python dict and returns it, else
+returns the data as a string. Zero byte files will return None.
+To convert this dict to string use json.dumps(data).
 Else, returns the data as a byte array, that can be converted to string using data.decode(&#8216;utf-8&#8217;)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Item.get_metadata">
 <code class="descname">get_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.get_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the item metadata for the specified item. 
+<dd><p>Returns the item metadata for the specified item.
 Returns None if the item does not have metadata.
 Items with metadata have &#8216;Metadata&#8217; in their typeKeywords</p>
 </dd></dl>
@@ -667,12 +804,12 @@ direction is one of [&#8216;forward&#8217;, &#8216;reverse&#8217;]</p>
 
 <dl class="method">
 <dt id="arcgis.gis.Item.share">
-<code class="descname">share</code><span class="sig-paren">(</span><em>everyone=False</em>, <em>org=False</em>, <em>groups=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.share" title="Permalink to this definition">¶</a></dt>
+<code class="descname">share</code><span class="sig-paren">(</span><em>everyone=False</em>, <em>org=False</em>, <em>groups=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.share" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shares an item with the specified list of groups</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="19%" />
-<col width="81%" />
+<col width="22%" />
+<col width="78%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
@@ -685,8 +822,12 @@ direction is one of [&#8216;forward&#8217;, &#8216;reverse&#8217;]</p>
 <td>optional boolean, share with the organization</td>
 </tr>
 <tr class="row-even"><td>groups</td>
-<td>optional string,
-comma-separated list of group IDs with which the item will be shared.</td>
+<td><dl class="first docutils">
+<dt>optional list of group names as strings, or, list of</dt>
+<dd>arcgis.gis.Group objects</dd>
+</dl>
+<p class="last">You can also pass a comma-separated list of group IDs</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -701,21 +842,50 @@ comma-separated list of group IDs with which the item will be shared.</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="arcgis.gis.Item.status">
+<code class="descname">status</code><span class="sig-paren">(</span><em>job_id=None</em>, <em>job_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inquire about status when publishing an item, adding an item in
+async mode, or adding with a multipart upload. &#8220;Partial&#8221; is
+available for Add Item Multipart, when only a part is uploaded
+and the item is not committed.</p>
+<dl class="docutils">
+<dt>Input:</dt>
+<dd><dl class="first last docutils">
+<dt>job_type The type of asynchronous job for which the status has</dt>
+<dd><p class="first">to be checked. Default is none, which check the
+item&#8217;s status.  This parameter is optional unless
+used with the operations listed below.
+Values: publish, generateFeatures, export,</p>
+<blockquote class="last">
+<div>and createService</div></blockquote>
+</dd>
+<dt>job_id - The job ID returned during publish, generateFeatures,</dt>
+<dd>export, and createService calls.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="arcgis.gis.Item.unshare">
 <code class="descname">unshare</code><span class="sig-paren">(</span><em>groups</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.unshare" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops sharing the item with the specified list of groups</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="18%" />
-<col width="82%" />
+<col width="22%" />
+<col width="78%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>groups</td>
-<td>optional string,
-comma-separated list of group IDs with which the item will be unshared.</td>
+<td><dl class="first docutils">
+<dt>optional list of group names as strings, or, list of</dt>
+<dd>arcgis.gis.Group objects.</dd>
+</dl>
+<p class="last">You can also pass a comma-separated list of group IDs</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1553,7 +1723,7 @@ Users call methods on this &#8216;content&#8217; object to manipulate (create, g
 <blockquote>
 <div><div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p>That content can be a file (such as a service definition, shapefile, CSV, layer package, 
+<p>That content can be a file (such as a service definition, shapefile, CSV, layer package,
 file geodatabase, geoprocessing package, map package) or it can be a URL (to an ArcGIS Server
 service, WMS service, or an application).</p>
 <p>If you are uploading a package or other file, provide a path or URL
@@ -1897,7 +2067,7 @@ set outside_org to True.</p>
 <td>required string, query string.  See notes.</td>
 </tr>
 <tr class="row-odd"><td>item_type</td>
-<td>optional string, set type of item to search
+<td>optional string, set type of item to search.
 <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000</a></td>
 </tr>
 <tr class="row-even"><td>sort_field</td>
@@ -2483,7 +2653,7 @@ GIS if a role_id is not specified
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.1',
+            VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

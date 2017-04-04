@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features module &mdash; arcgis 1.0.1 documentation</title>
+  <title>arcgis.features module &mdash; arcgis 1.2.0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.0.1 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
         <link rel="next" title="arcgis.features.analyze_patterns module" href="arcgis.features.analyze_patterns.html"/>
         <link rel="prev" title="arcgis.env module" href="arcgis.env.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.2.0
               </div>
             
           
@@ -179,6 +179,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#mosaic">mosaic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -194,6 +195,128 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#convert-feature-to-raster">convert_feature_to_raster</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#convert-raster-to-feature">convert_raster_to_feature</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#copy-raster">copy_raster</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.raster.functions.html">arcgis.raster.functions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#abs">abs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#acos">acos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#acosh">acosh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#apply">apply</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-max">arg_max</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-median">arg_median</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-min">arg_min</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arg-statistics">arg_statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#arithmetic">arithmetic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#asin">asin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#asinh">asinh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#aspect">aspect</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atan">atan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atan2">atan2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#atanh">atanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#band-arithmetic">band_arithmetic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-and">bitwise_and</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-left-shift">bitwise_left_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-not">bitwise_not</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-or">bitwise_or</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-right-shift">bitwise_right_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#bitwise-xor">bitwise_xor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-and">boolean_and</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-not">boolean_not</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-or">boolean_or</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#boolean-xor">boolean_xor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#classify">classify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#clip">clip</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap">colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#composite-band">composite_band</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#con">con</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#contrast-brightness">contrast_brightness</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#convolution">convolution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#cos">cos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#cosh">cosh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#curvature">curvature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#divide">divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#duration">duration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#elevation-void-fill">elevation_void_fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#equal-to">equal_to</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp">exp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp10">exp10</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp2">exp2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#expression">expression</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#extract-band">extract_band</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float">float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float-divide">float_divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#floor-divide">floor_divide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gemi">gemi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#geometric">geometric</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than">greater_than</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than-equal">greater_than_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gvitm">gvitm</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#hillshade">hillshade</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#is-null">is_null</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than">less_than</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than-equal">less_than_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ln">ln</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#local">local</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#log10">log10</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#log2">log2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#majority">majority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#majority-ignore-no-data">majority_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mask">mask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#max">max</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#max-ignore-no-data">max_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mean">mean</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mean-ignore-no-data">mean_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#med">med</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#med-ignore-no-data">med_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#min">min</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#min-ignore-no-data">min_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minority">minority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minority-ignore-no-data">minority_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#minus">minus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ml-classify">ml_classify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mod">mod</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mode">mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#msavi">msavi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#multiply">multiply</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ndvi">ndvi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#negate">negate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#not-equal">not_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#plus">plus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#power">power</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pvi">pvi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#range">range</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#range-ignore-no-data">range_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#remap">remap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#resample">resample</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#round-down">round_down</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#round-up">round_up</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#savi">savi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#segment-mean-shift">segment_mean_shift</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#set-null">set_null</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#shaded-relief">shaded_relief</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sin">sin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sinh">sinh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#slope">slope</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sqrt">sqrt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#square">square</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#statistics">statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std">std</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std-ignore-no-data">std_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#stretch">stretch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sultan">sultan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum">sum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum-ignore-no-data">sum_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tan">tan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tanh">tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#threshold">threshold</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#times">times</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#transpose-bits">transpose_bits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tsavi">tsavi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#unit-conversion">unit_conversion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety">variety</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety-ignore-no-data">variety_ignore_no_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field-renderer">vector_field_renderer</a></li>
 </ul>
 </li>
 </ul>
@@ -378,7 +501,7 @@ feature data.</p>
 feature classes, which represent a set of features located using a single spatial type (point, line, polygon) and a
 common set of properties.  This is the geographic extension of the classic tabular or relational representation for
 entities - a set of entities is modelled as rows in a table.  Tables represent entity classes with uniform
-properties.  In addition to working with “entities with location” as features, the system can also work with
+properties.  In addition to working with entities with location as features, the system can also work with
 non-spatial entities as rows in tables.  The system can also model relationships between entities using properties
 which act as primary and foreign keys.  A collection of feature classes and tables, with the associated
 relationships among the entities, is a feature layer collection. FeatureLayerCollections are one of the dataset types
@@ -463,7 +586,7 @@ returns a list of fields and the row object</div></blockquote>
 <dt id="arcgis.features.FeatureLayer">
 <em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">FeatureLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The feature layer is the primary concept for working with features in a GIS.</p>
-<p>Users create, import, export, analyze, edit, and visualize features, i.e. “entities in space” as feature layers.</p>
+<p>Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.</p>
 <p>Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
 tools.</p>
 <p>Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
@@ -519,6 +642,39 @@ Values: standard, native</dd>
 <dt id="arcgis.features.FeatureLayer.container">
 <code class="descname">container</code><a class="headerlink" href="#arcgis.features.FeatureLayer.container" title="Permalink to this definition">¶</a></dt>
 <dd><p>The feature layer collection to which this layer belongs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.FeatureLayer.delete_features">
+<code class="descname">delete_features</code><span class="sig-paren">(</span><em>deletes=None</em>, <em>where=None</em>, <em>geometry_filter=None</em>, <em>gdb_version=None</em>, <em>rollback_on_failure=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer.delete_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation deletes features in a feature layer or table
+Inputs:</p>
+<blockquote>
+<div><p>deletes - string of OIDs to remove from service
+where -  A where clause for the query filter.</p>
+<blockquote>
+<div>Any legal SQL where clause operating on the fields in 
+the layer is allowed. Features conforming to the specified 
+where clause will be deleted.</div></blockquote>
+<dl class="docutils">
+<dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
+<dd>with another geometry</dd>
+</dl>
+<p>gdb_version - Geodatabase version to apply the edits.
+rollback_on_failure - Optional parameter to specify if the</p>
+<blockquote>
+<div>edits should be applied only if all
+submitted edits succeed. If false, the
+server will apply the edits that succeed
+even if some of the submitted edits fail.
+If true, the server will apply the edits
+only if all edits succeed. The default
+value is true.</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>dictionary of messages</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -621,8 +777,8 @@ search results for a given time.  The values in
 the timeFilter should be as UTC timestampes in
 milliseconds.  No checking occurs to see if they
 are in the right format.</dd>
-<dt>geometryFilter - a GeometryFilter object to parse down a given</dt>
-<dd>query by another spatial dataset.</dd>
+<dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
+<dd>with another geometry</dd>
 <dt>maxAllowableOffset - This option can be used to specify the</dt>
 <dd>maxAllowableOffset to be used for
 generalizing geometries returned by
@@ -721,7 +877,7 @@ Query REST API.</dd>
 <dl class="docutils">
 <dt>Output:</dt>
 <dd>A FeatureSet containing the features matching the query
-unless another return type is specified, such as return</dd>
+unless another return type is specified, such as count</dd>
 </dl>
 </dd></dl>
 
@@ -797,7 +953,7 @@ not returned. The default is false.</dd>
 <dl class="class">
 <dt id="arcgis.features.Table">
 <em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">Table</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tables represent entity classes with uniform properties. In addition to working with “entities with location” as
+<dd><p>Tables represent entity classes with uniform properties. In addition to working with &#8220;entities with location&#8221; as
 features, the GIS can also work with non-spatial entities as rows in tables.</p>
 <p>Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
 have a geometry, and tables ignore any geometry related operation.</p>
@@ -852,6 +1008,39 @@ Values: standard, native</dd>
 <dt id="arcgis.features.Table.container">
 <code class="descname">container</code><a class="headerlink" href="#arcgis.features.Table.container" title="Permalink to this definition">¶</a></dt>
 <dd><p>The feature layer collection to which this layer belongs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.Table.delete_features">
+<code class="descname">delete_features</code><span class="sig-paren">(</span><em>deletes=None</em>, <em>where=None</em>, <em>geometry_filter=None</em>, <em>gdb_version=None</em>, <em>rollback_on_failure=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table.delete_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation deletes features in a feature layer or table
+Inputs:</p>
+<blockquote>
+<div><p>deletes - string of OIDs to remove from service
+where -  A where clause for the query filter.</p>
+<blockquote>
+<div>Any legal SQL where clause operating on the fields in 
+the layer is allowed. Features conforming to the specified 
+where clause will be deleted.</div></blockquote>
+<dl class="docutils">
+<dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
+<dd>with another geometry</dd>
+</dl>
+<p>gdb_version - Geodatabase version to apply the edits.
+rollback_on_failure - Optional parameter to specify if the</p>
+<blockquote>
+<div>edits should be applied only if all
+submitted edits succeed. If false, the
+server will apply the edits that succeed
+even if some of the submitted edits fail.
+If true, the server will apply the edits
+only if all edits succeed. The default
+value is true.</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>Output:</dt>
+<dd>dictionary of messages</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
@@ -954,8 +1143,8 @@ search results for a given time.  The values in
 the timeFilter should be as UTC timestampes in
 milliseconds.  No checking occurs to see if they
 are in the right format.</dd>
-<dt>geometryFilter - a GeometryFilter object to parse down a given</dt>
-<dd>query by another spatial dataset.</dd>
+<dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
+<dd>with another geometry</dd>
 <dt>maxAllowableOffset - This option can be used to specify the</dt>
 <dd>maxAllowableOffset to be used for
 generalizing geometries returned by
@@ -1054,7 +1243,7 @@ Query REST API.</dd>
 <dl class="docutils">
 <dt>Output:</dt>
 <dd>A FeatureSet containing the features matching the query
-unless another return type is specified, such as return</dd>
+unless another return type is specified, such as count</dd>
 </dl>
 </dd></dl>
 
@@ -1267,6 +1456,12 @@ spatial reference will be UnknownCoordinateSystem.</p>
 <dt id="arcgis.features.FeatureSet.fields">
 <code class="descname">fields</code><a class="headerlink" href="#arcgis.features.FeatureSet.fields" title="Permalink to this definition">¶</a></dt>
 <dd><p>gets the fields in the FeatureSet</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="arcgis.features.FeatureSet.from_dataframe">
+<em class="property">static </em><code class="descname">from_dataframe</code><span class="sig-paren">(</span><em>df</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.from_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a featureset from a Pandas&#8217; Data or Spatial DataFrame</p>
 </dd></dl>
 
 <dl class="staticmethod">
@@ -1484,7 +1679,7 @@ Filtering by where clause is not supported for feature collections</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.0.1',
+            VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

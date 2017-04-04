@@ -6,8 +6,9 @@ processed product on disk, for which raster analytics tools like arcgis.raster.a
 
 Functions can be applied to various rasters (or images), including the following:
 
-Imagery layers
-Rasters within imagery layers
+* Imagery layers
+* Rasters within imagery layers
+
 """
 # Raster dataset layers
 # Mosaic datasets
@@ -88,9 +89,9 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
 
 def arg_max(rasters, undefined_class=None, out_pixel_type=None):
     """
-     In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
-     which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
-     within each input raster.
+    In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
+    which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
+    within each input raster.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
 
@@ -291,6 +292,7 @@ def aspect(raster):
     the aspect. For more information, see
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/aspect-function.htm">Aspect function</a>
     and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-aspect-works.htm">How Aspect works</a>.
+
     :param raster: the input raster / imagery layer
     :return: aspect applied to the input raster
     """
@@ -371,6 +373,7 @@ def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", out_pixel_type=None):
     """
     Transformed Soil Adjusted Vegetation Index
     TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
+
     :param raster: the input raster / imagery layer
     :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
     :param out_pixel_type: output pixel type
@@ -382,6 +385,7 @@ def msavi(raster, band_indexes="4 3", out_pixel_type=None):
     """
     Modified Soil Adjusted Vegetation Index
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
+
     :param raster: the input raster / imagery layer
     :param band_indexes: "NIR Red", e.g., "4 3"
     :param out_pixel_type: output pixel type
@@ -406,6 +410,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", out_pixel_type=None):
     """
     Perpendicular Vegetation Index
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
+
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5"
     :param out_pixel_type: output pixel type
@@ -417,6 +422,7 @@ def gvitm(raster, band_indexes= "1 2 3 4 5 6", out_pixel_type=None):
     """
     Green Vegetation Index - Landsat TM
     GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
+
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red", e.g., "4 3"
     :param out_pixel_type: output pixel type
@@ -442,6 +448,7 @@ def expression(raster, expression="(B3 - B1 / B3 + B1)", out_pixel_type=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
     To identify the bands, prepend the band number with a B or b. For example: "BandIndexes":"(B1 + B2) / (B3 * B5)"
+
     :param raster: the input raster / imagery layer
     :param expression: the algebric formula
     :param out_pixel_type: output pixel type
@@ -584,6 +591,7 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, out_pixe
     """
     The ContrastBrightness function enhances the appearance of raster data (imagery) by modifying the brightness or
     contrast within the image. This function works on 8-bit input raster only.
+
     :param raster: input raster
     :param contrast_offset: double, -100 to 100
     :param brightness_offset: double, -100 to 100
@@ -618,7 +626,7 @@ def convolution(raster, kernel=None, out_pixel_type=None):
      see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
 
     :param raster: input raster
-    :param kernel well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
+    :param kernel: well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
     :param out_pixel_type: pixel type of result raster
     :return: output raster
     """
@@ -774,7 +782,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
                  wavelength_match_tolerance=None, out_pixel_type=None):
     """
     The extract_band function allows you to extract one or more bands from a raster, or it can reorder the bands in a
-     multiband image.This function was added at 10.2.1.The arguments for the extract_band function are as follows:
+    multiband image. The arguments for the extract_band function are as follows:
 
     :param raster: input raster
     :param band_ids: array of int
@@ -871,10 +879,10 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
               remove_edge_effect=None, out_pixel_type=None):
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
-     For more information, see
-     <a href='http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm'>hillshade
-     function</a> and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm">How hillshade works.</a>
-     The arguments for the hillshade function are as follows:
+    For more information, see
+    <a href='http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm'>hillshade
+    function</a> and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm">How hillshade works.</a>
+    The arguments for the hillshade function are as follows:
 
     :param dem: input DEM
     :param azimuth: double (e.g. 215.0)
@@ -2222,7 +2230,11 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
 
 def ml_classify(raster, signature, out_pixel_type=None):
     """
-    The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.This function was added at 10.2.1.The arguments for the ml_classify function are as follows:
+    The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification
+     algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
+     your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.
+     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
+     The arguments for the ml_classify function are as follows:
 
     :param raster: input raster
     :param signature: string. a signature string returned from computeClassStatistics (GSG)
@@ -2778,15 +2790,15 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     Filling is used to initialize pixel values of the output raster.
     Landsat 8 has a quality assessment band. The following are the example input and output bit positions to extract
     confidence levels by mapping them to 0-3:
-    Landsat 8 Water: {"input_bit_positions":[4,5],"output_bit_positions":[0,1]}
-    Landsat 8 Cloud Shadow: {"input_bit_positions":[6,7],"output_bit_positions":[0,1]}
-    Landsat 8 Vegetation: {"input_bit_positions":[8,9],"output_bit_positions":[0,1]}
-    Landsat 8 Snow/Ice: {"input_bit_positions":[10,11],"output_bit_positions":[0,1]}
-    Landsat 8 Cirrus: {"input_bit_positions":[12,13],"output_bit_positions":[0,1]}
-    Landsat 8 Cloud: {"input_bit_positions":[14,15],"output_bit_positions":[0,1]}
-    Landsat 8 Designated Fill: {"input_bit_positions":[0],"output_bit_positions":[0]}
-    Landsat 8 Dropped Frame: {"input_bit_positions":[1],"output_bit_positions":[0]}
-    Landsat 8 Terrain Occlusion: {"input_bit_positions":[2],"output_bit_positions":[0]}
+    * Landsat 8 Water: {"input_bit_positions":[4,5],"output_bit_positions":[0,1]}
+    * Landsat 8 Cloud Shadow: {"input_bit_positions":[6,7],"output_bit_positions":[0,1]}
+    * Landsat 8 Vegetation: {"input_bit_positions":[8,9],"output_bit_positions":[0,1]}
+    * Landsat 8 Snow/Ice: {"input_bit_positions":[10,11],"output_bit_positions":[0,1]}
+    * Landsat 8 Cirrus: {"input_bit_positions":[12,13],"output_bit_positions":[0,1]}
+    * Landsat 8 Cloud: {"input_bit_positions":[14,15],"output_bit_positions":[0,1]}
+    * Landsat 8 Designated Fill: {"input_bit_positions":[0],"output_bit_positions":[0]}
+    * Landsat 8 Dropped Frame: {"input_bit_positions":[1],"output_bit_positions":[0]}
+    * Landsat 8 Terrain Occlusion: {"input_bit_positions":[2],"output_bit_positions":[0]}
 
     :param raster: input raster
     :param input_bit_positions: array of long, required
