@@ -1051,7 +1051,7 @@ class Datastore(dict):
     @manifest.setter
     def manifest(self, value):
         """
-        Updates the manifest resource for bigdata fileshares,
+        Updates the manifest resource for bigdata fileshares
         """
         manifest_upload_url =  self._admin_url + '/data/items' + self.datapath + '/manifest/update'
 

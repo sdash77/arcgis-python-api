@@ -484,6 +484,34 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.fail("Error during test: " + str(testException))
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_get_data_method_Image(self):
+        """
+        For Image item, item.get_data(False) should return string representation of the item.
+        :return: 
+        """
+        try:
+            data_item = self.gis.content.search("set1_shifting_opportunity.png", "Image")[0]
+            with tempfile.TemporaryDirectory() as temp_dir:
+                item_data = data_item.download()
+                data_size = os.stat(item_data).st_size
+
+            self.assertIsInstance(item_data, str,
+                                  "Calling download() on Image item does not return download str path")
+            self.assertTrue(item_data.endswith(".png"),
+                            "Download file name does not match known input")
+            self.assertGreater(data_size, 0, "Downloaded file size is not greater than 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_download_method_zero_size_data(self):
         """
         When Item has no data or 0kb size - ensure Item.download() returns None
@@ -678,7 +706,6 @@ class Test_Item_portal_builtin(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
-
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
