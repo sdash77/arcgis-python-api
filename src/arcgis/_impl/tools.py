@@ -2140,7 +2140,46 @@ class _FeatureAnalysisTools(_AsyncService):
 
             unassigned_destinations_layer = arcgis.features.FeatureCollection(job_values['unassignedDestinationsLayer'])
             return { "routes_layer":routes_layer, "unassigned_origins_layer":unassigned_origins_layer, "unassigned_destinations_layer":unassigned_destinations_layer, }
+    
+    def create_route_layers(self,
+                       route_data_item,
+                       delete_route_data_item=False,
+                       output_name=None):
+        """
 
+
+        Parameters
+        ----------
+        route_data_item : Required item
+
+        delete_route_data_item : Required boolean
+
+        output_name: Optional dict
+
+        Returns
+        -------
+        route_layers : list (items)
+        """
+
+        task ="CreateRouteLayers"
+
+        params = {}
+
+        params["routeData"] = {"itemId": route_data_item.itemid}
+        params["deleteRouteData"] = delete_route_data_item
+        if output_name:
+            params["outputName"] = output_name
+
+        task_url, job_info = super()._analysis_job(task, params)
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        route_layer_items = []
+        
+        for itemid in job_values["routeLayers"]["items"]:
+            item = arcgis.gis.Item(self._gis, itemid)
+            route_layer_items.append(item)
+        
+        return route_layer_items
 
 class _RasterAnalysisTools(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
