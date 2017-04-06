@@ -15,24 +15,24 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from ._layer import ImageryLayer
 
-
-def _raster_input(raster):
-
-    if isinstance(raster, ImageryLayer):
-        layer = raster
-        raster = raster.filtered_rasters()
-    elif isinstance(raster, dict) and 'function_chain' in raster:
-        layer = raster['layer']
-        raster = raster['function_chain']
-    elif isinstance(raster, list):
-        r0 = raster[0]
-        if 'function_chain' in r0:
-            layer = r0['layer']
-            raster = [r['function_chain'] for r in raster]
-    else:
-        layer = None
-
-    return layer, raster
+#
+# def _raster_input(raster):
+#
+#     if isinstance(raster, ImageryLayer):
+#         layer = raster
+#         raster = raster._fn #filtered_rasters()
+#     # elif isinstance(raster, dict) and 'function_chain' in raster:
+#     #     layer = raster['layer']
+#     #     raster = raster['function_chain']
+#     elif isinstance(raster, list):
+#         r0 = raster[0]
+#         if 'function_chain' in r0:
+#             layer = r0['layer']
+#             raster = [r['function_chain'] for r in raster]
+#     else:
+#         layer = None
+#
+#     return layer, raster
 
 
 def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
@@ -613,10 +613,7 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=N
     if astype is not None:
         template_dict["outputPixelType"] = astype
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def convolution(raster, kernel=None, astype=None):
@@ -655,10 +652,7 @@ def convolution(raster, kernel=None, astype=None):
     else:
         raise RuntimeError('Invalid kernel type - pass int or list of list: [[][][]...]')
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
@@ -737,10 +731,7 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def elevation_void_fill(raster, max_void_width=0, astype=None):
@@ -772,10 +763,7 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
     if max_void_width is not None:
         template_dict["rasterFunctionArguments"]["MaxVoidWidth"] = max_void_width
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, missing_band_action=None,
@@ -819,10 +807,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     if wavelength_match_tolerance is not None:
         template_dict["rasterFunctionArguments"]["WavelengthMatchTolerance"] = wavelength_match_tolerance
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
@@ -869,10 +854,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
@@ -926,10 +908,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -994,10 +973,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
@@ -1466,7 +1442,7 @@ def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     return local(rasters, 29, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def int(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Int operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1498,7 +1474,7 @@ def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
     return local(rasters, 31, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def float(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Float operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2222,10 +2198,7 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     if no_data_interpretation is not None:
         template_dict["rasterFunctionArguments"]["NoDataInterpretation"] = no_data_interpretation
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def ml_classify(raster, signature, astype=None):
@@ -2259,10 +2232,7 @@ def ml_classify(raster, signature, astype=None):
     if signature is not None:
         template_dict["rasterFunctionArguments"]["SignatureFile"] = signature
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 # See NDVI() above
 # def ndvi(raster, visible_band_id=None, infrared_band_id=None, astype=None):
@@ -2383,10 +2353,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
@@ -2436,10 +2403,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
     if input_cellsize is not None:
         template_dict["rasterFunctionArguments"]["InputCellsize"] = input_cellsize
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectral_radius=None, spatial_radius=None,
@@ -2494,10 +2458,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     if min_num_pixels_per_segment is not None:
         template_dict["rasterFunctionArguments"]["MinNumPixelsPerSegment"] = min_num_pixels_per_segment
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
@@ -2553,10 +2514,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, remove_edge_effect=None,
@@ -2606,10 +2564,7 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     if dem is not None:
         template_dict["rasterFunctionArguments"]["DEM"] = dem
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
@@ -2658,10 +2613,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     if fill_no_data_only is not None:
         template_dict["rasterFunctionArguments"]["FillNoDataOnly"] = fill_no_data_only
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_deviations=None, statistics=None,
@@ -2675,12 +2627,12 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     can be used to define output minimum and maximum. DRA is used to get statistics from the extent in the export_image request.
     ComputeGamma will automatically calculate best gamma value to render exported image based on empirical model.
 
-    Stretch type 0 (None) does not require other parameters.
-    Stretch type 3 (StandardDeviation) requires NumberOfStandardDeviations, Statistics, or DRA (true).
-    Stretch type 4 (Histogram Equalization) requires the source dataset to have histograms or additional DRA (true).
-    Stretch type 5 (MinMax) requires Statistics or DRA (true).
-    Stretch type 6 (PercentClip) requires MinPercent, MaxPercent, and DRA (true), or histograms from the source dataset.
-    Stretch type 9 (sigmoid) does not require other parameters.
+    Stretch type None does not require other parameters.
+    Stretch type StdDev requires NumberOfStandardDeviations, Statistics, or DRA (true).
+    Stretch type Histogram (Histogram Equalization) requires the source dataset to have histograms or additional DRA (true).
+    Stretch type MinMax requires Statistics or DRA (true).
+    Stretch type PercentClip requires MinPercent, MaxPercent, and DRA (true), or histograms from the source dataset.
+    Stretch type Sigmoid does not require other parameters.
 
     Optionally, set the SigmoidStrengthLevel (1 to 6) to adjust the curvature of Sigmoid curve used in color stretch.
 
@@ -2688,7 +2640,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     The arguments for the stretch function are as follows:
 
     :param raster: input raster
-    :param stretch_type: int (0 = None, 3 = StandardDeviation, 4 = Histogram Equalization, 5 = MinMax, 6 = PercentClip, 9 = Sigmoid)
+    :param stretch_type: str, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
     :param min: double
     :param max: double
     :param number_of_standard_deviations: double (e.g. 2.5)
@@ -2706,6 +2658,20 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
 
     layer, raster = _raster_input(raster)
 
+    str_types = {
+        'none': 0,
+        'stddev': 3,
+        'histogram' : 4,
+        'minmax': 5,
+        'percentclip' : 6,
+        'sigmoid': 9
+    }
+
+    if isinstance(stretch_type, str):
+        in_str_type = str_types[stretch_type.lower()]
+    else:
+        in_str_type = stretch_type
+
     template_dict = {
         "rasterFunction": "Stretch",
         "rasterFunctionArguments": {
@@ -2718,7 +2684,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
         template_dict["outputPixelType"] = astype
 
     if stretch_type is not None:
-        template_dict["rasterFunctionArguments"]["StretchType"] = stretch_type
+        template_dict["rasterFunctionArguments"]["StretchType"] = in_str_type
     if min is not None:
         template_dict["rasterFunctionArguments"]["Min"] = min
     if max is not None:
@@ -2740,10 +2706,11 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     if sigmoid_strength_level is not None:
         template_dict["rasterFunctionArguments"]["SigmoidStrengthLevel"] = sigmoid_strength_level
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    if compute_gamma is not None or gamma is not None:
+        template_dict["rasterFunctionArguments"]["UseGamma"] = True
+
+
+    return _clone_layer(layer, template_dict)
 
 
 def threshold(raster, astype=None):
@@ -2773,10 +2740,7 @@ def threshold(raster, astype=None):
     if threshold_type is not None:
         template_dict["rasterFunctionArguments"]["ThresholdType"] = threshold_type
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, constant_fill_check=None,
@@ -2835,10 +2799,7 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     if fill_raster is not None:
         template_dict["rasterFunctionArguments"]["FillRaster"] = fill_raster
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
@@ -2876,10 +2837,7 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     if to_unit is not None:
         template_dict["rasterFunctionArguments"]["ToUnit"] = to_unit
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def vector_field_renderer(raster, is_uv_components=None, reference_system=None, mass_flow_angle_representation=None,
@@ -2922,10 +2880,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     if symbology_name is not None:
         template_dict["rasterFunctionArguments"]["SymbologyName"] = symbology_name
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def apply(raster, fn_name, **kwargs):
@@ -2954,10 +2909,56 @@ def apply(raster, fn_name, **kwargs):
         "variableName": "Raster"
     }
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
+
+def _clone_layer(layer, function_chain):
+    newlyr = ImageryLayer(layer._url, layer._gis)
+
+    newlyr._lazy_properties = layer.properties
+    newlyr._hydrated = True
+    newlyr._lazy_token = layer._token
+
+    # if layer._fn is not None: # chain the functions
+    #     old_chain = layer._fn
+    #     newlyr._fn = function_chain
+    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
+    # else:
+    newlyr._fn = function_chain
+
+    newlyr._where_clause = layer._where_clause
+    newlyr._spatial_filter = layer._spatial_filter
+    newlyr._temporal_filter = layer._temporal_filter
+    newlyr._mosaic_rule = layer._mosaic_rule
+    newlyr._filtered = layer._filtered
+
+    return newlyr
+    
+
+def _raster_input(raster):
+    if isinstance(raster, ImageryLayer):
+        layer = raster
+        raster = _get_raster(raster)
+    elif isinstance(raster, list):
+        r0 = raster[0]
+        layer = r0['layer']
+        raster = [_get_raster(r) for r in raster]
+    else: # maybe scalar for arithmetic functions
+        layer = None
+        # raster = raster
+
+    return layer, raster
+
+
+def _get_raster(raster):
+    if raster._fn is not None:
+        raster = raster._fn
+    else:
+        oids = raster.filtered_rasters()
+        if oids is None:
+            raster = '$$'
+        else:
+            raster = ['$' + str(x) for x in oids]
+    return raster

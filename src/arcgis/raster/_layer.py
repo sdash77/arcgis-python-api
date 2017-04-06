@@ -1,3 +1,5 @@
+import json
+
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
 from arcgis.geometry import Geometry
@@ -14,6 +16,27 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
 
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += '?token=' + self._token
+
+        lyr_dict = {'type': type(self).__name__, 'url': url}
+
+        if self._fn is not None:
+            options_dict = {
+                "imageServiceParameters": {
+                    "renderingRule": self._fn
+                }
+            }
+
+            lyr_dict.update({
+                "options": json.dumps(options_dict)
+            })
+
+        return lyr_dict
+
     @classmethod
     def fromitem(cls, item):
         if not item.type == 'Image Service':
@@ -22,7 +45,7 @@ class ImageryLayer(Layer):
         return cls(item.url, item._gis)
 
 
-    def filter(self, where=None, geometry=None, time=None, lock_to_selection=False):
+    def set_filter(self, where=None, geometry=None, time=None, lock_to_selection=False, clear_filters=False):
         """
         Filters the rasters that will be used for applying raster functions.
 
@@ -40,44 +63,51 @@ class ImageryLayer(Layer):
                 start time or end time will represent infinity for start or end time respectively.
                 Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
                 timestamp in milliseconds
-        :param lock_to_selection:
+        :param lock_to_selection: if True, the LockRaster mosaic rule will be applied to the layer, unless overridden
+        :param clear_filters: if True, the applied filters are cleared
         :return:
 
         """
-        self._filtered = True
-        if where is not None:
-            self._where_clause = where
+        if clear_filters:
+            self._filtered = False
+            self._where_clause = None
+            self._temporal_filter = None
+            self._spatial_filter = None
+        else:
+            self._filtered = True
+            if where is not None:
+                self._where_clause = where
 
-        if geometry is not None:
-            self._spatial_filter = geometry
+            if geometry is not None:
+                self._spatial_filter = geometry
 
-        if time is not None:
-            self._temporal_filter = time
+            if time is not None:
+                self._temporal_filter = time
 
-        if lock_to_selection:
-            oids = self.query(where=self._where_clause,
-                  time_filter=self._temporal_filter,
-                  geometry_filter=self._spatial_filter,
-                  return_ids_only=True)['objectIds']
-            self._mosaic_rule = {
-                  "mosaicMethod" : "esriMosaicLockRaster",
-                  "lockRasterIds": oids,
-                  "ascending" : True,
-                  "mosaicOperation" : "MT_FIRST"
-                }
+            if lock_to_selection:
+                oids = self.query(where=self._where_clause,
+                      time_filter=self._temporal_filter,
+                      geometry_filter=self._spatial_filter,
+                      return_ids_only=True)['objectIds']
+                self._mosaic_rule = {
+                      "mosaicMethod" : "esriMosaicLockRaster",
+                      "lockRasterIds": oids,
+                      "ascending" : True,
+                      "mosaicOperation" : "MT_FIRST"
+                    }
 
 
     def filtered_rasters(self):
         """The object ids of the filtered rasters in this imagery layer, by applying the where clause, spatial and
-        temporal filters"""
+        temporal filters. If no rasters are filtered, returns None. If all rasters are filtered, returns empty list"""
         if self._filtered:
             oids = self.query(where=self._where_clause,
                   time_filter=self._temporal_filter,
                   geometry_filter=self._spatial_filter,
                   return_ids_only=True)['objectIds']
-            return ['$' + str(x) for x in oids]
+            return oids #['$' + str(x) for x in oids]
         else:
-            return '$$'
+            return None # return '$$'
 
     def export_image(self,
                      bbox,
@@ -310,7 +340,10 @@ class ImageryLayer(Layer):
             params['bandIds'] = ",".join([str(x) for x in band_ids])
 
         if rendering_rule is not None:
-            params['renderingRule'] = rendering_rule
+            if 'function_chain' in rendering_rule:
+                params['renderingRule'] = rendering_rule['function_chain']
+            else:
+                params['renderingRule'] = rendering_rule
         elif self._fn is not None:
             params['renderingRule'] = self._fn
 
