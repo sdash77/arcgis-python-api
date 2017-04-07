@@ -53,8 +53,3 @@ def sanitize_field_name(s, length=None, sub_value=None):
        len(s) > length:
         s = s[:length]
     return s
-#--------------------------------------------------------------------------
-def chunks(l, n):
-    """yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
