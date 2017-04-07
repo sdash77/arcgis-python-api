@@ -28,22 +28,7 @@ def from_layer(layer):
     """
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
-    # max_records = layer.properties['maxRecordCount']
-    # service_count = layer.query(return_count_only=True)
-    # if service_count > max_records:
-    #     frames = []
-    #     oid_info = layer.query(return_ids_only=True)
-    #     for ids in chunks(oid_info['objectIds'], max_records):
-    #         ids = [str(i) for i in ids]
-    #         sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
-    #                               ",".join(ids))
-    #         frames.append(layer.query(where=sql).df)
-    #     res = pd.concat(frames, ignore_index=True)
-    #     res.reset_index(drop=True, inplace=True)
-    #
-    # else:
-    #     res = layer.query().df
-    #     res.reset_index(drop=True, inplace=True)
-    res = layer.query(return_all_records=True).df
+
+    res = layer.query().df
     res.reset_index(drop=True, inplace=True)
     return res

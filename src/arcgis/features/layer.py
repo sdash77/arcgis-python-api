@@ -175,7 +175,7 @@ class FeatureLayer(Layer):
               multipatch_option=None,
               quanitization_parameters=None,
               return_centroid=False,
-              return_all_records=False,
+              return_all_records=True,
               **kwargs):
         """ queries a feature service based on a sql statement
             Inputs:
