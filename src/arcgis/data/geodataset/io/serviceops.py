@@ -29,7 +29,10 @@ def from_layer(layer):
     """
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
-    max_records = layer.properties['maxRecordCount']
+    if 'maxRecordCount' in layer.properties:
+        max_records = layer.properties['maxRecordCount']
+    else:
+        max_records = 1000
     service_count = layer.query(return_count_only=True)
     if service_count > max_records:
         frames = []
