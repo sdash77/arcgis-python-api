@@ -184,6 +184,7 @@ define('mapview', [
      "esri/toolbars/draw",
      "esri/layers/KMLLayer",
      "esri/layers/RasterFunction",
+     "esri/layers/MosaicRule",
      "esri/layers/ArcGISImageServiceLayer",
      "esri/layers/ImageServiceParameters",
      "esri/geometry/Polyline",
@@ -218,6 +219,7 @@ define('mapview', [
      Draw,
      KMLLayer,
      RasterFunction,
+     MosaicRule,
      ArcGISImageServiceLayer,
      ImageServiceParameters,
      Polyline,
@@ -760,15 +762,20 @@ define('mapview', [
                         }
                         if (imgsvc_options.imageServiceParameters) {
                             var params = new ImageServiceParameters();
+
                             if (imgsvc_options.imageServiceParameters.renderingRule) {
                                 var rasterFunction = new RasterFunction(imgsvc_options.imageServiceParameters.renderingRule);
-                                if (imgsvc_options.imageServiceParameters.bandIds) {
-                                    params.bandIds = imgsvc_options.imageServiceParameters.bandIds;
-                                }
                                 params.renderingRule = rasterFunction;
-
-                                options.imageServiceParameters = params;
                             }
+                            if (imgsvc_options.imageServiceParameters.mosaicRule) {
+                                var mosaicRule = new MosaicRule(imgsvc_options.imageServiceParameters.mosaicRule);
+                                params.mosaicRule = mosaicRule;
+                            }
+                            if (imgsvc_options.imageServiceParameters.bandIds) {
+                                params.bandIds = imgsvc_options.imageServiceParameters.bandIds;
+                            }
+
+                            options.imageServiceParameters = params;
                         }
                     }
                     var layer = new ArcGISImageServiceLayer(newlayer.url, options);

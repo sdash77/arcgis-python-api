@@ -24,12 +24,17 @@ class ImageryLayer(Layer):
 
         lyr_dict = {'type': type(self).__name__, 'url': url}
 
-        if self._fn is not None:
-            options_dict = {
-                "imageServiceParameters": {
-                    "renderingRule": self._fn
-                }
+        options_dict = {
+            "imageServiceParameters": {
             }
+        }
+
+        if self._fn is not None or self._mosaic_rule is not None:
+            if self._fn is not None:
+                options_dict["imageServiceParameters"]["renderingRule"] = self._fn
+
+            if self._mosaic_rule is not None:
+                options_dict["imageServiceParameters"]["mosaicRule"] = self._mosaic_rule
 
             lyr_dict.update({
                 "options": json.dumps(options_dict)
@@ -98,11 +103,11 @@ class ImageryLayer(Layer):
                     }
 
 
-    def fltr(self, where=None, geometry=None, time=None):
+    def fltr(self, where=None, geometry=None, time=None, lock_rasters=True):
         """
         Filters the layer by where clause, geometry and temporal filters
 
-        The LockRaster mosaic rule is applied to the layer, using the filtered objectids
+
 
         :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
                 Any legal SQL where clause operating on the fields in the raster
@@ -116,36 +121,42 @@ class ImageryLayer(Layer):
                 start time or end time will represent infinity for start or end time respectively.
                 Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
                 timestamp in milliseconds
+        :param lock_rasters: bool If True, the LockRaster mosaic rule is applied to the layer, using the filtered objectids
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
-        oids = self.query(where=where,
-              time_filter=time,
-              geometry_filter=geometry,
-              return_ids_only=True)['objectIds']
 
-        newlyr = ImageryLayer(self._url, self._gis)
-
-        newlyr._lazy_properties = self.properties
-        newlyr._hydrated = True
-        newlyr._lazy_token = self._token
-
-        newlyr._fn = self._fn
+        newlyr = self._clone_layer()
 
         newlyr._where_clause = where
         newlyr._spatial_filter = geometry
         newlyr._temporal_filter = time
 
-        newlyr._mosaic_rule = {
-            "mosaicMethod": "esriMosaicLockRaster",
-            "lockRasterIds": oids,
-            "ascending": True,
-            "mosaicOperation": "MT_FIRST"
-        }
+        if lock_rasters:
+            oids = self.query(where=where,
+                  time_filter=time,
+                  geometry_filter=geometry,
+                  return_ids_only=True)['objectIds']
+            newlyr._mosaic_rule = {
+                "mosaicMethod": "esriMosaicLockRaster",
+                "lockRasterIds": oids,
+                "ascending": True,
+                "mosaicOperation": "MT_FIRST"
+            }
+
         newlyr._filtered = True
 
         return newlyr
 
+    def _clone_layer(self):
+        newlyr = ImageryLayer(self._url, self._gis)
+        newlyr._lazy_properties = self.properties
+        newlyr._hydrated = True
+        newlyr._lazy_token = self._token
+        newlyr._fn = self._fn
+        newlyr._mosaic_rule = self._mosaic_rule
+
+        return newlyr
 
     def filtered_rasters(self):
         """The object ids of the filtered rasters in this imagery layer, by applying the where clause, spatial and
@@ -344,9 +355,9 @@ class ImageryLayer(Layer):
             "JPEG", "LZ77"
         ]
         if mosaic_rule is not None:
-            params["moasiacRule"] = mosaic_rule
+            params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
-            params["moasiacRule"] = self._mosaic_rule
+            params["mosaicRule"] = self._mosaic_rule
 
         if export_format in __allowedFormat:
             params['format'] = export_format
@@ -884,232 +895,156 @@ class ImageryLayer(Layer):
     #     from arcgis.raster.functions import minus
     #     return minus(self, other)
 
-def mosaic(method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
+    def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
            muldidef=None, op="first"):
-    """
-    Defines a mosaicking rule when defining how individual images should be mosaicked. It specifies selection,
-    mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
-    the mosaic dataset. A mosaic rule is used to define:
+        """
+        Defines how individual images in this layer should be mosaicked. It specifies selection,
+        mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
+        the mosaic dataset. A mosaic rule is used to define:
 
-    * The selection of rasters that will participate in the mosaic (using where clause).
-    * The mosaic method, e.g. how the selected rasters are ordered.
-    * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
+        * The selection of rasters that will participate in the mosaic (using where clause).
+        * The mosaic method, e.g. how the selected rasters are ordered.
+        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
-    :param method:  determines how the selected rasters are ordered.
-        str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
-        required if method is: center | nadir | northwest | seamline,
-        optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
-        If sort_by and optionally sort_val parameters are specified, "attribute" method is used
-        If lock_raster_ids are specified, "lock-raster" method is used
-        If a viewpt parameter is passed, "viewpoint" method is used.
-    :param sort_by: optional str, field name when sorting by attributes
-    :param sort_val: optional, a constant value defining a reference or base value for the sort field when sorting by
-        attributes
-    :param lock_rasters: optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
-        to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
-        maximum pixel size range of the locked rasters.
-    :param viewpt: optional point, used as view point for viewpoint mosaicking method
-    :param asc: optional bool, indicate whether to use ascending or descending order. Default is ascending order.
-    :param where: optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
-        may not be visible at all scales
-    :param fids: optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
-        aware that the rasters may not be visible at all scales.
-    :param muldidef: optional dict, multidemensional definition used for filtering by variable/dimensions.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
-    :param op: optional string, first | last | min | max | mean | blend | sum
-        mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
-        pixel values, or blend them.
-    :return: a mosaic rule defined in the format at
-        http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
-    Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
-    """
-    mosaic_rule = {
-        "mosaicMethod": "esriMosaicNone",
-        "ascending": asc,
-        "mosaicOperation": 'MT_' + op.upper()
-    }
+        :param method:  determines how the selected rasters are ordered.
+            str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
+            required if method is: center | nadir | northwest | seamline,
+            optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
+            If sort_by and optionally sort_val parameters are specified, "attribute" method is used
+            If lock_raster_ids are specified, "lock-raster" method is used
+            If a viewpt parameter is passed, "viewpoint" method is used.
+        :param sort_by: optional str, field name when sorting by attributes
+        :param sort_val: optional, a constant value defining a reference or base value for the sort field when sorting by
+            attributes
+        :param lock_rasters: optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
+            to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
+            maximum pixel size range of the locked rasters.
+        :param viewpt: optional point, used as view point for viewpoint mosaicking method
+        :param asc: optional bool, indicate whether to use ascending or descending order. Default is ascending order.
+        :param where: optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
+            may not be visible at all scales
+        :param fids: optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
+            aware that the rasters may not be visible at all scales.
+        :param muldidef: optional dict, multidemensional definition used for filtering by variable/dimensions.
+            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+        :param op: optional string, first | last | min | max | mean | blend | sum
+            mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
+            pixel values, or blend them.
+        :return: a mosaic rule defined in the format at
+            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+        Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
+        """
+        mosaic_rule = {
+            "mosaicMethod": "esriMosaicNone",
+            "ascending": asc,
+            "mosaicOperation": 'MT_' + op.upper()
+        }
 
-    if where is not None:
-        mosaic_rule['where'] = where
+        if where is not None:
+            mosaic_rule['where'] = where
 
-    if fids is not None:
-        mosaic_rule['fids'] = fids
+        if fids is not None:
+            mosaic_rule['fids'] = fids
 
-    if muldidef is not None:
-        mosaic_rule['multidimensionalDefinition'] = muldidef
+        if muldidef is not None:
+            mosaic_rule['multidimensionalDefinition'] = muldidef
 
-    if method in [ 'none', 'center', 'nadir', 'northwest', 'seamline']:
-        mosaic_rule['mosaicMethod'] = 'esriMosaic' + method.title()
+        if method in [ 'none', 'center', 'nadir', 'northwest', 'seamline']:
+            mosaic_rule['mosaicMethod'] = 'esriMosaic' + method.title()
 
-    if viewpt is not None:
-        if not isinstance(viewpt, Geometry):
-            viewpt = Geometry(viewpt)
-        mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
-        mosaic_rule['viewpt'] = viewpt
+        if viewpt is not None:
+            if not isinstance(viewpt, Geometry):
+                viewpt = Geometry(viewpt)
+            mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
+            mosaic_rule['viewpt'] = viewpt
 
-    if sort_by is not None:
-        mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
-        mosaic_rule['sortField'] = sort_by
-        if sort_val is not None:
-            mosaic_rule['sortValue'] = sort_val
+        if sort_by is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
+            mosaic_rule['sortField'] = sort_by
+            if sort_val is not None:
+                mosaic_rule['sortValue'] = sort_val
 
-    if lock_rasters is not None:
-        mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
-        mosaic_rule['lockRasterIds'] = lock_rasters
+        if lock_rasters is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
+            mosaic_rule['lockRasterIds'] = lock_rasters
 
-    return mosaic_rule
+        self._mosaic_rule = mosaic_rule
 
+    @property
+    def mosaic_rule(self):
+        """The mosaic rule used by the imagery layer to define:
+        * The selection of rasters that will participate in the mosaic
+        * The mosaic method, e.g. how the selected rasters are ordered.
+        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
+        Set by calling the mosaic_by or fltr methods on the layer
+        """
+        return self._mosaic_rule
 
+    @mosaic_rule.setter
+    def mosaic_rule(self, value):
 
-# class MosaicRule(object):
-#     """
-#     Specifies the mosaic rule when defining how individual images should be mosaicked. It specifies selection,
-#     mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
-#     the mosaic dataset. A mosaic rule is used to define:
-#
-#     * The selection of rasters that will participate in the mosaic (using where clause).
-#     * The mosaic method, e.g. how the selected rasters are ordered.
-#     * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
-#     """
-#     def __init__(self, properties=None):
-#         self._dict = {}
-#
-#         self._where = None
-#         self._method = "none"
-#         self._viewpoint = None
-#         self._ascending = True
-#         self._object_ids = None
-#         self._sort_field = None
-#         self._sort_value = None
-#         self._operation = "first"
-#         self._lock_raster_ids = None
-#         self._multidimensional_definition = None
-#
-#         if properties is not None:
-#             self._dict.merge(properties)
-#
-#     @property
-#     def method(self):
-#         """
-#         The mosaic method determines how the selected rasters are ordered.
-#
-#         Known Values: none | center | nadir | viewpoint | attribute | lock-raster | northwest | seamline
-#         """
-#         return self._method
-#
-#     @method.setter
-#     def method(self, value):
-#         self.method = value
-#
-#     @property
-#     def ascending(self):
-#         """
-#         Indicates whether the sort should be ascending. This property applies to all mosaic methods where an ordering is
-#         defined except  seamline.
-#         """
-#         return self._ascending
-#
-#     @ascending.setter
-#     def ascending(self, value):
-#         self._ascending = value
-#
-#     @property
-#     def operation(self):
-#         """
-#         Defines the mosaic operation used to resolve overlapping pixels.
-#
-#         Known Values: first | last | min | max | mean | blend
-#         """
-#         return self._operation
-#
-#     @operation.setter
-#     def operation(self, value):
-#         self._operation = value
-#
-#     @property
-#     def lock_raster_ids(self):
-#         """
-#         An array of raster Ids. All the rasters with the given list of raster Ids are selected to participate in the
-#         mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and maximum pixel size range of
-#         the locked rasters.
-#         """
-#         return self._lock_raster_ids
-#
-#     @lock_raster_ids.setter
-#     def lock_raster_ids(self, value):
-#         self._lock_raster_ids = value
-#
-#     @property
-#     def multidimensional_definition(self):
-#         """
-#         A multiple dimensional service can have multiple dimensions for one or more variables. Use
-#         multiDimensionalDefinitions to filter data based on a slice or range of data. For example, a single ImageryLayer
-#         may have a depth dimension storing sea temperatures for the same pixel location at various depths.
-#         Another dimension could be time, where the same pixel stores multiple values based on a window of time.
-#
-#         This property can be used to filter and display ImageryLayer pixels for specific "slices" in those dimensions
-#         (e.g. display sea temperature at 1000m below sea level for a specific week in the year).
-#         """
-#         return self._multidimensional_definition
-#
-#     @multidimensional_definition.setter
-#     def multidimensional_definition(self, value):
-#         self._multidimensional_definition = value
-#
-#     @property
-#     def object_ids(self):
-#         """
-#         Defines a selection using a set of ObjectIDs. This property applies to all mosaic methods.
-#         """
-#         return self._object_ids
-#
-#     @object_ids.setter
-#     def object_ids(self, value):
-#         self._object_ids = value
-#
-#     @property
-#     def sort_field(self):
-#         """
-#         Defines the mosaic operation used to resolve overlapping pixels.
-#
-#         Known Values: first | last | min | max | mean | blend
-#         """
-#         return self._sort_field
-#
-#     @sort_field.setter
-#     def sort_field(self, value):
-#         self._sort_field = value
-#
-#     @property
-#     def sort_value(self):
-#         """
-#         A constant value defining a reference or base value for the sort field when the mosaic method is set to attribute.
-#         """
-#         return self._sort_value
-#
-#     @sort_value.setter
-#     def sort_value(self, value):
-#         self._sort_value= value
-#
-#     @property
-#     def viewpoint(self):
-#         """
-#         Defines the viewpoint location on which the ordering is defined based on the distance from the viewpoint and the nadir of rasters.
-#         """
-#         return self._viewpoint
-#
-#     @viewpoint.setter
-#     def viewpoint(self, value):
-#         self._viewpoint = value
-#
-#     @property
-#     def where(self):
-#         """
-#         The where clause determines which rasters will participate in the mosaic. This property applies to all mosaic methods.
-#         """
-#         return self._where
-#
-#     @where.setter
-#     def where(self, value):
-#         self._where = value
+        self._mosaic_rule = value
+
+    def _mosaic_operation(self, op):
+        """
+        Sets how overlapping pixels at the same location are resolved
+
+        :param op: string, one of first | last | min | max | mean | blend | sum
+
+        :return: this imagery layer with mosaic operation set to op
+        """
+        newlyr = self._clone_layer()
+        if self._mosaic_rule is not None:
+            newlyr._mosaic_rule["mosaicOperation"] = 'MT_' + op.upper()
+
+        return newlyr
+
+    def first(self):
+        """
+        overlapping pixels at the same location are resolved by picking the first image
+        :return: this imagery layer with mosaic operation set to 'first'
+        """
+        return self._mosaic_operation('first')
+
+    def last(self):
+        """
+        overlapping pixels at the same location are resolved by picking the last image
+        :return: this imagery layer with mosaic operation set to 'last'
+        """
+        return self._mosaic_operation('last')
+
+    def min(self):
+        """
+        overlapping pixels at the same location are resolved by picking the min pixel value
+        :return: this imagery layer with mosaic operation set to 'min'
+        """
+        return self._mosaic_operation('min')
+
+    def max(self):
+        """
+        overlapping pixels at the same location are resolved by picking the max pixel value
+        :return: this imagery layer with mosaic operation set to 'max'
+        """
+        return self._mosaic_operation('max')
+
+    def mean(self):
+        """
+        overlapping pixels at the same location are resolved by choosing the mean of all overlapping pixels
+        :return: this imagery layer with mosaic operation set to 'mean'
+        """
+        return self._mosaic_operation('mean')
+
+    def blend(self):
+        """
+        overlapping pixels at the same location are resolved by blending all overlapping pixels
+        :return: this imagery layer with mosaic operation set to 'blend'
+        """
+        return self._mosaic_operation('blend')
+
+    def sum(self):
+        """
+        overlapping pixels at the same location are resolved by adding up all overlapping pixel values
+        :return: this imagery layer with mosaic operation set to 'sum'
+        """
+        return self._mosaic_operation('sum')
