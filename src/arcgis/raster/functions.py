@@ -80,12 +80,9 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
         template_dict["rasterFunctionArguments"]['UndefinedClass'] = undefined_class
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : rasters,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(rasters, template_dict)
 
 def arg_max(rasters, undefined_class=None, astype=None):
     """
@@ -197,12 +194,9 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
         template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 
@@ -306,10 +300,7 @@ def aspect(raster):
         }
     }
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
@@ -337,12 +328,9 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 def ndvi(raster, band_indexes="4 3", astype=None):
     """
@@ -483,12 +471,9 @@ def classify(raster1, raster2, classifier_definition, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
@@ -514,12 +499,9 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def colormap(raster, colormap_name=None, colormap=None, astype=None):
@@ -553,12 +535,9 @@ def colormap(raster, colormap_name=None, colormap=None, astype=None):
         template_dict["rasterFunctionArguments"]['Colormap'] = colormap
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def composite_band(rasters, astype=None):
@@ -580,12 +559,9 @@ def composite_band(rasters, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=None):
     """
@@ -611,7 +587,7 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=N
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict)
 
@@ -638,7 +614,7 @@ def convolution(raster, kernel=None, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if (isinstance(kernel, int)):
         template_dict["rasterFunctionArguments"]['Type'] = kernel
@@ -691,12 +667,9 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def NDVI(raster, visible_band=2, ir_band=1, astype=None):
@@ -729,7 +702,7 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict)
 
@@ -758,7 +731,7 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if max_void_width is not None:
         template_dict["rasterFunctionArguments"]["MaxVoidWidth"] = max_void_width
@@ -794,7 +767,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
         template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
@@ -839,7 +812,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if geodata_transforms is not None:
         template_dict["rasterFunctionArguments"]["GeodataTransforms"] = geodata_transforms
@@ -891,7 +864,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if azimuth is not None:
         template_dict["rasterFunctionArguments"]["Azimuth"] = azimuth
@@ -964,7 +937,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if operation is not None:
         template_dict["rasterFunctionArguments"]["Operation"] = operation
@@ -978,7 +951,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
-def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def binary_plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Plus (addition,+) operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -994,7 +967,7 @@ def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def binary_minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Minus (subtraction,-) operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2189,7 +2162,7 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if no_data_values is not None:
         template_dict["rasterFunctionArguments"]["NoDataValues"] = no_data_values
@@ -2227,7 +2200,7 @@ def ml_classify(raster, signature, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if signature is not None:
         template_dict["rasterFunctionArguments"]["SignatureFile"] = signature
@@ -2258,7 +2231,7 @@ def ml_classify(raster, signature, astype=None):
 #     }
 #
 #     if astype is not None:
-#         template_dict["outputPixelType"] = astype
+#         template_dict["outputPixelType"] = astype.upper()
 #
 #     if visible_band_id is not None:
 #         template_dict["rasterFunctionArguments"]["VisibleBandID"] = visible_band_id
@@ -2294,7 +2267,7 @@ def ml_classify(raster, signature, astype=None):
 #     }
 #
 #     if astype is not None:
-#         template_dict["outputPixelType"] = astype
+#         template_dict["outputPixelType"] = astype.upper()
 #
 #     if < _argument_name1 > is not None:
 #         template_dict["rasterFunctionArguments"]["<ArgumentName1>"] = < _argument_name1 >
@@ -2338,7 +2311,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if input_ranges is not None:
         template_dict["rasterFunctionArguments"]["InputRanges"] = input_ranges
@@ -2396,7 +2369,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if resampling_type is not None:
         template_dict["rasterFunctionArguments"]["ResamplingType"] = resampling_type
@@ -2445,7 +2418,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if spectral_detail is not None:
         template_dict["rasterFunctionArguments"]["SpectralDetail"] = spectral_detail
@@ -2495,7 +2468,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if azimuth is not None:
         template_dict["rasterFunctionArguments"]["Azimuth"] = azimuth
@@ -2549,7 +2522,7 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if z_factor is not None:
         template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
@@ -2598,7 +2571,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if kernel_columns is not None:
         template_dict["rasterFunctionArguments"]["KernelColumns"] = kernel_columns
@@ -2616,7 +2589,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     return _clone_layer(layer, template_dict)
 
 
-def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_deviations=None, statistics=None,
+def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statistics=None,
             dra=None, min_percent=None, max_percent=None, gamma=None, compute_gamma=None, sigmoid_strength_level=None,
             astype=None):
     """
@@ -2643,7 +2616,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     :param stretch_type: str, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
     :param min: double
     :param max: double
-    :param number_of_standard_deviations: double (e.g. 2.5)
+    :param num_stddev: double (e.g. 2.5)
     :param statistics: double (e.g. 2.5)[<min1>, <max1>, <mean1>, <standardDeviation1>], //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
     :param dra: boolean. derive statistics from current request, Statistics parameter is ignored when DRA is true
     :param min_percent: double (e.g. 0.25), applicable to PercentClip
@@ -2681,7 +2654,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if stretch_type is not None:
         template_dict["rasterFunctionArguments"]["StretchType"] = in_str_type
@@ -2689,8 +2662,8 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
         template_dict["rasterFunctionArguments"]["Min"] = min
     if max is not None:
         template_dict["rasterFunctionArguments"]["Max"] = max
-    if number_of_standard_deviations is not None:
-        template_dict["rasterFunctionArguments"]["NumberOfStandardDeviations"] = number_of_standard_deviations
+    if num_stddev is not None:
+        template_dict["rasterFunctionArguments"]["NumberOfStandardDeviations"] = num_stddev
     if statistics is not None:
         template_dict["rasterFunctionArguments"]["Statistics"] = statistics
     if dra is not None:
@@ -2735,7 +2708,7 @@ def threshold(raster, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if threshold_type is not None:
         template_dict["rasterFunctionArguments"]["ThresholdType"] = threshold_type
@@ -2786,7 +2759,7 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if input_bit_positions is not None:
         template_dict["rasterFunctionArguments"]["InputBitPositions"] = input_bit_positions
@@ -2830,7 +2803,7 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if from_unit is not None:
         template_dict["rasterFunctionArguments"]["FromUnit"] = from_unit
@@ -2867,7 +2840,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     }
 
     if astype is not None:
-        template_dict["outputPixelType"] = astype
+        template_dict["outputPixelType"] = astype.upper()
 
     if is_uv_components is not None:
         template_dict["rasterFunctionArguments"]["IsUVComponents"] = is_uv_components
@@ -2943,7 +2916,7 @@ def _raster_input(raster):
         raster = _get_raster(raster)
     elif isinstance(raster, list):
         r0 = raster[0]
-        layer = r0['layer']
+        layer = r0
         raster = [_get_raster(r) for r in raster]
     else: # maybe scalar for arithmetic functions
         layer = None
@@ -2959,6 +2932,8 @@ def _get_raster(raster):
         oids = raster.filtered_rasters()
         if oids is None:
             raster = '$$'
+        elif len(oids) == 1:
+            raster = '$' + str(oids[0])
         else:
             raster = ['$' + str(x) for x in oids]
     return raster

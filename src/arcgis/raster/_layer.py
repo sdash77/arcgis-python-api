@@ -45,11 +45,11 @@ class ImageryLayer(Layer):
         return cls(item.url, item._gis)
 
 
-    def set_filter(self, where=None, geometry=None, time=None, lock_to_selection=False, clear_filters=False):
+    def set_filter(self, where=None, geometry=None, time=None, lock_rasters=False, clear_filters=False):
         """
         Filters the rasters that will be used for applying raster functions.
 
-        If lock_to_selection is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden
+        If lock_rasters is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden
 
         :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
                 Any legal SQL where clause operating on the fields in the raster
@@ -63,7 +63,7 @@ class ImageryLayer(Layer):
                 start time or end time will represent infinity for start or end time respectively.
                 Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
                 timestamp in milliseconds
-        :param lock_to_selection: if True, the LockRaster mosaic rule will be applied to the layer, unless overridden
+        :param lock_rasters: if True, the LockRaster mosaic rule will be applied to the layer, unless overridden
         :param clear_filters: if True, the applied filters are cleared
         :return:
 
@@ -73,6 +73,7 @@ class ImageryLayer(Layer):
             self._where_clause = None
             self._temporal_filter = None
             self._spatial_filter = None
+            self._mosaic_rule = None
         else:
             self._filtered = True
             if where is not None:
@@ -84,7 +85,7 @@ class ImageryLayer(Layer):
             if time is not None:
                 self._temporal_filter = time
 
-            if lock_to_selection:
+            if lock_rasters:
                 oids = self.query(where=self._where_clause,
                       time_filter=self._temporal_filter,
                       geometry_filter=self._spatial_filter,
@@ -95,6 +96,55 @@ class ImageryLayer(Layer):
                       "ascending" : True,
                       "mosaicOperation" : "MT_FIRST"
                     }
+
+
+    def fltr(self, where=None, geometry=None, time=None):
+        """
+        Filters the layer by where clause, geometry and temporal filters
+
+        The LockRaster mosaic rule is applied to the layer, using the filtered objectids
+
+        :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
+                Any legal SQL where clause operating on the fields in the raster
+        :param geometry: the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter
+        :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
+                Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+                Syntax: time_filter=<timeInstant>
+
+                Time extent specified as list of [<startTime>, <endTime>]
+                For time extents one of <startTime> or <endTime> could be None. A None value specified for
+                start time or end time will represent infinity for start or end time respectively.
+                Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
+                timestamp in milliseconds
+        :return: ImageryLayer with filtered images meeting the filter criteria
+
+        """
+    oids = self.query(where=where,
+              time_filter=time,
+              geometry_filter=geometry,
+              return_ids_only=True)['objectIds']
+
+        newlyr = ImageryLayer(self._url, self._gis)
+
+        newlyr._lazy_properties = self.properties
+        newlyr._hydrated = True
+        newlyr._lazy_token = self._token
+
+        newlyr._fn = self._fn
+
+        newlyr._where_clause = where
+        newlyr._spatial_filter = geometry
+        newlyr._temporal_filter = time
+
+        newlyr._mosaic_rule = {
+            "mosaicMethod": "esriMosaicLockRaster",
+            "lockRasterIds": oids,
+            "ascending": True,
+            "mosaicOperation": "MT_FIRST"
+        }
+        newlyr._filtered = True
+
+        return newlyr
 
 
     def filtered_rasters(self):
@@ -448,8 +498,10 @@ class ImageryLayer(Layer):
 
         if where is not None:
             params['where'] = where
-        else:
+        elif self._where_clause is not None:
             params['where'] = self._where_clause
+        else:
+            params['where'] = '1=1'
 
         if not group_by_fields_for_statistics is None:
             params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
@@ -823,6 +875,15 @@ class ImageryLayer(Layer):
 
         return self._con.get(url, params, token=self._token)
 
+
+    def __sub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus(self, other)
+
+    # def __rsub__(self, other):
+    #     from arcgis.raster.functions import minus
+    #     return minus(self, other)
+
 def mosaic(method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
            muldidef=None, op="first"):
     """
@@ -897,6 +958,9 @@ def mosaic(method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=N
         mosaic_rule['lockRasterIds'] = lock_rasters
 
     return mosaic_rule
+
+
+
 
 # class MosaicRule(object):
 #     """
