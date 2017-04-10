@@ -15,10 +15,6 @@ ImageryLayer
     :members:
     :undoc-members:
 
-mosaic
-------
-.. automethod:: arcgis.raster.mosaic
-
 Submodules
 --------------
 .. toctree::
