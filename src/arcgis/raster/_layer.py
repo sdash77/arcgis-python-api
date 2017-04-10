@@ -119,7 +119,7 @@ class ImageryLayer(Layer):
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
-    oids = self.query(where=where,
+        oids = self.query(where=where,
               time_filter=time,
               geometry_filter=geometry,
               return_ids_only=True)['objectIds']
