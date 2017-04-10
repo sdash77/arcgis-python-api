@@ -13,7 +13,7 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
-    warnings.warn("ArcPy Missing, cannot perform sqlite operations")
+    # warnings.warn("ArcPy Missing, cannot perform sqlite operations")
 
 #----------------------------------------------------------------------
 def to_sqlite(df,

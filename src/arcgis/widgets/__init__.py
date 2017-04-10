@@ -153,7 +153,12 @@ class MapView(widgets.DOMWidget):
         elif isinstance(item, Layer):
             js_layer = item._lyr_json
             if options is not None:
-                js_layer.update({"options": json.dumps(options)})
+                if 'options' in js_layer:  # ImageryLayers may have rendering rules in options
+                    lyr_options = json.loads(js_layer['options'])
+                    lyr_options.update(options)
+                    js_layer.update({'options': json.dumps(lyr_options)})
+                else:
+                    js_layer.update({"options": json.dumps(options)})
 
             self._addlayer = json.dumps(js_layer)
         elif 'layers' in item:  # items as well as services

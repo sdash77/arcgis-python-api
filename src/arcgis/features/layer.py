@@ -14,7 +14,7 @@ import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis._impl.common._utils import _date_handler
+from arcgis._impl.common._utils import _date_handler, chunks
 
 from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
 from .feature import Feature, FeatureSet
@@ -175,6 +175,7 @@ class FeatureLayer(Layer):
               multipatch_option=None,
               quanitization_parameters=None,
               return_centroid=False,
+              return_all_records=True,
               **kwargs):
         """ queries a feature service based on a sql statement
             Inputs:
@@ -287,6 +288,14 @@ class FeatureLayer(Layer):
                                  associated with each feature returned. If
                                  true, the result includes the geometry
                                  centroid. The default is false.
+                return_all_records - When True, the query operation will call
+                                    the service until all records that satisfy
+                                    the where_clause are returned. Note: result_offset
+                                    and result_record_count will be ignored
+                                    if return_all_records is True. Also, if
+                                    return_count_only, return_ids_only, or 
+                                    return_extent_only are True, this parameter
+                                    will be ignored.
                kwargs - optional parameters that can be passed to the Query
                  function.  This will allow users to pass additional
                  parameters not explicitly implemented on the function. A
@@ -308,9 +317,11 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-        if result_record_count:
+        if return_count_only or return_extent_only or return_ids_only:
+            return_all_records = False
+        if result_record_count and not return_all_records:
             params['resultRecordCount'] = result_record_count
-        if result_offset:
+        if result_offset and not return_all_records:
             params['resultOffset'] = result_offset
         if quanitization_parameters:
             params['quanitizationParameters'] = quanitization_parameters
@@ -359,22 +370,54 @@ class FeatureLayer(Layer):
                 params[key] = val
                 del key, val
 
-        result = self._con.post(path=url,
-                                postdata=params, token=self._token)
-        if 'error' in result:
-            raise ValueError(result)
+        if not return_all_records:
+            return self._query(url, params)
 
-        if return_count_only:
-            return result['count']
-        elif return_ids_only:
-            return result
+        params['returnCountOnly'] = True
+        record_count = self._query(url, params)
+        if 'maxRecordCount' in self.properties:
+            max_records = self.properties['maxRecordCount']
         else:
-            return FeatureSet.from_dict(result)
-            #['features']
-            # df = json_normalize(result['features'])
-            # df.columns = df.columns.str.replace('attributes.', '')
-            # return df
-            # return FeatureSet.fromJSON(jsonValue=json.dumps(result))
+            max_records = 1000
+
+        params['returnCountOnly'] = False
+        if record_count <= max_records:
+            return self._query(url, params)
+
+        result = None
+        if 'advancedQueryCapabilities' not in self.properties or \
+                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
+                not self.properties['advancedQueryCapabilities']['supportsPagination']:
+            params['returnIdsOnly'] = True
+            oid_info = self._query(url, params)
+            params['returnIdsOnly'] = False
+            for ids in chunks(oid_info['objectIds'], max_records):
+                ids = [str(i) for i in ids]
+                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
+                params['where'] = sql
+                records = self._query(url, params)
+                if result:
+                    result.features.extend(records.features)
+                else:
+                    result = records
+        else:
+            i = 0
+            params['resultRecordCount'] = max_records
+
+            while True:
+                params['resultOffset'] = max_records * i
+                records = self._query(url, params)
+
+                if result:
+                    result.features.extend(records.features)
+                else:
+                    result = records
+
+                if len(records.features) < max_records:
+                    break
+                i += 1
+
+        return result
 
     # ----------------------------------------------------------------------
     def query_related_records(self,
@@ -498,9 +541,9 @@ class FeatureLayer(Layer):
            This operation deletes features in a feature layer or table
            Inputs:
               deletes - string of OIDs to remove from service
-              where -  A where clause for the query filter.
-                       Any legal SQL where clause operating on the fields in
-                       the layer is allowed. Features conforming to the specified
+              where -  A where clause for the query filter. 
+                       Any legal SQL where clause operating on the fields in 
+                       the layer is allowed. Features conforming to the specified 
                        where clause will be deleted.
               geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
                                 with another geometry
@@ -698,6 +741,21 @@ class FeatureLayer(Layer):
             params['sqlFormat'] = "standard"
         return self._con.post(path=url,
                               postdata=params, token=self._token)
+
+    # ----------------------------------------------------------------------
+    def _query(self, url, params):
+        """ returns results of query """
+        result = self._con.post(path=url,
+                                postdata=params, token=self._token)
+        if 'error' in result:
+            raise ValueError(result)
+
+        if  params['returnCountOnly']:
+            return result['count']
+        elif params['returnIdsOnly']:
+            return result
+        else:
+            return FeatureSet.from_dict(result)
 
 
 class Table(FeatureLayer):
