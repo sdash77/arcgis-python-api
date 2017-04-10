@@ -31,7 +31,7 @@ Install steps for developers:
 
 * Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
 * Download or clone this repo. `git clone https://github.com/ArcGIS/geosaurus.git`
-* `pip3 install -e ./src` (for using latest source code)
+* `pip install -e ./src` (for using latest source code)
 * `jupyter nbextension install --py --sys-prefix arcgis` (for enabling the map widget for Jupyter notebook)
 * `jupyter nbextension install --py --sys-prefix arcgis` (to initialize the map widget in the browser every time the notebook loads)
 
