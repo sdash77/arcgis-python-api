@@ -940,7 +940,9 @@ class _ArcGISConnection(object):
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
              token=DEFAULT_TOKEN, try_json=True):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
-        path = quote(path, ':/')
+        # prevent double encoding
+        if not is_retry:
+            path = quote(path, ':/')
         url = path
         if url.lower().find("https://") > -1 or\
            url.lower().find("http://") > -1:
