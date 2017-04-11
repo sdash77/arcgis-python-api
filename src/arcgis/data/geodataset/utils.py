@@ -26,6 +26,11 @@ NUMERIC_TYPES = tuple(list(integer_types) + [
 STRING_TYPES = tuple(list(string_types) + \
     [str, np.str, np.unicode, chr])
 
+# --------------------------------------------------------------------------
+def chunks(l, n):
+    """yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 #--------------------------------------------------------------------------
 def sanitize_field_name(s, length=None, sub_value=None):
     """
