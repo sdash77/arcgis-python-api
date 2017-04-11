@@ -444,6 +444,19 @@ class FeatureLayerManager(_GISResource):
         super(FeatureLayerManager, self).__init__(url, gis)
 
     # ----------------------------------------------------------------------
+    @classmethod
+    def fromitem(cls, item, layer_id=0):
+        """
+        Creates a FeatureLayerManager object from a GIS Item.
+        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
+        The layer_id is the id of the layer in feature layer collection (feature service).
+        """
+        if item.type != "Feature Service":
+            raise TypeError("item must be a of type Feature Service, not " + item.type)
+        from arcgis.features import FeatureLayer
+        return FeatureLayer.fromitem(item, layer_id).manager
+
+    # ----------------------------------------------------------------------
     def refresh(self):
         """ refreshes a service """
         params = {"f": "json"}

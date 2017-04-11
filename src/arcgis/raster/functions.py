@@ -6,35 +6,36 @@ processed product on disk, for which raster analytics tools like arcgis.raster.a
 
 Functions can be applied to various rasters (or images), including the following:
 
-Imagery layers
-Rasters within imagery layers
+* Imagery layers
+* Rasters within imagery layers
+
 """
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
 from ._layer import ImageryLayer
 
+#
+# def _raster_input(raster):
+#
+#     if isinstance(raster, ImageryLayer):
+#         layer = raster
+#         raster = raster._fn #filtered_rasters()
+#     # elif isinstance(raster, dict) and 'function_chain' in raster:
+#     #     layer = raster['layer']
+#     #     raster = raster['function_chain']
+#     elif isinstance(raster, list):
+#         r0 = raster[0]
+#         if 'function_chain' in r0:
+#             layer = r0['layer']
+#             raster = [r['function_chain'] for r in raster]
+#     else:
+#         layer = None
+#
+#     return layer, raster
 
-def _raster_input(raster):
 
-    if isinstance(raster, ImageryLayer):
-        layer = raster
-        raster = raster.filtered_rasters()
-    elif isinstance(raster, dict) and 'function_chain' in raster:
-        layer = raster['layer']
-        raster = raster['function_chain']
-    elif isinstance(raster, list):
-        r0 = raster[0]
-        if 'function_chain' in r0:
-            layer = r0['layer']
-            raster = [r['function_chain'] for r in raster]
-    else:
-        layer = None
-
-    return layer, raster
-
-
-def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, out_pixel_type=None):
+def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
     """
     The arg_statistics function produces an output with a pixel value that represents a statistical metric from all
     bands of input rasters. The statistics can be the band index of the maximum, minimum, or median value, or the
@@ -78,19 +79,16 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
     if undefined_class is not None:
         template_dict["rasterFunctionArguments"]['UndefinedClass'] = undefined_class
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : rasters,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(rasters, template_dict)
 
-def arg_max(rasters, undefined_class=None, out_pixel_type=None):
+def arg_max(rasters, undefined_class=None, astype=None):
     """
-     In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
-     which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
-     within each input raster.
+    In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
+    which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
+    within each input raster.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
 
@@ -98,9 +96,9 @@ def arg_max(rasters, undefined_class=None, out_pixel_type=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "max", undefined_class=undefined_class, out_pixel_type=out_pixel_type)
+    return arg_statistics(rasters, "max", undefined_class=undefined_class, astype=astype)
 
-def arg_min(rasters, undefined_class=None, out_pixel_type=None):
+def arg_min(rasters, undefined_class=None, astype=None):
     """
     ArgMin is the argument of the minimum, which returns the Band index for which the given pixel attains
     its minimum value.
@@ -111,9 +109,9 @@ def arg_min(rasters, undefined_class=None, out_pixel_type=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "min", undefined_class=undefined_class, out_pixel_type=out_pixel_type)
+    return arg_statistics(rasters, "min", undefined_class=undefined_class, astype=astype)
 
-def arg_median(rasters, undefined_class=None, out_pixel_type=None):
+def arg_median(rasters, undefined_class=None, astype=None):
     """
     The ArgMedian method returns the Band index for which the given pixel attains the median value of values
     from all bands.
@@ -128,9 +126,9 @@ def arg_median(rasters, undefined_class=None, out_pixel_type=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "median", undefined_class=undefined_class, out_pixel_type=out_pixel_type)
+    return arg_statistics(rasters, "median", undefined_class=undefined_class, astype=astype)
 
-def duration(rasters, min_value=None, max_value=None, undefined_class=None, out_pixel_type=None):
+def duration(rasters, min_value=None, max_value=None, undefined_class=None, astype=None):
     """
     Returns the duration (number of bands) between a minimum and maximum value.
     The Duration method finds the longest consecutive elements in the array, where each element has a value greater
@@ -143,10 +141,10 @@ def duration(rasters, min_value=None, max_value=None, undefined_class=None, out_
     :return: the output raster with this function applied to it
     """
     return arg_statistics(rasters, "max",  min_value=min_value, max_value=max_value,
-                          undefined_class=undefined_class, out_pixel_type=out_pixel_type)
+                          undefined_class=undefined_class, astype=astype)
 
 
-def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None, operation_type=1):
+def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
     """
     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
 
@@ -195,17 +193,14 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     if in_cellsize_type is not None:
         template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 
-def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Adds two rasters or a raster and a scalar, and vice versa
 
@@ -216,9 +211,9 @@ def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_p
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 1)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 1)
 
-def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Subtracts a raster or a scalar from another raster or a scaler
 
@@ -229,9 +224,9 @@ def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 2)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 2)
 
-def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Multiplies two rasters or a raster and a scalar, and vice versa
 
@@ -242,9 +237,9 @@ def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", o
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 3)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 3)
 
-def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Divides two rasters or a raster and a scalar, and vice versa
 
@@ -255,9 +250,9 @@ def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 4)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 4)
 
-def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Adds two rasters or a raster and a scalar, and vice versa
 
@@ -268,9 +263,9 @@ def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 5)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 5)
 
-def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     Adds two rasters or a raster and a scalar, and vice versa
 
@@ -281,7 +276,7 @@ def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", out_p
     :return: the output raster with this function applied to it
     """
 
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, out_pixel_type, 6)
+    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
 
 
 def aspect(raster):
@@ -291,6 +286,7 @@ def aspect(raster):
     the aspect. For more information, see
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/aspect-function.htm">Aspect function</a>
     and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-aspect-works.htm">How Aspect works</a>.
+
     :param raster: the input raster / imagery layer
     :return: aspect applied to the input raster
     """
@@ -304,20 +300,17 @@ def aspect(raster):
         }
     }
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def band_arithmetic(raster, band_indexes=None, out_pixel_type=None, method=0):
+def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     """
     The band_arithmetic function performs an arithmetic operation on the bands of a raster. For more information,
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
 
     :param raster: the input raster / imagery layer
     :param band_indexes: band indexes or expression
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :param method: int (0 = UserDefined, 1 = NDVI, 2 = SAVI, 3 = TSAVI, 4 = MSAVI, 5 = GEMI, 6 = PVI, 7 = GVITM, 8 = Sultan)
     :return: band_arithmetic applied to the input raster
     """
@@ -334,27 +327,24 @@ def band_arithmetic(raster, band_indexes=None, out_pixel_type=None, method=0):
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
-def ndvi(raster, band_indexes="4 3", out_pixel_type=None):
+def ndvi(raster, band_indexes="4 3", astype=None):
     """
     Normalized Difference Vegetation Index
     NDVI = ((NIR - Red)/(NIR + Red))
 
     :param raster: the input raster / imagery layer
     :param band_indexes: Band Indexes "NIR Red", e.g., "4 3"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: Normalized Difference Vegetation Index raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 1)
+    return band_arithmetic(raster, band_indexes, astype, 1)
 
-def savi(raster, band_indexes="4 3 0.33", out_pixel_type=None):
+def savi(raster, band_indexes="4 3 0.33", astype=None):
     """
     Soil-Adjusted Vegetation Index
     SAVI = ((NIR - Red) / (NIR + Red + L)) x (1 + L)
@@ -362,34 +352,36 @@ def savi(raster, band_indexes="4 3 0.33", out_pixel_type=None):
 
     :param raster: the input raster / imagery layer
     :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 2)
+    return band_arithmetic(raster, band_indexes, astype, 2)
 
-def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", out_pixel_type=None):
+def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
     """
     Transformed Soil Adjusted Vegetation Index
     TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
+
     :param raster: the input raster / imagery layer
     :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 3)
+    return band_arithmetic(raster, band_indexes, astype, 3)
 
-def msavi(raster, band_indexes="4 3", out_pixel_type=None):
+def msavi(raster, band_indexes="4 3", astype=None):
     """
     Modified Soil Adjusted Vegetation Index
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
+
     :param raster: the input raster / imagery layer
     :param band_indexes: "NIR Red", e.g., "4 3"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 4)
+    return band_arithmetic(raster, band_indexes, astype, 4)
 
-def gemi(raster, band_indexes="4 3", out_pixel_type=None):
+def gemi(raster, band_indexes="4 3", astype=None):
     """
     Global Environmental Monitoring Index
     GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
@@ -397,34 +389,36 @@ def gemi(raster, band_indexes="4 3", out_pixel_type=None):
 
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red", e.g., "4 3"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 5)
+    return band_arithmetic(raster, band_indexes, astype, 5)
 
-def pvi(raster, band_indexes="4 3 0.3 0.5", out_pixel_type=None):
+def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     """
     Perpendicular Vegetation Index
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
+
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 6)
+    return band_arithmetic(raster, band_indexes, astype, 6)
 
-def gvitm(raster, band_indexes= "1 2 3 4 5 6", out_pixel_type=None):
+def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     """
     Green Vegetation Index - Landsat TM
     GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
+
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red", e.g., "4 3"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 7)
+    return band_arithmetic(raster, band_indexes, astype, 7)
 
-def sultan(raster, band_indexes="1 2 3 4 5 6", out_pixel_type=None):
+def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
     """
     Sultan's Formula (transform to 3 band 8 bit image)
         Band 1 = (Band5 / Band6) x 100
@@ -433,24 +427,25 @@ def sultan(raster, band_indexes="1 2 3 4 5 6", out_pixel_type=None):
 
     :param raster: the input raster / imagery layer
     :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     """
-    return band_arithmetic(raster, band_indexes, out_pixel_type, 8)
+    return band_arithmetic(raster, band_indexes, astype, 8)
 
-def expression(raster, expression="(B3 - B1 / B3 + B1)", out_pixel_type=None):
+def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
     To identify the bands, prepend the band number with a B or b. For example: "BandIndexes":"(B1 + B2) / (B3 * B5)"
+
     :param raster: the input raster / imagery layer
     :param expression: the algebric formula
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: output raster
     :return:
     """
-    return band_arithmetic(raster, expression, out_pixel_type, 0)
+    return band_arithmetic(raster, expression, astype, 0)
 
-def classify(raster1, raster2, classifier_definition, out_pixel_type=None):
+def classify(raster1, raster2, classifier_definition, astype=None):
     """
     classifies a segmented raster to a categorical raster.
 
@@ -475,15 +470,12 @@ def classify(raster1, raster2, classifier_definition, out_pixel_type=None):
         }
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
-def clip(raster, geometry=None, clip_outside=True, out_pixel_type=None):
+def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
     Clips a raster using a rectangular shape according to the extents defined or will clip a raster to the shape of an
     input polygon. The shape defining the clip can clip the extent of the raster or clip out an area within the raster.
@@ -492,7 +484,7 @@ def clip(raster, geometry=None, clip_outside=True, out_pixel_type=None):
     :param geometry: clipping geometry
     :param clip_outside: boolean, If True, the imagery outside the extents will be removed, else the imagery within the
             clipping_geometry will be removed.
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the clipped raster
     """
     layer, raster = _raster_input(raster)
@@ -506,16 +498,13 @@ def clip(raster, geometry=None, clip_outside=True, out_pixel_type=None):
         }
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def colormap(raster, colormap_name=None, colormap=None, out_pixel_type=None):
+def colormap(raster, colormap_name=None, colormap=None, astype=None):
     """
     Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
@@ -527,7 +516,7 @@ def colormap(raster, colormap_name=None, colormap=None, out_pixel_type=None):
       [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
       [<value2>, <red2>, <green2>, <blue2>]
     ],
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the clipped raster
     """
     layer, raster = _raster_input(raster)
@@ -545,21 +534,18 @@ def colormap(raster, colormap_name=None, colormap=None, out_pixel_type=None):
     if colormap is not None:
         template_dict["rasterFunctionArguments"]['Colormap'] = colormap
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def composite_band(rasters, out_pixel_type=None):
+def composite_band(rasters, astype=None):
     """
     Combines multiple images to form a multiband image.
 
     :param rasters: input rasters
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the multiband image
     """
     layer, rasters = _raster_input(rasters)
@@ -572,22 +558,20 @@ def composite_band(rasters, out_pixel_type=None):
         "variableName": "Rasters"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
-def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, out_pixel_type=None):
+def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=None):
     """
     The ContrastBrightness function enhances the appearance of raster data (imagery) by modifying the brightness or
     contrast within the image. This function works on 8-bit input raster only.
+
     :param raster: input raster
     :param contrast_offset: double, -100 to 100
     :param brightness_offset: double, -100 to 100
-    :param out_pixel_type: pixel type of result raster
+    :param astype: pixel type of result raster
     :return: output raster
     """
     layer, raster = _raster_input(raster)
@@ -602,24 +586,21 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, out_pixe
       "variableName" : "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def convolution(raster, kernel=None, out_pixel_type=None):
+def convolution(raster, kernel=None, astype=None):
     """
     The Convolution function performs filtering on the pixel values in an image, which can be used for sharpening an
     image, blurring an image, detecting edges within an image, or other kernel-based enhancements. For more information,
      see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
 
     :param raster: input raster
-    :param kernel well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
-    :param out_pixel_type: pixel type of result raster
+    :param kernel: well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
+    :param astype: pixel type of result raster
     :return: output raster
     """
     layer, raster = _raster_input(raster)
@@ -632,8 +613,8 @@ def convolution(raster, kernel=None, out_pixel_type=None):
       "variableName" : "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if (isinstance(kernel, int)):
         template_dict["rasterFunctionArguments"]['Type'] = kernel
@@ -647,13 +628,10 @@ def convolution(raster, kernel=None, out_pixel_type=None):
     else:
         raise RuntimeError('Invalid kernel type - pass int or list of list: [[][][]...]')
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def curvature(raster, curvature_type='standard', z_factor=1, out_pixel_type=None):
+def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
     """
     The Curvature function displays the shape or curvature of the slope. A part of a surface can be concave or convex;
     you can tell that by looking at the curvature value. The curvature is calculated by computing the second derivative
@@ -664,7 +642,7 @@ def curvature(raster, curvature_type='standard', z_factor=1, out_pixel_type=None
     :param raster: input raster
     :param curvature_type: 'standard', 'planform', 'profile'
     :param z_factor: double
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
     """
     layer, raster = _raster_input(raster)
@@ -688,16 +666,13 @@ def curvature(raster, curvature_type='standard', z_factor=1, out_pixel_type=None
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer' : layer,
-        'function_chain' : template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def NDVI(raster, visible_band=2, ir_band=1, out_pixel_type=None):
+def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     """
     The Normalized Difference Vegetation Index (ndvi) is a standardized index that allows you to generate an image
     displaying greenness (relative biomass). This index takes advantage of the contrast of the characteristics of
@@ -708,7 +683,7 @@ def NDVI(raster, visible_band=2, ir_band=1, out_pixel_type=None):
     :param raster: input raster
     :param visible_band_id: int (zero-based band id, e.g. 2)
     :param infrared_band_id: int (zero-based band id, e.g. 1)
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
     The following equation is used by the NDVI function to generate a 0–200 range 8 bit result:
     NDVI = ((IR - R)/(IR + R)) * 100 + 100
@@ -726,16 +701,13 @@ def NDVI(raster, visible_band=2, ir_band=1, out_pixel_type=None):
       "variableName" : "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def elevation_void_fill(raster, max_void_width=0, out_pixel_type=None):
+def elevation_void_fill(raster, max_void_width=0, astype=None):
     """
     The elevation_void_fill function is used to create pixels where holes exist in your elevation. Refer to
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/elevation-void-fill-function.htm">
@@ -743,7 +715,7 @@ def elevation_void_fill(raster, max_void_width=0, out_pixel_type=None):
 
     :param raster: input raster
     :param max_void_width: number. Maximum void width to fill. 0: fill all
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -758,23 +730,20 @@ def elevation_void_fill(raster, max_void_width=0, out_pixel_type=None):
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if max_void_width is not None:
         template_dict["rasterFunctionArguments"]["MaxVoidWidth"] = max_void_width
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, missing_band_action=None,
-                 wavelength_match_tolerance=None, out_pixel_type=None):
+                 wavelength_match_tolerance=None, astype=None):
     """
     The extract_band function allows you to extract one or more bands from a raster, or it can reorder the bands in a
-     multiband image.This function was added at 10.2.1.The arguments for the extract_band function are as follows:
+    multiband image. The arguments for the extract_band function are as follows:
 
     :param raster: input raster
     :param band_ids: array of int
@@ -782,7 +751,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     :param band_wavelengths: array of double
     :param missing_band_action: int, 0 = esriMissingBandActionFindBestMatch, 1 = esriMissingBandActionFail
     :param wavelength_match_tolerance: double
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -797,8 +766,8 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
         template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
@@ -811,14 +780,11 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     if wavelength_match_tolerance is not None:
         template_dict["rasterFunctionArguments"]["WavelengthMatchTolerance"] = wavelength_match_tolerance
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, out_pixel_type=None):
+              correct_geoid=None, astype=None):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
@@ -830,7 +796,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     :param z_offset: double
     :param constant_z: double
     :param correct_geoid: boolean
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -845,8 +811,8 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if geodata_transforms is not None:
         template_dict["rasterFunctionArguments"]["GeodataTransforms"] = geodata_transforms
@@ -861,20 +827,17 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
-              remove_edge_effect=None, out_pixel_type=None):
+              remove_edge_effect=None, astype=None):
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
-     For more information, see
-     <a href='http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm'>hillshade
-     function</a> and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm">How hillshade works.</a>
-     The arguments for the hillshade function are as follows:
+    For more information, see
+    <a href='http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm'>hillshade
+    function</a> and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm">How hillshade works.</a>
+    The arguments for the hillshade function are as follows:
 
     :param dem: input DEM
     :param azimuth: double (e.g. 215.0)
@@ -884,7 +847,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     :param ps_power: new at 10.2. double, used together with SCALED slope type
     :param psz_factor: new at 10.2. double, used together with SCALED slope type
     :param remove_edge_effect: new at 10.2. boolean, true of false
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -900,8 +863,8 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if azimuth is not None:
         template_dict["rasterFunctionArguments"]["Azimuth"] = azimuth
@@ -918,13 +881,10 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
     a pixel-by-pixel basis. For more information, see
@@ -941,7 +901,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", ou
     :param operation: int see reference at http://resources.arcgis.com/en/help/arcobjects-net/componenthelp/index.html#//004000000149000000
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -976,8 +936,8 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", ou
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if operation is not None:
         template_dict["rasterFunctionArguments"]["Operation"] = operation
@@ -986,15 +946,12 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", ou
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
-def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def binary_plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Plus (addition,+) operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1003,14 +960,14 @@ def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def binary_minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Minus (subtraction,-) operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1019,14 +976,14 @@ def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 2, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 2, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Times (multiplication,*) operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1035,14 +992,14 @@ def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 3, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 3, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Square Root operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1051,14 +1008,14 @@ def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 4, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 4, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Power operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1067,14 +1024,14 @@ def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 5, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 5, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The acos operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1083,14 +1040,14 @@ def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 6, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 6, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The asin operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1099,14 +1056,14 @@ def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 7, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 7, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATan operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1115,14 +1072,14 @@ def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 8, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 8, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATanH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1131,14 +1088,14 @@ def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 9, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 9, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Abs operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1147,14 +1104,14 @@ def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 10, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 10, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseAnd operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1163,14 +1120,14 @@ def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 11, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 11, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseLeftShift operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1179,14 +1136,14 @@ def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 12, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 12, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseNot operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1195,14 +1152,14 @@ def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 13, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 13, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseOr operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1211,14 +1168,14 @@ def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixe
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 14, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 14, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseRightShift operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1227,14 +1184,14 @@ def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf",
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 15, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 15, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseXOr operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1243,14 +1200,14 @@ def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 16, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 16, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanAnd operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1259,14 +1216,14 @@ def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 17, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 17, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanNot operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1275,14 +1232,14 @@ def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 18, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 18, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanOr operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1291,14 +1248,14 @@ def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixe
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 19, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 19, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanXOr operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1307,14 +1264,14 @@ def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pix
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 20, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 20, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Cos operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1323,14 +1280,14 @@ def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 21, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 21, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The CosH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1339,14 +1296,14 @@ def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 22, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 22, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Divide operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1355,14 +1312,14 @@ def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_ty
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 23, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 23, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The EqualTo operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1371,14 +1328,14 @@ def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 24, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 24, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1387,14 +1344,14 @@ def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 25, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 25, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp10 operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1403,14 +1360,14 @@ def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 26, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 26, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp2 operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1419,14 +1376,14 @@ def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 27, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 27, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The GreaterThan operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1435,14 +1392,14 @@ def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pi
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 28, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 28, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The GreaterThanEqual operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1451,14 +1408,14 @@ def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 29, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 29, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def int(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Int operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1467,14 +1424,14 @@ def int(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 30, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 30, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The IsNull operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1483,14 +1440,14 @@ def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_t
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 31, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 31, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def float(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Float operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1499,14 +1456,14 @@ def float(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 32, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 32, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The LessThan operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1515,14 +1472,14 @@ def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 33, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 33, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The LessThanEqual operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1531,14 +1488,14 @@ def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 34, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 34, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Ln operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1547,14 +1504,14 @@ def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=N
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 35, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 35, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Log10 operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1563,14 +1520,14 @@ def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 36, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 36, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Log2 operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1579,14 +1536,14 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Majority operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1595,14 +1552,14 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 38, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 38, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Max operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1611,14 +1568,14 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 39, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 39, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Mean operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1627,14 +1584,14 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 40, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 40, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Med operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1643,14 +1600,14 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 41, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 41, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Min operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1659,14 +1616,14 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 42, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 42, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Minority operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1675,14 +1632,14 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 43, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 43, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Mod operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1691,14 +1648,14 @@ def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 44, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 44, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Negate operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1707,14 +1664,14 @@ def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_ty
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 45, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 45, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The NotEqual operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1723,14 +1680,14 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Range operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1739,14 +1696,14 @@ def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 47, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 47, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RoundDown operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1755,14 +1712,14 @@ def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixe
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 48, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 48, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RoundUp operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1771,14 +1728,14 @@ def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 49, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 49, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SetNull operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1787,14 +1744,14 @@ def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 50, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 50, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Sin operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1803,14 +1760,14 @@ def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 51, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 51, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SinH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1819,14 +1776,14 @@ def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 52, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 52, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Square operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1835,14 +1792,14 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_ty
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Std operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1851,14 +1808,14 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 54, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 54, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Sum operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1867,14 +1824,14 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 55, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 55, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Tan operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1883,14 +1840,14 @@ def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 56, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 56, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The TanH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1899,14 +1856,14 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Variety operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1915,14 +1872,14 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_t
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 58, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 58, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ACosH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1931,14 +1888,14 @@ def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 59, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 59, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ASinH operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1947,14 +1904,14 @@ def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 60, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 60, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATan2 operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1963,14 +1920,14 @@ def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_typ
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 61, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 61, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The FloatDivide operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1979,14 +1936,14 @@ def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pi
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 64, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 64, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The FloorDivide operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -1995,14 +1952,14 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pi
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 65, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 65, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MajorityIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2011,14 +1968,14 @@ def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="First
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 66, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 66, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MaxIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2027,14 +1984,14 @@ def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 67, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 67, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MeanIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2043,14 +2000,14 @@ def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf",
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 68, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 68, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MedIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2059,14 +2016,14 @@ def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 69, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 69, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MinIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2075,14 +2032,14 @@ def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 70, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 70, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MinorityIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2091,14 +2048,14 @@ def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="First
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 71, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 71, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RangeIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2107,14 +2064,14 @@ def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf"
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 72, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 72, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The StdIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2123,14 +2080,14 @@ def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 73, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 73, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SumIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2139,14 +2096,14 @@ def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 74, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 74, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The VarietyIgnoreNoData operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2155,14 +2112,14 @@ def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstO
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 75, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 75, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=None):
+def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The con operation
     This function works on single band or the first band of an image only, and the output is single band.
@@ -2171,16 +2128,16 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", out_pixel_type=
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 76, extent_type=extent_type, cellsize_type=cellsize_type, out_pixel_type=out_pixel_type)
+    return local(rasters, 76, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
 
-def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretation=None, out_pixel_type=None):
+def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretation=None, astype=None):
     """
     The mask function changes the image by specifying a certain pixel value or a range of pixel values as no data.
     The arguments for the mask function are as follows:
@@ -2189,7 +2146,7 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     :param no_data_values: array of string ["band0_val","band1_val",...]
     :param included_ranges: array of double [band0_lowerbound,band0_upperbound,band1...],
     :param no_data_interpretation: int 0=MatchAny, 1=MatchAll
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2204,8 +2161,8 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if no_data_values is not None:
         template_dict["rasterFunctionArguments"]["NoDataValues"] = no_data_values
@@ -2214,19 +2171,20 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     if no_data_interpretation is not None:
         template_dict["rasterFunctionArguments"]["NoDataInterpretation"] = no_data_interpretation
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def ml_classify(raster, signature, out_pixel_type=None):
+def ml_classify(raster, signature, astype=None):
     """
-    The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.This function was added at 10.2.1.The arguments for the ml_classify function are as follows:
+    The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification
+     algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
+     your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.
+     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
+     The arguments for the ml_classify function are as follows:
 
     :param raster: input raster
     :param signature: string. a signature string returned from computeClassStatistics (GSG)
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2241,26 +2199,23 @@ def ml_classify(raster, signature, out_pixel_type=None):
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if signature is not None:
         template_dict["rasterFunctionArguments"]["SignatureFile"] = signature
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 # See NDVI() above
-# def ndvi(raster, visible_band_id=None, infrared_band_id=None, out_pixel_type=None):
+# def ndvi(raster, visible_band_id=None, infrared_band_id=None, astype=None):
 #     """
 #     The Normalized Difference Vegetation Index (ndvi) is a standardized index that allows you to generate an image displaying greenness (relative biomass). This index takes advantage of the contrast of the characteristics of two bands from a multispectral raster dataset—the chlorophyll pigment absorptions in the red band and the high reflectivity of plant materials in the near-infrared (NIR) band. For more information, see ndvi function.The arguments for the ndvi function are as follows:
 #
 #     :param raster: input raster
 #     :param visible_band_id: int (zero-based band id, e.g. 2)
 #     :param infrared_band_id: int (zero-based band id, e.g. 1)
-#     :param out_pixel_type: output pixel type
+#     :param astype: output pixel type
 #     :return: the output raster
 #
 #     """
@@ -2275,8 +2230,8 @@ def ml_classify(raster, signature, out_pixel_type=None):
 #         "variableName": "Raster"
 #     }
 #
-#     if out_pixel_type is not None:
-#         template_dict["outputPixelType"] = out_pixel_type
+#     if astype is not None:
+#         template_dict["outputPixelType"] = astype.upper()
 #
 #     if visible_band_id is not None:
 #         template_dict["rasterFunctionArguments"]["VisibleBandID"] = visible_band_id
@@ -2289,14 +2244,14 @@ def ml_classify(raster, signature, out_pixel_type=None):
 #     }
 
 # TODO: how does recast work?
-# def recast(raster, < _argument_name1 >= None, < _argument_name2 >= None, out_pixel_type=None):
+# def recast(raster, < _argument_name1 >= None, < _argument_name2 >= None, astype=None):
 #     """
 #     The recast function reassigns argument values in an existing function template.The arguments for the recast function are based on the function it is overwriting.
 #
 #     :param raster: input raster
 #     :param <_argument_name1>: ArgumentName1 will be reassigned with ArgumentValue1
 #     :param <_argument_name2>: ArgumentName1 will be reassigned with ArgumentValue2
-#     :param out_pixel_type: output pixel type
+#     :param astype: output pixel type
 #     :return: the output raster
 #
 #     """
@@ -2311,8 +2266,8 @@ def ml_classify(raster, signature, out_pixel_type=None):
 #         "variableName": "Raster"
 #     }
 #
-#     if out_pixel_type is not None:
-#         template_dict["outputPixelType"] = out_pixel_type
+#     if astype is not None:
+#         template_dict["outputPixelType"] = astype.upper()
 #
 #     if < _argument_name1 > is not None:
 #         template_dict["rasterFunctionArguments"]["<ArgumentName1>"] = < _argument_name1 >
@@ -2326,7 +2281,7 @@ def ml_classify(raster, signature, out_pixel_type=None):
 
 
 def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geometries=None, no_data_ranges=None,
-          allow_unmatched=None, out_pixel_type=None):
+          allow_unmatched=None, astype=None):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
     see <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm">remap function</a>.
@@ -2340,7 +2295,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     :param geometries: added at 10.3
     :param no_data_ranges: [double, double, ...], nodata ranges are specified in pairs: from (inclusive) and to (exclusive).
     :param allow_unmatched: Boolean, specify whether to keep the unmatched values or turn into nodata.
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2355,8 +2310,8 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if input_ranges is not None:
         template_dict["rasterFunctionArguments"]["InputRanges"] = input_ranges
@@ -2371,13 +2326,10 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def resample(raster, resampling_type=None, input_cellsize=None, out_pixel_type=None):
+def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
     """
     The resample function resamples pixel values from a given resolution.The arguments for the resample function are as follows:
 
@@ -2385,7 +2337,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, out_pixel_type=N
     :param resampling_type: one of NearestNeighbor,Bilinear,Cubic,Majority,BilinearInterpolationPlus,BilinearGaussBlur,
             BilinearGaussBlurPlus, Average, Minimum, Maximum,VectorAverage(require two bands)
     :param input_cellsize: point that defines cellsize in source spatial reference
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2416,22 +2368,19 @@ def resample(raster, resampling_type=None, input_cellsize=None, out_pixel_type=N
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if resampling_type is not None:
         template_dict["rasterFunctionArguments"]["ResamplingType"] = resampling_type
     if input_cellsize is not None:
         template_dict["rasterFunctionArguments"]["InputCellsize"] = input_cellsize
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectral_radius=None, spatial_radius=None,
-                       min_num_pixels_per_segment=None, out_pixel_type=None):
+                       min_num_pixels_per_segment=None, astype=None):
     """
     The segment_mean_shift function produces a segmented output. Pixel values in the output image represent the
     converged RGB colors of the segment. The input raster needs to be a 3-band 8-bit image. If the imagery layer is not
@@ -2453,7 +2402,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     :param spectral_radius: double. Bigger value is slower and has less segments.
     :param spatial_radius: int. Bigger value is slower and has less segments.
     :param min_num_pixels_per_segment: int
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2468,8 +2417,8 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if spectral_detail is not None:
         template_dict["rasterFunctionArguments"]["SpectralDetail"] = spectral_detail
@@ -2482,14 +2431,11 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     if min_num_pixels_per_segment is not None:
         template_dict["rasterFunctionArguments"]["MinNumPixelsPerSegment"] = min_num_pixels_per_segment
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
-                  psz_factor=None, remove_edge_effect=None, out_pixel_type=None):
+                  psz_factor=None, remove_edge_effect=None, astype=None):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
     Hillshade methods. For more information, see
@@ -2506,7 +2452,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param ps_power: double, used together with SCALED slope type
     :param psz_factor: double, used together with SCALED slope type
     :param remove_edge_effect: boolean, True or False
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2521,8 +2467,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if azimuth is not None:
         template_dict["rasterFunctionArguments"]["Azimuth"] = azimuth
@@ -2541,14 +2487,11 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, remove_edge_effect=None,
-          out_pixel_type=None):
+          astype=None):
     """
     slope represents the rate of change of elevation for each pixel. For more information, see
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm">slope function</a>
@@ -2562,7 +2505,7 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     :param psz_factor: new at 10.2. double, used together with SCALED slope type
     :param remove_edge_effect: new at 10.2. boolean, true of false
     :param dem: optional, default is the image service
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2578,8 +2521,8 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if z_factor is not None:
         template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
@@ -2594,14 +2537,11 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     if dem is not None:
         template_dict["rasterFunctionArguments"]["DEM"] = dem
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
-               fill_no_data_only=None, out_pixel_type=None):
+               fill_no_data_only=None, astype=None):
     """
     The statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
     For more information, see
@@ -2615,7 +2555,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     :param columns: int (e.g. 3)
     :param rows: int (e.g. 3)
     :param fill_no_data_only: bool
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2630,8 +2570,8 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if kernel_columns is not None:
         template_dict["rasterFunctionArguments"]["KernelColumns"] = kernel_columns
@@ -2646,15 +2586,12 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     if fill_no_data_only is not None:
         template_dict["rasterFunctionArguments"]["FillNoDataOnly"] = fill_no_data_only
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_deviations=None, statistics=None,
+def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statistics=None,
             dra=None, min_percent=None, max_percent=None, gamma=None, compute_gamma=None, sigmoid_strength_level=None,
-            out_pixel_type=None):
+            astype=None):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm">stretch function</a>.
@@ -2663,12 +2600,12 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     can be used to define output minimum and maximum. DRA is used to get statistics from the extent in the export_image request.
     ComputeGamma will automatically calculate best gamma value to render exported image based on empirical model.
 
-    Stretch type 0 (None) does not require other parameters.
-    Stretch type 3 (StandardDeviation) requires NumberOfStandardDeviations, Statistics, or DRA (true).
-    Stretch type 4 (Histogram Equalization) requires the source dataset to have histograms or additional DRA (true).
-    Stretch type 5 (MinMax) requires Statistics or DRA (true).
-    Stretch type 6 (PercentClip) requires MinPercent, MaxPercent, and DRA (true), or histograms from the source dataset.
-    Stretch type 9 (sigmoid) does not require other parameters.
+    Stretch type None does not require other parameters.
+    Stretch type StdDev requires NumberOfStandardDeviations, Statistics, or DRA (true).
+    Stretch type Histogram (Histogram Equalization) requires the source dataset to have histograms or additional DRA (true).
+    Stretch type MinMax requires Statistics or DRA (true).
+    Stretch type PercentClip requires MinPercent, MaxPercent, and DRA (true), or histograms from the source dataset.
+    Stretch type Sigmoid does not require other parameters.
 
     Optionally, set the SigmoidStrengthLevel (1 to 6) to adjust the curvature of Sigmoid curve used in color stretch.
 
@@ -2676,10 +2613,10 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     The arguments for the stretch function are as follows:
 
     :param raster: input raster
-    :param stretch_type: int (0 = None, 3 = StandardDeviation, 4 = Histogram Equalization, 5 = MinMax, 6 = PercentClip, 9 = Sigmoid)
+    :param stretch_type: str, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
     :param min: double
     :param max: double
-    :param number_of_standard_deviations: double (e.g. 2.5)
+    :param num_stddev: double (e.g. 2.5)
     :param statistics: double (e.g. 2.5)[<min1>, <max1>, <mean1>, <standardDeviation1>], //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
     :param dra: boolean. derive statistics from current request, Statistics parameter is ignored when DRA is true
     :param min_percent: double (e.g. 0.25), applicable to PercentClip
@@ -2687,12 +2624,26 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     :param gamma: array of doubles
     :param compute_gamma: optional, applicable to any stretch type when "UseGamma" is "true"
     :param sigmoid_strength_level: int (1~6), applicable to Sigmoid
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
 
     layer, raster = _raster_input(raster)
+
+    str_types = {
+        'none': 0,
+        'stddev': 3,
+        'histogram' : 4,
+        'minmax': 5,
+        'percentclip' : 6,
+        'sigmoid': 9
+    }
+
+    if isinstance(stretch_type, str):
+        in_str_type = str_types[stretch_type.lower()]
+    else:
+        in_str_type = stretch_type
 
     template_dict = {
         "rasterFunction": "Stretch",
@@ -2702,17 +2653,17 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if stretch_type is not None:
-        template_dict["rasterFunctionArguments"]["StretchType"] = stretch_type
+        template_dict["rasterFunctionArguments"]["StretchType"] = in_str_type
     if min is not None:
         template_dict["rasterFunctionArguments"]["Min"] = min
     if max is not None:
         template_dict["rasterFunctionArguments"]["Max"] = max
-    if number_of_standard_deviations is not None:
-        template_dict["rasterFunctionArguments"]["NumberOfStandardDeviations"] = number_of_standard_deviations
+    if num_stddev is not None:
+        template_dict["rasterFunctionArguments"]["NumberOfStandardDeviations"] = num_stddev
     if statistics is not None:
         template_dict["rasterFunctionArguments"]["Statistics"] = statistics
     if dra is not None:
@@ -2728,19 +2679,20 @@ def stretch(raster, stretch_type=0, min=None, max=None, number_of_standard_devia
     if sigmoid_strength_level is not None:
         template_dict["rasterFunctionArguments"]["SigmoidStrengthLevel"] = sigmoid_strength_level
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    if compute_gamma is not None or gamma is not None:
+        template_dict["rasterFunctionArguments"]["UseGamma"] = True
 
 
-def threshold(raster, out_pixel_type=None):
+    return _clone_layer(layer, template_dict)
+
+
+def threshold(raster, astype=None):
     """
     The binary threshold function produces the binary image. It uses the Otsu method and assumes the input image to have
      a bi-modal histogram. The arguments for the threshold function are as follows:
 
     :param raster: input raster
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2755,20 +2707,17 @@ def threshold(raster, out_pixel_type=None):
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if threshold_type is not None:
         template_dict["rasterFunctionArguments"]["ThresholdType"] = threshold_type
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, constant_fill_check=None,
-                   constant_fill_value=None, fill_raster=None, out_pixel_type=None):
+                   constant_fill_value=None, fill_raster=None, astype=None):
     """
     The transpose_bits function performs a bit operation. It extracts bit values from the source data and assigns them
     to new bits in the output data.The arguments for the transpose_bits function are as follows:
@@ -2778,15 +2727,15 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     Filling is used to initialize pixel values of the output raster.
     Landsat 8 has a quality assessment band. The following are the example input and output bit positions to extract
     confidence levels by mapping them to 0-3:
-    Landsat 8 Water: {"input_bit_positions":[4,5],"output_bit_positions":[0,1]}
-    Landsat 8 Cloud Shadow: {"input_bit_positions":[6,7],"output_bit_positions":[0,1]}
-    Landsat 8 Vegetation: {"input_bit_positions":[8,9],"output_bit_positions":[0,1]}
-    Landsat 8 Snow/Ice: {"input_bit_positions":[10,11],"output_bit_positions":[0,1]}
-    Landsat 8 Cirrus: {"input_bit_positions":[12,13],"output_bit_positions":[0,1]}
-    Landsat 8 Cloud: {"input_bit_positions":[14,15],"output_bit_positions":[0,1]}
-    Landsat 8 Designated Fill: {"input_bit_positions":[0],"output_bit_positions":[0]}
-    Landsat 8 Dropped Frame: {"input_bit_positions":[1],"output_bit_positions":[0]}
-    Landsat 8 Terrain Occlusion: {"input_bit_positions":[2],"output_bit_positions":[0]}
+    * Landsat 8 Water: {"input_bit_positions":[4,5],"output_bit_positions":[0,1]}
+    * Landsat 8 Cloud Shadow: {"input_bit_positions":[6,7],"output_bit_positions":[0,1]}
+    * Landsat 8 Vegetation: {"input_bit_positions":[8,9],"output_bit_positions":[0,1]}
+    * Landsat 8 Snow/Ice: {"input_bit_positions":[10,11],"output_bit_positions":[0,1]}
+    * Landsat 8 Cirrus: {"input_bit_positions":[12,13],"output_bit_positions":[0,1]}
+    * Landsat 8 Cloud: {"input_bit_positions":[14,15],"output_bit_positions":[0,1]}
+    * Landsat 8 Designated Fill: {"input_bit_positions":[0],"output_bit_positions":[0]}
+    * Landsat 8 Dropped Frame: {"input_bit_positions":[1],"output_bit_positions":[0]}
+    * Landsat 8 Terrain Occlusion: {"input_bit_positions":[2],"output_bit_positions":[0]}
 
     :param raster: input raster
     :param input_bit_positions: array of long, required
@@ -2794,7 +2743,7 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     :param constant_fill_check: bool, optional
     :param constant_fill_value: int, required
     :param fill_raster: optional, the fill raster
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2809,8 +2758,8 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if input_bit_positions is not None:
         template_dict["rasterFunctionArguments"]["InputBitPositions"] = input_bit_positions
@@ -2823,13 +2772,10 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     if fill_raster is not None:
         template_dict["rasterFunctionArguments"]["FillRaster"] = fill_raster
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
-def unit_conversion(raster, from_unit=None, to_unit=None, out_pixel_type=None):
+def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
     The unit_conversion function performs unit conversions.The arguments for the unit_conversion function are as follows:
     FromUnit and ToUnit take the following:
@@ -2841,7 +2787,7 @@ def unit_conversion(raster, from_unit=None, to_unit=None, out_pixel_type=None):
     :param raster: input raster
     :param from_unit: units constant listed below (int)
     :param to_unit: units constant listed below (int)
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2856,22 +2802,19 @@ def unit_conversion(raster, from_unit=None, to_unit=None, out_pixel_type=None):
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if from_unit is not None:
         template_dict["rasterFunctionArguments"]["FromUnit"] = from_unit
     if to_unit is not None:
         template_dict["rasterFunctionArguments"]["ToUnit"] = to_unit
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def vector_field_renderer(raster, is_uv_components=None, reference_system=None, mass_flow_angle_representation=None,
-                          calculation_method="Vector Average", symbology_name="Single Arrow", out_pixel_type=None):
+                          calculation_method="Vector Average", symbology_name="Single Arrow", astype=None):
     """
     The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.The arguments for the vector_field_renderer function are as follows:
 
@@ -2881,7 +2824,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     :param mass_flow_angle_representation: int 0=from 1=to
     :param calculation_method: string, "Vector Average" |
     :param symbology_name: string, "Single Arrow" |
-    :param out_pixel_type: output pixel type
+    :param astype: output pixel type
     :return: the output raster
 
     """
@@ -2896,8 +2839,8 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
         "variableName": "Raster"
     }
 
-    if out_pixel_type is not None:
-        template_dict["outputPixelType"] = out_pixel_type
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     if is_uv_components is not None:
         template_dict["rasterFunctionArguments"]["IsUVComponents"] = is_uv_components
@@ -2910,10 +2853,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     if symbology_name is not None:
         template_dict["rasterFunctionArguments"]["SymbologyName"] = symbology_name
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
 
 
 def apply(raster, fn_name, **kwargs):
@@ -2942,10 +2882,58 @@ def apply(raster, fn_name, **kwargs):
         "variableName": "Raster"
     }
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
 
-    return {
-        'layer': layer,
-        'function_chain': template_dict
-    }
+    return _clone_layer(layer, template_dict)
+
+def _clone_layer(layer, function_chain):
+    newlyr = ImageryLayer(layer._url, layer._gis)
+
+    newlyr._lazy_properties = layer.properties
+    newlyr._hydrated = True
+    newlyr._lazy_token = layer._token
+
+    # if layer._fn is not None: # chain the functions
+    #     old_chain = layer._fn
+    #     newlyr._fn = function_chain
+    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
+    # else:
+    newlyr._fn = function_chain
+
+    newlyr._where_clause = layer._where_clause
+    newlyr._spatial_filter = layer._spatial_filter
+    newlyr._temporal_filter = layer._temporal_filter
+    newlyr._mosaic_rule = layer._mosaic_rule
+    newlyr._filtered = layer._filtered
+
+    return newlyr
+    
+
+def _raster_input(raster):
+    if isinstance(raster, ImageryLayer):
+        layer = raster
+        raster = _get_raster(raster)
+    elif isinstance(raster, list):
+        r0 = raster[0]
+        layer = r0
+        raster = [_get_raster(r) for r in raster]
+    else: # maybe scalar for arithmetic functions
+        layer = None
+        # raster = raster
+
+    return layer, raster
+
+
+def _get_raster(raster):
+    if raster._fn is not None:
+        raster = raster._fn
+    else:
+        oids = raster.filtered_rasters()
+        if oids is None:
+            raster = '$$'
+        elif len(oids) == 1:
+            raster = '$' + str(oids[0])
+        else:
+            raster = ['$' + str(x) for x in oids]
+    return raster

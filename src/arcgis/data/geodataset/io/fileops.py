@@ -21,7 +21,7 @@ try:
     from arcpy import da
     HASARCPY = True
 except:
-    warn(message="ArcPy not found.")
+    # warn(message="ArcPy not found.")
     HASARCPY = False
 _log=logging.getLogger(__name__)
 #--------------------------------------------------------------------------

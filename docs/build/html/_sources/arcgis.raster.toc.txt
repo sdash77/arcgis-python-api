@@ -15,9 +15,14 @@ ImageryLayer
     :members:
     :undoc-members:
 
+mosaic
+------
+.. automethod:: arcgis.raster.mosaic
+
 Submodules
 --------------
 .. toctree::
    :maxdepth: 3
 
    arcgis.raster.analytics
+   arcgis.raster.functions

@@ -1,5 +1,8 @@
+import json
+
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
+from arcgis.geometry import Geometry
 from ..features import FeatureSet
 import datetime
 
@@ -11,6 +14,33 @@ class ImageryLayer(Layer):
         self._where_clause = '1=1'
         self._fn = None
         self._filtered = False
+        self._mosaic_rule = None
+
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += '?token=' + self._token
+
+        lyr_dict = {'type': type(self).__name__, 'url': url}
+
+        options_dict = {
+            "imageServiceParameters": {
+            }
+        }
+
+        if self._fn is not None or self._mosaic_rule is not None:
+            if self._fn is not None:
+                options_dict["imageServiceParameters"]["renderingRule"] = self._fn
+
+            if self._mosaic_rule is not None:
+                options_dict["imageServiceParameters"]["mosaicRule"] = self._mosaic_rule
+
+            lyr_dict.update({
+                "options": json.dumps(options_dict)
+            })
+
+        return lyr_dict
 
     @classmethod
     def fromitem(cls, item):
@@ -19,45 +49,126 @@ class ImageryLayer(Layer):
 
         return cls(item.url, item._gis)
 
-    def set_spatial_filter(self, fltr):
-        """Sets the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter """
-        self._spatial_filter = fltr
-        self._filtered = True
-        return self
 
-    def set_temporal_filter(self, fltr):
-        """Sets a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
-        Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
-        Syntax: time_filter=<timeInstant>
-
-        Time extent specified as list of [<startTime>, <endTime>]
-        For time extents one of <startTime> or <endTime> could be None. A None value specified for
-        start time or end time will represent infinity for start or end time respectively.
-        Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
-        timestamp in milliseconds
+    def set_filter(self, where=None, geometry=None, time=None, lock_rasters=False, clear_filters=False):
         """
-        self._temporal_filter = fltr
-        self._filtered = True
-        return self
+        Filters the rasters that will be used for applying raster functions.
 
-    def set_where_clause(self, where='1=1'):
-        """Sets a where clause on this layer to filter the imagery layer by the selection sql statement.
-        Any legal SQL where clause operating on the fields in the raster"""
-        self._where_clause = where
-        self._filtered = True
-        return self
+        If lock_rasters is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden
+
+        :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
+                Any legal SQL where clause operating on the fields in the raster
+        :param geometry: the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter
+        :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
+                Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+                Syntax: time_filter=<timeInstant>
+
+                Time extent specified as list of [<startTime>, <endTime>]
+                For time extents one of <startTime> or <endTime> could be None. A None value specified for
+                start time or end time will represent infinity for start or end time respectively.
+                Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
+                timestamp in milliseconds
+        :param lock_rasters: if True, the LockRaster mosaic rule will be applied to the layer, unless overridden
+        :param clear_filters: if True, the applied filters are cleared
+        :return:
+
+        """
+        if clear_filters:
+            self._filtered = False
+            self._where_clause = None
+            self._temporal_filter = None
+            self._spatial_filter = None
+            self._mosaic_rule = None
+        else:
+            self._filtered = True
+            if where is not None:
+                self._where_clause = where
+
+            if geometry is not None:
+                self._spatial_filter = geometry
+
+            if time is not None:
+                self._temporal_filter = time
+
+            if lock_rasters:
+                oids = self.query(where=self._where_clause,
+                      time_filter=self._temporal_filter,
+                      geometry_filter=self._spatial_filter,
+                      return_ids_only=True)['objectIds']
+                self._mosaic_rule = {
+                      "mosaicMethod" : "esriMosaicLockRaster",
+                      "lockRasterIds": oids,
+                      "ascending" : True,
+                      "mosaicOperation" : "MT_FIRST"
+                    }
+
+
+    def fltr(self, where=None, geometry=None, time=None, lock_rasters=True):
+        """
+        Filters the layer by where clause, geometry and temporal filters
+
+
+
+        :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
+                Any legal SQL where clause operating on the fields in the raster
+        :param geometry: the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter
+        :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
+                Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+                Syntax: time_filter=<timeInstant>
+
+                Time extent specified as list of [<startTime>, <endTime>]
+                For time extents one of <startTime> or <endTime> could be None. A None value specified for
+                start time or end time will represent infinity for start or end time respectively.
+                Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
+                timestamp in milliseconds
+        :param lock_rasters: bool If True, the LockRaster mosaic rule is applied to the layer, using the filtered objectids
+        :return: ImageryLayer with filtered images meeting the filter criteria
+
+        """
+
+        newlyr = self._clone_layer()
+
+        newlyr._where_clause = where
+        newlyr._spatial_filter = geometry
+        newlyr._temporal_filter = time
+
+        if lock_rasters:
+            oids = self.query(where=where,
+                  time_filter=time,
+                  geometry_filter=geometry,
+                  return_ids_only=True)['objectIds']
+            newlyr._mosaic_rule = {
+                "mosaicMethod": "esriMosaicLockRaster",
+                "lockRasterIds": oids,
+                "ascending": True,
+                "mosaicOperation": "MT_FIRST"
+            }
+
+        newlyr._filtered = True
+
+        return newlyr
+
+    def _clone_layer(self):
+        newlyr = ImageryLayer(self._url, self._gis)
+        newlyr._lazy_properties = self.properties
+        newlyr._hydrated = True
+        newlyr._lazy_token = self._token
+        newlyr._fn = self._fn
+        newlyr._mosaic_rule = self._mosaic_rule
+
+        return newlyr
 
     def filtered_rasters(self):
         """The object ids of the filtered rasters in this imagery layer, by applying the where clause, spatial and
-        temporal filters"""
+        temporal filters. If no rasters are filtered, returns None. If all rasters are filtered, returns empty list"""
         if self._filtered:
             oids = self.query(where=self._where_clause,
                   time_filter=self._temporal_filter,
                   geometry_filter=self._spatial_filter,
                   return_ids_only=True)['objectIds']
-            return ['$' + str(x) for x in oids]
+            return oids #['$' + str(x) for x in oids]
         else:
-            return '$$'
+            return None # return '$$'
 
     def export_image(self,
                      bbox,
@@ -73,7 +184,7 @@ class ImageryLayer(Layer):
                      compression=None,
                      compression_quality=None,
                      band_ids=None,
-                     moasiac_rule=None,
+                     mosaic_rule=None,
                      rendering_rule=None,
                      f="json",
                      save_folder=None,
@@ -243,8 +354,10 @@ class ImageryLayer(Layer):
         __allowedCompression = [
             "JPEG", "LZ77"
         ]
-        if isinstance(moasiac_rule, dict):
-            params["moasiacRule"] = moasiac_rule
+        if mosaic_rule is not None:
+            params["mosaicRule"] = mosaic_rule
+        elif self._mosaic_rule is not None:
+            params["mosaicRule"] = self._mosaic_rule
 
         if export_format in __allowedFormat:
             params['format'] = export_format
@@ -288,7 +401,10 @@ class ImageryLayer(Layer):
             params['bandIds'] = ",".join([str(x) for x in band_ids])
 
         if rendering_rule is not None:
-            params['renderingRule'] = rendering_rule
+            if 'function_chain' in rendering_rule:
+                params['renderingRule'] = rendering_rule['function_chain']
+            else:
+                params['renderingRule'] = rendering_rule
         elif self._fn is not None:
             params['renderingRule'] = self._fn
 
@@ -393,8 +509,10 @@ class ImageryLayer(Layer):
 
         if where is not None:
             params['where'] = where
-        else:
+        elif self._where_clause is not None:
             params['where'] = self._where_clause
+        else:
+            params['where'] = '1=1'
 
         if not group_by_fields_for_statistics is None:
             params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
@@ -639,8 +757,11 @@ class ImageryLayer(Layer):
         else:
             params["geometryType"] = 'esriGeometryPolygon'
 
-        if not mosaic_rule is None:
-            params["mosaicRule"] = mosaic_rule
+
+        if mosaic_rule is not None:
+            params["moasiacRule"] = mosaic_rule
+        elif self._mosaic_rule is not None:
+            params["moasiacRule"] = self._mosaic_rule
 
         if not rendering_rule is None:
             params["renderingRule"] = rendering_rule
@@ -654,7 +775,7 @@ class ImageryLayer(Layer):
 
         # ----------------------------------------------------------------------
 
-    def get_samples(self, geometry, geometry_type="esriGeometryPoint",
+    def get_samples(self, geometry, geometry_type=None,
                    sample_distance=None, sample_count=None, mosaic_rule=None,
                    pixel_size=None, return_first_value_only=None, interpolation=None,
                    out_fields=None):
@@ -711,6 +832,12 @@ class ImageryLayer(Layer):
          this parameter to include all the field values in the results.
         """
 
+        if not isinstance(geometry, Geometry):
+            geometry = Geometry(geometry)
+
+        if geometry_type is None:
+            geometry_type = 'esriGeometry' + geometry.type
+
         url = self._url + "/getSamples"
         params = {
             "f": "json",
@@ -724,6 +851,8 @@ class ImageryLayer(Layer):
             params["sampleCount"] = sample_count
         if not mosaic_rule is None:
             params["mosaicRule"] = mosaic_rule
+        elif self._mosaic_rule is not None:
+            params["moasiacRule"] = self._mosaic_rule
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
         if not return_first_value_only is None:
@@ -756,3 +885,166 @@ class ImageryLayer(Layer):
             params['renderingRule'] = self._fn
 
         return self._con.get(url, params, token=self._token)
+
+
+    def __sub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus(self, other)
+
+    # def __rsub__(self, other):
+    #     from arcgis.raster.functions import minus
+    #     return minus(self, other)
+
+    def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
+           muldidef=None, op="first"):
+        """
+        Defines how individual images in this layer should be mosaicked. It specifies selection,
+        mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
+        the mosaic dataset. A mosaic rule is used to define:
+
+        * The selection of rasters that will participate in the mosaic (using where clause).
+        * The mosaic method, e.g. how the selected rasters are ordered.
+        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
+
+        :param method:  determines how the selected rasters are ordered.
+            str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
+            required if method is: center | nadir | northwest | seamline,
+            optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
+            If sort_by and optionally sort_val parameters are specified, "attribute" method is used
+            If lock_raster_ids are specified, "lock-raster" method is used
+            If a viewpt parameter is passed, "viewpoint" method is used.
+        :param sort_by: optional str, field name when sorting by attributes
+        :param sort_val: optional, a constant value defining a reference or base value for the sort field when sorting by
+            attributes
+        :param lock_rasters: optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
+            to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
+            maximum pixel size range of the locked rasters.
+        :param viewpt: optional point, used as view point for viewpoint mosaicking method
+        :param asc: optional bool, indicate whether to use ascending or descending order. Default is ascending order.
+        :param where: optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
+            may not be visible at all scales
+        :param fids: optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
+            aware that the rasters may not be visible at all scales.
+        :param muldidef: optional dict, multidemensional definition used for filtering by variable/dimensions.
+            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+        :param op: optional string, first | last | min | max | mean | blend | sum
+            mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
+            pixel values, or blend them.
+        :return: a mosaic rule defined in the format at
+            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+        Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
+        """
+        mosaic_rule = {
+            "mosaicMethod": "esriMosaicNone",
+            "ascending": asc,
+            "mosaicOperation": 'MT_' + op.upper()
+        }
+
+        if where is not None:
+            mosaic_rule['where'] = where
+
+        if fids is not None:
+            mosaic_rule['fids'] = fids
+
+        if muldidef is not None:
+            mosaic_rule['multidimensionalDefinition'] = muldidef
+
+        if method in [ 'none', 'center', 'nadir', 'northwest', 'seamline']:
+            mosaic_rule['mosaicMethod'] = 'esriMosaic' + method.title()
+
+        if viewpt is not None:
+            if not isinstance(viewpt, Geometry):
+                viewpt = Geometry(viewpt)
+            mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
+            mosaic_rule['viewpt'] = viewpt
+
+        if sort_by is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
+            mosaic_rule['sortField'] = sort_by
+            if sort_val is not None:
+                mosaic_rule['sortValue'] = sort_val
+
+        if lock_rasters is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
+            mosaic_rule['lockRasterIds'] = lock_rasters
+
+        self._mosaic_rule = mosaic_rule
+
+    @property
+    def mosaic_rule(self):
+        """The mosaic rule used by the imagery layer to define:
+        * The selection of rasters that will participate in the mosaic
+        * The mosaic method, e.g. how the selected rasters are ordered.
+        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
+
+        Set by calling the mosaic_by or fltr methods on the layer
+        """
+        return self._mosaic_rule
+
+    @mosaic_rule.setter
+    def mosaic_rule(self, value):
+
+        self._mosaic_rule = value
+
+    def _mosaic_operation(self, op):
+        """
+        Sets how overlapping pixels at the same location are resolved
+
+        :param op: string, one of first | last | min | max | mean | blend | sum
+
+        :return: this imagery layer with mosaic operation set to op
+        """
+        newlyr = self._clone_layer()
+        if self._mosaic_rule is not None:
+            newlyr._mosaic_rule["mosaicOperation"] = 'MT_' + op.upper()
+
+        return newlyr
+
+    def first(self):
+        """
+        overlapping pixels at the same location are resolved by picking the first image
+        :return: this imagery layer with mosaic operation set to 'first'
+        """
+        return self._mosaic_operation('first')
+
+    def last(self):
+        """
+        overlapping pixels at the same location are resolved by picking the last image
+        :return: this imagery layer with mosaic operation set to 'last'
+        """
+        return self._mosaic_operation('last')
+
+    def min(self):
+        """
+        overlapping pixels at the same location are resolved by picking the min pixel value
+        :return: this imagery layer with mosaic operation set to 'min'
+        """
+        return self._mosaic_operation('min')
+
+    def max(self):
+        """
+        overlapping pixels at the same location are resolved by picking the max pixel value
+        :return: this imagery layer with mosaic operation set to 'max'
+        """
+        return self._mosaic_operation('max')
+
+    def mean(self):
+        """
+        overlapping pixels at the same location are resolved by choosing the mean of all overlapping pixels
+        :return: this imagery layer with mosaic operation set to 'mean'
+        """
+        return self._mosaic_operation('mean')
+
+    def blend(self):
+        """
+        overlapping pixels at the same location are resolved by blending all overlapping pixels
+        :return: this imagery layer with mosaic operation set to 'blend'
+        """
+        return self._mosaic_operation('blend')
+
+    def sum(self):
+        """
+        overlapping pixels at the same location are resolved by adding up all overlapping pixel values
+        :return: this imagery layer with mosaic operation set to 'sum'
+        """
+        return self._mosaic_operation('sum')
