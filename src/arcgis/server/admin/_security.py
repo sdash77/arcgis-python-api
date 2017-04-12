@@ -484,7 +484,9 @@ class Security(BaseServer):
         uURL = self._url + "/roles/update"
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
-    def update_user(self, username, password, fullname, description, email):
+    def update_user(self, username, password=None,
+                    fullname=None, description=None,
+                    email=None):
         """ Updates a user account in the user store
            Parameters:
               username - the name of the user. The name must be unique in
@@ -495,17 +497,19 @@ class Security(BaseServer):
                             for the user account.
               email - an optional email for the user account.
         """
+        user = {"username" : username}
         params = {
             "f" : "json",
-            "username" : username
+            "user" : {}
         }
         if password is not None:
-            params['password'] = password
+            user['password'] = password
         if fullname is not None:
-            params['fullname'] = fullname
+            user['fullname'] = fullname
         if description is not None:
-            params['description'] = description
+            user['description'] = description
         if email is not None:
-            params['email'] = email
+            user['email'] = email
+        params['user'] = user
         uURL = self._url + "/users/update"
         return self._con.post(path=uURL, postdata=params)

@@ -31,7 +31,7 @@ from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
 from arcgis._impl.connection import _ArcGISConnection
-
+from arcgis.gis import GIS
 class Error(Exception): pass
 
 __version__ = '2.0'
@@ -225,8 +225,8 @@ class ServerConnection(object):
         if self._tokenurl is None and \
            portal_connection is None:
             parsed = urlparse(baseurl)
-            tokenurl = "https://{netloc}/{wa}/admin/generateToken".format(
-                #scheme=parsed.scheme,
+            tokenurl = "{scheme}://{netloc}/{wa}/admin/generateToken".format(
+                scheme=parsed.scheme,
                 netloc=parsed.netloc,
                 wa=parsed.path[1:].split('/')[0]
             )
@@ -246,8 +246,13 @@ class ServerConnection(object):
         if portal_connection:
             if isinstance(portal_connection, _ArcGISConnection):
                 self._portal_connection = portal_connection # second connection
+            elif hasattr(self._portal_connection, '_con') and \
+                 getattr(self._portal_connection, "_con") is not None:
+                self._portal_connection = self._portal_connection._con
+            elif isinstance(portal_connection, GIS):
+                self._portal_connection = portal_connection._con
             else:
-                raise ValueError("A portal_connection object be of type _ArcGISConnection")
+                raise ValueError("A portal_connection object be of type _ArcGISConnection or GIS")
         if self._portal_connection:
             self._product = "FEDERATED_SERVER"
         else:
@@ -340,7 +345,7 @@ class ServerConnection(object):
         elif self.product == "FEDERATED_SERVER" and \
              self._portal_connection:
             parsed = urlparse(self.baseurl)
-            adminURL = "https://%s/%s/admin" % (parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
+            adminURL = "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, urlparse(self.baseurl).path[1:].split('/')[0])
             token =  self.portal_connection.generate_portal_server_token(serverUrl=adminURL)
             return token
         else: # Assume username/password BUITIN
@@ -350,13 +355,14 @@ class ServerConnection(object):
         if self._tokenurl is None:
             if self.baseurl.endswith('/'):
                 resp = self.post('generateToken', postdata,
-                                 ssl=True, add_token=False)
+                                 ssl=urlparse(self._tokenurl).scheme == 'https', add_token=False)
             else:
                 resp = self.post('/generateToken', postdata,
-                                 ssl=True, add_token=False)
+                                 ssl=urlparse(self._tokenurl).scheme == 'https', add_token=False)
         else:
+
             resp = self.post(path=self._tokenurl, postdata=postdata,
-                             ssl=True, add_token=False)
+                             ssl=urlparse(self._tokenurl).scheme == "https", add_token=False)
         if resp:
             return resp.get('token')
     #----------------------------------------------------------------------
@@ -522,6 +528,7 @@ class ServerConnection(object):
             use_ordered_dict=False, out_folder=None,
             file_name=None, force_bytes=False, **kwargs):
         """ Returns result of an HTTP GET. Handles token timeout and all SSL mode."""
+        path = quote(path, ':/%')
         url = path
         if url.lower().find("https://") > -1 or\
            url.lower().find("http://") > -1:
@@ -676,7 +683,8 @@ class ServerConnection(object):
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
              token=None, **kwargs):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
-        path = quote(path, ':/')
+        #if path.find(" ") > -1:
+        path = quote(path, ':/%')
         url = path
         if url.lower().find("https://") > -1 or\
            url.lower().find("http://") > -1:
@@ -763,8 +771,9 @@ class ServerConnection(object):
         # Check for errors, and handle the case where the token timed out
         # during use (and simply needs to be re-generated)
         try:
-            if resp_json.get('error', None) or \
-               resp_json.get('status', None):
+            if 'error' in resp_json or \
+               ('status' in resp_json and \
+                resp_json.get('status', None) != "success"):
 
                 errorcode = resp_json['code'] if 'code' in resp_json else 0
                 if errorcode == 498 and not is_retry:

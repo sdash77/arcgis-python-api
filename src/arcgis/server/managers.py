@@ -2,8 +2,9 @@
    Front end controls to the server.
 """
 import ssl
-from ._view import ServerManager
+from ._view import Catalog
 from .admin.administration import SiteManager
+
 ########################################################################
 class Server(object):
     """
@@ -14,7 +15,6 @@ class Server(object):
     _adminUrl = None
     _server = None
     _sm = None
-    _con = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url=None,
@@ -30,27 +30,35 @@ class Server(object):
         key_file = kwargs.pop('key_file', None)
         cert_file = kwargs.pop('cert_file', None)
         expiration = kwargs.pop('expiration', 60)
-        all_ssl = kwargs.pop('all_ssl', True)
+        all_ssl = kwargs.pop('all_ssl', None)
+        is_agol = kwargs.pop('is_agol', False)
+        if url.lower().find("arcgis.com") > -1:
+            is_agol = True
+        if all_ssl is None:
+            from urllib.parse import urlparse
+            all_ssl = urlparse(url).scheme == "https"
         referer = kwargs.pop('referer', None)
         proxy_host = kwargs.pop('proxy_host', None)
         proxy_port= kwargs.pop('proxy_port', None)
         initialize = kwargs.pop('initialize', None)
-        self._server = ServerManager(url,
-                              tokenurl,
-                              username,
-                              password,
-                              key_file,
-                              cert_file,
-                              expiration,
-                              all_ssl,
-                              referer,
-                              proxy_host,
-                              proxy_port,
-                              portal_connection,
-                              initialize)
+        self._server = Catalog(url,
+                               tokenurl,
+                               username,
+                               password,
+                               key_file,
+                               cert_file,
+                               expiration,
+                               all_ssl,
+                               referer,
+                               proxy_host,
+                               proxy_port,
+                               portal_connection,
+                               initialize,
+                               is_agol=is_agol)
         self._con = self._server.connection
-        self._sm = self._server.site_manager
-        self._info = self._server.info
+        if is_agol == False:
+            self._sm = self._server.site_manager
+            self._info = self._server.info
     #----------------------------------------------------------------------
     @property
     def connection(self):
@@ -60,7 +68,13 @@ class Server(object):
     @property
     def users(self):
         """returns operations to work with users"""
-        return self._sm.security
+        """
+        if self._sm then AGS UserManager
+        elif is_agol == True: then return gis.UserManager()
+        """
+        if self._sm:
+            from ._server import UserManager
+            return UserManager(self._sm)
     #----------------------------------------------------------------------
     @property
     def datastore(self):
@@ -82,7 +96,8 @@ class Server(object):
         The Compute Ref Count operation counts and lists all references to
         a specific data item. This operation helps you determine if a
         particular data item can be safely deleted or refreshed."""
-        return self._sm.data
+        if self._sm:
+            return self._sm.data
     #----------------------------------------------------------------------
     @property
     def usage(self):
@@ -91,10 +106,11 @@ class Server(object):
         within your site. The Create Usage Report operation lets you define
         a new usage report.
         """
-        return self._sm.usagereports
+        if self._sm:
+            return self._sm.usagereports
     #----------------------------------------------------------------------
     @property
-    def content(self):
+    def catalog(self):
         """
         The content resource is the root node and initial entry point into
         an ArcGIS Server host. This resource represents a catalog of
@@ -123,7 +139,8 @@ class Server(object):
         a specific data item. This operation helps you determine if a
         particular data item can be safely deleted or refreshed.
         """
-        return self._sm.datastore
+        if self._sm:
+            return self._sm.data
     #----------------------------------------------------------------------
     @property
     def logs(self):
@@ -137,7 +154,8 @@ class Server(object):
         **Note**
         ArcGIS Server Only
         """
-        return self._sm.logs
+        if self._sm:
+            return self._sm.logs
     #----------------------------------------------------------------------
     @property
     def kml(self):
@@ -145,14 +163,18 @@ class Server(object):
         This resource is a container for all the KMZ files created on the
         server.
         """
-        return self._sm.kml
+        if self._sm:
+            return self._sm.kml
     #----------------------------------------------------------------------
     @property
-    def logged_in_user(self):
+    def me(self):
         """
         returns the current logged in user
         """
-        return self._sm.info.loggedInUser
+        if self._sm:
+            return self._sm.info._loggedInUser
+        else:
+            return self._con._username
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -160,11 +182,24 @@ class Server(object):
 
         A read-only resource that returns meta information about the server
         """
-        return self._sm.info
+        if self._sm:
+            return self._sm.info
+    #----------------------------------------------------------------------
+    @property
+    def system(self):
+        """
+        provides access to common system configuration settings
+        """
+        if self._sm:
+            from ._server import SystemManager
+            return SystemManager(self._sm)
+
     #----------------------------------------------------------------------
     @property
     def services(self):
         """
-        Provides administrator access to the services on ArcGIS Server.
+        Provides administrator access to the services on ArcGIS Server as a
+        ServerManager Object.
         """
-        return self._sm.services
+        if self._sm:
+            return self._sm.services

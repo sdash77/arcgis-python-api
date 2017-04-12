@@ -333,8 +333,10 @@ class UsageReport(BaseServer):
             query_filter = {"machines": "*"}
         params = {
             "f" : "json",
-            "filter" : query_filter
+            "filter" : query_filter,
+            "filterType" : 'json'
         }
         url = self._url + "/data"
-        return self._con.post(path=url,
-                              postdata=params)
+        return self._con.get(path=url, params=params)
+    #post(path=url,
+                              #postdata=params)

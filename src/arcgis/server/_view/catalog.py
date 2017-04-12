@@ -10,12 +10,13 @@ from .._common import BaseServer
 from .._service._layerfactory import Service
 from .._common import ServerConnection
 ########################################################################
-class ServerManager(BaseServer):
+class Catalog(BaseServer):
     """This object represents an ArcGIS Server instance"""
     _url = None
     _con = None
     _json = None
     _json_dict = None
+    _adminUrl = None
     _folders = None
     _services = None
     _currentVersion = None
@@ -29,11 +30,17 @@ class ServerManager(BaseServer):
                  expiration=60, all_ssl=True,
                  referer=None, proxy_host=None,
                  proxy_port=None, portal_connection=None,
-                 initialize=True):
+                 initialize=True, **kwargs):
         """Constructor"""
-
+        self._pc = portal_connection
+        self._is_agol = kwargs.pop('is_agol', False)
+        if url.lower().find('arcgis.com') > -1:
+            self._is_agol = True
         self._url = self._validateurl(url=url)
-
+        if (username and password) or \
+           (key_file and cert_file) or \
+           portal_connection:
+            self._adminUrl = self._validateAdminUrl(url=url)
         con = ServerConnection(baseurl=self._url,
                                 tokenurl=tokenurl,
                                 username=username,
@@ -47,7 +54,7 @@ class ServerManager(BaseServer):
                                 proxy_port=proxy_port,
                                 portal_connection=portal_connection)
 
-        super(ServerManager, self).__init__(url=self._url,
+        super(Catalog, self).__init__(url=self._url,
                                      connection=con,
                                      initialize=initialize)
         self._con = con
@@ -56,16 +63,36 @@ class ServerManager(BaseServer):
         if initialize:
             self.init(self._con)
     #----------------------------------------------------------------------
+    def _validateAdminUrl(self, url):
+        """assembles the admin url"""
+        parsed = urlparse(url)
+        if self._is_agol == False:
+            parts = parsed.path[1:].split('/')
+            if len(parts) == 0:
+                return "%s://%s/arcgis/admin" % (parsed.scheme, parsed.netloc)
+            elif len(parts) > 0:
+                return "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, parts[0])
+        else:
+            parts = parsed.path[1:].split('/')
+            return "%s://%s/%s/ArcGIS/rest/services" % (parsed.scheme, parsed.netloc, parts[0])
+    #----------------------------------------------------------------------
     def _validateurl(self, url):
         """assembles the server url"""
         parsed = urlparse(url)
-        parts = parsed.path[1:].split('/')
-        if len(parts) == 0:
-            self._adminUrl = "%s://%s/arcgis/admin" % (parsed.scheme, parsed.netloc)
-            return "%s://%s/arcgis/rest/services" % (parsed.scheme, parsed.netloc)
-        elif len(parts) > 0:
-            self._adminUrl = "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, parts[0])
-            return "%s://%s/%s/rest/services" % (parsed.scheme, parsed.netloc, parts[0])
+        if self._is_agol == False:
+            parts = parsed.path[1:].split('/')
+            if len(parts) == 0:
+                return "%s://%s/arcgis/rest/services" % (parsed.scheme, parsed.netloc)
+            elif len(parts) > 0:
+                return "%s://%s/%s/rest/services" % (parsed.scheme, parsed.netloc, parts[0])
+        else:
+            parts = parsed.path[1:].split('/')
+            if len(parts) == 0:
+                res = self.connection.get("portals/self", {"f": "json"})
+                return "%s://%s/%s/ArcGIS/rest/services" % ( parsed.scheme,
+                                                             parsed.netloc,
+                                                             res['id'])
+            return "%s://%s/%s/ArcGIS/rest/services" % (parsed.scheme, parsed.netloc, parts[0])
     #----------------------------------------------------------------------
     def init(self, connection=None, folder='root'):
         """loads the property data into the class"""
@@ -109,10 +136,13 @@ class ServerManager(BaseServer):
     @property
     def site_manager(self):
         """points to the adminstrative side of ArcGIS Server"""
-        from ..admin.administration import SiteManager
-        return SiteManager(connection=self._con,
-                           url=self._adminUrl,
-                           initialize=False)
+        if self._is_agol == False:
+            from ..admin.administration import SiteManager
+            if self._adminUrl:
+                return SiteManager(connection=self._con,
+                               url=self._adminUrl,
+                               initialize=False)
+            return None
     #----------------------------------------------------------------------
     @property
     def location(self):
@@ -124,15 +154,16 @@ class ServerManager(BaseServer):
         """gets the current version of arcgis server"""
         if self._currentVersion is None:
             self.init()
-        return self._currentVersion
+        return self._currentVersion or getattr(self, 'currentVersion', None)
     #----------------------------------------------------------------------
     @property
     def user(self):
         """gets the logged in user"""
-        params = {"f" : "json"}
-        url = "%s/self" % self.root.replace("/services", "")
-        return self._con.get(path=url,
-                         params=params)
+        if self._is_agol == False:
+            params = {"f" : "json"}
+            url = "%s/self" % self.root.replace("/services", "")
+            return self._con.get(path=url,
+                             params=params)
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -145,13 +176,15 @@ class ServerManager(BaseServer):
     @property
     def services(self):
         """gets the services in the current folder"""
+        from urllib.parse import quote
         services = []
         if self._services is None:
             self.init()
         for s in self._services:
             url = "{base}/{name}/{stype}".format(base=self._url,
-                                                 name=s['name'],
+                                                 name=quote(s['name']),
                                                  stype=s['type'])
+
             services.append(Service(url=url, server=self))
         return services
     #----------------------------------------------------------------------

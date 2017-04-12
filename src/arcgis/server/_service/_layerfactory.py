@@ -4,6 +4,7 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
+from urllib.parse import quote
 from six import add_metaclass
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, Table, FeatureLayerCollection
@@ -34,7 +35,7 @@ class ServiceFactory(type):
                  initialize=False):
         """generates the proper type of layer from a given url"""
         from .. import Server
-        from .._view.catalog import ServerManager
+        from .._view.catalog import Catalog
         hasLayer = False
         if url is None and \
            item is None:
@@ -44,15 +45,22 @@ class ServiceFactory(type):
 
         if isinstance(server, ServerConnection):
             connection = server
-        elif isinstance(server, (Server, GIS, ServerManager)):
+        elif isinstance(server, (Server, GIS, Catalog)):
             connection = server._con
         else:
-            parsed = urlparse(url)
-            site_url = "{scheme}://{nl}/{wa}".format(scheme=parsed.scheme,
-                                                     nl=parsed.netloc,
-                                                     wa=parsed.path[1:].split('/')[0])
-            connection = ServerConnection(baseurl=site_url) # anonymous connection
-
+            try:
+                parsed = urlparse(url)
+                site_url = "{scheme}://{nl}/{wa}".format(scheme=parsed.scheme,
+                                                         nl=parsed.netloc,
+                                                         wa=parsed.path[1:].split('/')[0])
+                connection = ServerConnection(baseurl=site_url) # anonymous connection
+                server = Server(url=site_url)
+            except:
+                parsed = urlparse(url)
+                site_url = "{scheme}://{nl}/rest/services".format(scheme=parsed.scheme,
+                                                                     nl=parsed.netloc)
+                connection = Server(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
+                server = ServerManager(url=site_url)
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))

@@ -6,7 +6,7 @@ import os
 import json
 import tempfile
 ########################################################################
-class Services(BaseServer):
+class ServiceManager(BaseServer):
     """ returns information about the services on AGS """
     _currentURL = None
     _url = None
@@ -29,7 +29,7 @@ class Services(BaseServer):
                url - admin url
                connection - SiteConnection object
         """
-        super(Services, self).__init__(connection=connection,
+        super(ServiceManager, self).__init__(connection=connection,
                                        url=url)
         self._con = connection
         self._url = url
@@ -459,6 +459,24 @@ class Services(BaseServer):
         """
         Creates a new GIS service in the folder. A service is created by
         submitting a JSON representation of the service to this operation.
+
+        The JSON representation of a service contains the following four
+        sections:
+         - Service Description Properties-Common properties that are shared
+          by all service types. Typically, they identify a specific service.
+         - Service Framework Properties-Properties targeted towards the
+          framework that hosts the GIS service. They define the life cycle
+          and load balancing of the service.
+         - Service Type Properties -Properties targeted towards the core
+          service type as seen by the server administrator. Since these
+          properties are associated with a server object, they vary across
+          the service types. The Service Types section in the Help
+          describes the supported properties for each service.
+         - Extension Properties-Represent the extensions that are enabled
+          on the service. The Extension Types section in the Help describes
+          the supported out-of-the-box extensions for each service type.
+        Output:
+         dictionary status message
         """
         url = self._url + "/createService"
         params = {
@@ -578,9 +596,8 @@ class Services(BaseServer):
            folderName - a folder name
            serviceName - a service name
            serviceType - a service type. Allowed values:
-                "GPSERVER", "GLOBESERVER", "MAPSERVER",
-                "GEOMETRYSERVER", "IMAGESERVER", "SEARCHSERVER",
-                "GEODATASERVER", "GEOCODESERVER"
+                GeometryServer | ImageServer | MapServer | GeocodeServer |
+                GeoDataServer | GPServer | GlobeServer | SearchServer
         """
 
         url = self._url + "/exists"
@@ -648,6 +665,8 @@ class Service(BaseServer):
         self._con = connection
         if initialize:
             self.init(connection)
+    def __str__(self):
+        return json.dumps(self._json_dict)
     #----------------------------------------------------------------------
     def init(self, connection=None):
         """ populates server admin information """
@@ -704,6 +723,7 @@ class Service(BaseServer):
         if len(extensionObjects) > 0 and \
            isinstance(extensionObjects[0], Extension):
             self._extensions = extensionObjects
+            self._json_dict['extensions'] = [x.value for x in extensionObjects]
             res = self.edit(str(self))
             self._json = None
             self.init()

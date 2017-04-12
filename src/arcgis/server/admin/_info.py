@@ -37,41 +37,6 @@ class Info(BaseServer):
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
-    @property
-    def full_version(self):
-        """ returns the full version """
-        if self._fullVersion is None:
-            self.init()
-        return self._fullVersion
-    #----------------------------------------------------------------------
-    @property
-    def loggedInUser(self):
-        """ get the logged in user """
-        if self._loggedInUser is None:
-            self.init()
-        return self._loggedInUser
-    #----------------------------------------------------------------------
-    @property
-    def current_build(self):
-        """ returns the current build """
-        if self._currentBuild is None:
-            self.init()
-        return self._currentBuild
-    #----------------------------------------------------------------------
-    @property
-    def timezone(self):
-        """ returns the server's defined time zone """
-        if self._timezone is None:
-            self.init()
-        return self._timezone
-    #----------------------------------------------------------------------
-    @property
-    def user_privilege(self):
-        """ gets the logged in user's privileges """
-        if self._loggedInUserPrivilege is None:
-            self.init()
-        return self._loggedInUserPrivilege
-    #----------------------------------------------------------------------
     def available_time_zones(self):
         """
            Returns an enumeration of all the time zones of which the server

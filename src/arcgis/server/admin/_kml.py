@@ -11,7 +11,6 @@ class KML(BaseServer):
     _con = None
     _url = None
     _json_dict = None
-    _items = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
                  initialize=False):
@@ -40,11 +39,5 @@ class KML(BaseServer):
             "f" : "json",
             "kml" : kmz_as_json
         }
-        return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    @property
-    def items(self):
-        """ returns list of KMZ/KML on server """
-        if self._items is None:
-            self.init()
-        return self._items
+        return self._con.post(path=url,
+                              postdata=params)

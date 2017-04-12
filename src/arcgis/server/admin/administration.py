@@ -342,9 +342,9 @@ class SiteManager(BaseServer):
         if isinstance(self._resources, list) and \
            'services' in self._resources:
             url = self._url + "/services"
-            return _services.Services(url=url,
-                                      connection=self._con,
-                                      initialize=True)
+            return _services.ServiceManager(url=url,
+                                            connection=self._con,
+                                            initialize=True)
         else:
             return None
     #----------------------------------------------------------------------
