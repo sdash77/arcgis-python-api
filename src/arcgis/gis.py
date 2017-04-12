@@ -93,8 +93,21 @@ class GIS(object):
         self._datastores_list = None
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
                                        verify_cert=self._verify_cert, client_id=self._client_id)
-        if url.lower().find("www.arcgis.com") > -1:
-            print()
+        if url.lower().find("www.arcgis.com") > -1 and \
+           self._portal.is_logged_in:
+            from six.moves.urllib_parse import urlparse
+            props = self._portal.get_properties(force=True)
+            url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                  props['urlKey'],
+                                  props['customBaseUrl'])
+            self._url = url
+            self._portal = portalpy.Portal(url,
+                                           self._username,
+                                           self._password,
+                                           self._key_file,
+                                           self._cert_file,
+                                           verify_cert=self._verify_cert,
+                                           client_id=self._client_id)
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
