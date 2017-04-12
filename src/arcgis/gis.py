@@ -4622,7 +4622,7 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._lazy_token)
+        dictdata = self._con.post(self.url, params, token=self._con.token)
         self._lazy_properties = PropertyMap(dictdata)
 
     @property
