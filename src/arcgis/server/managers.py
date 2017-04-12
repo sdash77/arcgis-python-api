@@ -169,10 +169,15 @@ class Server(object):
     @property
     def me(self):
         """
-        returns the current logged in user
+        returns the current logged in username
         """
         if self._sm:
-            return self._sm.info._loggedInUser
+            from ._server import User
+            res = self.users.search(self._sm.info._loggedInUser)
+            if len(res) > 0:
+                return res[0]
+            else:
+                return self._sm.info._loggedInUser
         else:
             return self._con._username
     #----------------------------------------------------------------------

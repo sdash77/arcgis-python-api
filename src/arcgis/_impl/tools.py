@@ -56,7 +56,7 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
+                self._token = self._con.token
                 self._refresh()
             except RuntimeError as e:
                 try:
@@ -113,7 +113,7 @@ class _AsyncService(_GISService):
 
     def __init__(self, url, gis):
         super(_AsyncService, self).__init__(url, gis)
-        
+
     def _refresh(self):
         params = {"f" : "json"}
         dictdata = self._con.get(path=self.url, params=params, token=self._token)
@@ -402,9 +402,9 @@ class _AsyncService(_GISService):
 
 class _FeatureAnalysisTools(_AsyncService):
     """
-    Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability 
+    Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability
     in Portal for ArcGIS and ArcGIS Online.
-    
+
     Several `FeatureAnalysisTools` accept feature layers as inputs. The input layer can be passed in using several different formats:
     * a Feature Service Item. The first layer in the Feature Service is used as input
     * a Feature Collection Item. The first layer in the Feature Collection is used as input
@@ -2140,7 +2140,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
             unassigned_destinations_layer = arcgis.features.FeatureCollection(job_values['unassignedDestinationsLayer'])
             return { "routes_layer":routes_layer, "unassigned_origins_layer":unassigned_origins_layer, "unassigned_destinations_layer":unassigned_destinations_layer, }
-    
+
     def create_route_layers(self,
                        route_data_item,
                        delete_route_data_item=False,
@@ -2174,11 +2174,11 @@ class _FeatureAnalysisTools(_AsyncService):
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info)
         route_layer_items = []
-        
+
         for itemid in job_values["routeLayers"]["items"]:
             item = arcgis.gis.Item(self._gis, itemid)
             route_layer_items.append(item)
-        
+
         return route_layer_items
 
 class _RasterAnalysisTools(_AsyncService):
@@ -2189,12 +2189,12 @@ class _RasterAnalysisTools(_AsyncService):
         Constructs a client to the service given it's url from ArcGIS Online or Portal.
         """
         super(_RasterAnalysisTools, self).__init__(url, gis)
-        
+
     def _create_output_image_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Image Service")
         if not ok:
             raise RuntimeError("An Image Service by this name already exists: " + output_name)
-        
+
         createParameters = {
                 "name": output_name,
                 "description": "",
@@ -2205,7 +2205,7 @@ class _RasterAnalysisTools(_AsyncService):
                     "copyright": ""
                     }
                 }
-        
+
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
@@ -2215,7 +2215,7 @@ class _RasterAnalysisTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
+
     def generate_raster(self,
                        raster_function,
                        function_arguments=None,
@@ -2224,35 +2224,35 @@ class _RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         raster_function : Required, see http://resources.arcgis.com/en/help/rest/apiref/israsterfunctions.html
-            
+
         function_arguments : Optional,  for specifying input Raster alone, portal Item can be passed
-            
-        output_raster : Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+
+        output_raster : Optional. If not provided, an Image Service is created by the method and used as the output raster.
             You can pass in an existing Image Service Item from your GIS to use that instead.
             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-            A RuntimeError is raised if a service by that name already exists 
+            A RuntimeError is raised if a service by that name already exists
 
         output_raster_properties : Optional string
-            
-        context : Optional 
-            
+
+        context : Optional
+
         num_instances : Optional, number of instances to use
-            
+
 
         Returns
         -------
         out_raster : Image Service item
         """
-        
+
         task ="GenerateRaster"
 
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2264,7 +2264,7 @@ class _RasterAnalysisTools(_AsyncService):
             raise TypeError("output_raster should be a string (service name) or Item")
 
         output_raster =  { 'itemId' : output_service.itemid }
-        
+
         if isinstance(function_arguments, arcgis.gis.Item):
             if function_arguments.type.lower() == 'image service':
                 function_arguments =  { "Raster":{"itemId": function_arguments.itemid } }
@@ -2300,7 +2300,7 @@ class _RasterAnalysisTools(_AsyncService):
         output_service.update(item_properties)
         return output_service
 
-    
+
     def rasterize(self,
                        input_table,
                        output_raster,
@@ -2309,32 +2309,32 @@ class _RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_table : Required string
-            
+
         output_raster : Required string
-            
+
         raster_info : Required string
-            
+
         value_field : Optional string
-            
+
         context : Optional string
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
-        out_raster : layer 
+        out_raster : layer
         """
 
         task ="Rasterize"
 
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2387,26 +2387,26 @@ class _RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_table : Required string
-            
+
         output_raster : Required string
-            
+
         raster_info : Required string
-            
+
         value_field : Optional string
-            
+
         interpolation_method : Optional string
             One of the following: ['Nearest', 'Bilinear', 'Linear', 'NaturalNeighbor']
         radius : Optional float
-            
+
         context : Optional string
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
@@ -2415,7 +2415,7 @@ class _RasterAnalysisTools(_AsyncService):
 
         task ="Interpolate"
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2471,24 +2471,24 @@ class _RasterAnalysisTools(_AsyncService):
                        context=None,
                        num_instances=None):
         """
-        
+
 
         Parameters
         ----------
         input_raster : Required string
-            
+
         output_raster : Required string
-            
+
         output_cellsize : Optional string
-            
+
         resampling_method : Optional string
             One of the following: ['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
         clipping_geometry : Optional string
-            
+
         context : Optional string
-            
+
         num_instances : Optional string
-            
+
 
         Returns
         -------
@@ -2497,7 +2497,7 @@ class _RasterAnalysisTools(_AsyncService):
 
         task ="CopyRaster"
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2540,7 +2540,7 @@ class _RasterAnalysisTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
+
     def summarize_raster_within(self,
                        input_zone_layer,
                        zone_field,
@@ -2550,34 +2550,34 @@ class _RasterAnalysisTools(_AsyncService):
                        ignore_missing_values=True,
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_zone_layer : Required layer
-            
+
         zone_field : Required string
-            
+
         input_raster_layerto_summarize : Required string
-            
+
         output_name : Required string
-            
+
         statistic_type : Optional string
             One of the following: ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
         ignore_missing_values : Optional bool
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
-        out_raster : layer 
+        out_raster : layer
         """
 
         task ="Summarize Raster Within"
 
         output_service = None
-        
+
         if output_name is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2621,7 +2621,7 @@ class _RasterAnalysisTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
+
 
     def density(self,
                        input_feature_class,
@@ -2633,26 +2633,26 @@ class _RasterAnalysisTools(_AsyncService):
                        area_units="Square_map_units",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_feature_class : Required string
-            
+
         output_raster : Required string
-            
+
         value_field : Required string
-            
+
         raster_info : Optional string
-            
+
         method : Optional string
             One of the following: ['Point_Density', 'Line_Density', 'Kernel_Density_Densities_Planar', 'Kernel_Density_Densities_Geodesic', 'Kernel_Density_Counts_Planar', 'Kernel_Density_Counts_Geodesic']
         neighborhood : Optional string
-            
+
         area_units : Optional string
             One of the following: ['Square_map_units', 'Square_miles', 'Square_kilometers', 'Arces', 'Hectares', 'Square_yards', 'Square_feet', 'Square_inches', 'Square_meters', 'Square_centimeters', 'Square_millimeters']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -2661,7 +2661,7 @@ class _RasterAnalysisTools(_AsyncService):
 
         task ="Density"
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2705,7 +2705,7 @@ class _RasterAnalysisTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
+
 
     def classify(self,
                        input_raster,
@@ -2714,20 +2714,20 @@ class _RasterAnalysisTools(_AsyncService):
                        additional_input_raster=None,
                        number_of_instances="4"):
         """
-        
+
 
         Parameters
         ----------
         input_raster : Required string
-            
+
         input_classifier_definition : Required string
-            
+
         output_raster : Required string
-            
+
         additional_input_raster : Optional string
-            
+
         number_of_instances : Required string
-            
+
 
         Returns
         -------
@@ -2736,7 +2736,7 @@ class _RasterAnalysisTools(_AsyncService):
         task ="Classify"
 
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2757,7 +2757,7 @@ class _RasterAnalysisTools(_AsyncService):
         if additional_input_raster is not None:
             params["Additional_Input_Raster"] = additional_input_raster
         params["Number_of_Instances"] = number_of_instances
-            
+
         task_url, job_info = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2785,26 +2785,26 @@ class _RasterAnalysisTools(_AsyncService):
                        remove_tiiling_artifacts="false",
                        number_of_instances="4"):
         """
-        
+
 
         Parameters
         ----------
         input_raster : Required string
-            
+
         output_raster : Required string
-            
+
         spectral_detail : Required string
-            
+
         spatial_detail : Required string
-            
+
         minimum_segment_size_in_pixels : Required string
-            
+
         band_indexes : Required string
-            
+
         remove_tiiling_artifacts : Required string
-            
+
         number_of_instances : Required string
-            
+
 
         Returns
         -------
@@ -2813,7 +2813,7 @@ class _RasterAnalysisTools(_AsyncService):
         task ="Segment Mean Shift"
 
         output_service = None
-        
+
         if output_raster is None:
             output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
             output_service = self._create_output_image_service(output_ras_name, task)
@@ -2836,7 +2836,7 @@ class _RasterAnalysisTools(_AsyncService):
         params["Band_Indexes"] = band_indexes
         params["Remove_Tiiling_Artifacts"] = remove_tiiling_artifacts
         params["Number_of_Instances"] = number_of_instances
-            
+
         task_url, job_info = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2861,24 +2861,24 @@ class _RasterAnalysisTools(_AsyncService):
                        classifier_parameters,
                        segment_attributes="COLOR;MEAN"):
         """
-        
+
 
         Parameters
         ----------
         input_raster : Required string
-            
+
         input_training_sample_json : Required string
-            
+
         segmented_raster : Required string
-            
+
         classifier_parameters : Required string
-            
+
         segment_attributes : Required string
-            
+
 
         Returns
         -------
-        output_classifier_definition : layer 
+        output_classifier_definition : layer
         """
 
         task ="Train Classifier"
@@ -2895,14 +2895,14 @@ class _RasterAnalysisTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info)
-        
+
         return job_values['Output_Classifier_Definition']
 
     def _create_output_feature_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
         if not ok:
             raise RuntimeError("A Feature Service by this name already exists: " + output_name)
-        
+
         createParameters = {
                 "currentVersion": 10.2,
                 "serviceDescription": "",
@@ -2933,7 +2933,7 @@ class _RasterAnalysisTools(_AsyncService):
                     "dataSourceType": "spatiotemporal"
                 }
             }
-        
+
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
@@ -2943,8 +2943,8 @@ class _RasterAnalysisTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
-    
+
+
     def convert_raster_to_feature(self,
                        input_raster,
                        output_name,
@@ -2958,17 +2958,17 @@ class _RasterAnalysisTools(_AsyncService):
         Parameters
         ----------
         input_raster : Required string
-            
+
         output_name : Required string
-            
+
         field : Optional string
-            
+
         output_type : Optional string
             One of the following: ['Point', 'Line', 'Polygon']
         simplify_lines_or_polygons : Optional bool
-            
+
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3022,12 +3022,12 @@ class _GeoanalyticsTools(_AsyncService):
         """
         # super(RasterAnalysisTools, self).__init__(url, gis)
         super(_GeoanalyticsTools, self).__init__(url, gis)
-        
+
     def _create_output_service(self, output_name, task):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
         if not ok:
             raise RuntimeError("A Feature Service by this name already exists: " + output_name)
-        
+
         createParameters = {
                 "currentVersion": 10.2,
                 "serviceDescription": "",
@@ -3058,7 +3058,7 @@ class _GeoanalyticsTools(_AsyncService):
                     "dataSourceType": "spatiotemporal"
                 }
             }
-        
+
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
@@ -3068,8 +3068,8 @@ class _GeoanalyticsTools(_AsyncService):
                 }
         output_service.update(item_properties)
         return output_service
-        
-    
+
+
 
 
     def aggregate_points(self,
@@ -3090,40 +3090,40 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         point_layer : Required FeatureSet
-            
+
         distance_interval : Optional float
-            
+
         distance_interval_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         bin_type : Optional string
             One of the following: ['SQUARE', 'HEXAGON']
         polygon_layer : Optional FeatureSet
-            
+
         time_interval : Optional int
-            
+
         time_interval_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_repeat : Optional int
-            
+
         time_repeat_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_reference : Optional datetime.date
-            
+
         summary_fields : Optional string
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
-            
+
         process_sr : Optional int
 
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3204,20 +3204,20 @@ class _GeoanalyticsTools(_AsyncService):
                        datastore="GDB",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         in_dataset : Required FeatureSet
-            
+
         out_sr : Optional string
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3281,44 +3281,44 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         target_layer : Required FeatureSet
-            
+
         join_layer : Required FeatureSet
-            
+
         join_operation : Required string
             One of the following: ['Join one to one', 'Join one to many']
         join_fields : Optional string
-            
+
         summary_fields : Optional string
-            
+
         spatial_relationship : Optional string
             One of the following: ['Equals', 'Intersects', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near']
         spatial_near_distance : Optional float
-            
+
         spatial_near_distance_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         temporal_relationship : Optional string
             One of the following: ['Equals', 'Intersects', 'During', 'Contains', 'Finishes', 'FinishedBy', 'Meets', 'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near']
         temporal_near_distance : Optional int
-            
+
         temporal_near_distance_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         attribute_relationship : Optional string
-            
+
         join_condition : Optional string
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3410,36 +3410,36 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         distance : Optional float
-            
+
         distance_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         field : Optional string
-            
+
         method : Required string
             One of the following: ['GEODESIC', 'PLANAR']
         dissolve_option : Optional string
             One of the following: ['ALL', 'LIST', 'NONE']
         dissolve_fields : Optional string
-            
+
         summary_fields : Optional string
-            
+
         multipart : Optional bool
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3529,46 +3529,46 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         fields : Optional string
-            
+
         weight : Required string
             One of the following: ['UNIFORM', 'KERNEL']
         bin_size : Required float
-            
+
         bin_size_unit : Required string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         bin_type : Required string
             One of the following: ['SQUARE', 'HEXAGON']
         time_interval : Optional int
-            
+
         time_interval_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_repeat : Optional int
-            
+
         time_repeat_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_reference : Optional datetime.date
-            
+
         radius : Required float
-            
+
         radius_unit : Required string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         area_units : Optional string
             One of the following: ['ACRES', 'SQUARE_KILOMETERS', 'SQUARE_INCHES', 'SQUARE_FEET', 'SQUARE_YARDS', 'SQUARE_MAP_UNITS', 'SQUARE_METERS', 'SQUARE_MILES', 'HECTARES']
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional int
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3656,32 +3656,32 @@ class _GeoanalyticsTools(_AsyncService):
                            out_extent=None,
                            datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         track_fields : Required string
-            
+
         method : Required string
             One of the following: ['GEODESIC', 'PLANAR']
         buffer_field : Optional string
-            
+
         summary_fields : Optional string
-            
+
         time_split : Optional int
-            
+
         time_split_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3760,34 +3760,34 @@ class _GeoanalyticsTools(_AsyncService):
                                out_extent=None,
                                datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         point_layer : Required FeatureSet
-            
+
         distance_interval : Required float
-            
+
         distance_interval_unit : Required string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         time_interval : Required int
-            
+
         time_interval_unit : Required string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_interval_alignment : Optional string
             One of the following: ['END_TIME', 'START_TIME', 'REFERENCE_TIME']
         reference_time : Optional datetime.date
-            
+
         summary_fields : Optional string
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -3870,44 +3870,44 @@ class _GeoanalyticsTools(_AsyncService):
                        datastore="GDB",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         in_target_features : Required FeatureSet
-            
+
         in_join_features : Required FeatureSet
-            
+
         in_summary_stats : Optional string
-            
+
         in_spatial_relationship : Optional string
             One of the following: ['Intersect', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near']
         in_spatial_distance : Optional float
-            
+
         in_spatial_distance_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         in_attribute_relationship : Optional string
-            
+
         time_interval : Required int
-            
+
         time_interval_unit : Required string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_repeat : Required int
-            
+
         time_repeat_unit : Required string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_reference : Required datetime.date
-            
+
         out_features_name : Required string
-            
+
         out_sr : Optional string
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -3976,22 +3976,22 @@ class _GeoanalyticsTools(_AsyncService):
                        datastore="GDB",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         data_store_item_id : Required string
-            
+
         update_data_item : Optional bool
-            
+
         out_sr : Optional string
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -4045,22 +4045,22 @@ class _GeoanalyticsTools(_AsyncService):
                        datastore="GDB",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         output_layer_name : Required string
-            
+
         out_sr : Optional string
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -4113,22 +4113,22 @@ class _GeoanalyticsTools(_AsyncService):
                        datastore="GDB",
                        context=None):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         output_name : Required string
-            
+
         out_sr : Optional string
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
         context : Optional string
-            
+
 
         Returns
         -------
@@ -4186,24 +4186,24 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         input_layer : Required FeatureSet
-            
+
         fields : Required string
-            
+
         summary_fields : Optional string
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -4279,42 +4279,42 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         summary_layer : Required FeatureSet
-            
+
         bin_size : Optional float
-            
+
         bin_size_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         bin_type : Optional string
             One of the following: ['SQUARE', 'HEXAGON']
         sum_within_layer : Optional FeatureSet
-            
+
         time_interval : Optional int
-            
+
         time_interval_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_repeat : Optional int
-            
+
         time_repeat_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_reference : Optional datetime.date
-            
+
         summary_fields : Optional string
-            
+
         proportional_weighting : Optional bool
-            
+
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
@@ -4406,36 +4406,36 @@ class _GeoanalyticsTools(_AsyncService):
                        out_extent=None,
                        datastore="GDB"):
         """
-        
+
 
         Parameters
         ----------
         point_layer : Required FeatureSet
-            
+
         bin_size : Required float
-            
+
         bin_size_unit : Required string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         time_step_interval : Optional int
-            
+
         time_step_interval_unit : Optional string
             One of the following: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
         time_step_alignment : Optional string
             One of the following: ['END_TIME', 'START_TIME', 'REFERENCE_TIME']
         referencetime : Optional datetime.date
-            
+
         neighborhood_distance : Optional float
-            
+
         neighborhood_distance_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         output_name : Required string
-            
+
         out_sr : Optional int
 
         process_sr : Optional int
-            
+
         out_extent : Optional string
-            
+
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 

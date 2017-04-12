@@ -64,6 +64,7 @@ class GIS(object):
     The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
     """
+    _server_list = None
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None):
@@ -92,7 +93,8 @@ class GIS(object):
         self._datastores_list = None
         self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
                                        verify_cert=self._verify_cert, client_id=self._client_id)
-
+        if url.lower().find("www.arcgis.com") > -1:
+            print()
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
@@ -105,6 +107,58 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
+
+    @property
+    def servers(self):
+        """
+        The list of datastores resource managers for sites federated with the GIS.
+        """
+        if self._con._auth is None or \
+           self._con._auth.lower() == "anon":
+            return None
+        from arcgis.server import Server
+        if self._server_list:
+            return self._server_list
+
+        self._server_list = []
+        try:
+            is_portal = self.properties.isPortal
+            if self.properties.isPortal == False:
+                res = self._portal.con.post("portals/self/urls", {"f": "json"})
+                if 'urls' in res:
+                    urls = res['urls']
+                    servers = []
+                    for stype in ['features', 'tiles']:
+                        if stype in urls:
+                            for scheme in ['http', 'https']:
+                                if scheme in urls[stype]:
+                                    for url in urls[stype][scheme]:
+                                        surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/services".format(
+                                            scheme=scheme,
+                                            portalid=self.properties.id,
+                                            url=url)
+                                        admin_surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/admin".format(
+                                            scheme=scheme,
+                                            portalid=self.properties.id,
+                                            url=url)
+                                        servers.append(
+                                            #surl
+                                            Server(url=surl,
+                                                   portal_connection=self._con,
+                                                   is_agol=True)
+                                        )
+                    self._server_list = servers
+            else:
+                res = self._portal.con.post("portals/self/servers", {"f": "json"})
+                servers = res['servers']
+                admin_url = None
+                for server in servers:
+                    admin_url = server['adminUrl']
+                    self._server_list.append(Server(url=admin_url,
+                                                    portal_connection=self._con))
+        except:
+            _log.error("Could not access the servers associated with this site.")
+        return self._server_list
 
     @_lazy_property
     def users(self):
@@ -4582,7 +4636,7 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    self._lazy_token = self._con.token
 
                 self._refresh()
 

@@ -1,5 +1,11 @@
+"""
+Help Classes for the Server API
+"""
+from __future__ import division
+from __future__ import absolute_import
 from .admin._security import Security
 from .admin._system import System
+import datetime
 ########################################################################
 class UserManager(object):
     """
@@ -148,7 +154,35 @@ class User(dict):
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
     #----------------------------------------------------------------------
-    def update(self, password, full_name, description, email):
+    def _repr_html_(self):
+        fullName = 'Not Provided'
+        email = 'Not Provided'
+        description = 'Not Provided'
+        role = 'Not Provided'
+        try:
+            fullName = self.fullName
+        except:
+            fullName = 'Not Provided'
+
+        try:
+            description = self.description
+        except:
+            description = 'Not Provided'
+
+        return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
+                    <div class="item_right" style="float: none; width: auto; overflow: hidden;">
+                        <br/><b>Full Name</b>: """ + str(fullName) + """
+                        <br/><b>Description</b>: """ + str(description)  + """
+                        <br/><b>Email</b>: """ + str(email)  + """
+                        <br/><b>Role</b>: """ + str(role)  + """
+                        <br/><b>Current As:</b>: """ + str(datetime.datetime.now().strftime("%B %d, %Y")) + """
+
+                    </div>
+                </div>
+                """
+    #----------------------------------------------------------------------
+    def update(self, password=None, full_name=None,
+               description=None, email=None):
         """
         Updates a user account in the user store
 
@@ -161,6 +195,7 @@ class User(dict):
                             for the user account.
               email - an optional email for the user account.
         """
+
         res = self._security.update_user(self.username, password,
                                           full_name, description,
                                           email)
