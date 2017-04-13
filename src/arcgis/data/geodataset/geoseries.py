@@ -67,7 +67,7 @@ class GeoSeries(BaseSpatialPandas, Series):
         sr = kwargs.pop('sr', None)
 
         super(GeoSeries, self).__init__(*args, **kwargs)
-        self.crs = sr
+        self.sr = sr
         self._delete_index()
     def __new__(cls, *args, **kwargs):
         kwargs.pop('sr', None)
