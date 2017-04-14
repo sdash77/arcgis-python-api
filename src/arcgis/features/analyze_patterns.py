@@ -125,6 +125,7 @@ def find_hot_spots(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.find_hot_spots(
+        gis,
         analysis_layer,
         analysis_field,
         divided_by_field,
