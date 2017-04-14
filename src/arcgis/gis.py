@@ -124,7 +124,7 @@ class GIS(object):
     @property
     def servers(self):
         """
-        The list of datastores resource managers for sites federated with the GIS.
+        The list of server objects for servers federated with the GIS.
         """
         if self._con._auth is None or \
            self._con._auth.lower() == "anon":
@@ -157,7 +157,7 @@ class GIS(object):
                                         servers.append(
                                             #surl
                                             Server(url=surl,
-                                                   portal_connection=self._con,
+                                                   gis=self,
                                                    is_agol=True)
                                         )
                     self._server_list = servers
@@ -168,7 +168,7 @@ class GIS(object):
                 for server in servers:
                     admin_url = server['adminUrl']
                     self._server_list.append(Server(url=admin_url,
-                                                    portal_connection=self._con))
+                                                    gis=self))
         except:
             _log.error("Could not access the servers associated with this site.")
         return self._server_list

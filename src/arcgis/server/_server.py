@@ -36,13 +36,11 @@ class UserManager(object):
     def __init__(self, server):
         """Constructor"""
         from .admin.administration import SiteManager
-        from .admin._security import Security
         if isinstance(server, SiteManager):
             self._sm = server
             self._security = server.security
             isinstance(self._security, Security)
             self._security.connection._username
-
         else:
             raise ValueError("UserManager must take a SiteManager object")
     #----------------------------------------------------------------------
@@ -280,7 +278,7 @@ class RoleManager(object):
         :return: list of all roles in the server
         """
         roles = self._security.list_roles(startIndex=start_index,
-                                  pageSize=255)
+                                          pageSize=max_roles)
         return [Role(self._security, role) for role in roles['roles']]
     #----------------------------------------------------------------------
     def get_role(self, role_id, max_roles=10):

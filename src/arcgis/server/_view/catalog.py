@@ -176,7 +176,7 @@ class Catalog(BaseServer):
     @property
     def services(self):
         """gets the services in the current folder"""
-        from urllib.parse import quote
+        from six.moves.urllib_parse import quote
         services = []
         if self._services is None:
             self.init()

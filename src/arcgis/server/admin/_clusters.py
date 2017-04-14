@@ -1,7 +1,12 @@
+"""
+This resource is a collection of all the clusters created within your
+site. The Create Cluster operation lets you define a new cluster
+configuration.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-from .._common import BaseServer
 import json
+from .._common import BaseServer
 from .parameters import ClusterProtocol
 ########################################################################
 class Clusters(BaseServer):
@@ -39,7 +44,7 @@ class Clusters(BaseServer):
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
-    def create_cluster(self, clusterName, machineNames="", tcpClusterPort=""):
+    def create_cluster(self, cluster_name, machine_names="", port=""):
         """
         Creating a new cluster involves defining a clustering protocol that
         will be shared by all server machines participating in the cluster.
@@ -57,21 +62,21 @@ class Clusters(BaseServer):
                          name within a site
            machineNames - An optional comma-separated list of server
                           machines to be added to this cluster.
-           tcpClusterPort - A TCP port number that will be used by all the
-                            server machines to communicate with each other
-                            when using the TCP clustering protocol. This is
-                            the default clustering protocol. If this
-                            parameter is missing, a suitable default will
-                            be used.
+           port - A TCP port number that will be used by all the
+                  server machines to communicate with each other
+                  when using the TCP clustering protocol. This is
+                  the default clustering protocol. If this
+                  parameter is missing, a suitable default will
+                  be used.
         """
         url = self._url + "/create"
         params = {
             "f" : "json",
-            "clusterName" : clusterName,
-            "machineNames" : machineNames,
-            "tcpClusterPort" : tcpClusterPort
+            "clusterName" : cluster_name,
+            "machineNames" : machine_names,
+            "tcpClusterPort" : port
         }
-        return self._con.post(path=url,postdata=params)
+        return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def get_machines(self):
         """
@@ -85,7 +90,7 @@ class Clusters(BaseServer):
             "f" : "json"
         }
         return self._con.get(path=url,
-                            params=params)
+                             postdata=params)
 ########################################################################
 class Cluster(BaseServer):
     """
@@ -143,34 +148,6 @@ class Cluster(BaseServer):
         """refreshes the object's properties"""
         self.init()
     #----------------------------------------------------------------------
-    @property
-    def clusterName(self):
-        """returns the cluster name"""
-        if self._clusterName is None:
-            self.init()
-        return self._clusterName
-    #----------------------------------------------------------------------
-    @property
-    def clusterProtocol(self):
-        """returns the cluster's protocol parameters"""
-        if self._clusterProtocol is None:
-            self.init()
-        return self._clusterProtocol
-    #----------------------------------------------------------------------
-    @property
-    def configuredState(self):
-        """returns the current state of the cluster"""
-        if self._configurationState is None:
-            self.init()
-        return self._configuredState
-    #----------------------------------------------------------------------
-    @property
-    def machine_names(self):
-        """returns a list of machines in cluster"""
-        if self._machineNames is None:
-            self.init()
-        return self._machineNames
-    #----------------------------------------------------------------------
     def start(self):
         """
         Starts the cluster.  Starting a cluster involves starting all the
@@ -198,7 +175,7 @@ class Cluster(BaseServer):
         }
         url = self._url + "/stop"
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def delete(self):
         """
@@ -212,7 +189,7 @@ class Cluster(BaseServer):
         }
         url = self._url + "/delete"
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def cluster_services(self):
         """
@@ -227,7 +204,7 @@ class Cluster(BaseServer):
         }
         url = self._url + "/services"
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def cluster_machines(self):
         """
@@ -243,9 +220,9 @@ class Cluster(BaseServer):
             "f" : "json"
         }
         return self._con.get(path=url,
-                            params=params)
+                             postdata=params)
     #----------------------------------------------------------------------
-    def add_machines(self, machineNames):
+    def add_machines(self, names):
         """
         Adds new server machines to the cluster. The server machines need
         to be registered with the site prior to this operation. When a
@@ -253,44 +230,47 @@ class Cluster(BaseServer):
         services that were deployed to cluster and prepares to run them.
 
         Inputs:
-           machineNames - A comma-separated list of machine names. The
-           machines must be registered prior to completing this operation.
+           names - A comma-separated list of machine names. The machines
+            must be registered prior to completing this operation.
         """
         url = self._url + "/machines/add"
         params = {
             "f" : "json",
-            "machineNames" : machineNames
+            "machineNames" : names
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def remove_machines(self,
-                        machineNames):
+                        names):
         """
         Removes server machines from the cluster. The server machines are
         returned back to the pool of registered server machines.
 
         Inputs:
-           machineNames - A comma-separated list of machine names. The
-           machines must be registered prior to completing this operation.
+           names - A comma-separated list of machine names. The machines
+            must be registered prior to completing this operation.
         """
         url = self._url + "/machines/remove"
         params = {
             "f" : "json",
-            "machineNames" : machineNames
+            "machineNames" : names
         }
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def edit_protocol(self, clusterProtocolObj):
+    def edit_protocol(self, cpo):
         """
         Updates the Cluster Protocol. This will cause the cluster to be
         restarted with updated protocol configuration.
+
+        Paramters:
+         cpo: ClusterProtocal object or dictionary
         """
-        if isinstance(clusterProtocolObj, ClusterProtocol):
-            value = str(clusterProtocolObj.value['tcpClusterPort'])
-        elif isinstance(clusterProtocolObj, dict):
-            value = json.dumps(clusterProtocolObj)
+        if isinstance(cpo, ClusterProtocol):
+            value = str(cpo.value['tcpClusterPort'])
+        elif isinstance(cpo, dict):
+            value = json.dumps(cpo)
         else:
             raise AttributeError("Invalid Input, must be a ClusterProtocal Object")
         url = self._url + "/editProtocol"

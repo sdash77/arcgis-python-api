@@ -45,6 +45,16 @@ def from_featureclass(filename, **kwargs):
         if not fields:
             fields = [field.name for field in arcpy.ListFields(filename) \
                       if field.type not in ['Geometry']]
+            desc = arcpy.Describe(filename)
+            if hasattr(desc, 'areaFieldName'):
+                afn = desc.areaFieldName
+                if afn in fields:
+                    fields.remove(afn)
+            if hasattr(desc, 'lengthFieldName'):
+                lfn = desc.lengthFieldName
+                if lfn in fields:
+                    fields.remove(lfn)
+            del desc
         geom_fields = fields + ['SHAPE@']
         flds = fields + ['SHAPE']
         vals = []

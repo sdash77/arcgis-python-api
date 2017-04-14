@@ -4,7 +4,7 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
-from urllib.parse import quote
+from six.moves.urllib_parse import quote
 from six import add_metaclass
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, Table, FeatureLayerCollection

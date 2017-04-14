@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 from six.moves.urllib_parse import urlparse
-import os
 ########################################################################
 class Uploads(BaseServer):
     """

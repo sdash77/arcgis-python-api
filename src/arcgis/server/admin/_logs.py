@@ -1,3 +1,7 @@
+"""
+Logs are the records written by the various components of ArcGIS Server.
+You can query the logs and change various log settings.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -21,7 +25,7 @@ class Log(BaseServer):
                connection - SiteConnection class
         """
         super(Log, self).__init__(connection=connection,
-                                      url=url)
+                                  url=url)
         self._url = url
         self._con = connection
         if initialize:
@@ -56,7 +60,7 @@ class Log(BaseServer):
         }
         url = self._url + "/countErrorReports"
         return self._con.post(path=url,
-                            postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def clean(self):
         """ Deletes all the log files on all server machines in the site.  """
@@ -97,9 +101,9 @@ class Log(BaseServer):
                                     per machine
         """
         url = self._url + "/settings/edit"
-        allowed_levels =  ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
-        currentSettings= self.settings
-        currentSettings["f"] ="json"
+        allowed_levels = ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        currentSettings = self.settings
+        currentSettings["f"] = "json"
 
         if logLevel.upper() in allowed_levels:
             currentSettings['logLevel'] = logLevel.upper()
@@ -127,8 +131,7 @@ class Log(BaseServer):
               processIds=None,
               export=False,
               exportType="CSV", #CSV or TAB
-              out_path=None
-              ):
+              out_path=None):
         """
            The query operation on the logs resource provides a way to
            aggregate, filter, and page through logs across the entire site.

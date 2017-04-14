@@ -22,7 +22,7 @@ class Server(object):
                  username=None,
                  password=None,
                  verify_cert=False,
-                 portal_connection=None,
+                 gis=None,
                  **kwargs):
         """Constructor"""
         if verify_cert == False:
@@ -35,7 +35,7 @@ class Server(object):
         if url.lower().find("arcgis.com") > -1:
             is_agol = True
         if all_ssl is None:
-            from urllib.parse import urlparse
+            from six.moves.urllib_parse import urlparse
             all_ssl = urlparse(url).scheme == "https"
         referer = kwargs.pop('referer', None)
         proxy_host = kwargs.pop('proxy_host', None)
@@ -52,7 +52,7 @@ class Server(object):
                                referer,
                                proxy_host,
                                proxy_port,
-                               portal_connection,
+                               gis,
                                initialize,
                                is_agol=is_agol)
         self._con = self._server.connection
@@ -68,10 +68,6 @@ class Server(object):
     @property
     def users(self):
         """returns operations to work with users"""
-        """
-        if self._sm then AGS UserManager
-        elif is_agol == True: then return gis.UserManager()
-        """
         if self._sm:
             from ._server import UserManager
             return UserManager(self._sm)

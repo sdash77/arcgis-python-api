@@ -1,3 +1,7 @@
+"""
+This resource is a container for all the KMZ files created on the
+server.s
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -22,7 +26,7 @@ class KML(BaseServer):
                 creation
         """
         super(KML, self).__init__(connection=connection,
-                                      url=url)
+                                  url=url)
         self._con = connection
         self._url = url
         if initialize:
