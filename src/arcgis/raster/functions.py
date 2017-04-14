@@ -2869,7 +2869,7 @@ def apply(raster, fn_name, **kwargs):
 
     :param raster: the input raster, or imagery layer
     :param fn_name: name of the server side raster function template, See imagery layer properties.rasterFunctionInfos
-    :param kwargs: keyword arguments to override the default values of the raster function template
+    :param kwargs: keyword arguments to override the default values of the raster function template, including astype
     :return: the output raster
     """
     layer, raster = _raster_input(raster)
@@ -2884,6 +2884,10 @@ def apply(raster, fn_name, **kwargs):
 
     for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
+
+    astype = kwargs.pop('astype')
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict)
 
