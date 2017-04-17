@@ -56,7 +56,7 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                self._token = self._con.token
+                self._token = self._con.generate_portal_server_token(url)
                 self._refresh()
             except RuntimeError as e:
                 try:
