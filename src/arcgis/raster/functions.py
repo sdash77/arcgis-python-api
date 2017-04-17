@@ -2885,7 +2885,7 @@ def apply(raster, fn_name, **kwargs):
     for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
 
-    astype = kwargs.pop('astype')
+    astype = kwargs.pop('astype', None)
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
