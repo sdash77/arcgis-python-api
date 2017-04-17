@@ -103,7 +103,7 @@ class ImageryLayer(Layer):
                     }
 
 
-    def fltr(self, where=None, geometry=None, time=None, lock_rasters=True):
+    def filter(self, where=None, geometry=None, time=None, lock_rasters=True):
         """
         Filters the layer by where clause, geometry and temporal filters
 
