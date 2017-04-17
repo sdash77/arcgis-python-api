@@ -4622,7 +4622,7 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._con.token)
+        dictdata = self._con.post(self.url, params, token=self._lazy_token)
         self._lazy_properties = PropertyMap(dictdata)
 
     @property
@@ -4649,7 +4649,7 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    self._lazy_token = self._con.token
+                    self._lazy_token = self._con.generate_portal_server_token(self._url)
 
                 self._refresh()
 
