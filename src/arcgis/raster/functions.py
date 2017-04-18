@@ -858,9 +858,9 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     template_dict = {
         "rasterFunction": "Hillshade",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "DEM": raster
         },
-        "variableName": "Raster"
+        "variableName": "DEM"
     }
 
     if astype is not None:
@@ -2504,7 +2504,6 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     :param ps_power: new at 10.2. double, used together with SCALED slope type
     :param psz_factor: new at 10.2. double, used together with SCALED slope type
     :param remove_edge_effect: new at 10.2. boolean, true of false
-    :param dem: optional, default is the image service
     :param astype: output pixel type
     :return: the output raster
 
@@ -2516,9 +2515,9 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     template_dict = {
         "rasterFunction": "Slope",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "DEM": raster
         },
-        "variableName": "Raster"
+        "variableName": "DEM"
     }
 
     if astype is not None:
@@ -2534,8 +2533,8 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
-    if dem is not None:
-        template_dict["rasterFunctionArguments"]["DEM"] = dem
+    # if dem is not None:
+    #     template_dict["rasterFunctionArguments"]["DEM"] = raster
 
     return _clone_layer(layer, template_dict)
 
@@ -2869,7 +2868,7 @@ def apply(raster, fn_name, **kwargs):
 
     :param raster: the input raster, or imagery layer
     :param fn_name: name of the server side raster function template, See imagery layer properties.rasterFunctionInfos
-    :param kwargs: keyword arguments to override the default values of the raster function template
+    :param kwargs: keyword arguments to override the default values of the raster function template, including astype
     :return: the output raster
     """
     layer, raster = _raster_input(raster)
@@ -2884,6 +2883,10 @@ def apply(raster, fn_name, **kwargs):
 
     for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
+
+    astype = kwargs.pop('astype', None)
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict)
 
