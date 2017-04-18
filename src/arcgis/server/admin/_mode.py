@@ -1,8 +1,16 @@
+"""
+ArcGIS Server site mode that allows you to control changes to your site.
+You can set the site mode to READ_ONLY to disallow the publishing of new
+services and block most administrative operations. Your existing services
+will continue to function as they did previously. Note that certain
+administrative operations such as adding and removing machines from a
+site are still available in READ_ONLY mode.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
 
-
+###########################################################################
 class Mode(BaseServer):
     """
     ArcGIS Server site mode that allows you to control changes to your site.
@@ -26,7 +34,7 @@ class Mode(BaseServer):
                  initialize=False):
         """Constructor"""
         super(Mode, self).__init__(connection=connection,
-                                      url=url)
+                                   url=url)
         if url.lower().endswith('/mode'):
             self._url = url
         else:

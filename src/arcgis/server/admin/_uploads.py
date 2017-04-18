@@ -1,3 +1,17 @@
+"""
+This resource is a collection of all the items that have been uploaded
+to the server.
+
+There are two ways to upload items. You can upload complete items using
+the Upload Item operation. If a particular item is made up of many
+chunks (parts), you need to first register the item and subsequently
+upload the individual parts using the Upload Part operation. Item
+uploads are filtered by a whitelist of filename extensions. This is the
+default list: soe, sd, sde, odc, csv, txt, zshp, kmz. The default list
+can be overridden by setting the uploadFileExtensionWhitelist property
+with the server properties API.
+
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -59,20 +73,20 @@ class Uploads(BaseServer):
         return self._con.get(path=self._url,
                             params=params)
     #----------------------------------------------------------------------
-    def delete(self, itemId):
+    def delete(self, item_id):
         """
         Deletes the uploaded item and its configuration.
 
         Parameters:
-         :itemId: unique ID of the item
+         :item_id: unique ID of the item
         """
-        url = self._url + "/%s/delete" % itemId
+        url = self._url + "/%s/delete" % item_id
         params = {
             "f" : "json"
         }
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def item(self, itemId):
+    def item(self, item_id):
         """
         This resource represents an item that has been uploaded to the
         server. Various workflows upload items and then process them on the
@@ -80,28 +94,28 @@ class Uploads(BaseServer):
         Desktop or ArcGIS Server Manager, the application first uploads the
         service definition (.SD) to the server and then invokes the
         publishing geoprocessing tool to publish the service.
-        Each uploaded item is identified by a unique name (itemID). The
+        Each uploaded item is identified by a unique name (item_id). The
         pathOnServer property locates the specific item in the ArcGIS
         Server system directory.
         The committed parameter is set to true once the upload of
         individual parts is complete.
 
         Parameters:
-         :itemId: uploaded id identifier
+         :item_id: uploaded id identifier
         """
-        url = self._url + "/%s" % itemId
+        url = self._url + "/%s" % item_id
         params = {
             "f" : "json"
         }
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def upload(self, filePath, description=None):
+    def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
         Parameters:
-         :filePath: path of the file to upload
+         :path: path of the file to upload
          :description: optional descriptive text for the upload item
         """
         url = self._url + "/upload"
@@ -109,7 +123,7 @@ class Uploads(BaseServer):
             "f" : "json"
         }
         files = {}
-        files['itemFile'] = filePath
+        files['itemFile'] = path
         if description:
             params['description'] = description
         return self._con.post(path=url,
@@ -117,45 +131,44 @@ class Uploads(BaseServer):
                               files=files)
     #----------------------------------------------------------------------
     def upload_by_part(self,
-                     itemId,
-                     partNumber,
-                     partFile):
+                       item_id,
+                       part_number,
+                       part):
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
         Parameters:
-         :itemId: item to upload to
-         :partNumber: An integer value associated with the part.
-         :partFile: The file for the part being uploaded.
+         :item_id: item to upload to
+         :part_number: An integer value associated with the part.
+         :part: The file for the part being uploaded.
         """
-        url = self._url + "{iid}/uploadPart".format(iid=itemId)
+        url = self._url + "{iid}/uploadPart".format(iid=item_id)
         params = {
             "f" : "json",
-            "partNumber" : partNumber
+            "partNumber" : part_number
         }
         files = {}
-        files['partFile'] = partFile
+        files['partFile'] = part
         return self._con.post(path=url,
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    def commit(self, itemID, parts=None):
+    def commit(self, item_id, parts=None):
         """
         Use this operation to complete the upload of all the parts that
         make an item. The parts parameter indicates to the server all the
         parts that make up the item.
 
         Parameters:
-         :itemID: item ID to commit
+         :item_id: item ID to commit
          :parts: An optional comma-separated ordered list of all the parts
           that make the item. If this parameter is not provided, the
           default order of the parts is used.
         """
         params = {'f': 'json'}
-        url = self._url + '/{iid}/commit'.format(iid=itemID)
+        url = self._url + '/{iid}/commit'.format(iid=item_id)
         if parts:
             params['parts'] = parts
         return self._con.post(path=url,
                               postdata=params)
-

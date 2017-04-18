@@ -4,9 +4,11 @@ You can query the logs and change various log settings.
 """
 from __future__ import absolute_import
 from __future__ import print_function
-from .._common import BaseServer
-from datetime import datetime
 import csv
+from datetime import datetime
+from .._common import BaseServer
+
+
 ########################################################################
 class Log(BaseServer):
     """ Log of a server """
@@ -85,52 +87,52 @@ class Log(BaseServer):
             return ""
     #----------------------------------------------------------------------
     def edit_settings(self,
-                      logLevel="WARNING",
-                      logDir=None,
-                      maxLogFileAge=90,
-                      maxErrorReportsCount=10):
+                      level="WARNING",
+                      log_dir=None,
+                      max_age=90,
+                      max_report_count=10):
         """
            The log settings are for the entire site.
            Inputs:
-             logLevel -  Can be one of [OFF, SEVERE, WARNING, INFO, FINE,
+             level -  Can be one of [OFF, SEVERE, WARNING, INFO, FINE,
                          VERBOSE, DEBUG].
-             logDir - File path to the root of the log directory
-             maxLogFileAge - number of days that a server should save a log
+             log_dir - File path to the root of the log directory
+             max_age - number of days that a server should save a log
                              file.
-             maxErrorReportsCount - maximum number of error report files
+             ax_report_count - maximum number of error report files
                                     per machine
         """
         url = self._url + "/settings/edit"
         allowed_levels = ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
-        currentSettings = self.settings
-        currentSettings["f"] = "json"
+        current_settings = self.settings
+        current_settings["f"] = "json"
 
-        if logLevel.upper() in allowed_levels:
-            currentSettings['logLevel'] = logLevel.upper()
-        if logDir is not None:
-            currentSettings['logDir'] = logDir
-        if maxLogFileAge is not None and \
-           isinstance(maxLogFileAge, int):
-            currentSettings['maxLogFileAge'] = maxLogFileAge
-        if maxErrorReportsCount is not None and \
-           isinstance(maxErrorReportsCount, int) and\
-           maxErrorReportsCount > 0:
-            currentSettings['maxErrorReportsCount'] = maxErrorReportsCount
+        if level.upper() in allowed_levels:
+            current_settings['logLevel'] = level.upper()
+        if log_dir is not None:
+            current_settings['logDir'] = log_dir
+        if max_age is not None and \
+           isinstance(max_age, int):
+            current_settings['maxLogFileAge'] = max_age
+        if max_report_count is not None and \
+           isinstance(max_report_count, int) and\
+           max_report_count > 0:
+            current_settings['maxErrorReportsCount'] = max_report_count
         return self._con.post(path=url,
-                              postdata=currentSettings)
+                              postdata=current_settings)
     #----------------------------------------------------------------------
     def query(self,
-              startTime=None,
-              endTime=None,
-              sinceServerStart=False,
+              start_time=None,
+              end_time=None,
+              since_server_start=False,
               level="WARNING",
               services="*",
               machines="*",
               server="*",
               codes=None,
-              processIds=None,
+              process_IDs=None,
               export=False,
-              exportType="CSV", #CSV or TAB
+              export_type="CSV", #CSV or TAB
               out_path=None):
         """
            The query operation on the logs resource provides a way to
@@ -140,8 +142,8 @@ class Log(BaseServer):
         """
         if codes is None:
             codes = []
-        if processIds is None:
-            processIds = []
+        if process_IDs is None:
+            process_IDs = []
         allowed_levels = ("SEVERE", "WARNING", "INFO",
                           "FINE", "VERBOSE", "DEBUG")
         qFilter = {
@@ -149,22 +151,22 @@ class Log(BaseServer):
             "machines": "*",
             "server" : "*"
         }
-        if len(processIds) > 0:
-            qFilter['processIds'] = processIds
+        if len(process_IDs) > 0:
+            qFilter['processIds'] = process_IDs
         if len(codes) > 0:
             qFilter['codes'] = codes
         params = {
             "f" : "json",
-            "sinceServerStart" : sinceServerStart,
+            "sinceServerStart" : since_server_start,
             "pageSize" : 10000
         }
         url = "{url}/query".format(url=self._url)
-        if startTime is not None and \
-           isinstance(startTime, datetime):
-            params['startTime'] = startTime.strftime("%Y-%m-%dT%H:%M:%S")
-        if endTime is not None and \
-           isinstance(endTime, datetime):
-            params['endTime'] = endTime.strftime("%Y-%m-%dT%H:%M:%S")
+        if start_time is not None and \
+           isinstance(start_time, datetime):
+            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+        if end_time is not None and \
+           isinstance(end_time, datetime):
+            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
         if level.upper() in allowed_levels:
             params['level'] = level
         if server != "*":
@@ -174,14 +176,14 @@ class Log(BaseServer):
         if machines != "*":
             qFilter['machines'] = machines.split(",")
         params['filter'] = qFilter
-        if export == True and \
+        if export is True and \
            out_path is not None:
 
             messages = self._con.post(path=url,
                                       postdata=params)
             with open(name=out_path, mode='wb') as f:
                 hasKeys = False
-                if exportType == "TAB":
+                if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter='\t')
                 else:
                     csvwriter = csv.writer(f)
