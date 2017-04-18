@@ -113,8 +113,8 @@ def buffer(geometries,
            unit,
            out_sr=None,
            buffer_sr=None,
-           union_results=True,
-           geodesic=True,
+           union_results=None,
+           geodesic=None,
            gis=None):
     """
        The buffer function is performed on a geometry service resource
@@ -124,7 +124,7 @@ def buffer(geometries,
 
        Inputs:
          geometries - The array of geometries to be buffered.
-         is_sr - The well-known ID of the spatial reference or a spatial
+         in_sr - The well-known ID of the spatial reference or a spatial
           reference JSON object for the input geometries.
          distances - The distances that each of the input geometries is
           buffered.
