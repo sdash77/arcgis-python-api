@@ -644,8 +644,3 @@ class DirectoryManager(object):
         isinstance(self._system, System)
         return self._system.register(name, physicalPath, directoryType,
                                     maxFileAge, cleanupMode, description)
-
-
-
-
-########################################################################

@@ -115,6 +115,26 @@ class Server(object):
         return self._server
     #----------------------------------------------------------------------
     @property
+    def machines(self):
+        """
+        This resource represents a collection of all the server machines that
+        have been registered with the site. It other words, it represents
+        the total computing power of your site. A site will continue to run
+        as long as there is one server machine online.
+        For a server machine to start hosting GIS services, it must be
+        grouped (or clustered). When you create a new site, a cluster called
+        'default' is created for you.
+        The list of server machines in your site can be dynamic. You can
+        register additional server machines when you need to increase the
+        computing power of your site or unregister them if you no longer
+        need them.
+        """
+        if self._sm:
+            return self._sm.machines
+        return
+
+    #----------------------------------------------------------------------
+    @property
     def data(self):
         """
         This resource provides information about the data holdings of the

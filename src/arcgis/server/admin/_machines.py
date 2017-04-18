@@ -139,7 +139,7 @@ class Machines(BaseServer):
         url = "%s/register" % self._url
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def renameMachine(self, machineName, newMachineName):
+    def rename(self, name, new_name):
         """
            You must use this operation if one of the registered machines
            has undergone a name change. This operation updates any
@@ -149,16 +149,16 @@ class Machines(BaseServer):
            references. This operation is a manual call to handle the
            machine name change.
            Input:
-              machineName - The former name of the server machine that is
+              name - The former name of the server machine that is
                             registered with the site.
-              newMachineName - The new name of the server machine.
+              new_name - The new name of the server machine.
            Output:
               JSON messages as dictionary
         """
         params = {
             "f" : "json",
-            "machineName" : machineName,
-            "newMachineName" : newMachineName
+            "machineName" : name,
+            "newMachineName" : new_name
         }
         url = self._url + "/rename"
         return self._con.post(path=url, postdata=params)
@@ -284,7 +284,7 @@ class Machine(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def sslcertificate(self, certificate):
+    def ssl_certificate(self, certificate):
         """
         A certificate represents a key pair that has been digitally signed
         and acknowledged by a Certifying Authority (CA). It is the most
