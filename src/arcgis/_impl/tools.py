@@ -56,7 +56,10 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                self._token = self._con.generate_portal_server_token(url)
+                if isinstance(self._con, arcgis._impl._ArcGISConnection):
+                    self._token = self._con.generate_portal_server_token(url)
+                else:
+                    self._token = self._con.token
                 self._refresh()
             except RuntimeError as e:
                 try:

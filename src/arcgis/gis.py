@@ -4649,7 +4649,10 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
+                        self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    else:
+                        self._lazy_token = self._con.token
 
                 self._refresh()
 
