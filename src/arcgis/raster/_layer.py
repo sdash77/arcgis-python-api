@@ -103,7 +103,7 @@ class ImageryLayer(Layer):
                     }
 
 
-    def filter(self, where=None, geometry=None, time=None, lock_rasters=True):
+    def filter_by(self, where=None, geometry=None, time=None, lock_rasters=True):
         """
         Filters the layer by where clause, geometry and temporal filters
 
@@ -125,7 +125,6 @@ class ImageryLayer(Layer):
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
-
         newlyr = self._clone_layer()
 
         newlyr._where_clause = where
