@@ -13,6 +13,7 @@ class ImageryLayer(Layer):
         self._temporal_filter = None
         self._where_clause = '1=1'
         self._fn = None
+        self._fnra = None
         self._filtered = False
         self._mosaic_rule = None
 
@@ -153,6 +154,7 @@ class ImageryLayer(Layer):
         newlyr._hydrated = True
         newlyr._lazy_token = self._token
         newlyr._fn = self._fn
+        newlyr._fnra = self._fnra
         newlyr._mosaic_rule = self._mosaic_rule
 
         return newlyr
