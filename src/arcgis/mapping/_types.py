@@ -25,6 +25,17 @@ def _tempinput(data):
     yield temp.name
     os.unlink(temp.name)
 
+class SceneService(Layer):
+    """
+    The SceneSerice is represents a 3D service published on server.
+    """
+    def __init__(self, url, gis=None):
+        """
+        Constructs a feature layer given a feature layer URL
+        :param url: feature layer url
+        :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
+        """
+        super(SceneService, self).__init__(url, gis)
 
 class WebMap(collections.OrderedDict):
     """

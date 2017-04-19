@@ -4,13 +4,12 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
-from six.moves.urllib_parse import quote
 from six import add_metaclass
+from six.moves.urllib_parse import urlparse
 from arcgis.gis import GIS
-from arcgis.features.layer import FeatureLayer, Table, FeatureLayerCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geocoding import Geocoder
 from arcgis.geoprocessing._tool import Toolbox
-from .._common import ServerConnection
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
@@ -18,11 +17,9 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
+from arcgis.mapping._types import SceneService
+from .._common import ServerConnection
 from ._geodataservice import GeoData
-from ._globeservice import Globe, GlobeLayer
-from ._mobileservice import MobileService
-from ._sceneservice import Scene
-from six.moves.urllib_parse import urlparse
 
 class ServiceFactory(type):
     """
@@ -59,9 +56,9 @@ class ServiceFactory(type):
             except:
                 parsed = urlparse(url)
                 site_url = "{scheme}://{nl}/rest/services".format(scheme=parsed.scheme,
-                                                                     nl=parsed.netloc)
+                                                                  nl=parsed.netloc)
                 connection = Server(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
-                server = ServerManager(url=site_url)
+                server = Server(url=site_url)
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))
@@ -76,10 +73,10 @@ class ServiceFactory(type):
         elif base_name.lower() == "featureserver":
             if hasLayer:
                 return FeatureLayer(url=url,
-                                   gis=server)
+                                    gis=server)
             else:
                 return FeatureLayerCollection(url=url,
-                                              gis=server)
+                                            gis=server)
         elif base_name.lower() == "imageserver":
             return ImageryLayer(url=url,
                                 gis=server)
@@ -90,37 +87,28 @@ class ServiceFactory(type):
             return GeometryService(url=url,
                                    gis=server)
         elif base_name.lower() == "mobileserver":
-            return MobileService(url=url,
-                                 connection=connection,
-                                 initialize=initialize)
+            return Layer(url=url,
+                         gis=server)
         elif base_name.lower() == "geocodeserver":
             return Geocoder(location=url,
                             gis=server)
         elif base_name.lower() == "globeserver":
             if hasLayer:
-                return GlobeLayer( url=url,
-                                   connection=connection,
-                                   initialize=initialize)
-            return Globe(url=url,
-                         connection=connection,
-                         initialize=initialize)
+                return Layer(url=url, gis=server)
+            return Layer(url=url, gis=server)
         elif base_name.lower() == "geodataserver":
             return GeoData(url=url, connection=connection)
         elif base_name.lower() == "naserver":
             return NetworkDataset(url=url, gis=server)
         elif base_name.lower() == "sceneserver":
-            connection.token
-            return Scene(url=url, connection=server._con,
-                         initialize=True)
+            return SceneService(url=url, gis=server)
         elif base_name.lower() == "schematicsserver":
             return SchematicLayers( url=url,
                                     gis=server)
         elif base_name.lower() == "vectortileserver":
             return VectorTileLayer(url=url, gis=server)
         else:
-            import warnings
-            warnings.warn("The following url does not have a server type defined: %s" % url)
-            return None
+            return Layer(url=url, gis=server)
         return type.__call__(cls, url, connection, item, initialize)
 ###########################################################################
 @add_metaclass(ServiceFactory)
