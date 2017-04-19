@@ -11,7 +11,7 @@ from arcgis import SpatialDataFrame
 #from arcgis.server import Service
 from arcgis.data.geodataset import from_layer, to_featureclass, to_sqlite, from_featureclass
 #############################################################################
-@unittest.SkipTest
+#@unittest.SkipTest
 class FeatureSetConversionTest(unittest.TestCase):
     """
     tests the spatial dataframe operations related

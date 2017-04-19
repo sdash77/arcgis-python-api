@@ -82,6 +82,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             self.sr = types.SpatialReference({'wkt' : sr.exportToString()})
         elif not sr is None:
             raise ValueError("sr (spatial reference) must be a types.SpatialReference object")
+        else:
+            self.sr = None
         if geometry is not None:
             # Handles case when a user passes arcpy.Point objects instead of
             # arcpy.PointGeometry.
