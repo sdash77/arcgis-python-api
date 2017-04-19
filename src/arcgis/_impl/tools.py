@@ -56,7 +56,11 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
+                if isinstance(self._con, arcgis._impl._ArcGISConnection):
+                    self._token = self._con.generate_portal_server_token(url)
                 self._token = self._con.token
+                else:
+                    self._token = self._con.token
                 self._refresh()
             except RuntimeError as e:
                 try:
@@ -4780,8 +4784,8 @@ class _GeometryService(_GISService):
                unit,
                outSR=None,
                bufferSR=None,
-               unionResults=True,
-               geodesic=True
+               unionResults=None,
+               geodesic=None
                ):
         """
            The buffer operation is performed on a geometry service resource
@@ -4816,10 +4820,13 @@ class _GeometryService(_GISService):
         url = self._url + "/buffer"
         params = {
             "f" : "json",
-            "inSR" : inSR,
-            "geodesic" : json.dumps(geodesic),
-            "unionResults" : json.dumps(unionResults)
+            "inSR" : inSR
         }
+        if geodesic is not None:
+            params['geodesic'] = geodesic
+        if unionResults is not None:
+            params['unionResults'] = unionResults
+
         if isinstance(geometries, list) and len(geometries) > 0:
             g = geometries[0]
             if isinstance(g, Polygon):
@@ -4843,7 +4850,7 @@ class _GeometryService(_GISService):
             params['distances'] = ",".join(distances)
         else:
             params['distances'] = str(distances)
-        params['unit'] = unit
+        params['units'] = unit
         if bufferSR is not None:
             params['bufferSR'] = bufferSR
         if outSR is not None:
