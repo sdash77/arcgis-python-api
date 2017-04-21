@@ -15,6 +15,9 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from ._layer import ImageryLayer
 
+from arcgis.gis import Item
+import copy
+
 #
 # def _raster_input(raster):
 #
@@ -52,7 +55,7 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
     """
     # find oids given spatial and temporal filter and where clause
 
-    layer, target_rasters = _raster_input(rasters)
+    layer, raster, raster_ra = _raster_input(rasters)
 
     stat_types = {
         'max': 0,
@@ -67,9 +70,9 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
         "rasterFunction": "ArgStatistics",
         "rasterFunctionArguments": {
             "ArgStatisticsType": in_stat_type,
-            "Rasters": target_rasters
+            "Raster": raster
         },
-        "variableName": "Rasters"
+        "variableName": "Raster"
     }
 
     if min_value is not None:
@@ -82,7 +85,7 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(rasters, template_dict)
+    return _clone_layer(raster, template_dict, raster_ra)
 
 def arg_max(rasters, undefined_class=None, astype=None):
     """
@@ -156,8 +159,8 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster1 = _raster_input(raster1)
-    layer2, raster2 = _raster_input(raster2)
+    layer1, raster1, raster_ra1 = _raster_input(raster1)
+    layer2, raster2, raster_ra2 = _raster_input(raster2)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -196,7 +199,7 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
 
@@ -291,16 +294,16 @@ def aspect(raster):
     :return: aspect applied to the input raster
     """
 
-    layer, target_raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Aspect",
         "rasterFunctionArguments": {
-            "Raster" : target_raster,
+            "Raster" : raster,
         }
     }
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
@@ -315,14 +318,14 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     :return: band_arithmetic applied to the input raster
     """
 
-    layer, target_raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "BandArithmetic",
         "rasterFunctionArguments": {
             "Method": method,
             "BandIndexes": band_indexes,
-            "Raster": target_raster
+            "Raster": raster
         },
         "variableName": "Raster"
     }
@@ -330,7 +333,7 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 def ndvi(raster, band_indexes="4 3", astype=None):
     """
@@ -456,9 +459,9 @@ def classify(raster1, raster2, classifier_definition, astype=None):
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster1 = _raster_input(raster1)
-    layer2, raster2 = _raster_input(raster2)
-
+    layer1, raster1, raster_ra1 = _raster_input(raster1)
+    layer2, raster2, raster_ra2 = _raster_input(raster2)
+    
     layer = layer1 if layer1 is not None else layer2
 
     template_dict = {
@@ -473,7 +476,7 @@ def classify(raster1, raster2, classifier_definition, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
@@ -487,7 +490,7 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
     :param astype: output pixel type
     :return: the clipped raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Clip",
@@ -501,7 +504,7 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def colormap(raster, colormap_name=None, colormap=None, astype=None):
@@ -519,7 +522,7 @@ def colormap(raster, colormap_name=None, colormap=None, astype=None):
     :param astype: output pixel type
     :return: the clipped raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Colormap",
@@ -537,7 +540,7 @@ def colormap(raster, colormap_name=None, colormap=None, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def composite_band(rasters, astype=None):
@@ -548,20 +551,20 @@ def composite_band(rasters, astype=None):
     :param astype: output pixel type
     :return: the multiband image
     """
-    layer, rasters = _raster_input(rasters)
+    layer, raster, raster_ra = _raster_input(rasters)
 
     template_dict = {
         "rasterFunction": "CompositeBand",
         "rasterFunctionArguments": {
-            "Rasters": rasters
+            "Raster": raster
         },
-        "variableName": "Rasters"
+        "variableName": "Raster"
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=None):
     """
@@ -574,7 +577,7 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=N
     :param astype: pixel type of result raster
     :return: output raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
       "rasterFunction" : "ContrastBrightness",
@@ -589,7 +592,7 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=N
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def convolution(raster, kernel=None, astype=None):
@@ -603,7 +606,7 @@ def convolution(raster, kernel=None, astype=None):
     :param astype: pixel type of result raster
     :return: output raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
       "rasterFunction" : "Convolution",
@@ -628,7 +631,7 @@ def convolution(raster, kernel=None, astype=None):
     else:
         raise RuntimeError('Invalid kernel type - pass int or list of list: [[][][]...]')
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
@@ -645,7 +648,7 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
     :param astype: output pixel type
     :return: the output raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
 
     curv_types = {
@@ -669,7 +672,7 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def NDVI(raster, visible_band=2, ir_band=1, astype=None):
@@ -689,7 +692,7 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     NDVI = ((IR - R)/(IR + R)) * 100 + 100
     If you need the specific pixel values (-1.0 to 1.0), use the lowercase ndvi method.
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
       "rasterFunction" : "NDVI",
@@ -704,7 +707,7 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def elevation_void_fill(raster, max_void_width=0, astype=None):
@@ -720,7 +723,7 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "ElevationVoidFill",
@@ -736,7 +739,7 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
     if max_void_width is not None:
         template_dict["rasterFunctionArguments"]["MaxVoidWidth"] = max_void_width
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, missing_band_action=None,
@@ -756,7 +759,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "ExtractBand",
@@ -780,7 +783,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     if wavelength_match_tolerance is not None:
         template_dict["rasterFunctionArguments"]["WavelengthMatchTolerance"] = wavelength_match_tolerance
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
@@ -801,7 +804,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Geometric",
@@ -827,7 +830,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
@@ -853,14 +856,14 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     """
     raster = dem
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Hillshade",
         "rasterFunctionArguments": {
-            "DEM": raster
+            "Raster": raster
         },
-        "variableName": "DEM"
+        "variableName": "Raster"
     }
 
     if astype is not None:
@@ -881,7 +884,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -907,7 +910,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     """
     raster = rasters
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
 
     extent_types = {
@@ -946,7 +949,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
@@ -2151,7 +2154,7 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Mask",
@@ -2171,7 +2174,7 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     if no_data_interpretation is not None:
         template_dict["rasterFunctionArguments"]["NoDataInterpretation"] = no_data_interpretation
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def ml_classify(raster, signature, astype=None):
@@ -2189,7 +2192,7 @@ def ml_classify(raster, signature, astype=None):
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "MLClassify",
@@ -2205,7 +2208,7 @@ def ml_classify(raster, signature, astype=None):
     if signature is not None:
         template_dict["rasterFunctionArguments"]["SignatureFile"] = signature
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 # See NDVI() above
 # def ndvi(raster, visible_band_id=None, infrared_band_id=None, astype=None):
@@ -2220,7 +2223,7 @@ def ml_classify(raster, signature, astype=None):
 #
 #     """
 #
-#     layer, raster = _raster_input(raster)
+#     layer, raster, raster_ra = _raster_input(raster)
 #
 #     template_dict = {
 #         "rasterFunction": "NDVI",
@@ -2256,7 +2259,7 @@ def ml_classify(raster, signature, astype=None):
 #
 #     """
 #
-#     layer, raster = _raster_input(raster)
+#     layer, raster, raster_ra = _raster_input(raster)
 #
 #     template_dict = {
 #         "rasterFunction": "Recast",
@@ -2300,7 +2303,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Remap",
@@ -2326,7 +2329,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     if allow_unmatched is not None:
         template_dict["rasterFunctionArguments"]["AllowUnmatched"] = allow_unmatched
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
@@ -2342,7 +2345,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
     resample_types = {
         'NearestNeighbor': 0,
         'Bilinear': 1,
@@ -2376,7 +2379,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
     if input_cellsize is not None:
         template_dict["rasterFunctionArguments"]["InputCellsize"] = input_cellsize
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectral_radius=None, spatial_radius=None,
@@ -2407,7 +2410,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "SegmentMeanShift",
@@ -2431,7 +2434,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     if min_num_pixels_per_segment is not None:
         template_dict["rasterFunctionArguments"]["MinNumPixelsPerSegment"] = min_num_pixels_per_segment
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
@@ -2457,7 +2460,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "ShadedRelief",
@@ -2487,7 +2490,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, remove_edge_effect=None,
@@ -2510,14 +2513,14 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     """
     raster = dem
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Slope",
         "rasterFunctionArguments": {
-            "DEM": raster
+            "Raster": raster
         },
-        "variableName": "DEM"
+        "variableName": "Raster"
     }
 
     if astype is not None:
@@ -2536,7 +2539,7 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     # if dem is not None:
     #     template_dict["rasterFunctionArguments"]["DEM"] = raster
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
@@ -2559,7 +2562,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Statistics",
@@ -2585,7 +2588,7 @@ def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, co
     if fill_no_data_only is not None:
         template_dict["rasterFunctionArguments"]["FillNoDataOnly"] = fill_no_data_only
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statistics=None,
@@ -2628,7 +2631,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     str_types = {
         'none': 0,
@@ -2681,8 +2684,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
     if compute_gamma is not None or gamma is not None:
         template_dict["rasterFunctionArguments"]["UseGamma"] = True
 
-
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def threshold(raster, astype=None):
@@ -2696,7 +2698,7 @@ def threshold(raster, astype=None):
 
     """
     threshold_type = 1
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Threshold",
@@ -2712,7 +2714,7 @@ def threshold(raster, astype=None):
     if threshold_type is not None:
         template_dict["rasterFunctionArguments"]["ThresholdType"] = threshold_type
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, constant_fill_check=None,
@@ -2747,7 +2749,7 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "TransposeBits",
@@ -2771,7 +2773,7 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
     if fill_raster is not None:
         template_dict["rasterFunctionArguments"]["FillRaster"] = fill_raster
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
@@ -2791,7 +2793,7 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "UnitConversion",
@@ -2809,7 +2811,7 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     if to_unit is not None:
         template_dict["rasterFunctionArguments"]["ToUnit"] = to_unit
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def vector_field_renderer(raster, is_uv_components=None, reference_system=None, mass_flow_angle_representation=None,
@@ -2828,7 +2830,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
 
     """
 
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "VectorFieldRenderer",
@@ -2852,7 +2854,7 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     if symbology_name is not None:
         template_dict["rasterFunctionArguments"]["SymbologyName"] = symbology_name
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def apply(raster, fn_name, **kwargs):
@@ -2871,7 +2873,7 @@ def apply(raster, fn_name, **kwargs):
     :param kwargs: keyword arguments to override the default values of the raster function template, including astype
     :return: the output raster
     """
-    layer, raster = _raster_input(raster)
+    layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": fn_name,
@@ -2888,9 +2890,17 @@ def apply(raster, fn_name, **kwargs):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict)
+    return _clone_layer(layer, template_dict, raster_ra)
 
-def _clone_layer(layer, function_chain):
+def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None):
+    if isinstance(layer, Item):
+        layer = layer.layers[0]
+
+    function_chain_ra = copy.deepcopy(function_chain)
+    function_chain_ra['rasterFunctionArguments']['Raster'] = raster_ra
+    if raster_ra2 is not None:
+        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+
     newlyr = ImageryLayer(layer._url, layer._gis)
 
     newlyr._lazy_properties = layer.properties
@@ -2903,6 +2913,7 @@ def _clone_layer(layer, function_chain):
     #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
     # else:
     newlyr._fn = function_chain
+    newlyr._fnra = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
@@ -2916,17 +2927,19 @@ def _clone_layer(layer, function_chain):
 def _raster_input(raster):
     if isinstance(raster, ImageryLayer):
         layer = raster
+        raster_ra = _get_raster_ra(raster)
         raster = _get_raster(raster)
     elif isinstance(raster, list):
         r0 = raster[0]
         layer = r0
+        raster_ra = [_get_raster_ra(r) for r in raster]
         raster = [_get_raster(r) for r in raster]
-    else: # maybe scalar for arithmetic functions
+    else: # maybe scalar for arithmetic functions, or a chained raster fn
         layer = None
         # raster = raster
+        raster_ra = raster
 
-    return layer, raster
-
+    return layer, raster, raster_ra
 
 def _get_raster(raster):
     if raster._fn is not None:
@@ -2940,3 +2953,22 @@ def _get_raster(raster):
         else:
             raster = ['$' + str(x) for x in oids]
     return raster
+
+
+def _get_raster_ra(raster):
+    if raster._fnra is not None:
+        raster_ra = raster._fnra
+    elif isinstance(raster, ImageryLayer):
+        raster_ra = {
+            'url' : raster._url
+        }
+
+        if raster._mosaic_rule is not None:
+            raster_ra['mosaicRule'] = raster._mosaic_rule
+    elif isinstance(raster, Item):
+        raster_ra = {
+            'itemId': raster.itemid
+        }
+    else:
+        raster_ra = raster
+    return raster_ra
