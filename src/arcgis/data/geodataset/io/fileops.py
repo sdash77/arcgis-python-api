@@ -148,9 +148,11 @@ def to_featureclass(df, out_name, out_location=None,
        overwrite:
         arcpy.Delete_management(fc)
     if arcpy.Exists(fc) ==  False:
-        sr = df.sr
-        if sr is None:
+        sr = None
+        if df.sr is None:
             sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
+        else:
+            sr = df.sr.as_arcpy
         fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                  out_name=out_name,
                                                  geometry_type=df.geometry_type.upper(),

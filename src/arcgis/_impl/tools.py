@@ -58,7 +58,6 @@ class _GISService(object):
                 # try as a federated server
                 if isinstance(self._con, arcgis._impl._ArcGISConnection):
                     self._token = self._con.generate_portal_server_token(url)
-                self._token = self._con.token
                 else:
                     self._token = self._con.token
                 self._refresh()
