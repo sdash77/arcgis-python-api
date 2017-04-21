@@ -237,14 +237,14 @@ def generate_raster(raster_function,
     output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster. 
         You can pass in an existing Image Service Item from your GIS to use that instead.
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-        A RuntimeError is raised if a service by that name already exists 
-            
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+        A RuntimeError is raised if a service by that name already exists
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
     Returns
     -------
-    output_raster : Image layer item 
+    output_raster : Image layer item
     """
 
     task = "GenerateRaster"
@@ -281,7 +281,7 @@ def generate_raster(raster_function,
     if function_arguments is not None:
         params["functionArguments"] = function_arguments
     if output_raster_properties is not None:
-        params["outputRasterProperties"] = output_raster_properties
+        params["rasterProperties"] = output_raster_properties
     _set_context(params)
 
 

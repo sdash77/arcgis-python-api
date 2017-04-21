@@ -1049,3 +1049,68 @@ class ImageryLayer(Layer):
         :return: this imagery layer with mosaic operation set to 'sum'
         """
         return self._mosaic_operation('sum')
+
+
+    def save(self, output_name=None, for_viz=False, gis=None):
+        """
+        Persists this imagery layer to the GIS as an Imagery Layer item. If for_viz is True, a new Item is created that
+        uses the applied raster functions for visualization at display resolution using on-the-fly image processing.
+        If for_viz is False, distributed raster analysis is used for generating a new raster information product by
+        applying raster functions at source resolution across the extent of the output imagery layer.
+
+        :param output_name: Optional. If not provided, an Imagery Layer item is created by the method and used as the output.
+            You can pass in the name of the output Imagery Layer that should be created by this method to
+            be used as the output for the tool.
+            Alternatively, if for_viz is False, you can pass in an existing Image Service Item from your GIS to use that instead
+            A RuntimeError is raised if a service by that name already exists
+
+        :param for_viz: If True, a new Item is created that uses the applied raster functions for visualization at
+            display resolution using on-the-fly image processing.
+            If for_viz is False, distributed raster analysis is used for generating a new raster information product
+            for use in analysis and visualization by applying raster functions at source resolution across the extent of
+            the output imagery layer.
+
+        :param gis: The GIS to be used for saving the output
+
+        :return : output_raster - Image layer item
+        """
+        g = self._gis
+
+        if gis is not None:
+            g = gis
+
+        if for_viz:
+
+            if g._con._auth.lower() != 'ANON'.lower() and g._con._auth is not None:
+                text_data = {
+                    "id": "resultLayer",
+                    "visibility": True,
+                    "bandIds": [],
+                    "opacity": 1,
+                    "title": output_name,
+                    "timeAnimation": False,
+                    "renderingRule": self._fn,
+                    "mosaicRule": self._mosaic_rule
+                }
+                ext = self.properties.initialExtent
+
+                item_properties = {
+                    'title': output_name,
+                    'type': 'Image Service',
+                    'url' : self._url,
+                    'description': self.properties.description,
+                    'tags': 'imagery',
+                    'extent': '{},{},{},{}'.format(ext['xmin'], ext['ymin'], ext['xmax'], ext['ymax']),
+                    'spatialReference': self.properties.spatialReference.wkid,
+                    'text': json.dumps(text_data)
+                }
+
+                return g.content.add(item_properties)
+            else:
+                raise RuntimeError('You need to be signed in to a GIS to create Items')
+        else:
+            from .analytics import is_supported, generate_raster
+            if is_supported(g):
+                return generate_raster(self._fnra, output_name, gis=g)
+            else:
+                raise RuntimeError('This GIS does not support raster analysis.')
