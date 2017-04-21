@@ -346,7 +346,10 @@ class Geometry(BaseGeometry):
     @property
     def as_arcpy(self):
         if HASARCPY:
-            return arcpy.AsShape(self, True)
+            esri_json = True
+            if 'coordinates' in self:
+                esri_json = False
+            return arcpy.AsShape(self, esri_json)
         return None
     #----------------------------------------------------------------------
     @property

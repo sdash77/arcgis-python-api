@@ -19,10 +19,15 @@ from ....geometry import types
 try:
     import arcpy
     from arcpy import da
-    HASARCPY = True
+    HASARCPY = False#TODO change back to True
 except:
     # warn(message="ArcPy not found.")
     HASARCPY = False
+try:
+    import shapefile
+    HASPYSHP = True
+except:
+    HASPYSHP = False
 _log=logging.getLogger(__name__)
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
@@ -81,6 +86,9 @@ def from_featureclass(filename, **kwargs):
         else:
             sdf.sr = sdf.geometry[0].spatialReference
         return sdf
+    elif HASARCPY == False and HASPYSHP:
+
+        return
     return
 #--------------------------------------------------------------------------
 def to_featureclass(df, out_name, out_location=None,
