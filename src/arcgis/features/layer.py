@@ -53,7 +53,7 @@ class FeatureLayer(Layer):
         The layer_id is the id of the layer in feature layer collection (feature service).
         """
         return FeatureLayerCollection.fromitem(item).layers[layer_id]
-    
+
     @property
     def manager(self):
         """
@@ -293,7 +293,7 @@ class FeatureLayer(Layer):
                                     the where_clause are returned. Note: result_offset
                                     and result_record_count will be ignored
                                     if return_all_records is True. Also, if
-                                    return_count_only, return_ids_only, or 
+                                    return_count_only, return_ids_only, or
                                     return_extent_only are True, this parameter
                                     will be ignored.
                kwargs - optional parameters that can be passed to the Query
@@ -418,7 +418,53 @@ class FeatureLayer(Layer):
                 i += 1
 
         return result
+    # ----------------------------------------------------------------------
+    def validate_sql(sql, sql_type="where"):
+        """
+        The validate_sql operation validates an SQL-92 expression or WHERE
+        clause.
+        The validate_sql operation ensures that an SQL-92 expression, such
+        as one written by a user through a user interface, is correct
+        before performing another operation that uses the expression. For
+        example, validateSQL can be used to validate information that is
+        subsequently passed in as part of the where parameter of the
+        calculate operation.
+        validate_sql also prevents SQL injection. In addition, all table
+        and field names used in the SQL expression or WHERE clause are
+        validated to ensure they are valid tables and fields.
 
+        :Parameters:
+         :sql: the SQL expression of WHERE clause to validate
+           Example: "Population > 300000"
+         :sql_type:  Three SQL types are supported in validate_sql
+          - where (default) - Represents the custom WHERE clause the user
+            can compose when querying a layer or using calculate.
+          - expression - Represents an SQL-92 expression. Currently,
+            expression is used as a default value expression when adding a
+            new field or using the calculate API.
+          - statement - Represents the full SQL-92 statement that can be
+            passed directly to the database. No current ArcGIS REST API
+            resource or operation supports using the full SQL-92 SELECT
+            statement directly. It has been added to the validateSQL for
+            completeness.
+            Values: where | expression | statement
+        """
+        params = {
+            "f" : "json"
+        }
+        if not isinstance(sql, six.string_types):
+            raise ValueError("sql must be a string")
+        else:
+            params['sql'] = sql
+        if sql_type.lower() not in ['where', 'expression', 'statement']:
+            raise ValueError("sql_type must have value of: where, expression or statement")
+        else:
+            params['sqlType'] = sql_type
+        sql_type = sql_type.lower()
+        url = url = self._url + "/validateSQL"
+        return self._con.post(path=url,
+                              postdata=params,
+                              token=self._token)
     # ----------------------------------------------------------------------
     def query_related_records(self,
                               object_ids,
@@ -541,9 +587,9 @@ class FeatureLayer(Layer):
            This operation deletes features in a feature layer or table
            Inputs:
               deletes - string of OIDs to remove from service
-              where -  A where clause for the query filter. 
-                       Any legal SQL where clause operating on the fields in 
-                       the layer is allowed. Features conforming to the specified 
+              where -  A where clause for the query filter.
+                       Any legal SQL where clause operating on the fields in
+                       the layer is allowed. Features conforming to the specified
                        where clause will be deleted.
               geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
                                 with another geometry

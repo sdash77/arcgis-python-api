@@ -22,7 +22,7 @@ class Server(object):
                  username=None,
                  password=None,
                  verify_cert=False,
-                 portal_connection=None,
+                 gis=None,
                  **kwargs):
         """Constructor"""
         if verify_cert == False:
@@ -35,7 +35,7 @@ class Server(object):
         if url.lower().find("arcgis.com") > -1:
             is_agol = True
         if all_ssl is None:
-            from urllib.parse import urlparse
+            from six.moves.urllib_parse import urlparse
             all_ssl = urlparse(url).scheme == "https"
         referer = kwargs.pop('referer', None)
         proxy_host = kwargs.pop('proxy_host', None)
@@ -52,7 +52,7 @@ class Server(object):
                                referer,
                                proxy_host,
                                proxy_port,
-                               portal_connection,
+                               gis,
                                initialize,
                                is_agol=is_agol)
         self._con = self._server.connection
@@ -68,10 +68,6 @@ class Server(object):
     @property
     def users(self):
         """returns operations to work with users"""
-        """
-        if self._sm then AGS UserManager
-        elif is_agol == True: then return gis.UserManager()
-        """
         if self._sm:
             from ._server import UserManager
             return UserManager(self._sm)
@@ -117,6 +113,26 @@ class Server(object):
         folders and services published on the host.
         """
         return self._server
+    #----------------------------------------------------------------------
+    @property
+    def machines(self):
+        """
+        This resource represents a collection of all the server machines that
+        have been registered with the site. It other words, it represents
+        the total computing power of your site. A site will continue to run
+        as long as there is one server machine online.
+        For a server machine to start hosting GIS services, it must be
+        grouped (or clustered). When you create a new site, a cluster called
+        'default' is created for you.
+        The list of server machines in your site can be dynamic. You can
+        register additional server machines when you need to increase the
+        computing power of your site or unregister them if you no longer
+        need them.
+        """
+        if self._sm:
+            return self._sm.machines
+        return
+
     #----------------------------------------------------------------------
     @property
     def data(self):

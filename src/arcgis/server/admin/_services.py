@@ -1,10 +1,14 @@
+"""
+Classes and objects used to manage published services.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-from .._common import BaseServer
-from .parameters import Extension
 import os
 import json
 import tempfile
+from .._common import BaseServer
+from .parameters import Extension
+
 ########################################################################
 class ServiceManager(BaseServer):
     """ returns information about the services on AGS """
@@ -30,7 +34,7 @@ class ServiceManager(BaseServer):
                connection - SiteConnection object
         """
         super(ServiceManager, self).__init__(connection=connection,
-                                       url=url)
+                                             url=url)
         self._con = connection
         self._url = url
         self._currentURL = url
@@ -85,16 +89,16 @@ class ServiceManager(BaseServer):
         """ returns the services in the current folder """
         self._services = []
         params = {
-                    "f" : "json"
-                }
+            "f" : "json"
+        }
         json_dict = self._con.get(path=self._currentURL,
-                                 params=params)
+                                  params=params)
         if "services" in json_dict.keys():
             for s in json_dict['services']:
-                uURL = self._currentURL + "/%s.%s" % (s['serviceName'], s['type'])
+                u_url = self._currentURL + "/%s.%s" % (s['serviceName'], s['type'])
                 self._services.append(
-                    Service(url=uURL,
-                               connection=self._con)
+                    Service(url=u_url,
+                            connection=self._con)
                 )
         return self._services
     #----------------------------------------------------------------------
@@ -179,25 +183,24 @@ class ServiceManager(BaseServer):
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
     def can_create_service(self,
-                         service,
-                         options=None,
-                         folderName=None,
-                         serviceType=None
-                         ):
+                           service,
+                           options=None,
+                           folder_name=None,
+                           service_type=None):
         """
         Use canCreateService to determine whether a specific service can be
         created on the ArcGIS Server site.
 
         Parameters:
-         :folderName: This is an optional parameter to indicate the folder
+         :folder_name: This is an optional parameter to indicate the folder
           where canCreateService will check for the service.
-         :serviceType: The type of service that can be created. This is an
+         :service_type: The type of service that can be created. This is an
           optional parameter, though either theserviceType or service
           parameter must be used.
          :service: The service configuration in JSON format. For more
           information about the service configuration options, see
           createService. This is an optional parameter, though either the
-          serviceType or service parameter must be used.
+          service_type or service parameter must be used.
          :options: This is an optional parameter that provides additional
           information about the service, such as whether it is a hosted
           service.
@@ -207,49 +210,49 @@ class ServiceManager(BaseServer):
                   'service' : service}
         if options:
             params['options'] = options
-        if folderName:
-            params['folderName'] = folderName
-        if serviceType:
-            params['serviceType'] = serviceType
+        if folder_name:
+            params['folderName'] = folder_name
+        if service_type:
+            params['serviceType'] = service_type
         return self._con.post(path=url,
                               postdata=params)
 
     #----------------------------------------------------------------------
-    def add_folder_permission(self, principal, isAllowed=True, folder=None):
+    def add_folder_permission(self, principal, is_allowed=True, folder=None):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
            resources
            Input:
               principal - name of role to assign/disassign accesss
-              isAllowed -  boolean which allows access
+              is_allowed -  boolean which allows access
            Output:
               JSON message as dictionary
         """
         if folder is not None:
-            uURL = self._url + "/%s/%s" % (folder, "/permissions/add")
+            u_url = self._url + "/%s/%s" % (folder, "/permissions/add")
         else:
-            uURL = self._url + "/permissions/add"
+            u_url = self._url + "/permissions/add"
         params = {
             "f" : "json",
             "principal" : principal,
-            "isAllowed" : isAllowed
+            "isAllowed" : is_allowed
         }
-        return self._con.post(path=uURL, postdata=params)
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def list_folder_permissions(self,folderName):
+    def list_folder_permissions(self, folder_name):
         """
            Lists principals which have permissions for the folder.
            Input:
-              folderName - name of the folder to list permissions for
+              folder_name - name of the folder to list permissions for
            Output:
               JSON Message as Dictionary
         """
-        uURL = self._url + "/%s/permissions" % folderName
+        u_url = self._url + "/%s/permissions" % folder_name
         params = {
             "f" : "json",
         }
-        return self._con.post(path=uURL, postdata=params)
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def clean_permissions(self, principal):
         """
@@ -260,69 +263,69 @@ class ServiceManager(BaseServer):
            Output:
               JSON Message as Dictionary
         """
-        uURL = self._url + "/permissions/clean"
+        u_url = self._url + "/permissions/clean"
         params = {
             "f" : "json",
             "principal" : principal
         }
-        return self._con.post(path=uURL, postdata=params)
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def create_folder(self, folderName, description=""):
+    def create_folder(self, folder_name, description=""):
         """
            Creates a unique folder name on AGS
            Inputs:
-              folderName - name of folder on AGS
+              folder_name - name of folder on AGS
               description - describes the folder
            Output:
               JSON message as dictionary
         """
         params = {
             "f" : "json",
-            "folderName" : folderName,
+            "folderName" : folder_name,
             "description" : description
         }
-        uURL = self._url + "/createFolder"
-        return self._con.post(path=uURL, postdata=params)
+        u_url = self._url + "/createFolder"
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def delete_folder(self, folderName):
+    def delete_folder(self, folder_name):
         """
            deletes a folder on AGS
            Inputs:
-              folderName - name of folder to remove
+              folder_name - name of folder to remove
            Output:
               JSON message as dictionary
         """
         params = {
             "f" : "json"
         }
-        if folderName in self.folders:
-            uURL = self._url + "/%s/deleteFolder" % folderName
-            return self._con.post(path=uURL, postdata=params)
+        if folder_name in self.folders:
+            u_url = self._url + "/%s/deleteFolder" % folder_name
+            return self._con.post(path=u_url, postdata=params)
         else:
             return {"error" : "folder does not exist"}
     #----------------------------------------------------------------------
-    def delete_service(self, serviceName, serviceType, folder=None):
+    def delete_service(self, name, service_type, folder=None):
         """
            deletes a service from AGS
            Inputs:
-              serviceName - name of the service
-              serviceType - type of the service
+              name - name of the service
+              service_type - type of the service
               folder - name of the folder the service resides, leave None
                        for root.
            Output:
               JSON message as dictionary
         """
         if folder is None:
-            uURL = self._url + "/%s.%s/delete" % (serviceName,
-                                                  serviceType)
+            u_url = self._url + "/%s.%s/delete" % (name,
+                                                   service_type)
         else:
-            uURL = self._url + "/%s/%s.%s/delete" % (folder,
-                                                     serviceName,
-                                                     serviceType)
+            u_url = self._url + "/%s/%s.%s/delete" % (folder,
+                                                      name,
+                                                      service_type)
         params = {
             "f" : "json"
         }
-        return self._con.post(path=uURL, postdata=params)
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def service_report(self, folder=None):
         """
@@ -334,14 +337,14 @@ class ServiceManager(BaseServer):
                  "instances", "iteminfo",
                  "properties"]
         if folder is None:
-            uURL = self._url + "/report"
+            u_url = self._url + "/report"
         else:
-            uURL = self._url + "/%s/report" % folder
+            u_url = self._url + "/%s/report" % folder
         params = {
             "f" : "json",
             "parameters" : items
         }
-        return self._con.get(path=uURL, params=params)
+        return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
     @property
     def types(self):
@@ -349,9 +352,9 @@ class ServiceManager(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/types"
-        return self._con.get(path=uURL,
-                            params=params)
+        u_url = self._url + "/types"
+        return self._con.get(path=u_url,
+                             params=params)
     #----------------------------------------------------------------------
     def federate(self):
         """
@@ -397,23 +400,23 @@ class ServiceManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def unregister_extension(self, extensionFilename):
+    def unregister_extension(self, extension_filename):
         """
         Unregisters all the extensions from a previously registered server
         object extension (.SOE) file.
 
         Parameters:
-         :extensionFilename: name of the previously registered .SOE file
+         :extension_filename: name of the previously registered .SOE file
         """
         params = {
             "f" : "json",
-            "extensionFilename" : extensionFilename
+            "extensionFilename" : extension_filename
         }
         url = self._url + "/types/extensions/unregister"
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def update_extension(self, itemID):
+    def update_extension(self, item_id):
         """
         Updates extensions that have been previously registered with the
         server. All extensions in the new .SOE file must match with
@@ -422,22 +425,22 @@ class ServiceManager(BaseServer):
         configuration properties.
 
         Parameters:
-         :itemID: itemID of the uploaded .SOE file
+         :item_id: id of the uploaded .SOE file
         """
         params = {'f':'json',
-                  'id': itemID}
+                  'id': item_id}
         url = self._url + "/types/extensions/update"
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def rename_service(self, serviceName, serviceType,
-                       serviceNewName, folder=None):
+    def rename_service(self, name, service_type,
+                       new_name, folder=None):
         """
            Renames a published AGS Service
            Inputs:
-              serviceName - old service name
-              serviceType - type of service
-              serviceNewName - new service name
+              name - old service name
+              service_type - type of service
+              new_name - new service name
               folder - location of where the service lives, none means
                        root folder.
            Output:
@@ -445,15 +448,15 @@ class ServiceManager(BaseServer):
         """
         params = {
             "f" : "json",
-            "serviceName" : serviceName,
-            "serviceType" : serviceType,
-            "serviceNewName" : serviceNewName
+            "serviceName" : name,
+            "serviceType" : service_type,
+            "serviceNewName" : new_name
         }
         if folder is None:
-            uURL = self._url + "/renameService"
+            u_url = self._url + "/renameService"
         else:
-            uURL = self._url + "/%s/renameService" % folder
-        return self._con.post(path=uURL, postdata=params)
+            u_url = self._url + "/%s/renameService" % folder
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def create_service(self, service):
         """
@@ -487,24 +490,24 @@ class ServiceManager(BaseServer):
         elif isinstance(service, dict):
             params['service'] = json.dumps(service)
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def stop_services(self, services ):
+    def stop_services(self, services):
         """
         Stops serveral services on a single server
         Inputs:
            services - is a list of dictionary objects. Each dictionary
                       object is defined as:
-                        folderName - The name of the folder containing the
+                        folder_name - The name of the folder containing the
                         service, for example, "Planning". If the service
                         resides in the root folder, leave the folder
-                        property blank ("folderName": "").
+                        property blank ("folder_name": "").
                         serviceName - The name of the service, for example,
                         "FireHydrants".
                         type - The service type, for example, "MapServer".
                      Example:
                         [{
-                          "folderName" : "",
+                          "folder_name" : "",
                           "serviceName" : "SampleWorldCities",
                           "type" : "MapServer"
                         }]
@@ -523,18 +526,18 @@ class ServiceManager(BaseServer):
             }
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def start_services(self, services ):
+    def start_services(self, services):
         """
         starts serveral services on a single server
         Inputs:
            services - is a list of dictionary objects. Each dictionary
                       object is defined as:
-                        folderName - The name of the folder containing the
+                        folder_name - The name of the folder containing the
                         service, for example, "Planning". If the service
                         resides in the root folder, leave the folder
-                        property blank ("folderName": "").
+                        property blank ("folder_name": "").
                         serviceName - The name of the service, for example,
                         "FireHydrants".
                         type - The service type, for example, "MapServer".
@@ -559,9 +562,9 @@ class ServiceManager(BaseServer):
             }
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def edit_folder(self, description, webEncrypted=False):
+    def edit_folder(self, description, web_encrypted=False):
         """
         This operation allows you to change the description of an existing
         folder or change the web encrypted property.
@@ -572,30 +575,30 @@ class ServiceManager(BaseServer):
 
         Inputs:
            description - a description of the folder
-           webEncrypted - boolean to indicate if the services are
+           web_encrypted - boolean to indicate if the services are
             accessible over SSL only.
         """
         url = self._url + "/editFolder"
         params = {
             "f" : "json",
-            "webEncrypted" : webEncrypted,
+            "webEncrypted" : web_encrypted,
             "description" : "%s" % description
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def exists(self, folderName, serviceName=None, serviceType=None):
+    def exists(self, folder_name, name=None, service_type=None):
         """
         This operation allows you to check whether a folder or a service
-        exists. To test if a folder exists, supply only a folderName. To
+        exists. To test if a folder exists, supply only a folder_name. To
         test if a service exists in a root folder, supply both serviceName
-        and serviceType with folderName=None. To test if a service exists
+        and service_type with folder_name=None. To test if a service exists
         in a folder, supply all three parameters.
 
         Inputs:
-           folderName - a folder name
-           serviceName - a service name
-           serviceType - a service type. Allowed values:
+           folder_name - a folder name
+           name - a service name
+           service_type - a service type. Allowed values:
                 GeometryServer | ImageServer | MapServer | GeocodeServer |
                 GeoDataServer | GPServer | GlobeServer | SearchServer
         """
@@ -603,9 +606,9 @@ class ServiceManager(BaseServer):
         url = self._url + "/exists"
         params = {
             "f" : "json",
-            "folderName" : folderName,
-            "serviceName" : serviceName,
-            "type" : serviceType
+            "folderName" : folder_name,
+            "serviceName" : name,
+            "type" : service_type
         }
         return self._con.post(path=url,
                               postdata=params)
@@ -678,13 +681,13 @@ class Service(BaseServer):
                                        params=params)
         else:
             json_dict = self._con.get(path=self._currentURL,
-                                 params=params)
+                                      params=params)
         self._json = json.dumps(json_dict)
         self._json_dict = json_dict
         attributes = [attr for attr in dir(self)
-                    if not attr.startswith('__') and \
-                    not attr.startswith('_')]
-        for k,v in json_dict.items():
+                      if not attr.startswith('__') and \
+                      not attr.startswith('_')]
+        for k, v in json_dict.items():
             if k.lower() == "extensions":
                 self._extensions = []
                 for ext in v:
@@ -709,21 +712,22 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     @property
     def extensions(self):
+        """lists the extensions on a service"""
         if self._extensions is None:
             self.init()
         return self._extensions
     #----------------------------------------------------------------------
     def modify_extensions(self,
-                          extensionObjects=None):
+                          extension_objects=None):
         """
         enables/disables a service extension type based on the name
         """
-        if extensionObjects is None:
-            extensionObjects = []
-        if len(extensionObjects) > 0 and \
-           isinstance(extensionObjects[0], Extension):
-            self._extensions = extensionObjects
-            self._json_dict['extensions'] = [x.value for x in extensionObjects]
+        if extension_objects is None:
+            extension_objects = []
+        if len(extension_objects) > 0 and \
+           isinstance(extension_objects[0], Extension):
+            self._extensions = extension_objects
+            self._json_dict['extensions'] = [x.value for x in extension_objects]
             res = self.edit(str(self))
             self._json = None
             self.init()
@@ -767,16 +771,16 @@ class Service(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/start"
-        return self._con.post(path=uURL, postdata=params)
+        u_url = self._url + "/start"
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def stop(self):
         """ stops the current service """
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/stop"
-        return self._con.post(path=uURL, postdata=params)
+        u_url = self._url + "/stop"
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def restart(self):
         """ restarts the current service """
@@ -789,8 +793,8 @@ class Service(BaseServer):
         params = {
             "f" : "json",
         }
-        uURL = self._url + "/delete"
-        return self._con.post(path=uURL, postdata=params)
+        u_url = self._url + "/delete"
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -798,8 +802,8 @@ class Service(BaseServer):
         params = {
             "f" : "json",
         }
-        uURL = self._url + "/status"
-        return self._con.get(path=uURL, params=params)
+        u_url = self._url + "/status"
+        return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
     @property
     def statistics(self):
@@ -807,8 +811,8 @@ class Service(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/statistics"
-        return self._con.get(path=uURL, params=params)
+        u_url = self._url + "/statistics"
+        return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
     @property
     def permissions(self):
@@ -816,8 +820,8 @@ class Service(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/permissions"
-        return self._con.get(path=uURL, param_dict=params)
+        u_url = self._url + "/permissions"
+        return self._con.get(path=u_url, param_dict=params)
     #----------------------------------------------------------------------
     @property
     def iteminfo(self):
@@ -825,24 +829,24 @@ class Service(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/iteminfo"
-        return self._con.get(path=uURL, params=params)
+        u_url = self._url + "/iteminfo"
+        return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
-    def register_extension(self, itemID):
+    def register_extension(self, item_id):
         """
         Registers a new server object extension file with the server.
         Before you register the file, you need to upload the .SOE file to
-        the server using the Upload Data Item operation. The itemID
+        the server using the Upload Data Item operation. The item_id
         returned by the upload operation must be passed to the register
         operation.
         This operation registers all the server object extensions defined
         in the .SOE file.
 
         Parameters:
-         :itemID: The itemID of the uploaded .SOE file.
+         :item_id: The item_id of the uploaded .SOE file.
         """
         params = {
-            "id" : itemID,
+            "id" : item_id,
             "f" : "json"
         }
         url = self._url + "/types/extensions/register"
@@ -857,10 +861,10 @@ class Service(BaseServer):
         params = {
             "f" : "json"
         }
-        uURL = self._url + "/iteminfo/delete"
-        return self._con.get(path=uURL, params=params)
+        u_url = self._url + "/iteminfo/delete"
+        return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
-    def upload_item_info(self, folder, filePath):
+    def upload_item_info(self, folder, path):
         """
         Allows for the upload of new itemInfo files such as metadata.xml
         Inputs:
@@ -875,10 +879,10 @@ class Service(BaseServer):
             "f" : "json",
             "folder" : folder
         }
-        files['file'] = filePath
+        files['file'] = path
         return self._con.post(path=url,
-                          postdata=params,
-                          files=files)
+                              postdata=params,
+                              files=files)
     #----------------------------------------------------------------------
     def edit_item_info(self, json_dict):
         """
@@ -898,9 +902,9 @@ class Service(BaseServer):
             "serviceItemInfo" : json.dumps(json_dict)
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def service_manifest(self, fileType="json"):
+    def service_manifest(self, file_type="json"):
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -908,39 +912,39 @@ class Service(BaseServer):
         along with other supplementary files that make up the service.
 
         Inputs:
-           fileType - this can be json or xml.  json return the
+           file_type - this can be json or xml.  json return the
             manifest.json file.  xml returns the manifest.xml file.
 
 
         """
 
-        url = self._url + "/iteminfo/manifest/manifest.%s" % fileType
+        url = self._url + "/iteminfo/manifest/manifest.%s" % file_type
         params = {
         }
         f = self._con.get(path=url,
-                      params=params,
-                     out_folder=tempfile.gettempdir(),
-                     file_name=os.path.basename(url))
+                          params=params,
+                          out_folder=tempfile.gettempdir(),
+                          file_name=os.path.basename(url))
         return open(f, 'r').read()
     #----------------------------------------------------------------------
-    def add_permission(self, principal, isAllowed=True):
+    def add_permission(self, principal, is_allowed=True):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
            resources.
            Inputs:
               principal - role to be assigned
-              isAllowed - access of resource by boolean
+              is_allowed - access of resource by boolean
            Output:
               JSON message as dictionary
         """
-        uURL = self._url + "/permissions/add"
+        u_url = self._url + "/permissions/add"
         params = {
             "f" : "json",
             "principal" : principal,
-            "isAllowed" : isAllowed
+            "isAllowed" : is_allowed
         }
-        return self._con.post(path=uURL, postdata=params)
+        return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
     def edit(self, service):
         """

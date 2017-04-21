@@ -45,6 +45,16 @@ def from_featureclass(filename, **kwargs):
         if not fields:
             fields = [field.name for field in arcpy.ListFields(filename) \
                       if field.type not in ['Geometry']]
+            desc = arcpy.Describe(filename)
+            if hasattr(desc, 'areaFieldName'):
+                afn = desc.areaFieldName
+                if afn in fields:
+                    fields.remove(afn)
+            if hasattr(desc, 'lengthFieldName'):
+                lfn = desc.lengthFieldName
+                if lfn in fields:
+                    fields.remove(lfn)
+            del desc
         geom_fields = fields + ['SHAPE@']
         flds = fields + ['SHAPE']
         vals = []
@@ -138,9 +148,11 @@ def to_featureclass(df, out_name, out_location=None,
        overwrite:
         arcpy.Delete_management(fc)
     if arcpy.Exists(fc) ==  False:
-        sr = df.sr
-        if sr is None:
+        sr = None
+        if df.sr is None:
             sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
+        else:
+            sr = df.sr.as_arcpy
         fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                  out_name=out_name,
                                                  geometry_type=df.geometry_type.upper(),

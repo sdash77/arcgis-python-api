@@ -8,10 +8,10 @@ import pandas as pd
 import os, shutil, arcpy
 from arcgis.geometry import types
 from arcgis import SpatialDataFrame
-#from arcgis.server import Service
+from arcgis.server import Service
 from arcgis.data.geodataset import from_layer, to_featureclass, to_sqlite, from_featureclass
 #############################################################################
-@unittest.SkipTest
+#@unittest.SkipTest
 class FeatureSetConversionTest(unittest.TestCase):
     """
     tests the spatial dataframe operations related
@@ -40,7 +40,7 @@ class FeatureSetConversionTest(unittest.TestCase):
         self.assertIsInstance(res, pd.DataFrame, msg=\
                               "Got type: %s instead of pandas.DataFrame" % type(res))
 ###########################################################################
-@unittest.SkipTest
+#@unittest.SkipTest
 class IOTest(unittest.TestCase):
     """tests the spatial dataframe io functions"""
     def _construct_featureclass(self):

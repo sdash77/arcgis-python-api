@@ -847,9 +847,21 @@ class Geometry(BaseGeometry):
           SpatialReference object or the coordinate system name.
          :transformation_name: - The geotransformation name.
         """
+        from six import string_types, integer_types
         if HASARCPY:
+            if isinstance(spatial_reference, SpatialReference):
+                spatial_reference = spatial_reference.as_arcpy
+            elif isinstance(spatial_reference, arcpy.SpatialReference):
+                spatial_reference = spatial_reference
+            elif isinstance(spatial_reference, integer_types):
+                spatial_reference = arcpy.SpatialReference(spatial_reference)
+            elif isinstance(spatial_reference, string_types):
+                spatial_reference = arcpy.SpatialReference(
+                    text=spatial_reference)
+            else:
+                raise ValueError("Invalid spatial reference object.")
             return Geometry(self.as_arcpy.projectAs(spatial_reference=spatial_reference,
-                                           transformation_name=transformation_name))
+                                                    transformation_name=transformation_name))
         return None
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
@@ -869,7 +881,7 @@ class Geometry(BaseGeometry):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.queryPointAndDistance(in_point=second_geometry,
-                                               use_percentage=use_percentage)
+                                                       use_percentage=use_percentage)
         return None
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
@@ -891,9 +903,10 @@ class Geometry(BaseGeometry):
           expressed as a double from 0.0 (0 percent) to 1.0 (100 percent).
         """
         if HASARCPY:
-            return Geometry(self.as_arcpy.segmentAlongLine(start_measure=start_measure,
-                                           end_measure=end_measure,
-                                           use_percentage=use_percentage))
+            return Geometry(self.as_arcpy.segmentAlongLine(
+                start_measure=start_measure,
+                end_measure=end_measure,
+                use_percentage=use_percentage))
         return None
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
@@ -1013,6 +1026,18 @@ class SpatialReference(Geometry):
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
+    @property
+    def as_arcpy(self):
+        """returns the class as an arcpy SpatialReference object"""
+        if HASARCPY:
+            if 'wkid' in self:
+                return arcpy.SpatialReference(self['wkid'])
+            elif 'wkt' in self:
+                sr = arcpy.SpatialReference()
+                sr.loadFromString(self['wkt'])
+                return sr
+        return None
 
 
 class Envelope(Geometry):

@@ -1,8 +1,14 @@
+"""
+This resource is a collection of all the usage reports created within
+your site. The Create Usage Report operation lets you define a new
+usage report.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
+import json
 import six
 from .._common import BaseServer
-import json
+
 ########################################################################
 class UsageReports(BaseServer):
     """
@@ -58,12 +64,12 @@ class UsageReports(BaseServer):
         request returns the current usage reports settings. When usage
         reports are enabled, service usage statistics are collected and
         persisted to a statistics database. When usage reports are
-        disabled, the statistics are not collected. The samplingInterval
+        disabled, the statistics are not collected. The interval
         parameter defines the duration (in minutes) during which the usage
         statistics are sampled or aggregated (in-memory) before being
         written out to the statistics database. Database entries are
-        deleted after the interval specified in the maxHistory parameter (
-        in days), unless the maxHistory parameter is 0, for which the
+        deleted after the interval specified in the max_history parameter (
+        in days), unless the max_history parameter is 0, for which the
         statistics are persisted forever.
         """
         params = {
@@ -71,46 +77,47 @@ class UsageReports(BaseServer):
         }
         url = self._url + "/settings"
         return self._con.get(path=url,
-                            params=params)
+                             params=params)
     #----------------------------------------------------------------------
-    def edit_settings(self, samplingInterval,
-                                enabled=True, maxHistory=0):
+    def edit_settings(self,
+                      interval,
+                      enabled=True,
+                      max_history=0):
         """
         The usage reports settings are applied to the entire site. A POST
         request updates the usage reports settings.
 
         Inputs:
-           samplingInterval - Defines the duration (in minutes) for which
+           interval - Defines the duration (in minutes) for which
              the usage statistics are aggregated or sampled, in-memory,
              before being written out to the statistics database.
            enabled - default True - Can be true or false. When usage
              reports are enabled, service usage statistics are collected
              and persisted to a statistics database. When usage reports are
              disabled, the statistics are not collected.
-           maxHistory - default 0 - Represents the number of days after
+           max_history - default 0 - Represents the number of days after
              which usage statistics are deleted after the statistics
-             database. If the maxHistory parameter is set to 0, the
+             database. If the max_history parameter is set to 0, the
              statistics are persisted forever.
         """
         params = {
             "f" : "json",
-            "maxHistory" : maxHistory,
+            "maxHistory" : max_history,
             "enabled" : enabled,
-            "samplingInterval"  : samplingInterval
+            "samplingInterval" : interval
         }
         url = self._url + "/settings/edit"
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def create_usage_report(self,
-                          reportname,
-                          queries,
-                          metadata,
-                          since="LAST_DAY",
-                          fromValue=None,
-                          toValue=None,
-                          aggregationInterval=None
-                          ):
+                            reportname,
+                            queries,
+                            metadata,
+                            since="LAST_DAY",
+                            from_value=None,
+                            to_value=None,
+                            aggregation_interval=None):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
@@ -129,15 +136,15 @@ class UsageReports(BaseServer):
                  days.
               CUSTOM represents a time range that is specified using the
                  from and to parameters.
-           fromValue - optional value - The timestamp (milliseconds since
+           from_value - optional value - The timestamp (milliseconds since
               UNIX epoch, namely January 1, 1970, 00:00:00 GMT) for the
               beginning period of the report. Only valid when since is
               CUSTOM
-           toValue - optional value - The timestamp (milliseconds since
+           to_value - optional value - The timestamp (milliseconds since
               UNIX epoch, namely January 1, 1970, 00:00:00 GMT) for the
               ending period of the report.Only valid when since is
               CUSTOM.
-           aggregationInterval - Optional. Aggregation interval in minutes.
+           aggregation_interval - Optional. Aggregation interval in minutes.
               Server metrics are aggregated and returned for time slices
               aggregated using the specified aggregation interval. The time
               range for the report, specified using the since parameter
@@ -145,7 +152,7 @@ class UsageReports(BaseServer):
               slices, each covering an aggregation interval. Server metrics
               are then aggregated for each time slice and returned as data
               points in the report data.
-              When the aggregationInterval is not specified, the following
+              When the aggregation_interval is not specified, the following
               defaults are used:
                  LAST_DAY: 30 minutes
                  LAST_WEEK: 4 hours
@@ -153,8 +160,8 @@ class UsageReports(BaseServer):
                  LAST_YEAR: 1 week
                  CUSTOM: 30 minutes up to 1 day, 4 hours up to 1 week, 1
                  day up to 30 days, and 1 week for longer periods.
-             If the samplingInterval specified in Usage Reports Settings is
-             more than the aggregationInterval, the samplingInterval is
+             If the interval specified in Usage Reports Settings is
+             more than the aggregationInterval, the interval is
              used instead.
            queries - A list of queries for which to generate the report.
               You need to specify the list as an array of JSON objects
@@ -221,12 +228,12 @@ class UsageReports(BaseServer):
             params["queries"] = [queries]
         elif isinstance(queries, list):
             params["queries"] = queries
-        if aggregationInterval is not None:
-            params['aggregationInterval'] = aggregationInterval
+        if aggregation_interval is not None:
+            params['aggregationInterval'] = aggregation_interval
         if since.lower() == "custom":
-            params['to'] = toValue
-            params['from'] = fromValue
-        res =  self._con.post(path=url,
+            params['to'] = to_value
+            params['from'] = from_value
+        res = self._con.post(path=url,
                              postdata=params)
         #  Refresh the metrics object
         self.init()
@@ -338,5 +345,3 @@ class UsageReport(BaseServer):
         }
         url = self._url + "/data"
         return self._con.get(path=url, params=params)
-    #post(path=url,
-                              #postdata=params)

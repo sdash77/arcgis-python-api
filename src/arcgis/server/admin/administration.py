@@ -39,8 +39,8 @@ class SiteManager(BaseServer):
                  initialize=False):
         """Constructor"""
         super(SiteManager, self).__init__(connection=connection,
-                                                url=url)
-        if url.lower().endswith('/admin') == False:
+                                          url=url)
+        if not url.lower().endswith('/admin'):
             url = "%s/admin" % url
         self._url = url
         self._con = connection
@@ -78,11 +78,11 @@ class SiteManager(BaseServer):
     def create(self,
                username,
                password,
-               configStoreConnection,
+               config_store_connection,
                directories,
                cluster=None,
-               logsSettings=None,
-               runAsync=False):
+               logs_settings=None,
+               run_async=False):
         """
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:
@@ -124,14 +124,14 @@ class SiteManager(BaseServer):
             "directories" : directories,
             "username" : username,
             "password" : password,
-            "configStoreConnection" : configStoreConnection,
-            "logSettings" : logsSettings,
-            "runAsync" : runAsync
+            "configStoreConnection" : config_store_connection,
+            "logSettings" : logs_settings,
+            "runAsync" : run_async
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def join(self, adminURL, username, password):
+    def join(self, admin_url, username, password):
         """
         The Join Site operation is used to connect a server machine to an
         existing site. This is considered a 'push' mechanism, in which a
@@ -147,7 +147,7 @@ class SiteManager(BaseServer):
         Site operation instead.
 
         Inputs:
-           adminURL - The site URL of the currently live site. This is
+           admin_url - The site URL of the currently live site. This is
             typically the Administrator Directory URL of one of the server
             machines of a site.
            username - The name of an administrative account for the site.
@@ -156,12 +156,12 @@ class SiteManager(BaseServer):
         url = self._url + "/joinSite"
         params = {
             "f" : "json",
-            "adminURL" : adminURL,
+            "adminURL" : admin_url,
             "username" : username,
             "password" : password
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def delete(self):
         """
@@ -184,7 +184,7 @@ class SiteManager(BaseServer):
             "f" : "json"
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def export(self, location=None):
         """
@@ -207,7 +207,7 @@ class SiteManager(BaseServer):
         if location is not None:
             params['location'] = location
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def import_site(self, location):
         """
@@ -235,9 +235,9 @@ class SiteManager(BaseServer):
             "location" : location
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def upgrade(self, runAsync=False):
+    def upgrade(self, run_async=False):
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -258,13 +258,13 @@ class SiteManager(BaseServer):
         of a server machine.
 
         Paramters:
-         :runAsync: A flag to indicate if the operation needs to be run
+         :run_async: A flag to indicate if the operation needs to be run
           asynchronously. The default value is false.
         """
         url = self._url + "/upgrade"
         params = {
             "f" : "json",
-            "runAsync" : runAsync
+            "runAsync" : run_async
         }
         return self._con.post(path=url,
                               postdata=params)
@@ -277,7 +277,7 @@ class SiteManager(BaseServer):
             "f" : "json",
         }
         return self._con.get(path=url,
-                            params=params)
+                             params=params)
     #----------------------------------------------------------------------
     @property
     def machines(self):
@@ -441,4 +441,3 @@ class SiteManager(BaseServer):
                               connection=self._con,
                               initialize=True)
         return None
-

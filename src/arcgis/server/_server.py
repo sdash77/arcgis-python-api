@@ -36,13 +36,11 @@ class UserManager(object):
     def __init__(self, server):
         """Constructor"""
         from .admin.administration import SiteManager
-        from .admin._security import Security
         if isinstance(server, SiteManager):
             self._sm = server
             self._security = server.security
             isinstance(self._security, Security)
             self._security.connection._username
-
         else:
             raise ValueError("UserManager must take a SiteManager object")
     #----------------------------------------------------------------------
@@ -96,7 +94,7 @@ class UserManager(object):
         """
         You can use this operation to search a specific user or a group of
         users from the user store. The size of the search result can be
-        controlled with the maxCount parameter.
+        controlled with the max_results parameter.
 
         Inputs:
          :username: user or users to find
@@ -106,7 +104,7 @@ class UserManager(object):
          list of User objects
         """
         users = []
-        res = self._security.find_users(criteria=username, maxCount=max_results)
+        res = self._security.find_users(criteria=username, max_count=max_results)
         if "users" in res:
             for user in res["users"]:
                 users.append(User(self._security, user))
@@ -206,7 +204,7 @@ class User(dict):
                                           full_name, description,
                                           email)
         if res['status'] == 'success':
-            user = self._security.find_users(criteria=self.username, maxCount=1)['users'][0]
+            user = self._security.find_users(criteria=self.username, max_count=1)['users'][0]
             self._user_dict = user
             self.__dict__.update(user)
         return res
@@ -279,8 +277,8 @@ class RoleManager(object):
         :param max_roles: the maximum number of roles to be returned
         :return: list of all roles in the server
         """
-        roles = self._security.list_roles(startIndex=start_index,
-                                  pageSize=255)
+        roles = self._security.list_roles(start_index=start_index,
+                                          page_size=max_roles)
         return [Role(self._security, role) for role in roles['roles']]
     #----------------------------------------------------------------------
     def get_role(self, role_id, max_roles=10):
@@ -292,7 +290,7 @@ class RoleManager(object):
         :return: list of roles
         """
         roles = self._security.search_roles(role_filter=role_id,
-                                            maxCount=max_roles)
+                                            max_count=max_roles)
         return [Role(self._security, role) for role in roles['roles']]
 ########################################################################
 class Role(dict):
@@ -349,7 +347,7 @@ class Role(dict):
         if res['status'] == 'success':
             self.__dict__.update(self._security.search_roles(
                 role_filter=self.rolename,
-                maxCount=1)['roles'][0])
+                max_count=1)['roles'][0])
         return res
     #----------------------------------------------------------------------
     def delete(self):
@@ -646,8 +644,3 @@ class DirectoryManager(object):
         isinstance(self._system, System)
         return self._system.register(name, physicalPath, directoryType,
                                     maxFileAge, cleanupMode, description)
-
-
-
-
-########################################################################

@@ -16,18 +16,18 @@ class Extension(object):
                           "schematicsserver", "featureserver",
                           "wcsserver", "wmsserver"]
     #----------------------------------------------------------------------
-    def __init__(self, typeName,
+    def __init__(self, type_name,
                  capabilities,
                  enabled,
-                 maxUploadFileSize,
-                 allowedUploadFileType,
+                 max_upload_file_size,
+                 allowed_upload_filetype,
                  properties):
         """Constructor"""
-        self._typeName = typeName
+        self._typeName = type_name
         self._capabilities = capabilities
         self._enabled = enabled
-        self._maxUploadFileSize = maxUploadFileSize
-        self._allowedUploadFileTypes = allowedUploadFileType
+        self._maxUploadFileSize = max_upload_file_size
+        self._allowedUploadFileTypes = allowed_upload_filetype
         self._properties = properties
     #----------------------------------------------------------------------
     @property
@@ -69,23 +69,23 @@ class Extension(object):
             self._enabled = value
     #----------------------------------------------------------------------
     @property
-    def maxUploadFileSize(self):
+    def max_upload_file_size(self):
         """sets/gets the maxUploadFileSize"""
         return self._maxUploadFileSize
     #----------------------------------------------------------------------
-    @maxUploadFileSize.setter
-    def maxUploadFileSize(self, value):
+    @max_upload_file_size.setter
+    def max_upload_file_size(self, value):
         """sets/gets the maxUploadFileSize"""
         if isinstance(value, int):
             self._maxUploadFileSize = value
     #----------------------------------------------------------------------
     @property
-    def allowedUploadFileTypes(self):
+    def allowed_upload_filetypes(self):
         """gets/sets the allowedUploadFileTypes"""
         return self._allowedUploadFileTypes
     #----------------------------------------------------------------------
-    @allowedUploadFileTypes.setter
-    def allowedUploadFileTypes(self, value):
+    @allowed_upload_filetypes.setter
+    def allowed_upload_filetypes(self, value):
         """gets/sets the allowedUploadFileTypes"""
         self._allowedUploadFileTypes = value
     #----------------------------------------------------------------------
@@ -111,7 +111,8 @@ class Extension(object):
         """returns the object from json string or dictionary"""
         if isinstance(value, str):
             value = json.loads(value)
-        elif isinstance(value, dict): pass
+        elif isinstance(value, dict):
+            value = value
         else:
             raise AttributeError("Invalid input")
         return Extension(typeName=value['typeName'],
