@@ -17,7 +17,7 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._types import SceneService
+from arcgis.mapping._types import SceneLayer
 from .._common import ServerConnection
 from ._geodataservice import GeoData
 
@@ -101,7 +101,7 @@ class ServiceFactory(type):
         elif base_name.lower() == "naserver":
             return NetworkDataset(url=url, gis=server)
         elif base_name.lower() == "sceneserver":
-            return SceneService(url=url, gis=server)
+            return SceneLayer(url=url, gis=server)
         elif base_name.lower() == "schematicsserver":
             return SchematicLayers( url=url,
                                     gis=server)

@@ -23,7 +23,7 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer#
 from arcgis.raster import ImageryLayer#
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._types import SceneService
+from arcgis.mapping._types import SceneLayer
 ############################################################################
 #@unittest.SkipTest
 class ServiceFactoryTest(unittest.TestCase):
