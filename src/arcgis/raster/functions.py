@@ -2959,16 +2959,16 @@ def _get_raster_ra(raster):
     if raster._fnra is not None:
         raster_ra = raster._fnra
     elif isinstance(raster, ImageryLayer):
-        raster_ra = {
-            'url' : raster._url
-        }
+        raster_ra = raster._url
 
-        if raster._mosaic_rule is not None:
-            raster_ra['mosaicRule'] = raster._mosaic_rule
+
+        #if raster._mosaic_rule is not None:
+        #    raster_ra['mosaicRule'] = raster._mosaic_rule
     elif isinstance(raster, Item):
-        raster_ra = {
-            'itemId': raster.itemid
-        }
+        raise RuntimeError('Item not supported as input. Use ImageryLayer - e.g. item.layers[0]')
+        #raster_ra = {
+        #    'itemId': raster.itemid
+        #}
     else:
         raster_ra = raster
     return raster_ra
