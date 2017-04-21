@@ -396,7 +396,7 @@ class server_machines_test(unittest.TestCase):
     def test_get_machine(self):
         machines = self._server_auth._sm.machines
         isinstance(machines, arcgisserver.admin._machines.Machines)
-        self.assertIsInstance(machines.getMachine(machineName=machines.machines[0].machineName),
+        self.assertIsInstance(machines.get_machine(machine_name=machines.machines[0].machineName),
                               arcgisserver.admin._machines.Machine)
 ############################################################################
 #@unittest.SkipTest

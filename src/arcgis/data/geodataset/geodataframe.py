@@ -54,7 +54,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         Optional:
           :data: panda's dataframe containing attribute information
           :geometry: list/array/geoseries of arcgis.geometry objects
-          :sr: spatial reference of the dataframe
+          :sr: spatial reference of the dataframe.  This can be the factory
+           code, WKT string, arcpy.SpatialReference object, or
+           arcgis.SpatailReference object.
           :gis: passing a gis.GIS object set to Pro will ensure arcpy is
            installed and a full swatch of functionality is available to
            the end user.
@@ -68,12 +70,20 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
 
-        if isinstance(sr, integer_types):
-            self.sr = arcpy.SpatialReference(sr)
-        elif isinstance(sr, string_types):
-            self.sr = arcpy.SpatialReference(text=sr)
-        else:
+        if isinstance(sr, types.SpatialReference):
             self.sr = sr
+        elif isinstance(sr, integer_types):
+            self.sr = types.SpatialReference({'wkid' : sr})
+        elif isinstance(sr, string_types):
+            self.sr = types.SpatialReference({'wkt' : sr})
+        elif hasattr(sr, 'factoryCode'):
+            self.sr = types.SpatialReference({'wkid' : sr.factoryCode})
+        elif hasattr(sr, 'exportToString'):
+            self.sr = types.SpatialReference({'wkt' : sr.exportToString()})
+        elif not sr is None:
+            raise ValueError("sr (spatial reference) must be a types.SpatialReference object")
+        else:
+            self.sr = None
         if geometry is not None:
             # Handles case when a user passes arcpy.Point objects instead of
             # arcpy.PointGeometry.
@@ -197,7 +207,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         data = self._data
         if deep:
             data = data.copy()
-        return SpatialDataFrame(data).__finalize__(self)
+        return SpatialDataFrame(data, sr=self.sr).__finalize__(self)
     #----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
         """ writes the spatial dataframe to a map """
@@ -334,23 +344,37 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         if HASARCPY:
             if isinstance(spatial_reference, arcpy.SpatialReference):
-                sr = spatial_reference
+                wkt = spatial_reference.exportToString()
+                wkid = spatial_reference.factoryCode
+                if wkid:
+                    sr = types.SpatialReference({'wkid' : wkid})
+                elif wkt:
+                    sr = types.SpatialReference({'wkt': wkt})
+                else:
+                    sr = None
             elif isinstance(spatial_reference, int):
-                sr = arcpy.SpatialReference(spatial_reference)
+                sr = types.SpatialReference({'wkid' : spatial_reference})
             elif isinstance(spatial_reference, string_types):
-                sr = arcpy.SpatialReference(text=spatial_reference)
+                sr = types.SpatialReference({'wkt' : spatial_reference})
+            elif isinstance(spatial_reference, types.SpatialReference):
+                sr = spatial_reference
             else:
-                raise ValueError("spatial_referernce must be of type: int, string or arcpy.SpatialReference")
+                raise ValueError("spatial_referernce must be of type: int, string, types.SpatialReference, or arcpy.SpatialReference")
 
             if inplace:
                 df = self
             else:
                 df = self.copy()
-            geom = df.geometry.projectAs(sr, transformation)
-            geom.sr = sr.factoryCode
-            df.geometry = geom
-            if inplace:
-                return df
+            sarcpy = sr.as_arcpy
+            if sarcpy:
+                geom = df.geometry.project_as(sarcpy, transformation)
+                geom.sr = sr
+                df.geometry = geom
+                if inplace:
+                    return df
+            else:
+                raise Exception("could not reproject the dataframe.")
+            return df
     #----------------------------------------------------------------------
     def select_by_location(self, other, matches_only=True):
         """

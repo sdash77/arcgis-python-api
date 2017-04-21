@@ -1,7 +1,21 @@
+"""
+This resource represents a collection of all the server machines that
+have been registered with the site. It other words, it represents
+the total computing power of your site. A site will continue to run
+as long as there is one server machine online.
+For a server machine to start hosting GIS services, it must be
+grouped (or clustered). When you create a new site, a cluster called
+'default' is created for you.
+The list of server machines in your site can be dynamic. You can
+register additional server machines when you need to increase the
+computing power of your site or unregister them if you no longer
+need them.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-from .._common import BaseServer
 import json
+from .._common import BaseServer
+
 ########################################################################
 class Machines(BaseServer):
     """
@@ -54,9 +68,9 @@ class Machines(BaseServer):
         self._json_dict = json_dict
         self._json = json.dumps(json_dict)
         attributes = [attr for attr in dir(self)
-                    if not attr.startswith('__') and \
-                    not attr.startswith('_')]
-        for k,v in json_dict.items():
+                      if not attr.startswith('__') and \
+                      not attr.startswith('_')]
+        for k, v in json_dict.items():
             if k == "machines":
                 self._machines = []
                 for m in v:
@@ -71,14 +85,14 @@ class Machines(BaseServer):
             del k, v
     #----------------------------------------------------------------------
     @property
-    def DatastoreMachines(self):
+    def datastore_machines(self):
         """returns the datastore machine list"""
         if self._DatastoreMachines is None:
             self.init()
         return self._DatastoreMachines
     #----------------------------------------------------------------------
     @property
-    def Protocol(self):
+    def protocol(self):
         """returns the protocal"""
         if self._Protocal is None:
             self.init()
@@ -91,16 +105,16 @@ class Machines(BaseServer):
             self.init()
         return self._machines
     #----------------------------------------------------------------------
-    def getMachine(self, machineName):
+    def get_machine(self, machine_name):
         """returns a machine object for a given machine
            Input:
-              machineName - name of the box ex: SERVER.DOMAIN.COM
+              machine_name - name of the box ex: SERVER.DOMAIN.COM
         """
-        url = self._url + "/%s" % machineName
+        url = self._url + "/%s" % machine_name
         return Machine(url=url,
                        connection=self._con)
     #----------------------------------------------------------------------
-    def registerMachine(self, machineName, adminURL):
+    def register(self, name, admin_url):
         """
            For a server machine to participate in a site, it needs to be
            registered with the site. The server machine must have ArcGIS
@@ -110,8 +124,8 @@ class Machines(BaseServer):
            need to be added to a site. In contrast, a server machine can
            choose to join a site.
            Inputs:
-              machineName - name of the server machine
-              adminURL - URL wher ethe Administrator API is running on the
+              name - name of the server machine
+              admin_url - URL wher ethe Administrator API is running on the
                          server machine.
                          Example: http://<machineName>:6080/arcgis/admin
            Output:
@@ -119,13 +133,13 @@ class Machines(BaseServer):
         """
         params = {
             "f" : "json",
-            "machineName" : machineName,
-            "adminURL" : adminURL
+            "machineName" : name,
+            "adminURL" : admin_url
         }
         url = "%s/register" % self._url
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def renameMachine(self, machineName, newMachineName):
+    def rename(self, name, new_name):
         """
            You must use this operation if one of the registered machines
            has undergone a name change. This operation updates any
@@ -135,16 +149,16 @@ class Machines(BaseServer):
            references. This operation is a manual call to handle the
            machine name change.
            Input:
-              machineName - The former name of the server machine that is
+              name - The former name of the server machine that is
                             registered with the site.
-              newMachineName - The new name of the server machine.
+              new_name - The new name of the server machine.
            Output:
               JSON messages as dictionary
         """
         params = {
             "f" : "json",
-            "machineName" : machineName,
-            "newMachineName" : newMachineName
+            "machineName" : name,
+            "newMachineName" : new_name
         }
         url = self._url + "/rename"
         return self._con.post(path=url, postdata=params)
@@ -248,7 +262,7 @@ class Machine(BaseServer):
         return self._con.post(path=uURL, postdata=params)
     #----------------------------------------------------------------------
     @property
-    def sslcertificates(self):
+    def ssl_certificates(self):
         """
         This resource lists all the certificates (self-signed and CA-signed)
         created for the server machine. The server securely stores these
@@ -270,7 +284,7 @@ class Machine(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def sslcertificate(self, certificate):
+    def ssl_certificate(self, certificate):
         """
         A certificate represents a key pair that has been digitally signed
         and acknowledged by a Certifying Authority (CA). It is the most
@@ -323,23 +337,24 @@ class Machine(BaseServer):
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def import_CA_signed_certificate(self,
-                                  certificate,
-                                  caSignedCertificate):
+                                     certificate,
+                                     ca_signed_certificate):
         """
         Parameters:
          :certificate: name of the certificate to grab information for
-         :caSignedCertificate: The multi-part POST parameter containing the
+         :ca_signed_certificate: The multi-part POST parameter containing the
           signed certificate file.
         """
         params = {"f" : "json"}
         url = self._url + "/sslcertificates/{cert}/importCASignedCertificate".format(
             cert=certificate)
-        files = {"caSignedCertificate" : caSignedCertificate}
+        files = {"caSignedCertificate" : ca_signed_certificate}
         return self._con.post(path=url, postdata=params, files=files)
     #----------------------------------------------------------------------
-    def import_existing_server_certificate(self, alias,
-                                        certPassword,
-                                        certFile):
+    def import_existing_server_certificate(self,
+                                           alias,
+                                           cert_password,
+                                           cert_file):
         """
         This operation imports an existing server certificate, stored in
         the PKCS #12 format, into the keystore.
@@ -350,27 +365,26 @@ class Machine(BaseServer):
         Parameters:
          :alias: A unique name for the certificate that easily identifies
           it.
-         :certPassword:
-         :certPassword: password to unlock the file containing the
+         :cert_password: password to unlock the file containing the
           certificate
-         :certFile: multi-part POST parameter containing the certificate
+         :cert_file: multi-part POST parameter containing the certificate
           file
         """
         url = self._url + "/sslcertificates/importExistingServerCertificate"
         params = {
             "f" : "json",
             "alias" : alias,
-            "certPassword" : certPassword
+            "certPassword" : cert_password
         }
         files = {
-            "certFile" : certFile}
+            "certFile" : cert_file}
         return self._con.post(path=url,
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
     def import_root_certificate(self,
-                              alias,
-                              rootCACertificate):
+                                alias,
+                                root_CA_certificate):
         """
         This operation imports a certificate authority (CA)'s root and
         intermediate certificates into the keystore.
@@ -383,7 +397,7 @@ class Machine(BaseServer):
 
         Parameters:
          :alias: name of teh certificate
-         :rootCACertificate:multi-part POST parameter containing the
+         :root_CA_certificate:multi-part POST parameter containing the
           certificate file.
         """
         url = self._url + "/sslcertificates/importRootOrIntermediate"
@@ -392,7 +406,7 @@ class Machine(BaseServer):
             "alias" : alias
         }
         files = {
-            'rootCACertificate' : rootCACertificate
+            'rootCACertificate' : root_CA_certificate
         }
         return self._con.post(path=url,
                               postdata=params,

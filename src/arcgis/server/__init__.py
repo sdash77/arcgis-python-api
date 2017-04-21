@@ -4,5 +4,5 @@
 from ._service import Service
 from .managers import Server
 __version__ = "1.0"
-__all__ = ['Layer', 'Server']
+__all__ = ['Service', 'Server']
 

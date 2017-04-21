@@ -1,3 +1,8 @@
+"""
+The System resource is a collection of miscellaneous server-wide
+resources such as server properties, server directories, the
+configuration store, Web Adaptors, and licenses.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -19,7 +24,7 @@ class System(BaseServer):
                  initialize=False):
         """Constructor"""
         super(System, self).__init__(connection=connection,
-                                      url=url)
+                                     url=url)
         self._con = connection
         if url.lower().endswith("/system"):
             self._url = url
@@ -36,7 +41,7 @@ class System(BaseServer):
         return self._resources
     #----------------------------------------------------------------------
     @property
-    def serverProperties(self):
+    def server_properties(self):
         """gets the server properties for the site as an object"""
         return ServerProperties(url=self._url + "/properties",
                                 connection=self._con,
@@ -51,7 +56,7 @@ class System(BaseServer):
             "f" : "json"
         }
         res = self._con.get(path=url,
-                           params=params)
+                            params=params)
         for direct in res['directories']:
             directs.append(
                 ServerDirectory(url=url + "/%s" % direct["name"],
@@ -71,20 +76,20 @@ class System(BaseServer):
             "f" : "json"
         }
         res = self._con.get(path=url,
-                           params=params)
+                            params=params)
         for direct in res['directories']:
             if name.lower() == direct['name'].lower():
                 return ServerDirectory(url=url + "/%s" % direct["name"],
-                                connection=self._con,
-                                initialize=True)
+                                       connection=self._con,
+                                       initialize=True)
         return None
     #----------------------------------------------------------------------
     def register(self,
                  name,
-                 physicalPath,
-                 directoryType,
-                 maxFileAge,
-                 cleanupMode="NONE",
+                 physica_path,
+                 directory_type,
+                 max_age,
+                 cleanup_mode="NONE",
                  description=None):
         """
         Registers a new server directory. While registering the server
@@ -92,21 +97,21 @@ class System(BaseServer):
 
         Parameters:
          :name: The name of the server directory.
-         :physicalPath: The absolute physical path of the server directory.
-         :directoryType: The type of server directory.
-         :cleanupMode: Defines if files in the server directory needs to be
+         :physica_path: The absolute physical path of the server directory.
+         :directory_type: The type of server directory.
+         :cleanup_mode: Defines if files in the server directory needs to be
           cleaned up.
-         :maxFileAge: Defines how long a file in the directory needs to be
+         :max_age: Defines how long a file in the directory needs to be
           kept before it is deleted.
          :description:  An optional description for the server directory.
         """
         url = self._url + "/directories/register"
         params = {
             "name" : name,
-            "physicalPath" : physicalPath,
-            "directoryType" : directoryType,
-            "cleanupMode" : cleanupMode,
-            "maxFileAge" : maxFileAge
+            "physicalPath" : physica_path,
+            "directoryType" : directory_type,
+            "cleanupMode" : cleanup_mode,
+            "maxFileAge" : max_age
         }
         if description:
             params['description'] = description
@@ -127,7 +132,7 @@ class System(BaseServer):
         }
 
         return self._con.get(path=url,
-                            postdata=params)
+                             postdata=params)
     #----------------------------------------------------------------------
     @property
     def jobs(self):
@@ -168,30 +173,30 @@ class System(BaseServer):
             "f" : "json"
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
-    def update_web_adaptors_configuration(self, webAdaptorConfig):
+    def update_web_adaptors_configuration(self, config):
         """
         You can use this operation to change the configuration parameters
         and shared key.
 
         Inputs:
-           webAdaptorConfig - the sharedkey attribute must always be
+           config - the sharedkey attribute must always be
             present in this JSON
         """
         url = self._url + "/webadaptors/config/update"
         params = {
             "f" : "json",
-            "webAdaptorConfig" : webAdaptorConfig
+            "webAdaptorConfig" : config
         }
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
     def update_web_adaptor(self,
-                         wa_id,
-                         description,
-                         httpPort,
-                         httpsPort):
+                           wa_id,
+                           description,
+                           http_port,
+                           https_port):
         """
         This operation allows you to update the description, HTTP port, and
         HTTPS port of a Web Adaptor that is registered with the server.
@@ -204,15 +209,15 @@ class System(BaseServer):
         Parameters:
          :wa_id: web adaptor id
          :description: descriptive text
-         :httpPort: The HTTP port of the web server
-         :httpsPort: the HTTPS (SSL) port of the web server
+         :http_port: The HTTP port of the web server
+         :https_port: the HTTPS (SSL) port of the web server
         """
         url = self._url + "/webadaptors/{w}/update".format(w=wa_id)
         params = {
             'f' : 'json',
             'description' : description,
-            'httpPort' : httpPort,
-            'httpsPort' : httpsPort
+            'httpPort' : http_port,
+            'httpsPort' : https_port
         }
         return self._con.post(path=url,
                               postdata=params)
@@ -224,7 +229,7 @@ class System(BaseServer):
         to the server.
         """
         url = self._url + "/webadaptors/{waid}/update".format(
-        waid=wa_id)
+            waid=wa_id)
         params = {
             "f" : "json",
         }
@@ -282,15 +287,14 @@ class System(BaseServer):
                              params=params)
     #----------------------------------------------------------------------
     def edit_services_directory(self,
-                              allowedOrigins,
-                              arcgis_com_map,
-                              arcgis_com_map_text,
-                              jsapi_arcgis,
-                              jsapi_arcgis_css,
-                              jsapi_arcgis_css2,
-                              jsapi_arcgis_sdk,
-                              serviceDirEnabled
-                              ):
+                                allowed_origins,
+                                arcgis_com_map,
+                                arcgis_com_map_text,
+                                jsapi_arcgis,
+                                jsapi_arcgis_css,
+                                jsapi_arcgis_css2,
+                                jsapi_arcgis_sdk,
+                                service_dir_enabled):
         """
         With this operation you can enable or disable the HTML view of
         ArcGIS REST API (also known as the Services Directory). You can
@@ -299,7 +303,7 @@ class System(BaseServer):
         hosted JavaScript API and map viewer.
 
         Parameters:
-         :allowedOrigins: Comma-separated list of URLs of domains allowed to make
+         :allowed_origins: Comma-separated list of URLs of domains allowed to make
           requests. * can be used to denote all domains.
          :arcgis_com_map: URL of the map viewer application used for service
           previews. Defaults to the ArcGIS.com map viewer but could be used
@@ -314,19 +318,19 @@ class System(BaseServer):
          :jsapi_arcgis_css2:Additional CSS file associated with the ArcGIS
           API for JavaScript. Defaults to the online esri.css.
          :jsapi_arcgis_sdk: URL of the ArcGIS API for JavaScript help.
-         :serviceDirEnabled: Flag to enable/disable the HTML view of the
+         :service_dir_enabled: Flag to enable/disable the HTML view of the
           services directory.
         """
         params = {
             "f" : "json",
-            "allowedOrigins": allowedOrigins,
+            "allowedOrigins": allowed_origins,
             "arcgis.com.map" : arcgis_com_map,
             "arcgis.com.map.text" : arcgis_com_map_text,
             "jsapi.arcgis" : jsapi_arcgis,
             "jsapi.arcgis.css" : jsapi_arcgis_css,
             "jsapi.arcgis.css2" : jsapi_arcgis_css2,
             "jsapi.arcgis.sdk" : jsapi_arcgis_sdk,
-            "servicesDirEnabled" : serviceDirEnabled
+            "servicesDirEnabled" : service_dir_enabled
         }
         url = self._url + "/handlers/rest/servicesdirectory/edit"
         return self._con.post(path=url,
@@ -360,7 +364,9 @@ class System(BaseServer):
 
 ########################################################################
 class ConfigurationStore(BaseServer):
-    """"""
+    """
+    Configuration store helper
+    """
     _con = None
     _url = None
     _json = None
@@ -390,14 +396,14 @@ class ConfigurationStore(BaseServer):
         return self._type
     #----------------------------------------------------------------------
     @property
-    def connectionString(self):
+    def connection_string(self):
         """gets the connection string"""
         if self._connectionString is None:
             self.init()
         return self._connectionString
     #----------------------------------------------------------------------
     @property
-    def classValue(self):
+    def class_value(self):
         """gets the class value"""
         if self._class is None:
             self.init()
@@ -410,7 +416,7 @@ class ConfigurationStore(BaseServer):
             self.init()
         return self._status
     #----------------------------------------------------------------------
-    def recorver(self):
+    def recover(self):
         """
         If the shared configuration store for a site is unavailable, a site
         in read-only mode will operate in a degraded capacity that allows
@@ -428,10 +434,11 @@ class ConfigurationStore(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def edit(self, typeValue,
-             connectionString,
+    def edit(self,
+             type_value,
+             connection,
              move=True,
-             runAsync=False):
+             run_async=False):
         """
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
@@ -444,24 +451,24 @@ class ConfigurationStore(BaseServer):
         a shared path while creating a site and skip this step altogether.
 
         Inputs:
-           typeValue - Type of the configuration store. Values: FILESYSTEM
-           connectionString - A file path or connection URL to the physical
+           type_value - Type of the configuration store. Values: FILESYSTEM
+           connection - A file path or connection URL to the physical
             location of the store.
            move - default True - A boolean to indicate if you want to move
             the content of the current store to the new store.
-           runAsync - default False - Decides if this operation must run
+           run_async - default False - Decides if this operation must run
             asynchronously.
         """
         url = self._url + "/edit"
         params = {
             "f" : "json",
-            "type" : typeValue,
-            "connectionString" : connectionString,
+            "type" : type_value,
+            "connectionString" : connection,
             "move" : move,
-            "runAsync" : runAsync
+            "runAsync" : run_async
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
 ########################################################################
 class Jobs(BaseServer):
     """
@@ -481,7 +488,7 @@ class Jobs(BaseServer):
                  initialize=False):
         """Constructor"""
         super(Jobs, self).__init__(connection=connection,
-                                  url=url)
+                                   url=url)
         self._url = url
         self._con = connection
         if initialize:
@@ -494,20 +501,20 @@ class Jobs(BaseServer):
             self.init()
         return self._jobs
     #----------------------------------------------------------------------
-    def get_job(self, jobId):
+    def get_job(self, job_id):
         """
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.
 
         Inputs:
-           jobId - id of the job
+           job_id - id of the job
         """
-        url = self._url + "/%s" % jobId
+        url = self._url + "/%s" % job_id
         params = {
             "f" : "json"
         }
         return self._con.get(path=url,
-                            params=params)
+                             params=params)
 ########################################################################
 class ServerProperties(BaseServer):
     """
@@ -627,7 +634,7 @@ class ServerProperties(BaseServer):
             "properties" : properties
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
 ########################################################################
 class ServerDirectory(BaseServer):
     """
@@ -674,16 +681,16 @@ class ServerDirectory(BaseServer):
                  initialize=False):
         """Constructor"""
         super(ServerDirectory, self).__init__(connection=connection,
-                                      url=url)
+                                              url=url)
         self._url = url
         self._con = connection
         if initialize:
             self.init(connection)
     #----------------------------------------------------------------------
     def edit(self,
-             physicalPath,
-             cleanupMode,
-             maxFileAge,
+             physica_path,
+             cleanup_mode,
+             max_age,
              description):
         """
         The server directory's edit operation allows you to change the path
@@ -698,24 +705,24 @@ class ServerDirectory(BaseServer):
         network-accessible file share.
 
         Inputs:
-           physicalPath - The absolute physical path of the server
+           physica_path - The absolute physical path of the server
             directory.
-           cleanupMode - Defines if files in the server directory needs to
+           cleanup_mode - Defines if files in the server directory needs to
             be cleaned up. The default is NONE.
-           maxFileAge - Defines how long a file in the directory needs to
+           max_age - Defines how long a file in the directory needs to
             be kept before it is deleted.
            description - An optional description for the server directory
         """
         url = self._url + "/edit"
         params = {
             "f" : "json",
-            "physicalPath" : physicalPath,
-            "cleanupMode" : cleanupMode,
-            "maxFileAge" : maxFileAge,
+            "physicalPath" : physica_path,
+            "cleanupMode" : cleanup_mode,
+            "maxFileAge" : max_age,
             "description" : description
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def clean(self):
         """
@@ -732,7 +739,7 @@ class ServerDirectory(BaseServer):
             "f" : "json"
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
     #----------------------------------------------------------------------
     def recover_directory(self):
         """
@@ -763,4 +770,4 @@ class ServerDirectory(BaseServer):
             "f" : "json"
         }
         return self._con.post(path=url,
-                             postdata=params)
+                              postdata=params)
