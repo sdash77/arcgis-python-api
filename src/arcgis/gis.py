@@ -2293,7 +2293,7 @@ class ContentManager(object):
                        copyright_text = "",
                        wkid=102100,
                        create_params=None,
-                       service_type="imageService",
+                       service_type="featureService",
                        owner=None, folder=None, item_properties=None):
         """ Creates a service in the Portal
 
