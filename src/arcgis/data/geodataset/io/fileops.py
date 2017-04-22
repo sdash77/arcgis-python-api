@@ -23,6 +23,11 @@ try:
 except:
     # warn(message="ArcPy not found.")
     HASARCPY = False
+try:
+    import shapefile
+    HASPYSHP = True
+except:
+    HASPYSHP = False
 _log=logging.getLogger(__name__)
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
@@ -36,8 +41,8 @@ def from_featureclass(filename, **kwargs):
      sr: spatial reference object
      fields: list of fields to extract from the table
     """
+    from .. import SpatialDataFrame
     if HASARCPY:
-        from .. import SpatialDataFrame
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
         sr = kwargs.pop('sr', None)
@@ -80,6 +85,25 @@ def from_featureclass(filename, **kwargs):
             sdf.sr = sr
         else:
             sdf.sr = sdf.geometry[0].spatialReference
+        return sdf
+    elif HASARCPY == False and \
+         HASPYSHP == True and\
+         filename.lower().find('.shp') > -1:
+        geoms = []
+        records = []
+        reader = shapefile.Reader(filename)
+        fields = [field[0] for field in reader.fields if field[0] != 'DeletionFlag']
+        for r in reader.shapeRecords():
+            atr = dict(zip(fields, r.record))
+            geom = types.Geometry(r.shape.__geo_interface__)
+            atr['SHAPE'] = geom
+            records.append(atr)
+            del atr
+            del r
+            del geom
+        sdf = SpatialDataFrame(records)
+        sdf.set_geometry(col='SHAPE')
+        sdf.reset_index(inplace=True)
         return sdf
     return
 #--------------------------------------------------------------------------
