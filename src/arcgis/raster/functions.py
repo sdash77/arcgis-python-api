@@ -70,9 +70,9 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
         "rasterFunction": "ArgStatistics",
         "rasterFunctionArguments": {
             "ArgStatisticsType": in_stat_type,
-            "Raster": raster
+            "Rasters": raster
         },
-        "variableName": "Raster"
+        "variableName": "Rasters"
     }
 
     if min_value is not None:
@@ -85,7 +85,7 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(raster, template_dict, raster_ra)
+    return _clone_layer(raster, template_dict, raster_ra, variable_name='Rasters')
 
 def arg_max(rasters, undefined_class=None, astype=None):
     """
@@ -147,140 +147,140 @@ def duration(rasters, min_value=None, max_value=None, undefined_class=None, asty
                           undefined_class=undefined_class, astype=astype)
 
 
-def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
-    """
-    The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+# def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
+#     """
+#     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     layer1, raster1, raster_ra1 = _raster_input(raster1)
+#     layer2, raster2, raster_ra2 = _raster_input(raster2)
+#
+#     layer = layer1 if layer1 is not None else layer2
+#
+#     extent_types = {
+#         "FirstOf" : 0,
+#         "IntersectionOf" : 1,
+#         "UnionOf" : 2,
+#         "LastOf" : 3
+#     }
+#
+#     cellsize_types = {
+#         "FirstOf" : 0,
+#         "MinOf" : 1,
+#         "MaxOf" : 2,
+#         "MeanOf" : 3,
+#         "LastOf" : 4
+#     }
+#
+#     in_extent_type = extent_types[extent_type]
+#     in_cellsize_type = cellsize_types[cellsize_type]
+#
+#     template_dict = {
+#         "rasterFunction": "Arithmetic",
+#         "rasterFunctionArguments": {
+#             "OperationType": operation_type,
+#             "Raster": raster1,
+#             "Raster2": raster2
+#         }
+#     }
+#
+#     if in_extent_type is not None:
+#         template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+#     if in_cellsize_type is not None:
+#         template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
+#
+#     if astype is not None:
+#         template_dict["outputPixelType"] = astype.upper()
+#
+#     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
-    :return: the output raster with this function applied to it
-    """
-
-    layer1, raster1, raster_ra1 = _raster_input(raster1)
-    layer2, raster2, raster_ra2 = _raster_input(raster2)
-
-    layer = layer1 if layer1 is not None else layer2
-
-    extent_types = {
-        "FirstOf" : 0,
-        "IntersectionOf" : 1,
-        "UnionOf" : 2,
-        "LastOf" : 3
-    }
-
-    cellsize_types = {
-        "FirstOf" : 0,
-        "MinOf" : 1,
-        "MaxOf" : 2,
-        "MeanOf" : 3,
-        "LastOf" : 4
-    }
-
-    in_extent_type = extent_types[extent_type]
-    in_cellsize_type = cellsize_types[cellsize_type]
-
-    template_dict = {
-        "rasterFunction": "Arithmetic",
-        "rasterFunctionArguments": {
-            "OperationType": operation_type,
-            "Raster": raster1,
-            "Raster2": raster2
-        }
-    }
-
-    if in_extent_type is not None:
-        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
-    if in_cellsize_type is not None:
-        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
-
-    if astype is not None:
-        template_dict["outputPixelType"] = astype.upper()
-
-    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
-
-
-
-def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Adds two rasters or a raster and a scalar, and vice versa
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 1)
-
-def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Subtracts a raster or a scalar from another raster or a scaler
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 2)
-
-def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Multiplies two rasters or a raster and a scalar, and vice versa
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 3)
-
-def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Divides two rasters or a raster and a scalar, and vice versa
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 4)
-
-def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Adds two rasters or a raster and a scalar, and vice versa
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 5)
-
-def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    Adds two rasters or a raster and a scalar, and vice versa
-
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :return: the output raster with this function applied to it
-    """
-
-    return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
-
+#
+#
+# def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Adds two rasters or a raster and a scalar, and vice versa
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 1)
+#
+# def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Subtracts a raster or a scalar from another raster or a scaler
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 2)
+#
+# def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Multiplies two rasters or a raster and a scalar, and vice versa
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 3)
+#
+# def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Divides two rasters or a raster and a scalar, and vice versa
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 4)
+#
+# def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Adds two rasters or a raster and a scalar, and vice versa
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 5)
+#
+# def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#     """
+#     Adds two rasters or a raster and a scalar, and vice versa
+#
+#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+#     :return: the output raster with this function applied to it
+#     """
+#
+#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
+#
 
 def aspect(raster):
     """
@@ -556,15 +556,15 @@ def composite_band(rasters, astype=None):
     template_dict = {
         "rasterFunction": "CompositeBand",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Rasters": raster
         },
-        "variableName": "Raster"
+        "variableName": "Rasters"
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=None):
     """
@@ -897,7 +897,6 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
      ArcGIS Image Server to use this resource.
      At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
 
-    The local function works on single band or the first band of an image only, and the output is single band.
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -908,6 +907,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     :return: the output raster
 
     """
+    # redacted - The local function works on single band or the first band of an image only, and the output is single band.
     raster = rasters
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -934,9 +934,9 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     template_dict = {
         "rasterFunction": "Local",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Rasters": raster
         },
-        "variableName": "Raster"
+        "variableName": "Rasters"
     }
 
     if astype is not None:
@@ -949,15 +949,15 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
-def binary_plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Plus (addition,+) operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -970,10 +970,10 @@ def binary_plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     return local(rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def binary_minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The binary Minus (subtraction,-) operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -989,7 +989,7 @@ def binary_minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Times (multiplication,*) operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1005,7 +1005,7 @@ def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Square Root operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1021,7 +1021,7 @@ def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Power operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1037,7 +1037,7 @@ def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The acos operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1053,7 +1053,7 @@ def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The asin operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1069,7 +1069,7 @@ def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATan operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1085,7 +1085,7 @@ def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATanH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1101,7 +1101,7 @@ def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Abs operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1117,7 +1117,7 @@ def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseAnd operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1133,7 +1133,7 @@ def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseLeftShift operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1149,7 +1149,7 @@ def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseNot operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1165,7 +1165,7 @@ def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseOr operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1181,7 +1181,7 @@ def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
 def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseRightShift operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1197,7 +1197,7 @@ def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf",
 def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BitwiseXOr operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1213,7 +1213,7 @@ def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanAnd operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1229,7 +1229,7 @@ def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanNot operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1245,7 +1245,7 @@ def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanOr operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1261,7 +1261,7 @@ def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
 def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The BooleanXOr operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1277,7 +1277,7 @@ def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Cos operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1293,7 +1293,7 @@ def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The CosH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1309,7 +1309,7 @@ def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Divide operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1325,7 +1325,7 @@ def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
 def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The EqualTo operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1341,7 +1341,7 @@ def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1357,7 +1357,7 @@ def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp10 operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1373,7 +1373,7 @@ def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Exp2 operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1389,7 +1389,7 @@ def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The GreaterThan operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1405,7 +1405,7 @@ def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The GreaterThanEqual operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1421,7 +1421,7 @@ def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Int operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1437,7 +1437,7 @@ def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The IsNull operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1453,7 +1453,7 @@ def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Float operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1469,7 +1469,7 @@ def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The LessThan operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1485,7 +1485,7 @@ def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
 def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The LessThanEqual operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1501,7 +1501,7 @@ def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ast
 def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Ln operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1517,7 +1517,7 @@ def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Log10 operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1533,7 +1533,7 @@ def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Log2 operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1549,7 +1549,7 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Majority operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1565,7 +1565,7 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Max operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1581,7 +1581,7 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Mean operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1597,7 +1597,7 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Med operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1613,7 +1613,7 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Min operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1629,7 +1629,7 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Minority operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1645,7 +1645,7 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Mod operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1661,7 +1661,7 @@ def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Negate operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1677,7 +1677,7 @@ def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
 def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The NotEqual operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1693,7 +1693,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
 def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Range operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1709,7 +1709,7 @@ def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RoundDown operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1725,7 +1725,7 @@ def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
 def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RoundUp operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1741,7 +1741,7 @@ def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SetNull operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1757,7 +1757,7 @@ def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Sin operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1773,7 +1773,7 @@ def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SinH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1789,7 +1789,7 @@ def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Square operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1805,7 +1805,7 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
 def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Std operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1821,7 +1821,7 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Sum operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1837,7 +1837,7 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Tan operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1853,7 +1853,7 @@ def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The TanH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1869,7 +1869,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Variety operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1885,7 +1885,7 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ACosH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1901,7 +1901,7 @@ def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ASinH operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1917,7 +1917,7 @@ def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The ATan2 operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1933,7 +1933,7 @@ def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The FloatDivide operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1949,7 +1949,7 @@ def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The FloorDivide operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1965,7 +1965,7 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MajorityIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1981,7 +1981,7 @@ def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="First
 def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MaxIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -1997,7 +1997,7 @@ def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MeanIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2013,7 +2013,7 @@ def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf",
 def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MedIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2029,7 +2029,7 @@ def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MinIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2045,7 +2045,7 @@ def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The MinorityIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2061,7 +2061,7 @@ def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="First
 def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The RangeIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2077,7 +2077,7 @@ def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf"
 def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The StdIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2093,7 +2093,7 @@ def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The SumIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2109,7 +2109,7 @@ def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
 def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The VarietyIgnoreNoData operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2125,7 +2125,7 @@ def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstO
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The con operation
-    This function works on single band or the first band of an image only, and the output is single band.
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2892,12 +2892,12 @@ def apply(raster, fn_name, **kwargs):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None):
+def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
     function_chain_ra = copy.deepcopy(function_chain)
-    function_chain_ra['rasterFunctionArguments']['Raster'] = raster_ra
+    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
     if raster_ra2 is not None:
         function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
 
@@ -2931,9 +2931,16 @@ def _raster_input(raster):
         raster = _get_raster(raster)
     elif isinstance(raster, list):
         r0 = raster[0]
+        r1 = raster[1]
+        mix_and_match = False # mixing rasters from two image services
+        if r0._fn is None and r1._fn is None and r0._url != r1._url:
+            mix_and_match = True
         layer = r0
         raster_ra = [_get_raster_ra(r) for r in raster]
-        raster = [_get_raster(r) for r in raster]
+        if mix_and_match:
+            raster = [_get_raster_url(r) for r in raster]
+        else:
+            raster = [_get_raster(r) for r in raster]
     else: # maybe scalar for arithmetic functions, or a chained raster fn
         layer = None
         # raster = raster
@@ -2952,6 +2959,20 @@ def _get_raster(raster):
             raster = '$' + str(oids[0])
         else:
             raster = ['$' + str(x) for x in oids]
+    return raster
+
+def _get_raster_url(raster):
+    if raster._fn is not None:
+        raster = raster._fn
+    else:
+        raster = raster._url
+        # oids = raster.filtered_rasters()
+        # if oids is None:
+        #     raster = '$$'
+        # elif len(oids) == 1:
+        #     raster = '$' + str(oids[0])
+        # else:
+        #     raster = ['$' + str(x) for x in oids]
     return raster
 
 
