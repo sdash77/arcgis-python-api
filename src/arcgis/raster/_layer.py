@@ -16,6 +16,7 @@ class ImageryLayer(Layer):
         self._fnra = None
         self._filtered = False
         self._mosaic_rule = None
+        self._extent = self.properties.initialExtent
 
     @property
     def _lyr_json(self):
@@ -50,6 +51,14 @@ class ImageryLayer(Layer):
 
         return cls(item.url, item._gis)
 
+    @property
+    def extent(self):
+        """Area of interest. Used for displaying the imagery layer when queried"""
+        return self._extent
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = value
 
     def set_filter(self, where=None, geometry=None, time=None, lock_rasters=False, clear_filters=False):
         """
@@ -156,6 +165,7 @@ class ImageryLayer(Layer):
         newlyr._fn = self._fn
         newlyr._fnra = self._fnra
         newlyr._mosaic_rule = self._mosaic_rule
+        newlyr._extent = self._extent
 
         return newlyr
 
@@ -172,7 +182,7 @@ class ImageryLayer(Layer):
             return None # return '$$'
 
     def export_image(self,
-                     bbox,
+                     bbox=None,
                      image_sr=None,
                      bbox_sr=None,
                      size=None,
@@ -206,13 +216,15 @@ class ImageryLayer(Layer):
         exported image other than the image itself.
 
         Inputs:
-           bbox - The extent (bounding box) of the exported image. Unless
+           bbox - Optional. The extent (bounding box) of the exported image. Unless
                   the bbox_sr parameter has been specified, the bbox is
                   assumed to be in the spatial reference of the imagery
                   layer.
 
                   The bbox should be specified as an arcgis.geometry.Envelope object, it's json representation or as
                   a list or string with this format: '<xmin>, <ymin>, <xmax>, <ymax>'
+
+                  If omitted, the extent of the imagery layer is used
 
            image_sr - The spatial reference of the exported image.
                   The spatial reference can be specified as either a well-known ID, it's json representation or as an
@@ -314,13 +326,16 @@ class ImageryLayer(Layer):
             "size": "%s,%s" % (size[0], size[1]),
         }
 
-        if type(bbox) == str:
-            params['bbox'] = bbox
-        elif type(bbox) == list:
-            params['bbox'] = "%s,%s,%s,%s" % (bbox[0], bbox[1], bbox[2], bbox[3])
-        else: # json dict or Geometry Envelope object
-            bbox = "%s,%s,%s,%s" % (bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax'])
-            params['bbox'] = bbox
+        if bbox is not None:
+            if type(bbox) == str:
+                params['bbox'] = bbox
+            elif type(bbox) == list:
+                params['bbox'] = "%s,%s,%s,%s" % (bbox[0], bbox[1], bbox[2], bbox[3])
+            else: # json dict or Geometry Envelope object
+                bbox = "%s,%s,%s,%s" % (bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax'])
+                params['bbox'] = bbox
+        else:
+            params['bbox'] = self.properties.initialExtent
 
         if image_sr is not None:
             params['imageSR'] = image_sr
@@ -888,13 +903,6 @@ class ImageryLayer(Layer):
         return self._con.get(url, params, token=self._token)
 
 
-    def __sub__(self, other):
-        from arcgis.raster.functions import minus
-        return minus(self, other)
-
-    # def __rsub__(self, other):
-    #     from arcgis.raster.functions import minus
-    #     return minus(self, other)
 
     def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
            muldidef=None, op="first"):
@@ -1114,3 +1122,182 @@ class ImageryLayer(Layer):
                 return generate_raster(self._fnra, output_name, gis=g)
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
+
+
+    def _repr_jpeg_(self):
+        return self.export_image(bbox=self._extent, size=[1200, 450], export_format='jpeg', f='image')
+
+    def __sub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([self, other])
+
+    def __rsub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([other, self])
+
+    def __add__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([self, other])
+
+    def __radd__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([other, self])
+
+    def __mul__(self, other):
+        from arcgis.raster.functions import times
+        return times([self, other])
+
+    def __rmul__(self, other):
+        from arcgis.raster.functions import times
+        return times([other, self])
+
+    def __div__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([self, other])
+
+    def __rdiv__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([other, self])
+
+    def __pow__(self, other):
+        from arcgis.raster.functions import power
+        return power([self, other])
+
+    def __rpow__(self, other):
+        from arcgis.raster.functions import power
+        return power([other, self])
+
+    def __abs__(self):
+        from arcgis.raster.functions import abs
+        return abs([self])
+
+    def __lshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([self, other])
+
+    def __rlshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([other, self])
+
+    def __rshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([self, other])
+
+    def __rrshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([other, self])
+
+    def __floordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([self, other])
+
+    def __rfloordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([other, self])
+
+    def __truediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([self, other])
+
+    def __rtruediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([other, self])
+
+    def __mod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([self, other])
+
+    def __rmod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([other, self])
+
+    def __neg__(self):
+        from arcgis.raster.functions import negate
+        return negate([self])
+
+    def __invert__(self):
+        from arcgis.raster.functions import boolean_not
+        return boolean_not(self)
+
+    def __and__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([self, other])
+
+    def __rand__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([other, self])
+
+    def __xor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([self, other])
+
+    def __rxor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([other, self])
+
+    def __or__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([self, other])
+
+    def __ror__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([other, self])
+
+        # Raster.Raster.__pos__ = unaryPos         # +v
+# Raster.Raster.__abs__ = Functions.Abs    # abs(v)
+#
+# Raster.Raster.__add__  = Functions.Plus  # +
+# Raster.Raster.__radd__ = lambda self, lhs: Functions.Plus(lhs, self)
+# Raster.Raster.__sub__  = Functions.Minus # -
+# # TODO Huh?
+# Raster.Raster.__rsub__ = Functions.Minus
+# # Raster.Raster.__rsub__ = lambda self, lhs: Functions.Minus(lhs, self)
+# Raster.Raster.__mul__  = Functions.Times # *
+# Raster.Raster.__rmul__ = lambda self, lhs: Functions.Times(lhs, self)
+# Raster.Raster.__pow__  = Functions.Power # **
+# Raster.Raster.__rpow__ = lambda self, lhs: Functions.Power(lhs, self)
+#
+# Raster.Raster.__lshift__  = Functions.BitwiseLeftShift  # <<
+# Raster.Raster.__rlshift__ = lambda self, lhs: Functions.BitwiseLeftShift(lhs, self)
+# Raster.Raster.__rshift__  = Functions.BitwiseRightShift # >>
+# Raster.Raster.__rrshift__ = lambda self, lhs: Functions.BitwiseRightShift(lhs, self)
+#
+# Raster.Raster.__div__       = Functions.Divide     # /
+# Raster.Raster.__rdiv__      = lambda self, lhs: Functions.Divide(lhs, self)
+
+# Raster.Raster.__floordiv__  = Functions.FloorDivide # //
+# Raster.Raster.__rfloordiv__ = lambda self, lhs: Functions.FloorDivide(lhs, self)
+
+# Raster.Raster.__truediv__   = Functions.FloatDivide # /
+# Raster.Raster.__rtruediv__  = lambda self, lhs: Functions.FloatDivide(lhs, self)
+
+
+
+# Raster.Raster.__mod__       = Functions.Mod        # %
+# Raster.Raster.__rmod__      = lambda self, lhs: Functions.Mod(lhs, self)
+# Raster.Raster.__divmod__    = returnNotImplemented # divmod()
+# Raster.Raster.__rdivmod__   = returnNotImplemented
+#
+# # The Python bitwise operators are used for Raster boolean operators.
+# Raster.Raster.__invert__ = Functions.BooleanNot # ~
+# Raster.Raster.__and__    = Functions.BooleanAnd # &
+# Raster.Raster.__rand__   = lambda self, lhs: Functions.BooleanAnd(lhs, self)
+# Raster.Raster.__xor__    = Functions.BooleanXOr # ^
+# Raster.Raster.__rxor__   = lambda self, lhs: Functions.BooleanXOr(lhs, self)
+# Raster.Raster.__or__     = Functions.BooleanOr  # |
+# Raster.Raster.__ror__    = lambda self, lhs: Functions.BooleanOr(lhs, self)
+#
+# # Python will use the non-augmented versions of these.
+# Raster.Raster.__iadd__      = returnNotImplemented # +=
+# Raster.Raster.__isub__      = returnNotImplemented # -=
+# Raster.Raster.__imul__      = returnNotImplemented # *=
+# Raster.Raster.__idiv__      = returnNotImplemented # /=
+# Raster.Raster.__itruediv__  = returnNotImplemented # /=
+# Raster.Raster.__ifloordiv__ = returnNotImplemented # //=
+# Raster.Raster.__imod__      = returnNotImplemented # %=
+# Raster.Raster.__ipow__      = returnNotImplemented # **=
+# Raster.Raster.__ilshift__   = returnNotImplemented # <<=
+# Raster.Raster.__irshift__   = returnNotImplemented # >>=
+# Raster.Raster.__iand__      = returnNotImplemented # &=
+# Raster.Raster.__ixor__      = returnNotImplemented # ^=
+# Raster.Raster.__ior__       = returnNotImplemented # |=
