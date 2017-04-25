@@ -4033,7 +4033,7 @@ class Item(dict):
             self._hydrate() # refresh
             return resp
 
-    def share(self, everyone=False, org=False, groups=None):
+    def share(self, everyone=False, org=False, groups=None, allow_members_to_edit=False):
         """ Shares an item with the specified list of groups
 
         ================  ========================================================
@@ -4046,6 +4046,8 @@ class Item(dict):
         groups            optional list of group names as strings, or, list of
                             arcgis.gis.Group objects
                           You can also pass a comma-separated list of group IDs
+        ----------------  --------------------------------------------------------
+        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
         ================  ========================================================
 
         :return:
@@ -4079,9 +4081,9 @@ class Item(dict):
             group_ids = groups
 
         if self.access == 'public' and not everyone and not org:
-            return self._portal.share_item_as_group_admin(self.itemid, group_ids)
+            return self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
         else:
-            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids)
+            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
 
     def unshare(self, groups):
         """ Stops sharing the item with the specified list of groups
