@@ -626,7 +626,7 @@ class Portal(object):
         if resp:
             return resp
 
-    def share_item_as_group_admin(self, item_id, groups=""):
+    def share_item_as_group_admin(self, item_id, groups="", allow_members_to_edit=False):
         """ Shares public item with the specified list of groups belonging to caller
 
         ================  ========================================================
@@ -636,6 +636,8 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         groups            optional string,
                           comma-separated list of group IDs with which the item will be shared.
+        ----------------  --------------------------------------------------------
+        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
         ================  ========================================================
 
         :return:
@@ -644,12 +646,12 @@ class Portal(object):
 
 
         """
-        return self.con.post('content/items/' + item_id, self._postdata())
         path = 'content/items/' + item_id + '/share'
         postdata = self._postdata()
         postdata['groups'] = groups
         resp = self.con.post(path, postdata)
-
+        if allow_members_to_edit:
+            postdata['confirmItemControl'] = True
         if resp:
             return resp
 
@@ -671,16 +673,14 @@ class Portal(object):
 
 
         """
-        return self.con.post('content/items/' + item_id, self._postdata())
         path = 'content/items/' + item_id + '/unshare'
         postdata = self._postdata()
         postdata['groups'] = groups
         resp = self.con.post(path, postdata)
-
         if resp:
             return resp
 
-    def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups=""):
+    def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups="", allow_members_to_edit=False):
         """ Shares an item with the specified list of groups
 
         ================  ========================================================
@@ -698,6 +698,8 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         groups            optional string,
                           comma-separated list of group IDs with which the item will be shared.
+        ----------------  --------------------------------------------------------
+        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
         ================  ========================================================
 
         :return:
@@ -715,6 +717,8 @@ class Portal(object):
         postdata['everyone'] = everyone
         postdata['org'] = org
         postdata['groups'] = groups
+        if allow_members_to_edit:
+            postdata['confirmItemControl'] = True
         resp = self.con.post(path, postdata)
 
         if resp:
