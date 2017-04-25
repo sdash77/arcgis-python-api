@@ -21,7 +21,6 @@ try:
     from arcpy import da
     HASARCPY = True
 except:
-    # warn(message="ArcPy not found.")
     HASARCPY = False
 try:
     import shapefile
@@ -29,6 +28,80 @@ try:
 except:
     HASPYSHP = False
 _log=logging.getLogger(__name__)
+
+def _pyshp_to_shapefile(df, out_path, out_name):
+    """
+    Saves a SpatialDataFrame to a Shapefile using pyshp
+
+    :Parameters:
+     :df: spatail dataframe
+     :out_path: folder location to save the data
+     :out_name: name of the shapefile
+    :Output:
+     path to the shapefile or None if pyshp isn't installed or
+     spatial dataframe does not have a geometry column.
+    """
+    from ....geometry.types import Geometry
+    if HASPYSHP:
+        GEOMTYPELOOKUP = {
+            "Polygon" : shapefile.POLYGON,
+            "Point" : shapefile.POINT,
+            "Polyline" : shapefile.POLYLINE,
+            'null' : shapefile.NULL
+        }
+        if os.path.isdir(out_path) == False:
+            os.makedirs(out_path)
+        out_fc = os.path.join(out_path, out_name)
+        if out_fc.lower().endswith('.shp') == False:
+            out_fc += ".shp"
+        geom_field = df.geometry.name
+        if geom_field is None:
+            return
+        geom_type = "null"
+        idx = df[geom_field].first_valid_index()
+        if idx > -1:
+            geom_type = df.loc[idx][geom_field].type
+        shpfile = shapefile.Writer(GEOMTYPELOOKUP[geom_type])
+        shpfile.autoBalance = 1
+        for c in df.columns:
+            idx = df[c].first_valid_index()
+            if idx > -1:
+                if isinstance(df[c].loc[idx],
+                              Geometry):
+                    geom_field = (c, "GEOMETRY")
+                else:
+                    if isinstance(df[c].loc[idx], six.string_types):
+                        shpfile.field(name=c, size=255)
+                    elif isinstance(df[c].loc[idx], six.integer_types):
+                        shpfile.field(name=c, fieldType="N", size=5)
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                        shpfile.field(name=c, fieldType="N", size=10)
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                        shpfile.field(name=c, fieldType="F", size=19, decimal=11)
+                    elif isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64)):
+                        shpfile.field(name=c, fieldType="D", size=8)
+                    elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                        shpfile.field(name=c, fieldType="L", size=1)
+            del c
+            del idx
+        for idx, row in df.iterrows():
+            geom = row[df.geometry.name]
+            if geom.type == "Polygon":
+                shpfile.poly(geom['rings'])
+            elif geom.type == "Polyline":
+                shpfile.line(geom['path'])
+            elif geom.type == "Point":
+                shpfile.point(x=geom.x, y=geom.y)
+            else:
+                shpfile.null()
+            shpfile.record(*row.tolist()[:-1])
+            del idx
+            del row
+            del geom
+        shpfile.save(out_fc)
+        del shpfile
+        return out_fc
+    return None
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
@@ -125,137 +198,143 @@ def to_featureclass(df, out_name, out_location=None,
     Returns:
      path to the feature class
     """
-    cols = []
-    dt_idx = []
-    invalid_rows = []
-    idx = 0
-    max_length = None
-    if out_location:
-        if os.path.isdir(out_location) == False and \
-           out_location.lower().endswith('.gdb'):
-            out_location = arcpy.CreateFileGDB_management(out_folder_path=os.path.dirname(out_location),
-                                                         out_name=os.path.basename(out_location))[0]
-        elif os.path.isdir(out_location) == False and \
-             out_name.lower().endswith('.shp'):
-            os.makedirs(out_location)
-        elif os.path.isfile(out_location) == False and \
-             out_location.lower().endswith('.sde'):
-            raise ValueError("The sde connection file does not exist")
-    else:
-        if out_name.lower().endswith('.shp'):
-            out_location = tempfile.gettempdir()
-        elif HASARCPY:
-            out_location = arcpy.env.scratchGDB
+    if HASARCPY:
+        cols = []
+        dt_idx = []
+        invalid_rows = []
+        idx = 0
+        max_length = None
+        if out_location:
+            if os.path.isdir(out_location) == False and \
+               out_location.lower().endswith('.gdb'):
+                out_location = arcpy.CreateFileGDB_management(out_folder_path=os.path.dirname(out_location),
+                                                             out_name=os.path.basename(out_location))[0]
+            elif os.path.isdir(out_location) == False and \
+                 out_name.lower().endswith('.shp'):
+                os.makedirs(out_location)
+            elif os.path.isfile(out_location) == False and \
+                 out_location.lower().endswith('.sde'):
+                raise ValueError("The sde connection file does not exist")
         else:
-            out_location = tempfile.gettempdir()
-            out_name = out_name + ".shp"
-    fc = os.path.join(out_location, out_name)
-    df = df.copy() # create a copy so we don't modify the source data.
-    if out_name.lower().endswith('.shp'):
-        max_length = 10
-    for col in df.columns:
-        if col.lower() != 'shape':
-            if df[col].dtype.type in NUMERIC_TYPES:
-                df[col] = df[col].fillna(0)
-            elif df[col].dtype.type in DATETIME_TYPES:
-                dt_idx.append(idx)
+            if out_name.lower().endswith('.shp'):
+                out_location = tempfile.gettempdir()
+            elif HASARCPY:
+                out_location = arcpy.env.scratchGDB
             else:
-                df.loc[df[col].isnull(), col] = ""
-            idx += 1
-            col = sanitize_field_name(s=col,
-                                      length=max_length)
-        cols.append(col)
-        del col
-    df.columns = cols
+                out_location = tempfile.gettempdir()
+                out_name = out_name + ".shp"
+        fc = os.path.join(out_location, out_name)
+        df = df.copy() # create a copy so we don't modify the source data.
+        if out_name.lower().endswith('.shp'):
+            max_length = 10
+        for col in df.columns:
+            if col.lower() != 'shape':
+                if df[col].dtype.type in NUMERIC_TYPES:
+                    df[col] = df[col].fillna(0)
+                elif df[col].dtype.type in DATETIME_TYPES:
+                    dt_idx.append(idx)
+                else:
+                    df.loc[df[col].isnull(), col] = ""
+                idx += 1
+                col = sanitize_field_name(s=col,
+                                          length=max_length)
+            cols.append(col)
+            del col
+        df.columns = cols
 
-    if arcpy.Exists(fc) and \
-       overwrite:
-        arcpy.Delete_management(fc)
-    if arcpy.Exists(fc) ==  False:
-        sr = None
-        if df.sr is None:
-            sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
-        else:
-            sr = df.sr.as_arcpy
-        fc = arcpy.CreateFeatureclass_management(out_path=out_location,
-                                                 out_name=out_name,
-                                                 geometry_type=df.geometry_type.upper(),
-                                                 spatial_reference=sr)[0]
-    desc = arcpy.Describe(fc)
-    oidField = desc.oidFieldName
-    col_insert = copy.copy(df.columns).tolist()
-    col_insert = [f for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid', desc.oidFieldName.lower()]]
-    df_cols = col_insert.copy()
-    lower_col_names = [f.lower() for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid']]
-    idx_shp = None
+        if arcpy.Exists(fc) and \
+           overwrite:
+            arcpy.Delete_management(fc)
+        if arcpy.Exists(fc) ==  False:
+            sr = None
+            if df.sr is None:
+                sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
+            else:
+                sr = df.sr.as_arcpy
+            fc = arcpy.CreateFeatureclass_management(out_path=out_location,
+                                                     out_name=out_name,
+                                                     geometry_type=df.geometry_type.upper(),
+                                                     spatial_reference=sr)[0]
+        desc = arcpy.Describe(fc)
+        oidField = desc.oidFieldName
+        col_insert = copy.copy(df.columns).tolist()
+        col_insert = [f for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid', desc.oidFieldName.lower()]]
+        df_cols = col_insert.copy()
+        lower_col_names = [f.lower() for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid']]
+        idx_shp = None
 
-    if oidField.lower() in lower_col_names:
-        val = col_insert.pop(lower_col_names.index(oidField.lower()))
-        del df[val]
-        col_insert = copy.copy(df.columns).tolist()
-        lower_col_names = [f.lower() for f in col_insert]
-    if hasattr(desc, "areaFieldName") and \
-       desc.areaFieldName.lower() in lower_col_names:
-        val = col_insert.pop(lower_col_names.index(desc.areaFieldName.lower()))
-        del df[val]
-        col_insert = copy.copy(df.columns).tolist()
-        lower_col_names = [f.lower() for f in col_insert]
-    elif 'shape_area' in lower_col_names:
-        val = col_insert.pop(lower_col_names.index('shape_area'))
-        del df[val]
-        col_insert = copy.copy(df.columns).tolist()
-        lower_col_names = [f.lower() for f in col_insert]
-    if hasattr(desc, "lengthFieldName") and \
-       desc.lengthFieldName.lower() in lower_col_names:
-        val = col_insert.pop(lower_col_names.index(desc.lengthFieldName.lower()))
-        del df[val]
-        col_insert = copy.copy(df.columns).tolist()
-        lower_col_names = [f.lower() for f in col_insert]
-    elif 'shape_length' in lower_col_names:
-        val = col_insert.pop(lower_col_names.index('shape_length'))
-        del df[val]
-        col_insert = copy.copy(df.columns).tolist()
-        lower_col_names = [f.lower() for f in col_insert]
-    if "SHAPE" in df.columns:
-        idx_shp = col_insert.index("SHAPE")
-        col_insert[idx_shp] = "SHAPE@"
-    existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
-    for col in col_insert:
-        if col.lower().find('shape') == -1 and \
-           col.lower not in existing_fields:
-            arcpy.AddField_management(in_table=fc, field_name=col,
-                                      field_type=_infer_type(df, col))
-    icur = da.InsertCursor(fc, col_insert)
-    for index, row in df[df_cols].iterrows():
-        if len(dt_idx) > 0:
-            row = row.tolist()
-            for i in dt_idx:
-                row[i] = row[i].to_pydatetime()
-                del i
-            try:
-                if idx_shp:
-                    row[idx_shp] = row[idx_shp].as_arcpy
-                icur.insertRow(row)
-            except:
-                invalid_rows.append(index)
-                if skip_invalid == False:
-                    raise Exception("Invalid row detected at index: %s" % index)
-        else:
-            try:
+        if oidField.lower() in lower_col_names:
+            val = col_insert.pop(lower_col_names.index(oidField.lower()))
+            del df[val]
+            col_insert = copy.copy(df.columns).tolist()
+            lower_col_names = [f.lower() for f in col_insert]
+        if hasattr(desc, "areaFieldName") and \
+           desc.areaFieldName.lower() in lower_col_names:
+            val = col_insert.pop(lower_col_names.index(desc.areaFieldName.lower()))
+            del df[val]
+            col_insert = copy.copy(df.columns).tolist()
+            lower_col_names = [f.lower() for f in col_insert]
+        elif 'shape_area' in lower_col_names:
+            val = col_insert.pop(lower_col_names.index('shape_area'))
+            del df[val]
+            col_insert = copy.copy(df.columns).tolist()
+            lower_col_names = [f.lower() for f in col_insert]
+        if hasattr(desc, "lengthFieldName") and \
+           desc.lengthFieldName.lower() in lower_col_names:
+            val = col_insert.pop(lower_col_names.index(desc.lengthFieldName.lower()))
+            del df[val]
+            col_insert = copy.copy(df.columns).tolist()
+            lower_col_names = [f.lower() for f in col_insert]
+        elif 'shape_length' in lower_col_names:
+            val = col_insert.pop(lower_col_names.index('shape_length'))
+            del df[val]
+            col_insert = copy.copy(df.columns).tolist()
+            lower_col_names = [f.lower() for f in col_insert]
+        if "SHAPE" in df.columns:
+            idx_shp = col_insert.index("SHAPE")
+            col_insert[idx_shp] = "SHAPE@"
+        existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
+        for col in col_insert:
+            if col.lower().find('shape') == -1 and \
+               col.lower not in existing_fields:
+                arcpy.AddField_management(in_table=fc, field_name=col,
+                                          field_type=_infer_type(df, col))
+        icur = da.InsertCursor(fc, col_insert)
+        for index, row in df[df_cols].iterrows():
+            if len(dt_idx) > 0:
                 row = row.tolist()
-                if isinstance(idx_shp, int):
-                    row[idx_shp] = row[idx_shp].as_arcpy
-                icur.insertRow(row)
-            except:
-                invalid_rows.append(index)
-                if skip_invalid == False:
-                    raise Exception("Invalid row detected at index: %s" % index)
+                for i in dt_idx:
+                    row[i] = row[i].to_pydatetime()
+                    del i
+                try:
+                    if idx_shp:
+                        row[idx_shp] = row[idx_shp].as_arcpy
+                    icur.insertRow(row)
+                except:
+                    invalid_rows.append(index)
+                    if skip_invalid == False:
+                        raise Exception("Invalid row detected at index: %s" % index)
+            else:
+                try:
+                    row = row.tolist()
+                    if isinstance(idx_shp, int):
+                        row[idx_shp] = row[idx_shp].as_arcpy
+                    icur.insertRow(row)
+                except:
+                    invalid_rows.append(index)
+                    if skip_invalid == False:
+                        raise Exception("Invalid row detected at index: %s" % index)
 
-        del row
-    del icur
-    if len(invalid_rows) > 0:
-        t = ",".join([str(r) for r in invalid_rows])
-        _log.warning('The following rows could not be written to the table: %s' % t)
+            del row
+        del icur
+        if len(invalid_rows) > 0:
+            t = ",".join([str(r) for r in invalid_rows])
+            _log.warning('The following rows could not be written to the table: %s' % t)
+    elif HASARCPY == False and \
+         HASPYSHP:
+        return _pyshp_to_shapefile(df=df,
+                                   out_path=out_location,
+                                   out_name=out_name)
     return fc
 #--------------------------------------------------------------------------
 def _infer_type(df, col):
