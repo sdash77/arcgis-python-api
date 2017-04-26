@@ -986,7 +986,7 @@ class ImageryLayer(Layer):
         * The mosaic method, e.g. how the selected rasters are ordered.
         * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
-        Set by calling the mosaic_by or fltr methods on the layer
+        Set by calling the mosaic_by or filter_by methods on the layer
         """
         return self._mosaic_rule
 
