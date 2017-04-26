@@ -162,10 +162,16 @@ class ImageryLayer(Layer):
         newlyr._lazy_properties = self.properties
         newlyr._hydrated = True
         newlyr._lazy_token = self._token
+
         newlyr._fn = self._fn
         newlyr._fnra = self._fnra
         newlyr._mosaic_rule = self._mosaic_rule
         newlyr._extent = self._extent
+
+        # newlyr._where_clause = self._where_clause
+        # newlyr._spatial_filter = self._spatial_filter
+        # newlyr._temporal_filter = self._temporal_filter
+        # newlyr._filtered = self._filtered
 
         return newlyr
 
@@ -439,18 +445,18 @@ class ImageryLayer(Layer):
         params["f"] = f
 
         if f == "json":
-            return self._con.get(url, params, token=self._token)
+            return self._con.post(url, params, token=self._token)
         elif f == "image":
             if save_folder is not None and save_file is not None:
-                return self._con.get(url, params,
+                return self._con.post(url, params,
                                    out_folder=save_folder, try_json=False,
                                    file_name=save_file, token=self._token)
             else:
-                return self._con.get(url, params,
+                return self._con.post(url, params,
                                      try_json=False, force_bytes=True,
                                      token=self._token)
         elif f == "kmz":
-            return self._con.get(url, params,
+            return self._con.post(url, params,
                                  out_folder=save_folder,
                                  file_name=save_file, token=self._token)
         else:

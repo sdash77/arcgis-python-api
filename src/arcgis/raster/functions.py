@@ -2920,9 +2920,11 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
+    newlyr._extent = layer._extent
 
     return newlyr
-    
+
+
 
 def _raster_input(raster):
     if isinstance(raster, ImageryLayer):
