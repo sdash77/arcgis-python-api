@@ -113,7 +113,7 @@ class UsageReports(BaseServer):
     def create_usage_report(self,
                             reportname,
                             queries,
-                            metadata,
+                            metadata=None,
                             since="LAST_DAY",
                             from_value=None,
                             to_value=None,
@@ -215,30 +215,130 @@ class UsageReports(BaseServer):
            since="LAST_DAY"
         )
         """
+        """
+        {
+  "reportname": "Max response times for the last 7 days",
+  "since": "LAST_WEEK",
+  "queries": [{
+    "resourceURIs": ["services/"],
+    "metrics": ["RequestMaxResponseTime"]
+  }],
+  "metadata": {
+    "temp": false,
+    "title": "Max response times for the last 7 days",
+    "managerReport": true,
+    "styles": {"services/": {"color": "#382DF5"}}
+  }
+}
+        """
         url = self._url + "/add"
-
+        temp = False
         params = {
-            "f" : "json",
+
             "reportname" : reportname,
             "since" : since,
-
-            "metadata" : metadata
         }
+        if  not metadata:
+            params['metadata'] = {
+                "temp" : temp,
+                "title" : reportname,
+                "managerReport" : False,
+
+            }
+        else:
+            params['metadata'] = metadata
         if isinstance(queries, dict):
             params["queries"] = [queries]
         elif isinstance(queries, list):
             params["queries"] = queries
-        if aggregation_interval is not None:
+        if aggregation_interval:
             params['aggregationInterval'] = aggregation_interval
         if since.lower() == "custom":
             params['to'] = to_value
             params['from'] = from_value
+        p = {"f" : "json",'usagereport' : params}
         res = self._con.post(path=url,
-                             postdata=params)
+                             postdata=p)
         #  Refresh the metrics object
         self.init()
+        for report in self.reports:
+            if report.reportname.lower() == reportname.lower():
+                return report
         return res
+    #----------------------------------------------------------------------
+    def quick_report(self,
+                     since="LAST_WEEK",
+                     queries="services/",
+                     metrics="RequestsFailed"):
+        """
+        The operation quick_report generates an on the fly usage report for
+        a service, services, or folder.
 
+        :Parameters:
+           since - the time duration of the report. The supported values
+              are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
+              LAST_DAY represents a time range spanning the previous 24
+                 hours.
+              LAST_WEEK represents a time range spanning the previous 7
+                 days.
+              LAST_MONTH represents a time range spanning the previous 30
+                 days.
+              LAST_YEAR represents a time range spanning the previous 365
+                 days.
+              CUSTOM represents a time range that is specified using the
+                 from and to parameters.
+           queries - A list of queries for which to generate the report.
+              You need to specify the list as an array of JSON objects
+              representing the queries. Each query specifies the list of
+              metrics to be queries for a given set of resourceURIs.
+              The queries parameter has the following sub-parameters:
+                 resourceURIs - Comma separated list of resource URIs for
+                 which to report metrics. Specifies services or folders
+                 for which to gather metrics.
+                    The resourceURI is formatted as below:
+                       services/ - Entire Site
+                       services/Folder/  - Folder within a Site. Reports
+                         metrics aggregated across all services within that
+                         Folder and Sub-Folders.
+                       services/Folder/ServiceName.ServiceType - Service in
+                         a specified folder, for example:
+                         services/Map_bv_999.MapServer.
+                       services/ServiceName.ServiceType - Service in the
+                         root folder, for example: Map_bv_999.MapServer.
+           metrics - Comma separated list of metrics to be reported.
+                   Supported metrics are:
+                    RequestCount - the number of requests received
+                    RequestsFailed - the number of requests that failed
+                    RequestsTimedOut - the number of requests that timed out
+                    RequestMaxResponseTime - the maximum response time
+                    RequestAvgResponseTime - the average response time
+                    ServiceActiveInstances - the maximum number of active
+                    (running) service instances sampled at 1 minute
+                    intervals, for a specified service
+         :Output:
+          Python dictionary of data on a successful query.
+        """
+        from uuid import uuid4
+        queries = {
+            "resourceURIs": queries.split(','),
+            "metrics" : metrics.split(',')
+        }
+        reportname = uuid4().hex
+        metadata = {
+                "temp" : True,
+                "title" : reportname,
+                "managerReport" : False,
+
+            }
+        res = self.create_usage_report(reportname=reportname,
+                                       queries=queries,
+                                       since=since,
+                                       metadata=metadata)
+        if isinstance(res, UsageReport):
+            data = res.query()
+            res.delete()
+            return data
+        return res
 ########################################################################
 class UsageReport(BaseServer):
     """
