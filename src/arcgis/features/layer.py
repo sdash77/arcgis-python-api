@@ -177,11 +177,11 @@ class FeatureLayer(Layer):
               return_centroid=False,
               return_all_records=True,
               **kwargs):
-        """ queries a feature service based on a sql statement
+        """ queries a feature layer based on a sql statement
             Inputs:
                 where - the selection sql statement
                 out_fields - the attribute fields to return
-                objectIds -  The object IDs of this layer or table to be
+                object_ids -  The object IDs of this layer or table to be
                             queried.
                 distance - The buffer distance for the input geometries.
                           The distance unit is specified by units. For
@@ -199,7 +199,7 @@ class FeatureLayer(Layer):
                         Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
                         esriSRUnit_Foot | esriSRUnit_Kilometer |
                         esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
-                timeFilter - a TimeFilter object where either the start time
+                time_filter - a TimeFilter object where either the start time
                             or start and end time are defined to limit the
                             search results for a given time.  The values in
                             the timeFilter should be as UTC timestampes in

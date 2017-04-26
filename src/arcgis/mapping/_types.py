@@ -302,7 +302,10 @@ class MapImageLayer(Layer):
         tables = []
 
         for lyr in self.properties.layers:
-            lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis,
+            if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
+                lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
+            else:
+                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis,
                                                arcgis.features.FeatureLayerCollection(self.url, self._gis))
             layers.append(lyr)
 
