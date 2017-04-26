@@ -661,15 +661,17 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
+
+        import sys
+        if sys.version_info[0] == 2:
+            access = 'wb+'
+            kwargs = {}
+        else:
+            access = 'wt+'
+            kwargs = {'newline': ''}
+
         if file_extension == ".csv":
             res = os.path.join(save_location, out_name)
-            import sys
-            if sys.version_info[0] == 2:
-                access = 'wb+'
-                kwargs = {}
-            else:
-                access = 'wt+'
-                kwargs = {'newline': ''}
             with open(res, access, **kwargs) as csv_file:
                 import csv
                 csv_writer = csv.writer(csv_file)
@@ -690,7 +692,7 @@ class FeatureSet(object):
             del csv_file
         elif file_extension == ".json":
             res = os.path.join(save_location, out_name)
-            with open(res, 'wb') as writer:
+            with open(res, access) as writer:
 
                 json.dump(self.value, writer, sort_keys=True, indent=4, ensure_ascii=False)
                 writer.flush()
