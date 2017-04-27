@@ -16,7 +16,8 @@ class ImageryLayer(Layer):
         self._fnra = None
         self._filtered = False
         self._mosaic_rule = None
-        self._extent = self.properties.initialExtent
+        self._extent = None
+        # self._extent = self.properties.initialExtent
 
     @property
     def _lyr_json(self):
@@ -54,6 +55,9 @@ class ImageryLayer(Layer):
     @property
     def extent(self):
         """Area of interest. Used for displaying the imagery layer when queried"""
+        if self._extent is None:
+            self._extent = self.properties.initialExtent
+
         return self._extent
 
     @extent.setter
@@ -341,7 +345,7 @@ class ImageryLayer(Layer):
                 bbox = "%s,%s,%s,%s" % (bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax'])
                 params['bbox'] = bbox
         else:
-            params['bbox'] = self.properties.initialExtent
+            params['bbox'] = self.extent # properties.initialExtent
 
         if image_sr is not None:
             params['imageSR'] = image_sr
