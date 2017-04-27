@@ -168,11 +168,13 @@ def from_featureclass(filename, **kwargs):
         fields = [field[0] for field in reader.fields if field[0] != 'DeletionFlag']
         for r in reader.shapeRecords():
             atr = dict(zip(fields, r.record))
-            geom = types.Geometry(r.shape.__geo_interface__)
+            g = r.shape.__geo_interface__
+            g = _geojson_to_esrijson(g)
+            geom = types.Geometry(g)
             atr['SHAPE'] = geom
             records.append(atr)
             del atr
-            del r
+            del r, g
             del geom
         sdf = SpatialDataFrame(records)
         sdf.set_geometry(col='SHAPE')
@@ -361,4 +363,62 @@ def _infer_type(df, col):
         elif isinstance(val, datetime):
             return "DATE"
     return "TEXT"
-
+#--------------------------------------------------------------------------
+def _geojson_to_esrijson(geojson):
+    """converts the geojson spec to esri json spec"""
+    if geojson['type'] in ['Polygon', 'MultiPolygon']:
+        return {
+            'rings' : geojson['coordinates']
+        }
+    elif geojson['type'] == "Point":
+        return {
+            "x" : geojson['coordinates'][0],
+            "y" : geojson['coordinates'][1]
+        }
+    elif geojson['type'] == "MultiPoint":
+        return {
+            "points" : geojson['coordinates'],
+        }
+    elif geojson['type'] in ['LineString', 'MultiLineString']:
+        return {
+            "paths" : geojson['coordinates'],
+        }
+    return geojson
+#--------------------------------------------------------------------------
+def _geometry_to_geojson(geom):
+    """converts the esri json spec to geojson"""
+    if 'rings' in geom and \
+       len(geom['rings']) == 1:
+        return {
+            'type' : "Polygon",
+            "coordinates" : geom['rings']
+        }
+    elif 'rings' in geom and \
+       len(geom['rings']) > 1:
+        return {
+            'type' : "MultiPolygon",
+            "coordinates" : geom['rings']
+        }
+    elif geom['type'] == "Point":
+        return {
+            "coordinates" : [geom['x'], geom['y']],
+            "type" : "Point"
+        }
+    elif geom['type'] == "MultiPoint":
+        return {
+            "coordinates" : geom['points'],
+            'type' : "MultiPoint"
+        }
+    elif geom['type'].lower() == "polyline" and \
+         len(geom['paths']) <= 1:
+        return {
+            "coordinates" : geom['paths'],
+            'type' : "LineString"
+        }
+    elif geom['type'].lower() == "polyline" and \
+         len(geom['paths']) > 1:
+        return {
+            "coordinates" : geom['paths'],
+            'type' : "MultiLineString"
+        }
+    return geojson
