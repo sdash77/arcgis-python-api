@@ -17,6 +17,7 @@ from ._layer import ImageryLayer
 
 from arcgis.gis import Item
 import copy
+import numbers
 
 #
 # def _raster_input(raster):
@@ -2932,12 +2933,20 @@ def _raster_input(raster):
         raster_ra = _get_raster_ra(raster)
         raster = _get_raster(raster)
     elif isinstance(raster, list):
-        r0 = raster[0]
-        r1 = raster[1]
         mix_and_match = False # mixing rasters from two image services
-        if r0._fn is None and r1._fn is None and r0._url != r1._url:
-            mix_and_match = True
-        layer = r0
+        try:
+            r0 = raster[0]
+            r1 = raster[1]
+            if r0._fn is None and r1._fn is None and r0._url != r1._url:
+                mix_and_match = True
+        except:
+            pass
+
+        for r in raster: # layer is first non numeric raster in list
+            if not isinstance(r, numbers.Number):
+                layer = r
+                break
+
         raster_ra = [_get_raster_ra(r) for r in raster]
         if mix_and_match:
             raster = [_get_raster_url(r) for r in raster]
@@ -2951,42 +2960,45 @@ def _raster_input(raster):
     return layer, raster, raster_ra
 
 def _get_raster(raster):
-    if raster._fn is not None:
-        raster = raster._fn
-    else:
-        oids = raster.filtered_rasters()
-        if oids is None:
-            raster = '$$'
-        elif len(oids) == 1:
-            raster = '$' + str(oids[0])
+    if isinstance(raster, ImageryLayer):
+        if raster._fn is not None:
+            raster = raster._fn
         else:
-            raster = ['$' + str(x) for x in oids]
+            oids = raster.filtered_rasters()
+            if oids is None:
+                raster = '$$'
+            elif len(oids) == 1:
+                raster = '$' + str(oids[0])
+            else:
+                raster = ['$' + str(x) for x in oids]
     return raster
 
 def _get_raster_url(raster):
-    if raster._fn is not None:
-        raster = raster._fn
-    else:
-        raster = raster._url
-        # oids = raster.filtered_rasters()
-        # if oids is None:
-        #     raster = '$$'
-        # elif len(oids) == 1:
-        #     raster = '$' + str(oids[0])
-        # else:
-        #     raster = ['$' + str(x) for x in oids]
+    if isinstance(raster, ImageryLayer):
+        if raster._fn is not None:
+            raster = raster._fn
+        else:
+            raster = raster._url
+            # oids = raster.filtered_rasters()
+            # if oids is None:
+            #     raster = '$$'
+            # elif len(oids) == 1:
+            #     raster = '$' + str(oids[0])
+            # else:
+            #     raster = ['$' + str(x) for x in oids]
     return raster
 
 
 def _get_raster_ra(raster):
-    if raster._fnra is not None:
-        raster_ra = raster._fnra
-    elif isinstance(raster, ImageryLayer):
-        raster_ra = raster._url
+    if isinstance(raster, ImageryLayer):
+        if raster._fnra is not None:
+            raster_ra = raster._fnra
+        else:
+            raster_ra = raster._url
 
 
-        #if raster._mosaic_rule is not None:
-        #    raster_ra['mosaicRule'] = raster._mosaic_rule
+            #if raster._mosaic_rule is not None:
+            #    raster_ra['mosaicRule'] = raster._mosaic_rule
     elif isinstance(raster, Item):
         raise RuntimeError('Item not supported as input. Use ImageryLayer - e.g. item.layers[0]')
         #raster_ra = {
@@ -2994,4 +3006,5 @@ def _get_raster_ra(raster):
         #}
     else:
         raster_ra = raster
+
     return raster_ra
