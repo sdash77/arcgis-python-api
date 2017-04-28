@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features.enrich_data module &mdash; arcgis 1.2.0 documentation</title>
+  <title>arcgis.server package &mdash; arcgis 1.2.0 documentation</title>
   
 
   
@@ -33,10 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
-        <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
-        <link rel="next" title="arcgis.features.find_locations module" href="arcgis.features.find_locations.html"/>
-        <link rel="prev" title="arcgis.features.analyze_patterns module" href="arcgis.features.analyze_patterns.html"/> 
+    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -86,7 +83,7 @@
             
             
                 <p class="caption"><span class="caption-text">arcgis</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
@@ -112,22 +109,22 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#feature">Feature</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayer">FeatureLayer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#table">Table</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayercollection">FeatureLayerCollection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#interpolate-points">interpolate_points</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.enrich_data module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#enrich-layer">enrich_layer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.enrich_data.html#enrich-layer">enrich_layer</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
@@ -476,13 +473,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
-      
-    <li>arcgis.features.enrich_data module</li>
+    <li>arcgis.server package</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/arcgis.features.enrich_data.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/arcgis.server.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -492,47 +487,323 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-arcgis.features.enrich_data">
-<span id="arcgis-features-enrich-data-module"></span><h1>arcgis.features.enrich_data module<a class="headerlink" href="#module-arcgis.features.enrich_data" title="Permalink to this headline">¶</a></h1>
-<p>These functions help you explore the character of areas. Detailed demographic data and statistics are returned for your
-chosen areas.</p>
-<p>enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
-travel time or distance from a location.</p>
-<div class="section" id="enrich-layer">
-<h2>enrich_layer<a class="headerlink" href="#enrich-layer" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.features.enrich_data.enrich_layer">
-<code class="descclassname">enrich_data.</code><code class="descname">enrich_layer</code><span class="sig-paren">(</span><em>input_layer</em>, <em>data_collections=[]</em>, <em>analysis_variables=[]</em>, <em>country=None</em>, <em>buffer_type=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.enrich_data.enrich_layer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
-your data locations. For example: What kind of people live here? What do people like to do in this area? What are
-their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
-features that includes all demographic and geographic information from given data collections.</p>
+  <div class="section" id="arcgis-server-package">
+<h1>arcgis.server package<a class="headerlink" href="#arcgis-server-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.server.admin.html">arcgis.server.admin package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.server.admin.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.server.admin.html#module-arcgis.server.admin.administration">arcgis.server.admin.administration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.server.admin.html#module-arcgis.server.admin.parameters">arcgis.server.admin.parameters module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.server.admin.html#module-arcgis.server.admin">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-arcgis.server.managers">
+<span id="arcgis-server-managers-module"></span><h2>arcgis.server.managers module<a class="headerlink" href="#module-arcgis.server.managers" title="Permalink to this headline">¶</a></h2>
+<p>Front end controls to the server.</p>
+<dl class="class">
+<dt id="arcgis.server.managers.Server">
+<em class="property">class </em><code class="descclassname">arcgis.server.managers.</code><code class="descname">Server</code><span class="sig-paren">(</span><em>url=None</em>, <em>tokenurl=None</em>, <em>username=None</em>, <em>password=None</em>, <em>verify_cert=False</em>, <em>gis=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.server.managers.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Gains Access to the ArcGIS REST API</p>
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.catalog">
+<code class="descname">catalog</code><a class="headerlink" href="#arcgis.server.managers.Server.catalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>The content resource is the root node and initial entry point into
+an ArcGIS Server host. This resource represents a catalog of
+folders and services published on the host.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.connection">
+<code class="descname">connection</code><a class="headerlink" href="#arcgis.server.managers.Server.connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets server the connection object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.data">
+<code class="descname">data</code><a class="headerlink" href="#arcgis.server.managers.Server.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource provides information about the data holdings of the
+server. Data items are used by ArcGIS for Desktop and other clients
+to validate data paths referenced by GIS services.
+You can register new data items with the server by using the
+Register Data Item operation. Use the Find Data Items operation to
+search through the hierarchy of data items.
+A relational data store type represents a database platform that
+has been registered for use on a portal&#8217;s hosting server by the
+ArcGIS Server administrator. Each relational data store type
+describes the properties ArcGIS Server requires in order to connect
+to an instance of a database for a particular platform. At least
+one registered relational data store type is required before client
+applications such as Insights for ArcGIS can create Relational
+Database Connection portal items.
+The Compute Ref Count operation counts and lists all references to
+a specific data item. This operation helps you determine if a
+particular data item can be safely deleted or refreshed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.datastore">
+<code class="descname">datastore</code><a class="headerlink" href="#arcgis.server.managers.Server.datastore" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource provides information about the data holdings of the
+server. Data items are used by ArcGIS for Desktop and other clients
+to validate data paths referenced by GIS services.
+You can register new data items with the server by using the
+Register Data Item operation. Use the Find Data Items operation to
+search through the hierarchy of data items.
+A relational data store type represents a database platform that
+has been registered for use on a portal&#8217;s hosting server by the
+ArcGIS Server administrator. Each relational data store type
+describes the properties ArcGIS Server requires in order to connect
+to an instance of a database for a particular platform. At least
+one registered relational data store type is required before client
+applications such as Insights for ArcGIS can create Relational
+Database Connection portal items.
+The Compute Ref Count operation counts and lists all references to
+a specific data item. This operation helps you determine if a
+particular data item can be safely deleted or refreshed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.info">
+<code class="descname">info</code><a class="headerlink" href="#arcgis.server.managers.Server.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>A read-only resource that returns meta information about the server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.kml">
+<code class="descname">kml</code><a class="headerlink" href="#arcgis.server.managers.Server.kml" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource is a container for all the KMZ files created on the
+server.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.logs">
+<code class="descname">logs</code><a class="headerlink" href="#arcgis.server.managers.Server.logs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This allows users to access the  ArcGIS Server&#8217;s logs and lets
+administrators query and find errors and/or problems related to
+the server or a service.</p>
+<p>Logs are the records written by the various components of ArcGIS
+Server. You can query the logs and change various log settings.
+<strong>Note</strong>
+ArcGIS Server Only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.machines">
+<code class="descname">machines</code><a class="headerlink" href="#arcgis.server.managers.Server.machines" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource represents a collection of all the server machines that
+have been registered with the site. It other words, it represents
+the total computing power of your site. A site will continue to run
+as long as there is one server machine online.
+For a server machine to start hosting GIS services, it must be
+grouped (or clustered). When you create a new site, a cluster called
+&#8216;default&#8217; is created for you.
+The list of server machines in your site can be dynamic. You can
+register additional server machines when you need to increase the
+computing power of your site or unregister them if you no longer
+need them.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.me">
+<code class="descname">me</code><a class="headerlink" href="#arcgis.server.managers.Server.me" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the current logged in username</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.services">
+<code class="descname">services</code><a class="headerlink" href="#arcgis.server.managers.Server.services" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides administrator access to the services on ArcGIS Server as a
+ServerManager Object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.system">
+<code class="descname">system</code><a class="headerlink" href="#arcgis.server.managers.Server.system" title="Permalink to this definition">¶</a></dt>
+<dd><p>provides access to common system configuration settings</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.usage">
+<code class="descname">usage</code><a class="headerlink" href="#arcgis.server.managers.Server.usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource is a collection of all the usage reports created
+within your site. The Create Usage Report operation lets you define
+a new usage report.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.managers.Server.users">
+<code class="descname">users</code><a class="headerlink" href="#arcgis.server.managers.Server.users" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns operations to work with users</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-arcgis.server">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arcgis.server" title="Permalink to this headline">¶</a></h2>
+<p>Entry into ArcGIS Server REST API</p>
+<dl class="class">
+<dt id="arcgis.server.Service">
+<em class="property">class </em><code class="descclassname">arcgis.server.</code><code class="descname">Service</code><span class="sig-paren">(</span><em>url</em>, <em>item=None</em>, <em>server=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.server.Service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>The Layer class allows users to pass a url, connection or other object
+to the class and get back properties and functions specifically related
+to the service.</p>
 <dl class="docutils">
-<dt>input_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Feature layer to enrich with new data</dd>
-<dt>data_collections</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>Data collections you wish to add to your features.</dd>
-<dt>analysis_variables</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>A subset of specific variables instead of dataCollections.</dd>
-<dt>country</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The two character country code that specifies the country of the input features. Eg. US (United States),
-FR (France), GB (United Kingdom) etc.</dd>
-<dt>buffer_type</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
-radius.</dd>
-<dt>distance</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional float</span><dd>A double value that defines the straight-line distance or time (when drivingTime is used).</dd>
-<dt>units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
-calculate the area.</dd>
-<dt>output_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional properties such as output feature service name.</dd>
-<dt>context</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional settings such as processing extent and output spatial reference.</dd>
-<dt>gis :</dt>
-<dd>Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</dd>
+<dt>Inputs:</dt>
+<dd>url - internet address to the service
+server - Server class
+item - Portal or AGOL Item class</dd>
 </dl>
-<p>enriched_layer : layer (FeatureCollection)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="arcgis.server.Server">
+<em class="property">class </em><code class="descclassname">arcgis.server.</code><code class="descname">Server</code><span class="sig-paren">(</span><em>url=None</em>, <em>tokenurl=None</em>, <em>username=None</em>, <em>password=None</em>, <em>verify_cert=False</em>, <em>gis=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.server.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Gains Access to the ArcGIS REST API</p>
+<dl class="attribute">
+<dt id="arcgis.server.Server.catalog">
+<code class="descname">catalog</code><a class="headerlink" href="#arcgis.server.Server.catalog" title="Permalink to this definition">¶</a></dt>
+<dd><p>The content resource is the root node and initial entry point into
+an ArcGIS Server host. This resource represents a catalog of
+folders and services published on the host.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.connection">
+<code class="descname">connection</code><a class="headerlink" href="#arcgis.server.Server.connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets server the connection object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.data">
+<code class="descname">data</code><a class="headerlink" href="#arcgis.server.Server.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource provides information about the data holdings of the
+server. Data items are used by ArcGIS for Desktop and other clients
+to validate data paths referenced by GIS services.
+You can register new data items with the server by using the
+Register Data Item operation. Use the Find Data Items operation to
+search through the hierarchy of data items.
+A relational data store type represents a database platform that
+has been registered for use on a portal&#8217;s hosting server by the
+ArcGIS Server administrator. Each relational data store type
+describes the properties ArcGIS Server requires in order to connect
+to an instance of a database for a particular platform. At least
+one registered relational data store type is required before client
+applications such as Insights for ArcGIS can create Relational
+Database Connection portal items.
+The Compute Ref Count operation counts and lists all references to
+a specific data item. This operation helps you determine if a
+particular data item can be safely deleted or refreshed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.datastore">
+<code class="descname">datastore</code><a class="headerlink" href="#arcgis.server.Server.datastore" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource provides information about the data holdings of the
+server. Data items are used by ArcGIS for Desktop and other clients
+to validate data paths referenced by GIS services.
+You can register new data items with the server by using the
+Register Data Item operation. Use the Find Data Items operation to
+search through the hierarchy of data items.
+A relational data store type represents a database platform that
+has been registered for use on a portal&#8217;s hosting server by the
+ArcGIS Server administrator. Each relational data store type
+describes the properties ArcGIS Server requires in order to connect
+to an instance of a database for a particular platform. At least
+one registered relational data store type is required before client
+applications such as Insights for ArcGIS can create Relational
+Database Connection portal items.
+The Compute Ref Count operation counts and lists all references to
+a specific data item. This operation helps you determine if a
+particular data item can be safely deleted or refreshed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.info">
+<code class="descname">info</code><a class="headerlink" href="#arcgis.server.Server.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>A read-only resource that returns meta information about the server</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.kml">
+<code class="descname">kml</code><a class="headerlink" href="#arcgis.server.Server.kml" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource is a container for all the KMZ files created on the
+server.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.logs">
+<code class="descname">logs</code><a class="headerlink" href="#arcgis.server.Server.logs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This allows users to access the  ArcGIS Server&#8217;s logs and lets
+administrators query and find errors and/or problems related to
+the server or a service.</p>
+<p>Logs are the records written by the various components of ArcGIS
+Server. You can query the logs and change various log settings.
+<strong>Note</strong>
+ArcGIS Server Only</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.machines">
+<code class="descname">machines</code><a class="headerlink" href="#arcgis.server.Server.machines" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource represents a collection of all the server machines that
+have been registered with the site. It other words, it represents
+the total computing power of your site. A site will continue to run
+as long as there is one server machine online.
+For a server machine to start hosting GIS services, it must be
+grouped (or clustered). When you create a new site, a cluster called
+&#8216;default&#8217; is created for you.
+The list of server machines in your site can be dynamic. You can
+register additional server machines when you need to increase the
+computing power of your site or unregister them if you no longer
+need them.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.me">
+<code class="descname">me</code><a class="headerlink" href="#arcgis.server.Server.me" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the current logged in username</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.services">
+<code class="descname">services</code><a class="headerlink" href="#arcgis.server.Server.services" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides administrator access to the services on ArcGIS Server as a
+ServerManager Object.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.system">
+<code class="descname">system</code><a class="headerlink" href="#arcgis.server.Server.system" title="Permalink to this definition">¶</a></dt>
+<dd><p>provides access to common system configuration settings</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.usage">
+<code class="descname">usage</code><a class="headerlink" href="#arcgis.server.Server.usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>This resource is a collection of all the usage reports created
+within your site. The Create Usage Report operation lets you define
+a new usage report.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.server.Server.users">
+<code class="descname">users</code><a class="headerlink" href="#arcgis.server.Server.users" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns operations to work with users</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -542,15 +813,6 @@ calculate the area.</dd>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="arcgis.features.find_locations.html" class="btn btn-neutral float-right" title="arcgis.features.find_locations module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="arcgis.features.analyze_patterns.html" class="btn btn-neutral" title="arcgis.features.analyze_patterns module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

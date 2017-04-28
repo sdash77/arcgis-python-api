@@ -179,7 +179,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#mosaic">mosaic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -653,8 +652,8 @@ Inputs:</p>
 <div><p>deletes - string of OIDs to remove from service
 where -  A where clause for the query filter.</p>
 <blockquote>
-<div>Any legal SQL where clause operating on the fields in 
-the layer is allowed. Features conforming to the specified 
+<div>Any legal SQL where clause operating on the fields in
+the layer is allowed. Features conforming to the specified
 where clause will be deleted.</div></blockquote>
 <dl class="docutils">
 <dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
@@ -744,14 +743,14 @@ Input:</p>
 
 <dl class="method">
 <dt id="arcgis.features.FeatureLayer.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>where='1=1'</em>, <em>out_fields='*'</em>, <em>time_filter=None</em>, <em>geometry_filter=None</em>, <em>return_geometry=True</em>, <em>return_count_only=False</em>, <em>return_ids_only=False</em>, <em>return_distinct_values=False</em>, <em>return_extent_only=False</em>, <em>group_by_fields_for_statistics=None</em>, <em>statistic_filter=None</em>, <em>result_offset=None</em>, <em>result_record_count=None</em>, <em>object_ids=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>max_allowable_offset=None</em>, <em>out_sr=None</em>, <em>geometry_precision=None</em>, <em>gdb_version=None</em>, <em>order_by_fields=None</em>, <em>out_statistics=None</em>, <em>return_z=False</em>, <em>return_m=False</em>, <em>multipatch_option=None</em>, <em>quanitization_parameters=None</em>, <em>return_centroid=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>queries a feature service based on a sql statement
+<code class="descname">query</code><span class="sig-paren">(</span><em>where='1=1'</em>, <em>out_fields='*'</em>, <em>time_filter=None</em>, <em>geometry_filter=None</em>, <em>return_geometry=True</em>, <em>return_count_only=False</em>, <em>return_ids_only=False</em>, <em>return_distinct_values=False</em>, <em>return_extent_only=False</em>, <em>group_by_fields_for_statistics=None</em>, <em>statistic_filter=None</em>, <em>result_offset=None</em>, <em>result_record_count=None</em>, <em>object_ids=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>max_allowable_offset=None</em>, <em>out_sr=None</em>, <em>geometry_precision=None</em>, <em>gdb_version=None</em>, <em>order_by_fields=None</em>, <em>out_statistics=None</em>, <em>return_z=False</em>, <em>return_m=False</em>, <em>multipatch_option=None</em>, <em>quanitization_parameters=None</em>, <em>return_centroid=False</em>, <em>return_all_records=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>queries a feature layer based on a sql statement
 Inputs:</p>
 <blockquote>
 <div><blockquote>
 <div><p>where - the selection sql statement
 out_fields - the attribute fields to return
-objectIds -  The object IDs of this layer or table to be</p>
+object_ids -  The object IDs of this layer or table to be</p>
 <blockquote>
 <div>queried.</div></blockquote>
 <dl class="docutils">
@@ -771,7 +770,7 @@ supportsQueryWithDistance is true.
 Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
 esriSRUnit_Foot | esriSRUnit_Kilometer |
 esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile</dd>
-<dt>timeFilter - a TimeFilter object where either the start time</dt>
+<dt>time_filter - a TimeFilter object where either the start time</dt>
 <dd>or start and end time are defined to limit the
 search results for a given time.  The values in
 the timeFilter should be as UTC timestampes in
@@ -864,6 +863,14 @@ representing pixels on the screen.</dd>
 <dd>associated with each feature returned. If
 true, the result includes the geometry
 centroid. The default is false.</dd>
+<dt>return_all_records - When True, the query operation will call</dt>
+<dd>the service until all records that satisfy
+the where_clause are returned. Note: result_offset
+and result_record_count will be ignored
+if return_all_records is True. Also, if
+return_count_only, return_ids_only, or
+return_extent_only are True, this parameter
+will be ignored.</dd>
 </dl>
 </div></blockquote>
 <dl class="docutils">
@@ -945,6 +952,58 @@ not returned. The default is false.</dd>
 </div></blockquote>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.features.FeatureLayer.validate_sql">
+<code class="descname">validate_sql</code><span class="sig-paren">(</span><em>sql</em>, <em>sql_type='where'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer.validate_sql" title="Permalink to this definition">¶</a></dt>
+<dd><p>The validate_sql operation validates an SQL-92 expression or WHERE
+clause.
+The validate_sql operation ensures that an SQL-92 expression, such
+as one written by a user through a user interface, is correct
+before performing another operation that uses the expression. For
+example, validateSQL can be used to validate information that is
+subsequently passed in as part of the where parameter of the
+calculate operation.
+validate_sql also prevents SQL injection. In addition, all table
+and field names used in the SQL expression or WHERE clause are
+validated to ensure they are valid tables and fields.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">sql:</th><td class="field-body"><p class="first">the SQL expression of WHERE clause to validate
+Example: &#8220;Population &gt; 300000&#8221;</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">sql_type:</th><td class="field-body"><p class="first">Three SQL types are supported in validate_sql
+- where (default) - Represents the custom WHERE clause the user</p>
+<blockquote>
+<div><p>can compose when querying a layer or using calculate.</p>
+</div></blockquote>
+<ul class="last simple">
+<li>expression - Represents an SQL-92 expression. Currently,
+expression is used as a default value expression when adding a
+new field or using the calculate API.</li>
+<li>statement - Represents the full SQL-92 statement that can be
+passed directly to the database. No current ArcGIS REST API
+resource or operation supports using the full SQL-92 SELECT
+statement directly. It has been added to the validateSQL for
+completeness.
+Values: where | expression | statement</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1019,8 +1078,8 @@ Inputs:</p>
 <div><p>deletes - string of OIDs to remove from service
 where -  A where clause for the query filter.</p>
 <blockquote>
-<div>Any legal SQL where clause operating on the fields in 
-the layer is allowed. Features conforming to the specified 
+<div>Any legal SQL where clause operating on the fields in
+the layer is allowed. Features conforming to the specified
 where clause will be deleted.</div></blockquote>
 <dl class="docutils">
 <dt>geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship</dt>
@@ -1110,14 +1169,14 @@ Input:</p>
 
 <dl class="method">
 <dt id="arcgis.features.Table.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>where='1=1'</em>, <em>out_fields='*'</em>, <em>time_filter=None</em>, <em>geometry_filter=None</em>, <em>return_geometry=True</em>, <em>return_count_only=False</em>, <em>return_ids_only=False</em>, <em>return_distinct_values=False</em>, <em>return_extent_only=False</em>, <em>group_by_fields_for_statistics=None</em>, <em>statistic_filter=None</em>, <em>result_offset=None</em>, <em>result_record_count=None</em>, <em>object_ids=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>max_allowable_offset=None</em>, <em>out_sr=None</em>, <em>geometry_precision=None</em>, <em>gdb_version=None</em>, <em>order_by_fields=None</em>, <em>out_statistics=None</em>, <em>return_z=False</em>, <em>return_m=False</em>, <em>multipatch_option=None</em>, <em>quanitization_parameters=None</em>, <em>return_centroid=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table.query" title="Permalink to this definition">¶</a></dt>
-<dd><p>queries a feature service based on a sql statement
+<code class="descname">query</code><span class="sig-paren">(</span><em>where='1=1'</em>, <em>out_fields='*'</em>, <em>time_filter=None</em>, <em>geometry_filter=None</em>, <em>return_geometry=True</em>, <em>return_count_only=False</em>, <em>return_ids_only=False</em>, <em>return_distinct_values=False</em>, <em>return_extent_only=False</em>, <em>group_by_fields_for_statistics=None</em>, <em>statistic_filter=None</em>, <em>result_offset=None</em>, <em>result_record_count=None</em>, <em>object_ids=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>max_allowable_offset=None</em>, <em>out_sr=None</em>, <em>geometry_precision=None</em>, <em>gdb_version=None</em>, <em>order_by_fields=None</em>, <em>out_statistics=None</em>, <em>return_z=False</em>, <em>return_m=False</em>, <em>multipatch_option=None</em>, <em>quanitization_parameters=None</em>, <em>return_centroid=False</em>, <em>return_all_records=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table.query" title="Permalink to this definition">¶</a></dt>
+<dd><p>queries a feature layer based on a sql statement
 Inputs:</p>
 <blockquote>
 <div><blockquote>
 <div><p>where - the selection sql statement
 out_fields - the attribute fields to return
-objectIds -  The object IDs of this layer or table to be</p>
+object_ids -  The object IDs of this layer or table to be</p>
 <blockquote>
 <div>queried.</div></blockquote>
 <dl class="docutils">
@@ -1137,7 +1196,7 @@ supportsQueryWithDistance is true.
 Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
 esriSRUnit_Foot | esriSRUnit_Kilometer |
 esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile</dd>
-<dt>timeFilter - a TimeFilter object where either the start time</dt>
+<dt>time_filter - a TimeFilter object where either the start time</dt>
 <dd>or start and end time are defined to limit the
 search results for a given time.  The values in
 the timeFilter should be as UTC timestampes in
@@ -1230,6 +1289,14 @@ representing pixels on the screen.</dd>
 <dd>associated with each feature returned. If
 true, the result includes the geometry
 centroid. The default is false.</dd>
+<dt>return_all_records - When True, the query operation will call</dt>
+<dd>the service until all records that satisfy
+the where_clause are returned. Note: result_offset
+and result_record_count will be ignored
+if return_all_records is True. Also, if
+return_count_only, return_ids_only, or
+return_extent_only are True, this parameter
+will be ignored.</dd>
 </dl>
 </div></blockquote>
 <dl class="docutils">
@@ -1309,6 +1376,58 @@ not returned. The default is false.</dd>
 not returned. The default is false.</dd>
 </dl>
 </div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.Table.validate_sql">
+<code class="descname">validate_sql</code><span class="sig-paren">(</span><em>sql</em>, <em>sql_type='where'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table.validate_sql" title="Permalink to this definition">¶</a></dt>
+<dd><p>The validate_sql operation validates an SQL-92 expression or WHERE
+clause.
+The validate_sql operation ensures that an SQL-92 expression, such
+as one written by a user through a user interface, is correct
+before performing another operation that uses the expression. For
+example, validateSQL can be used to validate information that is
+subsequently passed in as part of the where parameter of the
+calculate operation.
+validate_sql also prevents SQL injection. In addition, all table
+and field names used in the SQL expression or WHERE clause are
+validated to ensure they are valid tables and fields.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">sql:</th><td class="field-body"><p class="first">the SQL expression of WHERE clause to validate
+Example: &#8220;Population &gt; 300000&#8221;</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">sql_type:</th><td class="field-body"><p class="first">Three SQL types are supported in validate_sql
+- where (default) - Represents the custom WHERE clause the user</p>
+<blockquote>
+<div><p>can compose when querying a layer or using calculate.</p>
+</div></blockquote>
+<ul class="last simple">
+<li>expression - Represents an SQL-92 expression. Currently,
+expression is used as a default value expression when adding a
+new field or using the calculate API.</li>
+<li>statement - Represents the full SQL-92 statement that can be
+passed directly to the database. No current ArcGIS REST API
+resource or operation supports using the full SQL-92 SELECT
+statement directly. It has been added to the validateSQL for
+completeness.
+Values: where | expression | statement</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

@@ -180,7 +180,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#mosaic">mosaic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -857,10 +856,13 @@ FeatureService or layer.</dd>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="classmethod">
 <dt id="arcgis.features.managers.FeatureLayerManager.fromitem">
-<code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.fromitem" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<em class="property">classmethod </em><code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em>, <em>layer_id=0</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.managers.FeatureLayerManager.fromitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a FeatureLayerManager object from a GIS Item.
+The type of item should be a &#8216;Feature Service&#8217; that represents a FeatureLayerCollection.
+The layer_id is the id of the layer in feature layer collection (feature service).</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.features.managers.FeatureLayerManager.properties">

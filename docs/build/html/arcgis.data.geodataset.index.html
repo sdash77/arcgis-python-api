@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features.enrich_data module &mdash; arcgis 1.2.0 documentation</title>
+  <title>arcgis.data.geodataset.index package &mdash; arcgis 1.2.0 documentation</title>
   
 
   
@@ -33,10 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
-        <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
-        <link rel="next" title="arcgis.features.find_locations module" href="arcgis.features.find_locations.html"/>
-        <link rel="prev" title="arcgis.features.analyze_patterns module" href="arcgis.features.analyze_patterns.html"/> 
+    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -86,7 +83,7 @@
             
             
                 <p class="caption"><span class="caption-text">arcgis</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
@@ -112,22 +109,22 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#feature">Feature</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayer">FeatureLayer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#table">Table</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayercollection">FeatureLayerCollection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#interpolate-points">interpolate_points</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.enrich_data module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#enrich-layer">enrich_layer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.enrich_data.html#enrich-layer">enrich_layer</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
@@ -476,13 +473,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
-      
-    <li>arcgis.features.enrich_data module</li>
+    <li>arcgis.data.geodataset.index package</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/arcgis.features.enrich_data.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/arcgis.data.geodataset.index.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -492,49 +487,261 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-arcgis.features.enrich_data">
-<span id="arcgis-features-enrich-data-module"></span><h1>arcgis.features.enrich_data module<a class="headerlink" href="#module-arcgis.features.enrich_data" title="Permalink to this headline">¶</a></h1>
-<p>These functions help you explore the character of areas. Detailed demographic data and statistics are returned for your
-chosen areas.</p>
-<p>enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
-travel time or distance from a location.</p>
-<div class="section" id="enrich-layer">
-<h2>enrich_layer<a class="headerlink" href="#enrich-layer" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.features.enrich_data.enrich_layer">
-<code class="descclassname">enrich_data.</code><code class="descname">enrich_layer</code><span class="sig-paren">(</span><em>input_layer</em>, <em>data_collections=[]</em>, <em>analysis_variables=[]</em>, <em>country=None</em>, <em>buffer_type=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.enrich_data.enrich_layer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
-your data locations. For example: What kind of people live here? What do people like to do in this area? What are
-their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
-features that includes all demographic and geographic information from given data collections.</p>
-<dl class="docutils">
-<dt>input_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Feature layer to enrich with new data</dd>
-<dt>data_collections</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>Data collections you wish to add to your features.</dd>
-<dt>analysis_variables</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>A subset of specific variables instead of dataCollections.</dd>
-<dt>country</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The two character country code that specifies the country of the input features. Eg. US (United States),
-FR (France), GB (United Kingdom) etc.</dd>
-<dt>buffer_type</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
-radius.</dd>
-<dt>distance</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional float</span><dd>A double value that defines the straight-line distance or time (when drivingTime is used).</dd>
-<dt>units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
-calculate the area.</dd>
-<dt>output_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional properties such as output feature service name.</dd>
-<dt>context</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional settings such as processing extent and output spatial reference.</dd>
-<dt>gis :</dt>
-<dd>Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</dd>
-</dl>
-<p>enriched_layer : layer (FeatureCollection)</p>
+  <div class="section" id="arcgis-data-geodataset-index-package">
+<h1>arcgis.data.geodataset.index package<a class="headerlink" href="#arcgis-data-geodataset-index-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-arcgis.data.geodataset.index.quadtree">
+<span id="arcgis-data-geodataset-index-quadtree-module"></span><h2>arcgis.data.geodataset.index.quadtree module<a class="headerlink" href="#module-arcgis.data.geodataset.index.quadtree" title="Permalink to this headline">¶</a></h2>
+<p>Variation of Pyqtree</p>
+<p><a class="reference external" href="https://github.com/karimbahgat/Pyqtree">https://github.com/karimbahgat/Pyqtree</a></p>
+<p>The MIT License (MIT)</p>
+<p>Copyright (c) 2016 Karim Bahgat</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &#8220;Software&#8221;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &#8220;AS IS&#8221;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+<dl class="class">
+<dt id="arcgis.data.geodataset.index.quadtree.Index">
+<em class="property">class </em><code class="descclassname">arcgis.data.geodataset.index.quadtree.</code><code class="descname">Index</code><span class="sig-paren">(</span><em>bbox=None</em>, <em>x=None</em>, <em>y=None</em>, <em>width=None</em>, <em>height=None</em>, <em>max_items=10</em>, <em>max_depth=20</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.quadtree.Index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">arcgis.data.geodataset.index.quadtree._QuadTree</span></code></p>
+<p>The top spatial index to be created by the user. Once created it can be
+populated with geographically placed members that can later be tested for
+intersection with a user inputted geographic bounding box. Note that the
+index can be iterated through in a for-statement, which loops through all
+all the quad instances and lets you access their properties.</p>
+<p>Example usage:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spindex</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span><span class="n">bbox</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spindex</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s1">&#39;duck&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">60</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spindex</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s1">&#39;cookie&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spindex</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">90</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">spindex</span><span class="o">.</span><span class="n">intersect</span><span class="p">((</span><span class="mi">51</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">86</span><span class="p">,</span> <span class="mi">86</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="go">[&#39;duck&#39;, &#39;python&#39;]</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.quadtree.Index.count">
+<code class="descname">count</code><a class="headerlink" href="#arcgis.data.geodataset.index.quadtree.Index.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the size of the index/number of nodes</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.quadtree.Index.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>item</em>, <em>bbox</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.quadtree.Index.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts an item into the quadtree along with its bounding box.</p>
+<p>Parameters:
+- <strong>item</strong>: The item to insert into the index, which will be returned by the intersection method
+- <strong>bbox</strong>: The spatial bounding box tuple of the item, with four members (xmin,ymin,xmax,ymax)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.quadtree.Index.intersect">
+<code class="descname">intersect</code><span class="sig-paren">(</span><em>bbox</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.quadtree.Index.intersect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intersects an input boundingbox rectangle with all of the items
+contained in the quadtree.</p>
+<p>Parameters:
+- <strong>bbox</strong>: A spatial bounding box tuple with four members (xmin,ymin,xmax,ymax)</p>
+<p>Returns:
+- A list of inserted items whose bounding boxes intersect with the input bbox.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-arcgis.data.geodataset.index.rtree">
+<span id="arcgis-data-geodataset-index-rtree-module"></span><h2>arcgis.data.geodataset.index.rtree module<a class="headerlink" href="#module-arcgis.data.geodataset.index.rtree" title="Permalink to this headline">¶</a></h2>
+<p>Pure python implementation of rtree</p>
+<p>Modification of
+<a class="reference external" href="http://code.google.com/p/pyrtree/">http://code.google.com/p/pyrtree/</a></p>
+<dl class="class">
+<dt id="arcgis.data.geodataset.index.rtree.RTree">
+<em class="property">class </em><code class="descclassname">arcgis.data.geodataset.index.rtree.</code><code class="descname">RTree</code><span class="sig-paren">(</span><em>stream=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>id</em>, <em>boundingbox</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>replicate c rtree method</p>
+<p>id: object id</p>
+<dl class="docutils">
+<dt>boundingbox: list</dt>
+<dd>bounding box [minx, miny, maxx, maxy]</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>o</em>, <em>orect</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.insert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.intersection">
+<code class="descname">intersection</code><span class="sig-paren">(</span><em>boundingbox</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.intersection" title="Permalink to this definition">¶</a></dt>
+<dd><p>replicate c rtree method</p>
+<dl class="docutils">
+<dt>ids</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>list of object ids whose bounding boxes intersect with query
+bounding box</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.query_point">
+<code class="descname">query_point</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.query_point" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.query_rect">
+<code class="descname">query_rect</code><span class="sig-paren">(</span><em>r</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.query_rect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.RTree.walk">
+<code class="descname">walk</code><span class="sig-paren">(</span><em>pred</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTree.walk" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="arcgis.data.geodataset.index.rtree.Rect">
+<em class="property">class </em><code class="descclassname">arcgis.data.geodataset.index.rtree.</code><code class="descname">Rect</code><span class="sig-paren">(</span><em>minx</em>, <em>miny</em>, <em>maxx</em>, <em>maxy</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="docutils">
+<dt>A rectangle class that stores: an axis aligned rectangle, and: two</dt>
+<dd>flags (swapped_x and swapped_y).  (The flags are stored
+implicitly via swaps in the order of minx/y and maxx/y.)</dd>
+</dl>
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.area">
+<code class="descname">area</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.coords">
+<code class="descname">coords</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.diagonal">
+<code class="descname">diagonal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.diagonal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.diagonal_sq">
+<code class="descname">diagonal_sq</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.diagonal_sq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.does_contain">
+<code class="descname">does_contain</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.does_contain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.does_containpoint">
+<code class="descname">does_containpoint</code><span class="sig-paren">(</span><em>p</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.does_containpoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.does_intersect">
+<code class="descname">does_intersect</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.does_intersect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.extent">
+<code class="descname">extent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.extent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.grow">
+<code class="descname">grow</code><span class="sig-paren">(</span><em>amt</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.grow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.intersect">
+<code class="descname">intersect</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.intersect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.overlap">
+<code class="descname">overlap</code><span class="sig-paren">(</span><em>orect</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.overlap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.swapped_x">
+<code class="descname">swapped_x</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.swapped_x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.swapped_y">
+<code class="descname">swapped_y</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.swapped_y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.union">
+<code class="descname">union</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.union" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.union_point">
+<code class="descname">union_point</code><span class="sig-paren">(</span><em>o</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.union_point" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.write_raw_coords">
+<code class="descname">write_raw_coords</code><span class="sig-paren">(</span><em>toarray</em>, <em>idx</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.write_raw_coords" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.x">
+<code class="descname">x</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.x" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.xx">
+<code class="descname">xx</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.xx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.y">
+<code class="descname">y</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.y" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.data.geodataset.index.rtree.Rect.yy">
+<code class="descname">yy</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rect.yy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="arcgis.data.geodataset.index.rtree.Rtree">
+<code class="descclassname">arcgis.data.geodataset.index.rtree.</code><code class="descname">Rtree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.Rtree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="arcgis.data.geodataset.index.rtree.RTreeError">
+<em class="property">exception </em><code class="descclassname">arcgis.data.geodataset.index.rtree.</code><code class="descname">RTreeError</code><a class="headerlink" href="#arcgis.data.geodataset.index.rtree.RTreeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="arcgis-data-geodataset-index-si-module">
+<h2>arcgis.data.geodataset.index.si module<a class="headerlink" href="#arcgis-data-geodataset-index-si-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-arcgis.data.geodataset.index">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arcgis.data.geodataset.index" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -542,15 +749,6 @@ calculate the area.</dd>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="arcgis.features.find_locations.html" class="btn btn-neutral float-right" title="arcgis.features.find_locations module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="arcgis.features.analyze_patterns.html" class="btn btn-neutral" title="arcgis.features.analyze_patterns module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

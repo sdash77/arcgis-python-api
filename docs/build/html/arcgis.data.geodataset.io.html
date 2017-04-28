@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features.enrich_data module &mdash; arcgis 1.2.0 documentation</title>
+  <title>arcgis.data.geodataset.io package &mdash; arcgis 1.2.0 documentation</title>
   
 
   
@@ -33,10 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
-        <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
-        <link rel="next" title="arcgis.features.find_locations module" href="arcgis.features.find_locations.html"/>
-        <link rel="prev" title="arcgis.features.analyze_patterns module" href="arcgis.features.analyze_patterns.html"/> 
+    <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -86,7 +83,7 @@
             
             
                 <p class="caption"><span class="caption-text">arcgis</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#gis">GIS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.html#item">Item</a></li>
@@ -112,22 +109,22 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="arcgis.features.toc.html">arcgis.features module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#feature">Feature</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayer">FeatureLayer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#table">Table</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurelayercollection">FeatureLayerCollection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featureset">FeatureSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#featurecollection">FeatureCollection</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arcgis.features.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.analyze_patterns.html">arcgis.features.analyze_patterns module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#calculate-density">calculate_density</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#find-hot-spots">find_hot_spots</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.analyze_patterns.html#interpolate-points">interpolate_points</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.enrich_data module</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#enrich-layer">enrich_layer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.features.enrich_data.html">arcgis.features.enrich_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.features.enrich_data.html#enrich-layer">enrich_layer</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.features.find_locations.html">arcgis.features.find_locations module</a><ul>
@@ -476,13 +473,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
-      
-    <li>arcgis.features.enrich_data module</li>
+    <li>arcgis.data.geodataset.io package</li>
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/arcgis.features.enrich_data.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/arcgis.data.geodataset.io.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -492,49 +487,137 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-arcgis.features.enrich_data">
-<span id="arcgis-features-enrich-data-module"></span><h1>arcgis.features.enrich_data module<a class="headerlink" href="#module-arcgis.features.enrich_data" title="Permalink to this headline">¶</a></h1>
-<p>These functions help you explore the character of areas. Detailed demographic data and statistics are returned for your
-chosen areas.</p>
-<p>enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
-travel time or distance from a location.</p>
-<div class="section" id="enrich-layer">
-<h2>enrich_layer<a class="headerlink" href="#enrich-layer" title="Permalink to this headline">¶</a></h2>
-<dl class="method">
-<dt id="arcgis.features.enrich_data.enrich_layer">
-<code class="descclassname">enrich_data.</code><code class="descname">enrich_layer</code><span class="sig-paren">(</span><em>input_layer</em>, <em>data_collections=[]</em>, <em>analysis_variables=[]</em>, <em>country=None</em>, <em>buffer_type=None</em>, <em>distance=None</em>, <em>units=None</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.enrich_data.enrich_layer" title="Permalink to this definition">¶</a></dt>
-<dd><p>The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
-your data locations. For example: What kind of people live here? What do people like to do in this area? What are
-their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
-features that includes all demographic and geographic information from given data collections.</p>
-<dl class="docutils">
-<dt>input_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Feature layer to enrich with new data</dd>
-<dt>data_collections</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>Data collections you wish to add to your features.</dd>
-<dt>analysis_variables</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>A subset of specific variables instead of dataCollections.</dd>
-<dt>country</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The two character country code that specifies the country of the input features. Eg. US (United States),
-FR (France), GB (United Kingdom) etc.</dd>
-<dt>buffer_type</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
-radius.</dd>
-<dt>distance</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional float</span><dd>A double value that defines the straight-line distance or time (when drivingTime is used).</dd>
-<dt>units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
-calculate the area.</dd>
-<dt>output_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional properties such as output feature service name.</dd>
-<dt>context</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional settings such as processing extent and output spatial reference.</dd>
-<dt>gis :</dt>
-<dd>Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</dd>
-</dl>
-<p>enriched_layer : layer (FeatureCollection)</p>
+  <div class="section" id="arcgis-data-geodataset-io-package">
+<h1>arcgis.data.geodataset.io package<a class="headerlink" href="#arcgis-data-geodataset-io-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-arcgis.data.geodataset.io.esrijson">
+<span id="arcgis-data-geodataset-io-esrijson-module"></span><h2>arcgis.data.geodataset.io.esrijson module<a class="headerlink" href="#module-arcgis.data.geodataset.io.esrijson" title="Permalink to this headline">¶</a></h2>
+<p>Converts Esri JSON to and from a Spatial DataFrame.</p>
+<dl class="function">
+<dt id="arcgis.data.geodataset.io.esrijson.to_json">
+<code class="descclassname">arcgis.data.geodataset.io.esrijson.</code><code class="descname">to_json</code><span class="sig-paren">(</span><em>df</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.io.esrijson.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts a dataframe to GeoJSON</p>
 </dd></dl>
 
+</div>
+<div class="section" id="module-arcgis.data.geodataset.io.fileops">
+<span id="arcgis-data-geodataset-io-fileops-module"></span><h2>arcgis.data.geodataset.io.fileops module<a class="headerlink" href="#module-arcgis.data.geodataset.io.fileops" title="Permalink to this headline">¶</a></h2>
+<p>Reads shapefiles, feature classes, table into a spatial dataframe</p>
+<dl class="function">
+<dt id="arcgis.data.geodataset.io.fileops.from_featureclass">
+<code class="descclassname">arcgis.data.geodataset.io.fileops.</code><code class="descname">from_featureclass</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.io.fileops.from_featureclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a GeoDataFrame from a feature class.
+Inputs:</p>
+<blockquote>
+<div>filename: full path to the feature class</div></blockquote>
+<dl class="docutils">
+<dt>Optional Parameters:</dt>
+<dd>sql_clause: sql clause to parse data down
+where_clause: where statement
+sr: spatial reference object
+fields: list of fields to extract from the table</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="arcgis.data.geodataset.io.fileops.to_featureclass">
+<code class="descclassname">arcgis.data.geodataset.io.fileops.</code><code class="descname">to_featureclass</code><span class="sig-paren">(</span><em>df</em>, <em>out_name</em>, <em>out_location=None</em>, <em>overwrite=True</em>, <em>out_sr=None</em>, <em>skip_invalid=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.io.fileops.to_featureclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts a SpatialDataFrame to a feature class</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">out_location:</th><td class="field-body">path to the workspace</td>
+</tr>
+<tr class="field-even field"><th class="field-name">out_name:</th><td class="field-body">name of the output feature class table</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">overwrite:</th><td class="field-body">True, the data will be erased then replaced, else the
+table will be appended to an existing table.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">out_sr:</th><td class="field-body">if set, the data will try to reproject itself</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">skip_invalid:</th><td class="field-body">if True, the cursor object will not raise an error on
+insertion of invalid data, if False, the first occurence of invalid
+data will raise an exception.</td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt>Returns:</dt>
+<dd>path to the feature class</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-arcgis.data.geodataset.io.serviceops">
+<span id="arcgis-data-geodataset-io-serviceops-module"></span><h2>arcgis.data.geodataset.io.serviceops module<a class="headerlink" href="#module-arcgis.data.geodataset.io.serviceops" title="Permalink to this headline">¶</a></h2>
+<p>Converts a Layer to a Spatial DataFrame</p>
+<dl class="function">
+<dt id="arcgis.data.geodataset.io.serviceops.from_layer">
+<code class="descclassname">arcgis.data.geodataset.io.serviceops.</code><code class="descname">from_layer</code><span class="sig-paren">(</span><em>layer</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.io.serviceops.from_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a Feature Service Layer to a Pandas&#8217; DataFrame</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><table class="first last docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">layer:</th><td class="field-body">FeatureLayer or Table object.  If the object is a FeatureLayer
+the function will return a Spatial DataFrame, if the object is of
+type Table, the function will return a Pandas&#8217; DataFrame</td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p>Usage:
+&gt;&gt;&gt; from arcgis.arcgisserver import Layer
+&gt;&gt;&gt; from arcgis import from_layer
+&gt;&gt;&gt; mylayer = Layer(&#8220;<a class="reference external" href="https://sampleserver6.arcgisonline.com/arcgis/rest">https://sampleserver6.arcgisonline.com/arcgis/rest</a>&#8221; +                        &#8220;/services/CommercialDamageAssessment/FeatureServer/0&#8221;)
+&gt;&gt;&gt; sdf = from_layer(mylayer)
+&gt;&gt;&gt; print(sdf)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-arcgis.data.geodataset.io.sqliteio">
+<span id="arcgis-data-geodataset-io-sqliteio-module"></span><h2>arcgis.data.geodataset.io.sqliteio module<a class="headerlink" href="#module-arcgis.data.geodataset.io.sqliteio" title="Permalink to this headline">¶</a></h2>
+<p>Converts a Spatial DataFrame to a SQLite DB</p>
+<dl class="function">
+<dt id="arcgis.data.geodataset.io.sqliteio.to_sqlite">
+<code class="descclassname">arcgis.data.geodataset.io.sqliteio.</code><code class="descname">to_sqlite</code><span class="sig-paren">(</span><em>df</em>, <em>out_folder</em>, <em>db_name</em>, <em>table_name</em>, <em>spatial_type='ST_GEOMETRY'</em>, <em>overwrite=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.data.geodataset.io.sqliteio.to_sqlite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new sqlite database and imports the dataframe data to that
+database.</p>
+<p>Inputs:</p>
+<p>df: spatial dataframe to export
+out_folder: Location of the SQLite database to be created
+db_name: Name of the SQLite database file. An extension of .sqlite will</p>
+<blockquote>
+<div>be automatically assigned if the spatial_type is ST_GEOMETRY or
+SPATIALITE. If the spatial_type is GEOPACKAGE, a .gpkg extension is
+automatically assigned.</div></blockquote>
+<p>table_name: name of the exported spatial dataframe
+spatial_type: The spatial type to install with the new SQLite database.</p>
+<blockquote>
+<div>ST_GEOMETRY-Esri&#8217;s spatial storage type. This is the default.
+SPATIALITE-SpatiaLite spatial storage type.
+GEOPACKAGE-OGC GeoPackage dataset.</div></blockquote>
+<dl class="docutils">
+<dt>overwrite: True will erase data if it exists, false will throw error if</dt>
+<dd>the sqlite database exists.</dd>
+<dt>Output:</dt>
+<dd>sqlite Database path location plus the feature class.</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-arcgis.data.geodataset.io">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arcgis.data.geodataset.io" title="Permalink to this headline">¶</a></h2>
+<p>contains operations to read/write geodataframe object
+to and from disk.</p>
 </div>
 </div>
 
@@ -542,15 +625,6 @@ calculate the area.</dd>
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="arcgis.features.find_locations.html" class="btn btn-neutral float-right" title="arcgis.features.find_locations module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="arcgis.features.analyze_patterns.html" class="btn btn-neutral" title="arcgis.features.analyze_patterns module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
