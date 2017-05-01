@@ -101,7 +101,6 @@ class MapView(widgets.DOMWidget):
         associated with the graphic.
 
         """
-        import pandas as pd
         if isinstance(shape, list) and len(shape) == 2:  # [lat, long] pair
             shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
         elif isinstance(shape, tuple):  # (lat, long) pair
@@ -119,7 +118,7 @@ class MapView(widgets.DOMWidget):
                     "symbol": symbol,
                     "attributes": feature.attributes
                 }
-                self.mode = pd.json.dumps(graphic)
+                self.mode = json.dumps(graphic)
         elif isinstance(shape, dict):
             graphic = {
                 "geometry": shape,
@@ -127,7 +126,7 @@ class MapView(widgets.DOMWidget):
                 "symbol": symbol,
                 "attributes": attributes
             }
-            self.mode = pd.json.dumps(graphic)
+            self.mode = json.dumps(graphic)
             # print(json.dumps(graphic))
         else:
             self.mode = shape

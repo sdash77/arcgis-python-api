@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import warnings
+
+import arcgis
 from six import string_types, integer_types
 import pandas as pd
 from pandas import DataFrame, Series, Index
@@ -62,12 +64,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
            installed and a full swatch of functionality is available to
            the end user.
         """
-        gis = kwargs.pop('gis', None)
+        gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
-        if gis is None:
-            from ...env import active_gis
-            if active_gis == False:
-                warnings.warn("GIS is not active")
+
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -93,18 +92,19 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                len(geometry) > 0:
                 g = geometry[0]
                 gtrans = []
-                if isinstance(g, arcpy.Point):
 
-                    for g in geometry:
-                        if isinstance(g, arcpy.Point):
-                            g = arcpy.PointGeometry(g)
-                        gtrans.append(types.Geometry(g))
-                    geometry = gtrans
-                elif isinstance(g, arcpy.Geometry):
-                    for g in geometry:
-                        gtrans.append(types.Geometry(g))
-                        del g
-                    geometry = gtrans
+                if HASARCPY:
+                    if isinstance(g, arcpy.Point):
+                        for g in geometry:
+                            if isinstance(g, arcpy.Point):
+                                g = arcpy.PointGeometry(g)
+                            gtrans.append(types.Geometry(g))
+                        geometry = gtrans
+                    elif isinstance(g, arcpy.Geometry):
+                        for g in geometry:
+                            gtrans.append(types.Geometry(g))
+                            del g
+                        geometry = gtrans
 
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
