@@ -1,5 +1,5 @@
 """
-SpatialDataFrame Object
+Spatial DataFrame Object developed off of the Panda's Dataframe object
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -9,6 +9,7 @@ from six import string_types, integer_types
 import pandas as pd
 from pandas import DataFrame, Series, Index
 import numpy
+from arcgis.gis import GIS
 from arcgis.data.geodataset.base import BaseSpatialPandas
 from arcgis.data.geodataset.geoseries import GeoSeries
 from six import PY2, PY3
@@ -41,7 +42,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                        'is_copy', '_subtyp', '_index',
                        '_default_kind', '_default_fill_value', '_metadata',
                        '__array_struct__', '__array_interface__']
-    _metadata = ['sr', '_geometry_column_name']
+    _metadata = ['sr', '_geometry_column_name', '_gis']
     _geometry_column_name = GEO_COLUMN_DEFAULT
     #----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
@@ -62,10 +63,11 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
            the end user.
         """
         gis = kwargs.pop('gis', None)
+        self._gis = gis
         if gis is None:
             from ...env import active_gis
             if active_gis == False:
-                warnings.warn("GIS is not ")
+                warnings.warn("GIS is not active")
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -107,11 +109,15 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
             if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
-                geometry = self['SHAPE'].tolist()
-                del self['SHAPE']
-                for idx, g in enumerate(geometry):
-                    geometry[idx] = types.Geometry(g)
-            self.set_geometry(geometry, inplace=True)
+                if all(isinstance(x, types.Geometry) \
+                       for x in self[self._geometry_column_name]) == False:
+                    geometry = self['SHAPE'].tolist()
+                    del self['SHAPE']
+                    for idx, g in enumerate(geometry):
+                        if isinstance(g, types.Geometry) == False and \
+                           isinstance(g, dict):
+                            geometry[idx] = types.Geometry(g)
+                    self.set_geometry(geometry, inplace=True)
         self._delete_index()
     #----------------------------------------------------------------------
     @property
@@ -121,30 +127,31 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
-        template = {
-            "type": "FeatureCollection",
-            "features": []
-        }
-        geom_type = self.geometry_type
-        if geom_type.lower() == "point":
-            geom_type = "Point"
-        elif geom_type.lower() == "polyline":
-            geom_type = "LineString"
-        elif geom_type.lower() == "polygon":
-            geom_type = "Polygon"
-        df_copy = self.copy(deep=True)
-        df_copy['geom_json'] = self.geometry.JSON
-        df_copy['SHAPE'] = df_copy['geom_json']
-        del df_copy['geom_json']
-        for index, row in df_copy.iterrows():
-            geom = row['SHAPE']
-            del row['SHAPE']
-            template['features'].append(
-                {"type" : geom_type,
-                "geometry" : pd.json.loads(geom),
-                "attributes":row}
-            )
-        return pd.json.dumps(template)
+        if HASARCPY:
+            template = {
+                "type": "FeatureCollection",
+                "features": []
+            }
+            geom_type = self.geometry_type
+            if geom_type.lower() == "point":
+                geom_type = "Point"
+            elif geom_type.lower() == "polyline":
+                geom_type = "LineString"
+            elif geom_type.lower() == "polygon":
+                geom_type = "Polygon"
+            df_copy = self.copy(deep=True)
+            df_copy['geom_json'] = self.geometry.JSON
+            df_copy['SHAPE'] = df_copy['geom_json']
+            del df_copy['geom_json']
+            for index, row in df_copy.iterrows():
+                geom = row['SHAPE']
+                del row['SHAPE']
+                template['features'].append(
+                    {"type" : geom_type,
+                     "geometry" : pd.json.loads(geom),
+                     "attributes":row}
+                )
+            return pd.json.dumps(template)
     @property
     def geoextent(self):
         """returns the extent of the spatial dataframe"""
@@ -211,9 +218,30 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
         """ writes the spatial dataframe to a map """
-        from ...gis import GIS
-        from ...widgets import MapView
-        raise NotImplementedError("plot is not implmented")
+        if self._gis is None:
+            gis = GIS(set_active=False)
+        else:
+            gis = self._gis
+        if self.sr:
+            sr = self.sr
+        else:
+            sr = self.geometry[0].spatial_reference
+        extent = None
+        if HASARCPY:
+            ext = self.geoextent
+            extent = pd.json.dumps({
+                "xmin" : ext[0],
+                "ymin" : ext[1],
+                "xmax" : ext[2],
+                "ymax" : ext[3],
+                "spatialReference" : sr
+            })
+        m = gis.map()#extent)
+
+        m.draw(self.to_featureset())
+        if extent:
+            m.extent = extent
+        return m
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(filename, **kwargs):
@@ -246,9 +274,16 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         from arcgis.data.geodataset.io import to_featureclass
         return to_featureclass(df=self,
-                                out_location=out_location,
-                                out_name=out_name,
-                                overwrite=overwrite, skip_invalid=skip_invalid)
+                               out_location=out_location,
+                               out_name=out_name,
+                               overwrite=overwrite, skip_invalid=skip_invalid)
+    #----------------------------------------------------------------------
+    def to_featureset(self):
+        """
+        Converts a spatial dataframe to a feature set object
+        """
+        from arcgis.features import FeatureSet
+        return FeatureSet.from_dataframe(self)
     #----------------------------------------------------------------------
     def set_geometry(self, col, drop=False, inplace=False, sr=None):
         """
@@ -405,7 +440,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         geometry_type must match.
         """
         if isinstance(other, SpatialDataFrame) and \
-            other.geometry_type == self.geometry_type:
+           other.geometry_type == self.geometry_type:
             return pd.concat(objs=[self, other], axis=0)
         elif isinstance(other, DataFrame):
             return pd.concat(objs=[self, other], axis=0)

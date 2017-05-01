@@ -16,6 +16,7 @@ try:
     GEOTYPES = (arcpy.Geometry, types.Geometry)
 except ImportError:
     GEOTYPES = (types.Geometry)
+    HASARCPY = False
 from warnings import warn
 try:
     from .index.quadtree import Index as QuadIndex
@@ -864,13 +865,14 @@ class BaseSpatialPandas(object):
     @property
     def bounds(self):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
-        x = self.geometry.extent
-        barray = []
-        for geom in x:
-            barray.append([float(x) for x in geom.__str__().split(' ')[:4]])
-        return DataFrame(barray,
-                         columns=['xmin', 'ymin', 'xmax', 'ymax'],
-                         index=self.index)
+        if HASARCPY:
+            x = self.geometry.extent
+            barray = []
+            for geom in x:
+                barray.append([float(x) for x in geom.__str__().split(' ')[:4]])
+            return DataFrame(barray,
+                             columns=['xmin', 'ymin', 'xmax', 'ymax'],
+                             index=self.index)
     #----------------------------------------------------------------------
     @property
     def series_extent(self):
@@ -878,10 +880,10 @@ class BaseSpatialPandas(object):
 
         This is a shortcut for calculating the min/max x and y bounds individually.
         """
-
-        b = self.bounds
-        return (b['xmin'].min(),
-                b['ymin'].min(),
-                b['xmax'].max(),
-                b['ymax'].max())
+        if HASARCPY:
+            b = self.bounds
+            return (b['xmin'].min(),
+                    b['ymin'].min(),
+                    b['xmax'].max(),
+                    b['ymax'].max())
 

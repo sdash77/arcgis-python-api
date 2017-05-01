@@ -437,12 +437,13 @@ class FeatureSet(object):
                 arcpy_found = False
             from pandas.io.json import json_normalize
             from arcgis import SpatialDataFrame
-            if arcpy_found and \
-               self.geometry_type is not None:
-                if 'wkt' in self.spatial_reference.keys():
-                    sr = arcpy.SpatialReference(text=self.spatial_reference['wkt'])
-                elif 'wkid' in self.spatial_reference:
-                    sr = arcpy.SpatialReference(self.spatial_reference['wkid'])
+            if self.geometry_type is not None:
+                if self.spatial_reference and \
+                   'wkt' in self.spatial_reference.keys():
+                    sr = SpatialReference(self.spatial_reference)
+                elif self.spatial_reference and \
+                     'wkid' in self.spatial_reference:
+                    sr = SpatialReference(self.spatial_reference)
                 else:
                     sr = None
                 geoms = []
@@ -451,18 +452,6 @@ class FeatureSet(object):
                     attributes.append(feat.attributes)
                     geoms.append(Geometry(feat.geometry))
                     del feat
-                #for feat in self.features:
-                    #attributes.append(feat.attributes)
-                    #gg = Geometry(feat.geometry)
-                    #if gg.type in ("POINT", "LINE", "POLYLINE",
-                                   #"POLYGON", "MULTIPOINT"):
-                        #g = arcpy.AsShape(str(gg), esri_json=True)
-                        #if sr:
-                            #g = g.projectAs(sr)
-
-                        #geoms.append(g)
-                    #del gg
-                    #del feat
                 df = json_normalize(attributes)
                 df.columns = df.columns.str.replace('attributes.', '')
                 return SpatialDataFrame(df, geometry=geoms, sr=sr)
@@ -503,6 +492,11 @@ class FeatureSet(object):
         """returns a featureset from a Pandas' Data or Spatial DataFrame"""
         from ..data.geodataset import SpatialDataFrame
         import pandas as pd
+        try:
+            import arcpy
+            HASARCPY = True
+        except ImportError:
+            HASARCPY = False
         features = []
         index = 0
         if isinstance(df, SpatialDataFrame):
@@ -519,7 +513,7 @@ class FeatureSet(object):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(geoms[index].JSON),
+                        "geometry": json.loads(json.dumps(geoms[0])),
                         "attributes": row
                     })
             else:

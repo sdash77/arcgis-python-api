@@ -1,4 +1,5 @@
 """
+Represents a Spatial Series in the Dataframe.
 """
 from __future__ import print_function
 from __future__ import division
@@ -9,10 +10,9 @@ from .base import BaseSpatialPandas
 
 try:
     import arcpy
-    from arcpy import da
-    hasArcPy = True
+    HASARCPY = True
 except:
-    hasArcPy = False
+    HASARCPY = False
 
 import numpy as np
 import pandas as pd
@@ -23,8 +23,12 @@ from ...geometry import types
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
 def _convert_array_args(args):
-    if len(args) == 1 and isinstance(args[0], (arcpy.Geometry, types.Geometry)):
-        args = ([args[0]],)
+    if HASARCPY:
+        if len(args) == 1 and isinstance(args[0], (arcpy.Geometry, types.Geometry)):
+            args = ([args[0]],)
+    else:
+        if len(args) == 1 and isinstance(args[0], (types.Geometry)):
+            args = ([args[0]],)
     return args
 
 
