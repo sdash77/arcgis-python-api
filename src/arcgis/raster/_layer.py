@@ -1129,7 +1129,7 @@ class ImageryLayer(Layer):
         else:
             from .analytics import is_supported, generate_raster
             if is_supported(g):
-                return generate_raster(self._fnra, output_name, gis=g)
+                return generate_raster(self._fnra, output_name=output_name, gis=g)
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
 
