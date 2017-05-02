@@ -234,7 +234,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 "ymin" : ext[1],
                 "xmax" : ext[2],
                 "ymax" : ext[3],
-                "spatialReference" : sr
+                "spatialReference" : sr.factoryCode
             })
         m = gis.map()#extent)
 
@@ -277,6 +277,89 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                out_location=out_location,
                                out_name=out_name,
                                overwrite=overwrite, skip_invalid=skip_invalid)
+    #----------------------------------------------------------------------
+    def to_hdf(self, path_or_buf, key, **kwargs):
+        """Write the contained data to an HDF5 file using HDFStore.
+
+        Parameters
+        ----------
+        path_or_buf : the path (string) or HDFStore object
+        key : string
+            indentifier for the group in the store
+        mode : optional, {'a', 'w', 'r+'}, default 'a'
+
+          ``'w'``
+              Write; a new file is created (an existing file with the same
+              name would be deleted).
+          ``'a'``
+              Append; an existing file is opened for reading and writing,
+              and if the file does not exist it is created.
+          ``'r+'``
+              It is similar to ``'a'``, but the file must already exist.
+        format : 'fixed(f)|table(t)', default is 'fixed'
+            fixed(f) : Fixed format
+                       Fast writing/reading. Not-appendable, nor searchable
+            table(t) : Table format
+                       Write as a PyTables Table structure which may perform
+                       worse but allow more flexible operations like searching
+                       / selecting subsets of the data
+        append : boolean, default False
+            For Table formats, append the input data to the existing
+        data_columns :  list of columns, or True, default None
+            List of columns to create as indexed data columns for on-disk
+            queries, or True to use all columns. By default only the axes
+            of the object are indexed. See `here
+            <http://pandas.pydata.org/pandas-docs/stable/io.html#query-via-data-columns>`__.
+
+            Applicable only to format='table'.
+        complevel : int, 1-9, default 0
+            If a complib is specified compression will be applied
+            where possible
+        complib : {'zlib', 'bzip2', 'lzo', 'blosc', None}, default None
+            If complevel is > 0 apply compression to objects written
+            in the store wherever possible
+        fletcher32 : bool, default False
+            If applying compression use the fletcher32 checksum
+        dropna : boolean, default False.
+            If true, ALL nan rows will not be written to store.
+        """
+
+        from pandas.io import pytables
+        return pytables.to_hdf(path_or_buf, key, pd.DataFrame(self), **kwargs)
+    #----------------------------------------------------------------------
+    @staticmethod
+    def from_hdf(path_or_buf, key=None, **kwargs):
+        """ read from the store, close it if we opened it
+
+            Retrieve pandas object stored in file, optionally based on where
+            criteria
+
+            Parameters
+            ----------
+            path_or_buf : path (string), buffer, or path object (pathlib.Path or
+                py._path.local.LocalPath) to read from
+
+                .. versionadded:: 0.19.0 support for pathlib, py.path.
+
+            key : group identifier in the store. Can be omitted if the HDF file
+                contains a single pandas object.
+            where : list of Term (or convertable) objects, optional
+            start : optional, integer (defaults to None), row number to start
+                selection
+            stop  : optional, integer (defaults to None), row number to stop
+                selection
+            columns : optional, a list of columns that if not None, will limit the
+                return columns
+            iterator : optional, boolean, return an iterator, default False
+            chunksize : optional, nrows to include in iteration, return an iterator
+
+            Returns
+            -------
+            The selected object
+
+            """
+        return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
+                                            key=key, **kwargs))
     #----------------------------------------------------------------------
     def to_featureset(self):
         """

@@ -383,7 +383,25 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "area", None)
+        elif isinstance(self, Polygon):
+            return self._shoelace_area(parts=self['rings'])
         return
+    #----------------------------------------------------------------------
+    def _shoelace_area(self, parts):
+        """calculates the shoelace area"""
+        area = 0.0
+        area_parts = []
+        for part in parts:
+            n = len(part)
+            for i in range(n):
+                j = (i + 1) % n
+
+                area += part[i][0] * part[j][1]
+                area -= part[j][0] * part[i][1]
+                print((n, area, i, j))
+            area_parts.append(area / 2.0)
+            area = 0.0
+        return sum(area_parts)
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -397,6 +415,21 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "extent", None)
+        elif isinstance(self, Polygon):
+            ptX = [ pt[0]  for part in pts for pt in self['rings']]
+            ptY = [ pt[1]  for part in pts for pt in self['rings']]
+            return min(ptX), min(ptY), max(ptX), max(ptY)
+
+        elif isinstance(self, Polyline):
+            ptX = [ pt[0]  for part in pts for pt in self['paths']]
+            ptY = [ pt[1]  for part in pts for pt in self['paths']]
+            return min(ptX), min(ptY), max(ptX), max(ptY)
+        elif isinstance(self, MultiPoint):
+            ptX = [ pt['x'] for pt in self['points']]
+            ptY = [ pt['y'] for pt in self['points']]
+            return min(ptX), min(ptY), max(ptX), max(ptY)
+        elif isinstance(self, Point):
+            return self['x'], self['y'], self['x'], self['y']
         return
     #----------------------------------------------------------------------
     @property
@@ -439,9 +472,6 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "length", None)
-        elif hasattr(self, 'type') and \
-             self.type in ['POLYLINE', 'POLYLINE']:
-            pass
         else:
             return None
     #----------------------------------------------------------------------
@@ -459,6 +489,14 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "partCount", None)
+        elif isinstance(self, Polygon):
+            return len(self['rings'])
+        elif isinstance(self, Polyline):
+            return len(self['paths'])
+        elif isinstance(self, MultiPoint):
+            return len(self['points'])
+        elif isinstance(self, Point):
+            return 1
         return
     #----------------------------------------------------------------------
     @property
@@ -466,6 +504,14 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "pointCount", None)
+        elif isinstance(self, Polygon):
+            return sum([len(part) for part in self['rings']])
+        elif isinstance(self, Polyline):
+            return sum([len(part) for part in self['paths']])
+        elif isinstance(self, MultiPoint):
+            return sum([len(part) for part in self['points']])
+        elif isinstance(self, Point):
+            return 1
         return
     #----------------------------------------------------------------------
     @property
@@ -566,6 +612,18 @@ class Geometry(BaseGeometry):
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.convexHull())
+        elif self.type.lower() == "polygon":
+            from ._convexhull import convex_hull
+            combine_pts = [pt for part in self['rings'] for pt in part]
+            return convex_hull(pts=combine_pts)
+        elif self.type.lower() == "polyline":
+            from ._convexhull import convex_hull
+            combine_pts = [pt for part in self['paths'] for pt in part]
+            return convex_hull(pts=combine_pts)
+        elif self.type.lower() == "multipoint":
+            from ._convexhull import convex_hull
+            combine_pts = [pt for part in self['points'] for pt in part]
+            return convex_hull(pts=combine_pts)
         return None
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
@@ -1041,8 +1099,16 @@ class SpatialReference(Geometry):
                 sr.loadFromString(self['wkt'])
                 return sr
         return None
-
-
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = SpatialReference(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
+###########################################################################
 class Envelope(Geometry):
     """
     An envelope is a rectangle defined by a range of values for each
@@ -1061,7 +1127,16 @@ class Envelope(Geometry):
     @property
     def type(self):
         return self._type
-
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = Evelope(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
+###########################################################################
 class Point(Geometry):
     """
     A point contains x and y fields along with a spatialReference field. A
@@ -1075,14 +1150,24 @@ class Point(Geometry):
             iterable = ()
         super(Point, self).__init__(iterable)
         self.update(kwargs)
-
+    #----------------------------------------------------------------------
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         return {"coordinates": [self['x'], self['y']], "type": "Point"}
-
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = Point(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
+###########################################################################
 class MultiPoint(Geometry):
     """
     A multipoint contains an array of points, along with a spatialReference
@@ -1109,15 +1194,24 @@ class MultiPoint(Geometry):
             iterable = ()
         super(MultiPoint, self).__init__(iterable)
         self.update(kwargs)
+    #----------------------------------------------------------------------
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         return {"coordinates": self['points'], "type": "MultiPoint"}
-
-
-
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = MultiPoint(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
+###########################################################################
 class Polyline(Geometry):
     """
     A polyline contains an array of paths or curvePaths and a
@@ -1139,14 +1233,24 @@ class Polyline(Geometry):
             iterable = ()
         super(Polyline, self).__init__(iterable)
         self.update(kwargs)
+    #----------------------------------------------------------------------
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         return {"coordinates": self['paths'], "type": "MultiLineString"}
-
-
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = Polyline(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
+###########################################################################
 class Polygon(Geometry):
     """
     A polygon contains an array of rings or curveRings and a
@@ -1174,11 +1278,20 @@ class Polygon(Geometry):
             iterable = ()
         super(Polygon, self).__init__(iterable)
         self.update(kwargs)
-
+    #----------------------------------------------------------------------
     @property
     def type(self):
         return self._type
-
+    #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         return {"coordinates": self['rings'], "type": "MultiPolygon"}
+    #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(d)
+        self = Polygon(iterable=d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return dict(self)
