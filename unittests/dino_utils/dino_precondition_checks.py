@@ -316,12 +316,33 @@ class PortalUtils():
         # function to add and publish
         def add_and_publish(file, gis, item_properties = {}, publish_item = False, folder=None, publish_parameters = {}):
             # check if such an item exists
-            file_name = pathlib.Path(file).stem #gives file name without extension
-            file_name_wextn = pathlib.Path(file).name
+            file_name=""
+            if file is None:
+                #happens for text based items
+                file_name = item_properties['title']
+                file_name_wextn = file_name
+            else:
+                file_name = pathlib.Path(file).stem #gives file name without extension
+                file_name_wextn = pathlib.Path(file).name
 
             print("Adding " + file_name_wextn, end= " ")
             sr = gis.content.search('title:' + file_name, max_items=1)
             if sr is not None and len(sr) > 0:
+                print(" already exists")
+                return True
+
+            sr2 = gis.content.search('title:' + file_name_wextn, max_items=1)
+            if sr2 is not None and len(sr2) > 0:
+                print(" already exists")
+                return True
+
+            sr3 = gis.content.search('name:' + file_name_wextn, max_items=1)
+            if sr3 is not None and len(sr3) > 0:
+                print(" already exists")
+                return True
+
+            sr4 = gis.content.search(file_name_wextn, max_items=1)
+            if sr4 is not None and len(sr4) > 0:
                 print(" already exists")
                 return True
             else:
@@ -329,14 +350,14 @@ class PortalUtils():
                 try:
                     added_item = gis.content.add(item_properties, file, folder=folder)
                 except Exception as addEx:
-                    print(addEx.__str__())
+                    print("Item add exception: " + addEx.__str__())
                     return False
                 if added_item is not None:
                     if publish_item:
                         try:
                             published_item = added_item.publish()
                         except Exception as pubEx:
-                            print(pubEx.__str__())
+                            print("Publish Exception: " + pubEx.__str__())
                             return False
 
                         if published_item is not None:
@@ -484,7 +505,8 @@ class PortalUtils():
         file_path = os.path.join(base_path, "shp")
         file_list = glob1(file_path, "set1*.zip")
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
+            item_properties = {'type': 'Shapefile', 'name':file}
+            add_and_publish(os.path.join(file_path, file), gis, item_properties, publish_item=True)
         print('-----------------------------------------------------------')
 
         # Add some web maps

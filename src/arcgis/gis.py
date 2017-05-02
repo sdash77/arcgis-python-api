@@ -4335,7 +4335,6 @@ class Item(dict):
             return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False):
-        import time
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature, tiled map, vector tile and scene services.
@@ -4352,10 +4351,31 @@ class Item(dict):
 
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
+        
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        publish_parameters  dictionary containing publish instructions and customizations. 
+                            Cannot be combined with overwrite.
+        ----------------    ---------------------------------------------------------------
+        address_fields      dict containing mapping of df columns to address fields, 
+                            eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
+        ----------------    ---------------------------------------------------------------
+        output_type         Only used when a feature service is published as a tile service. 
+                            eg: output_type='Tiles'
+        ----------------    ---------------------------------------------------------------
+        overwrite           If True, the hosted feature service is overwritten. 
+                            Only available in ArcGIS Online and Portal for ArcGIS 10.5 or later.
+        ================    ===============================================================
 
-        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
+        :return:
+            an arcgis.gis.Item object corresponding to the published web layer
+        
+        .. note::
+             	ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
         """
 
+        import time
         params = {
             "f" : "json"
         }
@@ -4384,9 +4404,11 @@ class Item(dict):
             folder = None
 
         if publish_parameters is None:
-            if fileType == 'shapefile':
-                publish_parameters =  {"hasStaticData":True, "name":os.path.splitext(self['name'])[0], "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
-            elif fileType == 'CSV':
+            if fileType == 'shapefile' and not overwrite:
+                publish_parameters =  {"hasStaticData":True, "name":os.path.splitext(self['name'])[0],
+                                       "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+
+            elif fileType == 'CSV' and not overwrite:
                 path = "content/features/analyze"
 
                 postdata = {
@@ -4415,6 +4437,54 @@ class Item(dict):
                 service_name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters.update({"name": service_name})
 
+            elif fileType in ['CSV', 'shapefile', 'fileGeodatabase'] and overwrite: #need to construct full publishParameters
+                #find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
+                related_items = self.related_items('Service2Data', 'reverse')
+
+                return_item_list = []
+                if len (related_items) == 1: #simple 1:1 relationship between data and service items
+                    r_item = related_items[0]
+                    #construct a FLC manager
+                    from arcgis.features import FeatureLayerCollection
+                    flc = FeatureLayerCollection.fromitem(r_item)
+                    flc_mgr = flc.manager
+
+                    #get the publish parameters from FLC manager
+                    publish_parameters = flc_mgr._gen_overwrite_publishParameters(r_item)
+
+                elif len(related_items) == 0:
+                    # the CSV item was never published. Hence overwrite should work like first time publishing - analyze csv
+                    path = "content/features/analyze"
+                    postdata = {
+                        "f": "pjson",
+                        "itemid" : self.itemid,
+                        "filetype" : "csv",
+
+                        "analyzeParameters" : {
+                            "enableGlobalGeocoding": "true",
+                            "sourceLocale":"en-us",
+                            #"locationType":"address",
+                            "sourceCountry":"",
+                            "sourceCountryHint":""
+                        }
+                    }
+
+                    if address_fields is not None:
+                        postdata['analyzeParameters']['locationType'] = 'address'
+
+                    res = self._portal.con.post(path, postdata)
+                    publish_parameters =  res['publishParameters']
+                    if address_fields is not None:
+                        publish_parameters.update({"addressFields":address_fields})
+
+                    # use csv title for service name, after replacing non-alphanumeric characters with _
+                    service_name = re.sub(r'[\W_]+', '_', self['title'])
+                    publish_parameters.update({"name": service_name})
+
+                elif len(related_items) > 1:
+                    # length greater than 1, then 1:many relationship
+                    raise RuntimeError("User cant overwrite this service, using this data, as this data is already referring to another service.")
+
             elif fileType == 'vectortilepackage':
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
@@ -4431,9 +4501,10 @@ class Item(dict):
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 buildInitialCache = True
 
-            else:
+            else: #sd files
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
+
         elif fileType == 'CSV': # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
             path = "content/features/analyze"
@@ -4462,44 +4533,8 @@ class Item(dict):
         ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite,
                                         self.owner, folder, buildInitialCache)
 
-        try:
-            serviceitem_id = ret[0]['serviceItemId']
-        except KeyError as ke:
-            raise RuntimeError(ret[0]['error']['message'])
-
-        if 'jobId' in ret[0]:
-            job_id = ret[0]['jobId']
-            path = 'content/users/' + self.owner
-            if folder is not None:
-                path = path + '/' + folder + '/'
-
-            path = path + '/items/' + serviceitem_id + '/status'
-            params = {
-                "f" : "json",
-                "jobid" : job_id
-            }
-            job_response = self._portal.con.post(path, params)
-
-            # Query and report the Analysis job status.
-            #
-            num_messages = 0
-            #print(str(job_response))
-            if "status" in job_response:
-                while not job_response.get("status") == "completed":
-                    time.sleep(5)
-
-                    job_response = self._portal.con.post(path, params)
-
-                    #print(str(job_response))
-                    if job_response.get("status") in ("esriJobFailed","failed"):
-                        raise Exception("Job failed.")
-                    elif job_response.get("status") == "esriJobCancelled":
-                        raise Exception("Job cancelled.")
-                    elif job_response.get("status") == "esriJobTimedOut":
-                        raise Exception("Job timed out.")
-
-            else:
-                raise Exception("No job results.")
+        #Check publishing job status
+        serviceitem_id = self._check_publish_status(ret, folder)
 
         return Item(self._gis, serviceitem_id)
 
@@ -4572,6 +4607,57 @@ class Item(dict):
             folder = None
         return self._portal.protect_item(self.itemid, self.owner, folder, enable)
 
+    def _check_publish_status(self, ret, folder):
+        """
+        Internal method to check the status of a publishing job.
+        :param ret: Dictionary representing the result of a publish REST call. This dict should contain the 
+                    `serviceItemId` and `jobId` of the publishing job
+        :param folder: obtained from self.ownerFolder
+        :return: 
+        """
+        import time
+        try:
+            serviceitem_id = ret[0]['serviceItemId']
+        except KeyError as ke:
+            raise RuntimeError(ret[0]['error']['message'])
+
+        if 'jobId' in ret[0]:
+            job_id = ret[0]['jobId']
+            path = 'content/users/' + self.owner
+            if folder is not None:
+                path = path + '/' + folder + '/'
+
+            path = path + '/items/' + serviceitem_id + '/status'
+            params = {
+                "f" : "json",
+                "jobid" : job_id
+            }
+            job_response = self._portal.con.post(path, params)
+
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+            #print(str(job_response))
+            if "status" in job_response:
+                while not job_response.get("status") == "completed":
+                    time.sleep(5)
+
+                    job_response = self._portal.con.post(path, params)
+
+                    #print(str(job_response))
+                    if job_response.get("status") in ("esriJobFailed","failed"):
+                        raise Exception("Job failed.")
+                    elif job_response.get("status") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("status") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
+
+            else:
+                raise Exception("No job results.")
+        else:
+            raise Exception("No job id")
+
+        return serviceitem_id
 
 def rot13(s):
     result = ""

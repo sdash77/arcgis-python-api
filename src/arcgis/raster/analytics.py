@@ -236,8 +236,10 @@ def generate_raster(raster_function,
     
     output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster. 
         You can pass in an existing Image Service Item from your GIS to use that instead.
+
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
         used as the output for the tool.
+
         A RuntimeError is raised if a service by that name already exists
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
