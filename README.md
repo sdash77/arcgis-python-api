@@ -35,7 +35,7 @@ Install steps for developers:
 * conda install pandas
 * `pip install -e ./src` (for using latest source code)
 * `jupyter nbextension install --py --sys-prefix arcgis` (for enabling the map widget for Jupyter notebook)
-* `jupyter nbextension install --py --sys-prefix arcgis` (to initialize the map widget in the browser every time the notebook loads)
+* `jupyter nbextension enable --py --sys-prefix arcgis` (to initialize the map widget in the browser every time the notebook loads)
 
 ### Build the Documentation
 

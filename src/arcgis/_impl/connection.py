@@ -936,9 +936,11 @@ class _ArcGISConnection(object):
 
         return handlers
     #----------------------------------------------------------------------
+
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
-             token=DEFAULT_TOKEN, try_json=True):
+             token=DEFAULT_TOKEN, try_json=True, out_folder=None,
+             file_name=None, force_bytes=False):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         # prevent double encoding
         if not is_retry:
@@ -1001,7 +1003,10 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
 
             resp = opener.open(req)
-            resp_data, is_file = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp,
+                                               out_folder=out_folder,
+                                               file_name=file_name,
+                                               force_bytes=force_bytes)
         # Otherwise send a normal HTTP POST request
         else:
             encoded_postdata = None
@@ -1018,14 +1023,18 @@ class _ArcGISConnection(object):
             opener.addheaders = headers
             #print("***"+url)
             resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data, is_file = self._process_response(resp)
+            resp_data, is_file = self._process_response(resp,
+                                               out_folder=out_folder,
+                                               file_name=file_name,
+                                               force_bytes=force_bytes)
 
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + resp_data)
         # print(resp_data)
 
-        if not try_json:
+        # If is a file or we're not trying to parse to JSON, return response as is
+        if is_file or not try_json:
             return resp_data
 
         if use_ordered_dict:

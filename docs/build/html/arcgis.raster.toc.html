@@ -179,7 +179,6 @@
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#imagerylayer">ImageryLayer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mosaic">mosaic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -628,6 +627,13 @@ esriGeodataTransformApplyOverwrite</div></blockquote>
 </dd></dl>
 
 <dl class="method">
+<dt id="arcgis.raster.ImageryLayer.blend">
+<code class="descname">blend</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.blend" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by blending all overlapping pixels
+:return: this imagery layer with mosaic operation set to &#8216;blend&#8217;</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="arcgis.raster.ImageryLayer.colormap">
 <code class="descname">colormap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.colormap" title="Permalink to this definition">¶</a></dt>
 <dd><p>The colormap resource returns RGB color representation of pixel
@@ -668,7 +674,7 @@ structure, you can specify the pixel size with a simple comma-separated syntax.<
 
 <dl class="method">
 <dt id="arcgis.raster.ImageryLayer.export_image">
-<code class="descname">export_image</code><span class="sig-paren">(</span><em>bbox</em>, <em>image_sr=None</em>, <em>bbox_sr=None</em>, <em>size=None</em>, <em>time=None</em>, <em>export_format='jpgpng'</em>, <em>pixel_type=None</em>, <em>no_data=None</em>, <em>no_data_interpretation='esriNoDataMatchAny'</em>, <em>interpolation=None</em>, <em>compression=None</em>, <em>compression_quality=None</em>, <em>band_ids=None</em>, <em>mosaic_rule=None</em>, <em>rendering_rule=None</em>, <em>f='json'</em>, <em>save_folder=None</em>, <em>save_file=None</em>, <em>compression_tolerance=None</em>, <em>adjust_aspect_ratio=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.export_image" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export_image</code><span class="sig-paren">(</span><em>bbox=None</em>, <em>image_sr=None</em>, <em>bbox_sr=None</em>, <em>size=None</em>, <em>time=None</em>, <em>export_format='jpgpng'</em>, <em>pixel_type=None</em>, <em>no_data=None</em>, <em>no_data_interpretation='esriNoDataMatchAny'</em>, <em>interpolation=None</em>, <em>compression=None</em>, <em>compression_quality=None</em>, <em>band_ids=None</em>, <em>mosaic_rule=None</em>, <em>rendering_rule=None</em>, <em>f='json'</em>, <em>save_folder=None</em>, <em>save_file=None</em>, <em>compression_tolerance=None</em>, <em>adjust_aspect_ratio=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.export_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>The export_image operation is performed on an imagery layer.
 The result of this operation is an image resource. This resource
 provides information about the exported image, such as its URL,
@@ -682,12 +688,13 @@ exported image other than the image itself.</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><dl class="first docutils">
-<dt>bbox - The extent (bounding box) of the exported image. Unless</dt>
+<dt>bbox - Optional. The extent (bounding box) of the exported image. Unless</dt>
 <dd><p class="first">the bbox_sr parameter has been specified, the bbox is
 assumed to be in the spatial reference of the imagery
 layer.</p>
-<p class="last">The bbox should be specified as an arcgis.geometry.Envelope object, it&#8217;s json representation or as
+<p>The bbox should be specified as an arcgis.geometry.Envelope object, it&#8217;s json representation or as
 a list or string with this format: &#8216;&lt;xmin&gt;, &lt;ymin&gt;, &lt;xmax&gt;, &lt;ymax&gt;&#8217;</p>
+<p class="last">If omitted, the extent of the imagery layer is used</p>
 </dd>
 <dt>image_sr - The spatial reference of the exported image.</dt>
 <dd>The spatial reference can be specified as either a well-known ID, it&#8217;s json representation or as an
@@ -772,11 +779,16 @@ response image has square pixels. Values: True | False</p>
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="arcgis.raster.ImageryLayer.extent">
+<code class="descname">extent</code><a class="headerlink" href="#arcgis.raster.ImageryLayer.extent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of interest. Used for displaying the imagery layer when queried</p>
+</dd></dl>
+
 <dl class="method">
-<dt id="arcgis.raster.ImageryLayer.filter">
-<code class="descname">filter</code><span class="sig-paren">(</span><em>where=None</em>, <em>geometry=None</em>, <em>time=None</em>, <em>lock_to_selection=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Filters the rasters that will be used for applying raster functions.</p>
-<p>If lock_to_selection is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden</p>
+<dt id="arcgis.raster.ImageryLayer.filter_by">
+<code class="descname">filter_by</code><span class="sig-paren">(</span><em>where=None</em>, <em>geometry=None</em>, <em>time=None</em>, <em>lock_rasters=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.filter_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filters the layer by where clause, geometry and temporal filters</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -794,11 +806,11 @@ start time or end time will represent infinity for start or end time respectivel
 Syntax: time_filter=[&lt;startTime&gt;, &lt;endTime&gt;] ; specified as datetime.date, datetime.datetime or
 timestamp in milliseconds</p>
 </li>
-<li><strong>lock_to_selection</strong> &#8211; </li>
+<li><strong>lock_rasters</strong> &#8211; bool If True, the LockRaster mosaic rule is applied to the layer, using the filtered objectids</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">ImageryLayer with filtered images meeting the filter criteria</p>
 </td>
 </tr>
 </tbody>
@@ -809,7 +821,14 @@ timestamp in milliseconds</p>
 <dt id="arcgis.raster.ImageryLayer.filtered_rasters">
 <code class="descname">filtered_rasters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.filtered_rasters" title="Permalink to this definition">¶</a></dt>
 <dd><p>The object ids of the filtered rasters in this imagery layer, by applying the where clause, spatial and
-temporal filters</p>
+temporal filters. If no rasters are filtered, returns None. If all rasters are filtered, returns empty list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.first">
+<code class="descname">first</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.first" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by picking the first image
+:return: this imagery layer with mosaic operation set to &#8216;first&#8217;</p>
 </dd></dl>
 
 <dl class="classmethod">
@@ -897,6 +916,96 @@ the response will indicate &#8220;hasRasterAttributeTable&#8221;: true; if the r
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.last">
+<code class="descname">last</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.last" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by picking the last image
+:return: this imagery layer with mosaic operation set to &#8216;last&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.max">
+<code class="descname">max</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.max" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by picking the max pixel value
+:return: this imagery layer with mosaic operation set to &#8216;max&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.mean">
+<code class="descname">mean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by choosing the mean of all overlapping pixels
+:return: this imagery layer with mosaic operation set to &#8216;mean&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.min">
+<code class="descname">min</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.min" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by picking the min pixel value
+:return: this imagery layer with mosaic operation set to &#8216;min&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.mosaic_by">
+<code class="descname">mosaic_by</code><span class="sig-paren">(</span><em>method=None</em>, <em>sort_by=None</em>, <em>sort_val=None</em>, <em>lock_rasters=None</em>, <em>viewpt=None</em>, <em>asc=True</em>, <em>where=None</em>, <em>fids=None</em>, <em>muldidef=None</em>, <em>op='first'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.mosaic_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines how individual images in this layer should be mosaicked. It specifies selection,
+mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
+the mosaic dataset. A mosaic rule is used to define:</p>
+<ul class="simple">
+<li>The selection of rasters that will participate in the mosaic (using where clause).</li>
+<li>The mosaic method, e.g. how the selected rasters are ordered.</li>
+<li>The mosaic operation, e.g. how overlapping pixels at the same location are resolved.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method</strong> &#8211; determines how the selected rasters are ordered.
+str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
+required if method is: center | nadir | northwest | seamline,
+optional otherwise. If no method is passed &#8220;none&#8221; method is used, which uses the order of records to sort
+If sort_by and optionally sort_val parameters are specified, &#8220;attribute&#8221; method is used
+If lock_raster_ids are specified, &#8220;lock-raster&#8221; method is used
+If a viewpt parameter is passed, &#8220;viewpoint&#8221; method is used.</li>
+<li><strong>sort_by</strong> &#8211; optional str, field name when sorting by attributes</li>
+<li><strong>sort_val</strong> &#8211; optional, a constant value defining a reference or base value for the sort field when sorting by
+attributes</li>
+<li><strong>lock_rasters</strong> &#8211; optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
+to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
+maximum pixel size range of the locked rasters.</li>
+<li><strong>viewpt</strong> &#8211; optional point, used as view point for viewpoint mosaicking method</li>
+<li><strong>asc</strong> &#8211; optional bool, indicate whether to use ascending or descending order. Default is ascending order.</li>
+<li><strong>where</strong> &#8211; optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
+may not be visible at all scales</li>
+<li><strong>fids</strong> &#8211; optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
+aware that the rasters may not be visible at all scales.</li>
+<li><strong>muldidef</strong> &#8211; optional dict, multidemensional definition used for filtering by variable/dimensions.
+See <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000</a></li>
+<li><strong>op</strong> &#8211; optional string, first | last | min | max | mean | blend | sum
+mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
+pixel values, or blend them.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a mosaic rule defined in the format at
+<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Also see <a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E</a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.raster.ImageryLayer.mosaic_rule">
+<code class="descname">mosaic_rule</code><a class="headerlink" href="#arcgis.raster.ImageryLayer.mosaic_rule" title="Permalink to this definition">¶</a></dt>
+<dd><p>The mosaic rule used by the imagery layer to define:
+* The selection of rasters that will participate in the mosaic
+* The mosaic method, e.g. how the selected rasters are ordered.
+* The mosaic operation, e.g. how overlapping pixels at the same location are resolved.</p>
+<p>Set by calling the mosaic_by or filter_by methods on the layer</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="arcgis.raster.ImageryLayer.properties">
 <code class="descname">properties</code><a class="headerlink" href="#arcgis.raster.ImageryLayer.properties" title="Permalink to this definition">¶</a></dt>
@@ -961,61 +1070,78 @@ else a dictionary containing the expected return type</dd>
 </div></blockquote>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.save">
+<code class="descname">save</code><span class="sig-paren">(</span><em>output_name=None</em>, <em>for_viz=False</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persists this imagery layer to the GIS as an Imagery Layer item. If for_viz is True, a new Item is created that
+uses the applied raster functions for visualization at display resolution using on-the-fly image processing.
+If for_viz is False, distributed raster analysis is used for generating a new raster information product by
+applying raster functions at source resolution across the extent of the output imagery layer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>output_name</strong> &#8211; Optional. If not provided, an Imagery Layer item is created by the method and used as the output.
+You can pass in the name of the output Imagery Layer that should be created by this method to
+be used as the output for the tool.
+Alternatively, if for_viz is False, you can pass in an existing Image Service Item from your GIS to use that instead
+A RuntimeError is raised if a service by that name already exists</li>
+<li><strong>for_viz</strong> &#8211; If True, a new Item is created that uses the applied raster functions for visualization at
+display resolution using on-the-fly image processing.
+If for_viz is False, distributed raster analysis is used for generating a new raster information product
+for use in analysis and visualization by applying raster functions at source resolution across the extent of
+the output imagery layer.</li>
+<li><strong>gis</strong> &#8211; The GIS to be used for saving the output</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:return : output_raster - Image layer item</p>
 </dd></dl>
 
-</div>
-<div class="section" id="mosaic">
-<h2>mosaic<a class="headerlink" href="#mosaic" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
-<dt id="arcgis.raster.mosaic">
-<code class="descclassname">raster.</code><code class="descname">mosaic</code><span class="sig-paren">(</span><em>method=None</em>, <em>sort_by=None</em>, <em>sort_val=None</em>, <em>lock_rasters=None</em>, <em>viewpt=None</em>, <em>asc=True</em>, <em>where=None</em>, <em>fids=None</em>, <em>muldidef=None</em>, <em>op='first'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.mosaic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a mosaicking rule when defining how individual images should be mosaicked. It specifies selection,
-mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
-the mosaic dataset. A mosaic rule is used to define:</p>
-<ul class="simple">
-<li>The selection of rasters that will participate in the mosaic (using where clause).</li>
-<li>The mosaic method, e.g. how the selected rasters are ordered.</li>
-<li>The mosaic operation, e.g. how overlapping pixels at the same location are resolved.</li>
-</ul>
+<dt id="arcgis.raster.ImageryLayer.set_filter">
+<code class="descname">set_filter</code><span class="sig-paren">(</span><em>where=None</em>, <em>geometry=None</em>, <em>time=None</em>, <em>lock_rasters=False</em>, <em>clear_filters=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.set_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filters the rasters that will be used for applying raster functions.</p>
+<p>If lock_rasters is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>method</strong> &#8211; determines how the selected rasters are ordered.
-str, can be none | center | nadir | northwest | seamline | viewpoint | attribute | lock-raster
-required if method is: center | nadir | northwest | seamline,
-optional otherwise. If no method is passed &#8220;none&#8221; method is used, which uses the order of records to sort
-If sort_by and optionally sort_val parameters are specified, &#8220;attribute&#8221; method is used
-If lock_raster_ids are specified, &#8220;lock-raster&#8221; method is used
-If a viewpt parameter is passed, &#8220;viewpoint&#8221; method is used.</li>
-<li><strong>sort_by</strong> &#8211; optional str, field name when sorting by attributes</li>
-<li><strong>sort_val</strong> &#8211; optional, a constant value defining a reference or base value for the sort field when sorting by
-attributes</li>
-<li><strong>lock_rasters</strong> &#8211; optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
-to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
-maximum pixel size range of the locked rasters.</li>
-<li><strong>viewpt</strong> &#8211; optional point, used as view point for viewpoint mosaicking method</li>
-<li><strong>asc</strong> &#8211; optional bool, indicate whether to use ascending or descending order. Default is ascending order.</li>
-<li><strong>where</strong> &#8211; optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
-may not be visible at all scales</li>
-<li><strong>fids</strong> &#8211; optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
-aware that the rasters may not be visible at all scales.</li>
-<li><strong>muldidef</strong> &#8211; optional dict, multidemensional definition used for filtering by variable/dimensions.
-See <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000</a></li>
-<li><strong>op</strong> &#8211; optional string, first | last | min | max | mean | blend | sum
-mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
-pixel values, or blend them.</li>
+<li><strong>where</strong> &#8211; a where clause on this layer to filter the imagery layer by the selection sql statement.
+Any legal SQL where clause operating on the fields in the raster</li>
+<li><strong>geometry</strong> &#8211; the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter</li>
+<li><strong>time</strong> &#8211; <p>a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
+Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
+Syntax: time_filter=&lt;timeInstant&gt;</p>
+<p>Time extent specified as list of [&lt;startTime&gt;, &lt;endTime&gt;]
+For time extents one of &lt;startTime&gt; or &lt;endTime&gt; could be None. A None value specified for
+start time or end time will represent infinity for start or end time respectively.
+Syntax: time_filter=[&lt;startTime&gt;, &lt;endTime&gt;] ; specified as datetime.date, datetime.datetime or
+timestamp in milliseconds</p>
+</li>
+<li><strong>lock_rasters</strong> &#8211; if True, the LockRaster mosaic rule will be applied to the layer, unless overridden</li>
+<li><strong>clear_filters</strong> &#8211; if True, the applied filters are cleared</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a mosaic rule defined in the format at
-<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/</a></p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Also see <a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E</a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.raster.ImageryLayer.sum">
+<code class="descname">sum</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.ImageryLayer.sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>overlapping pixels at the same location are resolved by adding up all overlapping pixel values
+:return: this imagery layer with mosaic operation set to &#8216;sum&#8217;</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

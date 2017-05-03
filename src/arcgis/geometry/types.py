@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import json
 import copy
 import sys
+from arcgis._impl.common._mixins import PropertyMap
 from six import add_metaclass
 try:
     import arcpy
@@ -182,8 +183,12 @@ class BaseGeometry(dict):
         :type name: str
         :param value: value to set item to
         """
-
-        self[name] = value
+        if name == 'spatial_reference':
+            if isinstance(value, PropertyMap):
+                value = dict(value)
+            self['spatialReference'] = value
+        else:
+            self[name] = value
     #----------------------------------------------------------------------
     def __delattr__(self, name):
         """
@@ -514,12 +519,18 @@ class Geometry(BaseGeometry):
             return 1
         return
     #----------------------------------------------------------------------
+    # @property
+    # def spatial_reference(self):
+    #     """"""
+    #     if HASARCPY:
+    #         return getattr(self.as_arcpy, "spatialReference", None)
+    #     return
+
     @property
     def spatial_reference(self):
-        """"""
-        if HASARCPY:
-            return getattr(self.as_arcpy, "spatialReference", None)
-        return
+        if 'spatialReference' in self:
+            return self['spatialReference']
+        return None
     #----------------------------------------------------------------------
     @property
     def true_centroid(self):

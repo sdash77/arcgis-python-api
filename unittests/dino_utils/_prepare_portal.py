@@ -61,21 +61,21 @@ if __name__ == "__main__":
     portal_password = _conf_reader['teamportal']['admin_password']
 
     my_gis = GIS(portal_url, portal_username, portal_password)
-    populate_portal_users_groups(my_gis)
+    # populate_portal_users_groups(my_gis)
 
     # Create content for publisher1
-    portal_url = _conf_reader['teamportal']['url']
-    pub1_username = _conf_reader['teamportal']['publisher1']
-    pub1_password = _conf_reader['teamportal']['publisher1_password']
+    portal_url = _conf_reader['arcgiscom']['url']
+    pub1_username = _conf_reader['arcgiscom']['admin_user']
+    pub1_password = _conf_reader['arcgiscom']['admin_password']
     data_path = _conf_reader2['test_data']['qalab_base_path']
 
     pub1_gis = GIS(portal_url, pub1_username, pub1_password)
     populate_portal_content_1(pub1_gis, data_path)
 
     # Create content for publisher2
-    portal_url = _conf_reader['teamportal']['url']
-    pub2_username = _conf_reader['teamportal']['publisher2']
-    pub2_password = _conf_reader['teamportal']['publisher2_password']
-
-    pub2_gis = GIS(portal_url, pub2_username, pub2_password)
-    populate_portal_content_2(pub2_gis)
+    # portal_url = _conf_reader['teamportal']['url']
+    # pub2_username = _conf_reader['teamportal']['publisher2']
+    # pub2_password = _conf_reader['teamportal']['publisher2_password']
+    #
+    # pub2_gis = GIS(portal_url, pub2_username, pub2_password)
+    # populate_portal_content_2(pub2_gis)

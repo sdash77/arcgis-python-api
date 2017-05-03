@@ -17,6 +17,7 @@ from ._layer import ImageryLayer
 
 from arcgis.gis import Item
 import copy
+import numbers
 
 #
 # def _raster_input(raster):
@@ -147,59 +148,59 @@ def duration(rasters, min_value=None, max_value=None, undefined_class=None, asty
                           undefined_class=undefined_class, astype=astype)
 
 
-# def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
-#     """
-#     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     layer1, raster1, raster_ra1 = _raster_input(raster1)
-#     layer2, raster2, raster_ra2 = _raster_input(raster2)
-#
-#     layer = layer1 if layer1 is not None else layer2
-#
-#     extent_types = {
-#         "FirstOf" : 0,
-#         "IntersectionOf" : 1,
-#         "UnionOf" : 2,
-#         "LastOf" : 3
-#     }
-#
-#     cellsize_types = {
-#         "FirstOf" : 0,
-#         "MinOf" : 1,
-#         "MaxOf" : 2,
-#         "MeanOf" : 3,
-#         "LastOf" : 4
-#     }
-#
-#     in_extent_type = extent_types[extent_type]
-#     in_cellsize_type = cellsize_types[cellsize_type]
-#
-#     template_dict = {
-#         "rasterFunction": "Arithmetic",
-#         "rasterFunctionArguments": {
-#             "OperationType": operation_type,
-#             "Raster": raster1,
-#             "Raster2": raster2
-#         }
-#     }
-#
-#     if in_extent_type is not None:
-#         template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
-#     if in_cellsize_type is not None:
-#         template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
-#
-#     if astype is not None:
-#         template_dict["outputPixelType"] = astype.upper()
-#
-#     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
+    """
+    The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+
+    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
+    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+    :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
+    :return: the output raster with this function applied to it
+    """
+
+    layer1, raster1, raster_ra1 = _raster_input(raster1)
+    layer2, raster2, raster_ra2 = _raster_input(raster2)
+
+    layer = layer1 if layer1 is not None else layer2
+
+    extent_types = {
+        "FirstOf" : 0,
+        "IntersectionOf" : 1,
+        "UnionOf" : 2,
+        "LastOf" : 3
+    }
+
+    cellsize_types = {
+        "FirstOf" : 0,
+        "MinOf" : 1,
+        "MaxOf" : 2,
+        "MeanOf" : 3,
+        "LastOf" : 4
+    }
+
+    in_extent_type = extent_types[extent_type]
+    in_cellsize_type = cellsize_types[cellsize_type]
+
+    template_dict = {
+        "rasterFunction": "Arithmetic",
+        "rasterFunctionArguments": {
+            "OperationType": operation_type,
+            "Raster": raster1,
+            "Raster2": raster2
+        }
+    }
+
+    if in_extent_type is not None:
+        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+    if in_cellsize_type is not None:
+        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
+
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 #
 #
@@ -2920,9 +2921,11 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
+    newlyr._extent = layer._extent
 
     return newlyr
-    
+
+
 
 def _raster_input(raster):
     if isinstance(raster, ImageryLayer):
@@ -2930,15 +2933,28 @@ def _raster_input(raster):
         raster_ra = _get_raster_ra(raster)
         raster = _get_raster(raster)
     elif isinstance(raster, list):
-        r0 = raster[0]
-        r1 = raster[1]
         mix_and_match = False # mixing rasters from two image services
-        if r0._fn is None and r1._fn is None and r0._url != r1._url:
-            mix_and_match = True
-        layer = r0
+        # try:
+        #     r0 = raster[0]
+        #     r1 = raster[1]
+        #     if r0._fn is None and r1._fn is None and r0._url != r1._url:
+        #         mix_and_match = True
+        # except:
+        #     pass
+
+        for r in raster: # layer is first non numeric raster in list
+            if not isinstance(r, numbers.Number):
+                layer = r
+                break
+
+        for r in raster:
+            if not isinstance(r, numbers.Number):
+                if r._url != layer._url:
+                    mix_and_match = True
+
         raster_ra = [_get_raster_ra(r) for r in raster]
         if mix_and_match:
-            raster = [_get_raster_url(r) for r in raster]
+            raster = [_get_raster_url(r, layer) for r in raster]
         else:
             raster = [_get_raster(r) for r in raster]
     else: # maybe scalar for arithmetic functions, or a chained raster fn
@@ -2949,42 +2965,74 @@ def _raster_input(raster):
     return layer, raster, raster_ra
 
 def _get_raster(raster):
-    if raster._fn is not None:
-        raster = raster._fn
-    else:
-        oids = raster.filtered_rasters()
-        if oids is None:
-            raster = '$$'
-        elif len(oids) == 1:
-            raster = '$' + str(oids[0])
+    if isinstance(raster, ImageryLayer):
+        if raster._fn is not None:
+            raster = raster._fn
         else:
-            raster = ['$' + str(x) for x in oids]
+            oids = raster.filtered_rasters()
+            if oids is None:
+                raster = '$$'
+            elif len(oids) == 1:
+                raster = '$' + str(oids[0])
+            else:
+                raster = ['$' + str(x) for x in oids]
     return raster
 
-def _get_raster_url(raster):
-    if raster._fn is not None:
-        raster = raster._fn
+
+def _replace_raster_url(obj, url=None):
+    # replace all "Raster" : '$$' with url
+    if isinstance(obj, dict):
+        value = {k: _replace_raster_url(v, url)
+                 for k, v in obj.items()}
+    elif isinstance(obj, list):
+        value = [_replace_raster_url(elem, url)
+                 for elem in obj]
     else:
-        raster = raster._url
-        # oids = raster.filtered_rasters()
-        # if oids is None:
-        #     raster = '$$'
-        # elif len(oids) == 1:
-        #     raster = '$' + str(oids[0])
-        # else:
-        #     raster = ['$' + str(x) for x in oids]
+        value = obj
+
+    if value == '$$':
+        return url
+    elif isinstance(value, str) and len(value) > 0 and value[0] == '$':
+        return url + '/' + value.replace('$', '')
+    else:
+        return value
+
+
+
+def _get_raster_url(raster, layer):
+    if isinstance(raster, ImageryLayer):
+        if raster._fn is not None:
+            if raster._url == layer._url:
+                raster = raster._fn
+            else:
+                raster = _replace_raster_url(raster._fn, raster._url)
+
+        else:
+            if raster._url == layer._url:
+                raster = '$$'
+            else:
+                raster = raster._url
+
+            # oids = raster.filtered_rasters()
+            # if oids is None:
+            #     raster = '$$'
+            # elif len(oids) == 1:
+            #     raster = '$' + str(oids[0])
+            # else:
+            #     raster = ['$' + str(x) for x in oids]
     return raster
 
 
 def _get_raster_ra(raster):
-    if raster._fnra is not None:
-        raster_ra = raster._fnra
-    elif isinstance(raster, ImageryLayer):
-        raster_ra = raster._url
+    if isinstance(raster, ImageryLayer):
+        if raster._fnra is not None:
+            raster_ra = raster._fnra
+        else:
+            raster_ra = raster._url
 
 
-        #if raster._mosaic_rule is not None:
-        #    raster_ra['mosaicRule'] = raster._mosaic_rule
+            #if raster._mosaic_rule is not None:
+            #    raster_ra['mosaicRule'] = raster._mosaic_rule
     elif isinstance(raster, Item):
         raise RuntimeError('Item not supported as input. Use ImageryLayer - e.g. item.layers[0]')
         #raster_ra = {
@@ -2992,4 +3040,5 @@ def _get_raster_ra(raster):
         #}
     else:
         raster_ra = raster
+
     return raster_ra

@@ -12,7 +12,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
 
 
-#pylint: disable=protected-access
+# pylint: disable=protected-access
 
 class AttachmentManager(object):
     """
@@ -76,6 +76,7 @@ class SyncManager(object):
     if the layer is sync enabled / supports disconnected editing.
     Users call methods on this 'replicas' object to manipulate (create, synchronize, unregister) replicas.
     """
+
     # http://services.arcgis.com/help/fsDisconnectedEditing.html
     def __init__(self, featsvc):
         self._fs = featsvc
@@ -301,7 +302,7 @@ class FeatureLayerCollectionManager(_GISResource):
            operation is a response indicating success or failure with error
            code and description.
 
-           This function will allow users to change add additional values
+           This function will allow users to change or add additional values
            to an already published service.
 
            Input:
@@ -429,6 +430,152 @@ class FeatureLayerCollectionManager(_GISResource):
         res = self._con.post(u_url, params)
         self.refresh()
         return res
+
+    # ----------------------------------------------------------------------
+    def overwrite(self, data_file):
+        """
+        Overwrite all the features and layers in a hosted feature layer collection service. This operation removes
+        all features but retains the properties (such as symbology, itemID) and capabilities configured on the service. 
+        There are some limits to using this operation: 
+            1. Only hosted feature layer collection services can be overwritten
+            2. The original data used to publish this layer should be available on the portal
+            3. The data file used to overwrite should be of the same format and filename as the original that was used to
+            publish the layer
+            4. The schema (column names, column data types) of the data_file should be the same as original. You can have
+            additional or fewer rows (features).
+            
+        In addition to overwriting the features, this operation also updates the data of the item used to published this
+        layer.
+        
+        :param data: path to data_file used to overwrite the hosted feature layer collection 
+        :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
+        """
+        # region Get Item associated with the service
+        if 'serviceItemId' in self.properties.keys():
+            feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
+        else:
+            return {'error': 'Can only overwrite a hosted feature layer collection'}
+        # endregion
+
+        # region find data item related to this hosted feature layer
+        related_data_items = feature_layer_item.related_items('Service2Data', 'forward')
+        if len(related_data_items) > 0:
+            related_data_item = related_data_items[0]
+        else:
+            return {'error': 'Cannot find related data item used to publish this feature layer'}
+
+        # endregion
+
+        # region construct publishParameters dictionary
+        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase']:
+            # construct a full publishParameters that is a combination of existing Feature Layer definition
+            # and original publishParameters.json used for publishing the service the first time
+
+            # get old publishParameters.json
+            path = "content/items/" + feature_layer_item.itemid + "/info/publishParameters.json"
+            postdata = {'f': 'json'}
+
+            old_publish_parameters = self._gis._con.post(path, postdata)
+
+            # get FeatureServer definition
+            feature_service_def = dict(self.properties)
+
+            # Get definition of each layer and table, remove fields in the dict
+            layers_dict = []
+            tables_dict = []
+            for layer in self.layers:
+                layer_def = dict(layer.properties)
+                if 'fields' in layer_def.keys():
+                    dump = layer_def.pop("fields")
+                layers_dict.append(layer_def)
+
+            for table in self.tables:
+                table_def = dict(table.properties)
+                if 'fields' in table_def.keys():
+                    dump = table_def.pop('fields')
+                tables_dict.append(table_def)
+
+            # Splice the detailed table and layer def with FeatuerServer def
+            feature_service_def['layers'] = layers_dict
+            feature_service_def['tables'] = tables_dict
+            from pathlib import Path
+            service_name = Path(self.url).parts[-2]  # get service name from url
+            feature_service_def['name'] = service_name
+
+            # combine both old publish params and full feature service definition
+            publish_parameters = feature_service_def
+            publish_parameters.update(old_publish_parameters)
+
+        else:
+            # overwriting a SD case - no need for detailed publish parameters
+            publish_parameters = None
+        # endregion
+
+        #region Perform overwriting
+        if related_data_item.update(data=data_file):
+            published_item = related_data_item.publish(publish_parameters, overwrite=True)
+            if published_item is not None:
+                return {'success': True}
+            else:
+                return {'error': 'Unable to overwrite the hosted feature layer collection'}
+        else:
+            return {'error': 'Unable to update related data item with new data'}
+        #end region
+
+        # ----------------------------------------------------------------------
+
+    def _gen_overwrite_publishParameters(self, flc_item):
+        """
+        This internal method generates publishParameters for overwriting a hosted feature layer collection. This is used
+        by Item.publish() method when user wants to originate the overwrite process from the data item instead of 
+        the hosted feature layer.
+        
+        :param flc_item: The Feature Layer Collection Item object that is being overwritten 
+        :return: JSON message as dictionary with to be used as publishParameters payload in the publish REST call.
+        """
+
+        # region construct publishParameters dictionary
+        # construct a full publishParameters that is a combination of existing Feature Layer definition
+        # and original publishParameters.json used for publishing the service the first time
+
+        # get old publishParameters.json
+        path = "content/items/" + flc_item.itemid + "/info/publishParameters.json"
+        postdata = {'f': 'json'}
+
+        old_publish_parameters = self._gis._con.post(path, postdata)
+
+        # get FeatureServer definition
+        feature_service_def = dict(self.properties)
+
+        # Get definition of each layer and table, remove fields in the dict
+        layers_dict = []
+        tables_dict = []
+        for layer in self.layers:
+            layer_def = dict(layer.properties)
+            if 'fields' in layer_def.keys():
+                dump = layer_def.pop("fields")
+            layers_dict.append(layer_def)
+
+        for table in self.tables:
+            table_def = dict(table.properties)
+            if 'fields' in table_def.keys():
+                dump = table_def.pop('fields')
+            tables_dict.append(table_def)
+
+        # Splice the detailed table and layer def with FeatuerServer def
+        feature_service_def['layers'] = layers_dict
+        feature_service_def['tables'] = tables_dict
+        from pathlib import Path
+        service_name = Path(self.url).parts[-2]  # get service name from url
+        feature_service_def['name'] = service_name
+
+        # combine both old publish params and full feature service definition
+        publish_parameters = feature_service_def
+        publish_parameters.update(old_publish_parameters)
+
+        # endregion
+
+        return publish_parameters
 
 
 class FeatureLayerManager(_GISResource):
@@ -625,4 +772,3 @@ class FeatureLayerManager(_GISResource):
         params = {"f": "json"}
         url += "/status"
         return self._con.get(url, params)
-

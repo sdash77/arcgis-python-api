@@ -86,4 +86,4 @@ return_z = False
 return_m = False
 
 #: If True, messages from geoprocessing tools will be printed to stdout
-verbose = True
+verbose = False

@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import warnings
+
+import arcgis
 from six import string_types, integer_types
 import pandas as pd
 from pandas import DataFrame, Series, Index
@@ -62,12 +64,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
            installed and a full swatch of functionality is available to
            the end user.
         """
-        gis = kwargs.pop('gis', None)
+        gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
-        if gis is None:
-            from ...env import active_gis
-            if active_gis == False:
-                warnings.warn("GIS is not active")
+
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -93,8 +92,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                len(geometry) > 0:
                 g = geometry[0]
                 gtrans = []
-                if isinstance(g, arcpy.Point):
 
+                if HASARCPY:
+                if isinstance(g, arcpy.Point):
                     for g in geometry:
                         if isinstance(g, arcpy.Point):
                             g = arcpy.PointGeometry(g)
@@ -242,6 +242,30 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if extent:
             m.extent = extent
         return m
+        if self._gis is None:
+            gis = GIS(set_active=False)
+        else:
+            gis = self._gis
+        if self.sr:
+            sr = self.sr
+        else:
+            sr = self.geometry[0].spatial_reference
+        extent = None
+        if HASARCPY:
+            ext = self.geoextent
+            extent = pd.json.dumps({
+                "xmin" : ext[0],
+                "ymin" : ext[1],
+                "xmax" : ext[2],
+                "ymax" : ext[3],
+                "spatialReference" : sr
+            })
+        m = gis.map()#extent)
+
+        m.draw(self.to_featureset())
+        if extent:
+            m.extent = extent
+        return m
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(filename, **kwargs):
@@ -360,6 +384,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             """
         return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
                                             key=key, **kwargs))
+    #----------------------------------------------------------------------
+    def to_featureset(self):
+        """
+        Converts a spatial dataframe to a feature set object
+        """
+        from arcgis.features import FeatureSet
+        return FeatureSet.from_dataframe(self)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """

@@ -123,7 +123,51 @@ class Test_FeatureLayer_portal(unittest.TestCase):
         else:
             print("Cannot create a FeatureLayerCollection manager class")
             class_skip = True
+        #endregion
 
+        # region Publish the feature layer for delete_features if it does not exist
+        cls.namePrefix = "dino_FeatureLayer_"
+        layer_name_delfeatures = cls.namePrefix + "delfeatures"
+
+        search_result = PortalUtils.search_portal_item(cls.gis, layer_name_delfeatures, "Feature Layer")
+        if search_result is not None:
+            print("Found necessary feature layer")
+            cls.feature_layer2_item = search_result
+        else:
+            print("Cannot find necessary feature layer, publishing a new layer")
+            fgdb_path = cls.qalab_cls_path + 'set1_fortune10_delfeatures.gdb.zip'
+            fgdb_item = cls.gis.content.add({'title': layer_name_delfeatures}, data=fgdb_path)
+
+            # publish the csv item
+            if fgdb_item is not None:
+                cls.feature_layer2_item = fgdb_item.publish()
+                if cls.feature_layer2_item is not None:
+                    print("Published dino_FeatureLayer_delfeatures feature layer")
+                else:
+                    print("Failed to publish data item to feature layer")
+                    class_skip = True
+            else:
+                print("Failed to add necessary data item file to portal")
+                class_skip = True
+
+        # ensure feature layer has necessary capabilities enabled
+        flc = features.FeatureLayerCollection.fromitem(cls.feature_layer2_item)
+        if flc is not None:
+            if 'Editing' not in flc.properties.capabilities:
+                result = flc.manager.update_definition(
+                    {'capabilities': 'Create,Delete,Query,Update,Editing,Extract',
+                     'syncEnabled': True})
+                if result.get('success'):
+                    print("Enabled necessary capabilities on feature layer")
+                else:
+                    print(str(result))
+                    class_skip = True
+        else:
+            print("Cannot create a FeatureLayerCollection manager class")
+            class_skip = True
+            # endregion
+
+        #endregion
         print("==================================================================")
         print("Beginning tests in Test_FeatureLayer_portal class")
         #endregion
@@ -214,6 +258,50 @@ class Test_FeatureLayer_portal(unittest.TestCase):
             f1_post_update = fset_post_update.features[0]
 
             self.assertEqual(f1_post_update.attributes['timestamp_'], self.time_stamp, "Updates are not reflected in the feature layer")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(class_skip, "Preconditions not met, skipping test")
+    def test_delete_features(self):
+        try:
+            # access the feature layer and its feature for editing
+            flayers = self.feature_layer2_item.layers
+            flayer0 = flayers[0]
+
+            # add two features
+            f1 = features.Feature()
+            f1.geometry = {'x': -9785223.91346784, 'y': 5317966.588194862}
+            f1.attributes = {'CITY': 'MILWAUKEE', 'STATE': 'WI', 'X': -87.902162, 'Y': 43.039372}
+
+            f2 = features.Feature()
+            f2.attributes = {'CITY': 'ORLANDO', 'STATE': 'FL', 'X': -81.404424, 'Y': 28.47029}
+            f2.geometry = {'x': -9061899.027999733, 'y': 3308397.032848168}
+
+            # push 2 features to service
+            flayer0.edit_features(adds=[f1, f2])
+
+            # get count after adding 2 features
+            old_feature_count = flayer0.query(return_count_only=True)
+            self.assertGreater(old_feature_count, 0,
+                               "At least 2 features should be present in feature layer, none present")
+
+            # delete all features
+            delete_features_result = flayer0.delete_features(where='1=1')
+            self.assertIsNotNone(delete_features_result, "Got back none from delete_features method call")
+            self.assertGreater(len(delete_features_result['deleteResults']), 0, "Length of delete_features call result "
+                                                                                "is 0. Did not delete even 1 feature.")
+
+            # Verify number of features after truncate
+            new_feature_count = flayer0.query(return_count_only=True)
+            self.assertEqual(new_feature_count, 0, "Feature count after delete_features not equal to 0")
 
         except AssertionError as assertErrorException:
             test_skip = True
