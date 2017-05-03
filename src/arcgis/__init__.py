@@ -2,7 +2,10 @@ __version__ = '1.2.0'
 
 from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping
 
-from .data.geodataset import SpatialDataFrame, GeoSeries
+try:
+    from .data.geodataset import SpatialDataFrame, GeoSeries
+except:
+    pass
 
 def _jupyter_nbextension_paths():
     return [{
