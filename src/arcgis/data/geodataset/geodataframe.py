@@ -14,7 +14,7 @@ import numpy
 from arcgis.gis import GIS
 from arcgis.data.geodataset.base import BaseSpatialPandas
 from arcgis.data.geodataset.geoseries import GeoSeries
-from six import PY2, PY3
+from six import PY3
 from six import string_types
 from arcgis.geometry import types
 GEO_COLUMN_DEFAULT = "SHAPE"
@@ -94,17 +94,17 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 gtrans = []
 
                 if HASARCPY:
-                if isinstance(g, arcpy.Point):
-                    for g in geometry:
-                        if isinstance(g, arcpy.Point):
-                            g = arcpy.PointGeometry(g)
-                        gtrans.append(types.Geometry(g))
-                    geometry = gtrans
-                elif isinstance(g, arcpy.Geometry):
-                    for g in geometry:
-                        gtrans.append(types.Geometry(g))
-                        del g
-                    geometry = gtrans
+                    if isinstance(g, arcpy.Point):
+                        for g in geometry:
+                            if isinstance(g, arcpy.Point):
+                                g = arcpy.PointGeometry(g)
+                            gtrans.append(types.Geometry(g))
+                        geometry = gtrans
+                    elif isinstance(g, arcpy.Geometry):
+                        for g in geometry:
+                            gtrans.append(types.Geometry(g))
+                            del g
+                        geometry = gtrans
 
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
@@ -225,42 +225,27 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if self.sr:
             sr = self.sr
         else:
-            sr = self.geometry[0].spatial_reference
-        extent = None
-        if HASARCPY:
-            ext = self.geoextent
-            extent = pd.json.dumps({
-                "xmin" : ext[0],
-                "ymin" : ext[1],
-                "xmax" : ext[2],
-                "ymax" : ext[3],
-                "spatialReference" : sr.factoryCode
-            })
-        m = gis.map()#extent)
-
-        m.draw(self.to_featureset())
-        if extent:
-            m.extent = extent
-        return m
-        if self._gis is None:
-            gis = GIS(set_active=False)
-        else:
-            gis = self._gis
-        if self.sr:
             sr = self.sr
-        else:
-            sr = self.geometry[0].spatial_reference
         extent = None
         if HASARCPY:
-            ext = self.geoextent
-            extent = pd.json.dumps({
-                "xmin" : ext[0],
-                "ymin" : ext[1],
-                "xmax" : ext[2],
-                "ymax" : ext[3],
-                "spatialReference" : sr
-            })
-        m = gis.map()#extent)
+            if sr:
+                ext = self.geoextent
+                extent = pd.json.dumps({
+                    "xmin" : ext[0],
+                    "ymin" : ext[1],
+                    "xmax" : ext[2],
+                    "ymax" : ext[3],
+                    "spatialReference" : sr.factoryCode
+                })
+            else:
+                ext = self.geoextent
+                extent = pd.json.dumps({
+                    "xmin" : ext[0],
+                    "ymin" : ext[1],
+                    "xmax" : ext[2],
+                    "ymax" : ext[3]
+                })
+        m = gis.map()
 
         m.draw(self.to_featureset())
         if extent:
@@ -384,13 +369,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             """
         return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
                                             key=key, **kwargs))
-    #----------------------------------------------------------------------
-    def to_featureset(self):
-        """
-        Converts a spatial dataframe to a feature set object
-        """
-        from arcgis.features import FeatureSet
-        return FeatureSet.from_dataframe(self)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """
