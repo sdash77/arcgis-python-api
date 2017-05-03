@@ -301,9 +301,8 @@ class SiteManager(BaseServer):
         if isinstance(self._resources, list) and \
            "data" in self._resources:
             url = self._url + "/data"
-            return _data.Data(url=url,
-                              connection=self._con,
-                              initialize=True)
+            return _data.DataStoreManager(url=url,
+                                          connection=self._con)
         else:
             return None
     #----------------------------------------------------------------------
