@@ -109,7 +109,34 @@ class IOTest(unittest.TestCase):
         fc = self._construct_featureclass()
         spdf = from_featureclass(filename=fc)
         spdf.to_pickle(out_file)
-        print()
+    #----------------------------------------------------------------------
+    def test_to_hdf(self):
+        from uuid import uuid4
+        out_file = r"c:\temp\%s.hf5" % uuid4().hex
+        if os.path.isfile(out_file):
+            os.remove(out_file)
+        from arcgis.data.geodataset.io import from_featureclass
+        fc = self._construct_featureclass()
+        spdf = from_featureclass(filename=fc)
+        spdf.to_hdf(out_file, uuid4().hex)
+        self.assertTrue(out_file, os.path.isfile(out_file))
+        os.remove(out_file)
+        arcpy.Delete_management(fc)
+    #----------------------------------------------------------------------
+    def test_from_hdf(self):
+        from uuid import uuid4
+        key = uuid4().hex
+        out_file = r"c:\temp\%s.hf5" % uuid4().hex
+        if os.path.isfile(out_file):
+            os.remove(out_file)
+        from arcgis.data.geodataset.io import from_featureclass
+        fc = self._construct_featureclass()
+        spdf = from_featureclass(filename=fc)
+        spdf.to_hdf(path_or_buf=out_file, key=key)
+        spdf = SpatialDataFrame.from_hdf(out_file, key=key)
+        self.assertIsInstance(spdf, SpatialDataFrame)
+        os.remove(out_file)
+        arcpy.Delete_management(fc)
     #----------------------------------------------------------------------
 ########################################################################
 class SpatailDataFrameTest1(unittest.TestCase):
