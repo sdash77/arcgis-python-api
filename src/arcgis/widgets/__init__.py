@@ -82,55 +82,49 @@ class MapView(widgets.DOMWidget):
                 raise TypeError("item type must be web map")
             self.id = self.item.id
 
-    def draw(self, shape, popup=None, symbol=None, attributes=None):
+    def add_layer(self, item, options=None):
         """
-        Draws a shape.
-
-        Arguments:
-        shape is one of ["circle", "downarrow", "ellipse", "extent", "freehandpolygon",
-        "freehandpolyline", "leftarrow", "line", "multipoint", "point", "polygon", "polyline",
-        "rectangle", "rightarrow", "triangle", "uparrow", or geometry dict object]
-
-        popup is a dict containing "title" and "content" as keys that will be displayed
-        when the shape is clicked
-
-        symbol is a symbol specified in json format as described at http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000
-        a default symbol is used is one is not specified
-
-        attributes is a dict containing name value pairs of fields and field values
-        associated with the graphic.
-
+        Adds layers from the provided item
         """
-        import pandas as pd
-        if isinstance(shape, list) and len(shape) == 2:  # [lat, long] pair
-            shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
-        elif isinstance(shape, tuple):  # (lat, long) pair
-            shape = {'x': shape[1], 'y': shape[0], "spatialReference": {"wkid": 4326}, 'type': 'point'}
-        elif isinstance(shape, dict) and 'location' in shape: # geocoded location
-            shape = {'x': shape['location']['x'], 'y': shape['location']['y'],
-                     "spatialReference": {"wkid": 4326}, 'type': 'point'}
-
-        if isinstance(shape, FeatureSet):
-            fset = shape
-            for feature in fset.features:
-                graphic = {
-                    "geometry": feature.geometry,
-                    "infoTemplate": popup,
-                    "symbol": symbol,
-                    "attributes": feature.attributes
+        if isinstance(item, dict) and 'function_chain' in item:
+            js_layer = item['layer']._lyr_json
+            options_dict = {
+                    "imageServiceParameters": {
+                        "renderingRule": item['function_chain']
+                    }
                 }
-                self.mode = pd.json.dumps(graphic)
-        elif isinstance(shape, dict):
-            graphic = {
-                "geometry": shape,
-                "infoTemplate": popup,
-                "symbol": symbol,
-                "attributes": attributes
-            }
-            self.mode = pd.json.dumps(graphic)
-            # print(json.dumps(graphic))
-        else:
-            self.mode = shape
+
+            if options is not None:
+                options_dict.update(options)
+
+            js_layer.update({
+                "options": json.dumps(options_dict)
+            })
+            self._addlayer = json.dumps(js_layer)
+        elif isinstance(item, Layer):
+            js_layer = item._lyr_json
+            if options is not None:
+                if 'options' in js_layer:  # ImageryLayers may have rendering rules in options
+                    lyr_options = json.loads(js_layer['options'])
+                    lyr_options.update(options)
+                    js_layer.update({'options': json.dumps(lyr_options)})
+                else:
+                    js_layer.update({"options": json.dumps(options)})
+
+            self._addlayer = json.dumps(js_layer)
+        elif 'layers' in item:  # items as well as services
+            if item.layers is None:
+                raise RuntimeError('No layers accessible/available in this item or service')
+            for lyr in item.layers:
+                js_layer = lyr._lyr_json
+                if options is not None:
+                    js_layer.update({"options": json.dumps(options)})
+                self._addlayer = json.dumps(js_layer)
+        else:  # dict {'url':'xxx', 'type':'yyy', 'opacity':'zzz' ...}
+            if options is not None:
+                item.update({"options": json.dumps(options)})
+
+            self._addlayer = json.dumps(item)
 
     def add_layer(self, item, options=None):
         """
