@@ -985,25 +985,33 @@ class Test_Item_arcgis_online(unittest.TestCase):
         #endregion
 
         #region publish necessary web layers
-        # upload csv item
-        csv_path = os.path.join(cls.qalab_cls_path, "set1_overwrite_manyHFS_csv.csv")
-        cls.one_to_many_csv_item = cls.gis.content.add({}, data=csv_path)
-        print("CSV item added")
-        cls.assertIsNotNone(cls.one_to_many_csv_item, "Cannot add csv item")
+        cls.one_to_many_csv_item = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv","CSV")
+        if not cls.one_to_many_csv_item:
+            # upload csv item
+            csv_path = os.path.join(cls.qalab_cls_path, "set1_overwrite_manyHFS_csv.csv")
+            cls.one_to_many_csv_item = cls.gis.content.add({}, data=csv_path)
+            print("CSV item added")
+            cls.assertIsNotNone(cls.one_to_many_csv_item, "Cannot add csv item")
 
-        # publish the csv item - 1
-        cls.one_to_many_wfl_item_1 = cls.one_to_many_csv_item.publish(
-            publish_parameters={'name': 'set1_overwrite_manyHFS_csv_1'})
-        cls.assertIsNotNone(cls.one_to_many_wfl_item_1, "Cannot publish CSV into a feature service")
-        print("Published " + 'set1_overwrite_manyHFS_csv_1')
-        cls.one_to_many_wfl_item_1.update({'title': 'set1_overwrite_manyHFS_csv_1'})
+        cls.one_to_many_wfl_item_1 = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv_1", "Feature Layer")
+        if not cls.one_to_many_wfl_item_1:
+            # publish the csv item - 1
+            cls.one_to_many_wfl_item_1 = cls.one_to_many_csv_item.publish(
+                publish_parameters={'name': 'set1_overwrite_manyHFS_csv_1'})
+            cls.assertIsNotNone(cls.one_to_many_wfl_item_1, "Cannot publish CSV into a feature service")
+            print("Published " + 'set1_overwrite_manyHFS_csv_1')
+            cls.one_to_many_wfl_item_1.update({'title': 'set1_overwrite_manyHFS_csv_1'})
 
-        # publish the csv item - 2
-        cls.one_to_many_wfl_item_2 = cls.one_to_many_csv_item.publish(
-            publish_parameters={'name': 'set1_overwrite_manyHFS_csv_2'})
-        cls.assertIsNotNone(cls.one_to_many_wfl_item_2, "Cannot publish CSV into a feature service")
-        print("Published " + 'set1_overwrite_manyHFS_csv_2')
-        cls.one_to_many_wfl_item_2.update({'title': 'set1_overwrite_manyHFS_csv_2'})
+
+        cls.one_to_many_wfl_item_2 = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv_2",
+                                                                    "Feature Layer")
+        if not cls.one_to_many_wfl_item_2:
+            # publish the csv item - 2
+            cls.one_to_many_wfl_item_2 = cls.one_to_many_csv_item.publish(
+                publish_parameters={'name': 'set1_overwrite_manyHFS_csv_2'})
+            cls.assertIsNotNone(cls.one_to_many_wfl_item_2, "Cannot publish CSV into a feature service")
+            print("Published " + 'set1_overwrite_manyHFS_csv_2')
+            cls.one_to_many_wfl_item_2.update({'title': 'set1_overwrite_manyHFS_csv_2'})
         #endregion
 
         #region print banner
@@ -1912,6 +1920,54 @@ class Test_Item_arcgis_online(unittest.TestCase):
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((old_flayer_df.shape[0] + 10, old_flayer_df.shape[1]), overwritten_flayer_df.shape,
                              "The number of rows cols of overwritten feature layer is not more than original")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))\
+
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_nonorg_public_Item_share_unshare_orggroup(self):
+        """
+        In AGOL, users can search for public items outside the org and share them to their group
+        This is a popular way to accumulate content in their GIS.
+        :return: 
+        """
+        try:
+            itemid = "8651e4d585654f6b955564efe44d04e5"
+            data_item = self.gis.content.get(itemid)
+            self.assertIsNotNone(data_item, "Cannot create an Item Obj using a non org public items id")
+            group3 = self.gis.groups.search("title:group3", max_groups=1)[0]
+
+            #unshare form the group first
+            unshare_result = data_item.unshare([group3])
+
+            # get contents of group3 to verify it is unshared
+            group3_content = group3.content()
+
+            import time
+            time.sleep(10) #should find a way around waiting like this for cache is update
+
+            interested_item = [i for i in group3_content if i.id == data_item.id]
+            self.assertEqual(len(interested_item), 0, "Shared item should not be found in group's contents")
+
+            #try sharing to the group in the org
+            share_result = data_item.share(groups=[group3])
+
+            import time
+            time.sleep(10)
+
+            #get contents of group3 to verify
+            group3_content = group3.content()
+
+            interested_item = [i for i in group3_content if i.id == data_item.id]
+            self.assertEqual(len(interested_item), 1, "Shared item not found in group's contents")
 
         except AssertionError as assertErrorException:
             test_skip = True
