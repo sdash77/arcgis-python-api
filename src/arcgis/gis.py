@@ -2978,7 +2978,7 @@ class Group(dict):
     def content(self, max_items=1000):
         """Returns a list of items shared with this group."""
         itemlist = []
-        items = self._portal.search('group:' + self.groupid, max_results=max_items)
+        items = self._portal.search('group:' + self.groupid, max_results=max_items, outside_org=True)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
@@ -4122,7 +4122,7 @@ class Item(dict):
             group_ids = groups
 
         if self.access == 'public':
-            return self._portal.unshare_item_as_group_owner(self.itemid, group_ids)
+            return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
         else:
             return self._portal.unshare_item(self.itemid, self.owner, folder, group_ids)
 

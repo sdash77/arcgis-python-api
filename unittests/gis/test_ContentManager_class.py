@@ -107,8 +107,9 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
         #endregion
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+        self.time_stamp_numerals= str.format("{0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
               str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = "Time stamp: " + self.time_stamp_numerals
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -139,6 +140,42 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
                 #validate item can be found
                 self.assertTrue(len(publish_output.layer.featureSet.features) > 0, "No features found in geocoded"
                                                                                    "feature collection")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(class_skip, "Test preconditions not met, skipping")
+    def test_create_service_defaults(self):
+        """
+        Calling gis.content.create_service("test","test service") shouls create a feature service.
+        :return: 
+        """
+        #region old previous output
+        old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults", "Feature Service")
+        if old_output_sr:
+            try:
+                old_output_delete_result = old_output_sr.delete()
+                print("Deleted old output: " + str(old_output_delete_result))
+            except:
+                pass #not a failure, deleting is just for housekeeping as this service does not have any data associated.
+        #endregion
+
+        try:
+            #create default feature service
+            service_title = self.test_case_name +"_" + self.time_stamp_numerals
+            print("Creating service titled: " + service_title)
+
+            service_item = self.gis.content.create_service(name=service_title, service_description="Dino test default service")
+            print(service_item.title)
+            self.assertEqual(service_item.type, "Feature Service",
+                             "Default service type created when calling create_service is not a feature service")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -212,8 +249,9 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
         # endregion
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-                                     str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp_numerals = str.format("{0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = "Time stamp: " + self.time_stamp_numerals
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -247,6 +285,44 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 self.assertTrue(len(publish_output.layer.featureSet.features) > 0,
                                 "No features found in geocoded"
                                 "feature collection")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(class_skip, "Test preconditions not met, skipping")
+    def test_create_service_defaults(self):
+        """
+        Calling gis.content.create_service("test","test service") shouls create a feature service.
+        :return: 
+        """
+        # region old previous output
+        old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults",
+                                                       "Feature Service")
+        if old_output_sr:
+            try:
+                old_output_delete_result = old_output_sr.delete()
+                print("Deleted old output: " + str(old_output_delete_result))
+            except:
+                pass  # not a failure, deleting is just for housekeeping as this service does not have any data associated.
+        # endregion
+
+        try:
+            # create default feature service
+            service_title = self.test_case_name + "_" + self.time_stamp_numerals
+            print("Creating service titled: " + service_title)
+
+            service_item = self.gis.content.create_service(name=service_title,
+                                                           service_description="Dino test default service")
+            print(service_item.title)
+            self.assertEqual(service_item.type, "Feature Service",
+                             "Default service type created when calling create_service is not a feature service")
 
         except AssertionError as assertErrorException:
             test_skip = True
