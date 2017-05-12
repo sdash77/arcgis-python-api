@@ -115,11 +115,13 @@ class Extension(object):
             value = value
         else:
             raise AttributeError("Invalid input")
-        return Extension(typeName=value['typeName'],
-                         capabilities=value['capabilities'],
+        if 'allowedUploadFileTypes' not in value:
+            value['allowedUploadFileTypes'] = ""
+        return Extension(type_name=value['typeName'],
+                         capabilities=value['capabilities'] or "",
                          enabled=value['enabled'] == "true",
-                         maxUploadFileSize=value['maxUploadFileSize'],
-                         allowedUploadFileType=value['allowedUploadFileTypes'],
+                         max_upload_file_size=value['maxUploadFileSize'],
+                         allowed_upload_filetype=value['allowedUploadFileTypes'] or "",
                          properties=value['properties'])
 ########################################################################
 class ClusterProtocol(object):

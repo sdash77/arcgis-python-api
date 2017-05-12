@@ -84,11 +84,15 @@ class UserManager(object):
     @property
     def me(self):
         """
-        Gets the user object as the current logged in user.
+        Gets the user object as the current logged in user. If the username
+        cannot be found, for example, the site administrator account, then
+        just the username is returned.
         """
         res = self.search(username=self._security.connection._username,
-                          max_results=1)[0]
-        return res
+                          max_results=1)
+        if len(res) == 0:
+            return self._security.connection._username
+        return res[0]
     #----------------------------------------------------------------------
     def search(self, username, max_results=25):
         """
@@ -158,7 +162,7 @@ class User(dict):
         description = 'Not Provided'
         role = 'Not Provided'
         try:
-            fullName = self.fullName
+            fullName = self.fullname
         except:
             fullName = 'Not Provided'
         try:
@@ -169,16 +173,13 @@ class User(dict):
             email = self.email
         except:
             email = 'Not Provided'
-        try:
-            role = self.role
-        except:
-            role = "Not Provided"
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
+                    <br/><b>Username</b>: """ + str(self.username) + """
                         <br/><b>Full Name</b>: """ + str(fullName) + """
                         <br/><b>Description</b>: """ + str(description)  + """
                         <br/><b>Email</b>: """ + str(email)  + """
-                        <br/><b>Role</b>: """ + str(role)  + """
+                        <br/><b>Disabled</b>: """ + str(self.disabled)  + """
                         <br/><b>Current As:</b>: """ + str(datetime.datetime.now().strftime("%B %d, %Y")) + """
 
                     </div>
