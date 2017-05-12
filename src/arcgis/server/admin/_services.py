@@ -285,7 +285,9 @@ class ServiceManager(BaseServer):
             "description" : description
         }
         u_url = self._url + "/createFolder"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        self.init()
+        return res
     #----------------------------------------------------------------------
     def delete_folder(self, folder_name):
         """
@@ -300,7 +302,9 @@ class ServiceManager(BaseServer):
         }
         if folder_name in self.folders:
             u_url = self._url + "/%s/deleteFolder" % folder_name
-            return self._con.post(path=u_url, postdata=params)
+            res = self._con.post(path=u_url, postdata=params)
+            self.init()
+            return res
         else:
             return {"error" : "folder does not exist"}
     #----------------------------------------------------------------------
