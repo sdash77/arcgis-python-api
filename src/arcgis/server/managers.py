@@ -135,28 +135,13 @@ class Server(object):
 
     #----------------------------------------------------------------------
     @property
-    def data(self):
+    def site(self):
         """
-        This resource provides information about the data holdings of the
-        server. Data items are used by ArcGIS for Desktop and other clients
-        to validate data paths referenced by GIS services.
-        You can register new data items with the server by using the
-        Register Data Item operation. Use the Find Data Items operation to
-        search through the hierarchy of data items.
-        A relational data store type represents a database platform that
-        has been registered for use on a portal's hosting server by the
-        ArcGIS Server administrator. Each relational data store type
-        describes the properties ArcGIS Server requires in order to connect
-        to an instance of a database for a particular platform. At least
-        one registered relational data store type is required before client
-        applications such as Insights for ArcGIS can create Relational
-        Database Connection portal items.
-        The Compute Ref Count operation counts and lists all references to
-        a specific data item. This operation helps you determine if a
-        particular data item can be safely deleted or refreshed.
+        The site maintains all its configuration and meta information on
+        disk in a set of files that make up the Configuration Store.
         """
         if self._sm:
-            return self._sm.data
+            return self._sm
     #----------------------------------------------------------------------
     @property
     def logs(self):
