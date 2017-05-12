@@ -377,6 +377,30 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         from arcgis.features import FeatureSet
         return FeatureSet.from_dataframe(self)
     #----------------------------------------------------------------------
+    def to_featurelayer(self, title, gis,
+                        tags, description="", snippet=''):
+        """
+        publishes a spatail dataframe to a new feature layer
+        """
+        if gis is None:
+            raise ValueError("GIS object must be provided")
+        from arcgis.gis import GIS, ContentManager
+        isinstance(gis, GIS)
+        content = gis.content
+        isinstance(content, ContentManager)
+        sr = self.sr or 4326
+        content.create_service(name=title,
+                               service_description=description,
+                               has_static_data=False,
+                               max_record_count=1000,
+                               supported_query_formats="JSON",
+                               wkid=sr,
+                               capabilities=None,
+                               description=description,
+                               copyright_text="",
+                               service_type='featureService')
+        return
+    #----------------------------------------------------------------------
     def set_geometry(self, col, drop=False, inplace=False, sr=None):
         """
         Set the SpatialDataFrame geometry using either an existing column or

@@ -48,3 +48,34 @@ def from_layer(layer):
         res = layer.query().df
         res.reset_index(drop=True, inplace=True)
     return res
+#----------------------------------------------------------------------
+def to_layer(df,
+             layer,
+             update_existing=True,
+             add_new=False,
+             truncate=False):
+    """
+    Sends the Spatial DataFrame information to a published service
+
+    :Parameters:
+     :df: Spatial DataFrame object
+     :layer: Feature Layer or Table Layer object
+     :update_existing: boolean -
+     :add_new: boolean
+     :truncate: if true, all records will be deleted and the dataframe
+      records will replace the service data
+    Output:
+     A layer object
+    """
+    if not isinstance(df, (SpatialDataFrame)):
+        raise ValueError("df must be a SpatialDatframe")
+    if not isinstance(layer, (Table, FeatureLayer)):
+        raise ValueError("layer must be a FeatureLayer or Table Layer")
+    if truncate:
+        layer.delete_features(where='1=1')
+        layer.edit_features(adds=df.to_featureset().features)
+    elif update_existing:
+        layer.edit_features(updates=df.to_featureset().features)
+    elif add_new:
+        layer.edit_features(adds=df.to_featureset().features)
+    return layer

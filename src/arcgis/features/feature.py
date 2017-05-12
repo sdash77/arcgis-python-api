@@ -15,6 +15,11 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import BaseGeometry, Point, MultiPoint, Polyline, Polygon, Geometry, SpatialReference
 from arcgis.gis import Layer
 
+try:
+    import arcpy
+    HASARCPY = True
+except ImportError:
+    HASARCPY = False
 
 class Feature(object):
     """ Entities located in space with a set of properties can be represented as features. """
@@ -655,7 +660,9 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
-
+        if file_extension.lower() not in ['.csv', '.json'] and \
+           HASARCPY == False:
+            raise ImportError("ArcPy is required to export a feature class.")
         import sys
         if sys.version_info[0] == 2:
             access = 'wb+'
