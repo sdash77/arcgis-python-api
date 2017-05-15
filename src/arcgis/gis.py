@@ -2300,8 +2300,8 @@ class ContentManager(object):
             max_record_count        optional int, ,maximum number of records in query operations
             supported_query_formats optional string, formats in which query results are returned
             capabilities            optional string, Specify service capabilities.
-                                    If left unspecified, 'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
-                                    are used for image services, and 'Create,Delete,Query,Update,Editing'
+                                    If left unspecified, 'Image,Catalog,Metadata,Download,Pixels'
+                                    are used for image services, and 'Query'
                                     are used for feature services, and 'Query' otherwise
             description             optional string, a user-friendly description for the published dataset.
             copyright_text          optional string, copyright information associated with the dataset.
@@ -2356,9 +2356,9 @@ class ContentManager(object):
         """
         if capabilities is None:
             if service_type == 'imageService':
-                capabilities = 'Image,Catalog,Metadata,Download,Pixels,Edit,Mensuration,Uploads'
+                capabilities = 'Image,Catalog,Metadata,Download,Pixels'
             elif service_type == 'featureService':
-                capabilities = 'Create,Delete,Query,Update,Editing'
+                capabilities = 'Query'
             else:
                 capabilities = 'Query'
 
@@ -2387,7 +2387,14 @@ class ContentManager(object):
         :return:
             None if the item is not found and returns an item object if the item is found
         """
-        item = self._portal.get_item(itemid)
+        try:
+            item = self._portal.get_item(itemid)
+        except RuntimeError as re:
+            if re.args[0].__contains__("Item does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
+
         if item is not None:
             return Item(self._gis, itemid, item)
         return None

@@ -303,7 +303,7 @@ class ServiceManager(BaseServer):
            Inputs:
               folder_name - name of folder to remove
            Output:
-              JSON message as dictionary
+              boolean
         """
         params = {
             "f" : "json"
@@ -316,7 +316,7 @@ class ServiceManager(BaseServer):
                 return res['status'] == 'success'
             return res
         else:
-            return {"error" : "folder does not exist"}
+            return False
     #----------------------------------------------------------------------
     def delete_service(self, name, service_type, folder=None):
         """
@@ -327,7 +327,7 @@ class ServiceManager(BaseServer):
               folder - name of the folder the service resides, leave None
                        for root.
            Output:
-              JSON message as dictionary
+              boolean
         """
         if folder is None:
             u_url = self._url + "/%s.%s/delete" % (name,
