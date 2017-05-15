@@ -70,8 +70,11 @@ class Log(BaseServer):
             "f" : "json",
         }
         url = "{}/clean".format(self._url)
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def settings(self):

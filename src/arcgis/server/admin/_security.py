@@ -65,7 +65,10 @@ class Security(BaseServer):
             "description" : description
         }
         a_url = self._url + "/roles/add"
-        return self._con.post(path=a_url, postdata=params)
+        res = self._con.post(path=a_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def add_user(self,
                  username,
@@ -95,7 +98,10 @@ class Security(BaseServer):
         if email is not None:
             params['email'] = email
         a_url = self._url + "/users/add"
-        return self._con.post(path=a_url, postdata=params)
+        res = self._con.post(path=a_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def add_users_to_role(self, rolename, users):
         """ Assigns a role to multiple users """
@@ -105,7 +111,10 @@ class Security(BaseServer):
             "users" : users
         }
         rURL = self._url + "/roles/addUsersToRole"
-        return self._con.post(path=rURL, postdata=params)
+        res = self._con.post(path=rURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def assign_privilege(self, rolename, privilege="ACCESS"):
         """
@@ -139,8 +148,11 @@ class Security(BaseServer):
             "rolename" : rolename,
             "privilege" : privilege
         }
-        return self._con.post(path=a_url,
-                              postdata=params)
+        res = self._con.post(path=a_url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def assign_roles(self, username, roles):
         """
@@ -162,7 +174,10 @@ class Security(BaseServer):
             "roles" : roles
         }
         u_url = self._url + "/users/assignRoles"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def disable_primary_site_administrator(self):
         """
@@ -175,7 +190,10 @@ class Security(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=dURL, postdata=params)
+        res = self._con.post(path=dURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def enable_primary_site_administrator(self):
         """
@@ -194,7 +212,10 @@ class Security(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=eURL, postdata=params)
+        res = self._con.post(path=eURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def get_privilege_for_role(self, rolename):
         """
@@ -355,8 +376,11 @@ class Security(BaseServer):
             "rolename" : rolename
         }
         u_url = self._url + "/roles/remove"
-        return self._con.post(path=u_url,
-                              postdata=params)
+        res = self._con.post(path=u_url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def remove_roles_from_user(self, username, roles):
         """
@@ -375,7 +399,10 @@ class Security(BaseServer):
             "username" : username,
             "roles" : roles
         }
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def delete_user(self, username):
         """
@@ -390,7 +417,10 @@ class Security(BaseServer):
             "username" : username
         }
         u_url = self._url + "/users/remove"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def remove_users_from_role(self, rolename, users):
         """
@@ -407,7 +437,10 @@ class Security(BaseServer):
             "users" : users
         }
         u_url = self._url + "/roles/removeUsersFromRole"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def roles(self):
@@ -477,7 +510,10 @@ class Security(BaseServer):
         if password is not None:
             params['password'] = password
         u_url = self._url + "/psa/update"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def update_role(self, rolename, description):
         """ Updates a role description in the role store
@@ -494,7 +530,10 @@ class Security(BaseServer):
         if description is not None:
             params['description'] = description
         u_url = self._url + "/roles/update"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def update_user(self, username, password=None,
                     fullname=None, description=None,

@@ -238,7 +238,10 @@ class ServiceManager(BaseServer):
             "principal" : principal,
             "isAllowed" : is_allowed
         }
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def list_folder_permissions(self, folder_name):
         """
@@ -268,7 +271,10 @@ class ServiceManager(BaseServer):
             "f" : "json",
             "principal" : principal
         }
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def create_folder(self, folder_name, description=""):
         """
@@ -287,6 +293,8 @@ class ServiceManager(BaseServer):
         u_url = self._url + "/createFolder"
         res = self._con.post(path=u_url, postdata=params)
         self.init()
+        if 'status' in res:
+            return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
     def delete_folder(self, folder_name):
@@ -304,6 +312,8 @@ class ServiceManager(BaseServer):
             u_url = self._url + "/%s/deleteFolder" % folder_name
             res = self._con.post(path=u_url, postdata=params)
             self.init()
+            if 'status' in res:
+                return res['status'] == 'success'
             return res
         else:
             return {"error" : "folder does not exist"}
@@ -329,7 +339,10 @@ class ServiceManager(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def service_report(self, folder=None):
         """
@@ -401,8 +414,11 @@ class ServiceManager(BaseServer):
         """
         params = {'f' : 'json'}
         url = self._url + "/unfederate"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def unregister_extension(self, extension_filename):
         """
@@ -417,8 +433,11 @@ class ServiceManager(BaseServer):
             "extensionFilename" : extension_filename
         }
         url = self._url + "/types/extensions/unregister"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def update_extension(self, item_id):
         """
@@ -434,8 +453,11 @@ class ServiceManager(BaseServer):
         params = {'f':'json',
                   'id': item_id}
         url = self._url + "/types/extensions/update"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def rename_service(self, name, service_type,
                        new_name, folder=None):
@@ -460,7 +482,11 @@ class ServiceManager(BaseServer):
             u_url = self._url + "/renameService"
         else:
             u_url = self._url + "/%s/renameService" % folder
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        self.init()
+        return res
     #----------------------------------------------------------------------
     def create_service(self, service):
         """
@@ -529,8 +555,11 @@ class ServiceManager(BaseServer):
                 "services":services
             }
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def start_services(self, services):
         """
@@ -565,8 +594,11 @@ class ServiceManager(BaseServer):
                 "services":services
             }
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def edit_folder(self, description, web_encrypted=False):
         """
@@ -588,8 +620,11 @@ class ServiceManager(BaseServer):
             "webEncrypted" : web_encrypted,
             "description" : "%s" % description
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def exists(self, folder_name, name=None, service_type=None):
         """
@@ -614,8 +649,11 @@ class ServiceManager(BaseServer):
             "serviceName" : name,
             "type" : service_type
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 ########################################################################
 class Service(BaseServer):
     """ Defines a AGS Admin Service """
@@ -736,6 +774,7 @@ class Service(BaseServer):
             self._json = None
             self.init()
             return res
+        return False
     #----------------------------------------------------------------------
     def has_child_permissions_conflict(self, principal, permission):
         """
@@ -776,7 +815,10 @@ class Service(BaseServer):
             "f" : "json"
         }
         u_url = self._url + "/start"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def stop(self):
         """ stops the current service """
@@ -784,13 +826,16 @@ class Service(BaseServer):
             "f" : "json"
         }
         u_url = self._url + "/stop"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def restart(self):
         """ restarts the current service """
         self.stop()
         self.start()
-        return {'status': 'success'}
+        return True
     #----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""
@@ -798,7 +843,10 @@ class Service(BaseServer):
             "f" : "json",
         }
         u_url = self._url + "/delete"
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -948,7 +996,10 @@ class Service(BaseServer):
             "principal" : principal,
             "isAllowed" : is_allowed
         }
-        return self._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def edit(self, service):
         """
@@ -965,4 +1016,7 @@ class Service(BaseServer):
             params['service'] = service
         elif isinstance(service, dict):
             params['service'] = json.dumps(service)
-        return self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res

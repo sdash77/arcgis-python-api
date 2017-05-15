@@ -160,8 +160,11 @@ class Cluster(BaseServer):
             "f" : "json"
         }
         url = self._url + "/start"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def stop(self):
         """
@@ -174,8 +177,11 @@ class Cluster(BaseServer):
             "f" : "json"
         }
         url = self._url + "/stop"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def delete(self):
         """
@@ -188,8 +194,11 @@ class Cluster(BaseServer):
             "f" : "json"
         }
         url = self._url + "/delete"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['statis'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def cluster_services(self):
         """
@@ -256,8 +265,11 @@ class Cluster(BaseServer):
             "f" : "json",
             "machineNames" : names
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def edit_protocol(self, cpo):
         """
@@ -278,5 +290,8 @@ class Cluster(BaseServer):
             "f" : "json",
             "tcpClusterPort" : value
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res

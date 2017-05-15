@@ -137,7 +137,10 @@ class Machines(BaseServer):
             "adminURL" : admin_url
         }
         url = "%s/register" % self._url
-        return self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def rename(self, name, new_name):
         """
@@ -161,7 +164,10 @@ class Machines(BaseServer):
             "newMachineName" : new_name
         }
         url = self._url + "/rename"
-        return self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 ########################################################################
 class Machine(BaseServer):
     """
@@ -232,7 +238,10 @@ class Machine(BaseServer):
             "f" : "json"
         }
         uURL = self._url + "/start"
-        return self._con.post(path=uURL, postdata=params)
+        res = self._con.post(path=uURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def stop(self):
         """ Stops the server machine """
@@ -240,7 +249,10 @@ class Machine(BaseServer):
             "f" : "json"
         }
         uURL = self._url + "/stop"
-        return self._con.post(path=uURL, postdata=params)
+        res = self._con.post(path=uURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def unregister(self):
         """
@@ -259,7 +271,10 @@ class Machine(BaseServer):
             "f" : "json"
         }
         uURL = self._url + "/unregister"
-        return self._con.post(path=uURL, postdata=params)
+        res = self._con.post(path=uURL, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def ssl_certificates(self):
