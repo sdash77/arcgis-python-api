@@ -93,7 +93,7 @@ class WebScene(collections.OrderedDict):
         collections.OrderedDict.__init__(self, webscenedict)
 
     def _repr_html_(self):
-        return '<iframe width=960 height=600 src="' + "http://www.arcgis.com/home/webscene/viewer.html?webscene=" + self.item.itemid + '"/>'
+        return '<iframe width=960 height=600 src="' + "https://www.arcgis.com/home/webscene/viewer.html?webscene=" + self.item.itemid + '"/>'
 
     # def __repr__(self):
     #    dictrepr = dict.__repr__(self)
