@@ -2387,7 +2387,14 @@ class ContentManager(object):
         :return:
             None if the item is not found and returns an item object if the item is found
         """
-        item = self._portal.get_item(itemid)
+        try:
+            item = self._portal.get_item(itemid)
+        except RuntimeError as re:
+            if re.args[0].__contains__("Item does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
+
         if item is not None:
             return Item(self._gis, itemid, item)
         return None
