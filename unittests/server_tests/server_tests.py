@@ -124,12 +124,12 @@ class ServerCatalogTests(unittest.TestCase):
                         tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
         content = server.catalog
         idx = -1
-        for f in content.folders:
-            if f.lower() == 'system':
-                idx = content.folders.index(f)
-        content.folder = content.folders[idx]
-        if idx == -1:
-            self.assertGreater(idx, -1, 'Login failed for local server')
+        #for f in content.folders:
+            #if f.lower() == 'system':
+                #idx = content.folders.index(f)
+        #content.folder = content.folders[idx]
+        #if idx == -1:
+            #self.assertGreater(idx, -1, 'Login failed for local server')
         self.assertIsInstance(server, Server)
         self.assertGreaterEqual(len(content.services), 1)
     #----------------------------------------------------------------------
@@ -166,15 +166,15 @@ class ServerPropertyTest(unittest.TestCase):
 
         self.assertIsInstance(server.catalog,
                               arcgisserver._view.Catalog)
-    def test_data(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
-        server = Server(url=url_105,
-                            username=self._username,
-                            password=self._password)
-        self.assertIsInstance(server.data,
-                              arcgisserver.admin._data.Data)
-    def test_data_store(self):
+    #def test_data(self):
+        #"""catalog 10.5 data"""
+        #url_105 = URLS[5]
+        #server = Server(url=url_105,
+                            #username=self._username,
+                            #password=self._password)
+        #self.assertIsInstance(server.data,
+                              #arcgisserver.admin._data.Data)
+    def test_data_storemanager(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
         server = Server(url=url_105,
@@ -182,7 +182,7 @@ class ServerPropertyTest(unittest.TestCase):
                             password=self._password)
         ds = server.datastore
         self.assertIsInstance(server.datastore,
-                              arcgisserver.admin._data.Data)
+                              arcgisserver.admin._data.DataStoreManager)
     def test_info(self):
         """catalog 10.5 info"""
         url_105 = URLS[5]
@@ -493,7 +493,7 @@ class server_userandusers_test(unittest.TestCase):
         if len(roles.get_role(role_id='role1')) == 1:
             roles.get_role(role_id='role1')[0].delete()
         role = roles.create(name='role1', description='role description')
-        self.assertTrue(role['status'] == 'success')
+        self.assertTrue(role)
     def test_role_update(self):
         from arcgis.server._server import UserManager, User, RoleManager, Role
         roles = self.users.roles
@@ -501,14 +501,14 @@ class server_userandusers_test(unittest.TestCase):
         role = roles.get_role(role_id='role1')[0]
         isinstance(role, Role)
 
-        self.assertIsInstance(role.update(description="New Description"), (dict, Role))
+        self.assertIsInstance(role.update(description="New Description"), (dict, Role, bool))
     def test_set_privileges(self):
         from arcgis.server._server import UserManager, User, RoleManager, Role
         roles = self.users.roles
         isinstance(roles, RoleManager)
         role = roles.get_role(role_id='role1')[0]
         isinstance(role, Role)
-        self.assertIsInstance(role.set_privileges("publish"), (dict, Role))
+        self.assertIsInstance(role.set_privileges("publish"), (dict, Role, bool))
     #----------------------------------------------------------------------
     def test_user(self):
         from arcgis.server._server import UserManager, User
@@ -528,7 +528,7 @@ class server_userandusers_test(unittest.TestCase):
         isinstance(user, User)
         role = roles.get_role(role_id='role1')[0]
         res = user.add_role(role.rolename)
-        self.assertTrue(res['status'] == 'success')
+        self.assertTrue(res)
 
 
 #--------------------------------------------------------------------------
