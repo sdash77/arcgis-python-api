@@ -1771,19 +1771,37 @@ class RoleManager(object):
 
     def create(self, name, description, privileges=None):
         """Creates and returns a custom role with the specified parameters"""
-        role_id = self._portal.create_role(name, description)
-        if role_id is not None:
-            role_data = {
-              "id": role_id,
-              "name": name,
-              "description": description
-            }
-            role = Role(self._gis, role_id, role_data)
-            role.privileges = privileges
-            return role
+        if self.exists(role_name=name) == False:
+            role_id = self._portal.create_role(name, description)
+            if role_id is not None:
+                role_data = {
+                  "id": role_id,
+                  "name": name,
+                  "description": description
+                }
+                role = Role(self._gis, role_id, role_data)
+                role.privileges = privileges
+                return role
+            else:
+                return None
         else:
-            return None
+            n = str(name.lower())
+            roles = [r for r in self.all() \
+                     if r.name.lower() == n]
+            return roles[0]
+        return None
 
+    def exists(self, role_name):
+        """
+        Checks to see if a role exists by it's name
+        :role_name: name of the role to look up
+        Returns:
+         boolean
+        """
+        for role in self.all():
+            if role.name.lower() == role_name.lower():
+                return True
+        return False
 
     def all(self, max_roles=1000):
         """

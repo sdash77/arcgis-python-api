@@ -582,7 +582,7 @@ class ImageryLayer(Layer):
             params['returnDistinctValues'] = return_distinct_values
 
         url = self._url + "/query"
-        result = self._con.get(url, params, token=self._token)
+        result = self._con.post(path=url, postdata=params, token=self._token)
 
         if 'error' in result:
             raise ValueError(result)
@@ -592,7 +592,7 @@ class ImageryLayer(Layer):
         elif return_ids_only:
             return result
         elif return_geometry:
-            return FeatureSet.from_dict(result)
+            return FeatureSet.from_dict(result).df
         else:
             return result
 
