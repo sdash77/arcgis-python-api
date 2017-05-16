@@ -3577,6 +3577,9 @@ class Item(dict):
     An item can have associated binary or textual data that's available via the item data resource.
     For example, an item of type Map Package returns the actual bits corresponding to the
     map package via the item data resource.
+
+    Items that have layers (eg FeatureLayerCollection items and ImageryLayer items) and tables have
+    the dynamic `layers` and `tables` properties to get to the individual layers/tables in this item.
     """
 
     def __init__(self, gis, itemid, itemdict=None):

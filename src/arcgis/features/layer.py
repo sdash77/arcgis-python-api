@@ -829,6 +829,9 @@ class FeatureLayerCollection(_GISResource):
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
     replicas for disconnected editing of the feature layer collection.
+
+    Note: You can use the `layers` and `tables` property to get to the individual layers and tables in this
+    feature layer collection.
     """
 
     def __init__(self, url, gis=None):
