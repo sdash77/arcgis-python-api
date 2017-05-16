@@ -592,7 +592,7 @@ class ImageryLayer(Layer):
         elif return_ids_only:
             return result
         elif return_geometry:
-            return FeatureSet.from_dict(result).df
+            return FeatureSet.from_dict(result)
         else:
             return result
 
