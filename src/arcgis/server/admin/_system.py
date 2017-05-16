@@ -115,8 +115,11 @@ class System(BaseServer):
         }
         if description:
             params['description'] = description
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 
     #----------------------------------------------------------------------
     @property
@@ -130,7 +133,6 @@ class System(BaseServer):
         params = {
             "f" : "json"
         }
-
         return self._con.get(path=url,
                              postdata=params)
     #----------------------------------------------------------------------
@@ -189,8 +191,11 @@ class System(BaseServer):
             "f" : "json",
             "webAdaptorConfig" : config
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def update_web_adaptor(self,
                            wa_id,
@@ -219,8 +224,11 @@ class System(BaseServer):
             'httpPort' : http_port,
             'httpsPort' : https_port
         }
-        return self._con.post(path=url,
+        res = self._con.post(path=url,
                               postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def unregister_webadaptor(self, wa_id):
         """
@@ -233,8 +241,11 @@ class System(BaseServer):
         params = {
             "f" : "json",
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def configuration_store(self):
@@ -252,8 +263,11 @@ class System(BaseServer):
         """
         params = {'f': 'json'}
         url = self._url + "/handlers/rest/cache/clear"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def deployment(self):
@@ -333,8 +347,11 @@ class System(BaseServer):
             "servicesDirEnabled" : service_dir_enabled
         }
         url = self._url + "/handlers/rest/servicesdirectory/edit"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     @property
     def handlers(self):
@@ -467,8 +484,11 @@ class ConfigurationStore(BaseServer):
             "move" : move,
             "runAsync" : run_async
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 ########################################################################
 class Jobs(BaseServer):
     """
@@ -633,8 +653,11 @@ class ServerProperties(BaseServer):
             "f" : "json",
             "properties" : properties
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 ########################################################################
 class ServerDirectory(BaseServer):
     """
@@ -721,8 +744,11 @@ class ServerDirectory(BaseServer):
             "maxFileAge" : max_age,
             "description" : description
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def clean(self):
         """
@@ -738,8 +764,11 @@ class ServerDirectory(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def recover_directory(self):
         """
@@ -769,5 +798,8 @@ class ServerDirectory(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res

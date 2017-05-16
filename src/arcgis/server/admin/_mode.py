@@ -62,5 +62,8 @@ class Mode(BaseServer):
                   "runAsync" : runAsync,
                   "f" : "json"}
         url = self._url + "/update"
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res

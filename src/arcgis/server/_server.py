@@ -64,7 +64,12 @@ class UserManager(object):
                                       fullname="%s %s" % (firstname, lastname),
                                       description=description,
                                       email=email)
-        if 'status' in res and res['status'] == 'success':
+        if isinstance(res, dict) and \
+           'status' in res and \
+           res['status'] == 'success':
+            return self.search(username=username)[0]
+        elif isinstance(res, bool) and \
+             res:
             return self.search(username=username)[0]
         return None
     #----------------------------------------------------------------------
@@ -345,7 +350,7 @@ class Role(dict):
         """
         res =  self._security.update_role(rolename=self.rolename,
                                           description=description)
-        if res['status'] == 'success':
+        if res:
             self.__dict__.update(self._security.search_roles(
                 role_filter=self.rolename,
                 max_count=1)['roles'][0])

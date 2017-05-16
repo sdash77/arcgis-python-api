@@ -613,6 +613,8 @@ class ServerConnection(object):
 
                 # If the JSON parsed correctly and there are no errors,
                 # return the JSON
+                if 'status' in resp_json: # FOR DEMO TODO REMOVE ME
+                    return resp_json['status'] == 'success'
                 return resp_json
 
             # If we couldnt parse the response to JSON, return it as is
@@ -794,7 +796,6 @@ class ServerConnection(object):
         except AttributeError:
             # Top-level JSON object isnt a dict, so can't have an error
             pass
-
         return resp_json
     #----------------------------------------------------------------------
     def _get_content_type(self, filename):

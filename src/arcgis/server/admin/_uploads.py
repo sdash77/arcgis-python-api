@@ -84,7 +84,10 @@ class Uploads(BaseServer):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def item(self, item_id):
         """
@@ -126,9 +129,12 @@ class Uploads(BaseServer):
         files['itemFile'] = path
         if description:
             params['description'] = description
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
+        res = self._con.post(path=url,
+                             postdata=params,
+                             files=files)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def upload_by_part(self,
                        item_id,
@@ -170,5 +176,8 @@ class Uploads(BaseServer):
         url = self._url + '/{iid}/commit'.format(iid=item_id)
         if parts:
             params['parts'] = parts
-        return self._con.post(path=url,
-                              postdata=params)
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
