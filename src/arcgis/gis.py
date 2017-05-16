@@ -3746,9 +3746,8 @@ class Item(dict):
                 return download_path
 
     def export(self, title, export_format, parameters=None, wait=True):
-        import time
         """
-        Exports a service item (POST only) to the specified output format.
+        Exports a service item to the specified output format.
         Available only to users with an organizational subscription.
         Invokable only by the service item owner or an administrator.
 
@@ -3767,6 +3766,7 @@ class Item(dict):
          successfully.  This is useful for long running exports that could
          hold up a script.
         """
+        import time
         formats = ['Shapefile',
                    'CSV',
                    'File Geodatabase',
