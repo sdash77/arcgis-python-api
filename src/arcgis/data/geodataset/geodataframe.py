@@ -16,12 +16,12 @@ from arcgis.data.geodataset.base import BaseSpatialPandas
 from arcgis.data.geodataset.geoseries import GeoSeries
 from six import PY3
 from six import string_types
-from arcgis.geometry import types
+from arcgis.geometry import _types
 GEO_COLUMN_DEFAULT = "SHAPE"
-GEOM_TYPES = (types.Point, types.MultiPoint,
-              types.Polygon,types.Geometry,
-              types.Polyline,
-              types.BaseGeometry)
+GEOM_TYPES = (_types.Point, _types.MultiPoint,
+              _types.Polygon,_types.Geometry,
+              _types.Polyline,
+              _types.BaseGeometry)
 try:
     import arcpy
     from arcpy import Geometry
@@ -71,18 +71,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
 
-        if isinstance(sr, types.SpatialReference):
+        if isinstance(sr, _types.SpatialReference):
             self.sr = sr
         elif isinstance(sr, integer_types):
-            self.sr = types.SpatialReference({'wkid' : sr})
+            self.sr = _types.SpatialReference({'wkid' : sr})
         elif isinstance(sr, string_types):
-            self.sr = types.SpatialReference({'wkt' : sr})
+            self.sr = _types.SpatialReference({'wkt' : sr})
         elif hasattr(sr, 'factoryCode'):
-            self.sr = types.SpatialReference({'wkid' : sr.factoryCode})
+            self.sr = _types.SpatialReference({'wkid' : sr.factoryCode})
         elif hasattr(sr, 'exportToString'):
-            self.sr = types.SpatialReference({'wkt' : sr.exportToString()})
+            self.sr = _types.SpatialReference({'wkt' : sr.exportToString()})
         elif not sr is None:
-            raise ValueError("sr (spatial reference) must be a types.SpatialReference object")
+            raise ValueError("sr (spatial reference) must be a _types.SpatialReference object")
         else:
             self.sr = None
         if geometry is not None:
@@ -98,25 +98,25 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                         for g in geometry:
                             if isinstance(g, arcpy.Point):
                                 g = arcpy.PointGeometry(g)
-                            gtrans.append(types.Geometry(g))
+                            gtrans.append(_types.Geometry(g))
                         geometry = gtrans
                     elif isinstance(g, arcpy.Geometry):
                         for g in geometry:
-                            gtrans.append(types.Geometry(g))
+                            gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
 
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
             if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
-                if all(isinstance(x, types.Geometry) \
+                if all(isinstance(x, _types.Geometry) \
                        for x in self[self._geometry_column_name]) == False:
                     geometry = self['SHAPE'].tolist()
                     del self['SHAPE']
                     for idx, g in enumerate(geometry):
-                        if isinstance(g, types.Geometry) == False and \
+                        if isinstance(g, _types.Geometry) == False and \
                            isinstance(g, dict):
-                            geometry[idx] = types.Geometry(g)
+                            geometry[idx] = _types.Geometry(g)
                     self.set_geometry(geometry, inplace=True)
         self._delete_index()
     #----------------------------------------------------------------------
@@ -498,19 +498,19 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 wkt = spatial_reference.exportToString()
                 wkid = spatial_reference.factoryCode
                 if wkid:
-                    sr = types.SpatialReference({'wkid' : wkid})
+                    sr = _types.SpatialReference({'wkid' : wkid})
                 elif wkt:
-                    sr = types.SpatialReference({'wkt': wkt})
+                    sr = _types.SpatialReference({'wkt': wkt})
                 else:
                     sr = None
             elif isinstance(spatial_reference, int):
-                sr = types.SpatialReference({'wkid' : spatial_reference})
+                sr = _types.SpatialReference({'wkid' : spatial_reference})
             elif isinstance(spatial_reference, string_types):
-                sr = types.SpatialReference({'wkt' : spatial_reference})
-            elif isinstance(spatial_reference, types.SpatialReference):
+                sr = _types.SpatialReference({'wkt' : spatial_reference})
+            elif isinstance(spatial_reference, _types.SpatialReference):
                 sr = spatial_reference
             else:
-                raise ValueError("spatial_referernce must be of type: int, string, types.SpatialReference, or arcpy.SpatialReference")
+                raise ValueError("spatial_referernce must be of type: int, string, _types.SpatialReference, or arcpy.SpatialReference")
 
             if inplace:
                 df = self

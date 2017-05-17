@@ -19,15 +19,15 @@ import pandas as pd
 from pandas import Series, DataFrame
 from pandas.core.indexing import _NDFrameIndexer
 from pandas.util.decorators import cache_readonly
-from ...geometry import types
+from ...geometry import _types
 OLD_PANDAS = issubclass(Series, np.ndarray)
 
 def _convert_array_args(args):
     if HASARCPY:
-        if len(args) == 1 and isinstance(args[0], (arcpy.Geometry, types.Geometry)):
+        if len(args) == 1 and isinstance(args[0], (arcpy.Geometry, _types.Geometry)):
             args = ([args[0]],)
     else:
-        if len(args) == 1 and isinstance(args[0], (types.Geometry)):
+        if len(args) == 1 and isinstance(args[0], (_types.Geometry)):
             args = ([args[0]],)
     return args
 

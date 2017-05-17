@@ -8,14 +8,14 @@ from __future__ import division
 from six import integer_types
 import numpy as np
 import pandas as pd
-from arcgis.geometry import types
+from arcgis.geometry import _types
 from pandas import DataFrame, Series
 try:
     import arcpy
     HASARCPY = True
-    GEOTYPES = (arcpy.Geometry, types.Geometry)
+    GEOTYPES = (arcpy.Geometry, _types.Geometry)
 except ImportError:
-    GEOTYPES = (types.Geometry)
+    GEOTYPES = (_types.Geometry)
     HASARCPY = False
 from warnings import warn
 try:
