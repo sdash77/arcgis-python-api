@@ -418,16 +418,22 @@ class Geometry(BaseGeometry):
     @property
     def extent(self):
         """"""
+        ptX = []
+        ptY = []
         if HASARCPY:
             return getattr(self.as_arcpy, "extent", None)
         elif isinstance(self, Polygon):
-            ptX = [ pt[0]  for part in pts for pt in self['rings']]
-            ptY = [ pt[1]  for part in pts for pt in self['rings']]
+            for pts in self['rings']:
+                for part in pts:
+                    ptX.append(part[0])
+                    ptY.append(part[1])
             return min(ptX), min(ptY), max(ptX), max(ptY)
 
         elif isinstance(self, Polyline):
-            ptX = [ pt[0]  for part in pts for pt in self['paths']]
-            ptY = [ pt[1]  for part in pts for pt in self['paths']]
+            for pts in self['paths']:
+                for part in pts:
+                    ptX.append(part[0])
+                    ptY.append(part[1])
             return min(ptX), min(ptY), max(ptX), max(ptY)
         elif isinstance(self, MultiPoint):
             ptX = [ pt['x'] for pt in self['points']]
