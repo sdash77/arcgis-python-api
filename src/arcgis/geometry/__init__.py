@@ -61,6 +61,6 @@ geometry type and returns the correct type as the example below demonstrates:
 
 """
 
-from .types import *
+from ._types import *
 from .functions import *
 from . import fltr

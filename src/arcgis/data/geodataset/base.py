@@ -8,14 +8,14 @@ from __future__ import division
 from six import integer_types
 import numpy as np
 import pandas as pd
-from arcgis.geometry import types
+from arcgis.geometry import _types
 from pandas import DataFrame, Series
 try:
     import arcpy
     HASARCPY = True
-    GEOTYPES = (arcpy.Geometry, types.Geometry)
+    GEOTYPES = (arcpy.Geometry, _types.Geometry)
 except ImportError:
-    GEOTYPES = (types.Geometry)
+    GEOTYPES = (_types.Geometry)
     HASARCPY = False
 from warnings import warn
 try:
@@ -207,6 +207,8 @@ class BaseSpatialPandas(object):
             warn("Cannot generate spatial index: Missing package 'rtree'.")
         elif HAS_QUADINDEX:
             bbox = self.series_extent
+            if bbox is None:
+                bbox = [-180, -90, 180, 90]
             qi = QuadIndex(bbox=bbox)
             geometry_type = self.geometry_type.lower()
             if geometry_type == 'point':
@@ -219,7 +221,22 @@ class BaseSpatialPandas(object):
                         factor = 0
                     if geometry_type == 'pointgeometry':
                         item = item.centroid
-                    qi.insert(item=idx, bbox=(item.extent.XMin - factor, item.extent.YMin - factor, item.extent.XMax + factor, item.extent.YMax + factor))
+                    if HASARCPY:
+                        try:
+                            qi.insert(item=idx, bbox=(item.extent.XMin - factor,
+                                                      item.extent.YMin - factor,
+                                                      item.extent.XMax + factor,
+                                                      item.extent.YMax + factor))
+                        except:
+                            pass
+                    else:
+                        try:
+                            qi.insert(item=idx, bbox=(item.extent[0] - factor,
+                                                      item.extent[1] - factor,
+                                                      item.extent[2] + factor,
+                                                      item.extent[3] + factor))
+                        except:
+                            pass
             self._sindex = qi
         elif HAS_SINDEX:
             #(xmin, ymin, xmax, ymax)
@@ -881,9 +898,13 @@ class BaseSpatialPandas(object):
         This is a shortcut for calculating the min/max x and y bounds individually.
         """
         if HASARCPY:
-            b = self.bounds
-            return (b['xmin'].min(),
-                    b['ymin'].min(),
-                    b['xmax'].max(),
-                    b['ymax'].max())
+            try:
+                b = self.bounds
+                return (b['xmin'].min(),
+                        b['ymin'].min(),
+                        b['xmax'].max(),
+                        b['ymax'].max())
+            except:
+                return None
+
 

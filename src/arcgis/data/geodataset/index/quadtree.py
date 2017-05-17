@@ -222,7 +222,7 @@ class Index(_QuadTree):
             midx, midy = x1+width/2.0, y1+height/2.0
             super(Index, self).__init__(midx, midy, width, height, max_items, max_depth)
 
-        elif all(x, y, width, height):
+        elif all([x, y, width, height]):
             super(Index, self).__init__(x, y, width, height, max_items, max_depth)
 
         else:

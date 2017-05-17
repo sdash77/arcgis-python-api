@@ -15,7 +15,7 @@ from six import iteritems, integer_types
 from datetime import datetime
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 from ..utils import sanitize_field_name
-from ....geometry import types
+from ....geometry import _types
 try:
     import arcpy
     from arcpy import da
@@ -41,7 +41,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
      path to the shapefile or None if pyshp isn't installed or
      spatial dataframe does not have a geometry column.
     """
-    from ....geometry.types import Geometry
+    from ....geometry._types import Geometry
     if HASPYSHP:
         GEOMTYPELOOKUP = {
             "Polygon" : shapefile.POLYGON,
@@ -146,7 +146,7 @@ def from_featureclass(filename, **kwargs):
 
             for row in rows:
                 row = list(row)
-                geoms.append(types.Geometry(row.pop(geom_idx)))
+                geoms.append(_types.Geometry(row.pop(geom_idx)))
                 vals.append(row)
                 del row
             del rows
@@ -170,7 +170,7 @@ def from_featureclass(filename, **kwargs):
             atr = dict(zip(fields, r.record))
             g = r.shape.__geo_interface__
             g = _geojson_to_esrijson(g)
-            geom = types.Geometry(g)
+            geom = _types.Geometry(g)
             atr['SHAPE'] = geom
             records.append(atr)
             del atr

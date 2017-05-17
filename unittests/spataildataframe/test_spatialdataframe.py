@@ -6,7 +6,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 import unittest
 import pandas as pd
 import os, shutil, arcpy
-from arcgis.geometry import types
+from arcgis.geometry import _types
 from arcgis import SpatialDataFrame
 from arcgis.server import Service
 from arcgis.data.geodataset import from_layer, to_featureclass, to_sqlite, from_featureclass
@@ -50,7 +50,7 @@ class IOTest(unittest.TestCase):
                                                          out_name=fc)[0]
     #----------------------------------------------------------------------
     def setUp(self):
-        self._dir = r"c:\temp\testing"
+        self._dir = arcpy.env.scratchFolder#r"c:\temp\testing"
         self._shp = "myshptest.shp"
         self._gdb = arcpy.env.scratchGDB
 
@@ -139,6 +139,7 @@ class IOTest(unittest.TestCase):
         arcpy.Delete_management(fc)
     #----------------------------------------------------------------------
 ########################################################################
+#@unittest.SkipTest
 class SpatailDataFrameTest1(unittest.TestCase):
     """
     Tests the spatial dataframe using dummy data
@@ -197,7 +198,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
         sdf = SpatialDataFrame(df,
                                geometry=[arcpy.PointGeometry(arcpy.Point(X=r[0], Y=r[1])) \
                                          for r in self._coords])
-        self.assertTrue(isinstance(sdf.geometry.all(), (arcpy.Geometry, types.Geometry)), True)
+        self.assertTrue(isinstance(sdf.geometry.all(), (arcpy.Geometry, _types.Geometry)), True)
     #####PROPERTY TESTS####################################################################
 
     def test_geoextent(self):
