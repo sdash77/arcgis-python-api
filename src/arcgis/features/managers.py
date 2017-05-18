@@ -319,11 +319,14 @@ class FeatureLayerCollectionManager(_GISResource):
         params = {
             "f": "json",
             "addToDefinition": json.dumps(json_dict),
-            "async": False
+            "async": json.dumps(False)
         }
         adddefn_url = self._url + "/addToDefinition"
+        old_ref = self._con._referer
+        self._con._referer = "http"
         res = self._con.post(adddefn_url, params)
         self.refresh()
+        self._con._referer = old_ref
         return res
 
     # ----------------------------------------------------------------------
@@ -394,8 +397,10 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": False
         }
         u_url = self._url + "/updateDefinition"
-
+        old_ref = self._con._referer
+        self._con._referer = "http"
         res = self._con.post(u_url, params)
+        self._con._referer = old_ref
         self.refresh()
         return res
 
@@ -435,19 +440,19 @@ class FeatureLayerCollectionManager(_GISResource):
     def overwrite(self, data_file):
         """
         Overwrite all the features and layers in a hosted feature layer collection service. This operation removes
-        all features but retains the properties (such as symbology, itemID) and capabilities configured on the service. 
-        There are some limits to using this operation: 
+        all features but retains the properties (such as symbology, itemID) and capabilities configured on the service.
+        There are some limits to using this operation:
             1. Only hosted feature layer collection services can be overwritten
             2. The original data used to publish this layer should be available on the portal
             3. The data file used to overwrite should be of the same format and filename as the original that was used to
             publish the layer
             4. The schema (column names, column data types) of the data_file should be the same as original. You can have
             additional or fewer rows (features).
-            
+
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
-        
-        :param data: path to data_file used to overwrite the hosted feature layer collection 
+
+        :param data: path to data_file used to overwrite the hosted feature layer collection
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
         # region Get Item associated with the service
@@ -527,10 +532,10 @@ class FeatureLayerCollectionManager(_GISResource):
     def _gen_overwrite_publishParameters(self, flc_item):
         """
         This internal method generates publishParameters for overwriting a hosted feature layer collection. This is used
-        by Item.publish() method when user wants to originate the overwrite process from the data item instead of 
+        by Item.publish() method when user wants to originate the overwrite process from the data item instead of
         the hosted feature layer.
-        
-        :param flc_item: The Feature Layer Collection Item object that is being overwritten 
+
+        :param flc_item: The Feature Layer Collection Item object that is being overwritten
         :return: JSON message as dictionary with to be used as publishParameters payload in the publish REST call.
         """
 
@@ -721,19 +726,19 @@ class FeatureLayerManager(_GISResource):
                  asynchronous=False,
                  wait=True):
         """
-           The truncate operation supports deleting all features or attachments 
-           in a hosted feature service layer. The result of this operation is a 
+           The truncate operation supports deleting all features or attachments
+           in a hosted feature service layer. The result of this operation is a
            response indicating success or failure with error code and description.
            See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
            for additional information on this function.
            Input:
               attachment_only - Deletes all the attachments for this layer.
-                                None of the layer features will be deleted 
+                                None of the layer features will be deleted
                                 when attachmentOnly=true.
               asynchronous - Supports options for asynchronous processing. The
-                      default format is false. It is recommended to set 
+                      default format is false. It is recommended to set
                       async=true for larger datasets.
-              wait - if async, wait to pause the process until the async 
+              wait - if async, wait to pause the process until the async
                      operation is completed.
 
            Output:

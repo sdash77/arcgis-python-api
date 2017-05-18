@@ -2297,6 +2297,81 @@ class ContentManager(object):
         else:
             return None
 
+    def create_view(self,
+                    item,
+                    name,
+                    spatial_reference=None,
+                    extent=None,
+                    allow_schema_changes=True,
+                    updateable=True,
+                    capabilities="Query",
+                    view_layers=None):
+        """
+        Creates a View of an Existing Feature Service.
+
+        Parameters:
+         :item: parent item to create view for.  This must be a feature service.
+         :name: Name of the new view item
+         :spatial_reference:
+         :extent: initial extent of the object
+         :allow_schema_changes: boolean that determines if a view can alter a
+          service's schema.
+         :updateable: boolean value that says if a view can update values
+         :capabilities: determines what operations a user can do on a given
+          view
+         :view_layer_def: optional dictionary used to define the layers that
+          are referenced inside the view.  The default is all layers.
+        :Returns:
+         Item for  the view
+        """
+        from .features import FeatureLayerCollection
+        gis = self._gis
+        content = self
+        if isinstance(item, str):
+            item = content.get(itemid=item)
+        elif isinstance(item, Item) == False:
+            raise ValueError("Item must be an item id or Item object")
+        url = item.url
+        fs = FeatureLayerCollection(url=url, gis=gis)
+        fs_manager = fs.manager
+        url = "%s/content/users/%s/createService" % (gis._url, gis.users.me.username)
+        params = {
+            "f" : "json",
+            "isView" : True,
+            "createParameters" :json.dumps({"name": name,
+                                            "isView":True,
+                                            "sourceSchemaChangesAllowed": allow_schema_changes,
+                                            "isUpdatableView": updateable,
+                                            "spatialReference":spatial_reference or fs.properties['spatialReference'],
+                                            "initialExtent": extent or fs.properties['initialExtent'],
+                                            "capabilities":capabilities or fs.properties['capabilties']}),
+            "outputType" : "featureService"
+        }
+        res = gis._con.post(path=url, postdata=params)
+        view = content.get(res['itemId'])
+        fs_view = FeatureLayerCollection(url=view.url, gis=gis)
+        add_def = {
+            "layers" : []
+        }
+        if view_layers is None:
+            for lyr in fs.layers:
+                add_def['layers'].append(
+                    {
+                    "adminLayerInfo" : {
+                        "viewLayerDefinition" :
+                        {
+                            "sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
+                            "sourceLayerId" : lyr.manager.properties['id'],
+                            "sourceLayerFields" :  "*"
+                        }
+                        },
+                    "name" : lyr.manager.properties['name']
+                })
+        else:
+            add_def = view_layers
+        fs_view.manager.add_to_definition(add_def)
+        return content.get(res['itemId'])
+
     def create_service(self, name,
                        service_description="",
                        has_static_data=False,

@@ -479,7 +479,8 @@ class ImageryLayer(Layer):
               order_by_fields=None,
               return_distinct_values=None,
               out_statistics=None,
-              group_by_fields_for_statistics=None
+              group_by_fields_for_statistics=None,
+              out_sr=None
               ):
         """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
          either a set of features or an array of raster IDs (if return_ids_only is set to True),
@@ -522,6 +523,9 @@ class ImageryLayer(Layer):
                group_by_fields_for_statistics-One or more field names using the
                                          values that need to be grouped for
                                          calculating the statistics.
+               out_sr - if the returning geometry needs to be in a different
+                        spatial reference, provide the function with the
+                        desired WKID.
             Output:
                A FeatureSet containing the footprints (features) matching the query when return_geometry is True,
                else a dictionary containing the expected return type
@@ -580,7 +584,8 @@ class ImageryLayer(Layer):
             params['orderByFields'] = order_by_fields
         if return_distinct_values is not None:
             params['returnDistinctValues'] = return_distinct_values
-
+        if out_sr is not None:
+            params['outSR'] = out_sr
         url = self._url + "/query"
         result = self._con.post(path=url, postdata=params, token=self._token)
 
