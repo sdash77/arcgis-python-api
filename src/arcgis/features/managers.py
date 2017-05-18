@@ -32,9 +32,20 @@ class AttachmentManager(object):
     def download(self, oid, attachment_id, save_path=None):
         """ downloads attachment and returns it's path on disk """
         att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, attachment_id)
+        att_list = self.get_list(oid)
+
+        #get attachment file name
+        desired_att = [att for att in att_list if att['id']== attachment_id]
+        if len(desired_att) == 0: #bad attachment id
+            raise RuntimeError
+        else:
+            att_name = desired_att[0]['name']
+
         if not save_path:
             save_path = tempfile.gettempdir()
-        return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path, token=self._layer._token)
+
+        return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
+                                    file_name=att_name, token=self._layer._token, force_bytes=False)
 
     def add(self, oid, file_path):
         """ Adds an attachment to a feature layer
