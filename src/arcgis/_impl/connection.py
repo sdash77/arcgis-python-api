@@ -250,13 +250,13 @@ class _ArcGISConnection(object):
         self.token = None
         self._server_token = None
         self._connection = connection # second connection
-        
+
         self._verify_cert = verify_cert
 
         # Setup the referer and user agent
         if baseurl:
             if not referer:
-                referer = urlparse(baseurl).netloc
+                referer = "http"#urlparse(baseurl).netloc
             self._referer = referer
             self._useragent = 'geosaurus/' + __version__
 
@@ -276,7 +276,7 @@ class _ArcGISConnection(object):
             self._auth = "BUILTIN" # or BASIC (LDAP) or DIGEST
         else:
             self._auth = "ANON" # or IWA (NTLM or Kerberos) (self.login sets this up)
-            
+
         if cert_file is None and key_file is None:
             self.login(username, password, expiration, client_id)
 
@@ -513,7 +513,7 @@ class _ArcGISConnection(object):
                     self._username = username
                     self._password = password
                     self._expiration = expiration
-                    
+
                     return newtoken
 
             elif client_id is not None:
@@ -527,7 +527,7 @@ class _ArcGISConnection(object):
                 self._auth = "ANON"
 
         except HTTPError as err:
-            if err.code == 401: 
+            if err.code == 401:
                 authhdr = err.headers.get('WWW-Authenticate')
                 if authhdr is not None:
                     if authhdr.lower().startswith('basic'):
@@ -548,8 +548,8 @@ class _ArcGISConnection(object):
         except ValueError as ve:
             if str(ve) == "AbstractBasicAuthHandler does not support the following scheme: 'Negotiate'":
                 self._auth = "IWA"
-            
-            
+
+
     #----------------------------------------------------------------------
     def relogin(self, expiration=60):
         """ Re-authenticates with the portal using the same username/password. """
@@ -761,8 +761,8 @@ class _ArcGISConnection(object):
             params = {}
         if try_json:
             params['f'] = 'json'
-        
-        
+
+
         if add_token:
             if token != DEFAULT_TOKEN: # use the provided token, if any
                 if token is not None:
@@ -816,8 +816,8 @@ class _ArcGISConnection(object):
                                 _log.info('Token expired during get request, ' \
                                           + 'fetching a new token and retrying')
                                 newtoken = self.relogin()
-                                
-                                
+
+
                                 self.token = newtoken
 
                                 if token != DEFAULT_TOKEN: # was provided a FEDERATED SERVER token, that has expired
@@ -892,7 +892,7 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
         handlers = []
-        
+
         if self._auth == "BASIC": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
@@ -913,10 +913,10 @@ class _ArcGISConnection(object):
             if os.name == 'nt':
                 try:
                     from .common._iwa import NtlmSspiAuthHandler, KerberosSspiAuthHandler
-                
+
                     auth_NTLM = NtlmSspiAuthHandler()
                     auth_krb = KerberosSspiAuthHandler()
-                
+
                     handlers.append(auth_NTLM)
                     handlers.append(auth_krb)
 
@@ -926,7 +926,7 @@ class _ArcGISConnection(object):
                     _log.error(str(err))
             else:
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
-            
+
         elif self._auth == "PKI":
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
