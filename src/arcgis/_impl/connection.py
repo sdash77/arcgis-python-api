@@ -647,7 +647,13 @@ class _ArcGISConnection(object):
                 return p.findall(contentDisposition.strip().replace('"', ''))[0][0]
             elif os.path.basename(url).find('.') > -1:
                 return os.path.basename(url)
-        return "%s.%s" % (uuid.uuid4().get_hex(), ext)
+
+        if six.PY2:
+            hex = '-===============%s==' % uuid.uuid4().get_hex()
+        elif six.PY3:
+            hex = '-===============%s==' % uuid.uuid4().hex
+
+        return "%s.%s" % (hex, ext)
     #----------------------------------------------------------------------
     def _process_response(self, resp, out_folder=None,  file_name=None, force_bytes=False):
         """ processes the response object"""
