@@ -2204,6 +2204,8 @@ class ContentManager(object):
             -----------------  ----------------------------------------------------------------------------
             title              optional string.  Name of the item.
             -----------------  ----------------------------------------------------------------------------
+            text               optional string.  For text based items such as Feature Collections & WebMaps
+            -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
             -----------------  ----------------------------------------------------------------------------
             tags               optional string of comma-separated values, or list of strings.
