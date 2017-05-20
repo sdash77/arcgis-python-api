@@ -605,6 +605,7 @@ class FeatureLayerManager(_GISResource):
 
     def __init__(self, url, gis=None):
         super(FeatureLayerManager, self).__init__(url, gis)
+        self._hydrate()
 
     # ----------------------------------------------------------------------
     @classmethod
