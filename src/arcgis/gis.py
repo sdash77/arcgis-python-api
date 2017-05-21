@@ -2336,7 +2336,7 @@ class ContentManager(object):
         url = item.url
         fs = FeatureLayerCollection(url=url, gis=gis)
         fs_manager = fs.manager
-        url = "%s/content/users/%s/createService" % (gis._url, gis.users.me.username)
+        url = "%scontent/users/%s/createService" % (gis._con.baseurl, gis.users.me.username)
         params = {
             "f" : "json",
             "isView" : True,
