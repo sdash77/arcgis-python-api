@@ -289,7 +289,6 @@ class FeatureLayerCollectionManager(_GISResource):
 
         self.layers = layers
         self.tables = tables
-
     # ----------------------------------------------------------------------
     def refresh(self):
         """ refreshes a feature layer collection """
@@ -304,7 +303,83 @@ class FeatureLayerCollectionManager(_GISResource):
         self._fs._populate_layers()
 
         return res
+    # ----------------------------------------------------------------------
+    def create_view(self,
+                    name,
+                    spatial_reference=None,
+                    extent=None,
+                    allow_schema_changes=True,
+                    updateable=True,
+                    capabilities="Query",
+                    view_layers=None):
+        """
+        Creates a View of an Existing Feature Service.
 
+        Parameters:
+         :name: Name of the new view item
+         :spatial_reference:
+         :extent: initial extent of the object
+         :allow_schema_changes: boolean that determines if a view can alter a
+          service's schema.
+         :updateable: boolean value that says if a view can update values
+         :capabilities: determines what operations a user can do on a given
+          view
+         :view_layer_def: optional dictionary used to define the layers that
+          are referenced inside the view.  The default is all layers.
+        :Returns:
+         Item for  the view
+        """
+        import os
+        from . import FeatureLayerCollection
+        gis = self._gis
+        content = gis.content
+        if 'serviceItemId' not in self.properties:
+            raise Exception("A registered hosted feature service is required to use create_view")
+        item_id = self.properties['serviceItemId']
+        item = content.get(itemid=item_id)
+        url = item.url
+        fs = FeatureLayerCollection(url=url, gis=gis)
+        if gis._url.lower().find("sharing/rest") < 0:
+            url = gis._url + "/sharing/rest"
+        else:
+            url = gis._url
+        url = "%s/content/users/%s/createService" % (url, gis.users.me.username)
+        params = {
+            "f" : "json",
+            "isView" : True,
+            "createParameters" :json.dumps({"name": name,
+                                            "isView":True,
+                                            "sourceSchemaChangesAllowed": allow_schema_changes,
+                                            "isUpdatableView": updateable,
+                                            "spatialReference":spatial_reference or fs.properties['spatialReference'],
+                                            "initialExtent": extent or fs.properties['initialExtent'],
+                                            "capabilities":capabilities or fs.properties['capabilties']}),
+            "outputType" : "featureService"
+        }
+        res = gis._con.post(path=url, postdata=params)
+        view = content.get(res['itemId'])
+        fs_view = FeatureLayerCollection(url=view.url, gis=gis)
+        add_def = {
+            "layers" : []
+        }
+        if view_layers is None:
+            for lyr in fs.layers:
+                add_def['layers'].append(
+                    {
+                        "adminLayerInfo" : {
+                            "viewLayerDefinition" :
+                        {
+                            "sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
+                            "sourceLayerId" : lyr.manager.properties['id'],
+                            "sourceLayerFields" :  "*"
+                        }
+                        },
+                        "name" : lyr.manager.properties['name']
+                    })
+        else:
+            add_def = view_layers
+        fs_view.manager.add_to_definition(add_def)
+        return content.get(res['itemId'])
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):
         """
