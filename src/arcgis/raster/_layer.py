@@ -935,7 +935,7 @@ class ImageryLayer(Layer):
             required if method is: center | nadir | northwest | seamline,
             optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
             If sort_by and optionally sort_val parameters are specified, "attribute" method is used
-            If lock_raster_ids are specified, "lock-raster" method is used
+            If lock_rasters are specified, "lock-raster" method is used
             If a viewpt parameter is passed, "viewpoint" method is used.
         :param sort_by: optional str, field name when sorting by attributes
         :param sort_val: optional, a constant value defining a reference or base value for the sort field when sorting by
