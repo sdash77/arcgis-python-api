@@ -2204,8 +2204,6 @@ class ContentManager(object):
             -----------------  ----------------------------------------------------------------------------
             title              optional string.  Name of the item.
             -----------------  ----------------------------------------------------------------------------
-            text               optional string.  For text based items such as Feature Collections & WebMaps
-            -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
             -----------------  ----------------------------------------------------------------------------
             tags               optional string of comma-separated values, or list of strings.
@@ -2298,81 +2296,6 @@ class ContentManager(object):
             return Item(self._gis, itemid)
         else:
             return None
-
-    def create_view(self,
-                    item,
-                    name,
-                    spatial_reference=None,
-                    extent=None,
-                    allow_schema_changes=True,
-                    updateable=True,
-                    capabilities="Query",
-                    view_layers=None):
-        """
-        Creates a View of an Existing Feature Service.
-
-        Parameters:
-         :item: parent item to create view for.  This must be a feature service.
-         :name: Name of the new view item
-         :spatial_reference:
-         :extent: initial extent of the object
-         :allow_schema_changes: boolean that determines if a view can alter a
-          service's schema.
-         :updateable: boolean value that says if a view can update values
-         :capabilities: determines what operations a user can do on a given
-          view
-         :view_layer_def: optional dictionary used to define the layers that
-          are referenced inside the view.  The default is all layers.
-        :Returns:
-         Item for  the view
-        """
-        from .features import FeatureLayerCollection
-        gis = self._gis
-        content = self
-        if isinstance(item, str):
-            item = content.get(itemid=item)
-        elif isinstance(item, Item) == False:
-            raise ValueError("Item must be an item id or Item object")
-        url = item.url
-        fs = FeatureLayerCollection(url=url, gis=gis)
-        fs_manager = fs.manager
-        url = "%scontent/users/%s/createService" % (gis._con.baseurl, gis.users.me.username)
-        params = {
-            "f" : "json",
-            "isView" : True,
-            "createParameters" :json.dumps({"name": name,
-                                            "isView":True,
-                                            "sourceSchemaChangesAllowed": allow_schema_changes,
-                                            "isUpdatableView": updateable,
-                                            "spatialReference":spatial_reference or fs.properties['spatialReference'],
-                                            "initialExtent": extent or fs.properties['initialExtent'],
-                                            "capabilities":capabilities or fs.properties['capabilties']}),
-            "outputType" : "featureService"
-        }
-        res = gis._con.post(path=url, postdata=params)
-        view = content.get(res['itemId'])
-        fs_view = FeatureLayerCollection(url=view.url, gis=gis)
-        add_def = {
-            "layers" : []
-        }
-        if view_layers is None:
-            for lyr in fs.layers:
-                add_def['layers'].append(
-                    {
-                    "adminLayerInfo" : {
-                        "viewLayerDefinition" :
-                        {
-                            "sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
-                            "sourceLayerId" : lyr.manager.properties['id'],
-                            "sourceLayerFields" :  "*"
-                        }
-                        },
-                    "name" : lyr.manager.properties['name']
-                })
-        else:
-            add_def = view_layers
-        fs_view.manager.add_to_definition(add_def)
-        return content.get(res['itemId'])
 
     def create_service(self, name,
                        service_description="",
@@ -2628,57 +2551,115 @@ class ContentManager(object):
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
 
-    def import_data(self, df, address_fields=None):
+    def import_data(self, df, address_fields=None, **kwargs):
         """
         Imports a Pandas data frame, that has an address column,
         to a feature collection
 
 
-        df : pandas dataframe
+        df : pandas dataframe or arcgis.SpatialDataFrame
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
-
+        title: optional title of the item. This is used for spatial dataframe objects.
+        tags: optional tags when publishing a spatial dataframe to Portal/AGOL
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
         from .features import FeatureCollection
+        from . import SpatialDataFrame
+        from ._impl.common._utils import zipws
+        import zipfile
+        import shutil
+        from uuid import uuid4
+        import pandas as pd
+        try:
+            import arcpy
+            has_arcpy = False#True
+        except ImportError:
+            has_arcpy = False
+        try:
+            import shapefile
+            has_pyshp = True
+        except ImportError:
+            has_pyshp = False
+        if has_arcpy == False and \
+           has_pyshp == False and \
+           isinstance(df, SpatialDataFrame):
+            raise Exception("SpatialDataFrame's must have either pyshp or" + \
+                            " arcpy available to use import_data")
+        elif isinstance(df, SpatialDataFrame):
+            temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
+            title = kwargs.pop("title", uuid4().hex)
+            tags = kwargs.pop('tags', 'FGDB')
+            os.makedirs(temp_dir)
+            temp_zip = os.path.join(temp_dir, "output.zip")
+            if has_arcpy:
+                fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
+                                                      out_name="publish.gdb")[0]
+                ds = df.to_featureclass(out_location=fgdb,
+                                        out_name=os.path.basename(temp_dir))
+                zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
+                item = self.add(
+                    item_properties={
+                        "title" : title,
+                        "type" : "File Geodatabase",
+                        "tags" : tags},
+                    data=zip_fgdb)
+                shutil.rmtree(temp_dir,
+                              ignore_errors=True)
+                return item.publish()
+            elif has_pyshp:
+                ds = df.to_featureclass(out_location=temp_dir,
+                                        out_name="export.shp")
+                zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
+                item = self.add(
+                    item_properties={
+                        "title":title,
+                        "tags":tags},
+                    data=zip_shp)
+                shutil.rmtree(temp_dir,
+                              ignore_errors=True)
+                return item.publish()
+            return
+        elif isinstance(df, pd.DataFrame):
+            # CSV WORKFLOW
+            path = "content/features/analyze"
 
-        path = "content/features/analyze"
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
 
-        postdata = {
-            "f": "pjson",
-            "text" : df.to_csv(),
-            "filetype" : "csv",
-
-            "analyzeParameters" : {
-                "enableGlobalGeocoding": "true",
-                "sourceLocale":"en-us",
-                #"locationType":"address",
-                "sourceCountry":"",
-                "sourceCountryHint":"",
-                "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
+                "analyzeParameters" : {
+                    "enableGlobalGeocoding": "true",
+                    "sourceLocale":"en-us",
+                    #"locationType":"address",
+                    "sourceCountry":"",
+                    "sourceCountryHint":"",
+                    "geocodeServiceUrl":self._gis.properties.helperServices.geocode[0]['url']
+                }
             }
-        }
 
-        if address_fields is not None:
-            postdata['analyzeParameters']['locationType'] = 'address'
+            if address_fields is not None:
+                postdata['analyzeParameters']['locationType'] = 'address'
 
-        res = self._portal.con.post(path, postdata)
-        #import json
-        #json.dumps(res)
-        if address_fields is not None:
-            res['publishParameters'].update({"addressFields":address_fields})
+            res = self._portal.con.post(path, postdata)
+            #import json
+            #json.dumps(res)
+            if address_fields is not None:
+                res['publishParameters'].update({"addressFields":address_fields})
 
-        path = "content/features/generate"
-        postdata = {
-            "f": "pjson",
-            "text" : df.to_csv(),
-            "filetype" : "csv",
-            "publishParameters" : json.dumps(res['publishParameters'])
-        }
+            path = "content/features/generate"
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
+                "publishParameters" : json.dumps(res['publishParameters'])
+            }
 
-        res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
+            res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
 
-        fc = FeatureCollection(res['featureCollection']['layers'][0])
-        return fc
+            fc = FeatureCollection(res['featureCollection']['layers'][0])
+            return fc
+        return None
 
     def is_service_name_available(self, service_name, service_type):
         """

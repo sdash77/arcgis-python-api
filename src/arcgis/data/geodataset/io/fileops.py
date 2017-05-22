@@ -251,6 +251,10 @@ def to_featureclass(df, out_name, out_location=None,
             sr = None
             if df.sr is None:
                 sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
+                if 'wkid' in sr:
+                    sr = arcpy.SpatialReference(sr['wkid'])
+                else:
+                    sr = None
             else:
                 sr = df.sr.as_arcpy
             fc = arcpy.CreateFeatureclass_management(out_path=out_location,

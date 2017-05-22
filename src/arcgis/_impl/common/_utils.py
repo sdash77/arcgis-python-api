@@ -8,9 +8,8 @@ import datetime
 from datetime import date
 import tempfile
 from contextlib import contextmanager
-
 import six
-import logging 
+import logging
 
 #----------------------------------------------------------------------
 def create_uid():
@@ -123,6 +122,38 @@ def rot13(s):
 
     # Return transformation.
     return result
+#--------------------------------------------------------------------------
+def zipws(path, outfile, keep=True):
+    """
+    compress the contents of a folder
+    Parameters:
+     :path: folder or folder contents to compress as a zip file
+     :outfile: output file and location
+     :keep: boolean - if true, the folder structure is kept, else just the
+      files
+    Output:
+     path to a compressed zip file.
+    """
+    zipobj = zipfile.ZipFile(outfile, 'w', zipfile.ZIP_DEFLATED)
+    path = os.path.normpath(path)
+    for (dirpath, dirnames, filenames) in os.walk(path):
+        for file in filenames:
+            if not file.endswith('.lock'):
+                try:
+                    if keep:
+                        zipobj.write(
+                            os.path.join(dirpath,
+                                         file),
+                            os.path.join(os.path.basename(path),
+                                         os.path.join(dirpath,
+                                                      file)[len(path)+len(os.sep):]))
+                    else:
+                        zipobj.write(os.path.join(dirpath, file),
+                        os.path.join(dirpath[len(path):], file))
+                except Exception:
+                    pass
+    zipobj.close()
+    return outfile
 #--------------------------------------------------------------------------
 def _to_utf8(data):
     """ Converts strings and collections of strings from unicode to utf-8. """
