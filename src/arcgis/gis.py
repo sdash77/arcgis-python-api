@@ -2572,7 +2572,7 @@ class ContentManager(object):
         import pandas as pd
         try:
             import arcpy
-            has_arcpy = False#True
+            has_arcpy = True
         except ImportError:
             has_arcpy = False
         try:
