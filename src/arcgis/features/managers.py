@@ -149,57 +149,69 @@ class SyncManager(object):
         for the layers in the replica.
 
         Inputs:
-           replicaName - name of the replica
+           replica_name - name of the replica
            layers - layers to export
-           layerQueries - In addition to the layers and geometry parameters, the layerQueries
+           layer_queries - In addition to the layers and geometry parameters, the layer_queries
             parameter can be used to further define what is replicated. This
             parameter allows you to set properties on a per layer or per table
             basis. Only the properties for the layers and tables that you want
             changed from the default are required.
             Example:
-             layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+             layer_queries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometryFilter - arcgis.geometry.filter to filter results by a spatial relationship
+           geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
                             with another geometry
-           returnAttachments - If true, attachments are added to the replica and returned in the
-            response. Otherwise, attachments are not included.
-           returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
-            attachment returned from createReplica. Otherwise,
-            attachments are embedded in the response.
-           replicaSR - the spatial reference of the replica geometry.
-           transportType -  The transportType represents the response format. If the
-            transportType is esriTransportTypeUrl, the JSON response is contained in a file,
+           replica_sr - the spatial reference of the replica geometry.
+           transport_type -  The transport_type represents the response format. If the
+            transport_type is esriTransportTypeUrl, the JSON response is contained in a file,
             and the URL link to the file is returned. Otherwise, the JSON object is returned
             directly. The default is esriTransportTypeUrl.
-            If async is true, the results will always be returned as if transportType is
+            If async is true, the results will always be returned as if transport_type is
             esriTransportTypeUrl. If dataFormat is sqlite, the transportFormat will always be
             esriTransportTypeUrl regardless of how the parameter is set.
             Values: esriTransportTypeUrl | esriTransportTypeEmbedded
-           returnAttachments - If true, attachments are added to the replica and returned in
+           return_attachments - If true, attachments are added to the replica and returned in
             the response. Otherwise, attachments are not included. The default is false. This
             parameter is only applicable if the feature service has attachments.
-           returnAttachmentsDatabyURL -  If true, a reference to a URL will be provided for
-            each attachment returned from createReplica. Otherwise, attachments are embedded
+           return_attachments_databy_url -  If true, a reference to a URL will be provided for
+            each attachment returned from create method. Otherwise, attachments are embedded
             in the response. The default is true. This parameter is only applicable if the
-            feature service has attachments and if returnAttachments is true.
-           attachmentsSyncDirection - Client can specify the attachmentsSyncDirection when
-            creating a replica. AttachmentsSyncDirection is currently a createReplica property
-            and cannot be overridden during sync.
-            Values: none, upload, bidirectional
+            feature service has attachments and if return_attachments is true.
            asynchronous - If true, the request is processed as an asynchronous job, and a URL is
             returned that a client can visit to check the status of the job. See the topic on
             asynchronous usage for more information. The default is false.
-           syncModel - Client can specify the attachmentsSyncDirection when creating a replica.
-            AttachmentsSyncDirection is currently a createReplica property and cannot be
-            overridden during sync.
-           dataFormat - The format of the replica geodatabase returned in the response. The
+           attachments_sync_direction - Client can specify the attachmentsSyncDirection when
+            creating a replica. AttachmentsSyncDirection is currently a createReplica property
+            and cannot be overridden during sync.
+            Values: none, upload, bidirectional
+           sync_model - this parameter is used to indicate that the replica is being created for 
+            per-layer sync or per-replica sync. To determine which model types are supported by a 
+            service, query the supportsPerReplicaSync, supportsPerLayerSync, and supportsSyncModelNone 
+            properties of the Feature Service. By default, a replica is created for per-replica sync. 
+            If syncModel is perReplica, the syncDirection specified during sync applies to all layers 
+            in the replica. If the syncModel is perLayer, the syncDirection is defined on a layer-by-layer 
+            basis. 
+            
+            If syncModel is perReplica, the response will have replicaServerGen. A perReplica syncModel 
+            requires the replicaServerGen on sync. The replicaServerGen tells the server the point 
+            in time from which to send back changes. If syncModel is perLayer, the response will include 
+            an array of server generation numbers for the layers in layerServerGens. A perLayer sync 
+            model requires the layerServerGens on sync. The layerServerGens tell the server the point 
+            in time from which to send back changes for a specific layer. sync_model=none can be used
+            to export the data without creating a replica. Query the supportsSyncModelNone property 
+            of the feature service to see if this model type is supported.
+            
+            See the RollbackOnFailure and Sync Models topic for more details.
+            Values: perReplica | perLayer | none
+            Example: syncModel=perLayer
+           data_format - The format of the replica geodatabase returned in the response. The
             default is json.
             Values: filegdb, json, sqlite, shapefile
-           replicaOptions - This parameter instructs the createReplica operation to create a
+           replica_options - This parameter instructs the create operation to create a
             new replica based on an existing replica definition (refReplicaId). It can be used
             to specify parameters for registration of existing data for sync. The operation
             will create a replica but will not return data. The responseType returned in the
-            createReplica response will be esriReplicaResponseTypeInfo.
+            create response will be esriReplicaResponseTypeInfo.
            wait - if async, wait to pause the process until the async operation is completed.
            out_path - folder path to save the file
         """
