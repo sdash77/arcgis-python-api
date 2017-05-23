@@ -2553,20 +2553,23 @@ class ContentManager(object):
 
     def import_data(self, df, address_fields=None, **kwargs):
         """
-        Imports a Pandas data frame, that has an address column,
-        to a feature collection
+        Imports a Pandas data frame, that has an address column, or an arcgis spatial dataframe
+        into the GIS.
 
+        Spatial dataframes are imported into the GIS and published as feature layers.
+        Pandas dataframes that have an address column are imported as an in memory feature collection.
+        Note: By default, there is a limit of 1,000 rows/features for Pandas dataframes. This limit isn't there for spatial dataframes.
 
         df : pandas dataframe or arcgis.SpatialDataFrame
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
         title: optional title of the item. This is used for spatial dataframe objects.
-        tags: optional tags when publishing a spatial dataframe to Portal/AGOL
+        tags: optional tags when publishing a spatial dataframe to the the GIS
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
         from .features import FeatureCollection
         from . import SpatialDataFrame
         from ._impl.common._utils import zipws
-        import zipfile
+
         import shutil
         from uuid import uuid4
         import pandas as pd
