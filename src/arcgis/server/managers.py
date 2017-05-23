@@ -60,6 +60,39 @@ class Server(object):
             self._sm = self._server.site_manager
             self._info = self._server.info
     #----------------------------------------------------------------------
+    def publish_sd(self,
+                   sd_file,
+                   folder=None):
+        """
+        publishes a service definition file to arcgis server
+        """
+        if sd_file.lower().endswith('.sd') == False:
+            return False
+        if self._sm:
+            catalog = self.catalog
+            isinstance(catalog, Catalog)
+            if 'System' in catalog.folders:
+                catalog.folder = 'System'
+            else:
+                return False
+            service = catalog.find(service_name="PublishingTools",
+                                   folder="System")
+            if service is None:
+                service = catalog.find(service_name="PublishingToolsEx",
+                                       folder="System")
+            if service is None:
+                return False
+            uploads = self._sm.uploads
+            status, res = uploads.upload(path=sd_file, description="sd file")
+            if status:
+                uid = res['item']['itemID']
+                res = service.publish_service_definition(in_sdp_id=uid)
+                return True
+            return False
+        else:
+            return False
+
+    #----------------------------------------------------------------------
     @property
     def connection(self):
         """gets server the connection object"""

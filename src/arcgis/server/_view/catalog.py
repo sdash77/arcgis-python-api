@@ -128,6 +128,35 @@ class Catalog(BaseServer):
                 setattr(self, "_"+ k, v)
         self.__dict__.update(missing)
     #----------------------------------------------------------------------
+    def find(self, service_name, folder=None):
+        """
+        finds a service based on it's name in a given folder
+        """
+        from six.moves.urllib_parse import quote
+        c_folder = self.folder
+
+        params = {
+            "f" : "json"
+        }
+        self.folder = folder
+        url = self.location
+        connection = self._con
+        missing = {}
+        json_dict = connection.get(path=url,
+                                   params=params)
+        if 'services' in json_dict:
+            for v in json_dict['services']:
+                print(v)
+                if v['name'].lower().replace(self.folder.lower() + "/", '') == service_name.lower():
+                    url = "{base}/{name}/{stype}".format(base=self._url,
+                                                         name=quote(v['name']),
+                                                         stype=v['type'])
+                    self.folder = c_folder
+                    return Service(url=url, server=self)
+                del v
+        self.folder = c_folder
+        return None
+    #----------------------------------------------------------------------
     @property
     def root(self):
         """gets the url of the class"""
