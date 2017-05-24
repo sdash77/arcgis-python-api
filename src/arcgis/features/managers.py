@@ -159,8 +159,8 @@ class SyncManager(object):
             Example:
              layer_queries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
-                            with another geometry
+           geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
+                             spatial relationship with another geometry
            replica_sr - the spatial reference of the replica geometry.
            transport_type -  The transport_type represents the response format. If the
             transport_type is esriTransportTypeUrl, the JSON response is contained in a file,

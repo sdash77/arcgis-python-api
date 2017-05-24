@@ -72,7 +72,8 @@ class ImageryLayer(Layer):
 
         :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
                 Any legal SQL where clause operating on the fields in the raster
-        :param geometry: the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter
+        :param geometry: spatial filter from arcgis.geometry.filters module to filter results by a
+                                spatial relationship with another geometry
         :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
                 Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
                 Syntax: time_filter=<timeInstant>
@@ -125,7 +126,8 @@ class ImageryLayer(Layer):
 
         :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
                 Any legal SQL where clause operating on the fields in the raster
-        :param geometry: the spatial filter on this layer to spatially filter the imagery layer by the specified arcgis.geometry.filter
+        :param geometry: spatial filter from arcgis.geometry.filters module to filter results by a
+                         spatial relationship with another geometry
         :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
                 Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
                 Syntax: time_filter=<timeInstant>
@@ -499,8 +501,8 @@ class ImageryLayer(Layer):
                     start time or end time will represent infinity for start or end time respectively.
                     Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
                     timestamp in milliseconds
-               geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
-                                with another geometry
+               geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
+                                spatial relationship with another geometry
                return_geometry - true means a geometry will be returned,
                                 else just the attributes
                return_ids_only - false is default.  True means only OBJECTIDs

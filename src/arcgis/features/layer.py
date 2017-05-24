@@ -205,8 +205,8 @@ class FeatureLayer(Layer):
                             the timeFilter should be as UTC timestampes in
                             milliseconds.  No checking occurs to see if they
                             are in the right format.
-                geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
-                                with another geometry
+                geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
+                                spatial relationship with another geometry
                 maxAllowableOffset - This option can be used to specify the
                                      maxAllowableOffset to be used for
                                      generalizing geometries returned by
@@ -591,8 +591,8 @@ class FeatureLayer(Layer):
                        Any legal SQL where clause operating on the fields in
                        the layer is allowed. Features conforming to the specified
                        where clause will be deleted.
-              geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
-                                with another geometry
+              geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
+                                spatial relationship with another geometry
               gdb_version - Geodatabase version to apply the edits.
               rollback_on_failure - Optional parameter to specify if the
                                   edits should be applied only if all
@@ -1128,8 +1128,8 @@ class FeatureLayerCollection(_GISResource):
             Example:
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
-           geometry_filter - arcgis.geometry.filter to filter results by a spatial relationship
-                            with another geometry
+           geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
+                             spatial relationship with another geometry
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
