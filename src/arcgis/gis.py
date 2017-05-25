@@ -3480,7 +3480,39 @@ class User(dict):
         if ret:
             self._hydrate()
         return ret
-
+    #----------------------------------------------------------------------
+    def disable(self):
+        """
+        The Disable operation (POST only) disables login access for the
+        user. It is only available to the administrator of the organization
+        """
+        params = {"f" : "json"}
+        url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            self._hydrate()
+            return res['status'] == 'success'
+        elif 'success' in res:
+            self._hydrate()
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
+    def enable(self):
+        """
+        The Disable operation (POST only) disables login access for the
+        user. It is only available to the administrator of the organization
+        """
+        params = {"f" : "json"}
+        url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            self._hydrate()
+            return res['status'] == 'success'
+        elif 'success' in res:
+            self._hydrate()
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
     def update_role(self, role):
         """ Updates this user's role to org_user, org_publisher, org_admin or a custom role
 
