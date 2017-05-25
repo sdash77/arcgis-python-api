@@ -16,6 +16,7 @@ import os
 import re
 import tempfile
 import zipfile
+import configparser
 from contextlib import contextmanager
 
 import arcgis._impl.portalpy as portalpy
@@ -67,7 +68,7 @@ class GIS(object):
     _server_list = None
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
-                 verify_cert=True, set_active=True, client_id=None):
+                 verify_cert=True, set_active=True, client_id=None, profile=None):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
@@ -76,8 +77,56 @@ class GIS(object):
 
         If no url is provided, ArcGIS Online is used. If username/password
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
+
+        A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
+        specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+        The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
+        or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
+        saved in the configuration file by that profile name.
         """
         from arcgis._impl.tools import _Tools
+
+        if profile is not None:
+            if url is None and username is None and password is None and \
+                key_file is None and cert_file is None and \
+                client_id is None:
+                # read
+                cfg = os.path.expanduser("~") + '/.arcgisprofile'
+                config = configparser.ConfigParser()
+                config.read(cfg)
+
+                if profile in config:
+                    url = rot13(config[profile].get('url'))
+                    username = rot13(config[profile].get('username'))
+                    password = rot13(config[profile].get('password'))
+                    key_file = rot13(config[profile].get('key_file'))
+                    cert_file = rot13(config[profile].get('cert_file'))
+                    client_id = rot13(config[profile].get('client_id'))
+                else:
+                    raise RuntimeError('No such profile was found.')
+            else:
+                # write
+                config = configparser.ConfigParser()
+                config[profile] = {
+                }
+
+                if url is not None:
+                    config[profile]['url']= rot13(url)
+                if username is not None:
+                    config[profile]['username']= rot13(username)
+                if password is not None:
+                    config[profile]['password']= rot13(password)
+                if key_file is not None:
+                    config[profile]['key_file']= rot13(key_file)
+                if cert_file is not None:
+                    config[profile]['cert_file']= rot13(cert_file)
+                if client_id is not None:
+                    config[profile]['client_id']= rot13(client_id)
+
+                cfg = os.path.expanduser("~") + '/.arcgisprofile'
+                with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
+                    config.write(configfile)
+
         if url is None:
             url = "http://www.arcgis.com"
 
@@ -4779,6 +4828,8 @@ class Item(dict):
         return serviceitem_id
 
 def rot13(s):
+    if s is None:
+        return None
     result = ""
 
     # Loop over characters.
