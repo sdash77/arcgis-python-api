@@ -2159,8 +2159,7 @@ class ContentManager(object):
         self._portal = gis._portal
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
-        """ Adds content to a Portal by creating an item.
-
+        """ Adds content to the GIS by creating an item.
 
             .. note::
                 That content can be a file (such as a service definition, shapefile, CSV, layer package,
