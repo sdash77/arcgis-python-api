@@ -20,7 +20,7 @@ class FeatureSetConversionTest(unittest.TestCase):
     """
     #----------------------------------------------------------------------
     def setUp(self):
-        self._fs_urls = ["https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/0",# Point
+        self._fs_urls = ["https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0",# Point
                          "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Hurricanes/MapServer/1", # Polyline
                          "https://sampleserver6.arcgisonline.com/arcgis/rest/services/MontgomeryQuarters/MapServer/0"] #polygon
         self._table_url =  "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/1" # table
@@ -66,8 +66,7 @@ class IOTest(unittest.TestCase):
         self.assertIsInstance(sdf, SpatialDataFrame)
     #----------------------------------------------------------------------
     def test_to_featureclass_shp(self):
-        url = "https://sampleserver6.arcgisonline.com/arcgis"+\
-            "/rest/services/ServiceRequest/MapServer/0"
+        url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
         sdf = from_layer(layer=Service(url=url))
         fc = to_featureclass(df=sdf,
                              out_location=self._dir,
@@ -75,8 +74,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(arcpy.Exists(fc))
     #----------------------------------------------------------------------
     def test_to_featureclass_fgdb(self):
-        url = "https://sampleserver6.arcgisonline.com/arcgis"+\
-            "/rest/services/ServiceRequest/MapServer/0"
+        url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
         sdf = from_layer(layer=Service(url=url))
         fc = to_featureclass(df=sdf,
                              out_location=self._gdb,
@@ -84,8 +82,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(arcpy.Exists(fc))
     #----------------------------------------------------------------------
     def test_to_sqlite(self):
-        url = "https://sampleserver6.arcgisonline.com/arcgis"+\
-            "/rest/services/ServiceRequest/MapServer/0"
+        url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
         sdf = from_layer(layer=Service(url=url))
         fc = to_sqlite(df=sdf,
                        out_folder=self._dir,
@@ -100,7 +97,7 @@ class IOTest(unittest.TestCase):
         geom = spdf.geometry
         print(geom)
         self.assertIsInstance(spdf, SpatialDataFrame)
-    @unittest.skip
+
     def test_to_pickle(self):
         out_file = r"c:\temp\test.pkl"
         if os.path.isfile(out_file):
@@ -110,6 +107,7 @@ class IOTest(unittest.TestCase):
         spdf = from_featureclass(filename=fc)
         spdf.to_pickle(out_file)
     #----------------------------------------------------------------------
+    @unittest.skip
     def test_to_hdf(self):
         from uuid import uuid4
         out_file = r"c:\temp\%s.hf5" % uuid4().hex
@@ -123,6 +121,7 @@ class IOTest(unittest.TestCase):
         os.remove(out_file)
         arcpy.Delete_management(fc)
     #----------------------------------------------------------------------
+    @unittest.SkipTest
     def test_from_hdf(self):
         from uuid import uuid4
         key = uuid4().hex

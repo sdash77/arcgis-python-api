@@ -2210,7 +2210,6 @@ class ContentManager(object):
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
-
             .. note::
                 That content can be a file (such as a service definition, shapefile, CSV, layer package,
                 file geodatabase, geoprocessing package, map package) or it can be a URL (to an ArcGIS Server
