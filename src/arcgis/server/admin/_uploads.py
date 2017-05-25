@@ -132,9 +132,10 @@ class Uploads(BaseServer):
         res = self._con.post(path=url,
                              postdata=params,
                              files=files)
-        if 'status' in res:
-            return res['status'] == 'success'
-        return res
+        if 'status' in res and \
+           res['status'] == 'success':
+            return True, res
+        return False, res
     #----------------------------------------------------------------------
     def upload_by_part(self,
                        item_id,

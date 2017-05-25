@@ -251,7 +251,8 @@ def to_featureclass(df, out_name, out_location=None,
             sr = None
             if df.sr is None:
                 sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
-                if 'wkid' in sr:
+                if isinstance(sr, dict) and \
+                   'wkid' in sr:
                     sr = arcpy.SpatialReference(sr['wkid'])
                 else:
                     sr = None
@@ -264,7 +265,15 @@ def to_featureclass(df, out_name, out_location=None,
         desc = arcpy.Describe(fc)
         oidField = desc.oidFieldName
         col_insert = copy.copy(df.columns).tolist()
-        col_insert = [f for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid', desc.oidFieldName.lower()]]
+        if hasattr(desc, 'areaFieldName'):
+            af = desc.areaFieldName.lower()
+        else:
+            af = None
+        if hasattr(desc, 'lengthFieldName'):
+            lf = desc.lengthFieldName.lower()
+        else:
+            lf = None
+        col_insert = [f for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid', desc.oidFieldName.lower(), af, lf]]
         df_cols = col_insert.copy()
         lower_col_names = [f.lower() for f in col_insert if f.lower() not in ['oid', 'objectid', 'fid']]
         idx_shp = None
@@ -302,9 +311,12 @@ def to_featureclass(df, out_name, out_location=None,
         existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
         for col in col_insert:
             if col.lower().find('shape') == -1 and \
-               col.lower not in existing_fields:
-                arcpy.AddField_management(in_table=fc, field_name=col,
-                                          field_type=_infer_type(df, col))
+               col.lower() not in existing_fields:
+                try:
+                    arcpy.AddField_management(in_table=fc, field_name=col,
+                                              field_type=_infer_type(df, col))
+                except:
+                    print('col %s' % col)
         icur = da.InsertCursor(fc, col_insert)
         for index, row in df[df_cols].iterrows():
             if len(dt_idx) > 0:

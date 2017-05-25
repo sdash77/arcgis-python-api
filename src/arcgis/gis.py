@@ -2159,7 +2159,7 @@ class ContentManager(object):
         self._portal = gis._portal
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
-        """ Adds content to the GIS by creating an item.
+        """ Adds content to a Portal by creating an item.
 
 
             .. note::
@@ -2203,8 +2203,6 @@ class ContentManager(object):
             description        optional string.  Description of the item.
             -----------------  ----------------------------------------------------------------------------
             title              optional string.  Name of the item.
-            -----------------  ----------------------------------------------------------------------------
-            text               optional string.  For text based items such as Feature Collections & WebMaps
             -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
             -----------------  ----------------------------------------------------------------------------
@@ -3482,7 +3480,39 @@ class User(dict):
         if ret:
             self._hydrate()
         return ret
-
+    #----------------------------------------------------------------------
+    def disable(self):
+        """
+        The Disable operation (POST only) disables login access for the
+        user. It is only available to the administrator of the organization
+        """
+        params = {"f" : "json"}
+        url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            self._hydrate()
+            return res['status'] == 'success'
+        elif 'success' in res:
+            self._hydrate()
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
+    def enable(self):
+        """
+        The Disable operation (POST only) disables login access for the
+        user. It is only available to the administrator of the organization
+        """
+        params = {"f" : "json"}
+        url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            self._hydrate()
+            return res['status'] == 'success'
+        elif 'success' in res:
+            self._hydrate()
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
     def update_role(self, role):
         """ Updates this user's role to org_user, org_publisher, org_admin or a custom role
 
