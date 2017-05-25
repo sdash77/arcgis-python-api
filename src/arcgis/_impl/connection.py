@@ -448,6 +448,9 @@ class _ArcGISConnection(object):
             import webbrowser
             import getpass
 
+            print("Please sign in to your GIS and paste the code that is obtained below.")
+            print("If a web browser does not automatically open, please navigate to the URL below yourself instead.")
+            print("Opening web browser to navigate to: " + codeurl)
             webbrowser.open_new(codeurl)
             code = getpass.getpass("Enter code obtained on signing in using SAML: ")
 
