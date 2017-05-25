@@ -2206,6 +2206,8 @@ class ContentManager(object):
             -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
             -----------------  ----------------------------------------------------------------------------
+            text               optional string.  For text based items such as Feature Collections & WebMaps
+            -----------------  ----------------------------------------------------------------------------
             tags               optional string of comma-separated values, or list of strings.
                                Used for searches on items.
             -----------------  ----------------------------------------------------------------------------
