@@ -2159,7 +2159,7 @@ class ContentManager(object):
         self._portal = gis._portal
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
-        """ Adds content to a Portal by creating an item.
+        """ Adds content to the GIS by creating an item.
 
 
             .. note::
@@ -2205,6 +2205,8 @@ class ContentManager(object):
             title              optional string.  Name of the item.
             -----------------  ----------------------------------------------------------------------------
             url                optional string.  URL to item that are based on URLs.
+            -----------------  ----------------------------------------------------------------------------
+            text               optional string.  For text based items such as Feature Collections & WebMaps
             -----------------  ----------------------------------------------------------------------------
             tags               optional string of comma-separated values, or list of strings.
                                Used for searches on items.
