@@ -357,7 +357,7 @@ define('mapview', [
                 that.toolbar = new Draw(evt.map);
                 // hook up events
                 that.toolbar.on("draw-end", onDrawEnd);
-                //map.on("extent-change", onExtentChange);
+                evt.map.on("extent-change", onExtentChange);
                 evt.map.on("click", onMouseClick);
 
 
@@ -369,13 +369,14 @@ define('mapview', [
 
 
             // JS map events
-            /*
+            
             function onExtentChange(evt){
+                //console.log('#####EXTENTCHANGE')
               var extent = evt.extent,
                   zoomed = evt.levelChange;
                 that.extent_change(extent, zoomed);
             }
-            */
+            
             function onDrawEnd(evtObj) {
                 var geometry = evtObj.geometry;
 
@@ -952,12 +953,14 @@ define('mapview', [
             this.touch();
             this.send({ event: 'draw-end', message: geometry });
         },
-        /*
+        
         extent_change(extent, zoomed) {
-            //console.log(extent);
+            //console.log(JSON.stringify(extent));
             //console.log(zoomed);
+            this.model.set('_jsextent', JSON.stringify(extent));
+            this.touch();
         },
-        */
+        
 
         events: {
             // Dictionary of events and their handlers.

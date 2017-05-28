@@ -17,9 +17,9 @@ except:
     from IPython.html import widgets
 
 try:
-    from traitlets import Unicode, Int, List, Bool
+    from traitlets import Unicode, Int, List, Bool, Dict
 except:
-    from IPython.utils.traitlets import Unicode, Int, List, Bool
+    from IPython.utils.traitlets import Unicode, Int, List, Bool, Dict
 
 
 class MapView(widgets.DOMWidget):
@@ -39,6 +39,7 @@ class MapView(widgets.DOMWidget):
     start_time = Unicode('').tag(sync=True)
     end_time = Unicode('').tag(sync=True)
     _extent = Unicode('').tag(sync=True)
+    _jsextent = Unicode('').tag(sync=True)
     _token_info = Unicode('').tag(sync=True)
 
     _arcgis_url = Unicode('').tag(sync=True)
@@ -95,7 +96,9 @@ class MapView(widgets.DOMWidget):
         when the shape is clicked
 
         symbol is a symbol specified in json format as described at http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000
-        a default symbol is used is one is not specified
+        a default symbol is used is one is not specified.
+        Tip: a helper utility to get the symbol format for several predefined symbols is available at
+        https://developers.arcgis.com/javascript/3/samples/portal_symbols/
 
         attributes is a dict containing name value pairs of fields and field values
         associated with the graphic.
@@ -187,7 +190,10 @@ class MapView(widgets.DOMWidget):
 
     @property
     def extent(self):
-        return json.loads(self._extent)
+        if self._jsextent is not None and self._jsextent != '':
+            return json.loads(self._jsextent)
+        else:
+            return None
 
     @extent.setter
     def extent(self, value):
