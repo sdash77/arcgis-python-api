@@ -344,10 +344,20 @@ class ImageryLayer(Layer):
             elif type(bbox) == list:
                 params['bbox'] = "%s,%s,%s,%s" % (bbox[0], bbox[1], bbox[2], bbox[3])
             else: # json dict or Geometry Envelope object
+                if bbox_sr is None:
+                    if 'spatialReference' in bbox:
+                        bbox_sr = bbox['spatialReference']
+
                 bbox = "%s,%s,%s,%s" % (bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax'])
                 params['bbox'] = bbox
+
+
+
         else:
             params['bbox'] = self.extent # properties.initialExtent
+            if bbox_sr is None:
+                if 'spatialReference' in self.extent:
+                    bbox_sr = self.extent['spatialReference']
 
         if image_sr is not None:
             params['imageSR'] = image_sr
@@ -1142,7 +1152,10 @@ class ImageryLayer(Layer):
 
 
     def _repr_jpeg_(self):
-        return self.export_image(bbox=self._extent, size=[1200, 450], export_format='jpeg', f='image')
+        bbox_sr = None
+        if 'spatialReference' in self.extent:
+            bbox_sr = self.extent['spatialReference']
+        return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
