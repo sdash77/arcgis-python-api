@@ -384,9 +384,6 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     """
     tbx = None
     url = url_or_item
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
     if isinstance(url_or_item, Item):
         tbx = Toolbox.fromitem(url_or_item)
         url = url_or_item.url

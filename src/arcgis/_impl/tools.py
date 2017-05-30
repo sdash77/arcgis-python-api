@@ -923,53 +923,6 @@ class _FeatureAnalysisTools(_AsyncService):
             group_by_summary = arcgis.features.FeatureCollection(job_values['groupBySummary'])
             return { "result_layer":result_layer, "group_by_summary":group_by_summary, }
 
-    def join_features(self,
-        target_layer,
-        join_layer,
-        spatial_relationship,
-        spatial_relationship_distance,
-        spatial_relationship_distance_units,
-        attribute_relationship,
-        join_operation,
-        summary_fields,
-        output_name,
-        context):
-
-        task ="JoinFeatures"
-
-        params = {}
-
-        params["targetLayer"] = super()._feature_input(target_layer)
-        params["joinLayer"] = super()._feature_input(join_layer)
-        if spatial_relationship is not None:
-            params["spatialRelationship"] = spatial_relationship
-        if spatial_relationship_distance is not None:
-            params["spatialRelationshipDistance"] = spatial_relationship_distance
-        if spatial_relationship_distance_units is not None:
-            params["spatialRelationshipDistanceUnits"] = spatial_relationship_distance_units
-        if attribute_relationship is not None:
-            params["attributeRelationship"] = attribute_relationship
-        if summary_fields is not None:
-            params["summaryFields"] = summary_fields
-        if join_operation is not None:
-            params["joinOperation"] = join_operation
-        if output_name is not None:
-            params["outputName"] = {"serviceProperties": {"name": output_name }}
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
-        #print(job_values)
-        if output_name is not None:
-            itemid = job_values['outputLayer']['itemId']
-            item = arcgis.gis.Item(self._gis, itemid)
-            return item
-        else:
-            # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
     def enrich_layer(self,
                        input_layer,
