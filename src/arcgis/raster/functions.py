@@ -1691,7 +1691,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The Range operation
 

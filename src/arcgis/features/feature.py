@@ -504,10 +504,12 @@ class FeatureSet(object):
             HASARCPY = False
         features = []
         index = 0
+        sr = None
         if isinstance(df, SpatialDataFrame):
             df_rows = df.copy()
             del df_rows['SHAPE']
             geoms = df['SHAPE'].tolist()
+            sr = df.sr
         elif isinstance(df, pd.DataFrame):
             geoms = []
             df_rows = df.copy().to_dict('records')
@@ -527,7 +529,12 @@ class FeatureSet(object):
                         "attributes": row
                     })
             index += 1
-        return FeatureSet.from_dict(featureset_dict={'features': features})
+        fs =  FeatureSet.from_dict(featureset_dict={'features': features})
+
+        if sr is not None:
+            fs.spatial_reference = sr
+
+        return fs
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -569,6 +576,9 @@ class FeatureSet(object):
         elif isinstance(value, str) and \
                 str(value).isdigit():
             self._spatial_reference = SpatialReference(wkid=int(value))
+        else:
+            self._spatial_reference = SpatialReference(value)
+
 
     # ----------------------------------------------------------------------
     @property
