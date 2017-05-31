@@ -66,6 +66,7 @@ class GIS(object):
     as well as the results of your analysis. To create a new map, call the map() method.
     """
     _server_list = None
+    portaladmin = None
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
@@ -169,7 +170,10 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-
+        if self.properties.isPortal:
+            from ._impl.portaladmin.portaladmin import PortalAdminManager
+            self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
+                                                  gis=self)
     @property
     def servers(self):
         """
