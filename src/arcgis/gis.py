@@ -66,6 +66,7 @@ class GIS(object):
     as well as the results of your analysis. To create a new map, call the map() method.
     """
     _server_list = None
+    portaladmin = None
 
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
@@ -169,7 +170,10 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-
+        if self.properties.isPortal:
+            from ._impl.portaladmin.portaladmin import PortalAdminManager
+            self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
+                                                  gis=self)
     @property
     def servers(self):
         """
@@ -3806,6 +3810,8 @@ class Item(dict):
                     svc = FeatureLayerCollection.fromitem(self)
                     for lyr in svc.layers:
                         layers.append(lyr)
+                    for tbl in svc.tables:
+                        tables.append(tbl)
 
             elif self.type == 'Map Service':
                 svc = MapImageLayer.fromitem(self)
@@ -3848,7 +3854,7 @@ class Item(dict):
             pass
 
     def __getattribute__ (self, name):
-        if name == 'layers' or name == 'tables':
+        if name == 'layers':
             if self['layers'] == None or self['layers'] == []:
                 try:
                     with _DisableLogger():
@@ -3856,6 +3862,14 @@ class Item(dict):
                 except:
                     pass
                 return self['layers']
+        elif name == 'tables':
+            if self['tables'] == None or self['tables'] == []:
+                try:
+                    with _DisableLogger():
+                        self._populate_layers()
+                except:
+                    pass
+                return self['tables']
         return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name): # support item attributes
