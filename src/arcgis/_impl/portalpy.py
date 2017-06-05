@@ -142,7 +142,7 @@ class Portal(object):
                                              all_ssl=True,
                                              referer=referer,
                                              proxy_host=proxy_host,
-                                             proxy_port=proxy_port, 
+                                             proxy_port=proxy_port,
                                              verify_cert=verify_cert)
             else:
                 self.con = _ArcGISConnection(baseurl=self.resturl,
@@ -155,7 +155,7 @@ class Portal(object):
                                              all_ssl=True,
                                              referer=referer,
                                              proxy_host=proxy_host,
-                                             proxy_port=proxy_port, 
+                                             proxy_port=proxy_port,
                                              verify_cert=verify_cert,
                                              client_id=client_id)
         #self.get_version(True)
@@ -605,13 +605,13 @@ class Portal(object):
         ----------------  --------------------------------------------------------
         folder            optional string, folder containing the item.  Defaults to the root folder.
         ----------------  --------------------------------------------------------
-        enable            optional boolean, True to enable delete protection, False to 
+        enable            optional boolean, True to enable delete protection, False to
                           to disable it
         ================  ========================================================
 
         :return:
             dict with key "success" containing boolean whether process completed or not
-            
+
 
         """
         path = 'content/users/' + owner
@@ -2082,7 +2082,12 @@ class Portal(object):
         if data:
             if _is_http_url(data):
                 data = request.urlretrieve(data)[0]
-            files.append(('file', data, os.path.basename(data)))
+            elif os.path.isfile(data):
+                files.append(('file', data, os.path.basename(data)))
+            elif isinstance(data, dict):
+                postdata['text'] = json.dumps(data)
+            else:
+                postdata['text'] = data
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
@@ -2219,10 +2224,10 @@ class Portal(object):
 
     def move_item(self, itemid, owner, current_folder, folder_id):
         """ Moves the item to given folder """
-        
+
         path = 'content/users/' + owner
         if current_folder :
-            path += '/' + current_folder 
+            path += '/' + current_folder
         path += '/items/' + itemid + '/move'
 
         postdata = self._postdata()
