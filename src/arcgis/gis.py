@@ -170,10 +170,6 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-        if self.properties.isPortal:
-            from ._impl.portaladmin.portaladmin import PortalAdminManager
-            self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
-                                                  gis=self)
         # if self.properties.isPortal:
         #     from ._impl.portaladmin.portaladmin import PortalAdminManager
         #     self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
@@ -288,6 +284,79 @@ class GIS(object):
         if resp:
             delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get('success')
+
+    def add_resource(self,
+                     key=None,
+                     path=None,
+                     text=None):
+        """
+        The add resource operation allows the administrator to add a file
+        resource, for example, the organization's logo or custom banner.
+        The resource can be used by any member of the organization. File
+        resources use storage space from your quota and are scanned for
+        viruses.
+
+        Parameters:
+         :key: look up key for file
+         :path: file path to the resource to upload
+         :text: text value to add to the site's resources
+        Output:
+         boolean
+        """
+        files = None
+        if key is None and path:
+            key = os.path.basename(path)
+        elif key is None and path is None:
+            raise ValueError("key must be populated is path is null")
+        postdata = {
+                "f" : "json",
+                "key" : key,
+            }
+        if path:
+            files = {
+                    'file' : path
+                }
+        elif text:
+            postdata['text'] = text
+        resp = self._portal.con.post('portals/self/addresource', postdata, files=files)
+        if 'success' in resp:
+            return resp['success']
+        return resp
+
+    def remove_resource(self, key):
+        """The Remove Resource operation allows the administrator to remove
+        a file resource.
+
+        Parameters:
+         :key: The name of the resource to delete.
+        Output:
+         boolean
+        """
+        postdata = {
+                "f" : "json",
+                "key" : key,
+            }
+
+        resp = self._portal.con.post('portals/self/removeresource', postdata)
+        if 'success' in resp:
+            return resp['success']
+        return resp
+
+    #----------------------------------------------------------------------
+    def portal_resources(self, start=1, num=100):
+        """
+        returns a list of resources uploaded to portal.  The items can be
+        images, files and other content used to stylize and modify a
+        portal's appearance.
+        """
+        postdata = {
+            "f" : "json",
+            'start' : start,
+            'num' : 255
+        }
+        resp = self._portal.con.post('portals/self/resources',
+                                     postdata)
+        return resp
 
     def __str__(self):
         return 'GIS @ ' + self._url
