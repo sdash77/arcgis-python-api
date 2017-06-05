@@ -184,23 +184,23 @@ class SyncManager(object):
             creating a replica. AttachmentsSyncDirection is currently a createReplica property
             and cannot be overridden during sync.
             Values: none, upload, bidirectional
-           sync_model - this parameter is used to indicate that the replica is being created for 
-            per-layer sync or per-replica sync. To determine which model types are supported by a 
-            service, query the supportsPerReplicaSync, supportsPerLayerSync, and supportsSyncModelNone 
-            properties of the Feature Service. By default, a replica is created for per-replica sync. 
-            If syncModel is perReplica, the syncDirection specified during sync applies to all layers 
-            in the replica. If the syncModel is perLayer, the syncDirection is defined on a layer-by-layer 
-            basis. 
-            
-            If syncModel is perReplica, the response will have replicaServerGen. A perReplica syncModel 
-            requires the replicaServerGen on sync. The replicaServerGen tells the server the point 
-            in time from which to send back changes. If syncModel is perLayer, the response will include 
-            an array of server generation numbers for the layers in layerServerGens. A perLayer sync 
-            model requires the layerServerGens on sync. The layerServerGens tell the server the point 
+           sync_model - this parameter is used to indicate that the replica is being created for
+            per-layer sync or per-replica sync. To determine which model types are supported by a
+            service, query the supportsPerReplicaSync, supportsPerLayerSync, and supportsSyncModelNone
+            properties of the Feature Service. By default, a replica is created for per-replica sync.
+            If syncModel is perReplica, the syncDirection specified during sync applies to all layers
+            in the replica. If the syncModel is perLayer, the syncDirection is defined on a layer-by-layer
+            basis.
+
+            If syncModel is perReplica, the response will have replicaServerGen. A perReplica syncModel
+            requires the replicaServerGen on sync. The replicaServerGen tells the server the point
+            in time from which to send back changes. If syncModel is perLayer, the response will include
+            an array of server generation numbers for the layers in layerServerGens. A perLayer sync
+            model requires the layerServerGens on sync. The layerServerGens tell the server the point
             in time from which to send back changes for a specific layer. sync_model=none can be used
-            to export the data without creating a replica. Query the supportsSyncModelNone property 
+            to export the data without creating a replica. Query the supportsSyncModelNone property
             of the feature service to see if this model type is supported.
-            
+
             See the RollbackOnFailure and Sync Models topic for more details.
             Values: perReplica | perLayer | none
             Example: syncModel=perLayer
@@ -264,7 +264,136 @@ class SyncManager(object):
                                              edits_upload_format,
                                              data_format,
                                              rollback_on_failure)
+    def create_replica_item(self,
+                            replica_name,
+                            item,
+                            destination_gis,
+                            layers=None,
+                            extent=None):
+        """creates a replicated service from a parent to another GIS"""
+        import tempfile
+        import os
+        from ..gis import Item
+        fs = item.layers[0].container
+        if layers is None:
+            ls = fs.properties['layers']
+            ts = fs.properties['tables']
+            layers = ""
+            for i in ls + ts:
+                layers += str(i['id'])
+        if extent is None:
+            extent = fs.properties['fullExtent']
+            if 'spatialReference' in extent:
+                del extent['spatialReference']
+        out_path = tempfile.gettempdir()
+        from . import FeatureLayerCollection
+        isinstance(fs, FeatureLayerCollection)
+        db = fs._create_replica(replica_name=replica_name,
+                            layers=layers,
+                            geometry_filter=extent,
+                            attachments_sync_direction=None,
+                            transport_type="esriTransportTypeUrl",
+                            return_attachments=True,
+                            return_attachments_data_by_url=True,
+                            asynchronous=True,
+                            sync_model="perLayer",
+                            target_type="server",
+                            data_format="sqlite",
+                            #target_type="server",
+                            out_path=out_path,
+                            wait=True)
+        if os.path.isfile(db) == False:
+            raise Exception("Could not create the replica")
+        destination_content = destination_gis.content
+        item = destination_content.add(item_properties= {"type" : "SQLite Geodatabase",
+                                                    "tags" : "replication",
+                                                    "title" : replica_name},
+                                  data=db)
+        published = item.publish()
+        return published
 
+    def sync_replicated_items(self, parent, child, replica_name):
+        """
+        synchronizes two replicated items between portals
+
+        Paramters:
+         :parent: arcgis.gis.Item class that points to a feature service
+          who is the parent (source) dataset.
+         :child: arcgis.gis.Item class that points to the child replica
+         :replica_name: name of the replica to synchronize
+        Output:
+         boolean value. True means service is up to date/synchronized,
+         False means the synchronization failed.
+
+
+        """
+        from ..gis import Item
+        if isinstance(parent, Item) == False:
+            raise ValueError("parent must be an Item")
+        if isinstance(child, Item) == False:
+            raise ValueError("child must be an Item")
+        child_fs = child.layers[0].container
+        parent_fs = parent.layers[0].container
+        child_replicas = child_fs.replicas
+        parent_replicas = parent_fs.replicas
+        if child_replicas and \
+           parent_replicas:
+            child_replica_id = None
+            parent_replica_id = None
+            child_replica = None
+            parent_replica = None
+            for replica in child_replicas.get_list():
+                if replica['replicaName'].lower() == replica_name.lower():
+                    child_replica_id = replica['replicaID']
+                    break
+            for replica in parent_replicas.get_list():
+                if replica['replicaName'].lower() == replica_name.lower():
+                    parent_replica_id = replica['replicaID']
+                    break
+            if child_replica_id and \
+               parent_replica_id:
+                import tempfile, os
+                child_replica = child_replicas.get(replica_id=child_replica_id)
+                parent_replica = parent_replicas.get(replica_id=parent_replica_id)
+                delta = parent_fs._synchronize_replica(replica_id=parent_replica_id,
+                                                       transport_type="esriTransportTypeUrl",
+                                                       close_replica=False,
+                                                       return_ids_for_adds=False,
+                                                       return_attachment_databy_url=True,
+                                                       asynchronous=False,
+                                                       sync_direction="download",
+                                                       sync_layers=parent_replica['layerServerGens'],
+                                                       edits_upload_format="sqlite",
+                                                       data_format="sqlite",
+                                                       rollback_on_failure=False,
+                                                       out_path=tempfile.gettempdir())
+                if os.path.isfile(delta) == False:
+                    return True
+                work, message = child_fs.upload(path=delta)
+                if isinstance(message, dict) and \
+                   'item' in message and \
+                   'itemID' in message['item']:
+                    syncLayers_child = child_replica['layerServerGens']
+                    syncLayers_parent = parent_replica['layerServerGens']
+                    for i in range(len(syncLayers_parent)):
+                        syncLayers_child[i]['serverSibGen'] = syncLayers_parent[i]['serverGen']
+                    child_fs._synchronize_replica(
+                        replica_id=child_replica_id,
+                        sync_layers=syncLayers_child,
+                        sync_direction=None,
+                        edits_upload_id=message['item']['itemID'],
+                        return_ids_for_adds=False,
+                        data_format="sqlite",
+                        asynchronous=False,
+                        edits_upload_format="sqlite")
+                    return True
+                else:
+                    return False
+            else:
+                raise ValueError("Could not find replica name %s in both services" % replica_name)
+        else:
+            return False
+        return False
 
 class FeatureLayerCollectionManager(_GISResource):
     """
