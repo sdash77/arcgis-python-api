@@ -286,6 +286,8 @@ class SyncManager(object):
             if 'spatialReference' in extent:
                 del extent['spatialReference']
         out_path = tempfile.gettempdir()
+        from . import FeatureLayerCollection
+        isinstance(fs, FeatureLayerCollection)
         db = fs._create_replica(replica_name=replica_name,
                             layers=layers,
                             geometry_filter=extent,
@@ -295,8 +297,9 @@ class SyncManager(object):
                             return_attachments_data_by_url=True,
                             asynchronous=True,
                             sync_model="perLayer",
-                            target_type="sqlite",
+                            target_type="server",
                             data_format="sqlite",
+                            #target_type="server",
                             out_path=out_path,
                             wait=True)
         if os.path.isfile(db) == False:
