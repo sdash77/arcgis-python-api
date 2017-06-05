@@ -4578,7 +4578,8 @@ class Item(dict):
             fileType = 'scenePackage'
         elif self['type'] == 'Tile Package':
             fileType = 'tilePackage'
-
+        elif self['type'] == 'SQLite Geodatabase':
+            fileType = 'sqliteGeodatabase'
         try:
             folder = self.ownerFolder
         except:
@@ -4681,7 +4682,11 @@ class Item(dict):
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 buildInitialCache = True
-
+            elif fileType == 'sqliteGeodatabase':
+                name = re.sub(r'[\W_]+', '_', self['title'])
+                publish_parameters = {"name":name,
+                                      'maxRecordCount':2000,
+                                      "capabilities":"Query, Sync"}
             else: #sd files
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
