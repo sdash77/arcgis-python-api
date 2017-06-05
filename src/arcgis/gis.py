@@ -174,6 +174,10 @@ class GIS(object):
             from ._impl.portaladmin.portaladmin import PortalAdminManager
             self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
                                                   gis=self)
+        # if self.properties.isPortal:
+        #     from ._impl.portaladmin.portaladmin import PortalAdminManager
+        #     self.portaladmin = PortalAdminManager(url="%s/portaladmin" % self._url,
+        #                                           gis=self)
     @property
     def servers(self):
         """
