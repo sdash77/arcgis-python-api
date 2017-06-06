@@ -1867,7 +1867,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Variety operation
 
@@ -1876,11 +1876,13 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 58, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 75 if ignore_nodata else 58
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2107,20 +2109,6 @@ def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     return local(rasters, 74, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The VarietyIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 75, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2780,11 +2768,10 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
     The unit_conversion function performs unit conversions.The arguments for the unit_conversion function are as follows:
-    FromUnit and ToUnit take the following:
-    Speed Units: 100=MetersPerSecond, 101=KilometersPerHour, 102 =Knots, 103 =FeetPerSecond, 104=MilesPerHour
-    Temperature Units: 200=Celsius,201=Fahrenheit,202=Kelvin
-    Distance Units: 1=Inches, 2=Points, 3=Feet,4=Yards,5=Miles, 6=NauticalMiles,7=Millimeters,8=Centimeters,9=Meters,
-    10=Kilometers,11=DecimalDegrees,12=Decimeters
+    from_unit and to_unit take the following str values:
+    Speed Units: MetersPerSecond, KilometersPerHour, Knots, FeetPerSecond, MilesPerHour
+    Temperature Units: Celsius,Fahrenheit,Kelvin
+    Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimeters, Centimeters, Meters
 
     :param raster: input raster
     :param from_unit: units constant listed below (int)
@@ -2795,6 +2782,32 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    unit_types = {
+        'inches': 1,
+        'feet': 3,
+        'yards': 4,
+        'miles': 5,
+        'nauticalmiles': 6,
+        'millimeters': 7,
+        'centimeters': 8,
+        'meters': 9,
+        'celsius': 200,
+        'fahrenheit': 201,
+        'kelvin': 202,
+        'meterspersecond': 100,
+        'kilometersperhour': 101,
+        'knots': 102,
+        'feetpersecond': 103,
+        'milesperhour': 104
+    }
+
+    if isinstance(from_unit, str):
+        from_unit = unit_types[from_unit.lower()]
+
+    if isinstance(to_unit, str):
+        to_unit = unit_types[to_unit.lower()]
+
 
     template_dict = {
         "rasterFunction": "UnitConversion",
