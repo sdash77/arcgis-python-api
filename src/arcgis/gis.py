@@ -407,6 +407,8 @@ class PortalResourceManager(object):
             files = {
                 'file' : path
             }
+            if self._portal.is_arcgisonline == False:
+                postdata['text'] = ""
         elif text:
             postdata['text'] = text
         resp = self._portal.con.post('portals/self/addresource',
