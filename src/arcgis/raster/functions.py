@@ -1547,7 +1547,7 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Majority operation
 
@@ -1556,14 +1556,16 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 38, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 66 if ignore_nodata else 38
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Max operation
 
@@ -1576,10 +1578,11 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 39, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 67 if ignore_nodata else 39
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Mean operation
 
@@ -1588,14 +1591,16 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 40, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 68 if ignore_nodata else 40
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Med operation
 
@@ -1604,14 +1609,16 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 41, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 69 if ignore_nodata else 41
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Min operation
 
@@ -1620,14 +1627,16 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 42, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 70 if ignore_nodata else 42
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Minority operation
 
@@ -1636,11 +1645,13 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 43, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 71 if ignore_nodata else 43
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1691,7 +1702,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Range operation
 
@@ -1700,11 +1711,13 @@ def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ast
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 47, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 72 if ignore_nodata else 47
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1803,7 +1816,7 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Std operation
 
@@ -1812,14 +1825,16 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 54, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 73 if ignore_nodata else 54
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None):
     """
     The Sum operation
 
@@ -1828,11 +1843,13 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 55, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 74 if ignore_nodata else 55
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1867,7 +1884,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
     """
     The Variety operation
 
@@ -1876,11 +1893,13 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :return: the output raster
 
     """
-    return local(rasters, 58, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    opnum = 75 if ignore_nodata else 58
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1961,166 +1980,6 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 
     """
     return local(rasters, 65, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def majority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MajorityIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 66, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def max_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MaxIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 67, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def mean_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MeanIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 68, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def med_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MedIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 69, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def min_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MinIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 70, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def minority_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The MinorityIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 71, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def range_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The RangeIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 72, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def std_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The StdIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 73, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def sum_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The SumIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 74, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
-
-
-def variety_ignore_no_data(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-    """
-    The VarietyIgnoreNoData operation
-
-    The arguments for this function are as follows:
-
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
-
-    """
-    return local(rasters, 75, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2543,10 +2402,10 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
+def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
                fill_no_data_only=None, astype=None):
     """
-    The statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
+    The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
     For more information, see
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
     The arguments for the statistics function are as follows:
@@ -2780,11 +2639,10 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
     The unit_conversion function performs unit conversions.The arguments for the unit_conversion function are as follows:
-    FromUnit and ToUnit take the following:
-    Speed Units: 100=MetersPerSecond, 101=KilometersPerHour, 102 =Knots, 103 =FeetPerSecond, 104=MilesPerHour
-    Temperature Units: 200=Celsius,201=Fahrenheit,202=Kelvin
-    Distance Units: 1=Inches, 2=Points, 3=Feet,4=Yards,5=Miles, 6=NauticalMiles,7=Millimeters,8=Centimeters,9=Meters,
-    10=Kilometers,11=DecimalDegrees,12=Decimeters
+    from_unit and to_unit take the following str values:
+    Speed Units: MetersPerSecond, KilometersPerHour, Knots, FeetPerSecond, MilesPerHour
+    Temperature Units: Celsius,Fahrenheit,Kelvin
+    Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimeters, Centimeters, Meters
 
     :param raster: input raster
     :param from_unit: units constant listed below (int)
@@ -2795,6 +2653,32 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    unit_types = {
+        'inches': 1,
+        'feet': 3,
+        'yards': 4,
+        'miles': 5,
+        'nauticalmiles': 6,
+        'millimeters': 7,
+        'centimeters': 8,
+        'meters': 9,
+        'celsius': 200,
+        'fahrenheit': 201,
+        'kelvin': 202,
+        'meterspersecond': 100,
+        'kilometersperhour': 101,
+        'knots': 102,
+        'feetpersecond': 103,
+        'milesperhour': 104
+    }
+
+    if isinstance(from_unit, str):
+        from_unit = unit_types[from_unit.lower()]
+
+    if isinstance(to_unit, str):
+        to_unit = unit_types[to_unit.lower()]
+
 
     template_dict = {
         "rasterFunction": "UnitConversion",

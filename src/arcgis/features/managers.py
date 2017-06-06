@@ -465,7 +465,7 @@ class FeatureLayerCollectionManager(_GISResource):
          :updateable: boolean value that says if a view can update values
          :capabilities: determines what operations a user can do on a given
           view
-         :view_layer_def: optional dictionary used to define the layers that
+         :view_layers: optional dictionary used to define the layers that
           are referenced inside the view.  The default is all layers.
         :Returns:
          Item for  the view
