@@ -286,6 +286,8 @@ class ImageryLayer(Layer):
                            pixel values while transforming the raster
                            dataset when it undergoes warping or when it
                            changes coordinate space.
+                           One of: RSP_BilinearInterpolation, RSP_CubicConvolution,
+                            RSP_Majority, RSP_NearestNeighbor
 
            compression - Controls how to compress the image when exporting
                          to TIFF format: None, JPEG, LZ77. It does not
@@ -332,7 +334,7 @@ class ImageryLayer(Layer):
         import datetime
 
         if size is None:
-            size = [400, 400]
+            size = [1200, 450]
 
         params = {
             "size": "%s,%s" % (size[0], size[1]),
