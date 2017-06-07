@@ -3832,7 +3832,27 @@ class User(dict):
             items.append(Item(self._gis, item['id'], item))
 
         return items
-
+    #----------------------------------------------------------------------
+    @property
+    def notifications(self):
+        """
+        The list of notifications available for the given user.
+        """
+        from ._impl.notification import Notification
+        result = []
+        url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
+        params = {"f" : "json"}
+        ns = self._portal.con.get(url, params)
+        if "notifications" in ns:
+            for n in ns["notifications"]:
+                result.append(Notification(url="%s/%s" % (url, n['id']),
+                                           user=self,
+                                           data=n,
+                                           initialize=False)
+                              )
+                del n
+            return result
+        return result
 
 class Item(dict):
     """
