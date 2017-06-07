@@ -925,7 +925,6 @@ class CollaborationManager(object):
             else:
                 raise Exception("Could not find the portal's ID")
         self._basepath = "portals/%s" % self._pid
-    #def __iter__(self):
 
     #----------------------------------------------------------------------
     def create(self,
@@ -1408,8 +1407,8 @@ class Collaboration(dict):
                        params, verify_cert=False)
     #----------------------------------------------------------------------
     def invite_participant(self,
-                           access_mode,
-                           expiration,
+                           config_json,
+                           expiration=24,
                            guest_portal_url=None,
                            guest_gis=None):
         """
@@ -1431,9 +1430,15 @@ class Collaboration(dict):
         establish trust between your portal and that of your participant.
 
         Inputs:
-         :config_json: A JSON object containing a map of access modes for the
-          participant in each of the collaboration workspaces.
-          The possible access modes are: send | receive | sendAndReceive
+         :config_json: A JSON object containing a map of access modes for
+          the participant in each of the collaboration workspaces.
+          Defined as: send | receive | sendAndReceive
+          :Example:
+          config_json = [
+                {"workspace_id" : "send"},
+                {"workspace_id2" : "receive"},
+                {"workspace_id3" : "sendAndReceive"}
+          ]
          :expiration: The time in UTC when the invitation to collaborate
           should expire.
          :guest_portal_url: The URL of the participating portal that you want
@@ -1448,15 +1453,10 @@ class Collaboration(dict):
         if guest_portal_url is None and \
            guest_gis:
             guest_portal_url = guest_gis._portal.url
-        access_modes = ["send", "receive", "sendAndReceive"]
-        if access_mode in access_modes:
-            config_json = [{self.id: access_mode}]
-        else:
-            raise ValueError("Invalid access mode: %s" % access_mode)
         data_path = "%s/inviteParticipant" % self._basepath
         params = {
             "f" : "json",
-            "guestPortalUrl" : guest_portal_url ,
+            "guestPortalUrl" : guest_portal_url,
             "collaborationWorkspacesParticipantConfigJSON" : config_json,
             "expiration" : expiration
         }
