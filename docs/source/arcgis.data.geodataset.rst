@@ -1,4 +1,4 @@
-arcgis\.data\.geodataset package
+Geodataset package
 ================================
 
 Subpackages
@@ -6,57 +6,11 @@ Subpackages
 
 .. toctree::
 
-    arcgis.data.geodataset.index
     arcgis.data.geodataset.io
 
-Submodules
-----------
-
-arcgis\.data\.geodataset\.base module
--------------------------------------
-
-.. automodule:: arcgis.data.geodataset.base
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-arcgis\.data\.geodataset\.geodataframe module
+Spatialdataframe Class
 ---------------------------------------------
 
-.. automodule:: arcgis.data.geodataset.geodataframe
+.. autoclass:: arcgis.data.geodataset.SpatialDataFrame
     :members:
     :undoc-members:
-    :show-inheritance:
-
-arcgis\.data\.geodataset\.geoseries module
-------------------------------------------
-
-.. automodule:: arcgis.data.geodataset.geoseries
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-arcgis\.data\.geodataset\.tools module
---------------------------------------
-
-.. automodule:: arcgis.data.geodataset.tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-arcgis\.data\.geodataset\.utils module
---------------------------------------
-
-.. automodule:: arcgis.data.geodataset.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: arcgis.data.geodataset
-    :members:
-    :undoc-members:
-    :show-inheritance:
