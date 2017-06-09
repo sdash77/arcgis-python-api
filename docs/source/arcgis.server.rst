@@ -1,16 +1,15 @@
-arcgis.server module
-=================
+Server Sub-Package
+======================
 
-.. automodule:: arcgis.server
-
-Server
---------------
+Server module
+-------------------------------
 .. autoclass:: arcgis.server.Server
-    :members:
-    :undoc-members:
+   :members:
+   :undoc-members:
 
-Service
----------------
+Service module
+-------------------------------
 .. autoclass:: arcgis.server.Service
-    :members:
-    :undoc-members:
+   :members:
+   :undoc-members:
+	

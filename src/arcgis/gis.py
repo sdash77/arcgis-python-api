@@ -67,7 +67,7 @@ class GIS(object):
     """
     _server_list = None
     admin = None
-
+    oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
         """
@@ -174,6 +174,9 @@ class GIS(object):
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
             from ._impl.portaladmin.portaladmin import PortalAdminManager
+            from ._impl.oauth import OAuth
+            self.oauth = OAuth(url="%s/oauth2" % self._portal.url,
+                               gis=self)
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                             gis=self)
     @property
@@ -922,7 +925,6 @@ class CollaborationManager(object):
             else:
                 raise Exception("Could not find the portal's ID")
         self._basepath = "portals/%s" % self._pid
-    #def __iter__(self):
 
     #----------------------------------------------------------------------
     def create(self,
@@ -1306,6 +1308,10 @@ class Collaboration(dict):
     @_lazy_property
     def workspaces(self):
         """
+        The workspaces resource lists all the workspaces in a given
+        collaboration. A workspace is a virtual space in the collaboration
+        to which each participating portal is either sending or receiving
+        content. Workspaces can only be created by the collaboration owner.
         """
         data_path = "%s/workspaces" % self._basepath
         params = {'f' : 'json',
@@ -1401,9 +1407,10 @@ class Collaboration(dict):
                        params, verify_cert=False)
     #----------------------------------------------------------------------
     def invite_participant(self,
-                           guest_portal_url,
                            config_json,
-                           expiration):
+                           expiration=24,
+                           guest_portal_url=None,
+                           guest_gis=None):
         """
         As a collaboration host, once you have set up a new collaboration,
         you are ready to invite other portals as participants in your
@@ -1423,21 +1430,33 @@ class Collaboration(dict):
         establish trust between your portal and that of your participant.
 
         Inputs:
-         :guest_portal_url: The URL of the participating portal that you want
-          to invite to the collaboration.
-         :collaborationWorkspacesParticipantConfigJSON: A JSON object
-          containing a map of access modes for the participant in each of
-          the collaboration workspaces.
-          The possible access modes are: send | receive | sendAndReceive
+         :config_json: A JSON object containing a map of access modes for
+          the participant in each of the collaboration workspaces.
+          Defined as: send | receive | sendAndReceive
+          :Example:
+          config_json = [
+                {"workspace_id" : "send"},
+                {"workspace_id2" : "receive"},
+                {"workspace_id3" : "sendAndReceive"}
+          ]
          :expiration: The time in UTC when the invitation to collaborate
           should expire.
+         :guest_portal_url: The URL of the participating portal that you want
+          to invite to the collaboration.
+         :guest_gis: GIS object to the guest collaboration site (optional)
         Output:
          contents of a file that contains the invitation information
         """
+        if guest_gis is None and \
+           guest_portal_url is None:
+            raise ValueError("A GIS object or URL is required")
+        if guest_portal_url is None and \
+           guest_gis:
+            guest_portal_url = guest_gis._portal.url
         data_path = "%s/inviteParticipant" % self._basepath
         params = {
             "f" : "json",
-            "guestPortalUrl" : guest_portal_url ,
+            "guestPortalUrl" : guest_portal_url,
             "collaborationWorkspacesParticipantConfigJSON" : config_json,
             "expiration" : expiration
         }
@@ -2745,7 +2764,7 @@ class ContentManager(object):
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop('tags', 'FGDB')
             os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "output.zip")
+            temp_zip = os.path.join(temp_dir, "%s.zip" % "a" + uuid4().hex[:5])
             if has_arcpy:
                 fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
                                                       out_name="publish.gdb")[0]
@@ -3813,7 +3832,27 @@ class User(dict):
             items.append(Item(self._gis, item['id'], item))
 
         return items
-
+    #----------------------------------------------------------------------
+    @property
+    def notifications(self):
+        """
+        The list of notifications available for the given user.
+        """
+        from ._impl.notification import Notification
+        result = []
+        url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
+        params = {"f" : "json"}
+        ns = self._portal.con.get(url, params)
+        if "notifications" in ns:
+            for n in ns["notifications"]:
+                result.append(Notification(url="%s/%s" % (url, n['id']),
+                                           user=self,
+                                           data=n,
+                                           initialize=False)
+                              )
+                del n
+            return result
+        return result
 
 class Item(dict):
     """
@@ -4942,6 +4981,115 @@ class Item(dict):
             raise Exception("No job id")
 
         return serviceitem_id
+    #----------------------------------------------------------------------
+    @property
+    def comments(self):
+        """
+        returns a list of comments on a given item
+        """
+        from ._impl.comments import Comment
+        cs = []
+        start = 1
+        num = 100
+        nextStart = 0
+        url = "%s/content/items/%s/comments" % (self._portal.url, self.id)
+        while nextStart != -1:
+            params = {
+                "f" : "json",
+                "start" : start,
+                "num" : num
+            }
+            res = self._portal.con.post(url, params)
+            for c in res['comments']:
+                cs.append(Comment(url="%s/%s" % (url, c['id']),
+                                  item=self, initialize=False))
+            start += num
+            nextStart = res['nextStart']
+        return cs
+    #----------------------------------------------------------------------
+    def add_comment(self, comment):
+        """
+        Adds a comment to an item. Available only to authenticated users
+        who have access to the item.
+
+        Parameters:
+         :comment: text comment to a specific item
+        Output:
+         comment ID is successful, None on failure
+        """
+        params = {
+            "f" : "json",
+            "comment" : comment
+        }
+        url = "%s/content/items/%s/addComment" % (self._portal.url, self.id)
+        res = self._portal.con.post(url, params)
+        if 'commentId' in res:
+            return res['commentId']
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def rating(self):
+        """
+        Returns the rating given by the current user to the item, if any.
+        """
+        url = "%s/content/items/%s/rating" % (self._portal.url, self.id)
+        params = {"f" : "json"}
+        res = self._portal.con.get(url, params)
+        if 'rating' in res:
+            return res['rating']
+        return None
+    #----------------------------------------------------------------------
+    @rating.setter
+    def rating(self, value):
+        """
+        Adds a rating to an item to which you have access. Only one rating
+        can be given to an item per user. If this call is made on a
+        currently rated item, the new rating will overwrite the existing
+        rating. A user cannot rate their own item. Available only to
+        authenticated users.
+
+        Parameters:
+         :value: Rating to set for the item. Rating must be a floating
+          point number between 1.0 and 5.0.
+        """
+        url = "%s/content/items/%s/addRating" % (self._portal.url,
+                                                 self.id)
+        params = {"f" : "json",
+                  'rating' : float(value)}
+        res = self._portal.con.post(url, params)
+    #----------------------------------------------------------------------
+    def delete_rating(self):
+        """
+        Removes the rating the calling user added for the specified item
+        """
+        url = "%s/content/items/%s/deleteRating" % (self._portal.url,
+                                                    self.id)
+        params = {"f" : "json"}
+        res = self._portal.con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    @property
+    def proxies(self):
+        """
+        All ArcGIS Online hosted proxy services set on a registered app
+        item with the Registered App type keyword. This resource is only
+        available to the item owner and the organization administrator.
+        """
+        url = "%s/content/users/%s/items/%s/proxies" % (self._portal.url,
+                                                        self.owner,
+                                                        self.id)
+        params = {"f" : "json"}
+        ps = []
+        try:
+            res = self._portal.con.get(url, params)
+            if 'appProxies' in res:
+                for p in res['appProxies']:
+                    ps.append(p)
+        except:
+            return []
+        return ps
 
 def rot13(s):
     if s is None:
