@@ -9,7 +9,7 @@ import os, shutil, arcpy
 from arcgis.geometry import _types
 from arcgis import SpatialDataFrame
 from arcgis.server import Service
-from arcgis.data.geodataset import from_layer, to_featureclass, to_sqlite, from_featureclass
+from arcgis.features._data.geodataset.io import from_layer, to_featureclass, to_sqlite, from_featureclass
 #############################################################################
 #@unittest.SkipTest
 class FeatureSetConversionTest(unittest.TestCase):
@@ -91,7 +91,7 @@ class IOTest(unittest.TestCase):
         self.assertTrue(arcpy.Exists(fc))
     #----------------------------------------------------------------------
     def test_from_featureclass(self):
-        from arcgis.data.geodataset.io import from_featureclass
+        from arcgis.features._data.geodataset.io import from_featureclass
         fc = self._construct_featureclass()
         spdf = from_featureclass(filename=fc)
         geom = spdf.geometry
@@ -102,7 +102,7 @@ class IOTest(unittest.TestCase):
         out_file = r"c:\temp\test.pkl"
         if os.path.isfile(out_file):
             os.remove(out_file)
-        from arcgis.data.geodataset.io import from_featureclass
+        from arcgis.features._data.geodataset.io import from_featureclass
         fc = self._construct_featureclass()
         spdf = from_featureclass(filename=fc)
         spdf.to_pickle(out_file)
@@ -113,7 +113,7 @@ class IOTest(unittest.TestCase):
         out_file = r"c:\temp\%s.hf5" % uuid4().hex
         if os.path.isfile(out_file):
             os.remove(out_file)
-        from arcgis.data.geodataset.io import from_featureclass
+        from arcgis.features._data.geodataset.io import from_featureclass
         fc = self._construct_featureclass()
         spdf = from_featureclass(filename=fc)
         spdf.to_hdf(out_file, uuid4().hex)
@@ -128,7 +128,7 @@ class IOTest(unittest.TestCase):
         out_file = r"c:\temp\%s.hf5" % uuid4().hex
         if os.path.isfile(out_file):
             os.remove(out_file)
-        from arcgis.data.geodataset.io import from_featureclass
+        from arcgis.features._data.geodataset.io import from_featureclass
         fc = self._construct_featureclass()
         spdf = from_featureclass(filename=fc)
         spdf.to_hdf(path_or_buf=out_file, key=key)
@@ -213,7 +213,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_JSON(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -225,7 +225,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_WKT(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -237,7 +237,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_WKB(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -249,7 +249,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_area(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -261,7 +261,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_centroid(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -273,7 +273,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_extent(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -285,7 +285,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_firstPoint(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -297,7 +297,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_hullRectangle(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -309,7 +309,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_isMultipart(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -321,7 +321,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_labelPoint(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -333,7 +333,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_lastPoint(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -345,7 +345,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_length(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -357,7 +357,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_length3D(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -369,7 +369,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_partCount(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -381,7 +381,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_pointCount(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -393,7 +393,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_spatialReference(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -405,7 +405,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
     def test_trueCentroid(self):
         res = []
         #,
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -418,7 +418,7 @@ class SpatailDataFrameTest1(unittest.TestCase):
         res = []
         #,
         from six import string_types
-        from arcgis import GeoSeries
+        from arcgis.features._data.geodataset import GeoSeries
         import pandas as pd
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
                      self.geom_lines[0], self.geom_polygon[0]]:
@@ -430,8 +430,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     ### Geometry Index Tests ###################################################################
     def test_create_spatial_index(self):
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
@@ -443,8 +443,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
             res.append(isinstance(index, (quadtree.Index, rtree.RTree)))
         self.assertTrue(all(res))
     def test_searching_index(self):
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
@@ -457,8 +457,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
             res.append(len(index.intersect(bbox))>0)
         self.assertTrue(all(res))
     def test_searching_index_no_items(self):
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in [self.geom_ptgeoms[0],self.geom_pts[0],
@@ -473,8 +473,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
     ### Geometry Function Tests ################################################################
     def test_angleAndDistanceTo(self):
         """angleAndDistanceTo (other, {method})"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_ptgeoms:
@@ -486,8 +486,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
                                    pd.Series))
     def test_boundary(self):
         """boundary"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         count = 0
@@ -501,8 +501,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_buffer(self):
         """buffer"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -514,8 +514,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_clip(self):
         """clip"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -528,8 +528,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_contains(self):
         """contains"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -542,8 +542,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res) == False)
     def test_convexhull(self):
         """convex hull"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -556,8 +556,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_crosses(self):
         """crosses"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -570,8 +570,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_crosses(self):
         """crosses"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -585,8 +585,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
     @unittest.skip("testing skipping")
     def test_densify(self):
         """densify"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -599,8 +599,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_difference(self):
         """difference"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -613,8 +613,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_disjoint(self):
         """disjoint"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -627,8 +627,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res) == False)
     def test_distanceTo(self):
         """distanceTo"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_pts:
@@ -641,8 +641,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_equals(self):
         """equals"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_pts:
@@ -654,8 +654,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_getArea(self):
         """getArea"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -667,8 +667,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_getLength(self):
         """getArea"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -680,8 +680,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_getPart(self):
         """getPart"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -693,8 +693,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_intersect(self):
         """intersect"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -706,8 +706,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_overlaps(self):
         """overlaps"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -719,8 +719,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_projectAs(self):
         """projectAs"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -732,8 +732,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_symetricalDifference(self):
         """symetricalDifference"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -745,8 +745,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res))
     def test_touches(self):
         """touches"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:
@@ -758,8 +758,8 @@ class SpatailDataFrameTest1(unittest.TestCase):
         self.assertTrue(all(res) == False)
     def test_within(self):
         """union"""
-        from arcgis import GeoSeries
-        from arcgis.data.geodataset.index import quadtree, rtree
+        from arcgis.features._data.geodataset import GeoSeries
+        from arcgis.features._data.geodataset.index import quadtree, rtree
         import pandas as pd
         res = []
         for geom in self.geom_polygon:

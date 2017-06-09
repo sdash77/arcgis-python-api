@@ -20,6 +20,7 @@ representation and user experience - on a map, in a 3D scene, as entities with a
 
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
+from ._data.geodataset import SpatialDataFrame
 from . import analyze_patterns
 from . import enrich_data
 from . import find_locations
@@ -27,4 +28,6 @@ from . import manage_data
 from . import summarize_data
 from . import use_proximity
 
-__all__ = ['Feature', 'FeatureSet', 'FeatureCollection', 'FeatureLayer', 'Table', 'FeatureLayerCollection']
+__all__ = ['SpatialDataFrame', 'Feature', 'FeatureSet',
+           'FeatureCollection', 'FeatureLayer', 'Table',
+           'FeatureLayerCollection']

@@ -3,7 +3,7 @@ import pandas as pd
 import os, shutil, arcpy
 from arcgis.geometry import _types
 from arcgis import SpatialDataFrame
-from arcgis.data.geodataset import GeoSeries
+from arcgis.features._data.geodataset import GeoSeries
 import arcpy
 class RobustReProjectionTest(unittest.TestCase):
     def setUp(self):
