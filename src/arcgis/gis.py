@@ -317,6 +317,8 @@ class GIS(object):
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
+
+        Note: The map widget is only supported within Jupyter Notebook.
         """
         try:
             from arcgis.widgets import MapView
