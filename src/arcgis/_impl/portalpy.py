@@ -198,7 +198,6 @@ class Portal(object):
                              postdata)
         return resp
 
-
     def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to a Portal.
 
@@ -370,9 +369,6 @@ class Portal(object):
         resp = self.con.post(path, postdata, files)
         if resp:
             return resp['services']
-
-
-
 
     def create_service(self,
                        name,
