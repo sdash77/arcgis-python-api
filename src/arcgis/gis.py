@@ -733,8 +733,9 @@ class Datastore(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
         return '<%s title:"%s" type:"%s">' % (type(self).__name__, self.path, self.type)
@@ -3436,8 +3437,9 @@ class Group(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
         return '<%s title:"%s" owner:%s>' % (type(self).__name__, self.title, self.owner)
@@ -3777,8 +3779,9 @@ class User(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
 
     def __repr__(self):
@@ -4587,11 +4590,12 @@ class Item(dict):
                 """
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
-        return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self.type, self.owner)
+        return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self._ux_item_type(), self.owner)
 
     def reassign_to(self, target_owner, target_folder=None):
         """ Allows the administrator to reassign a single item from one user to another.
