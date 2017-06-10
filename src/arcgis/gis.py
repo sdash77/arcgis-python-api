@@ -170,13 +170,13 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-        if self.properties.isPortal and \
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == "org_admin":
-            from ._impl.portaladmin.portaladmin import PortalAdminManager
+        if self.properties.isPortal:
+            me = self.users.me
+            if hasattr(me, 'role') and me.role == "org_admin":
+                from ._impl.portaladmin.portaladmin import PortalAdminManager
 
-            self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
-                                            gis=self)
+                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                gis=self)
     @property
     def servers(self):
         """
