@@ -121,7 +121,6 @@ def _analysis_job_status(gptool, task_url, job_info):
         # Query and report the Analysis job status.
         #
         num_messages = 0
-
         if "jobStatus" in job_response:
             while not job_response.get("jobStatus") == "esriJobSucceeded":
                 time.sleep(1)
@@ -141,7 +140,7 @@ def _analysis_job_status(gptool, task_url, job_info):
                             _log.warn(msg['description'])
                         elif msg['type'] == 'esriJobMessageTypeError':
                             _log.error(msg['description'])
-                            print(msg['description'], file=sys.stderr)
+                            # print(msg['description'], file=sys.stderr)
                         else:
                             _log.warn(msg['description'])
                     num_messages = num
