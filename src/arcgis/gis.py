@@ -1298,9 +1298,9 @@ class CollaborationManager(object):
                         postdata=params,
                         files=files)
     #----------------------------------------------------------------------
-    @_lazy_property
-    def collaborations(self):
-        """gets all colaborations for a portal"""
+
+    def list(self):
+        """gets all collaborations for a portal"""
         data_path = "%s/collaborations" % self._basepath
         params = {"f" : "json",
                   "num":100,
