@@ -67,7 +67,7 @@ class GIS(object):
     """
     _server_list = None
     admin = None
-    # oauth = None
+
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
         """
@@ -174,9 +174,7 @@ class GIS(object):
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
             from ._impl.portaladmin.portaladmin import PortalAdminManager
-            # from ._impl.oauth import OAuth
-            # self.oauth = OAuth(url="%s/oauth2" % self._portal.url,
-            #                   gis=self)
+
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                             gis=self)
     @property
@@ -252,12 +250,6 @@ class GIS(object):
         """
         return ContentManager(self)
 
-    @_lazy_property
-    def _resources(self):
-        """
-        The manager to mange GIS resources
-        """
-        return _PortalResourceManager(gis=self)
     @_lazy_property
     def ux(self):
         return UX(self)

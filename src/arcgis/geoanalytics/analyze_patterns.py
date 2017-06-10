@@ -134,8 +134,13 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
 
 calculate_density.__annotations__ = {
     'fields': str,
@@ -245,8 +250,13 @@ def find_hot_spots(
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
-    _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
-    return output_service
+
+    try:
+        _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 find_hot_spots.__annotations__ = {
     'bin_size': float,
