@@ -185,7 +185,7 @@ class GIS(object):
         if self._con._auth is None or \
            self._con._auth.lower() == "anon":
             return None
-        from arcgis.server import Server
+        from arcgis.gis.server import Server
         if self._server_list:
             return self._server_list
 
@@ -475,13 +475,13 @@ class UX(object):
         """
         Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
         upload your own. For best results the dimensions of the banner image should be 960 x 180 pixels. You can also
-        specify a custom html for how the banner space should appear. For more information, refer to 
+        specify a custom html for how the banner space should appear. For more information, refer to
         http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        banner_file       optional string. If uploading a custom banner, then path to the 
+        banner_file       optional string. If uploading a custom banner, then path to the
                            banner file. If using a built-in banner, valid values are
                            banner-1, banner-2, banner-3, banner-4, banner-5. If None, existing
                            banner is remove.
@@ -490,11 +490,11 @@ class UX(object):
                             banner file.
         ----------------  ---------------------------------------------------------------
         custom_html       optional string. Specify exactly how the banner should appear in
-                            html. For help on this, refer to 
+                            html. For help on this, refer to
                             http://server.arcgis.com/en/portal/latest/administer/windows/supported-html.htm
         ================  ===============================================================
 
-        :return: True | False 
+        :return: True | False
         """
         # check if banner has to be removed
         if not banner_file:
@@ -579,7 +579,7 @@ class UX(object):
         logo_file         optional string. Specify path to image file. If None, existing thumbnail is removed.
         ================  ===============================================================
 
-        :return: True | False 
+        :return: True | False
         """
 
         # Add resource file
@@ -613,10 +613,10 @@ class UX(object):
     def set_background(self, background_file=None, is_built_in=True):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
-        or upload your own. If you upload your own image, the image is positioned at the top and center of the page. 
+        or upload your own. If you upload your own image, the image is positioned at the top and center of the page.
         The image repeats horizontally if it is smaller than the browser or device window. For best results, if you want
-        a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on 
-        smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size. 
+        a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on
+        smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size.
 
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
@@ -631,7 +631,7 @@ class UX(object):
                             If uploading a custom image, this parameter is ignored.
         ================  ===============================================================
 
-        :return: True | False 
+        :return: True | False
         """
 
         # Add resource if using a custom background file.
@@ -677,7 +677,7 @@ class UX(object):
         description       required string. Specify a description about the organization
         ================  ===============================================================
 
-        :return: True | False 
+        :return: True | False
         """
 
         # Add resource
@@ -1725,7 +1725,7 @@ class Collaboration(dict):
         This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
          to the portal group is shared to other participants in the collaboration.
         :param portal_group: arcgis.gis.Group object or group id string
-        :return: 
+        :return:
         """
         group_id = None
         if isinstance(portal_group, Group):
@@ -1746,8 +1746,8 @@ class Collaboration(dict):
     def _force_sync(self, workspace):
         """
         Undocumented. This operation will force sync the collaboration and its workspaces
-        :param workspace: 
-        :return: 
+        :param workspace:
+        :return:
         """
         config_sync_data_path = "{}/configSync".format(self._basepath)
         config_sync_status = self._portal.con.get(config_sync_data_path, {"f":"json"})
