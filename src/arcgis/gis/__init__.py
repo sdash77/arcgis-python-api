@@ -223,8 +223,11 @@ class GIS(object):
                 admin_url = None
                 for server in servers:
                     admin_url = server['adminUrl']
-                    self._server_list.append(Server(url=admin_url,
-                                                    gis=self))
+                    try:
+                        self._server_list.append(Server(url=admin_url, gis=self))
+                    except:
+                        _log.error("Could not access the servers at: " + admin_url)
+
         except:
             _log.error("Could not access the servers associated with this site.")
         return self._server_list

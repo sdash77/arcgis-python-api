@@ -1,6 +1,9 @@
 import ssl
 import logging
+import arcgis
 
+
+from arcgis._impl.common._mixins import PropertyMap
 
 from arcgis._server._view import Catalog
 
@@ -39,10 +42,9 @@ class ServerManager(object):
         pass
     #----------------------------------------------------------------------
 
-
 class Server(object):
     """
-    An ArcGIS Enterprise _server used for hosting services
+    An ArcGIS Enterprise server used for hosting services
     """
     _url = None
     _con =  None
@@ -58,7 +60,7 @@ class Server(object):
                  verify_cert=False,
                  gis=None,
                  **kwargs):
-        """An ArcGIS Enterprise _server"""
+        """An ArcGIS Enterprise server"""
         ### TODO: write doc
 
         ### TODO: don't set unverified context
@@ -106,38 +108,38 @@ class Server(object):
     # ----------------------------------------------------------------------
 
     #----------------------------------------------------------------------
-    # def publish_sd(self,
-    #                sd_file,
-    #                folder=None):
-    #     """
-    #     publishes a service definition file to arcgis _server
-    #     """
-    #     if sd_file.lower().endswith('.sd') == False:
-    #         return False
-    #     if self._sm:
-    #         catalog = self.catalog
-    #         isinstance(catalog, Catalog)
-    #         if 'System' in catalog.folders:
-    #             catalog.folder = 'System'
-    #         else:
-    #             return False
-    #         service = catalog.find(service_name="PublishingTools",
-    #                                folder="System")
-    #         if service is None:
-    #             service = catalog.find(service_name="PublishingToolsEx",
-    #                                    folder="System")
-    #         if service is None:
-    #             return False
-    #         uploads = self._sm.uploads
-    #         status, res = uploads.upload(path=sd_file, description="sd file")
-    #         if status:
-    #             uid = res['item']['itemID']
-    #             res = service.publish_service_definition(in_sdp_id=uid)
-    #             return True
-    #         return False
-    #     else:
-    #         return False
-    #
+    def _publish_sd(self,
+                   sd_file,
+                   folder=None):
+        """
+        publishes a service definition file to arcgis server
+        """
+        if sd_file.lower().endswith('.sd') == False:
+            return False
+        if self._sm:
+            catalog = self.catalog
+            isinstance(catalog, Catalog)
+            if 'System' in catalog.folders:
+                catalog.folder = 'System'
+            else:
+                return False
+            service = catalog.find(service_name="PublishingTools",
+                                   folder="System")
+            if service is None:
+                service = catalog.find(service_name="PublishingToolsEx",
+                                       folder="System")
+            if service is None:
+                return False
+            uploads = self._sm.uploads
+            status, res = uploads.upload(path=sd_file, description="sd file")
+            if status:
+                uid = res['item']['itemID']
+                res = service.publish_service_definition(in_sdp_id=uid)
+                return True
+            return False
+        else:
+            return False
+
     # #----------------------------------------------------------------------
     # @property
     # def connection(self):
@@ -252,7 +254,7 @@ class Server(object):
         returns the current logged in username
         """
         if self._sm:
-            from ._server import User
+            from arcgis._server import User
             res = self.users.search(self._sm.info._loggedInUser)
             if len(res) > 0:
                 return res[0]
@@ -276,7 +278,7 @@ class Server(object):
         provides access to common system configuration settings
         """
         if self._sm:
-            from ._server import SystemManager
+            from arcgis._server import SystemManager
             return SystemManager(self._sm)
 
     #----------------------------------------------------------------------
@@ -287,4 +289,177 @@ class Server(object):
         ServerManager Object.
         """
         if self._sm:
-            return self._sm.services
+            return ServiceManager(self)
+
+class ServiceManager(object):
+    """
+    Helper class for managing services. This class is not created by users directly. An instance of this class,
+    called ‘services’, is available as a property of the Server object. Users call methods on this ‘services’ object to
+    managing services.
+    """
+    def __init__(self, server):
+        self._svcmgr = server._sm.services
+        self._server = server
+
+    @property
+    def folders(self):
+        """ returns a list of all folders """
+        return self._svcmgr.folders
+
+    def list(self, folder='/'):
+        """ returns a list of services in the specified folder """
+        self._svcmgr.folder = folder
+        services =  self._svcmgr.services
+        return [Service(None, None, service=svc, svcmgr=self._svcmgr) for svc in services]
+
+    def create_folder(self, folder, description=""):
+        """
+           Creates a unique folder
+           Inputs:
+              folder_name - name of folder
+              description - describes the folder
+           Output:
+              result as dictionary
+        """
+        return self._svcmgr.create_folder(self, folder, description)
+
+    def delete_folder(self, folder):
+        """
+           Deletes a folder
+           Inputs:
+              folder - name of folder to remove
+           Output:
+              bool
+        """
+        return self._svcmgr.delete_folder(folder)
+
+    def publish_sd(self, sd_file_path, folder=None):
+        """
+        Publishes a service definition file to the server
+        :param sd_file_path: service defition file
+        :param folder: optional folder name
+        :return: True if published, False otherwise
+        """
+        return self._server._publish_sd(sd_file_path, folder)
+
+    def create_service(self, service):
+        """
+        Creates a new GIS service in the folder. A service is created by
+        submitting a JSON representation of the service to this operation.
+
+        The JSON representation of a service contains the following four
+        sections:
+         - Service Description Properties-Common properties that are shared
+          by all service types. Typically, they identify a specific service.
+         - Service Framework Properties-Properties targeted towards the
+          framework that hosts the GIS service. They define the life cycle
+          and load balancing of the service.
+         - Service Type Properties -Properties targeted towards the core
+          service type as seen by the server administrator. Since these
+          properties are associated with a server object, they vary across
+          the service types. The Service Types section in the Help
+          describes the supported properties for each service.
+         - Extension Properties-Represent the extensions that are enabled
+          on the service. The Extension Types section in the Help describes
+          the supported out-of-the-box extensions for each service type.
+        Output:
+         dictionary status message
+        """
+        return self._svcmgr.create_service(service)
+
+    def exists(self, folder_name, name=None, service_type=None):
+        """
+        This operation allows you to check whether a folder or a service
+        exists. To test if a folder exists, supply only a folder_name. To
+        test if a service exists in a root folder, supply both serviceName
+        and service_type with folder_name=None. To test if a service exists
+        in a folder, supply all three parameters.
+
+        Inputs:
+           folder_name - a folder name
+           name - a service name
+           service_type - a service type. Allowed values:
+                GeometryServer | ImageServer | MapServer | GeocodeServer |
+                GeoDataServer | GPServer | GlobeServer | SearchServer
+        """
+        return self._svcmgr.exists(folder_name, name, service_type)
+
+class Service(object):
+    """A GIS service"""
+    _service = None
+    _svcmgr = None
+
+    def __init__(self, url, server, **kwargs):
+        service = kwargs.pop('service', None)
+        svcmgr = kwargs.pop('svcmgr', None)
+        if service is not None:
+            self._service = service
+            self._svcmgr = svcmgr
+        else:
+            self._service = arcgis._server.admin._services.Service(url, server._con)
+
+        self._properties = PropertyMap(self._service._json_dict)
+
+    @classmethod
+    def _from_service(cls, service):
+        return cls(None, None, service=service)
+
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._service.url)
+
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._service.url)
+
+    @property
+    def properties(self):
+        """
+        The properties of the Service
+        """
+        return self._properties
+
+    def start(self):
+        """Starts the service"""
+        return self._service.start()
+
+    def stop(self):
+        """Stops the service"""
+        return self._service.stop()
+
+    def delete(self):
+        """Deletes the service and return True if successful, False otherwise"""
+        return self._service.delete()
+
+    def edit(self, service):
+        """
+        To edit a service, you need to submit the complete JSON
+        representation of the service, which includes the updates to the
+        service properties. Editing a service causes the service to be
+        restarted with updated properties.
+        """
+        return self._service.edit(service)
+
+    @property
+    def status(self):
+        """Returns the status of the service """
+        return self._service.status
+
+    @property
+    def statistics(self):
+        """Returns the stats for the service """
+        return self._service.statistics
+
+    def rename(self, new_name):
+        """Renames this service to the new name"""
+        params = {
+            "f": "json",
+            "serviceName": self.properties.serviceName,
+            "serviceType": self.properties.type,
+            "serviceNewName": new_name
+        }
+
+        u_url = self._service._url[:self._service._url.rfind('/')] + "/renameService"
+
+        res = self._service._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
