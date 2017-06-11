@@ -173,7 +173,7 @@ class GIS(object):
         if self.properties.isPortal:
             me = self.users.me
             if hasattr(me, 'role') and me.role == "org_admin":
-                from ._impl.portaladmin.portaladmin import PortalAdminManager
+                from arcgis._impl.portaladmin.portaladmin import PortalAdminManager
 
                 self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                 gis=self)
@@ -410,7 +410,7 @@ class _PortalResourceManager(object):
             if isinstance(text, dict):
                 postdata['text'] = json.dumps(text)
             elif isinstance(text, str):
-                from ._impl.common._utils import _to_utf8
+                from arcgis._impl.common._utils import _to_utf8
                 postdata['text'] = _to_utf8(text)
         else:
             if self._portal.is_arcgisonline == False:
@@ -3010,9 +3010,9 @@ class ContentManager(object):
         tags: optional tags when publishing a spatial dataframe to the the GIS
         Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
         """
-        from .features import FeatureCollection
-        from . import SpatialDataFrame
-        from ._impl.common._utils import zipws
+        from arcgis.features import FeatureCollection
+        from arcgis import SpatialDataFrame
+        from arcgis._impl.common._utils import zipws
 
         import shutil
         from uuid import uuid4
@@ -4113,7 +4113,7 @@ class User(dict):
         """
         The list of notifications available for the given user.
         """
-        from ._impl.notification import Notification
+        from arcgis._impl.notification import Notification
         result = []
         url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
         params = {"f" : "json"}
@@ -5263,7 +5263,7 @@ class Item(dict):
         """
         returns a list of comments on a given item
         """
-        from ._impl.comments import Comment
+        from arcgis._impl.comments import Comment
         cs = []
         start = 1
         num = 100
