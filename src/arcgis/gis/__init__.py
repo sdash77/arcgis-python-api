@@ -3011,7 +3011,7 @@ class ContentManager(object):
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
         title: optional title of the item. This is used for spatial dataframe objects.
         tags: optional tags when publishing a spatial dataframe to the the GIS
-        Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
+        Returns feature collection or feature layer, that can be used for analysis, visualization or published to the GIS as an item
         """
         from arcgis.features import FeatureCollection
         from arcgis import SpatialDataFrame
