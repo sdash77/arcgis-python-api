@@ -227,7 +227,7 @@ class GIS(object):
                     admin_url = server['adminUrl']
                     try:
                         self._server_list.append(Server(url=admin_url, gis=self))
-        except:
+                    except:
                         _log.error("Could not access the servers at: " + admin_url)
 
         except:
