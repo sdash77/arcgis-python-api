@@ -475,25 +475,27 @@ class MachineManager(object):
     #----------------------------------------------------------------------
     def __init__(self, server, **kwargs):
         """Constructor"""
-        #from .._server.admin._machines import Machine, Machines
         hydrate = kwargs.pop('hydrate', False)
         self._sm = server
         self._machines = server.machines
         if hydrate:
             self._hydrate()
-            self._hydrate = True
+            self._hydrated = True
+            self._properties = PropertyMap(self._machines._json_dict)
         else:
             self._hydrated = False
-        self._properties = PropertyMap(self._machines._json_dict)
+
     def _hydrate(self):
         self._machines.init()
-        self._pm = PropertyMap(self._machines._json_dict)
+        self._properties = PropertyMap(self._machines._json_dict)
     #----------------------------------------------------------------------
     @property
     def properties(self):
         """
         returns the machine's properties
         """
+        if self._properties is None:
+            self._hydrate()
         return self._properties
     #----------------------------------------------------------------------
     @property
@@ -763,7 +765,7 @@ class LogManager(object):
     _resources = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, logs):
+    def __init__(self, logs):
         """Constructor
             Inputs:
                url - admin url
@@ -866,7 +868,7 @@ class ReportManager:
         isinstance(self._reports, UsageReports)
         if hydrate:
             self._hydrate()
-            self._hydrate = True
+            self._hydrated = True
             self._reports.init()
             self._properties = PropertyMap(self._reports._json_dict)
         else:
@@ -1115,7 +1117,7 @@ class Report(object):
     """
     A Single Usage Report returned by ArcGIS Server
     """
-    _properties
+    _properties = None
     #----------------------------------------------------------------------
     def __init__(self, report):
         """Constructor"""
@@ -1188,10 +1190,3 @@ class Report(object):
                {"machines": "*"}
         """
         return self._report.query(query_filter=query_filter)
-
-
-
-
-
-
-
