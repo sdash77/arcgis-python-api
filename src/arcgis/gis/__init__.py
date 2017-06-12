@@ -174,9 +174,6 @@ class GIS(object):
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
             from .._impl.portaladmin.portaladmin import PortalAdminManager
-            #from ._impl.oauth import OAuth
-            #self.oauth = OAuth(url="%s/oauth2" % self._portal.url,
-            #                   gis=self)
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                             gis=self)
     @property
