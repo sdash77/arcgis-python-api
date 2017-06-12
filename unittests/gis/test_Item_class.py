@@ -945,6 +945,38 @@ class Test_Item_portal_builtin(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_dependent_upon_ownItems(self):
+        """
+        As an item owner, I should be able to get my Item's dependencies
+        :return:
+        """
+
+        # get an item
+        chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+        wm = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+        try:
+            chicago_deps = chicago_csv_item.dependent_upon()
+            wm_deps = wm.dependent_upon()
+
+            #assert csv item dependency none
+            self.assertIsNotNone(chicago_deps, "Unable to get dependencies for CSV item")
+            self.assertEqual(chicago_deps['fullCount'], 0, "A default CSV item should have 0 dependencies")
+
+            #assert webmap dependency
+            self.assertIsNotNone(wm_deps, "Unable to get dependencies for a webmap item")
+            self.assertGreaterEqual(len(wm_deps['list']), 1, "at least 1 dependency should be found for cities webmap")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 class Test_Item_arcgis_online(unittest.TestCase):
     """
     Test to check if a Item object works with ArcGIS Online org
@@ -1978,6 +2010,39 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_dependent_upon_ownItems(self):
+        """
+        As an item owner, I should be able to get my Item's dependencies
+        :return:
+        """
+
+        # get an item
+        chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+        wm = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+        try:
+            chicago_deps = chicago_csv_item.dependent_upon()
+            wm_deps = wm.dependent_upon()
+
+            # assert csv item dependency none
+            self.assertIsNotNone(chicago_deps, "Unable to get dependencies for CSV item")
+            self.assertEqual(chicago_deps['fullCount'], 0, "A default CSV item should have 0 dependencies")
+
+            # assert webmap dependency
+            self.assertIsNotNone(wm_deps, "Unable to get dependencies for a webmap item")
+            self.assertGreaterEqual(len(wm_deps['list']), 1,
+                                    "at least 1 dependency should be found for cities webmap")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
 
 #TestModule
 def tearDownModule():
