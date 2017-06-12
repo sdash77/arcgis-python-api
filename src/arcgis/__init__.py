@@ -3,7 +3,7 @@ __version__ = '1.2.0'
 from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping
 
 try:
-    from .data.geodataset import SpatialDataFrame, GeoSeries
+    from .features import SpatialDataFrame
 except:
     pass
 

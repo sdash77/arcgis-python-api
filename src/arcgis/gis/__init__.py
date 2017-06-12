@@ -67,7 +67,7 @@ class GIS(object):
     """
     _server_list = None
     admin = None
-
+    oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
         """
@@ -170,13 +170,15 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-        # if self.properties.isPortal:
-        #     me = self.users.me
-        #     if hasattr(me, 'role') and me.role == "org_admin":
-        #         from arcgis._impl.portaladmin.portaladmin import PortalAdminManager
-        #
-        #         self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
-        #                                         gis=self)
+        if self.properties.isPortal and \
+           hasattr(self.users.me, 'role') and \
+           self.users.me.role == "org_admin":
+            from ._impl.portaladmin.portaladmin import PortalAdminManager
+            from ._impl.oauth import OAuth
+            self.oauth = OAuth(url="%s/oauth2" % self._portal.url,
+                               gis=self)
+            self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                            gis=self)
     @property
     def servers(self):
         """
@@ -4116,7 +4118,7 @@ class User(dict):
         """
         The list of notifications available for the given user.
         """
-        from arcgis._impl.notification import Notification
+        from ._impl.notification import Notification
         result = []
         url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
         params = {"f" : "json"}
@@ -5266,7 +5268,7 @@ class Item(dict):
         """
         returns a list of comments on a given item
         """
-        from arcgis._impl.comments import Comment
+        from ._impl.comments import Comment
         cs = []
         start = 1
         num = 100

@@ -33,7 +33,7 @@ class Comment(dict):
         self._gis = item._gis
         self._portal = self._gis._portal
         if isinstance(item._gis, _ArcGISConnection):
-            self._con = item._gis
+            self._con = gis
         elif isinstance(item._gis, GIS):
             self._gis = item._gis
             self._con = item._gis._con
