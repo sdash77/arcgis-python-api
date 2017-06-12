@@ -79,9 +79,12 @@ Returns:
     return_values = [
         {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
     ]
-
-    _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 copy_to_data_store.__annotations__ = {
     'output_name': str}

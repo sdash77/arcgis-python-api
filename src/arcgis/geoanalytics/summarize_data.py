@@ -135,10 +135,12 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True)
-    
-    return output_service
-
+    try:
+        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 aggregate_points.__annotations__ = {
                      'bin_type': str,
@@ -314,8 +316,12 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 join_features.__annotations__ = {
                   'join_operation': str,
@@ -427,10 +433,13 @@ Returns:
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
+    try:
+        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
-    _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True)
-    
-    return output_service
 
 reconstruct_tracks.__annotations__ = {
                        'track_fields':str,
@@ -513,9 +522,12 @@ Returns:
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
-
-    _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 summarize_attributes.__annotations__ = {
                          'fields': str,
@@ -621,8 +633,12 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 summarize_within.__annotations__ = {
                      'bin_type': str,

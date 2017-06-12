@@ -118,8 +118,12 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 create_buffers.__annotations__ = {
     'distance': float,

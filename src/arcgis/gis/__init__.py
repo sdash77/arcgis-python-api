@@ -1,4 +1,4 @@
-﻿"""
+"""
 The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or ArcGIS Enterprise.
 This module provides functionality to manage
@@ -187,7 +187,7 @@ class GIS(object):
         if self._con._auth is None or \
            self._con._auth.lower() == "anon":
             return None
-        from arcgis.server import Server
+        from arcgis.gis.server import Server
         if self._server_list:
             return self._server_list
 
@@ -225,8 +225,11 @@ class GIS(object):
                 admin_url = None
                 for server in servers:
                     admin_url = server['adminUrl']
-                    self._server_list.append(Server(url=admin_url,
-                                                    gis=self))
+                    try:
+                        self._server_list.append(Server(url=admin_url, gis=self))
+        except:
+                        _log.error("Could not access the servers at: " + admin_url)
+
         except:
             _log.error("Could not access the servers associated with this site.")
         return self._server_list
@@ -253,11 +256,8 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
-    def resources(self):
-        """
-        The manager to mange GIS resources
-        """
-        return PortalResourceManager(gis=self)
+    def ux(self):
+        return UX(self)
 
     @_lazy_property
     def _datastores(self):
@@ -294,7 +294,7 @@ class GIS(object):
 
         resp = self._portal.con.post('portals/self/update', postdata)
         if resp:
-            delattr(self, '_lazy_properties') # force refresh of properties when queried next
+            # delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get('success')
 
     def __str__(self):
@@ -317,6 +317,8 @@ class GIS(object):
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
+
+        Note: The map widget is only supported within Jupyter Notebook.
         """
         try:
             from arcgis.widgets import MapView
@@ -372,7 +374,7 @@ class GIS(object):
 
         return mapwidget
 
-class PortalResourceManager(object):
+class _PortalResourceManager(object):
     """Helper class to manage portal resources in a GIS"""
 
     def __init__(self, gis):
@@ -381,10 +383,7 @@ class PortalResourceManager(object):
         self._portal = gis._portal
 
 
-    def create(self,
-               key=None,
-               path=None,
-               text=None):
+    def add(self, key=None, path=None, text=None):
         """
         The add resource operation allows the administrator to add a file
         resource, for example, the organization's logo or custom banner.
@@ -412,10 +411,16 @@ class PortalResourceManager(object):
             files = {
                 'file' : path
             }
+        if text:
+            if isinstance(text, dict):
+                postdata['text'] = json.dumps(text)
+            elif isinstance(text, str):
+                from arcgis._impl.common._utils import _to_utf8
+                postdata['text'] = _to_utf8(text)
+        else:
             if self._portal.is_arcgisonline == False:
                 postdata['text'] = ""
-        elif text:
-            postdata['text'] = text
+
         resp = self._portal.con.post('portals/self/addresource',
                                      postdata, files=files)
         if 'success' in resp:
@@ -443,7 +448,7 @@ class PortalResourceManager(object):
         return resp
 
     #----------------------------------------------------------------------
-    def all(self, start=1, num=100):
+    def list(self, start=1, num=100):
         """
         returns a list of resources uploaded to portal.  The items can be
         images, files and other content used to stylize and modify a
@@ -460,6 +465,237 @@ class PortalResourceManager(object):
             return resp['resources']
         return resp
 
+###########################################################################
+class UX(object):
+    """Helper class for modifying the portal home page. This class is not created by users directly. An instance of
+    the class, called 'ux', is available as a property of the GIS object. Users call methods on this 'ux' object
+    to set banner, background, logo, name etc."""
+
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+
+    def set_banner(self, banner_file=None, is_built_in=False, custom_html = None):
+        """
+        Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
+        upload your own. For best results the dimensions of the banner image should be 960 x 180 pixels. You can also
+        specify a custom html for how the banner space should appear. For more information, refer to
+        http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        banner_file       optional string. If uploading a custom banner, then path to the
+                           banner file. If using a built-in banner, valid values are
+                           banner-1, banner-2, banner-3, banner-4, banner-5. If None, existing
+                           banner is remove.
+        ----------------  ---------------------------------------------------------------
+        is_built_in       optional bool, default=False. Specify True if using a built-in
+                            banner file.
+        ----------------  ---------------------------------------------------------------
+        custom_html       optional string. Specify exactly how the banner should appear in
+                            html. For help on this, refer to
+                            http://server.arcgis.com/en/portal/latest/administer/windows/supported-html.htm
+        ================  ===============================================================
+
+        :return: True | False
+        """
+        # check if banner has to be removed
+        if not banner_file:
+            #remove code
+            portal_resources = _PortalResourceManager(self._gis)
+            #find existing banner resource file
+            resource_list = portal_resources.list()
+            e_banner = [banner for banner in resource_list if banner['key'].startswith('banner')]
+
+            #loop through and remove existing banner resource file
+            for banner in e_banner:
+                try:
+                    portal_resources.delete(banner['key'])
+                except:
+                    continue
+
+            #reset the home page - recurse
+            return self.set_banner('banner-2',True)
+
+        # Add resource if using a custom banner file.
+        rotator_panel = []
+        if not is_built_in:
+            # find image extension
+            from pathlib import Path
+            fpath = Path(banner_file)
+            f_splits = fpath.name.split('.')
+            if len(f_splits) > 1 and f_splits[1] == 'png':
+                key_val = 'banner.png'
+            elif len(f_splits) > 1 and f_splits[1] == 'jpg':
+                key_val = 'banner.jpg'
+            else:
+                raise RuntimeError('Invalid image extension')
+
+            portal_resources = _PortalResourceManager(self._gis)
+            add_result = portal_resources.add(key_val, banner_file)
+
+            if add_result and custom_html:
+                rotator_panel = [{"id": "banner-custom",
+                                  "innerHTML": custom_html}]
+
+            elif add_result and not custom_html:
+                # set rotator_panel_text
+                rotator_panel = [{"id": "banner-custom",
+                                  "innerHTML": "<img src='{}/portals/self/resources/{}?token=SECURITY_TOKEN' "
+                                               "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px;"
+                                               " -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
+                                               "width:960px;'/>".format(
+                                      self._portal.con.baseurl, key_val)}]
+        else:  # using built-in
+            if not custom_html:  # if no custom html is specified for built-in image
+                rotator_panel = [{"id": banner_file,
+                                  "innerHTML": "<img src='images/{}.jpg' "
+                                               "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px; "
+                                               "-o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
+                                               "width:960px; height:180px;'/><div style='position:absolute; bottom:80px; "
+                                               "left:80px; max-height:65px; width:660px; margin:0;'>"
+                                               "<img src='{}/portals/self/resources/thumbnail.png?token=SECURITY_TOKEN' "
+                                               "class='esriFloatLeading esriTrailingMargin025' style='margin-bottom:0; "
+                                               "max-height:100px;'/><span style='position:absolute; bottom:0; margin-bottom:0; "
+                                               "line-height:normal; font-family:HelveticaNeue,Verdana; font-weight:600; "
+                                               "font-size:32px; color:#369;'>{}</span></div>".format(banner_file,
+                                                                                                     self._portal.con.baseurl,
+                                                                                                     self._gis.properties.name)}]
+            else:  # using custom html
+                rotator_panel = [{"id": banner_file,
+                                  "innerHTML": custom_html}]
+
+        # Update the portal self with these banner values
+        update_result = self._gis.update_properties({"rotatorPanels": rotator_panel})
+        return update_result
+
+    def set_logo(self, logo_file=None):
+        """
+        Configure your home page by setting the organization's logo image. For best results the logo file should be
+        65 x 65 pixels in dimension.
+
+        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        logo_file         optional string. Specify path to image file. If None, existing thumbnail is removed.
+        ================  ===============================================================
+
+        :return: True | False
+        """
+
+        # Add resource file
+        portal_resources = _PortalResourceManager(self._gis)
+        key_val=""
+        # find image extension
+        if logo_file:
+            from pathlib import Path
+            fpath = Path(logo_file)
+            f_splits = fpath.name.split('.')
+            if len(f_splits) > 1 and f_splits[1] == 'png':
+                key_val = 'thumbnail.png'
+            elif len(f_splits) > 1 and f_splits[1] == 'jpg':
+                key_val = 'thumbnail.jpg'
+            elif len(f_splits) > 1 and f_splits[1] == 'gif':
+                key_val = 'thumbnail.gif'
+
+            add_result = portal_resources.add(key_val, logo_file)
+        else:
+            for ext in ['.png', '.jpg', '.gif']:
+                try:
+                    portal_resources.delete('thumbnail' + ext)
+                except:
+                    continue
+            key_val = None
+
+        # Update the portal self with these banner values
+        update_result = self._gis.update_properties({"thumbnail": key_val})
+        return update_result
+
+    def set_background(self, background_file=None, is_built_in=True):
+        """
+        Configure your home page by setting the organization's background image. You can choose no image, a built-in image
+        or upload your own. If you upload your own image, the image is positioned at the top and center of the page.
+        The image repeats horizontally if it is smaller than the browser or device window. For best results, if you want
+        a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on
+        smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size.
+
+        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        background_file   optional string. If using a custom background, specify path to image file.
+                            To remove an existing background, specify None for this argument and
+                            False for is_built_in argument.
+        ----------------  ---------------------------------------------------------------
+        is_built_in       optional bool, default=True. The built-in background is set by default.
+                            If uploading a custom image, this parameter is ignored.
+        ================  ===============================================================
+
+        :return: True | False
+        """
+
+        # Add resource if using a custom background file.
+        background_update_val = None
+        if background_file:
+            # find image extension
+            from pathlib import Path
+            fpath = Path(background_file)
+            f_splits = fpath.name.split('.')
+            if len(f_splits) > 1 and f_splits[1] == 'png':
+                key_val = 'background.png'
+            elif len(f_splits) > 1 and f_splits[1] == 'jpg':
+                key_val = 'background.jpg'
+            else:
+                raise RuntimeError('Invalid image extension')
+
+            portal_resources = _PortalResourceManager(self._gis)
+            add_result = portal_resources.add(key_val, background_file)
+            if not add_result:
+                raise RuntimeError("Error adding background image as a resource file")
+            background_update_val = key_val
+
+        elif is_built_in:  # using built-in
+            background_update_val = 'images/arcgis_background.jpg'
+        else:
+            background_update_val = "none"
+
+        # Update the portal self with these banner values
+        update_result = self._gis.update_properties({"backgroundImage": background_update_val})
+        return update_result
+
+    def set_name_description(self, name, description):
+        """
+        Configure your home page by setting the organization's name and description
+
+        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        name              required string. Specify a name for the organization
+        ----------------  ---------------------------------------------------------------
+        description       required string. Specify a description about the organization
+        ================  ===============================================================
+
+        :return: True | False
+        """
+
+        # Add resource
+        key_val = 'localizedOrgProperties'
+        text = {'default':{'name':name,
+                           'description':description}}
+
+        portal_resources = _PortalResourceManager(self._gis)
+        add_result = portal_resources.add(key_val, text=text)
+
+        # Update the portal self with these banner values
+        update_result = self._gis.update_properties(text['default'])
+        return update_result
 ###########################################################################
 class Datastore(dict):
     """
@@ -502,8 +738,9 @@ class Datastore(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
         return '<%s title:"%s" type:"%s">' % (type(self).__name__, self.path, self.type)
@@ -1066,9 +1303,9 @@ class CollaborationManager(object):
                         postdata=params,
                         files=files)
     #----------------------------------------------------------------------
-    @_lazy_property
-    def collaborations(self):
-        """gets all colaborations for a portal"""
+
+    def list(self):
+        """gets all collaborations for a portal"""
         data_path = "%s/collaborations" % self._basepath
         params = {"f" : "json",
                   "num":100,
@@ -1327,7 +1564,7 @@ class Collaboration(dict):
             res = self._portal.con.get(data_path, params)
         return workspaces
     #----------------------------------------------------------------------
-    def export_inivitation(self, out_folder):
+    def export_invitation(self, out_folder):
         """
         The exportInvitationResponse operation exports a collaboration
         invitation response file from a collaboration guest portal. The
@@ -1346,7 +1583,8 @@ class Collaboration(dict):
         """
         params = {"f" : "json"}
         data_path = "%s/exportInvitationResponse" % self._basepath
-        return self._portal.con.get(data_path, params, out_folder=out_folder)
+        return self._portal.con.post(data_path, params, out_folder=out_folder, verify_cert=False)
+        # return self._portal.con.get(data_path, params, out_folder=out_folder)
     #----------------------------------------------------------------------
     def import_invitation_response(self,
                                    response_file,
@@ -1487,6 +1725,46 @@ class Collaboration(dict):
         return con.get(data_path,
                        params)
     #----------------------------------------------------------------------
+    def add_group_to_workspace(self, portal_group, workspace):
+        """
+        This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
+         to the portal group is shared to other participants in the collaboration.
+        :param portal_group: arcgis.gis.Group object or group id string
+        :return:
+        """
+        group_id = None
+        if isinstance(portal_group, Group):
+            group_id = portal_group.groupid
+        elif isinstance(portal_group, str):
+            group_id = portal_group
+
+        data_path = "{}/workspaces/{}/updatePortalGroupLink".format(self._basepath, workspace['id'])
+        params = {'f':'json',
+                  'portalGroupId':group_id,
+                  'enableRealtimeSync':True,
+                  'copyFeatureServiceData': False}
+        con = self._portal.con
+        result = con.post(path=data_path, postdata=params, verify_cert=False)
+        return result
+
+    # ----------------------------------------------------------------------
+    def _force_sync(self, workspace):
+        """
+        Undocumented. This operation will force sync the collaboration and its workspaces
+        :param workspace:
+        :return:
+        """
+        config_sync_data_path = "{}/configSync".format(self._basepath)
+        config_sync_status = self._portal.con.get(config_sync_data_path, {"f":"json"})
+
+        if config_sync_status['success']:
+            #proceed to workspace sync
+            workspace_sync_data_path = "{}/workspaces/{}/sync".format(self._basepath, workspace['id'])
+            wksp_sync_status = self._portal.con.post(workspace_sync_data_path, postdata={'f':'json'}, verify_cert=False)
+            return wksp_sync_status
+        else:
+            raise RuntimeError("Error force syncing")
+    # ----------------------------------------------------------------------
     def refresh(self, invitation_id):
         """
         The refresh operation refreshes a previously generated
@@ -1518,8 +1796,8 @@ class Collaboration(dict):
         data_path = "%s/removeParticipation" % self._basepath
         params = {"f" : "json"}
         con = self._portal.con
-        return con.get(path=data_path,
-                       params=params,
+        return con.post(path=data_path,
+                       postdata=params,
                        verify_cert=False)
     #----------------------------------------------------------------------
     def remove_participant(self, portal_id):
@@ -2735,11 +3013,11 @@ class ContentManager(object):
         address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
         title: optional title of the item. This is used for spatial dataframe objects.
         tags: optional tags when publishing a spatial dataframe to the the GIS
-        Returns feature collection, that can be used for analysis, visualization or published to the GIS as an item
+        Returns feature collection or feature layer, that can be used for analysis, visualization or published to the GIS as an item
         """
-        from .features import FeatureCollection
-        from . import SpatialDataFrame
-        from ._impl.common._utils import zipws
+        from arcgis.features import FeatureCollection
+        from arcgis import SpatialDataFrame
+        from arcgis._impl.common._utils import zipws
 
         import shutil
         from uuid import uuid4
@@ -3164,8 +3442,9 @@ class Group(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
         return '<%s title:"%s" owner:%s>' % (type(self).__name__, self.title, self.owner)
@@ -3505,8 +3784,9 @@ class User(dict):
             return dict.__getitem__(self, k)
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
 
     def __repr__(self):
@@ -4315,11 +4595,12 @@ class Item(dict):
                 """
 
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        return '\n'.join(state)
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
 
     def __repr__(self):
-        return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self.type, self.owner)
+        return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self._ux_item_type(), self.owner)
 
     def reassign_to(self, target_owner, target_folder=None):
         """ Allows the administrator to reassign a single item from one user to another.

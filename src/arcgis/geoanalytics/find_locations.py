@@ -105,9 +105,12 @@ Returns:
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
-
-    _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 find_similar_locations.__annotations__ = {
     'most_or_least_similar': str,

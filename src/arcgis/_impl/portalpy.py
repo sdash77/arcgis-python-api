@@ -81,7 +81,10 @@ class Portal(object):
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
                  tokenurl=None, verify_cert=True, client_id=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
-        if url.endswith('/home'): # be permissive in accepting home app urls
+        url = url.strip()
+        if url.endswith('/home/'): # be permissive in accepting home app urls
+            url = url[:-6]
+        elif url.endswith('/home'): # be permissive in accepting home app urls
             url = url[:-5]
         self._is_arcpy = url.lower() == "pro"
         if self._is_arcpy:
@@ -197,7 +200,6 @@ class Portal(object):
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
                              postdata)
         return resp
-
 
     def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to a Portal.
@@ -370,9 +372,6 @@ class Portal(object):
         resp = self.con.post(path, postdata, files)
         if resp:
             return resp['services']
-
-
-
 
     def create_service(self,
                        name,

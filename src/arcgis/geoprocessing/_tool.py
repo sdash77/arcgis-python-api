@@ -487,7 +487,7 @@ class _AsyncResource(_GISResource):
                                 _log.warn(msg['description'])
                             elif msg['type'] == 'esriJobMessageTypeError':
                                 _log.error(msg['description'])
-                                print(msg['description'], file=sys.stderr)
+                                # print(msg['description'], file=sys.stderr)
                             else:
                                 _log.warn(msg['description'])  # ,file = sys.stderr)
                         num_messages = num

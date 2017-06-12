@@ -10,6 +10,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import DataFile
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service
 
 _log = _logging.getLogger(__name__)
@@ -133,8 +134,13 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
-    _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
-    return output_service
+    try:
+        _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
 
 calculate_density.__annotations__ = {
     'fields': str,
@@ -169,38 +175,37 @@ def find_hot_spots(
 
 
 
+    Parameters:
 
-Parameters:
+       point_layer: Input Points (FeatureSet). Required parameter.
 
-   point_layer: Input Points (_FeatureSet). Required parameter.
+       bin_size: Bin Size (float). Required parameter.
 
-   bin_size: Bin Size (float). Required parameter.
+       bin_size_unit: Bin Size Unit (str). Required parameter.
+          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-   bin_size_unit: Bin Size Unit (str). Required parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+       neighborhood_distance: Neighborhood Distance (float). Required parameter.
 
-   neighborhood_distance: Neighborhood Distance (float). Required parameter.
+       neighborhood_distance_unit: Neighborhood Distance Unit (str). Required parameter.
+          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-   neighborhood_distance_unit: Neighborhood Distance Unit (str). Required parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+       time_step_interval: Time Step Interval (int). Optional parameter.
 
-   time_step_interval: Time Step Interval (int). Optional parameter.
+       time_step_interval_unit: Time Step Interval Unit (str). Optional parameter.
+          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
-   time_step_interval_unit: Time Step Interval Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+       time_step_alignment: Time Step Alignment (str). Optional parameter.
+          Choice list:['EndTime', 'StartTime', 'ReferenceTime']
 
-   time_step_alignment: Time Step Alignment (str). Optional parameter.
-      Choice list:['EndTime', 'StartTime', 'ReferenceTime']
+       time_step_reference: Time Step Reference (_datetime). Optional parameter.
 
-   time_step_reference: Time Step Reference (_datetime). Optional parameter.
+       output_name: Output Features Name (str). Required parameter.
 
-   output_name: Output Features Name (str). Required parameter.
-
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-Returns:
-   output - Output Features as a feature layer collection item
+    Returns:
+       output - Output Features as a feature layer collection item
 
 
     """
@@ -245,8 +250,13 @@ Returns:
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
-    _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
-    return output_service
+
+    try:
+        _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
 
 find_hot_spots.__annotations__ = {
     'bin_size': float,
@@ -258,3 +268,84 @@ find_hot_spots.__annotations__ = {
     'time_step_alignment': str,
     'time_step_reference': _datetime,
     'output_name': str}
+
+
+def create_space_time_cube(point_layer: _FeatureSet,
+                           bin_size: float,
+                           bin_size_unit: str,
+                           time_step_interval: int,
+                           time_step_interval_unit: str,
+                           time_step_alignment: str = None,
+                           time_step_reference: _datetime = None,
+                           summary_fields: str = None,
+                           output_name: str = None,
+                           context: str = None,
+                           gis=None) -> DataFile:
+    """
+    Summarizes a set of points into a netCDF data structure by aggregating them into space-time bins. Within each bin,
+    the points are counted and specified attributes are aggregated. For all bin locations, the trend for counts and
+    summary field values are evaluated.
+
+    Parameters:
+
+       point_layer: Input Features (FeatureSet). Required parameter.
+
+       bin_size: Distance Interval (float). Required parameter.
+
+       bin_size_unit: Distance Interval Unit (str). Required parameter.
+          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+
+       time_step_interval: Time Step Interval (int). Required parameter.
+
+       time_step_interval_unit: Time Step Interval Unit (str). Required parameter.
+          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+
+       time_step_alignment: Time Step Alignment (str). Optional parameter.
+          Choice list:['EndTime', 'StartTime', 'ReferenceTime']
+
+       time_step_reference: Time Step Reference (datetime). Optional parameter.
+
+       summary_fields: Summary Fields (str). Optional parameter.
+
+       output_name: Output Name (str). Required parameter.
+
+       context: Context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+    Returns:
+       output_cube - Output Space Time Cube as a DataFile
+
+    """
+    kwargs = locals()
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+
+    params = {}
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    _set_context(params)
+
+    param_db = {
+        "point_layer": (_FeatureSet, "pointLayer"),
+        "bin_size": (float, "binSize"),
+        "bin_size_unit": (str, "binSizeUnit"),
+        "time_step_interval": (int, "timeStepInterval"),
+        "time_step_interval_unit": (str, "timeStepIntervalUnit"),
+        "time_step_alignment": (str, "timeStepAlignment"),
+        "time_step_reference": (_datetime, "timeStepReference"),
+        "summary_fields": (str, "summaryFields"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output_cube": (DataFile, "Output Space Time Cube"),
+    }
+    return_values = [
+        {"name": "output_cube", "display_name": "Output Space Time Cube", "type": DataFile},
+    ]
+
+    return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True)
+
