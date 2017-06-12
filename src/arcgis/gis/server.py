@@ -771,8 +771,6 @@ class LogManager(object):
                url - admin url
                connection - SiteConnection class
         """
-        super(LogManager, self).__init__(logs=logs,
-                                         url=url)
         self._logs = logs
     #----------------------------------------------------------------------
     def count_error_reports(self, machine="*"):
