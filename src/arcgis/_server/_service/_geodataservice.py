@@ -18,27 +18,6 @@ class GeoData(BaseServer):
     _versions = None
     #----------------------------------------------------------------------
     @property
-    def defaultWorkingVersion(self):
-        """returns the default working version name"""
-        if self._defaultWorkingVersion is None:
-            self.init()
-        return self._defaultWorkingVersion
-    #----------------------------------------------------------------------
-    @property
-    def workspaceType(self):
-        """returns the workspace type"""
-        if self._workspaceType is None:
-            self.init()
-        return self._workspaceType
-    #----------------------------------------------------------------------
-    @property
-    def replicas(self):
-        """returns a list of replices"""
-        if self._replicas is None:
-            self.init()
-        return self._replicas
-    #----------------------------------------------------------------------
-    @property
     def replicasResource(self):
         """returns a list of replices"""
         if self._replicasResource is None:
@@ -48,20 +27,6 @@ class GeoData(BaseServer):
                     self._replicasResource["replicaName"] = replica.name
                     self._replicasResource["replicaID"] = replica.guid
         return self._replicasResource
-    #----------------------------------------------------------------------
-    @property
-    def serviceDescription(self):
-        """returns the service description"""
-        if self._serviceDescription is None:
-            self.init()
-        return self._serviceDescription
-    #----------------------------------------------------------------------
-    @property
-    def versions(self):
-        """returns a list of the versions"""
-        if self._versions is None:
-            self.init()
-        return self._versions
     #----------------------------------------------------------------------
     def unRegisterReplica(self,replicaGUID):
         """ unRegisterReplica operation is performed on a Geodata Service

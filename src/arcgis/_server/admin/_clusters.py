@@ -25,9 +25,6 @@ class Clusters(BaseServer):
     _json_dict = None
     _json = None
     _url = None
-    _proxy_url = None
-    _proxy_port = None
-    _securityHandler = None
     #----------------------------------------------------------------------
     def __init__(self, url,
                  connection,
@@ -42,7 +39,7 @@ class Clusters(BaseServer):
         else:
             self._url = url + "/clusters"
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def create_cluster(self, cluster_name, machine_names="", port=""):
         """
@@ -109,16 +106,7 @@ class Cluster(BaseServer):
     _con = None
     _json_dict = None
     _json = None
-    _proxy_url = None
-    _proxy_port = None
     _url = None
-    _securityHandler = None
-    _clusterName = None
-    _clusterProtocol = None
-    _configuredState = None
-    _machineNames = None
-    _configurationState = None
-    _clusters = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
                  initialize=False):
@@ -128,25 +116,20 @@ class Cluster(BaseServer):
         self._con = connection
         self._url = url
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     @property
     def clusters(self):
         """returns the cluster object for each server"""
-        if self._clusters is None:
-            self.init()
+        if 'clusters' in self.properties:
             Cs = []
             for c in self._clusters:
                 url = self._url + "/%s" % c['clusterName']
                 Cs.append(Cluster(url=url,
                                   connection=self._con,
                                   initialize=True))
-            self._clusters = Cs
-        return self._clusters
-    #----------------------------------------------------------------------
-    def refresh(self):
-        """refreshes the object's properties"""
-        self.init()
+            return Cs
+        return []
     #----------------------------------------------------------------------
     def start(self):
         """

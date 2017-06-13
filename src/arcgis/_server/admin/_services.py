@@ -39,7 +39,7 @@ class ServiceManager(BaseServer):
         self._url = url
         self._currentURL = url
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     @property
     def folder(self):
@@ -51,13 +51,14 @@ class ServiceManager(BaseServer):
         """gets/set the current folder"""
 
         if folder == "" or\
-             folder == "/":
+             folder == "/" or \
+             folder is None:
             self._currentURL = self._url
             self._services = None
             self._description = None
             self._folderName = None
             self._webEncrypted = None
-            self.init()
+            self._init()
             self._folderName = folder
         elif folder in self.folders:
             self._currentURL = self._url + "/%s" % folder
@@ -65,14 +66,15 @@ class ServiceManager(BaseServer):
             self._description = None
             self._folderName = None
             self._webEncrypted = None
-            self.init()
+            self._init()
             self._folderName = folder
     #----------------------------------------------------------------------
     @property
     def folders(self):
         """ returns a list of all folders """
         if self._folders is None:
-            self.init()
+            self._init()
+            self._folders = self.properties['folders']
         if "/" not in self._folders:
             self._folders.append("/")
         return self._folders
@@ -81,7 +83,7 @@ class ServiceManager(BaseServer):
     def description(self):
         """ returns the decscription """
         if self._description is None:
-            self.init()
+            self._init()
         return self._description
     #----------------------------------------------------------------------
     @property
@@ -292,7 +294,7 @@ class ServiceManager(BaseServer):
         }
         u_url = self._url + "/createFolder"
         res = self._con.post(path=u_url, postdata=params)
-        self.init()
+        self._init()
         if 'status' in res:
             return res['status'] == 'success'
         return res
@@ -311,7 +313,7 @@ class ServiceManager(BaseServer):
         if folder_name in self.folders:
             u_url = self._url + "/%s/deleteFolder" % folder_name
             res = self._con.post(path=u_url, postdata=params)
-            self.init()
+            self._init()
             if 'status' in res:
                 return res['status'] == 'success'
             return res
@@ -485,7 +487,7 @@ class ServiceManager(BaseServer):
         res = self._con.post(path=u_url, postdata=params)
         if 'status' in res:
             return res['status'] == 'success'
-        self.init()
+        self._init()
         return res
     #----------------------------------------------------------------------
     def create_service(self, service):
@@ -709,11 +711,11 @@ class Service(BaseServer):
         self._currentURL = url
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     def __str__(self):
         return json.dumps(self._json_dict)
     #----------------------------------------------------------------------
-    def init(self, connection=None):
+    def _init(self, connection=None):
         """ populates server admin information """
         params = {
             "f" : "json"
@@ -744,19 +746,19 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     def refresh(self):
         """refreshes the object's values by re-querying the service"""
-        self.init()
+        self._init()
     #----------------------------------------------------------------------
     def json_properties(self):
         """returns the jsonProperties"""
         if self._jsonProperties is None:
-            self.init()
+            self._init()
         return self._jsonProperties
     #----------------------------------------------------------------------
     @property
     def extensions(self):
         """lists the extensions on a service"""
         if self._extensions is None:
-            self.init()
+            self._init()
         return self._extensions
     #----------------------------------------------------------------------
     def modify_extensions(self,
@@ -772,7 +774,7 @@ class Service(BaseServer):
             self._json_dict['extensions'] = [x.value for x in extension_objects]
             res = self.edit(str(self))
             self._json = None
-            self.init()
+            self._init()
             return res
         return False
     #----------------------------------------------------------------------

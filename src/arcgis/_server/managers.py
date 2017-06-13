@@ -25,6 +25,7 @@ class Server(object):
                  gis=None,
                  **kwargs):
         """Constructor"""
+        self._url = url
         if verify_cert == False:
             ssl._create_default_https_context = ssl._create_unverified_context
         key_file = kwargs.pop('key_file', None)
@@ -55,10 +56,16 @@ class Server(object):
                                gis,
                                initialize,
                                is_agol=is_agol)
-        self._con = self._server.connection
+        self._con = self._server._con
         if is_agol == False:
             self._sm = self._server.site_manager
             self._info = self._server.info
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s for %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s for %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     def publish_sd(self,
                    sd_file,
@@ -91,12 +98,6 @@ class Server(object):
             return False
         else:
             return False
-
-    #----------------------------------------------------------------------
-    @property
-    def connection(self):
-        """gets server the connection object"""
-        return self._server.connection
     #----------------------------------------------------------------------
     @property
     def users(self):

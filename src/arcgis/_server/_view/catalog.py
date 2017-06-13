@@ -9,6 +9,7 @@ import json
 from .._common import BaseServer
 from .._service._layerfactory import Service
 from .._common import ServerConnection
+from ..._impl.common._mixins import PropertyMap
 ########################################################################
 class Catalog(BaseServer):
     """This object represents an ArcGIS Server instance"""
@@ -61,7 +62,7 @@ class Catalog(BaseServer):
         self._location = self._url
         self._currentFolder = "root"
         if initialize:
-            self.init(self._con)
+            self._init(self._con)
     #----------------------------------------------------------------------
     def _validateAdminUrl(self, url):
         """assembles the admin url"""
@@ -88,13 +89,26 @@ class Catalog(BaseServer):
         else:
             parts = parsed.path[1:].split('/')
             if len(parts) == 0:
-                res = self.connection.get("portals/self", {"f": "json"})
+                res = self._con.get("portals/self", {"f": "json"})
                 return "%s://%s/%s/ArcGIS/rest/services" % ( parsed.scheme,
                                                              parsed.netloc,
                                                              res['id'])
             return "%s://%s/%s/ArcGIS/rest/services" % (parsed.scheme, parsed.netloc, parts[0])
     #----------------------------------------------------------------------
-    def init(self, connection=None, folder='root'):
+    def __str__(self):
+        if self._json_dict is None:
+            self._init()
+        val = self._json_dict
+        if val is None:
+            return "{}"
+        return json.dumps(self._json_dict)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "{classname}({data})".format(
+            classname=self.__class__.__name__,
+            data=self.__str__())
+    #----------------------------------------------------------------------
+    def _init(self, connection=None, folder='root'):
         """loads the property data into the class"""
         params = {
             "f" : "json"
@@ -109,19 +123,16 @@ class Catalog(BaseServer):
         json_dict = connection.get(path=url, params=params)
         self._json_dict = json_dict
         self._json = json.dumps(json_dict)
-        attributes = [attr for attr in dir(self)
-                      if not attr.startswith('__') and \
-                      not attr.startswith('_')]
-        for k,v in json_dict.items():
-            if k == "folders":
-                pass
-            elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+        try:
+            if isinstance(json_dict, dict):
+                self._json_dict = result
+                self._properties = PropertyMap(json_dict)
             else:
-                missing[k] = v
-                setattr(self, k,v)
-        json_dict = connection.get(path=self.root,
-                                 params=params)
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
         for k,v in json_dict.items():
             if k == 'folders':
                 v.insert(0, 'root')
@@ -182,7 +193,7 @@ class Catalog(BaseServer):
     def current_version(self):
         """gets the current version of arcgis server"""
         if self._currentVersion is None:
-            self.init()
+            self._init()
         return self._currentVersion or getattr(self, 'currentVersion', None)
     #----------------------------------------------------------------------
     @property
@@ -208,7 +219,7 @@ class Catalog(BaseServer):
         from six.moves.urllib_parse import quote
         services = []
         if self._services is None:
-            self.init()
+            self._init()
         for s in self._services:
             url = "{base}/{name}/{stype}".format(base=self._url,
                                                  name=quote(s['name']),
@@ -221,7 +232,7 @@ class Catalog(BaseServer):
     def folders(self):
         """returns the folders on server"""
         if self._folders is None:
-            self.init(folder="root")
+            self._init(folder="root")
         return self._folders
     #----------------------------------------------------------------------
     @property
@@ -242,13 +253,13 @@ class Catalog(BaseServer):
             else:
                 self._currentFolder = 'root'
                 self._location = self.root
-            self.init(folder=value)
+            self._init(folder=value)
         elif value is None:
             self._currentFolder = 'root'
             self._location = self.root
-            self.init(folder='root')
+            self._init(folder='root')
         elif value in ['/', '', 'root']:
             self._currentFolder = value
             self._location = "%s/%s" % (self.root, value)
-            self.init(folder='root')
+            self._init(folder='root')
 

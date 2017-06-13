@@ -9,6 +9,7 @@ from .._server._common import ServerConnection
 from ..gis import GIS
 from .._server._view import Catalog
 from .._server.admin._logs import Log
+from .._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
 
 class ServerManager(object):
@@ -97,7 +98,7 @@ class Server(object):
                                gis,
                                initialize,
                                is_agol=is_agol)
-        self._con = self._server.connection
+        self._con = self._server._con
         if not is_agol:
             self._sm = self._server.site_manager
             # self._info = self._server.info
@@ -176,7 +177,7 @@ class Server(object):
         a specific data item. This operation helps you determine if a
         particular data item can be safely deleted or refreshed."""
         if self._sm:
-            return self._sm.data
+            return DataStoreManager(self._sm)
     #----------------------------------------------------------------------
     @property
     def usage(self):
@@ -239,7 +240,7 @@ class Server(object):
         ArcGIS Server Only
         """
         if self._sm:
-            return LogManager(logs=self._sm.logs)
+            return LogManager(self._sm)
     #----------------------------------------------------------------------
     @property
     def _kml(self):
@@ -479,24 +480,14 @@ class MachineManager(object):
         self._sm = server
         self._machines = server.machines
         if hydrate:
-            self._hydrate()
-            self._hydrated = True
-            self._properties = PropertyMap(self._machines._json_dict)
-        else:
-            self._hydrated = False
-
-    def _hydrate(self):
-        self._machines.init()
-        self._properties = PropertyMap(self._machines._json_dict)
+            self._machines.properties
     #----------------------------------------------------------------------
     @property
     def properties(self):
         """
         returns the machine's properties
         """
-        if self._properties is None:
-            self._hydrate()
-        return self._properties
+        return self._machines.properties
     #----------------------------------------------------------------------
     @property
     def list(self):
@@ -504,18 +495,16 @@ class MachineManager(object):
         returns the list of machines in the GIS
         """
         ms = []
-        for m in self._machines.machines:
-            ms.append(_Machine(machine=m))
+        for m in self._machines.list:
+            ms.append(Machine(machine=m))
         return ms
     #----------------------------------------------------------------------
     def get(self, name):
         """
         gets a single instance of a machine
         """
-        return _Machine(
-            self._machines.get_machine(
-                machine_name=name)
-        )
+        return Machine(
+            self._machines.get(machine_name=name))
     #----------------------------------------------------------------------
     def register(self, name, admin_url):
         """
@@ -560,7 +549,7 @@ class MachineManager(object):
         self._properties = PropertyMap(self._machines._json_dict)
         return res
 ########################################################################
-class _Machine(object):
+class Machine(object):
     """
        A server machine represents a machine on which ArcGIS Server
        software has been installed and licensed. A site is made up one or
@@ -592,10 +581,7 @@ class _Machine(object):
         """
         lists the machine's properties
         """
-        if self._properties is None:
-            self._machine.init()
-            self._properties = PropertyMap(self._machine._json_dict)
-        return self._properties
+        return self._machine.properties
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -756,7 +742,7 @@ class LogManager(object):
     messages.
 
     Parameters:
-     :param logs: log object
+     :param server: server object
     """
     _url = None
     _con = None
@@ -765,13 +751,15 @@ class LogManager(object):
     _resources = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, logs):
-        """Constructor
-            Inputs:
-               url - admin url
-               connection - SiteConnection class
-        """
-        self._logs = logs
+    def __init__(self, server):
+        """Constructor"""
+        self._sm = server
+        self._logs = server.logs
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """ returns the properties for the Logs """
+        return self._logs.properties
     #----------------------------------------------------------------------
     def count_error_reports(self, machine="*"):
         """ This operation counts the number of error reports (crash
@@ -848,7 +836,7 @@ class LogManager(object):
             out_path=out_path
         )
 ########################################################################
-class ReportManager:
+class ReportManager(object):
     """
     Manages and modifies the usage reports for ArcGIS Server
     """
@@ -857,35 +845,17 @@ class ReportManager:
     _hydrated = None
     _reports = None
     #----------------------------------------------------------------------
-    def __init__(self, server, **kwargs):
+    def __init__(self, server):
         """Constructor"""
-        hydrate = kwargs.pop('hydrate', False)
         self._sm = server
         self._reports = self._sm.usagereports
-        from .._server.admin._usagereports import UsageReports, UsageReport
-        isinstance(self._reports, UsageReports)
-        if hydrate:
-            self._hydrate()
-            self._hydrated = True
-            self._reports.init()
-            self._properties = PropertyMap(self._reports._json_dict)
-        else:
-            self._hydrated = False
-    #----------------------------------------------------------------------
-    def _hydrate(self):
-        self._properties = None
-        self._reports.init()
-        self._properties = PropertyMap(self._reports._json_dict)
     #----------------------------------------------------------------------
     @property
     def properties(self):
         """
-        returns the machine's properties
+        returns the report manager's properties
         """
-        if self._properties is None:
-            self._reports.init()
-            self._properties = PropertyMap(self._reports._json_dict)
-        return self._properties
+        return self._reports.properties
     #----------------------------------------------------------------------
     @property
     def list(self):
@@ -1188,3 +1158,433 @@ class Report(object):
                {"machines": "*"}
         """
         return self._report.query(query_filter=query_filter)
+########################################################################
+class DataStoreManager(object):
+    """"""
+    _properties = None
+    _ds = None
+    _server = None
+    #----------------------------------------------------------------------
+    def __init__(self, server):
+        """Constructor"""
+        self._sm = server
+        self._ds = self._sm.data
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        returns the machine's properties
+        """
+        return self._ds.properties
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return str(self._ds)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return str(self._ds)
+    #----------------------------------------------------------------------
+    @property
+    def list(self):
+        """returns a list of datastore objects"""
+        stores = []
+        for d in self._ds.datastores:
+            stores.append(Datastore(d))
+            del d
+        return stores#self._ds.datastores
+    #----------------------------------------------------------------------
+    @property
+    def config(self):
+        """
+           The data store configuration properties affect the behavior of
+           the data holdings of the server. The properties include:
+           blockDataCopy - When this property is false, or not set at all,
+           copying data to the site when publishing services from a client
+           application is allowed. This is the default behavior. When this
+           property is true, the client application is not allowed to copy
+           data to the site when publishing. Rather, the publisher is
+           required to register data items through which the service being
+           published can reference data. Values: true | false
+        """
+        return self._ds.config
+    #----------------------------------------------------------------------
+    @config.setter
+    def config(self, config):
+        """
+        This operation allows you to update the data store configuration
+        You can use this to allow or block the automatic copying of data
+        to the server at publish time
+        Input:
+        :param config: - the JSON object containing the data configuration
+        Output:
+        JSON message as dictionary
+        """
+        return self._ds.config(config)
+    #----------------------------------------------------------------------
+    def get(self, path):
+        """ Returns the data item object at the given path
+
+        Parameters:
+        :param path: required string, the data item path
+        Output:
+        None if the data item is not found at that path and the data item
+        object if its found
+        """
+        return self._ds.get(path)
+    #----------------------------------------------------------------------
+    def add_folder(self,
+                   name,
+                   server_path,
+                   client_path=None):
+        """
+        Registers a folder with the data store.
+        Input
+            name - unique fileshare name on the server
+            server_path - the path to the folder from the server (and client, if shared path)
+            client_path - if folder is replicated, the path to the folder from the client
+            if folder is shared, don't set this parameter
+        Output:
+              the data item is registered successfully, None otherwise
+        """
+        return self._ds.add_folder(name=name,
+                                   server_path=server_path,
+                                   client_path=client_path)
+    #----------------------------------------------------------------------
+    def add(self,
+            name,
+            item):
+        """
+        Registers a new data item with the data store.
+        Input
+            item - The disct representing the data item.
+            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        Output:
+              True if the data item is registered successfully, False otherwise
+        """
+        return self._ds.add(name=name, item=item)
+    #----------------------------------------------------------------------
+    def add_bigdata(self,
+                    name,
+                    server_path=None):
+        """
+        Registers a bigdata fileshare with the data store.
+        Input
+            name - unique bigdata fileshare name on the server
+            server_path - the path to the folder from the server
+        Output:
+              the data item if registered successfully, None otherwise
+        """
+        return self._ds.add_bigdata(name=name,
+                                    server_path=server_path)
+    #----------------------------------------------------------------------
+    def add_database(self,
+                     name,
+                     conn_str,
+                     client_conn_str=None,
+                     conn_type="shared"):
+        """
+        Registers a database with the data store.
+        Input
+            name - unique database name on the server
+            conn_str - the path to the folder from the server (and client, if shared or serverOnly database)
+            client_conn_str: connection string for client to connect to replicated enterprise database>
+            conn_type - "<shared|replicated|serverOnly>"
+        Output:
+            the data item is registered successfully, None otherwise
+        """
+        return self._ds.add_database(name,
+                                     conn_str,
+                                     client_conn_str,
+                                     conn_type)
+    #----------------------------------------------------------------------
+    def get_total_refcount(self, path):
+        """
+           Computes the total number of references to a given data item
+           that exist on the server. You can use this operation to
+           determine if a data resource can be safely deleted (or taken
+           down for maintenance).
+           Input:
+              path - The complete hierarchical path to the item
+           Output:
+              JSON message as dictionary
+        """
+        return self._ds.get_total_refcount(path=path)
+    #----------------------------------------------------------------------
+    def make_datastore_machine_primary(self,
+                                       item_name,
+                                       machine_name):
+        """
+        Promotes a standby machine to the primary Data Store machine. The
+        existing primary machine is downgraded to a standby machine.
+
+        Parameters:
+         :item_name: name of the data store item
+         :machine_name: name of the machine to promote to primary
+        """
+        return self._ds.make_datastore_machine_primary(
+            item_name, machine_name)
+    #----------------------------------------------------------------------
+    def get_relational_datastore_type(self, type_id):
+        """
+        This resource lists the properties of a registered relational data
+        store type. The properties returned are those that client
+        applications must provide when creating a Relational Database
+        Connection portal item.
+
+        Parameters:
+         :type_id: datastore type id
+        """
+        return self._ds.get_relational_datastore_type(type_id=type_id)
+    #----------------------------------------------------------------------
+    @property
+    def relational_datastore_types(self):
+        """
+        This resource lists the relational data store types that have been
+        registered with the server. Each registered relational data store
+        type has both an id and a name property, as well as an array of
+        userDefinedProperties, which indicates the properties client
+        applications must provide when creating a Relational Database
+        Connection portal item. Only administrators can register and
+        unregister a relational data store type. The following database
+        platforms are supported: SAP HANA, Microsoft SQL Server and
+        Teradata.
+        """
+        return self._ds.relational_datastore_types
+    #----------------------------------------------------------------------
+    def search(self,
+               parent_path=None,
+               ancestor_path=None,
+               types=None,
+               id=None):
+        """
+           You can use this operation to search through the various data
+           items registered in the server's data store.
+           Inputs:
+              parent_path - The path of the parent under which to find items
+              ancestor_path - The path of the ancestor under which to find
+                             items.
+              types - A filter for the type of the items
+              id - A filter to search by the ID of the item
+           Output:
+              dictionary
+        """
+        return self._ds.search(parent_path, ancestor_path, types, id)
+    #----------------------------------------------------------------------
+    def _register_data_item(self, item):
+        """
+           Registers a new data item with the server's data store.
+           Input
+              item - The JSON representing the data item.
+              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+           Output:
+              dictionary
+        """
+
+        return self._ds._register_data_item(item)
+    #----------------------------------------------------------------------
+    @property
+    def items(self):
+        """ This resource lists data items that are the root of all other
+            data items in the data store.
+        """
+        return self._ds.items
+    #----------------------------------------------------------------------
+    def validate(self):
+        """ validates all the items in the datastore """
+        res = self._ds.validate()
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
+    #----------------------------------------------------------------------
+    def make_primary(self, datastore_name, machine_name):
+        """
+        Promotes a standby machine to the primary Data Store machine. The
+        existing primary machine is downgraded to a standby machine.
+
+        """
+        return self._ds.make_primary(datastore_name, machine_name)
+    #----------------------------------------------------------------------
+    def remove_datastore(self, item_name, machine_name):
+        """
+        Removes a standby machine from the Data Store. This operation is
+        not supported on the primary Data Store machine.
+
+        Inputs:
+           item_name - name of the data store item
+           machine_name - name of the machine to remove
+        """
+        return self._ds.remove_datastore(item_name, machine_name)
+    #----------------------------------------------------------------------
+    def start(self, item_name, machine_name):
+        """
+        Starts the database instance running on the Data Store machine.
+
+        Inputs:
+           item_name - name of the item to start
+           machine_name - name of the machine to start on
+        """
+        return self._ds.start_datastore(item_name, machine_name)
+    #----------------------------------------------------------------------
+    def stop(self, item_name, machine_name):
+        """
+        Stop the database instance running on the Data Store machine.
+
+        Inputs:
+           item_name - name of the item to stop
+           machine_name - name of the machine to stop on
+        """
+        return self._ds.stop_datastore(item_name, machine_name)
+    #----------------------------------------------------------------------
+    def _unregister_data_item(self, path):
+        """
+        Unregisters a data item that has been previously registered with
+        the server's data store.
+
+        Inputs:
+           path - path to share folder
+
+        Example:
+           path = r"/fileShares/folder_share"
+           print data.unregisterDataItem(path)
+        """
+        return self._ds._unregister_data_item(path)
+    #----------------------------------------------------------------------
+    def validate_egdb(self, data_store_name, name):
+        """
+        Checks the status of ArcGIS Data Store and provides a health check
+        response.
+
+        Inputs:
+           data_store_namee - name of the datastore
+           name - name of the machine
+        """
+        return self._ds.validate_egdb(data_store_name, name)
+########################################################################
+class Datastore(object):
+    """
+    """
+    _store = None
+    #----------------------------------------------------------------------
+    def __init__(self, datastore):
+        """Constructor"""
+        self._store = datastore
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        returns the machine's properties
+        """
+        return self._store.properties
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return str(self._store)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return str(self._store)
+    #----------------------------------------------------------------------
+    @property
+    def manifest(self):
+        """
+        The manifest resource for bigdata fileshares,
+        """
+        return self._store.manifest
+    #----------------------------------------------------------------------
+    @manifest.setter
+    def manifest(self, value):
+        """
+        Updates the manifest resource for bigdata fileshares
+        """
+        return self._store.manifest(value)
+    #---------------------------------------------------------------------
+    @property
+    def hints(self):
+        """
+        This returns the hints resource for a big data file share. Hints
+        are advanced parameters to control the generation of Manifest.
+        """
+        return self._store.hints
+    #---------------------------------------------------------------------
+    @hints.setter
+    def hints(self,
+              hints):
+        """
+        Upload a hints file for a big data file share item. This will
+        replace the existing hints file. To apply the control parameters in
+        the hints file and regenerate the manifest, use the editDataItem to
+        edit the big data file share (using the same data store item as
+        input) which will regenerate the manifest. When a manifest is
+        regenerated, it will be updated only for datasets that have hints
+        and for new datasets that are added to the existing big data file
+        share location.
+
+        Parameters:
+         :name: name of the big data item to update
+         :hints: The hints file to be uploaded.
+        """
+        return self._store.hints(hints)
+    #----------------------------------------------------------------------
+    @property
+    def ref_count(self):
+        """
+        The total number of references to this data item that exist on the
+        server. You can use this property to determine if this data item
+        can be safely deleted (or taken down for maintenance).
+        """
+        return self._store.ref_count
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Unregisters this data item from the data store
+        """
+        return self._store.delete()
+    #----------------------------------------------------------------------
+    def update(self, item):
+        """
+        Edits this data item to update its connection information.
+
+        Input
+            item - the dict representation of the updated item
+        Output:
+              True if successful
+        """
+        return self._store.update(item)
+    #----------------------------------------------------------------------
+    def validate(self):
+        """
+        Validates that this data item's path (for file shares) or connection string (for databases)
+        is accessible to every server node in the site
+
+        Output:
+              True if successful
+        """
+        return self._store.validate()
+    #----------------------------------------------------------------------
+    @property
+    def datasets(self):
+        """
+        Returns the datasets in the data store (currently implemented for big data file shares.)
+        """
+        return self._store.datasets
+
+
+
+
+
+
+########################################################################
+class SecurityManager(object):
+    """"""
+    _properties = None
+    _security =  None
+    #----------------------------------------------------------------------
+    def __init__(self):
+        """Constructor"""
+        pass
+########################################################################
+class SystemManager(object):
+    """"""
+    _properties = None
+    _system = None
+    #----------------------------------------------------------------------
+    def __init__(self):
+        """Constructor"""
+        pass

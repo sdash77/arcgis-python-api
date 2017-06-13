@@ -15,8 +15,6 @@ class Log(BaseServer):
     _url = None
     _con = None
     _json_dict = None
-    _operations = None
-    _resources = None
     _json = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
@@ -31,21 +29,7 @@ class Log(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
-    #----------------------------------------------------------------------
-    @property
-    def operations(self):
-        """ returns the operations """
-        if self._operations is None:
-            self.init()
-        return self._operations
-    #----------------------------------------------------------------------
-    @property
-    def resources(self):
-        """ returns the log resources """
-        if self._resources is None:
-            self.init()
-        return self._resources
+            self._init(connection)
     #----------------------------------------------------------------------
     def count_error_reports(self, machine="*"):
         """ This operation counts the number of error reports (crash

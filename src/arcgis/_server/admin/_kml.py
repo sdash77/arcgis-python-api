@@ -30,7 +30,7 @@ class KML(BaseServer):
         self._con = connection
         self._url = url
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def create_KMZ(self, kmz_as_json):
         """

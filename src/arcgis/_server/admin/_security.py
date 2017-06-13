@@ -36,14 +36,7 @@ class Security(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection=connection)
-    #----------------------------------------------------------------------
-    @property
-    def resources(self):
-        """ returns the resources """
-        if self._resources is None:
-            self.init()
-        return self._resources
+            self._init(connection=connection)
     #----------------------------------------------------------------------
     def add_role(self, name, description=""):
         """ Adds a role to the role store. This operation is available only

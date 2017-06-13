@@ -15,7 +15,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import json
 from .._common import BaseServer
-
+from ..._impl.common._mixins import PropertyMap
 ########################################################################
 class Machines(BaseServer):
     """
@@ -36,8 +36,6 @@ class Machines(BaseServer):
     _con = None
     _url = None
     _json = None
-    _DatastoreMachines = None
-    _Protocal = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
                  initialize=False):
@@ -52,63 +50,50 @@ class Machines(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
-    def init(self, connection=None):
-        """ populates server admin information """
-        params = {
-            "f" : "json"
-        }
-        if connection:
-            json_dict = connection.get(path=self._url,
-                                       params=params)
-        else:
-            json_dict = self._con.get(path=self._url,
-                                      params=params)
-        self._json_dict = json_dict
-        self._json = json.dumps(json_dict)
+    def _init(self, connection=None):
+        """loads the properties into the class"""
+        if connection is None:
+            connection = self._con
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
                       not attr.startswith('_')]
-        for k, v in json_dict.items():
-            if k == "machines":
-                self._machines = []
-                for m in v:
-                    self._machines.append(
-                        Machine(url=self._url +"/%s" % m['machineName'],
-                                connection=self._con)
-                    )
-            elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
+        params = {"f":"json"}
+        try:
+            result = connection.get(path=self._url,
+                                    params=params)
+            if isinstance(result, dict):
+                if 'machines' in result:
+                    self._machines = []
+                    for m in result['machines']:
+                        self._machines.append(
+                            Machine(url=self._url +"/%s" % m['machineName'],
+                                    connection=self._con)
+                        )
+                self._json_dict = result
+                self._properties = PropertyMap(result)
             else:
-                setattr(self, k, v)
-            del k, v
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
     #----------------------------------------------------------------------
     @property
-    def datastore_machines(self):
-        """returns the datastore machine list"""
-        if self._DatastoreMachines is None:
-            self.init()
-        return self._DatastoreMachines
-    #----------------------------------------------------------------------
-    @property
-    def protocol(self):
-        """returns the protocal"""
-        if self._Protocal is None:
-            self.init()
-        return self._Protocal
-    #----------------------------------------------------------------------
-    @property
-    def machines(self):
+    def list(self):
         """  returns the list of machines in the cluster """
         if self._machines is None:
-            self.init()
+            self._init()
         return self._machines
     #----------------------------------------------------------------------
-    def get_machine(self, machine_name):
-        """returns a machine object for a given machine
-           Input:
-              machine_name - name of the box ex: SERVER.DOMAIN.COM
+    def get(self, machine_name):
+        """
+        returns a machine object for a given machine
+        Parameters:
+         :param machine_name: name of the server
+         **example**
+         >>> machines_obj.get("SERVER.DOMAIN.COM")
         """
         url = self._url + "/%s" % machine_name
         return Machine(url=url,
@@ -189,6 +174,12 @@ class Machine(BaseServer):
        be registered with the site. A machine can participate in only one
        site at a time. To remove a machine permanently from the site, you
        can use the unregister operation.
+
+       Parameters:
+        :url: web address of the machine
+        :connection: SiteConnection object
+        :initialize: default False, if True, the properties are loaded at
+        creation
     """
     _appServerMaxHeapSize = None
     _webServerSSLEnabled = None
@@ -209,11 +200,12 @@ class Machine(BaseServer):
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
                  initialize=False):
-        """Constructor
-            Inputs:
-               url - admin url
-               connection - SiteConnection object
-               initialize - boolean - loads properties at creation of object
+        """
+        Constructor
+        Inputs:
+        url - admin url
+        connection - SiteConnection object
+        initialize - boolean - loads properties at creation of object
         """
         super(Machine, self).__init__(connection=connection,
                                       url=url)
@@ -221,7 +213,13 @@ class Machine(BaseServer):
         self._con = connection
         self._currentURL = url
         if initialize:
-            self.init(connection)
+            self._init(connection)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     @property
     def status(self):

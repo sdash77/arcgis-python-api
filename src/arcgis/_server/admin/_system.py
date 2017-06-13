@@ -31,14 +31,7 @@ class System(BaseServer):
         else:
             self._url = url + "/system"
         if initialize:
-            self.init(connection)
-    #----------------------------------------------------------------------
-    @property
-    def resources(self):
-        """gets the resources"""
-        if self._resources is None:
-            self.init()
-        return self._resources
+            self._init(connection)
     #----------------------------------------------------------------------
     @property
     def server_properties(self):
@@ -388,10 +381,6 @@ class ConfigurationStore(BaseServer):
     _url = None
     _json = None
     _json_dict = None
-    _type = None
-    _connectionString = None
-    _class = None
-    _status = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
@@ -403,35 +392,7 @@ class ConfigurationStore(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
-    #----------------------------------------------------------------------
-    @property
-    def type(self):
-        """gets the configuration store type"""
-        if self._type is None:
-            self.init()
-        return self._type
-    #----------------------------------------------------------------------
-    @property
-    def connection_string(self):
-        """gets the connection string"""
-        if self._connectionString is None:
-            self.init()
-        return self._connectionString
-    #----------------------------------------------------------------------
-    @property
-    def class_value(self):
-        """gets the class value"""
-        if self._class is None:
-            self.init()
-        return self._class
-    #----------------------------------------------------------------------
-    @property
-    def status(self):
-        """gets the status value"""
-        if self._status is None:
-            self.init()
-        return self._status
+            self._init(connection)
     #----------------------------------------------------------------------
     def recover(self):
         """
@@ -512,13 +473,13 @@ class Jobs(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     @property
     def jobs(self):
         """gets the job ids"""
         if self._jobs is None:
-            self.init()
+            self._init()
         return self._jobs
     #----------------------------------------------------------------------
     def get_job(self, job_id):
@@ -642,7 +603,7 @@ class ServerProperties(BaseServer):
         else:
             self._url = url + "/properties"
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def update(self, properties):
         """
@@ -708,7 +669,7 @@ class ServerDirectory(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def edit(self,
              physica_path,
