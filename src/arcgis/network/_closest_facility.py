@@ -1006,7 +1006,7 @@ See http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Close
     if gis is None:
         gis = arcgis.env.active_gis
 
-    url = gis.properties.helperServices.asyncVRP.url[:-len('/FindClosestFacilities')]
+    url = gis.properties.helperServices.asyncClosestFacility.url[:-len('/FindClosestFacilities')]
 
     return _execute_gp_tool(gis, "FindClosestFacilities", kwargs, param_db, return_values, _use_async, url)
 
