@@ -179,14 +179,14 @@ def find_hot_spots(
 
        point_layer: Input Points (FeatureSet). Required parameter.
 
-       bin_size: Bin Size (float). Required parameter.
+       bin_size: Bin Size (float). Optional parameter.
 
-       bin_size_unit: Bin Size Unit (str). Required parameter.
+       bin_size_unit: Bin Size Unit (str). Optional parameter.
           Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-       neighborhood_distance: Neighborhood Distance (float). Required parameter.
+       neighborhood_distance: Neighborhood Distance (float). Optional parameter.
 
-       neighborhood_distance_unit: Neighborhood Distance Unit (str). Required parameter.
+       neighborhood_distance_unit: Neighborhood Distance Unit (str). Optional parameter.
           Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
        time_step_interval: Time Step Interval (int). Optional parameter.
@@ -199,7 +199,7 @@ def find_hot_spots(
 
        time_step_reference: Time Step Reference (_datetime). Optional parameter.
 
-       output_name: Output Features Name (str). Required parameter.
+       output_name: Output Features Name (str). Optional parameter.
 
        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 

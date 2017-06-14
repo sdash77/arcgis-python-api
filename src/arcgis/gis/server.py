@@ -471,7 +471,6 @@ class MachineManager(object):
     """
     _machines = None
     _pm = None
-    _hydrated = None
     #----------------------------------------------------------------------
     def __init__(self, server, **kwargs):
         """Constructor"""
@@ -502,8 +501,7 @@ class MachineManager(object):
         """
         gets a single instance of a machine
         """
-        return Machine(
-            self._machines.get(machine_name=name))
+        return Machine(self._machines.get(machine_name=name))
     #----------------------------------------------------------------------
     def register(self, name, admin_url):
         """
@@ -524,7 +522,6 @@ class MachineManager(object):
         """
         res = self._machines.register(name, admin_url)
         self._machines.init()
-        self._properties = PropertyMap(self._machines._json_dict)
         return res
     #----------------------------------------------------------------------
     def rename(self, name, new_name):
@@ -545,7 +542,6 @@ class MachineManager(object):
         """
         res = self._machines.rename(name, new_name)
         self._machines.init()
-        self._properties = PropertyMap(self._machines._json_dict)
         return res
 ########################################################################
 class Machine(object):
@@ -754,6 +750,13 @@ class LogManager(object):
         """Constructor"""
         self._sm = server
         self._logs = server.logs
+    def __init__(self, logs):
+        """Constructor
+            Inputs:
+               url - admin url
+               connection - SiteConnection class
+        """
+        self._logs = logs
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -841,13 +844,16 @@ class ReportManager(object):
     """
     _machines = None
     _pm = None
-    _hydrated = None
     _reports = None
     #----------------------------------------------------------------------
     def __init__(self, server):
         """Constructor"""
         self._sm = server
         self._reports = self._sm.usagereports
+        from .._server.admin._usagereports import UsageReports, UsageReport
+        isinstance(self._reports, UsageReports)
+        if hydrate:
+            self._reports.init()
     #----------------------------------------------------------------------
     @property
     def properties(self):
