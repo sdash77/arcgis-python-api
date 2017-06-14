@@ -7,19 +7,23 @@ from .._impl.common._mixins import PropertyMap
 from .._impl.connection import _ArcGISConnection
 from .._server._common import ServerConnection
 from ..gis import GIS
-from .._server._view import Catalog
-from .._server.admin._logs import Log
+from .._impl._server._view import Catalog
+from .._impl._server.admin._logs import Log
+from .._impl._server.admin._data import Datastore as AdminDataStore
 from .._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
-
+###########################################################################
 class ServerManager(object):
     _gis = None
-
+    #----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
+        self._pa = gis.admin
+        self._federation = self._pa.federation
         self._server_list = None
-
+    #----------------------------------------------------------------------
+    @property
     def list(self):
         """gets all servers in a GIS"""
         if self._server_list is not None:
@@ -33,21 +37,140 @@ class ServerManager(object):
         for server in servers:
             try:
                 admin_url = server['adminUrl']
-                self._server_list.append(Server(url=admin_url, gis=self))
+                self._server_list.append(Server(url=admin_url, gis=self._gis))
             except:
                 _log.warn("Could not access the server at " + admin_url)
 
         return self._server_list
     #----------------------------------------------------------------------
+    def get(self, role=None, function=None):
+        """
+        returns a server(s) by role or function.
 
-
-    def federate(self):
-        pass
+        Parameters:
+        :param role: Whether the server is a hosting server for the portal,
+        a federated server, or a server with restricted access to
+        publishing. The allowed values are FEDERATED_SERVER,
+        FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, or HOSTING_SERVER.
+        :param function: Server function associates a specific function
+        with the server. It takes in a comma separated list of values. The
+        allowed values are GeoAnalytics,RasterAnalytics, and ImageHosting.
+        """
+        servers = []
+        if role is None and function is None:
+            raise ValueError("A role or function must be provided")
+        for server in self._federation.servers['servers']:
+            if role.lower() == server['serverRole'].lower():
+                servers.append(Server(url=server['adminUrl'], gis=self._gis))
+            elif str(function).lower() == server['serverFunction'].lower():
+                servers.append(Server(url=server['adminUrl'], gis=self._gis))
+        return servers
     #----------------------------------------------------------------------
+    @property
+    def info(self):
+        """
+        returns federation information associated the WebGIS
+        """
+        return self._federation.servers['servers']
+    #----------------------------------------------------------------------
+    def federate(self,
+                 url,
+                 admin_url,
+                 username,
+                 password):
+        """
+        This operation enables ArcGIS Servers to be federated with Portal
+        for ArcGIS.
+        Parameters:
+         :url: The URL of the GIS server used by external users when
+          accessing the ArcGIS Server site. If the site includes the Web
+          Adaptor, the URL includes the Web Adaptor address, for example,
+          https://webadaptor.domain.com/arcgis. If you've added ArcGIS
+          Server to your organization's reverse proxy server, the URL is
+          the reverse proxy server address (for example,
+          https://reverseproxy.domain.com/myorg). Note that the federation
+          operation will perform a validation check to determine if the
+          provided URL is accessible from the server site. If the resulting
+          validation check fails, a warning will be generated in the Portal
+          for ArcGIS logs. However, federation will not fail if the URL is
+          not validated, as the URL may not be accessible from the server
+          site, such as is the case when the server site is behind a
+          firewall.
+         :admin_url: The URL used for accessing ArcGIS Server when
+          performing administrative operations on the internal network, for
+          example, https://gisserver.domain.com:6443/arcgis.
+         :username: The username of the primary site administrator account
+         :password: password of the username above.
+        Output:
+         server response with server ID
+        """
+        res = self._federation.federate(url,
+                                        admin_url,
+                                        username,
+                                        password)
+        self._server_list = None
+        return res
+    #----------------------------------------------------------------------
+    def unfederate(self, server_id):
+        """
+        This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
+        Parameters:
+         :server_id: unique ID of the server
+        """
+        res = self._federation(server_id)
+        self._server_list = None
+        return res
+    #----------------------------------------------------------------------
+    def update(self, server_id, role, function=None):
+        """
+        This operation allows you to set an ArcGIS Server federated with
+        Portal for ArcGIS as the hosting server or to enforce fine-grained
+        access control to a federated server. You can also remove hosting
+        server status from an ArcGIS Server. You can also remove hosting
+        server status from an ArcGIS Server. To set a hosting server, an
+        enterprise geodatabase must be registered as a managed database
+        with the ArcGIS Server.
+
+        Parameters:
+         :server_id: unique id of the server
+         :role: Whether the server is a hosting server for the portal, a
+          federated server, or a server with restricted access to
+          publishing. The allowed values are:
+           FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
+           or HOSTING_SERVER.
+         :function: Function associates a specific function with the
+         server. It takes in a comma separated list of values. The allowed
+         values are GeoAnalytics,RasterAnalytics, and ImageHosting. Values
+         can be comma separated but it is not recommend that a single
+         server have all the server functions
+        """
+        return self._federation.update(server_id, role, function)
+    #----------------------------------------------------------------------
+    def validate(self):
+        """
+        This operation returns information on the status of ArcGIS Servers
+        registered with Portal for ArcGIS.
+
+        Output: Boolean.  If false, there is an issue with 1 or more of the
+        Federated Servers.  True means all servers are functioning as
+        expected.
+        """
+        return self._federation.validate_all()['status'] == 'success'
+###########################################################################
 class Server(object):
     """
     An ArcGIS Enterprise server used for hosting services
+
+    Parameters:
+    :param url: site url of the server
+    :param tokenurl: optional URL for pointing to the server's token url
+    :param username: name of login user
+    :param password: password of login user
+    :param verify_cert: boolean value, False means any invalid certificates
+    will be ignored.  True means only valid certificates will be accepted.
+    :param gis: if a server is federated, a GIS object should be given
+    inorder to ensure that the Portal Security is used over server token.
     """
     _url = None
     _con =  None
@@ -82,7 +205,7 @@ class Server(object):
         referer = kwargs.pop('referer', None)
         proxy_host = kwargs.pop('proxy_host', None)
         proxy_port= kwargs.pop('proxy_port', None)
-        initialize = kwargs.pop('initialize', None)
+        initialize = kwargs.pop('initialize', True)
         self._admin_url = url
         self._server = Catalog(url,
                                tokenurl,
@@ -98,6 +221,7 @@ class Server(object):
                                gis,
                                initialize,
                                is_agol=is_agol)
+
         self._con = self._server._con
         if not is_agol:
             self._sm = self._server.site_manager
@@ -108,8 +232,6 @@ class Server(object):
 
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._admin_url)
-    # ----------------------------------------------------------------------
-
     #----------------------------------------------------------------------
     def _publish_sd(self,
                    sd_file,
@@ -120,8 +242,7 @@ class Server(object):
         if sd_file.lower().endswith('.sd') == False:
             return False
         if self._sm:
-            catalog = self.catalog
-            isinstance(catalog, Catalog)
+            catalog = self._server
             if 'System' in catalog.folders:
                 catalog.folder = 'System'
             else:
@@ -143,11 +264,21 @@ class Server(object):
         else:
             return False
 
-    # #----------------------------------------------------------------------
-    # @property
-    # def connection(self):
-    #     """gets _server the connection object"""
-    #     return self._server.connection
+    #----------------------------------------------------------------------
+    @property
+    def site(self):
+        """
+        A site is a collection of server resources. This collection
+        includes server machines that are installed with ArcGIS Server,
+        including GIS services, data and so on. The site resource also
+        lists the current version of the software.
+        When you install ArcGIS Server on a server machine for the first
+        time, you must create a new site. Subsequently, newer server
+        machines can join your site and increase its computing power. Once
+        a site is no longer required, you can delete the site, which will
+        cause all of the resources to be cleaned up.
+        """
+        return SiteManager(self._sm)
     #----------------------------------------------------------------------
     @property
     def users(self):
@@ -256,7 +387,6 @@ class Server(object):
         returns the current logged in username
         """
         if self._sm:
-            from arcgis._server import User
             res = self.users.search(self._sm.info._loggedInUser)
             if len(res) > 0:
                 return res[0]
@@ -296,12 +426,19 @@ class Server(object):
 class ServiceManager(object):
     """
     Helper class for managing services. This class is not created by users directly. An instance of this class,
-    called ‘services’, is available as a property of the Server object. Users call methods on this ‘services’ object to
+    called 'services', is available as a property of the Server object. Users call methods on this 'services' object to
     managing services.
     """
     def __init__(self, server):
         self._svcmgr = server._sm.services
         self._server = server
+
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._svcmgr._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._svcmgr._url)
 
     @property
     def folders(self):
@@ -398,7 +535,7 @@ class Service(object):
             self._service = service
             self._svcmgr = svcmgr
         else:
-            self._service = arcgis._server.admin._services.Service(url, server._con)
+            self._service = arcgis._impl._server.admin._services.Service(url, server._con)
 
         self._properties = PropertyMap(self._service._json_dict)
 
@@ -479,6 +616,12 @@ class MachineManager(object):
         self._machines = server.machines
         if hydrate:
             self._machines.properties
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._machines._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._machines._url)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -750,13 +893,12 @@ class LogManager(object):
         """Constructor"""
         self._sm = server
         self._logs = server.logs
-    def __init__(self, logs):
-        """Constructor
-            Inputs:
-               url - admin url
-               connection - SiteConnection class
-        """
-        self._logs = logs
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._logs._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._logs._url)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -850,10 +992,12 @@ class ReportManager(object):
         """Constructor"""
         self._sm = server
         self._reports = self._sm.usagereports
-        from .._server.admin._usagereports import UsageReports, UsageReport
-        isinstance(self._reports, UsageReports)
-        if hydrate:
-            self._reports.init()
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._reports._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._reports._url)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -1024,10 +1168,11 @@ class ReportManager(object):
                                                 from_value,
                                                 to_value,
                                                 aggregation_interval)
-        if isinstance(res, UsageReport):
+        try:
             self._reports.init()
             return Report(res)
-        return res
+        except:
+            return res
     #----------------------------------------------------------------------
     def quick_report(self,
                      since="LAST_WEEK",
@@ -1091,12 +1236,14 @@ class Report(object):
     A Single Usage Report returned by ArcGIS Server
     """
     _properties = None
+    _con = None
     #----------------------------------------------------------------------
     def __init__(self, report):
         """Constructor"""
-        from .._server.admin._usagereports import UsageReport
+        from .._impl._server.admin._usagereports import UsageReport
         if isinstance(report, UsageReport):
             self._report = report
+            self._con = self._report._con
             self._properties = report._json_dict
         else:
             raise ValueError("Invalid Input, a UsageReport must be given.")
@@ -1175,18 +1322,18 @@ class DataStoreManager(object):
         self._sm = server
         self._ds = self._sm.data
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._ds._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._ds._url)
+    #----------------------------------------------------------------------
     @property
     def properties(self):
         """
         returns the machine's properties
         """
         return self._ds.properties
-    #----------------------------------------------------------------------
-    def __str__(self):
-        return str(self._ds)
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return str(self._ds)
     #----------------------------------------------------------------------
     @property
     def list(self):
@@ -1569,30 +1716,6 @@ class Datastore(object):
         Returns the datasets in the data store (currently implemented for big data file shares.)
         """
         return self._store.datasets
-
-
-
-
-
-
-#########################################################################
-#class SecurityManager(object):
-    #""""""
-    #_properties = None
-    #_security =  None
-    ##----------------------------------------------------------------------
-    #def __init__(self):
-        #"""Constructor"""
-        #pass
-#########################################################################
-#class SystemManager(object):
-    #""""""
-    #_properties = None
-    #_system = None
-    ##----------------------------------------------------------------------
-    #def __init__(self):
-        #"""Constructor"""
-        #pass
 ########################################################################
 class UserManager(object):
     """
@@ -1626,10 +1749,10 @@ class UserManager(object):
         self._security = server.security
     #----------------------------------------------------------------------
     def __str__(self):
-        return str(self._security)
+        return '<%s at %s>' % (type(self).__name__, self._security._url)
     #----------------------------------------------------------------------
     def __repr__(self):
-        return str(self._security)
+        return '<%s at %s>' % (type(self).__name__, self._security._url)
     #----------------------------------------------------------------------
     def create(self, username, password, firstname,
                lastname, email=None, description=None):
@@ -1765,6 +1888,7 @@ class User(dict):
             email = self.email
         except:
             email = 'Not Provided'
+        import datetime
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                     <br/><b>Username</b>: """ + str(self.username) + """
@@ -1812,7 +1936,7 @@ class User(dict):
         Parameter:
          :role: role name to assign to current user
         """
-        isinstance(self._security, Security)
+
         return self._security.assign_roles(username=self.username,
                                            roles=role_name)
     #----------------------------------------------------------------------
@@ -1847,11 +1971,14 @@ class RoleManager(object):
     #----------------------------------------------------------------------
     def __init__(self, security):
         """Constructor"""
-        if isinstance(security, Security):
-            self._security = security
-        else:
-            raise ValueError("Invalid input, must be type _security.Security")
+        self._security = security
 
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._security._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._security._url)
     #----------------------------------------------------------------------
     def create(self, name, description):
         """Creates and returns a custom role with the specified parameters
@@ -1947,7 +2074,6 @@ class Role(dict):
         """
         deletes the current role
         """
-        isinstance(self._security, Security)
         res = self._security.delete_role(rolename=self.rolename)
         self = None
     #----------------------------------------------------------------------
@@ -1973,7 +2099,6 @@ class Role(dict):
             privilage = privilage.upper()
         else:
             raise ValueError("Invalid privilage.")
-        isinstance(self._security, Security)
         return self._security.assign_privilege(rolename=self.rolename,
                                                privilege=privilage)
 ########################################################################
@@ -1990,7 +2115,12 @@ class SystemManager(object):
         """Constructor"""
         self._sm = server
         self._system = server.system
-
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
     #----------------------------------------------------------------------
     @property
     def jobs(self):
@@ -2142,6 +2272,12 @@ class DirectoryManager(object):
     def __init__(self, system):
         self._system = system
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._system._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._system._url)
+    #----------------------------------------------------------------------
     @property
     def directories(self):
         """
@@ -2227,3 +2363,201 @@ class DirectoryManager(object):
         """
         return self._system.register(name, physicalPath, directoryType,
                                     maxFileAge, cleanupMode, description)
+########################################################################
+class SiteManager(object):
+    """
+    A site is a collection of server resources. This collection includes
+    server machines that are installed with ArcGIS Server, including GIS
+    services, data and so on. The site resource also lists the current
+    version of the software.
+    When you install ArcGIS Server on a server machine for the first time,
+    you must create a new site. Subsequently, newer server machines can
+    join your site and increase its computing power. Once a site is no
+    longer required, you can delete the site, which will cause all of
+    the resources to be cleaned up.
+
+    Parameters:
+     :server: arcgis.gis.server object
+    """
+    _sm = None
+    #----------------------------------------------------------------------
+    def __init__(self, server, initialize=False):
+        """Constructor"""
+        self._sm = server
+        if initialize:
+            self._sm._init()
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the site """
+        return self._sm.properties
+    #----------------------------------------------------------------------
+    def create(self,
+               username,
+               password,
+               config_store_connection,
+               directories,
+               cluster=None,
+               logs_settings=None,
+               run_async=False):
+        """
+        This is the first operation that you must invoke when you install
+        ArcGIS Server for the first time. Creating a new site involves:
+
+          -Allocating a store to save the site configuration
+          -Configuring the server machine and registering it with the site
+          -Creating a new cluster configuration that includes the server
+           machine
+          -Configuring server directories
+          -Deploying the services that are marked to auto-deploy
+
+        Because of the sheer number of tasks, it usually takes a little
+        while for this operation to complete. Once a site has been created,
+        you can publish GIS services and deploy them to your server
+        machines.
+
+        Inputs:
+           username - The name of the administrative account to be used by
+             the site. This can be changed at a later stage.
+           password - The credentials of the administrative account.
+           configStoreConnection - A JSON object representing the
+             connection to the configuration store. By default, the
+             configuration store will be maintained in the ArcGIS Server
+             installation directory.
+           directories - A JSON object representing a collection of server
+             directories to create. By default, the server directories will
+             be created locally.
+           cluster - An optional cluster configuration. By default, the
+             site will create a cluster called 'default' with the first
+             available port numbers starting from 4004.
+           logsSettings - Optional log settings.
+           runAsync - A flag to indicate if the operation needs to be run
+             asynchronously. Values: true | false
+        """
+        return self._sm.create(username,
+                               password,
+                               config_store_connection,
+                               directories,
+                               cluster,
+                               logs_settings,
+                               run_async)
+    #----------------------------------------------------------------------
+    def join(self, admin_url, username, password):
+        """
+        The Join Site operation is used to connect a server machine to an
+        existing site. This is considered a 'push' mechanism, in which a
+        server machine pushes its configuration to the site. For the
+        operation to be successful, you need to provide an account with
+        administrative privileges to the site.
+        When an attempt is made to join a site, the site validates the
+        administrative credentials, then returns connection information
+        about its configuration store back to the server machine. The
+        server machine then uses the connection information to work with
+        the configuration store.
+        If this is the first server machine in your site, use the Create
+        Site operation instead.
+
+        Inputs:
+           admin_url - The site URL of the currently live site. This is
+            typically the Administrator Directory URL of one of the server
+            machines of a site.
+           username - The name of an administrative account for the site.
+           password - The password of the administrative account.
+        """
+        return self._sm.join(admin_url, username, password)
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes the site configuration and releases all server resources.
+        This is an unrecoverable operation. This operation is well suited
+        for development or test servers that need to be cleaned up
+        regularly. It can also be performed prior to uninstall. Use caution
+        with this option because it deletes all services, settings, and
+        other configurations.
+        This operation performs the following tasks:
+          - Stops all server machines participating in the site. This in
+            turn stops all GIS services hosted on the server machines.
+          - All services and cluster configurations are deleted.
+          - All server machines are unregistered from the site.
+          - All server machines are unregistered from the site.
+          - The configuration store is deleted.
+        """
+        return self._sm.delete()
+    #----------------------------------------------------------------------
+    def export(self, location=None):
+        """
+        Exports the site configuration to a location you specify as input
+        to this operation.
+
+        Inputs:
+           location - A path to a folder accessible to the server where the
+            exported site configuration will be written. If a location is
+            not specified, the server writes the exported site
+            configuration file to directory owned by the server and returns
+            a virtual path (an HTTP URL) to that location from where it can
+            be downloaded.
+
+        """
+        return self._sm.export(location)
+    #----------------------------------------------------------------------
+    def import_site(self, location):
+        """
+        This operation imports a site configuration into the currently
+        running site. Importing a site means replacing all site
+        configurations (including GIS services, security configurations,
+        and so on) of the currently running site with those contained in
+        the site configuration file you supply as input. The input site
+        configuration file can be obtained through the exportSite
+        operation.
+        This operation will restore all information included in the backup,
+        as noted in exportSite. When it is complete, this operation returns
+        a report as the response. You should review this report and fix any
+        problems it lists to ensure your site is fully functioning again.
+        The importSite operation lets you restore your site from a backup
+        that you created using the exportSite operation.
+
+        Input:
+           location - A file path to an exported configuration or an ID
+            referencing the stored configuration on the server.
+        """
+        return self._sm.import_site(location=location)
+    #----------------------------------------------------------------------
+    def upgrade(self, run_async=False):
+        """
+        This is the first operation that must be invoked during an ArcGIS
+        Server upgrade. Once the new software version has been installed
+        and the setup has completed, this operation will be available. A
+        successful run of this operation will complete the upgrade of
+        ArcGIS Server.
+
+        **caution**
+        If errors are returned with the upgrade operation, you must address
+        the errors before you may continue. For example, if you encounter
+        an error about an invalid license, you will need to re-authorize
+        the software using a valid license and you may then retry this
+        operation.
+
+        **note**
+        This operation is available only when a server machine is currently
+        being upgraded. It will not be available after a successful upgrade
+        of a server machine.
+
+        Paramters:
+         :run_async: A flag to indicate if the operation needs to be run
+          asynchronously. The default value is false.
+        """
+        return self._sm.upgrade(run_async)
+    #----------------------------------------------------------------------
+    @property
+    def public_key(self):
+        """gets the public key"""
+        return self._sm.public_key
+
+
+

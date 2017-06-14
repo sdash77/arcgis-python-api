@@ -174,62 +174,64 @@ class GIS(object):
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
             from .._impl.portaladmin.portaladmin import PortalAdminManager
+            from .server import ServerManager
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                             gis=self)
-    @property
-    def servers(self):
-        """
-        The list of server objects for servers federated with the GIS.
-        """
-        if self._con._auth is None or \
-           self._con._auth.lower() == "anon":
-            return None
-        from arcgis.gis.server import Server
-        if self._server_list:
-            return self._server_list
+            self.servers = ServerManager(gis=self)
+    #@property
+    #def _servers(self):
+        #"""
+        #The list of server objects for servers federated with the GIS.
+        #"""
+        #if self._con._auth is None or \
+           #self._con._auth.lower() == "anon":
+            #return None
+        #from arcgis.gis.server import Server
+        #if self._server_list:
+            #return self._server_list
 
-        self._server_list = []
-        try:
-            is_portal = self.properties.isPortal
-            if self.properties.isPortal == False:
-                res = self._portal.con.post("portals/self/urls", {"f": "json"})
-                if 'urls' in res:
-                    urls = res['urls']
-                    servers = []
-                    for stype in ['features', 'tiles']:
-                        if stype in urls:
-                            for scheme in ['http', 'https']:
-                                if scheme in urls[stype]:
-                                    for url in urls[stype][scheme]:
-                                        surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/services".format(
-                                            scheme=scheme,
-                                            portalid=self.properties.id,
-                                            url=url)
-                                        admin_surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/admin".format(
-                                            scheme=scheme,
-                                            portalid=self.properties.id,
-                                            url=url)
-                                        servers.append(
-                                            #surl
-                                            Server(url=surl,
-                                                   gis=self,
-                                                   is_agol=True)
-                                        )
-                    self._server_list = servers
-            else:
-                res = self._portal.con.post("portals/self/servers", {"f": "json"})
-                servers = res['servers']
-                admin_url = None
-                for server in servers:
-                    admin_url = server['adminUrl']
-                    try:
-                        self._server_list.append(Server(url=admin_url, gis=self))
-                    except:
-                        _log.error("Could not access the servers at: " + admin_url)
+        #self._server_list = []
+        #try:
+            #is_portal = self.properties.isPortal
+            #if self.properties.isPortal == False:
+                #res = self._portal.con.post("portals/self/urls", {"f": "json"})
+                #if 'urls' in res:
+                    #urls = res['urls']
+                    #servers = []
+                    #for stype in ['features', 'tiles']:
+                        #if stype in urls:
+                            #for scheme in ['http', 'https']:
+                                #if scheme in urls[stype]:
+                                    #for url in urls[stype][scheme]:
+                                        #surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/services".format(
+                                            #scheme=scheme,
+                                            #portalid=self.properties.id,
+                                            #url=url)
+                                        #admin_surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/admin".format(
+                                            #scheme=scheme,
+                                            #portalid=self.properties.id,
+                                            #url=url)
+                                        #servers.append(
+                                            ##surl
+                                            #Server(url=surl,
+                                                   #gis=self,
+                                                   #is_agol=True)
+                                        #)
+                    #self._server_list = servers
+            #else:
+                #res = self._portal.con.post("portals/self/servers", {"f": "json"})
+                #servers = res['servers']
+                #admin_url = None
+                #for server in servers:
+                    #admin_url = server['adminUrl']
+                    #try:
+                        #self._server_list.append(Server(url=admin_url, gis=self))
+                    #except:
+                        #_log.error("Could not access the servers at: " + admin_url)
 
-        except:
-            _log.error("Could not access the servers associated with this site.")
-        return self._server_list
+        #except:
+            #_log.error("Could not access the servers associated with this site.")
+        #return self._server_list
 
     @_lazy_property
     def users(self):
