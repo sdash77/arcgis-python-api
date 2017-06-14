@@ -10,6 +10,7 @@ from ..gis import GIS
 from .._impl._server._view import Catalog
 from .._impl._server.admin._logs import Log
 from .._impl._server.admin._data import Datastore as AdminDataStore
+from .._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
@@ -241,8 +242,7 @@ class Server(object):
         if sd_file.lower().endswith('.sd') == False:
             return False
         if self._sm:
-            catalog = self.catalog
-            isinstance(catalog, Catalog)
+            catalog = self._server
             if 'System' in catalog.folders:
                 catalog.folder = 'System'
             else:
@@ -387,7 +387,6 @@ class Server(object):
         returns the current logged in username
         """
         if self._sm:
-            from arcgis._impl._server import User
             res = self.users.search(self._sm.info._loggedInUser)
             if len(res) > 0:
                 return res[0]
@@ -1169,10 +1168,11 @@ class ReportManager(object):
                                                 from_value,
                                                 to_value,
                                                 aggregation_interval)
-        if isinstance(res, UsageReport):
+        try:
             self._reports.init()
             return Report(res)
-        return res
+        except:
+            return res
     #----------------------------------------------------------------------
     def quick_report(self,
                      since="LAST_WEEK",
@@ -1236,12 +1236,14 @@ class Report(object):
     A Single Usage Report returned by ArcGIS Server
     """
     _properties = None
+    _con = None
     #----------------------------------------------------------------------
     def __init__(self, report):
         """Constructor"""
         from .._impl._server.admin._usagereports import UsageReport
         if isinstance(report, UsageReport):
             self._report = report
+            self._con = self._report._con
             self._properties = report._json_dict
         else:
             raise ValueError("Invalid Input, a UsageReport must be given.")
@@ -1332,12 +1334,6 @@ class DataStoreManager(object):
         returns the machine's properties
         """
         return self._ds.properties
-    #----------------------------------------------------------------------
-    def __str__(self):
-        return str(self._ds)
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return str(self._ds)
     #----------------------------------------------------------------------
     @property
     def list(self):
@@ -1892,6 +1888,7 @@ class User(dict):
             email = self.email
         except:
             email = 'Not Provided'
+        import datetime
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_right" style="float: none; width: auto; overflow: hidden;">
                     <br/><b>Username</b>: """ + str(self.username) + """
@@ -1939,7 +1936,7 @@ class User(dict):
         Parameter:
          :role: role name to assign to current user
         """
-        isinstance(self._security, Security)
+
         return self._security.assign_roles(username=self.username,
                                            roles=role_name)
     #----------------------------------------------------------------------
@@ -1974,10 +1971,8 @@ class RoleManager(object):
     #----------------------------------------------------------------------
     def __init__(self, security):
         """Constructor"""
-        if isinstance(security, Security):
-            self._security = security
-        else:
-            raise ValueError("Invalid input, must be type _security.Security")
+        self._security = security
+
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._security._url)
@@ -2079,7 +2074,6 @@ class Role(dict):
         """
         deletes the current role
         """
-        isinstance(self._security, Security)
         res = self._security.delete_role(rolename=self.rolename)
         self = None
     #----------------------------------------------------------------------
@@ -2105,7 +2099,6 @@ class Role(dict):
             privilage = privilage.upper()
         else:
             raise ValueError("Invalid privilage.")
-        isinstance(self._security, Security)
         return self._security.assign_privilege(rolename=self.rolename,
                                                privilege=privilage)
 ########################################################################
