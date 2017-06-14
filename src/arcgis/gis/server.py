@@ -7,9 +7,9 @@ from .._impl.common._mixins import PropertyMap
 from .._impl.connection import _ArcGISConnection
 from .._server._common import ServerConnection
 from ..gis import GIS
-from .._server._view import Catalog
-from .._server.admin._logs import Log
-from .._server.admin._data import Datastore as AdminDataStore
+from .._impl._server._view import Catalog
+from .._impl._server.admin._logs import Log
+from .._impl._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
 
 class ServerManager(object):
@@ -256,7 +256,7 @@ class Server(object):
         returns the current logged in username
         """
         if self._sm:
-            from arcgis._server import User
+            from arcgis._impl._server import User
             res = self.users.search(self._sm.info._loggedInUser)
             if len(res) > 0:
                 return res[0]
@@ -398,7 +398,7 @@ class Service(object):
             self._service = service
             self._svcmgr = svcmgr
         else:
-            self._service = arcgis._server.admin._services.Service(url, server._con)
+            self._service = arcgis._impl._server.admin._services.Service(url, server._con)
 
         self._properties = PropertyMap(self._service._json_dict)
 
@@ -850,7 +850,7 @@ class ReportManager(object):
         """Constructor"""
         self._sm = server
         self._reports = self._sm.usagereports
-        from .._server.admin._usagereports import UsageReports, UsageReport
+        from .._impl._server.admin._usagereports import UsageReports, UsageReport
         isinstance(self._reports, UsageReports)
         if hydrate:
             self._reports.init()
@@ -1094,7 +1094,7 @@ class Report(object):
     #----------------------------------------------------------------------
     def __init__(self, report):
         """Constructor"""
-        from .._server.admin._usagereports import UsageReport
+        from .._impl._server.admin._usagereports import UsageReport
         if isinstance(report, UsageReport):
             self._report = report
             self._properties = report._json_dict
