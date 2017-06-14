@@ -56,21 +56,14 @@ class DataStoreManager(BaseServer):
             self._con = connection
         self._url = url
         if initialize:
-            self.init()
-    #----------------------------------------------------------------------
-    def refresh(self):
-        """refreshes the DataStoreManager Object"""
-        self._datastores = None
-    #----------------------------------------------------------------------
-    def init(self, connection=None):
-        """override initialize function"""
-        self._json_dict = {}
+            self._init()
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s for %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     def __repr__(self):
         return '<%s for %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
     @property
     def datastores(self):
         """returns a list of datastore objects"""
@@ -289,7 +282,6 @@ class DataStoreManager(BaseServer):
         }
         return self._con.post(path=url,
                               postdata=params)
-
     #----------------------------------------------------------------------
     def make_datastore_machine_primary(self,
                                        item_name,
@@ -530,10 +522,10 @@ class Datastore(BaseServer):
             self._con = datastore._con
         self._datastore = datastore
         self._url = "%s%s" % (datastore._url, path)
-        self.init()
+        self._init()
     #----------------------------------------------------------------------
     def __str__(self):
-        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        state = ["   %s=%r" % (attribute, value) for (attribute, value) in self._json_dict.items()]
         return '\n'.join(state)
     #----------------------------------------------------------------------
     def __repr__(self):

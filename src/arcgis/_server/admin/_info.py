@@ -10,15 +10,6 @@ class Info(BaseServer):
     _con = None
     _json_dict = None
     _url = None
-    _securityHandler = None
-    _timezone = None
-    _loggedInUser = None
-    _loggedInUserPrivilege = None
-    _currentBuild = None
-    _currentVersion = None
-    _fullVersion = None
-    _proxy_port = None
-    _proxy_url = None
     _json = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
@@ -34,7 +25,7 @@ class Info(BaseServer):
         self._con = connection
         self._url = url
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def available_time_zones(self):
         """

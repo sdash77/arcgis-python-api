@@ -30,10 +30,6 @@ class SiteManager(BaseServer):
     _con = None
     _json_dict = None
     _json = None
-    _acceptLanguage = None
-    _currentVersion = None
-    _resources = None
-    _fullVersion = None
     #----------------------------------------------------------------------
     def __init__(self, connection, url,
                  initialize=False):
@@ -45,35 +41,7 @@ class SiteManager(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection=connection)
-    #----------------------------------------------------------------------
-    @property
-    def accept_language(self):
-        """returns the accepted lanaguage"""
-        if self._acceptLanguage is None:
-            self.init()
-        return self._acceptLanguage
-    #----------------------------------------------------------------------
-    @property
-    def current_version(self):
-        """returns the current version"""
-        if self._currentVersion is None:
-            self.init()
-        return self._currentVersion
-    #----------------------------------------------------------------------
-    @property
-    def resources(self):
-        """returns the resources on the server"""
-        if self._resources is None:
-            self.init()
-        return self._resources
-    #----------------------------------------------------------------------
-    @property
-    def full_version(self):
-        """returns the full version of the arcgis server software"""
-        if self._fullVersion is None:
-            self.init()
-        return self._fullVersion
+            self._init(connection=connection)
     #----------------------------------------------------------------------
     def create(self,
                username,
@@ -282,10 +250,10 @@ class SiteManager(BaseServer):
     @property
     def machines(self):
         """gets a reference to the machines object"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           'machines' in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'machines' in self.resources:
             url = self._url + "/machines"
             return _machines.Machines(url,
                                       connection=self._con,
@@ -296,10 +264,10 @@ class SiteManager(BaseServer):
     @property
     def data(self):
         """returns the reference to the data functions as a class"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           "data" in self._resources:
+        if self.properties is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "data" in self.resources:
             url = self._url + "/data"
             return _data.DataStoreManager(url=url,
                                           connection=self._con)
@@ -319,10 +287,10 @@ class SiteManager(BaseServer):
     @property
     def clusters(self):
         """returns the clusters functions if supported in resources"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           "clusters" in self._resources:
+        if self.properties is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "clusters" in self.resources:
             url = self._url + "/clusters"
             return _clusters.Cluster(url=url,
                                      connection=self._con,
@@ -336,10 +304,10 @@ class SiteManager(BaseServer):
         Gets the services object which will provide the ArcGIS Server's
         admin information about services and folders.
         """
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           'services' in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'services' in self.resources:
             url = self._url + "/services"
             return _services.ServiceManager(url=url,
                                             connection=self._con,
@@ -353,10 +321,10 @@ class SiteManager(BaseServer):
         Gets the services object which will provide the ArcGIS Server's
         admin information about the usagereports.
         """
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           'usagereports' in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'usagereports' in self.resources:
             url = self._url + "/usagereports"
             return _usagereports.UsageReports(url=url,
                                               connection=self._con,
@@ -375,10 +343,10 @@ class SiteManager(BaseServer):
     @property
     def logs(self):
         """returns an object to work with the site logs"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           'logs' in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'logs' in self.resources:
             url = self._url + "/logs"
             return _logs.Log(url=url,
                              connection=self._con,
@@ -389,10 +357,10 @@ class SiteManager(BaseServer):
     @property
     def security(self):
         """returns an object to work with the site security"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           "security" in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "security" in self.resources:
             url = self._url + "/security"
             return _security.Security(url=url,
                                       connection=self._con,
@@ -403,10 +371,10 @@ class SiteManager(BaseServer):
     @property
     def system(self):
         """returns an object to work with the site system"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           "system" in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "system" in self.resources:
             url = self._url + "/system"
             return _system.System(url=url,
                                   connection=self._con,
@@ -417,10 +385,10 @@ class SiteManager(BaseServer):
     @property
     def uploads(self):
         """returns an object to work with the site uploads"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           "uploads" in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "uploads" in self.resources:
             url = self._url + "/uploads"
             return _uploads.Uploads(url=url,
                                     connection=self._con,
@@ -431,10 +399,10 @@ class SiteManager(BaseServer):
     @property
     def mode(self):
         """returns the class that works with Mode"""
-        if self._resources is None:
-            self.init()
-        if isinstance(self._resources, list) and \
-           'mode' in self._resources:
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'mode' in self.resources:
             url = self._url + "/mode"
             return _mode.Mode(url=url,
                               connection=self._con,

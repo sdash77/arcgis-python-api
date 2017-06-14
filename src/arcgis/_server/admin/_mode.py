@@ -41,7 +41,7 @@ class Mode(BaseServer):
             self._url = url + "/mode"
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def update(self,
                siteMode,

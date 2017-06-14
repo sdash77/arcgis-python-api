@@ -401,15 +401,8 @@ class SystemManager(object):
     #----------------------------------------------------------------------
     def __init__(self, server):
         """Constructor"""
-        from .admin.administration import SiteManager
-        from .admin._system import System
-        if isinstance(server, SiteManager):
-            self._sm = server
-
-            self._system = server.system
-        else:
-            raise ValueError("SystemManager must take a SiteManager object")
-
+        self._sm = server
+        self._system = server.system
     #----------------------------------------------------------------------
     @property
     def jobs(self):

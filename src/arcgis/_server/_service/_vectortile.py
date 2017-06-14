@@ -28,7 +28,7 @@ class VectorTile(BaseServer):
         self._url = url
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range, out_folder=None):
         """This resource returns glyphs in PBF format. The template url for

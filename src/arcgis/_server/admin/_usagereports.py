@@ -34,23 +34,23 @@ class UsageReports(BaseServer):
             self._url = url + "/usagereports"
         self._con = connection
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
     @property
     def metrics(self):
         """gets the metrics values"""
         if self._metrics is None:
-            self.init()
+            self._init()
         return self._metrics
     #----------------------------------------------------------------------
     @property
     def reports(self):
         """returns a list of reports on the server"""
-        if self._metrics is None:
-            self.init()
+        if self.properties is None:
+            self._init()
         self._reports = []
-        if isinstance(self._metrics, list):
-            for r in self._metrics:
+        if isinstance(self.properties['metrics'], list):
+            for r in self.properties['metrics']:
                 url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
                 self._reports.append(UsageReport(url=url,
                                                  connection=self._con))
@@ -215,22 +215,6 @@ class UsageReports(BaseServer):
            since="LAST_DAY"
         )
         """
-        """
-        {
-  "reportname": "Max response times for the last 7 days",
-  "since": "LAST_WEEK",
-  "queries": [{
-    "resourceURIs": ["services/"],
-    "metrics": ["RequestMaxResponseTime"]
-  }],
-  "metadata": {
-    "temp": false,
-    "title": "Max response times for the last 7 days",
-    "managerReport": true,
-    "styles": {"services/": {"color": "#382DF5"}}
-  }
-}
-        """
         url = self._url + "/add"
         temp = False
         params = {
@@ -260,7 +244,7 @@ class UsageReports(BaseServer):
         res = self._con.post(path=url,
                              postdata=p)
         #  Refresh the metrics object
-        self.init()
+        self._init()
         for report in self.reports:
             if report.reportname.lower() == reportname.lower():
                 return report
@@ -367,7 +351,7 @@ class UsageReport(BaseServer):
         self._con = connection
         self._url = url
         if initialize:
-            self.init()
+            self._init()
     #----------------------------------------------------------------------
     def edit(self):
         """

@@ -5,12 +5,14 @@ from __future__ import absolute_import
 import json
 from collections import OrderedDict
 from ._connection import ServerConnection
+from ..._impl.common._mixins import PropertyMap
 ###########################################################################
-class BaseServer(OrderedDict):
+class BaseServer(object):
     _con = None
     _url = None
     _json_dict = None
     _json = None
+    _properties = None
     def __init__(self, url, connection=None, initialize=True, **kwargs):
         """class initializer"""
         super(BaseServer, self).__init__()
@@ -20,40 +22,61 @@ class BaseServer(OrderedDict):
         else:
             raise ValueError("connection must be of type SiteConnection")
         if initialize:
-            self.init(connection)
+            self._init(connection)
     #----------------------------------------------------------------------
-    def init(self, connection=None):
+    def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        attributes = [attr for attr in dir(self)
-                      if not attr.startswith('__') and \
-                      not attr.startswith('_')]
         params = {"f":"json"}
-        result = connection.get(path=self._url,
-                                params=params)
-        self._json_dict = result
-        for k,v in result.items():
-            if k in attributes:
-                setattr(self, "_"+ k, v)
-                self[k] = v
+        try:
+            result = connection.get(path=self._url,
+                                    params=params)
+            if isinstance(result, dict):
+                self._json_dict = result
+                self._properties = PropertyMap(result)
             else:
-                self[k] = v
-        self.__dict__.update(result)
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
     #----------------------------------------------------------------------
     @property
-    def connection(self):
-        """gets/sets the connection object"""
-        return self._con
+    def properties(self):
+        """
+        returns the object properties
+        """
+        if self._properties is None:
+            self._init()
+        return self._properties
     #----------------------------------------------------------------------
-    @connection.setter
-    def connection(self, value):
-        """gets/sets the connection object"""
-        if isinstance(value, ServerConnection):
-            self._con = value
-            self.refresh()
-        else:
-            raise ValueError("connection must be of type SiteConnection")
+    def __getattr__(self, name):
+        """adds dot notation to any class"""
+        if self._properties is None:
+            self._init()
+        try:
+            return self._properties.__getitem__(name)
+        except:
+            for k,v in self._json_dict.items():
+                if k.lower() == name.lower():
+                    return v
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
+                                                                        name))
+    #----------------------------------------------------------------------
+    def __getitem__(self, key):
+        """helps make object function like a dictionary object"""
+        try:
+            return self._properties.__getitem__(key)
+        except KeyError:
+            for k,v in self._json_dict.items():
+                if k.lower() == key.lower():
+                    return v
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
+                                                                        key))
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
+                                                                        key))
     #----------------------------------------------------------------------
     @property
     def url(self):
@@ -68,7 +91,7 @@ class BaseServer(OrderedDict):
     #----------------------------------------------------------------------
     def __str__(self):
         if self._json_dict is None:
-            self.init()
+            self._init()
         val = self._json_dict
         if val is None:
             return "{}"
@@ -84,6 +107,6 @@ class BaseServer(OrderedDict):
         for k,v in self._json_dict.items():
             yield k,v
     #----------------------------------------------------------------------
-    def refresh(self):
+    def _refresh(self):
         """reloads all the properties of a given service"""
-        self.init()
+        self._init()
