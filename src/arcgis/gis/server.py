@@ -1,8 +1,11 @@
+"""
+The Server API is a collection of administrative classes designed for
+managing site's ArcGIS Server instances.  The Server and ServerManager are
+the entry point into ensuring a WebGIS stays health and services stay up.
+"""
 import ssl
 import logging
 import arcgis
-
-
 from .._impl.common._mixins import PropertyMap
 from .._impl.connection import _ArcGISConnection
 from .._server._common import ServerConnection
@@ -14,6 +17,13 @@ from .._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
+    """
+    ServerManager is a set of tools to work with your WebGIS that allows
+    administrators to federate, unfederate and manage ArcGIS Servers.
+
+    Parameters:
+     :param gis: on-premise GIS object
+    """
     _gis = None
     #----------------------------------------------------------------------
     def __init__(self, gis):
@@ -423,6 +433,7 @@ class Server(object):
         if self._sm:
             return ServiceManager(self)
 
+###########################################################################
 class ServiceManager(object):
     """
     Helper class for managing services. This class is not created by users directly. An instance of this class,
@@ -522,9 +533,17 @@ class ServiceManager(object):
                 GeoDataServer | GPServer | GlobeServer | SearchServer
         """
         return self._svcmgr.exists(folder_name, name, service_type)
-
+########################################################################
 class Service(object):
-    """A GIS service"""
+    """
+    Represents a GIS administrative service
+
+    Parameter:
+    :param url: admin url of the service
+    :param server: server object
+    :param service: service object
+    :param svcmgr: service manager object
+    """
     _service = None
     _svcmgr = None
 
@@ -605,6 +624,20 @@ class Service(object):
 ########################################################################
 class MachineManager(object):
     """
+    This resource represents a collection of all the server machines that
+    have been registered with the site. It other words, it represents the
+    total computing power of your site. A site will continue to run as long
+    as there is one server machine online.
+    For a server machine to start hosting GIS services, it must be grouped
+    (or clustered). When you create a new site, a cluster called ‘default’
+    is created for you.
+    The list of server machines in your site can be dynamic. You can
+    register additional server machines when you need to increase the
+    computing power of your site or unregister them if you no longer need
+    them.
+
+    Parameters:
+    :param server: server administration object
     """
     _machines = None
     _pm = None
@@ -707,6 +740,9 @@ class Machine(object):
        be registered with the site. A machine can participate in only one
        site at a time. To remove a machine permanently from the site, you
        can use the unregister operation.
+
+       Parameter:
+       :param machine: Machine object
     """
     _properties = None
     #----------------------------------------------------------------------
@@ -983,6 +1019,9 @@ class LogManager(object):
 class ReportManager(object):
     """
     Manages and modifies the usage reports for ArcGIS Server
+
+    Parameter:
+    :param server: Server object
     """
     _machines = None
     _pm = None
@@ -1234,6 +1273,9 @@ class ReportManager(object):
 class Report(object):
     """
     A Single Usage Report returned by ArcGIS Server
+    (This class should not be created by a user)
+    Parameter:
+    :param report: internal Report object
     """
     _properties = None
     _con = None
@@ -1312,7 +1354,31 @@ class Report(object):
         return self._report.query(query_filter=query_filter)
 ########################################################################
 class DataStoreManager(object):
-    """"""
+    """
+    This resource provides information about the data holdings of the
+    server. Data items are used by ArcGIS for Desktop and other clients to
+    validate data paths referenced by GIS services.
+
+    You can register new data items with the server by using the Register
+    Data Item operation. Use the Find Data Items operation to search
+    through the hierarchy of data items.
+
+    A relational data store type represents a database platform that has
+    been registered for use on a portal’s hosting server by the ArcGIS
+    Server administrator. Each relational data store type describes the
+    properties ArcGIS Server requires in order to connect to an instance of
+    a database for a particular platform. At least one registered
+    relational data store type is required before client applications such
+    as Insights for ArcGIS can create Relational Database Connection portal
+    items.
+
+    The Compute Ref Count operation counts and lists all references to a
+    specific data item. This operation helps you determine if a particular
+    data item can be safely deleted or refreshed.
+
+    Parameters:
+    :param server: Server object
+    """
     _properties = None
     _ds = None
     _server = None
@@ -1613,6 +1679,10 @@ class DataStoreManager(object):
 ########################################################################
 class Datastore(object):
     """
+    Represents a Single Datastore in DataStoreManager
+
+    Parameter:
+    :param datastore: reprsents a single instance of datastore
     """
     _store = None
     #----------------------------------------------------------------------
