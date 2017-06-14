@@ -5,7 +5,8 @@ from __future__ import absolute_import
 import json
 from collections import OrderedDict
 from ._connection import ServerConnection
-from ..._impl.common._mixins import PropertyMap
+#from arcgis._impl.common._mixins import  PropertyMap
+from ...common._mixins import PropertyMap#..._impl.common._mixins import PropertyMap
 ###########################################################################
 class BaseServer(object):
     _con = None

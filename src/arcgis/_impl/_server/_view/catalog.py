@@ -9,7 +9,7 @@ import json
 from .._common import BaseServer
 from .._service._layerfactory import Service
 from .._common import ServerConnection
-from ..._impl.common._mixins import PropertyMap
+from ...common._mixins import PropertyMap
 ########################################################################
 class Catalog(BaseServer):
     """This object represents an ArcGIS Server instance"""
@@ -125,7 +125,7 @@ class Catalog(BaseServer):
         self._json = json.dumps(json_dict)
         try:
             if isinstance(json_dict, dict):
-                self._json_dict = result
+                self._json_dict = json_dict
                 self._properties = PropertyMap(json_dict)
             else:
                 self._json_dict = {}
@@ -137,7 +137,7 @@ class Catalog(BaseServer):
             if k == 'folders':
                 v.insert(0, 'root')
                 setattr(self, "_"+ k, v)
-        self.__dict__.update(missing)
+        #self.__dict__.update(missing)
     #----------------------------------------------------------------------
     def find(self, service_name, folder=None):
         """
@@ -218,14 +218,14 @@ class Catalog(BaseServer):
         """gets the services in the current folder"""
         from six.moves.urllib_parse import quote
         services = []
-        if self._services is None:
-            self._init()
-        for s in self._services:
+        for s in self.properties['services']:
             url = "{base}/{name}/{stype}".format(base=self._url,
                                                  name=quote(s['name']),
                                                  stype=s['type'])
-
-            services.append(Service(url=url, server=self))
+            try:
+                services.append(Service(url=url, server=self))
+            except:
+                pass # handles case were service throws an error!
         return services
     #----------------------------------------------------------------------
     @property

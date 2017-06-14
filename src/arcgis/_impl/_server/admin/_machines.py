@@ -15,7 +15,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import json
 from .._common import BaseServer
-from ..._impl.common._mixins import PropertyMap
+from ...common._mixins import PropertyMap
 ########################################################################
 class Machines(BaseServer):
     """
