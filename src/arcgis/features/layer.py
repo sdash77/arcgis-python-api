@@ -45,6 +45,7 @@ class FeatureLayer(Layer):
         self._storage = container
         self.attachments = AttachmentManager(self)
 
+
     @classmethod
     def fromitem(cls, item, layer_id=0):
         """
@@ -845,6 +846,10 @@ class FeatureLayerCollection(_GISResource):
 
         self._populate_layers()
         self._admin = None
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
 
     def _populate_layers(self):
         """

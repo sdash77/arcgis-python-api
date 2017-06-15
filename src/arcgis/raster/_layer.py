@@ -17,6 +17,10 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
         # self._extent = self.properties.initialExtent
 
     @property

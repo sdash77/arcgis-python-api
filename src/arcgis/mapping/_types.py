@@ -290,6 +290,10 @@ class MapImageLayer(Layer):
 
         self._populate_layers()
         self._admin = None
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
 
     @classmethod
     def fromitem(cls, item):
@@ -305,13 +309,11 @@ class MapImageLayer(Layer):
             if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
                 lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
             else:
-                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis,
-                                               arcgis.features.FeatureLayerCollection(self.url, self._gis))
+                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
             layers.append(lyr)
 
         for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis,
-                                        arcgis.features.FeatureLayerCollection(self.url, self._gis))
+            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
             tables.append(lyr)
 
         # fsurl = self.url + '/layers'

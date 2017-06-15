@@ -734,7 +734,10 @@ class Toolbox(_AsyncResource):
         Constructs a Geoprocessing toolbox
         """
         super(Toolbox, self).__init__(url, gis)
-
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
 
         self._taskurls = {}
         self._param_names = {} # mapping from fn to name-map (camel_case (PEP8ified) parameter name to GP_Param_Name)

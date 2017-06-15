@@ -26,6 +26,10 @@ class StreamLayer(Layer):
         self._on_features = None
         self._on_disconnect = None
         self._on_error = None
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
 
     @property
     def out_sr(self):
