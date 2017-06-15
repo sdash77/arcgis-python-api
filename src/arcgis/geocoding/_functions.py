@@ -32,6 +32,10 @@ class Geocoder(_GISResource):
         """
         super(Geocoder, self).__init__(location, gis)
         try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
+        try:
             self._address_field = self.properties.singleLineAddressField.name
         except:
             print("Geocoder does not support single line address input")

@@ -5404,6 +5404,8 @@ class _GISResource(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None):
+        from .._impl._server._common import ServerConnection
+        from .._impl.connection import _ArcGISConnection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -5412,9 +5414,15 @@ class _GISResource(object):
             gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
+        #elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            #self._gis = GIS(set_active=False)
+            #self._con = gis
         else:
             self._gis = gis
-            self._con = gis._con
+            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
+                self._con = gis
+            else:
+                self._con = gis._con
 
     @classmethod
     def fromitem(cls, item):

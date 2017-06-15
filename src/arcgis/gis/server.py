@@ -8,12 +8,12 @@ import logging
 import arcgis
 from .._impl.common._mixins import PropertyMap
 from .._impl.connection import _ArcGISConnection
-from .._server._common import ServerConnection
+from .._impl._server._common import ServerConnection
 from ..gis import GIS
 from .._impl._server._view import Catalog
 from .._impl._server.admin._logs import Log
 from .._impl._server.admin._data import Datastore as AdminDataStore
-from .._server.admin._data import Datastore as AdminDataStore
+from .._impl._server.admin._data import Datastore as AdminDataStore
 _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
@@ -548,11 +548,16 @@ class Service(object):
     _svcmgr = None
 
     def __init__(self, url, server, **kwargs):
+        """initializer"""
+        from .._impl.connection import _ArcGISConnection
+        from .._impl._server._common import ServerConnection
         service = kwargs.pop('service', None)
         svcmgr = kwargs.pop('svcmgr', None)
         if service is not None:
             self._service = service
             self._svcmgr = svcmgr
+        elif isinstance(server, (_ArcGISConnection, ServerConnection)):
+            self._service = arcgis._impl._server.admin._services.Service(url, server)
         else:
             self._service = arcgis._impl._server.admin._services.Service(url, server._con)
 
@@ -629,7 +634,7 @@ class MachineManager(object):
     total computing power of your site. A site will continue to run as long
     as there is one server machine online.
     For a server machine to start hosting GIS services, it must be grouped
-    (or clustered). When you create a new site, a cluster called ‘default’
+    (or clustered). When you create a new site, a cluster called 'default'
     is created for you.
     The list of server machines in your site can be dynamic. You can
     register additional server machines when you need to increase the
@@ -1364,7 +1369,7 @@ class DataStoreManager(object):
     through the hierarchy of data items.
 
     A relational data store type represents a database platform that has
-    been registered for use on a portal’s hosting server by the ArcGIS
+    been registered for use on a portal's hosting server by the ArcGIS
     Server administrator. Each relational data store type describes the
     properties ArcGIS Server requires in order to connect to an instance of
     a database for a particular platform. At least one registered

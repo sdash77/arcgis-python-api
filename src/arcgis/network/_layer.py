@@ -808,6 +808,10 @@ class NetworkDataset(_GISResource):
     """
     def __init__(self, url, gis=None):
         super(NetworkDataset, self).__init__(url, gis)
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
         self._load_layers()
 
     @classmethod

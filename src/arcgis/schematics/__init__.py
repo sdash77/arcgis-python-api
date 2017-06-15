@@ -11,6 +11,10 @@ from arcgis.gis import Layer
 class SchematicLayers(Layer):
     def __init__(self, url, gis=None):
         super(SchematicLayers, self).__init__(url, gis)
+        try:
+            from .._impl._server._service._adminfactory import AdminServiceGen
+            self.service = AdminServiceGen(service=self, gis=gis)
+        except: pass
 
     @property
     def diagrams(self):
