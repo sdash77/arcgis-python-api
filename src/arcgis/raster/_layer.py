@@ -498,7 +498,14 @@ class ImageryLayer(Layer):
               return_distinct_values=None,
               out_statistics=None,
               group_by_fields_for_statistics=None,
-              out_sr=None
+              out_sr=None,
+              return_all_records=False,
+              object_ids=None,
+              multi_dimensional_def=None,
+              result_offset=None,
+              result_record_count=None,
+              max_allowable_offset=None,
+              true_curves=False
               ):
         """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
          either a set of features or an array of raster IDs (if return_ids_only is set to True),
@@ -544,6 +551,37 @@ class ImageryLayer(Layer):
                out_sr - if the returning geometry needs to be in a different
                         spatial reference, provide the function with the
                         desired WKID.
+               return_all_records - boolean, if True(default) all records
+                                    will be returned. False means only the
+                                    limit of records will be returned.
+               object_ids - The object IDs of this raster catalog to be
+                            queried.When this parameter is specified, any
+                            other filter parameters (including where) are
+                            ignored.
+                            When this parameter is specified, setting
+                            returnIdsOnly=true is invalid.
+                            Syntax: objectIds=<objectId1>, <objectId2>
+                            Example: objectIds=37, 462
+              multi_dimensional_def- The filters defined by multiple
+                            dimensional definitions.
+              result_offset - This option fetches query results by skipping
+              a specified number of records. The query results start from
+              the next record (i.e., resultOffset + 1). The Default value
+              is None.
+              result_record_count - This option fetches query results up to
+              the resultRecordCount specified. When resultOffset is
+              specified and this parameter is not, image service defaults
+              to maxRecordCount. The maximum value for this parameter is
+              the value of the layer's maxRecordCount property.
+              max_allowable_offset - This option can be used to specify the
+              max_allowable_offset to be used for generalizing geometries
+              returned by the query operation. The max_allowable_offset is
+              in the units of the outSR. If outSR is not specified,
+              max_allowable_offset is assumed to be in the unit of the
+              spatial reference of the service.
+              true_curves -  If true, returns true curves in output
+              geometres, otherwise curves get converted to densified
+              polylines or polygons.
             Output:
                A FeatureSet containing the footprints (features) matching the query when return_geometry is True,
                else a dictionary containing the expected return type
@@ -554,7 +592,18 @@ class ImageryLayer(Layer):
                   "returnIdsOnly": return_ids_only,
                   "returnCountOnly": return_count_only,
                   }
-
+        if object_ids:
+            params['objectIds'] = object_ids
+        if multi_dimensional_def:
+            params['multidimensionalDefinition'] = multi_dimensional_def
+        if result_offset:
+            params['resultOffset'] = result_offset
+        if result_record_count:
+            params['resultRecordCount'] = result_record_count
+        if max_allowable_offset:
+            params['maxAllowableOffset'] = max_allowable_offset
+        if true_curves:
+            params['returnTrueCurves'] = true_curves
         if where is not None:
             params['where'] = where
         elif self._where_clause is not None:
@@ -605,7 +654,35 @@ class ImageryLayer(Layer):
         if out_sr is not None:
             params['outSR'] = out_sr
         url = self._url + "/query"
-        result = self._con.post(path=url, postdata=params, token=self._token)
+        if return_all_records and \
+           return_count_only == False:
+            count = self.query(where=where, geometry_filter=geometry_filter,
+                               time_filter=time_filter, return_count_only=True)
+            if count > self.properties.maxRecordCount:
+                n = count // self.properties.maxRecordCount
+                if (count % self.properties.maxRecordCount) > 0:
+                    n += 1
+                records = None
+                for i in range(n):
+                    if records is None:
+                        params['resultOffset'] = i * self.properties.maxRecordCount
+                        params['resultRecordCount'] = self.properties.maxRecordCount
+                        records = self._con.post(path=url,
+                                                postdata=params,
+                                                token=self._token)
+
+                    else:
+                        params['resultOffset'] = i * self.properties.maxRecordCount
+                        params['resultRecordCount'] = self.properties.maxRecordCount
+                        res = self._con.post(path=url,
+                                             postdata=params,
+                                             token=self._token)
+                        records['features'] += res['features']
+                result = records
+            else:
+                result = self._con.post(path=url, postdata=params, token=self._token)
+        else:
+            result = self._con.post(path=url, postdata=params, token=self._token)
 
         if 'error' in result:
             raise ValueError(result)
