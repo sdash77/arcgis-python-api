@@ -33,7 +33,6 @@ class ServerManager(object):
         self._federation = self._pa.federation
         self._server_list = None
     #----------------------------------------------------------------------
-    @property
     def list(self):
         """gets all servers in a GIS"""
         if self._server_list is not None:
@@ -47,7 +46,7 @@ class ServerManager(object):
         for server in servers:
             try:
                 admin_url = server['adminUrl']
-                self._server_list.append(Server(url=admin_url, gis=self._gis))
+                self._server_list.append(Server(url=admin_url, gis=self._gis, info=server))
             except:
                 _log.warn("Could not access the server at " + admin_url)
 
@@ -77,9 +76,10 @@ class ServerManager(object):
         return servers
     #----------------------------------------------------------------------
     @property
-    def info(self):
+    def _server_info(self):
         """
-        returns federation information associated the WebGIS
+        returns federation information for all servers associated the
+        WebGIS
         """
         return self._federation.servers['servers']
     #----------------------------------------------------------------------
@@ -132,7 +132,7 @@ class ServerManager(object):
         self._server_list = None
         return res
     #----------------------------------------------------------------------
-    def update(self, server_id, role, function=None):
+    def update(self, server, role, function=None):
         """
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained
@@ -143,7 +143,7 @@ class ServerManager(object):
         with the ArcGIS Server.
 
         Parameters:
-         :server_id: unique id of the server
+         :server: arcgis.gis.Server object
          :role: Whether the server is a hosting server for the portal, a
           federated server, or a server with restricted access to
           publishing. The allowed values are:
@@ -155,6 +155,31 @@ class ServerManager(object):
          can be comma separated but it is not recommend that a single
          server have all the server functions
         """
+        if isinstance(server, Server) == False:
+            raise ValueError("server must be of type arcgis.gis.Server")
+        roles = ["FEDERATED_SERVER",
+                 "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
+                 "HOSTING_SERVER"]
+        functions = {
+            "geoanalytics" : "GeoAnalytics",
+            "rasteranalytics" : "RasterAnalytics",
+            "imagehosting" : "ImageHosting",
+            "none" : None
+        }
+        if not role.upper() in roles:
+            raise ValueError("Invalid role, allowed values: %s" % ",".join(roles))
+        if not str(function).lower() in functions.keys():
+            raise ValueError("Invalid function, allowed values: %s" % ",".join(functions.keys()))
+        else:
+            function = functions[str(function).lower()]
+        server_id = None
+        from six.moves.urllib.parse import urlparse
+        b = urlparse(url=server._admin_url).netloc.lower()
+        for s in self._server_info:
+            if b == urlparse(s['adminUrl'].lower()).netloc:
+                server_id = s['id']
+                break
+            del s
         return self._federation.update(server_id, role, function)
     #----------------------------------------------------------------------
     def validate(self):
@@ -187,6 +212,14 @@ class Server(object):
     _admin_url = None
     _server = None
     _sm = None
+    _servicemanager = None
+    _systemmanager = None
+    _logmanager = None
+    _sitemanager = None
+    _usermanager = None
+    _datastoremanager = None
+    _reportmanager = None
+    _machinemanager = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url=None,
@@ -197,8 +230,6 @@ class Server(object):
                  gis=None,
                  **kwargs):
         """An ArcGIS Enterprise server"""
-        ### TODO: write doc
-
         ### TODO: don't set unverified context
         if not verify_cert:
             ssl._create_default_https_context = ssl._create_unverified_context
@@ -207,6 +238,7 @@ class Server(object):
         expiration = kwargs.pop('expiration', 60)
         all_ssl = kwargs.pop('all_ssl', None)
         is_agol = kwargs.pop('is_agol', False)
+        info = kwargs.pop('info', None)
         if url.lower().find("arcgis.com") > -1:
             is_agol = True
         if all_ssl is None:
@@ -235,11 +267,12 @@ class Server(object):
         self._con = self._server._con
         if not is_agol:
             self._sm = self._server.site_manager
-            # self._info = self._server.info
-
+        if info:
+            self.info = PropertyMap(info)
+    #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._admin_url)
-
+    #----------------------------------------------------------------------
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._admin_url)
     #----------------------------------------------------------------------
@@ -288,13 +321,18 @@ class Server(object):
         a site is no longer required, you can delete the site, which will
         cause all of the resources to be cleaned up.
         """
-        return SiteManager(self._sm)
+        if self._sm:
+            if self._sitemanager is None:
+                self._sitemanager = SiteManager(self._sm)
+            return self._sitemanager
     #----------------------------------------------------------------------
     @property
     def users(self):
         """returns operations to work with users"""
         if self._sm:
-            return UserManager(server=self._sm)
+            if self._usermanager is None:
+                self._usermanager = UserManager(server=self._sm)
+            return self._usermanager
     #----------------------------------------------------------------------
     @property
     def datastores(self):
@@ -317,7 +355,9 @@ class Server(object):
         a specific data item. This operation helps you determine if a
         particular data item can be safely deleted or refreshed."""
         if self._sm:
-            return DataStoreManager(self._sm)
+            if self._datastoremanager is None:
+                self._datastoremanager = DataStoreManager(self._sm)
+            return self._datastoremanager
     #----------------------------------------------------------------------
     @property
     def usage(self):
@@ -327,7 +367,9 @@ class Server(object):
         a new usage report.
         """
         if self._sm:
-            return ReportManager(self._sm)
+            if self._reportmanager is None:
+                self._reportmanager = ReportManager(self._sm)
+            return self._reportmanager
     #----------------------------------------------------------------------
     @property
     def _catalog(self):
@@ -354,8 +396,10 @@ class Server(object):
         need them.
         """
         if self._sm:
-            return MachineManager(self._sm)
-        return
+            if self._machinemanager is None:
+                self._machinemanager = MachineManager(self._sm)
+            return self._machinemanager
+        return None
 
     #----------------------------------------------------------------------
     @property
@@ -380,7 +424,9 @@ class Server(object):
         ArcGIS Server Only
         """
         if self._sm:
-            return LogManager(self._sm)
+            if self._logmanager is None:
+                self._logmanager = LogManager(self._sm)
+            return self._logmanager
     #----------------------------------------------------------------------
     @property
     def _kml(self):
@@ -420,9 +466,9 @@ class Server(object):
         provides access to common system configuration settings
         """
         if self._sm:
-            #from arcgis._server import SystemManager
-            return SystemManager(self._sm)
-
+            if self._systemmanager is None:
+                self._systemmanager = SystemManager(self._sm)
+            return self._systemmanager
     #----------------------------------------------------------------------
     @property
     def services(self):
@@ -431,7 +477,9 @@ class Server(object):
         ServerManager Object.
         """
         if self._sm:
-            return ServiceManager(self)
+            if self._servicemanager is None:
+                self._servicemanager = ServiceManager(self)
+            return self._servicemanager
 
 ###########################################################################
 class ServiceManager(object):
@@ -440,9 +488,12 @@ class ServiceManager(object):
     called 'services', is available as a property of the Server object. Users call methods on this 'services' object to
     managing services.
     """
+    _currentFolder = None
+    _services = None
     def __init__(self, server):
         self._svcmgr = server._sm.services
         self._server = server
+        self._currentFolder = None
 
     #----------------------------------------------------------------------
     def __str__(self):
@@ -458,9 +509,13 @@ class ServiceManager(object):
 
     def list(self, folder='/'):
         """ returns a list of services in the specified folder """
-        self._svcmgr.folder = folder
-        services =  self._svcmgr.services
-        return [Service(None, None, service=svc, svcmgr=self._svcmgr) for svc in services]
+        if folder != self._currentFolder or \
+           self._services is None:
+            self._currentFolder = folder
+            self._svcmgr.folder = folder
+            services =  self._svcmgr.services
+            self._services = [Service(None, None, service=svc, svcmgr=self._svcmgr) for svc in services]
+        return self._services
 
     def create_folder(self, folder, description=""):
         """
@@ -471,7 +526,7 @@ class ServiceManager(object):
            Output:
               result as dictionary
         """
-        return self._svcmgr.create_folder(self, folder, description)
+        return self._svcmgr.create_folder(folder, description)
 
     def delete_folder(self, folder):
         """
@@ -490,6 +545,7 @@ class ServiceManager(object):
         :param folder: optional folder name
         :return: True if published, False otherwise
         """
+        self._services = None
         return self._server._publish_sd(sd_file_path, folder)
 
     def create_service(self, service):
@@ -515,6 +571,7 @@ class ServiceManager(object):
         Output:
          dictionary status message
         """
+        self._services = None
         return self._svcmgr.create_service(service)
 
     def exists(self, folder_name, name=None, service_type=None):
@@ -668,7 +725,6 @@ class MachineManager(object):
         """
         return self._machines.properties
     #----------------------------------------------------------------------
-    @property
     def list(self):
         """
         returns the list of machines in the GIS
@@ -754,6 +810,12 @@ class Machine(object):
     def __init__(self, machine):
         """Constructor"""
         self._machine = machine
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._machine._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._machine._url)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -1050,7 +1112,6 @@ class ReportManager(object):
         """
         return self._reports.properties
     #----------------------------------------------------------------------
-    @property
     def list(self):
         """returns a list of reports on the server"""
         reports = []
@@ -1406,7 +1467,6 @@ class DataStoreManager(object):
         """
         return self._ds.properties
     #----------------------------------------------------------------------
-    @property
     def list(self):
         """returns a list of datastore objects"""
         stores = []
