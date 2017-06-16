@@ -643,7 +643,14 @@ class ServiceManager(BaseServer):
                 GeometryServer | ImageServer | MapServer | GeocodeServer |
                 GeoDataServer | GPServer | GlobeServer | SearchServer
         """
-
+        if folder_name and \
+           name is None and \
+           service_type is None:
+            for folder in self.folders:
+                if folder.lower() == folder_name.lower():
+                    return True
+                del folder
+            return False
         url = self._url + "/exists"
         params = {
             "f" : "json",
@@ -655,6 +662,8 @@ class ServiceManager(BaseServer):
                              postdata=params)
         if 'status' in res:
             return res['status'] == 'success'
+        elif 'exists' in res:
+            return res['exists']
         return res
 ########################################################################
 class Service(BaseServer):
