@@ -491,10 +491,10 @@ default_tolerance = {'distance': 10,
     'units': 'esriMeters'}
                                                                                      
 def solve_vehicle_routing_problem(
-    orders = default_orders,
-    depots = default_depots,
-    routes = default_routes,
-    breaks = default_breaks,
+    orders,
+    depots,
+    routes,
+    breaks = None,
     time_units = """Minutes""",
     distance_units = """Miles""",
     analysis_region = None,
@@ -502,18 +502,18 @@ def solve_vehicle_routing_problem(
     uturn_policy = """ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY""",
     time_window_factor = """Medium""",
     spatially_cluster_routes = True,
-    route_zones = default_route_zones,
-    route_renewals = default_route_renewals,
-    order_pairs = default_order_pairs,
+    route_zones = None,
+    route_renewals = None,
+    order_pairs = None,
     excess_transit_factor = """Medium""",
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
     use_hierarchy_in_analysis = True,
-    restrictions = default_restrictions,
-    attribute_parameter_values = default_param_values,
+    restrictions = None,
+    attribute_parameter_values = None,
     populate_route_lines = True,
-    route_line_simplification_tolerance = default_tolerance,
+    route_line_simplification_tolerance = None,
     populate_directions = False,
     directions_language = """en""",
     directions_style_name = """NA Desktop""",
@@ -529,7 +529,7 @@ involves how to best assign a group of customers to a fleet of vehicles and to s
 objectives in solving such vehicle routing problems (VRP) are to provide a high level of customer service by honoring
 any time windows while keeping the overall operating and investment costs for each route as low as possible. The
 constraints are to complete the routes with available resources and within the time limits imposed by driver work
-shifts, driving speeds, and customer commitments., This service can be used to determine solutions for such complex
+shifts, driving speeds, and customer commitments. This method can be used to determine solutions for such complex
 fleet management tasks. Consider an example of delivering goods to grocery stores from a central warehouse location.
 A fleet of three trucks is available at the warehouse. The warehouse operates only within a certain time window-from
 8:00 a.m. to 5:00 p.m.-during which all trucks must return back to the warehouse. Each truck has a capacity of 15,000
@@ -1985,6 +1985,39 @@ Parameters:
     See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/VehicleRoutingProblem_GPServer/World_VehicleRoutingProblem/SolveVehicleRoutingProblem.htm for additional help.
     """
     kwargs = locals()
+
+    if orders is None:
+        orders = default_orders
+    if depots is None:
+        depots = default_depots
+    if routes is None:
+        routes = default_routes
+    if breaks is None:
+        breaks = default_breaks
+    if route_zones is None:
+        route_zones = default_route_zones
+    if route_renewals is None:
+        route_renewals = default_route_renewals
+    if order_pairs is None:
+        order_pairs = default_order_pairs
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if restrictions is None:
+        restrictions = default_restrictions
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_param_values
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = default_tolerance
 
     param_db = {
         "orders": (FeatureSet, "orders"),

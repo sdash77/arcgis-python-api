@@ -94,8 +94,8 @@ default_attributes = {'fields': [
                                                                                       'exceededTransferLimit': False}
                                                                                       
 def generate_origin_destination_cost_matrix(
-    origins = default_origins,
-    destinations = default_destinations,
+    origins,
+    destinations,
     travel_mode = """Custom""",
     time_units = """Minutes""",
     distance_units = """Kilometers""",
@@ -104,13 +104,13 @@ def generate_origin_destination_cost_matrix(
     cutoff = None,
     time_of_day = None,
     time_zone_for_time_of_day = """Geographically Local""",
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
     uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
     use_hierarchy = True,
-    restrictions = default_restrictions,
-    attribute_parameter_values = default_attributes,
+    restrictions = None,
+    attribute_parameter_values = None,
     impedance = """Drive Time""",
     origin_destination_line_shape = """None""",
     gis = None):
@@ -551,6 +551,27 @@ Returns the following as a named tuple:
 See https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/OriginDestinationCostMatrix_GPServer/World_OriginDestinationCostMatrix/GenerateOriginDestinationCostMatrix.htm for additional help.
     """
     kwargs = locals()
+
+    if origins is None:
+        origins = default_origins
+
+    if destinations is None:
+        destinations = default_destinations
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if restrictions is None:
+        restrictions = default_restrictions
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_attributes
 
     param_db = {
         "origins": (FeatureSet, "Origins"),

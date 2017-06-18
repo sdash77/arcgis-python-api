@@ -262,7 +262,7 @@ default_tolerance = {'distance': 10, 'units': 'esriMeters'}
 
 
 def find_routes(
-    stops = default_stops,
+    stops,
     measurement_units = """Minutes""",
     analysis_region = None,
     reorder_stops_to_find_optimal_routes = False,
@@ -272,14 +272,14 @@ def find_routes(
     time_of_day = None,
     time_zone_for_time_of_day = """Geographically Local""",
     uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
     use_hierarchy = True,
-    restrictions = default_restrictions,
-    attribute_parameter_values = default_attributes,
+    restrictions = None,
+    attribute_parameter_values = None,
     route_shape = """True Shape""",
-    route_line_simplification_tolerance = default_tolerance,
+    route_line_simplification_tolerance = None,
     populate_route_edges = False,
     populate_directions = True,
     directions_language = """en""",
@@ -825,6 +825,27 @@ Returns the following as a named tuple:
 See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Route_GPServer/World_Route/FindRoutes.htm for additional help.
     """
     kwargs = locals()
+
+    if stops is None:
+        stops = default_stops
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if restrictions is None:
+        restrictions = default_restrictions
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_attributes
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = default_tolerance
 
     param_db = {
         "stops": (FeatureSet, "Stops"),

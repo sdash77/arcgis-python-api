@@ -318,8 +318,8 @@ default_tolerance = {'distance': 10, 'units': 'esriMeters'}
                                 
                                 
 def find_closest_facilities(
-    incidents = default_incidents,
-    facilities = default_facilities,
+    incidents,
+    facilities,
     measurement_units = """Minutes""",
     analysis_region = None,
     number_of_facilities_to_find = 1,
@@ -329,9 +329,9 @@ def find_closest_facilities(
     time_of_day = None,
     time_of_day_usage = """Start Time""",
     uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
     restrictions = """['Avoid Unpaved Roads',
     'Avoid Private Roads',
     'Driving an Automobile',
@@ -340,9 +340,9 @@ def find_closest_facilities(
     'Avoid Gates',
     'Avoid Express Lanes',
     'Avoid Carpool Roads']""",
-    attribute_parameter_values = default_attributes,
+    attribute_parameter_values = None,
     route_shape = """True Shape""",
-    route_line_simplification_tolerance = default_tolerance,
+    route_line_simplification_tolerance = None,
     populate_directions = False,
     directions_language = """en""",
     directions_distance_units = """Miles""",
@@ -963,6 +963,26 @@ Returns the following as a named tuple:
 See http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ClosestFacility_GPServer/World_ClosestFacility/FindClosestFacilities.htm for additional help.
     """
     kwargs = locals()
+    if incidents is None:
+        incidents = default_incidents
+
+    if facilities is None:
+        facilities = default_facilities
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_attributes
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = default_tolerance
 
     param_db = {
         "incidents": (FeatureSet, "Incidents"),

@@ -365,8 +365,8 @@ default_attributes = {
                                   'displayFieldName': '', 'exceededTransferLimit': False}    
     
 def solve_location_allocation(
-    facilities = default_facilities,
-    demand_points = default_demands,
+    facilities,
+    demand_points,
     measurement_units = """Minutes""",
     analysis_region = None,
     problem_type = """Minimize Impedance""",
@@ -380,9 +380,9 @@ def solve_location_allocation(
     time_of_day = None,
     time_zone_for_time_of_day = """Geographically Local""",
     uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
     use_hierarchy = True,
     restrictions = """['Avoid Unpaved Roads',
     'Avoid Private Roads',
@@ -392,7 +392,7 @@ def solve_location_allocation(
     'Avoid Gates',
     'Avoid Express Lanes',
     'Avoid Carpool Roads']""",
-    attribute_parameter_values = default_attributes,
+    attribute_parameter_values = None,
     allocation_line_shape = """Straight Line""",
     travel_mode = """Custom""",
     impedance = """Drive Time""",
@@ -872,6 +872,24 @@ Returns the following as a named tuple:
 See https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/LocationAllocation_GPServer/World_LocationAllocation/SolveLocationAllocation.htm for additional help.
     """
     kwargs = locals()
+
+    if facilities is None:
+        facilities = default_facilities
+
+    if demand_points is None:
+        demand_points = default_demands
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_attributes
 
     param_db = {
         "facilities": (FeatureSet, "Facilities"),
