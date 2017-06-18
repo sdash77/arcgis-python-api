@@ -66,8 +66,8 @@ class GIS(object):
     as well as the results of your analysis. To create a new map, call the map() method.
     """
     _server_list = None
-    admin = None
-    oauth = None
+    # admin = None
+    # oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
         """
