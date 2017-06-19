@@ -441,7 +441,7 @@ class FeatureSet(object):
             except:
                 arcpy_found = False
             from pandas.io.json import json_normalize
-            from arcgis import SpatialDataFrame
+            from arcgis.features import SpatialDataFrame
             if self.geometry_type is not None:
                 if self.spatial_reference and \
                    'wkt' in self.spatial_reference.keys():

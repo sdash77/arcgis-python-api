@@ -3014,8 +3014,7 @@ class ContentManager(object):
         tags: optional tags when publishing a spatial dataframe to the the GIS
         Returns feature collection or feature layer, that can be used for analysis, visualization or published to the GIS as an item
         """
-        from arcgis.features import FeatureCollection
-        from arcgis import SpatialDataFrame
+        from arcgis.features import FeatureCollection, SpatialDataFrame
         from arcgis._impl.common._utils import zipws
 
         import shutil
