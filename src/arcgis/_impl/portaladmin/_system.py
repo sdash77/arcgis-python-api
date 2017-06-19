@@ -4,7 +4,7 @@ Modifies a local portal's system settings.
 from ..connection import _ArcGISConnection
 from ...gis import GIS
 from ._base import BasePortalAdmin
-
+from ..common._mixins import PropertyMap
 ########################################################################
 class System(BasePortalAdmin):
     """
@@ -33,7 +33,7 @@ class System(BasePortalAdmin):
             raise ValueError(
                     "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -295,14 +295,13 @@ class WebAdaptors(BasePortalAdmin):
             raise ValueError(
                     "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
-    @property
-    def adaptors(self):
-        """"""
+    def list(self):
+        """returns all instances of WebAdaptors"""
         res = []
-        if self.webAdaptors:
-            for wa in self.webAdaptors:
+        if 'webAdaptors' in self.properties:
+            for wa in self.properties.webAdaptors:
                 url = "%s/%s" % (self._url, wa['id'])
                 res.append(WebAdaptor(url=url, gis=self._con))
         return res
@@ -377,7 +376,7 @@ class WebAdaptor(BasePortalAdmin):
             raise ValueError(
                     "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def unregister(self):
         """
@@ -423,7 +422,7 @@ class Directory(BasePortalAdmin):
             raise ValueError(
                     "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -435,7 +434,7 @@ class Directory(BasePortalAdmin):
         data from the old path to the new path. This has to be done
         independently by the system administrator.
         """
-        return self._json_dict
+        return PropertyMap(self._json_dict)
     #----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
@@ -451,6 +450,8 @@ class Directory(BasePortalAdmin):
         params = {
             "f" : "json"
         }
+        if isinstance(value, PropertyMap):
+            value = dict(value)
         for k,v in value.items():
             params[k] = v
         return self._con.post(path=url, postdata=params)
@@ -488,7 +489,7 @@ class Licenses(BasePortalAdmin):
             raise ValueError(
                     "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def entitlements(self, app="arcgisprodesktop"):
         """
@@ -518,12 +519,13 @@ class Licenses(BasePortalAdmin):
     #----------------------------------------------------------------------
     def remove_entitlement(self, app="arcgisprodesktop"):
         """
+        deletes an entitlement from a site
         """
         allowed = ["appstudioweb", "arcgisprodesktop",
-                       "busanalystonline_2", "drone2map",
-                       "geoplanner", "arcgisInsights",
-                       "LRReporter", "navigator",
-                       "RoadwayReporter"]
+                   "busanalystonline_2", "drone2map",
+                   "geoplanner", "arcgisInsights",
+                   "LRReporter", "navigator",
+                   "RoadwayReporter"]
         params = {
                 "f" : "json",
                 "appId" : app
