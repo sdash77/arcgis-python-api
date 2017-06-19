@@ -293,7 +293,7 @@ default_attributes = {
                                'displayFieldName': '', 'exceededTransferLimit': False}    
     
 def generate_service_areas(
-    facilities = default_facilities,
+    facilities,
     break_values = """5 10 15""",
     break_units = """Minutes""",
     analysis_region = None,
@@ -304,13 +304,13 @@ def generate_service_areas(
     polygons_for_multiple_facilities = """Overlapping""",
     polygon_overlap_type = """Rings""",
     detailed_polygons = False,
-    polygon_trim_distance = default_trim,
-    polygon_simplification_tolerance = default_tolerance,
-    point_barriers = default_point_barriers,
-    line_barriers = default_line_barriers,
-    polygon_barriers = default_polygon_barriers,
-    restrictions = default_restrictions,
-    attribute_parameter_values = default_attributes,
+    polygon_trim_distance = None,
+    polygon_simplification_tolerance = None,
+    point_barriers = None,
+    line_barriers = None,
+    polygon_barriers = None,
+    restrictions = None,
+    attribute_parameter_values = None,
     time_zone_for_time_of_day = """Geographically Local""",
     travel_mode = """Custom""",
     impedance = """Drive Time""",
@@ -835,6 +835,31 @@ Returns the following as a named tuple:
 See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ServiceAreas_GPServer/World_ServiceAreas/GenerateServiceAreas.htm for additional help.
     """
     kwargs = locals()
+
+    if facilities is None:
+        facilities = default_facilities
+
+    if polygon_trim_distance is None:
+        polygon_trim_distance = default_trim
+
+    if polygon_simplification_tolerance is None:
+        polygon_simplification_tolerance = default_tolerance
+
+    if point_barriers is None:
+        point_barriers = default_point_barriers
+
+    if line_barriers is None:
+        line_barriers = default_line_barriers
+
+    if polygon_barriers is None:
+        polygon_barriers = default_polygon_barriers
+
+    if restrictions is None:
+        restrictions = default_restrictions
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = default_attributes
+
 
     param_db = {
         "facilities": (FeatureSet, "Facilities"),

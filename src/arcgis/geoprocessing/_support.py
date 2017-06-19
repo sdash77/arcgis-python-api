@@ -202,6 +202,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         #print(param_name + " = " + str(param_value))
         if param_name in param_db:
             py_type, gp_param_name = param_db[param_name]
+            if param_value is None:
+                param_value = ''
             gp_params[gp_param_name] = param_value
             if py_type == FeatureSet:
                 if webtool:
@@ -260,8 +262,11 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         output_dict = {}
         for retParamName in resp.keys():
             output_val = resp[retParamName]
-            ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
-            output_dict[ret_param_name] = ret_val
+            try:
+                ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
+                output_dict[ret_param_name] = ret_val
+            except KeyError:
+                pass # cannot handle unexpected output as return tuple will change
 
         # tools with output map service - add another output:
         # result_layer = '' #***self.properties.resultMapServerName
@@ -284,8 +289,11 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             retParamName = result['paramName']
 
             output_val = result['value']
-            ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
-            output_dict[ret_param_name] = ret_val
+            try:
+                ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
+                output_dict[ret_param_name] = ret_val
+            except KeyError:
+                pass  # cannot handle unexpected output as return tuple will change
 
         num_returns = len(resp['results'])
         return _return_output(num_returns, output_dict, return_values)
@@ -310,7 +318,7 @@ def _return_output(num_returns, output_dict, return_values):
         ret_names = []
         for return_value in return_values:
             ret_names.append(return_value['name'])
-
+        # ret_names = output_dict.keys() # CANT USE - the order matters
         NamedTuple = collections.namedtuple('ToolOutput', ret_names)
         tool_output = NamedTuple(**output_dict)
         return tool_output
@@ -318,7 +326,10 @@ def _return_output(num_returns, output_dict, return_values):
 
 def _get_output_value(gptool, output_val, param_db, retParamName):
     ret_param_name = _camelCase_to_underscore(retParamName)
+
+
     ret_type, _ = param_db[ret_param_name]
+
     ret_val = None
     if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
         jsondict = output_val

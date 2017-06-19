@@ -66,8 +66,8 @@ class GIS(object):
     as well as the results of your analysis. To create a new map, call the map() method.
     """
     _server_list = None
-    admin = None
-    oauth = None
+    # admin = None
+    # oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
                  verify_cert=True, set_active=True, client_id=None, profile=None):
         """
@@ -175,8 +175,8 @@ class GIS(object):
            self.users.me.role == "org_admin":
             from .._impl.portaladmin.portaladmin import PortalAdminManager
             from .server import ServerManager
-            self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
-                                            gis=self)
+            self.ux = UX(self)
+            self._admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
             self.servers = ServerManager(gis=self)
     #@property
     #def _servers(self):
@@ -254,9 +254,9 @@ class GIS(object):
         """
         return ContentManager(self)
 
-    @_lazy_property
-    def ux(self):
-        return UX(self)
+    # @_lazy_property
+    # def ux(self):
+    #     return UX(self)
 
     @_lazy_property
     def _datastores(self):
@@ -3014,8 +3014,7 @@ class ContentManager(object):
         tags: optional tags when publishing a spatial dataframe to the the GIS
         Returns feature collection or feature layer, that can be used for analysis, visualization or published to the GIS as an item
         """
-        from arcgis.features import FeatureCollection
-        from arcgis import SpatialDataFrame
+        from arcgis.features import FeatureCollection, SpatialDataFrame
         from arcgis._impl.common._utils import zipws
 
         import shutil
@@ -4505,9 +4504,9 @@ class Item(dict):
         if self.type.lower() == "web map":
             icon = "maps16.png"
         elif self.type.lower() == "web scene":
-            icon = "webscene16.png"
+            icon = "websceneglobal16.png"
         elif self.type.lower() == "cityengine web scene":
-            icon = "webscene16.png"
+            icon = "websceneglobal16.png"
         elif self.type.lower() == "pro map":
             icon = "mapsgray16.png"
         elif self.type.lower() == "feature service":

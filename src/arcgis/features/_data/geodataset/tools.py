@@ -19,7 +19,7 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     :output:
       Spatial Dataframe
     """
-    from arcgis import SpatialDataFrame
+    from arcgis.features import SpatialDataFrame
     if not isinstance(df1, SpatialDataFrame):
         raise ValueError("df1 must be a spatial dataframe")
     if not isinstance(df2, SpatialDataFrame):

@@ -25,40 +25,40 @@ class RouteLayer(NetworkLayer):
     The Route Layer which has common properties of Network Layer
     as well as some attributes unique to Route Network Layer only.
     """
-    def solve(self,stops,
+    def solve(self, stops,
               barriers=None,
-              polylineBarriers=None,
-              polygonBarriers=None,
-              travelMode=None,
-              attributeParameterValues=None,
-              returnDirections=None,
-              returnRoutes=True,
-              returnStops=False,
-              returnBarriers=False,
-              returnPolylineBarriers=True,
-              returnPolygonBarriers=True,
-              outSR=None,
-              ignoreInvalidLocations=True,
-              outputLines=None,
-              findBestSequence=False,
-              preserveFirstStop=True,
-              preserveLastStop=True,
-              useTimeWindows=False,
-              startTime=None,
-              startTimeIsUTC=False,
-              accumulateAttributeNames=None,
-              impedanceAttributeName=None,
-              restrictionAttributeNames=None,
-              restrictUTurns=None,
-              useHierarchy=True,
-              directionsLanguage=None,
-              directionsOutputType=None,
-              directionsStyleName=None,
-              directionsLengthUnits=None,
-              directionsTimeAttributeName=None,
-              outputGeometryPrecision=None,
-              outputGeometryPrecisionUnits=None,
-              returnZ=False
+              polyline_barriers=None,
+              polygon_barriers=None,
+              travel_mode=None,
+              attribute_parameter_values=None,
+              return_directions=None,
+              return_routes=True,
+              return_stops=False,
+              return_barriers=False,
+              return_polyline_barriers=True,
+              return_polygon_barriers=True,
+              out_sr=None,
+              ignore_invalid_locations=True,
+              output_lines=None,
+              find_best_sequence=False,
+              preserve_first_stop=True,
+              preserve_last_stop=True,
+              use_time_windows=False,
+              start_time=None,
+              start_time_is_utc=False,
+              accumulate_attribute_names=None,
+              impedance_attribute_name=None,
+              restriction_attribute_names=None,
+              restrict_u_turns=None,
+              use_hierarchy=True,
+              directions_language=None,
+              directions_output_type=None,
+              directions_style_name=None,
+              directions_length_units=None,
+              directions_time_attribute_name=None,
+              output_geometry_precision=None,
+              output_geometry_precision_units=None,
+              return_z=False
               ):
         """The solve operation is performed on a network layer resource.
         The solve operation is supported on a network layer whose layerType
@@ -209,70 +209,70 @@ class RouteLayer(NetworkLayer):
 
         if not barriers is None:
             params['barriers'] = barriers
-        if not polylineBarriers is None:
-            params['polylineBarriers'] = polylineBarriers
-        if not polygonBarriers is None:
-            params['polygonBarriers'] = polygonBarriers
-        if not travelMode is None:
-            params['travelMode'] = travelMode
-        if not attributeParameterValues is None:
-            params['attributeParameterValues'] = attributeParameterValues
-        if not returnDirections is None:
-            params['returnDirections'] = returnDirections
-        if not returnRoutes is None:
-            params['returnRoutes'] = returnRoutes
-        if not returnStops is None:
-            params['returnStops'] = returnStops
-        if not returnBarriers is None:
-            params['returnBarriers'] = returnBarriers
-        if not returnPolylineBarriers is None:
-            params['returnPolylineBarriers'] = returnPolylineBarriers
-        if not returnPolygonBarriers is None:
-            params['returnPolygonBarriers'] = returnPolygonBarriers
-        if not outSR is None:
-            params['outSR'] = outSR
-        if not ignoreInvalidLocations is None:
-            params['ignoreInvalidLocations'] = ignoreInvalidLocations
-        if not outputLines is None:
-            params['outputLines'] = outputLines
-        if not findBestSequence is None:
-            params['findBestSequence'] = findBestSequence
-        if not preserveFirstStop is None:
-            params['preserveFirstStop'] = preserveFirstStop
-        if not preserveLastStop is None:
-            params['preserveLastStop'] = preserveLastStop
-        if not useTimeWindows is None:
-            params['useTimeWindows'] = useTimeWindows
-        if not startTime is None:
-            params['startTime'] = startTime
-        if not startTimeIsUTC is None:
-            params['startTimeIsUTC'] = startTimeIsUTC
-        if not accumulateAttributeNames is None:
-            params['accumulateAttributeNames'] = accumulateAttributeNames
-        if not impedanceAttributeName is None:
-            params['impedanceAttributeName'] = impedanceAttributeName
-        if not restrictionAttributeNames is None:
-            params['restrictionAttributeNames'] = restrictionAttributeNames
-        if not restrictUTurns is None:
-            params['restrictUTurns'] = restrictUTurns
-        if not useHierarchy is None:
-            params['useHierarchy'] = useHierarchy
-        if not directionsLanguage is None:
-            params['directionsLanguage'] = directionsLanguage
-        if not directionsOutputType is None:
-            params['directionsOutputType'] = directionsOutputType
-        if not directionsStyleName is None:
-            params['directionsStyleName'] = directionsStyleName
-        if not directionsLengthUnits is None:
-            params['directionsLengthUnits'] = directionsLengthUnits
-        if not directionsTimeAttributeName is None:
-            params['directionsTimeAttributeName'] = directionsTimeAttributeName
-        if not outputGeometryPrecision is None:
-            params['outputGeometryPrecision'] = outputGeometryPrecision
-        if not outputGeometryPrecisionUnits is None:
-            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
-        if not returnZ is None:
-            params['returnZ'] = returnZ
+        if not polyline_barriers is None:
+            params['polylineBarriers'] = polyline_barriers
+        if not polygon_barriers is None:
+            params['polygonBarriers'] = polygon_barriers
+        if not travel_mode is None:
+            params['travelMode'] = travel_mode
+        if not attribute_parameter_values is None:
+            params['attributeParameterValues'] = attribute_parameter_values
+        if not return_directions is None:
+            params['returnDirections'] = return_directions
+        if not return_routes is None:
+            params['returnRoutes'] = return_routes
+        if not return_stops is None:
+            params['returnStops'] = return_stops
+        if not return_barriers is None:
+            params['returnBarriers'] = return_barriers
+        if not return_polyline_barriers is None:
+            params['returnPolylineBarriers'] = return_polyline_barriers
+        if not return_polygon_barriers is None:
+            params['returnPolygonBarriers'] = return_polygon_barriers
+        if not out_sr is None:
+            params['outSR'] = out_sr
+        if not ignore_invalid_locations is None:
+            params['ignoreInvalidLocations'] = ignore_invalid_locations
+        if not output_lines is None:
+            params['outputLines'] = output_lines
+        if not find_best_sequence is None:
+            params['findBestSequence'] = find_best_sequence
+        if not preserve_first_stop is None:
+            params['preserveFirstStop'] = preserve_first_stop
+        if not preserve_last_stop is None:
+            params['preserveLastStop'] = preserve_last_stop
+        if not use_time_windows is None:
+            params['useTimeWindows'] = use_time_windows
+        if not start_time is None:
+            params['startTime'] = start_time
+        if not start_time_is_utc is None:
+            params['startTimeIsUTC'] = start_time_is_utc
+        if not accumulate_attribute_names is None:
+            params['accumulateAttributeNames'] = accumulate_attribute_names
+        if not impedance_attribute_name is None:
+            params['impedanceAttributeName'] = impedance_attribute_name
+        if not restriction_attribute_names is None:
+            params['restrictionAttributeNames'] = restriction_attribute_names
+        if not restrict_u_turns is None:
+            params['restrictUTurns'] = restrict_u_turns
+        if not use_hierarchy is None:
+            params['useHierarchy'] = use_hierarchy
+        if not directions_language is None:
+            params['directionsLanguage'] = directions_language
+        if not directions_output_type is None:
+            params['directionsOutputType'] = directions_output_type
+        if not directions_style_name is None:
+            params['directionsStyleName'] = directions_style_name
+        if not directions_length_units is None:
+            params['directionsLengthUnits'] = directions_length_units
+        if not directions_time_attribute_name is None:
+            params['directionsTimeAttributeName'] = directions_time_attribute_name
+        if not output_geometry_precision is None:
+            params['outputGeometryPrecision'] = output_geometry_precision
+        if not output_geometry_precision_units is None:
+            params['outputGeometryPrecisionUnits'] = output_geometry_precision_units
+        if not return_z is None:
+            params['returnZ'] = return_z
 
         return self._con.post(path=url,
                               postdata=params, token=self._token)
@@ -284,40 +284,40 @@ class ServiceAreaLayer(NetworkLayer):
     Layer as well as some attributes unique to Service Area Layer
     only.
     """
-    def solve_service_area(self,facilities,
-                         barriers=None,
-                         polylineBarriers=None,
-                         polygonBarriers=None,
-                         travelMode=None,
-                         attributeParameterValues=None,
-                         defaultBreaks=None,
-                         excludeSourcesFromPolygons=None,
-                         mergeSimilarPolygonRanges=None,
-                         outputLines=None,
-                         outputPolygons=None,
-                         overlapLines=None,
-                         overlapPolygons=None,
-                         splitLinesAtBreaks=None,
-                         splitPolygonsAtBreaks=None,
-                         trimOuterPolygon=None,
-                         trimPolygonDistance=None,
-                         trimPolygonDistanceUnits=None,
-                         returnFacilities=False,
-                         returnBarriers=False,
-                         returnPolylineBarriers=False,
-                         returnPolygonBarriers=False,
-                         outSR=None,
-                         accumulateAttributeNames=None,
-                         impedanceAttributeName=None,
-                         restrictionAttributeNames=None,
-                         restrictUTurns=None,
-                         outputGeometryPrecision=None,
-                         outputGeometryPrecisionUnits='esriUnknownUnits',
-                         useHierarchy=None,
-                         timeOfDay=None,
-                         timeOfDayIsUTC=None,
-                         travelDirection=None,
-                         returnZ=False):
+    def solve_service_area(self, facilities,
+                           barriers=None,
+                           polyline_barriers=None,
+                           polygon_barriers=None,
+                           travel_mode=None,
+                           attribute_parameter_values=None,
+                           default_breaks=None,
+                           exclude_sources_from_polygons=None,
+                           merge_similar_polygon_ranges=None,
+                           output_lines=None,
+                           output_polygons=None,
+                           overlap_lines=None,
+                           overlap_polygons=None,
+                           split_lines_at_breaks=None,
+                           split_polygons_at_breaks=None,
+                           trim_outer_polygon=None,
+                           trim_polygon_distance=None,
+                           trim_polygon_distance_units=None,
+                           return_facilities=False,
+                           return_barriers=False,
+                           return_polyline_barriers=False,
+                           return_polygon_barriers=False,
+                           out_sr=None,
+                           accumulate_attribute_names=None,
+                           impedance_attribute_name=None,
+                           restriction_attribute_names=None,
+                           restrict_u_turns=None,
+                           output_geometry_precision=None,
+                           output_geometry_precision_units='esriUnknownUnits',
+                           use_hierarchy=None,
+                           time_of_day=None,
+                           time_of_day_is_utc=None,
+                           travel_direction=None,
+                           return_z=False):
         """ The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
         You can provide arguments to the solve service area operation as
@@ -468,70 +468,70 @@ class ServiceAreaLayer(NetworkLayer):
 
         if not barriers is None:
             params['barriers'] = barriers
-        if not polylineBarriers is None:
-            params['polylineBarriers'] = polylineBarriers
-        if not polygonBarriers is None:
-            params['polygonBarriers'] = polygonBarriers
-        if not travelMode is None:
-            params['travelMode'] = travelMode
-        if not attributeParameterValues is None:
-            params['attributeParameterValues'] = attributeParameterValues
-        if not defaultBreaks is None:
-            params['defaultBreaks'] = defaultBreaks
-        if not excludeSourcesFromPolygons is None:
-            params['excludeSourcesFromPolygons'] = excludeSourcesFromPolygons
-        if not mergeSimilarPolygonRanges is None:
-            params['mergeSimilarPolygonRanges'] = mergeSimilarPolygonRanges
-        if not outputLines is None:
-            params['outputLines'] = outputLines
-        if not outputPolygons is None:
-            params['outputPolygons'] = outputPolygons
-        if not overlapLines is None:
-            params['overlapLines'] = overlapLines
-        if not overlapPolygons is None:
-            params['overlapPolygons'] = overlapPolygons
-        if not splitLinesAtBreaks is None:
-            params['splitLinesAtBreaks'] = splitLinesAtBreaks
-        if not splitPolygonsAtBreaks is None:
-            params['splitPolygonsAtBreaks'] = splitPolygonsAtBreaks
-        if not trimOuterPolygon is None:
-            params['trimOuterPolygon'] = trimOuterPolygon
-        if not trimPolygonDistance is None:
-            params['trimPolygonDistance'] = trimPolygonDistance
-        if not trimPolygonDistanceUnits is None:
-            params['trimPolygonDistanceUnits'] = trimPolygonDistanceUnits
-        if not returnFacilities is None:
-            params['returnFacilities'] = returnFacilities
-        if not returnBarriers is None:
-            params['returnBarriers'] = returnBarriers
-        if not returnPolylineBarriers is None:
-            params['returnPolylineBarriers'] = returnPolylineBarriers
-        if not returnPolygonBarriers is None:
-            params['returnPolygonBarriers'] = returnPolygonBarriers
-        if not outSR is None:
-            params['outSR'] = outSR
-        if not accumulateAttributeNames is None:
-            params['accumulateAttributeNames'] = accumulateAttributeNames
-        if not impedanceAttributeName is None:
-            params['impedanceAttributeName'] = impedanceAttributeName
-        if not restrictionAttributeNames is None:
-            params['restrictionAttributeNames'] = restrictionAttributeNames
-        if not restrictUTurns is None:
-            params['restrictUTurns'] = restrictUTurns
-        if not outputGeometryPrecision is None:
-            params['outputGeometryPrecision'] = outputGeometryPrecision
-        if not outputGeometryPrecisionUnits is None:
-            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
-        if not useHierarchy is None:
-            params['useHierarchy'] = useHierarchy
-        if not timeOfDay is None:
-            params['timeOfDay'] = timeOfDay
-        if not timeOfDayIsUTC is None:
-            params['timeOfDayIsUTC'] = timeOfDayIsUTC
-        if not travelDirection is None:
-            params['travelDirection'] = travelDirection
-        if not returnZ is None:
-            params['returnZ'] = returnZ
+        if not polyline_barriers is None:
+            params['polylineBarriers'] = polyline_barriers
+        if not polygon_barriers is None:
+            params['polygonBarriers'] = polygon_barriers
+        if not travel_mode is None:
+            params['travelMode'] = travel_mode
+        if not attribute_parameter_values is None:
+            params['attributeParameterValues'] = attribute_parameter_values
+        if not default_breaks is None:
+            params['defaultBreaks'] = default_breaks
+        if not exclude_sources_from_polygons is None:
+            params['excludeSourcesFromPolygons'] = exclude_sources_from_polygons
+        if not merge_similar_polygon_ranges is None:
+            params['mergeSimilarPolygonRanges'] = merge_similar_polygon_ranges
+        if not output_lines is None:
+            params['outputLines'] = output_lines
+        if not output_polygons is None:
+            params['outputPolygons'] = output_polygons
+        if not overlap_lines is None:
+            params['overlapLines'] = overlap_lines
+        if not overlap_polygons is None:
+            params['overlapPolygons'] = overlap_polygons
+        if not split_lines_at_breaks is None:
+            params['splitLinesAtBreaks'] = split_lines_at_breaks
+        if not split_polygons_at_breaks is None:
+            params['splitPolygonsAtBreaks'] = split_polygons_at_breaks
+        if not trim_outer_polygon is None:
+            params['trimOuterPolygon'] = trim_outer_polygon
+        if not trim_polygon_distance is None:
+            params['trimPolygonDistance'] = trim_polygon_distance
+        if not trim_polygon_distance_units is None:
+            params['trimPolygonDistanceUnits'] = trim_polygon_distance_units
+        if not return_facilities is None:
+            params['returnFacilities'] = return_facilities
+        if not return_barriers is None:
+            params['returnBarriers'] = return_barriers
+        if not return_polyline_barriers is None:
+            params['returnPolylineBarriers'] = return_polyline_barriers
+        if not return_polygon_barriers is None:
+            params['returnPolygonBarriers'] = return_polygon_barriers
+        if not out_sr is None:
+            params['outSR'] = out_sr
+        if not accumulate_attribute_names is None:
+            params['accumulateAttributeNames'] = accumulate_attribute_names
+        if not impedance_attribute_name is None:
+            params['impedanceAttributeName'] = impedance_attribute_name
+        if not restriction_attribute_names is None:
+            params['restrictionAttributeNames'] = restriction_attribute_names
+        if not restrict_u_turns is None:
+            params['restrictUTurns'] = restrict_u_turns
+        if not output_geometry_precision is None:
+            params['outputGeometryPrecision'] = output_geometry_precision
+        if not output_geometry_precision_units is None:
+            params['outputGeometryPrecisionUnits'] = output_geometry_precision_units
+        if not use_hierarchy is None:
+            params['useHierarchy'] = use_hierarchy
+        if not time_of_day is None:
+            params['timeOfDay'] = time_of_day
+        if not time_of_day_is_utc is None:
+            params['timeOfDayIsUTC'] = time_of_day_is_utc
+        if not travel_direction is None:
+            params['travelDirection'] = travel_direction
+        if not return_z is None:
+            params['returnZ'] = return_z
 
         return self._con.post(path=url,
                               postdata=params, token=self._token)
@@ -543,39 +543,39 @@ class ClosestFacilityLayer(NetworkLayer):
     Layer as well as some attributes unique to Closest Facility Layer
     only.
     """
-    def solve_closest_facility(self,incidents,facilities,
-                             barriers=None,
-                             polylineBarriers=None,
-                             polygonBarriers=None,
-                             travelMode=None,
-                             attributeParameterValues=None,
-                             returnDirections=None,
-                             directionsLanguage=None,
-                             directionsStyleName=None,
-                             directionsLengthUnits=None,
-                             directionsTimeAttributeName=None,
-                             returnCFRoutes=True,
-                             returnFacilities=False,
-                             returnIncidents=False,
-                             returnBarriers=False,
-                             returnPolylineBarriers=False,
-                             returnPolygonBarriers=False,
-                             outputLines=None,
-                             defaultCutoff=None,
-                             defaultTargetFacilityCount=None,
-                             travelDirection=None,
-                             outSR=None,
-                             accumulateAttributeNames=None,
-                             impedanceAttributeName=None,
-                             restrictionAttributeNames=None,
-                             restrictUTurns=None,
-                             useHierarchy=True,
-                             outputGeometryPrecision=None,
-                             outputGeometryPrecisionUnits=None,
-                             timeOfDay=None,
-                             timeOfDayIsUTC=None,
-                             timeOfDayUsage=None,
-                             returnZ=False):
+    def solve_closest_facility(self, incidents, facilities,
+                               barriers=None,
+                               polyline_barriers=None,
+                               polygon_barriers=None,
+                               travel_mode=None,
+                               attribute_parameter_values=None,
+                               return_directions=None,
+                               directions_language=None,
+                               directions_style_name=None,
+                               directions_length_units=None,
+                               directions_time_attribute_name=None,
+                               return_cf_routes=True,
+                               return_facilities=False,
+                               return_incidents=False,
+                               return_barriers=False,
+                               return_polyline_barriers=False,
+                               return_polygon_barriers=False,
+                               output_lines=None,
+                               default_cutoff=None,
+                               default_target_facility_count=None,
+                               travel_direction=None,
+                               out_sr=None,
+                               accumulate_attribute_names=None,
+                               impedance_attribute_name=None,
+                               restriction_attribute_names=None,
+                               restrict_u_turns=None,
+                               use_hierarchy=True,
+                               output_geometry_precision=None,
+                               output_geometry_precision_units=None,
+                               time_of_day=None,
+                               time_of_day_is_utc=None,
+                               time_of_day_usage=None,
+                               return_z=False):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
@@ -735,68 +735,68 @@ class ClosestFacilityLayer(NetworkLayer):
 
         if not barriers is None:
             params['barriers'] = barriers
-        if not polylineBarriers is None:
-            params['polylineBarriers'] = polylineBarriers
-        if not polygonBarriers is None:
-            params['polygonBarriers'] = polygonBarriers
-        if not travelMode is None:
-            params['travelMode'] = travelMode
-        if not attributeParameterValues is None:
-            params['attributeParameterValues'] = attributeParameterValues
-        if not returnDirections is None:
-            params['returnDirections'] = returnDirections
-        if not directionsLanguage is None:
-            params['directionsLanguage'] = directionsLanguage
-        if not directionsStyleName is None:
-            params['directionsStyleName'] = directionsStyleName
-        if not directionsLengthUnits is None:
-            params['directionsLengthUnits'] = directionsLengthUnits
-        if not directionsTimeAttributeName is None:
-            params['directionsTimeAttributeName'] = directionsTimeAttributeName
-        if not returnCFRoutes is None:
-            params['returnCFRoutes'] = returnCFRoutes
-        if not returnFacilities is None:
-            params['returnFacilities'] = returnFacilities
-        if not returnIncidents is None:
-            params['returnIncidents'] = returnIncidents
-        if not returnBarriers is None:
-            params['returnBarriers'] = returnBarriers
-        if not returnPolylineBarriers is None:
-            params['returnPolylineBarriers'] = returnPolylineBarriers
-        if not returnPolygonBarriers is None:
-            params['returnPolygonBarriers'] = returnPolygonBarriers
-        if not outputLines is None:
-            params['outputLines'] = outputLines
-        if not defaultCutoff is None:
-            params['defaultCutoff'] = defaultCutoff
-        if not defaultTargetFacilityCount is None:
-            params['defaultTargetFacilityCount'] = defaultTargetFacilityCount
-        if not travelDirection is None:
-            params['travelDirection'] = travelDirection
-        if not outSR is None:
-            params['outSR'] = outSR
-        if not accumulateAttributeNames is None:
-            params['accumulateAttributeNames'] = accumulateAttributeNames
-        if not impedanceAttributeName is None:
-            params['impedanceAttributeName'] = impedanceAttributeName
-        if not restrictionAttributeNames is None:
-            params['restrictionAttributeNames'] = restrictionAttributeNames
-        if not restrictUTurns is None:
-            params['restrictUTurns'] = restrictUTurns
-        if not useHierarchy is None:
-            params['useHierarchy'] = useHierarchy
-        if not outputGeometryPrecision is None:
-            params['outputGeometryPrecision'] = outputGeometryPrecision
-        if not outputGeometryPrecisionUnits is None:
-            params['outputGeometryPrecisionUnits'] = outputGeometryPrecisionUnits
-        if not timeOfDay is None:
-            params['timeOfDay'] = timeOfDay
-        if not timeOfDayIsUTC is None:
-            params['timeOfDayIsUTC'] = timeOfDayIsUTC
-        if not timeOfDayUsage is None:
-            params['timeOfDayUsage'] = timeOfDayUsage
-        if not returnZ is None:
-            params['returnZ'] = returnZ
+        if not polyline_barriers is None:
+            params['polylineBarriers'] = polyline_barriers
+        if not polygon_barriers is None:
+            params['polygonBarriers'] = polygon_barriers
+        if not travel_mode is None:
+            params['travelMode'] = travel_mode
+        if not attribute_parameter_values is None:
+            params['attributeParameterValues'] = attribute_parameter_values
+        if not return_directions is None:
+            params['returnDirections'] = return_directions
+        if not directions_language is None:
+            params['directionsLanguage'] = directions_language
+        if not directions_style_name is None:
+            params['directionsStyleName'] = directions_style_name
+        if not directions_length_units is None:
+            params['directionsLengthUnits'] = directions_length_units
+        if not directions_time_attribute_name is None:
+            params['directionsTimeAttributeName'] = directions_time_attribute_name
+        if not return_cf_routes is None:
+            params['returnCFRoutes'] = return_cf_routes
+        if not return_facilities is None:
+            params['returnFacilities'] = return_facilities
+        if not return_incidents is None:
+            params['returnIncidents'] = return_incidents
+        if not return_barriers is None:
+            params['returnBarriers'] = return_barriers
+        if not return_polyline_barriers is None:
+            params['returnPolylineBarriers'] = return_polyline_barriers
+        if not return_polygon_barriers is None:
+            params['returnPolygonBarriers'] = return_polygon_barriers
+        if not output_lines is None:
+            params['outputLines'] = output_lines
+        if not default_cutoff is None:
+            params['defaultCutoff'] = default_cutoff
+        if not default_target_facility_count is None:
+            params['defaultTargetFacilityCount'] = default_target_facility_count
+        if not travel_direction is None:
+            params['travelDirection'] = travel_direction
+        if not out_sr is None:
+            params['outSR'] = out_sr
+        if not accumulate_attribute_names is None:
+            params['accumulateAttributeNames'] = accumulate_attribute_names
+        if not impedance_attribute_name is None:
+            params['impedanceAttributeName'] = impedance_attribute_name
+        if not restriction_attribute_names is None:
+            params['restrictionAttributeNames'] = restriction_attribute_names
+        if not restrict_u_turns is None:
+            params['restrictUTurns'] = restrict_u_turns
+        if not use_hierarchy is None:
+            params['useHierarchy'] = use_hierarchy
+        if not output_geometry_precision is None:
+            params['outputGeometryPrecision'] = output_geometry_precision
+        if not output_geometry_precision_units is None:
+            params['outputGeometryPrecisionUnits'] = output_geometry_precision_units
+        if not time_of_day is None:
+            params['timeOfDay'] = time_of_day
+        if not time_of_day_is_utc is None:
+            params['timeOfDayIsUTC'] = time_of_day_is_utc
+        if not time_of_day_usage is None:
+            params['timeOfDayUsage'] = time_of_day_usage
+        if not return_z is None:
+            params['returnZ'] = return_z
 
         return self._con.post(path=url, postdata=params, token=self._token)
 

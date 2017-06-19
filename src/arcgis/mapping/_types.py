@@ -64,9 +64,8 @@ class WebMap(collections.OrderedDict):
         mapwidget = MapView(gis=self._gis, item=self.item)
         return mapwidget._ipython_display_(**kwargs)
 
-    # def __repr__(self):
-    #    dictrepr = collections.OrderedDict.__repr__(self)
-    #    return '%s(%s)' % (type(self).__name__, dictrepr)
+    def __repr__(self):
+        return 'WebMap at ' + self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid
 
     def __str__(self):
         return json.dumps(self)
@@ -95,9 +94,8 @@ class WebScene(collections.OrderedDict):
     def _repr_html_(self):
         return '<iframe width=960 height=600 src="' + "https://www.arcgis.com/home/webscene/viewer.html?webscene=" + self.item.itemid + '"/>'
 
-    # def __repr__(self):
-    #    dictrepr = dict.__repr__(self)
-    #    return '%s(%s)' % (type(self).__name__, dictrepr)
+    def __repr__(self):
+        return 'WebScene at ' + self.item._portal.url  + "/home/webscene/viewer.html?webscene=" + self.item.itemid
 
     def __str__(self):
         return json.dumps(self)
