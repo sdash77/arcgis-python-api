@@ -29,7 +29,7 @@ class ServerManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
-        self._pa = gis.admin
+        self._pa = gis._admin
         self._federation = self._pa.federation
         self._server_list = None
     #----------------------------------------------------------------------

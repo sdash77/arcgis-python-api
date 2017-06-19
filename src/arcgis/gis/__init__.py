@@ -176,7 +176,7 @@ class GIS(object):
             from .._impl.portaladmin.portaladmin import PortalAdminManager
             from .server import ServerManager
             self.ux = UX(self)
-            # self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
+            self._admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
             self.servers = ServerManager(gis=self)
     #@property
     #def _servers(self):
