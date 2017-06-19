@@ -36,7 +36,7 @@ class Security(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     @property
     def enterpriseusers(self):
@@ -288,7 +288,7 @@ class OAuth(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def update(self, current_id, new_id):
         """
@@ -363,11 +363,11 @@ class SSLCertificates(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
-    def refresh(self):
+    def _refresh(self):
         """reloads all the properties of a given service"""
-        self.init()
+        self._init()
     #----------------------------------------------------------------------
     def update(self, alias, protocols, cipher_suites):
         """
@@ -448,20 +448,6 @@ class SSLCertificates(BasePortalAdmin):
           parameter.
         """
         import json
-        #params = {
-            #"f" : "json",
-            #"alias" : alias,
-            #"keyAlg" : key_algorithm,
-            #"keySize" : key_size,
-            #"sigAlg" : signature_algorithm,
-            #"cn" : common_name,
-            #"orgUnit" :  unit,
-            #"org" : organization,
-            #"city" : city,
-            #"state" : state,
-            #"country" : country_code,
-            #"validity" : validity
-        #}
         params = {
             "alias":alias,
             'keyAlg':key_algorithm,
@@ -482,7 +468,7 @@ class SSLCertificates(BasePortalAdmin):
         except json.JSONDecodeError:
             # Need to capture this because method only returns HTML
             # Ignore decoding errors
-            self.refresh()
+            self._refresh()
             return True
         except:
             return False
@@ -543,18 +529,33 @@ class SSLCertificates(BasePortalAdmin):
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    @property
-    def certificates(self):
+    def list(self):
         """
         list of certificates
         """
         certs = []
-        self.refresh()
-        for cert in self.sslCertificates:
+        self._refresh()
+        for cert in self.properties.sslCertificates:
             url = "%s/%s" % (self._url, cert)
             certs.append(SSLCertificate(url=url, gis=self._gis))
             del cert
         return certs
+    #----------------------------------------------------------------------
+    def get(self, alias_name):
+        """
+        gets a single SSLCertificate object by the alias name
+
+        Parameters:
+        :param alias_name: common name of the certificate
+        Output:
+        returns a single SSLCertificate object if it exists, else
+        it returns None
+        """
+        for cert in self.list():
+            if cert.properties['Alias name'].lower() == alias_name.lower():
+                return cert
+            del cert
+        return None
 ########################################################################
 class SSLCertificate(BasePortalAdmin):
     """
@@ -579,7 +580,7 @@ class SSLCertificate(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def generate_csr(self, signing_request):
         """
@@ -667,7 +668,7 @@ class EnterpriseGroups(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def search(self,
                query="",
@@ -774,7 +775,7 @@ class EnterpriseUsers(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
     #----------------------------------------------------------------------
     def create(self,
                username,
