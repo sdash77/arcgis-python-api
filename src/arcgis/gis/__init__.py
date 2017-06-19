@@ -175,8 +175,8 @@ class GIS(object):
            self.users.me.role == "org_admin":
             from .._impl.portaladmin.portaladmin import PortalAdminManager
             from .server import ServerManager
-            self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
-                                            gis=self)
+            self.ux = UX(self)
+            # self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
             self.servers = ServerManager(gis=self)
     #@property
     #def _servers(self):
@@ -254,9 +254,9 @@ class GIS(object):
         """
         return ContentManager(self)
 
-    @_lazy_property
-    def ux(self):
-        return UX(self)
+    # @_lazy_property
+    # def ux(self):
+    #     return UX(self)
 
     @_lazy_property
     def _datastores(self):
@@ -4505,9 +4505,9 @@ class Item(dict):
         if self.type.lower() == "web map":
             icon = "maps16.png"
         elif self.type.lower() == "web scene":
-            icon = "webscene16.png"
+            icon = "websceneglobal16.png"
         elif self.type.lower() == "cityengine web scene":
-            icon = "webscene16.png"
+            icon = "websceneglobal16.png"
         elif self.type.lower() == "pro map":
             icon = "mapsgray16.png"
         elif self.type.lower() == "feature service":
