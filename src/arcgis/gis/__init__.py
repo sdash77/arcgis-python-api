@@ -165,7 +165,9 @@ class GIS(object):
 
         self._con = self._portal.con
         if self._con._auth.lower() != 'ANON'.lower() and \
-               self._con._auth is not None:
+                self._con._auth is not None and \
+                hasattr(self.users.me, 'role') and \
+                self.users.me.role == "org_admin":
             self.collaborations = CollaborationManager(gis=self)
         self._tools = _Tools(self)
         if set_active:
@@ -1174,7 +1176,7 @@ class CollaborationManager(object):
                host_contact_email_address,
                access_mode="sendAndReceive"):
         """
-        The createCollaboration operation creates a collaboration. The host
+        The create method creates a collaboration. The host
         of the collaboration is the portal where it is created. The initial
         workspace for the collaboration is also created. A portal group in
         the host portal is linked to the workspace. The access mode for the
@@ -1332,7 +1334,7 @@ class CollaborationManager(object):
                             webauth_cert_file=None,
                             webauth_cert_password=None):
         """
-        The validateCollaborationInvitation resource allows a portal to
+        The validate_invitation method allows a portal to
         validate a collaboration invitation. The invitation file received
         securely from the collaboration host portal must be provided.
         Validation checks include checking that the invitation is for the
