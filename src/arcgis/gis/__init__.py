@@ -3736,6 +3736,120 @@ class Group(dict):
         """
         return self._portal.leave_group(self.groupid)
 
+    def join(self):
+        """
+        Users apply to join a group using the Join Group operation. This
+        creates a new group application, which the group administrators
+        accept or decline. This operation also creates a notification for
+        the user indicating that they have applied to join this group.
+        Available only to authenticated users.
+        Users can only apply to join groups to which they have access. If
+        the group is private, users will not be able to find it to ask to
+        join it.
+        Information pertaining to the applying user, such as their full
+        name and username, can be sent as part of the group application.
+        """
+        url = "community/groups/%s/join" % (self.groupid)
+        params = {"f" : "json"}
+        res = self._portal.con.post(url, params)
+        if 'success' in res:
+            return res['success'] == True
+        return res
+    #----------------------------------------------------------------------
+    @property
+    def applications(self):
+        """
+        Lists the group applications for the given group. Available to
+        administrators of the group or administrators of an organization if
+        the group is part of one.
+        """
+        apps = []
+        try:
+            path = "%scommunity/groups/%s/applications" % (self._portal.resturl, self.groupid)
+            params = {"f" : "json"}
+            res = self._portal.con.post(path, params)
+            if 'applications' in res:
+                for app in res['applications']:
+                    url = "%s/%s" % (path, app['username'])
+                    apps.append(GroupApplication(url=url, gis=self._gis))
+        except:
+            print()
+        return apps
+
+class GroupApplication(object):
+    """
+    Represents a single group application on the GIS (ArcGIS Online or
+    Portal for ArcGIS)
+    """
+    _con = None
+    _portal =  None
+    _gis = None
+    _url = None
+    _properties = None
+    def __init__(self, url, gis, **kwargs):
+        initialize = kwargs.pop('initialize', False)
+        self._url = url
+        self._gis = gis
+        self._portal = gis._portal
+        self._con = self._portal.con
+        if initialize:
+            self._init()
+
+    def _init(self):
+        """loads the properties"""
+        try:
+            res = self._con.get(self._url, {'f':'json'})
+            self._properties = PropertyMap(res)
+            self._json_dict = res
+        except:
+            self._properties = PropertyMap({})
+            self._json_dict = {}
+
+    @property
+    def properties(self):
+        if self._properties is None:
+            self._init()
+        return self._properties
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s for %s>' % (type(self).__name__, self.properties.username)
+
+    def accept(self):
+        """
+        When a user applies to join a group, a group application is
+        created. Group administrators choose to accept this application
+        using the Accept Group Application operation. This operation adds
+        the applying user to the group then deletes the application. This
+        operation also creates a notification for the user indicating that
+        the user's group application was accepted. Available only to group
+        owners and admins.
+        """
+        url = "%s/accept" % self._url
+        params = {"f" : "json"}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success'] == True
+        return res
+
+    def decline(self):
+        """
+        When a user applies to join a group, a group application is
+        created. Group administrators can decline this application using
+        the Decline Group Application operation (POST only). This operation
+        deletes the application and creates a notification for the user
+        indicating that the user's group application was declined. The
+        applying user will not be added to the group. Available only to
+        group owners and admins.
+        """
+        url = "%s/decline" % self._url
+        params = {"f" : "json"}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success'] == True
+        return res
 
 class User(dict):
     """
