@@ -4,7 +4,7 @@ has a status that indicates whether the machine is ready to accept
 requests.
 """
 from ._base import BasePortalAdmin
-from .._impl.common._mixins import PropertyMap
+from ..._impl.common._mixins import PropertyMap
 ########################################################################
 class Machines(BasePortalAdmin):
     """

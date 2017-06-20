@@ -3,9 +3,9 @@ Contains the base class that all portaladmin object inherit from.
 """
 from __future__ import absolute_import
 import json
-from .._impl.connection import _ArcGISConnection
+from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
-from .._impl.common._mixins import PropertyMap
+from ..._impl.common._mixins import PropertyMap
 ###########################################################################
 class BasePortalAdmin(object):
     _con = None

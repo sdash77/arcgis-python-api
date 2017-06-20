@@ -1,7 +1,7 @@
 """
 Entry point to working with local enterprise GIS functions
 """
-from .._impl.connection import _ArcGISConnection
+from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
 from ._base import BasePortalAdmin
 ########################################################################

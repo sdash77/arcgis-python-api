@@ -1,10 +1,10 @@
 """
 Modifies a local portal's system settings.
 """
-from .._impl.connection import _ArcGISConnection
-from ...gis import GIS
+from ..._impl.connection import _ArcGISConnection
+from .. import GIS
 from ._base import BasePortalAdmin
-from .._impl.common._mixins import PropertyMap
+from ..._impl.common._mixins import PropertyMap
 ########################################################################
 class System(BasePortalAdmin):
     """

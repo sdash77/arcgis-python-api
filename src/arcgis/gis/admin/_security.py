@@ -1,8 +1,8 @@
 """
 Controls the local portal's security settings
 """
-from .._impl.connection import _ArcGISConnection
-from ..gis import GIS
+from ..._impl.connection import _ArcGISConnection
+from .. import GIS
 from ._base import BasePortalAdmin
 ########################################################################
 class Security(BasePortalAdmin):
