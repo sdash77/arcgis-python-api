@@ -1,7 +1,7 @@
 """
 Updates the Federation Settings to Portal
 """
-from ...gis import GIS
+from ..gis import GIS
 from ._base import BasePortalAdmin
 ########################################################################
 class Federation(BasePortalAdmin):

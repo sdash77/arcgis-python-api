@@ -4,8 +4,7 @@ has a status that indicates whether the machine is ready to accept
 requests.
 """
 from ._base import BasePortalAdmin
-from .._server import Server
-from ..common._mixins import PropertyMap
+from .._impl.common._mixins import PropertyMap
 ########################################################################
 class Machines(BasePortalAdmin):
     """
@@ -36,7 +35,9 @@ class Machines(BasePortalAdmin):
         """
         machines = []
         for m in self.properties.machines:
-            machines.append(Machine(name=m['machineName'], url=self._url, info=dict(m),
+            machines.append(Machine(name=m['machineName'],
+                                    url=self._url,
+                                    info=dict(m),
                                     gis=self._gis,
                                     portaladmin=self._pa))
         return machines
@@ -49,6 +50,7 @@ class Machines(BasePortalAdmin):
         for m in self.properties.machines:
             if m['machineName'].lower() == name.lower():
                 return Machine(name=m['machineName'],
+                               gis=self._gis,
                                url=self._url,
                                info=dict(m),
                                portaladmin=self._pa)

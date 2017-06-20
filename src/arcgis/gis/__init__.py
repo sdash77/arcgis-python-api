@@ -175,7 +175,7 @@ class GIS(object):
         if self.properties.isPortal and \
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
-            from .._impl.portaladmin.portaladmin import PortalAdminManager
+            from .admin.portaladmin import PortalAdminManager
             from .server import ServerManager
             self.ux = UX(self)
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
@@ -1511,7 +1511,7 @@ class Collaboration(dict):
             params['start'] = res['nextStart']
             if res['nextStart'] == -1:
                 return invs
-            res = self._portal.con.get(data_path, params)
+            res = self._portal.con.get(path, params)
         return invs
     #----------------------------------------------------------------------
     def delete(self):
@@ -1808,7 +1808,6 @@ class Collaboration(dict):
         """
         params = {'f' : 'json'}
         data_path = "%s/participants/%s/remove" % (self._basepath, portal_id)
-        isinstance(con, arcgis._impl.connection._ArcGISConnection)
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
     #----------------------------------------------------------------------
@@ -1825,7 +1824,6 @@ class Collaboration(dict):
         """
         params = {'f' : 'json'}
         data_path = "%s/workspaces/%s/removePortalGroupLink" % (self._basepath, workspace_id)
-        isinstance(con, arcgis._impl.connection._ArcGISConnection)
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
     #----------------------------------------------------------------------
@@ -4118,7 +4116,7 @@ class User(dict):
         """
         The list of notifications available for the given user.
         """
-        from ._impl.notification import Notification
+        from .._impl.notification import Notification
         result = []
         url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
         params = {"f" : "json"}
@@ -5268,7 +5266,7 @@ class Item(dict):
         """
         returns a list of comments on a given item
         """
-        from ._impl.comments import Comment
+        from .._impl.comments import Comment
         cs = []
         start = 1
         num = 100

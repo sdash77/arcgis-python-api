@@ -2,7 +2,6 @@
 Module contains a class to manage site level functions on a local GIS
 """
 from ._base import BasePortalAdmin
-from ..common._mixins import PropertyMap
 ########################################################################
 class Site(BasePortalAdmin):
     """
@@ -19,6 +18,7 @@ class Site(BasePortalAdmin):
     #----------------------------------------------------------------------
     def __init__(self, url, portaladmin, **kwargs):
         """Constructor"""
+        super(Site, self).__init__(url=url, gis=portaladmin._gis)
         initialize = kwargs.pop('initialize', False)
         self._url = url
         self._pa = portaladmin
