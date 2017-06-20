@@ -197,6 +197,15 @@ class MapView(widgets.DOMWidget):
 
     @extent.setter
     def extent(self, value):
+        if isinstance(value, (tuple, list)):
+            if all(isinstance(el, list) for el in value):
+                extent = {
+                    'xmin': value[0][0],
+                    'ymin': value[0][1],
+                    'xmax': value[1][0],
+                    'ymax': value[1][1]
+                }
+                value = extent
         self._extent = json.dumps(value)
 
     def on_click(self, callback, remove=False):

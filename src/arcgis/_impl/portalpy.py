@@ -81,11 +81,11 @@ class Portal(object):
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
                  tokenurl=None, verify_cert=True, client_id=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
-        url = url.strip()
-        if url.endswith('/home/'): # be permissive in accepting home app urls
-            url = url[:-6]
-        elif url.endswith('/home'): # be permissive in accepting home app urls
-            url = url[:-5]
+        url = url.strip()            # be permissive in accepting home app urls
+        homepos = url.find('/home')
+        if homepos != -1:
+            url = url[:homepos]
+
         self._is_arcpy = url.lower() == "pro"
         if self._is_arcpy:
             try:
