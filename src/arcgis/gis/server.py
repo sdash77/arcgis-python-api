@@ -29,7 +29,7 @@ class ServerManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
-        self._pa = gis._admin
+        self._pa = gis.admin
         self._federation = self._pa.federation
         self._server_list = None
     #----------------------------------------------------------------------
@@ -526,7 +526,9 @@ class ServiceManager(object):
            Output:
               result as dictionary
         """
-        return self._svcmgr.create_folder(folder, description)
+        res = self._svcmgr.create_folder(folder, description)
+        self._svcmgr._folders = None
+        return res
 
     def delete_folder(self, folder):
         """
@@ -536,7 +538,9 @@ class ServiceManager(object):
            Output:
               bool
         """
-        return self._svcmgr.delete_folder(folder)
+        res = self._svcmgr.delete_folder(folder)
+        self._svcmgr._folders = None
+        return res
 
     def publish_sd(self, sd_file_path, folder=None):
         """

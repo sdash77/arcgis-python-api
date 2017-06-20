@@ -34,7 +34,13 @@ class PortalAdminManager(BasePortalAdmin):
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
-            self.init(self._gis)
+            self._init(self._gis)
+    #----------------------------------------------------------------------
+    #def __str__(self):
+    #    return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    #def __repr__(self):
+    #    return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     @property
     def machines(self):
@@ -267,4 +273,3 @@ class PortalAdminManager(BasePortalAdmin):
                   "machineName" : machine_name}
         url = "%s/machines/unregister" % self._url
         return self._con.post(path=url, postdata=params)
-
