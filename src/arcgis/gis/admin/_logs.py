@@ -1,7 +1,7 @@
 """
 Allows access to the Portal Logs
 """
-from ...gis import GIS
+from .. import GIS
 from ._base import BasePortalAdmin
 ########################################################################
 class Logs(BasePortalAdmin):

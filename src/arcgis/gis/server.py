@@ -143,13 +143,13 @@ class ServerManager(object):
         with the ArcGIS Server.
 
         Parameters:
-         :server: arcgis.gis.Server object
-         :role: Whether the server is a hosting server for the portal, a
+         :param server: arcgis.gis.Server object
+         :param role: Whether the server is a hosting server for the portal, a
           federated server, or a server with restricted access to
           publishing. The allowed values are:
            FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
            or HOSTING_SERVER.
-         :function: Function associates a specific function with the
+         :param function: Function associates a specific function with the
          server. It takes in a comma separated list of values. The allowed
          values are GeoAnalytics,RasterAnalytics, and ImageHosting. Values
          can be comma separated but it is not recommend that a single
@@ -508,7 +508,12 @@ class ServiceManager(object):
         return self._svcmgr.folders
 
     def list(self, folder='/'):
-        """ returns a list of services in the specified folder """
+        """
+        returns a list of services in the specified folder
+
+        Parameters:
+        :param folder: name of the folder to list services from
+        """
         if folder != self._currentFolder or \
            self._services is None:
             self._currentFolder = folder
@@ -520,11 +525,11 @@ class ServiceManager(object):
     def create_folder(self, folder, description=""):
         """
            Creates a unique folder
-           Inputs:
-              folder_name - name of folder
-              description - describes the folder
+           Parameters:
+            :param folder_name - name of folder
+            :param description - describes the folder
            Output:
-              result as dictionary
+            result as dictionary
         """
         res = self._svcmgr.create_folder(folder, description)
         self._svcmgr._folders = None
@@ -533,10 +538,10 @@ class ServiceManager(object):
     def delete_folder(self, folder):
         """
            Deletes a folder
-           Inputs:
-              folder - name of folder to remove
+           Parameters:
+            :param folder - name of folder to remove
            Output:
-              bool
+            boolean
         """
         res = self._svcmgr.delete_folder(folder)
         self._svcmgr._folders = None
@@ -573,7 +578,7 @@ class ServiceManager(object):
           on the service. The Extension Types section in the Help describes
           the supported out-of-the-box extensions for each service type.
         Output:
-         dictionary status message
+        dictionary status message
         """
         self._services = None
         return self._svcmgr.create_service(service)
@@ -586,12 +591,12 @@ class ServiceManager(object):
         and service_type with folder_name=None. To test if a service exists
         in a folder, supply all three parameters.
 
-        Inputs:
-           folder_name - a folder name
-           name - a service name
-           service_type - a service type. Allowed values:
-                GeometryServer | ImageServer | MapServer | GeocodeServer |
-                GeoDataServer | GPServer | GlobeServer | SearchServer
+        Parameters:
+        :param folder_name - a folder name
+        :param name - a service name
+        :param service_type - a service type. Allowed values:
+        GeometryServer | ImageServer | MapServer | GeocodeServer |
+        GeoDataServer | GPServer | GlobeServer | SearchServer
         """
         return self._svcmgr.exists(folder_name, name, service_type)
 ########################################################################
@@ -741,6 +746,9 @@ class MachineManager(object):
     def get(self, name):
         """
         gets a single instance of a machine
+
+        Parameters:
+        :param name: name of the machine
         """
         return Machine(self._machines.get(machine_name=name))
     #----------------------------------------------------------------------
@@ -753,11 +761,11 @@ class MachineManager(object):
            the site and is a convenient way when a large number of machines
            need to be added to a site. In contrast, a server machine can
            choose to join a site.
-           Inputs:
-              name - name of the server machine
-              admin_url - URL wher ethe Administrator API is running on the
-                         server machine.
-                         Example: http://<machineName>:6080/arcgis/admin
+           Parameters:
+            :param name: - name of the server machine
+            :param admin_url: - URL wher ethe Administrator API is running on the
+                               server machine.
+                               Example: http://<machineName>:6080/arcgis/admin
            Output:
               JSON message as dictionary
         """
@@ -774,10 +782,10 @@ class MachineManager(object):
            identifying a name change and repairing itself and all its
            references. This operation is a manual call to handle the
            machine name change.
-           Input:
-              name - The former name of the server machine that is
-                            registered with the site.
-              new_name - The new name of the server machine.
+           Parameters:
+            :param name: - The former name of the server machine that is
+                          registered with the site.
+            :param new_name: - The new name of the server machine.
            Output:
               JSON messages as dictionary
         """
@@ -1015,9 +1023,9 @@ class LogManager(object):
     def count_error_reports(self, machine="*"):
         """ This operation counts the number of error reports (crash
             reports) that have been generated on each machine.
-            Input:
-               machine - name of the machine in the cluster.  * means all
-                         machines.  This is default
+            Parameters:
+               :param machine: - name of the machine in the cluster.  * means all
+                                 machines.  This is default
             Output:
                dictionary with report count and machine name
         """
@@ -1039,14 +1047,14 @@ class LogManager(object):
              max_report_count=10):
         """
            The log settings are for the entire site.
-           Inputs:
-             level -  Can be one of [OFF, SEVERE, WARNING, INFO, FINE,
-                         VERBOSE, DEBUG].
-             log_dir - File path to the root of the log directory
-             max_age - number of days that a server should save a log
+           Parameters:
+             :param level: - Can be one of [OFF, SEVERE, WARNING, INFO, FINE,
+                             VERBOSE, DEBUG].
+             :param log_dir: - File path to the root of the log directory
+             :param max_age: - number of days that a server should save a log
                              file.
-             ax_report_count - maximum number of error report files
-                                    per machine
+             :param ax_report_count: - maximum number of error report files
+                                       per machine
         """
         return self._logs.edit_settings(level=level,
                                         log_dir=log_dir,
@@ -1069,7 +1077,7 @@ class LogManager(object):
         """
            The query operation on the logs resource provides a way to
            aggregate, filter, and page through logs across the entire site.
-           Inputs:
+           Parameters:
 
         """
         return self._logs.query(
@@ -1148,7 +1156,7 @@ class ReportManager(object):
         The usage reports settings are applied to the entire site. A POST
         request updates the usage reports settings.
 
-        Inputs:
+        Parameters:
            interval - Defines the duration (in minutes) for which
              the usage statistics are aggregated or sampled, in-memory,
              before being written out to the statistics database.
@@ -1177,7 +1185,7 @@ class ReportManager(object):
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
 
-        Inputs:
+        Parameters:
            reportname - the unique name of the report
            since - the time duration of the report. The supported values
               are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
@@ -1410,7 +1418,7 @@ class Report(object):
         response of null indicates that data is not available or requests
         were not logged for that metric in the corresponding time-slice.
 
-        Inputs:
+        Parameters:
            query_filter - The report data can be filtered by the machine
              where the data is generated. The filter accepts a comma
              separated list of machine names; * represents all machines.
@@ -1500,7 +1508,7 @@ class DataStoreManager(object):
         This operation allows you to update the data store configuration
         You can use this to allow or block the automatic copying of data
         to the server at publish time
-        Input:
+        Parameters:
         :param config: - the JSON object containing the data configuration
         Output:
         JSON message as dictionary
@@ -1589,7 +1597,7 @@ class DataStoreManager(object):
            that exist on the server. You can use this operation to
            determine if a data resource can be safely deleted (or taken
            down for maintenance).
-           Input:
+           Parameters:
               path - The complete hierarchical path to the item
            Output:
               JSON message as dictionary
@@ -1645,7 +1653,7 @@ class DataStoreManager(object):
         """
            You can use this operation to search through the various data
            items registered in the server's data store.
-           Inputs:
+           Parameters:
               parent_path - The path of the parent under which to find items
               ancestor_path - The path of the ancestor under which to find
                              items.
@@ -1695,7 +1703,7 @@ class DataStoreManager(object):
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
 
-        Inputs:
+        Parameters:
            item_name - name of the data store item
            machine_name - name of the machine to remove
         """
@@ -1705,7 +1713,7 @@ class DataStoreManager(object):
         """
         Starts the database instance running on the Data Store machine.
 
-        Inputs:
+        Parameters:
            item_name - name of the item to start
            machine_name - name of the machine to start on
         """
@@ -1715,7 +1723,7 @@ class DataStoreManager(object):
         """
         Stop the database instance running on the Data Store machine.
 
-        Inputs:
+        Parameters:
            item_name - name of the item to stop
            machine_name - name of the machine to stop on
         """
@@ -1726,7 +1734,7 @@ class DataStoreManager(object):
         Unregisters a data item that has been previously registered with
         the server's data store.
 
-        Inputs:
+        Parameters:
            path - path to share folder
 
         Example:
@@ -1740,7 +1748,7 @@ class DataStoreManager(object):
         Checks the status of ArcGIS Data Store and provides a health check
         response.
 
-        Inputs:
+        Parameters:
            data_store_namee - name of the datastore
            name - name of the machine
         """
@@ -1954,7 +1962,7 @@ class UserManager(object):
         users from the user store. The size of the search result can be
         controlled with the max_results parameter.
 
-        Inputs:
+        Parameters:
          :username: user or users to find
          :max_results: integer value of the maximum number of users to
          return
@@ -2561,7 +2569,7 @@ class SiteManager(object):
         you can publish GIS services and deploy them to your server
         machines.
 
-        Inputs:
+        Parameters:
            username - The name of the administrative account to be used by
              the site. This can be changed at a later stage.
            password - The credentials of the administrative account.
@@ -2602,7 +2610,7 @@ class SiteManager(object):
         If this is the first server machine in your site, use the Create
         Site operation instead.
 
-        Inputs:
+        Parameters:
            admin_url - The site URL of the currently live site. This is
             typically the Administrator Directory URL of one of the server
             machines of a site.
@@ -2634,7 +2642,7 @@ class SiteManager(object):
         Exports the site configuration to a location you specify as input
         to this operation.
 
-        Inputs:
+        Parameters:
            location - A path to a folder accessible to the server where the
             exported site configuration will be written. If a location is
             not specified, the server writes the exported site
@@ -2661,7 +2669,7 @@ class SiteManager(object):
         The importSite operation lets you restore your site from a backup
         that you created using the exportSite operation.
 
-        Input:
+        Parameters:
            location - A file path to an exported configuration or an ID
             referencing the stored configuration on the server.
         """
