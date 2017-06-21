@@ -169,6 +169,7 @@ class GIS(object):
                 hasattr(self.users.me, 'role') and \
                 self.users.me.role == "org_admin":
             self.collaborations = CollaborationManager(gis=self)
+            self.metadata = MetadataManager(gis=self)
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
@@ -180,6 +181,7 @@ class GIS(object):
             self.ux = UX(self)
             self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
             self.servers = ServerManager(gis=self)
+
     #@property
     #def _servers(self):
         #"""
@@ -295,6 +297,7 @@ class GIS(object):
 
         resp = self._portal.con.post('portals/self/update', postdata)
         if resp:
+            self._lazy_properties = PropertyMap(self._portal.get_properties(force=True))
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get('success')
 
@@ -1949,6 +1952,96 @@ class Collaboration(dict):
         data_path = "%s/validatInvitationResponse" % self._basepath
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
+
+########################################################################
+class MetadataManager(object):
+    """
+    Provides Administrators an Easy value to enable, update and disable
+    metadata settings on a Web GIS Site (Enterprise or ArcGIS Online)
+    """
+
+    #----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Constructor"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._con = gis._portal.con
+    #----------------------------------------------------------------------
+    def enable(self, metadata_format="arcgis"):
+        """
+        This operation turns on metadata for items and allows the
+        administrator to set the default metadata scheme.
+
+        Parameters:
+         :param metadata_format: the default metadata format
+        Output:
+         boolean stating if the operation was a success
+        """
+        isinstance(self._gis, GIS)
+        lookup = {
+            "fgdc" : "fgdc",
+            "inspire" : "inspire",
+            "iso19139" : "iso19139",
+            "iso19139-3.2" : "iso19139-3.2",
+            "iso19115" : "iso19115",
+            "arcgis" : "arcgis"
+        }
+        if not metadata_format.lower() in lookup.keys():
+            raise ValueError("Invalid metadata_format")
+        params = {
+            "metadataEditable" : True,
+            "metadataFormats" : lookup[metadata_format.lower()]
+        }
+        return self._gis.update_properties(properties_dict=params)
+    #----------------------------------------------------------------------
+    def disable(self):
+        """
+        This operation turns off metadata for items.
+
+        Output:
+         boolean stating if the operation was a success
+        """
+
+        params = {
+            "metadataEditable" : False,
+            "metadataFormats" : ""
+        }
+        return self._gis.update_properties(properties_dict=params)
+    #----------------------------------------------------------------------
+    def update(self, metadata_format="arcgis"):
+        """
+        This operation allows administrators to update the current metdata
+        properties.
+
+        Parameters:
+         :param metadata_format: the default metadata format
+        Output:
+         boolean stating if the operation was a success
+        """
+        isinstance(self._gis, GIS)
+        lookup = {
+            "fgdc" : "fgdc",
+            "inspire" : "inspire",
+            "iso19139" : "iso19139",
+            "iso19139-3.2" : "iso19139-3.2",
+            "iso19115" : "iso19115",
+            "arcgis" : "arcgis"
+        }
+        if not metadata_format.lower() in lookup.keys():
+            raise ValueError("Invalid metadata_format")
+        params = {
+            "metadataEditable" : True,
+            "metadataFormats" : lookup[metadata_format.lower()]
+        }
+        return self._gis.update_properties(properties_dict=params)
+    #----------------------------------------------------------------------
+    @property
+    def is_enabled(self):
+        """returns boolean to show if metadata is enable on a GIS"""
+        try:
+            return self._gis.properties.metadataEditable
+        except:
+            return False
 
 ###########################################################################
 class UserManager(object):
@@ -4571,8 +4664,8 @@ class Item(dict):
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
-
-    def get_metadata(self):
+    @property
+    def metadata(self):
         """ Returns the item metadata for the specified item.
             Returns None if the item does not have metadata.
             Items with metadata have 'Metadata' in their typeKeywords
@@ -4588,6 +4681,32 @@ class Item(dict):
                 return None
             else:
                 raise e
+
+    #----------------------------------------------------------------------
+    @metadata.setter
+    def metadata(self, value):
+        """
+        For metadata enabled site, users can get/set metadata from a file
+        or XML text.
+        """
+        import shutil
+        from six import string_types
+        xml_file = os.path.join(tempfile.gettempdir(), 'metadata.xml')
+        if os.path.isfile(xml_file) == True:
+            os.remove(xml_file)
+        if os.path.isfile(value) == True and \
+           str(value).lower().endswith('.xml'):
+            if os.path.basename(value).lower() != 'metadata.xml':
+                shutil.copy(value, xml_file)
+            else:
+                xml_file = value
+        elif isinstance(value, string_types):
+            with open(xml_file, mode='w') as writer:
+                writer.write(value)
+                writer.close()
+        else:
+            raise ValueError("Input must be XML path file or XML Text")
+        return self.update(metadata=xml_file)
 
     def download_metadata(self, save_folder=None):
         """ Downloads the item metadata for the specified item id, returns file path.

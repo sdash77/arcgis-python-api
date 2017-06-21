@@ -69,7 +69,7 @@ class ServerManager(object):
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
         for server in self._federation.servers['servers']:
-            if role.lower() == server['serverRole'].lower():
+            if str(role).lower() == server['serverRole'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
             elif str(function).lower() == server['serverFunction'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
