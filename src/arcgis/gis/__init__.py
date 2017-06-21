@@ -164,23 +164,36 @@ class GIS(object):
             self._url = self._portal.url
 
         self._con = self._portal.con
-        if self._con._auth.lower() != 'ANON'.lower() and \
-                self._con._auth is not None and \
-                hasattr(self.users.me, 'role') and \
-                self.users.me.role == "org_admin":
-            self.collaborations = CollaborationManager(gis=self)
-            self.metadata = MetadataManager(gis=self)
+
+        if self._con._auth.lower() != 'anon' and \
+           self._con._auth is not None and \
+           hasattr(self.users.me, 'role') and \
+           self.users.me.role == "org_admin":
+            if self.properties.isPortal == True:
+                from .admin.portaladmin import PortalAdminManager
+                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                gis=self)
+            else:
+                from .admin.agoladmin import AGOLAdminManager
+                self.admin = AGOLAdminManager(gis=self)
+
+        #if self._con._auth.lower() != 'ANON'.lower() and \
+           #self._con._auth is not None and \
+           #hasattr(self.users.me, 'role') and \
+           #self.users.me.role == "org_admin":
+            #self.collaborations = CollaborationManager(gis=self)
+            #self.metadata = MetadataManager(gis=self)
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-        if self.properties.isPortal and \
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == "org_admin":
-            from .admin.portaladmin import PortalAdminManager
-            from .server import ServerManager
-            self.ux = UX(self)
-            self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
-            self.servers = ServerManager(gis=self)
+        #if self.properties.isPortal and \
+           #hasattr(self.users.me, 'role') and \
+           #self.users.me.role == "org_admin":
+            #from .admin.portaladmin import PortalAdminManager
+            #from .server import ServerManager
+            #self.ux = UX(self)
+            #self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url, gis=self)
+            #self.servers = ServerManager(gis=self)
 
     #@property
     #def _servers(self):

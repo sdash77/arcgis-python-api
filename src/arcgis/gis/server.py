@@ -13,7 +13,7 @@ from ..gis import GIS
 from .._impl._server._view import Catalog
 from .._impl._server.admin._logs import Log
 from .._impl._server.admin._data import Datastore as AdminDataStore
-from .._impl._server.admin._data import Datastore as AdminDataStore
+
 _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
