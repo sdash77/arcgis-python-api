@@ -29,6 +29,10 @@ class PortalAdminManager(BasePortalAdmin):
     _site = None
     _url = None
     _gis = None
+    _ux = None
+    _metadata = None
+    _collaborations = None
+    _servers = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -46,6 +50,42 @@ class PortalAdminManager(BasePortalAdmin):
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
+    #----------------------------------------------------------------------
+    @property
+    def ux(self):
+        """returns a UX/UI manager"""
+        if self._ux is None:
+            from .. import UX
+            self._ux = UX(gis=self._gis)
+        return self._ux
+    #----------------------------------------------------------------------
+    @property
+    def collaborations(self):
+        """
+        The collaborations resource lists all collaborations in which a
+        portal participates
+        """
+        if self._collaborations is None:
+            from .. import CollaborationManager
+            self._collaborations = CollaborationManager(gis=self._gis)
+        return self._collaborations
+    #----------------------------------------------------------------------
+    @property
+    def metadata(self):
+        """
+        """
+        if self._metadata is None:
+            from .. import MetadataManager
+            self._metadata = MetadataManager(gis=self._gis)
+        return self._metadata
+    #----------------------------------------------------------------------
+    @property
+    def servers(self):
+        """returns a server manager object"""
+        if self._servers is None:
+            from ..server import ServerManager
+            self._servers = ServerManager(gis=self._gis)
+        return self._servers
     #----------------------------------------------------------------------
     @property
     def machines(self):
