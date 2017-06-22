@@ -19,6 +19,7 @@ class AGOLAdminManager(object):
     """
     _gis = None
     _ux = None
+    _credits = None
     _metadata = None
     _collaborations = None
     #----------------------------------------------------------------------
@@ -57,6 +58,17 @@ class AGOLAdminManager(object):
             from ._collaboration import CollaborationManager
             self._collaborations = CollaborationManager(gis=self._gis)
         return self._collaborations
+    #----------------------------------------------------------------------
+    @property
+    def credits(self):
+        """
+        manages the credits on a ArcGIS Online
+        """
+        if self._credits is None:
+            from ._creditmanagement import CreditManager
+            self._credits = CreditManager(gis=self._gis)
+        return self._credits
+
     #----------------------------------------------------------------------
     @property
     def metadata(self):
