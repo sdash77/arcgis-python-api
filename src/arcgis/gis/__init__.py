@@ -1843,7 +1843,7 @@ class ContentManager(object):
             return Item(self._gis, itemid, item)
         return None
 
-    def search(self, query, item_type=None, sort_field='numViews', sort_order='desc', max_items=10, outside_org=False):
+    def search(self, query, item_type=None, sort_field='avgRating', sort_order='desc', max_items=10, outside_org=False):
         """ Searches for portal items.
 
         .. note::
