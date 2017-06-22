@@ -306,7 +306,6 @@ class Server(object):
             return False
         else:
             return False
-
     #----------------------------------------------------------------------
     @property
     def site(self):
