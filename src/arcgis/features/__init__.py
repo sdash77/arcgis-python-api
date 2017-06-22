@@ -27,6 +27,7 @@ from . import find_locations
 from . import manage_data
 from . import summarize_data
 from . import use_proximity
+from . import analysis
 
 __all__ = ['SpatialDataFrame', 'Feature', 'FeatureSet',
            'FeatureCollection', 'FeatureLayer', 'Table',
