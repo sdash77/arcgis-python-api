@@ -495,7 +495,7 @@ class FeatureSet(object):
     @staticmethod
     def from_dataframe(df):
         """returns a featureset from a Pandas' Data or Spatial DataFrame"""
-        from ..data.geodataset import SpatialDataFrame
+        from ._data.geodataset import SpatialDataFrame
         import pandas as pd
         try:
             import arcpy
