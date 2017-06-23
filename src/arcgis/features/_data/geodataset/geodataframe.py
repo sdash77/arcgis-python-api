@@ -231,6 +231,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
         """ writes the spatial dataframe to a map """
+        from arcgis import geometry
         if self._gis is None:
             gis = GIS(set_active=False)
         else:
@@ -242,13 +243,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         extent = None
         if HASARCPY:
             if sr:
+                wkid = None
+                if hasattr(sr, 'factoryCode'):
+                    wkid = sr.factoryCode
+                elif isinstance(sr, geometry.SpatialReference):
+                    wkid = sr['wkid']
                 ext = self.geoextent
                 extent = pd.json.dumps({
                     "xmin" : ext[0],
                     "ymin" : ext[1],
                     "xmax" : ext[2],
                     "ymax" : ext[3],
-                    "spatialReference" : sr.factoryCode
+                    "spatialReference" : wkid
                 })
             else:
                 ext = self.geoextent
