@@ -4049,7 +4049,8 @@ class Item(dict):
         if resp:
             return resp.get('success')
 
-    def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False):
+    def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False,
+                file_type=None):
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature, tiled map, vector tile and scene services.
@@ -4081,6 +4082,13 @@ class Item(dict):
         ----------------    ---------------------------------------------------------------
         overwrite           If True, the hosted feature service is overwritten.
                             Only available in ArcGIS Online and Portal for ArcGIS 10.5 or later.
+        ----------------    ---------------------------------------------------------------
+        file_type           Some formats are not automatically detected, when this occurs, the
+                            file_type can be specified: serviceDefinition,shapefile,csv,
+                            tilePackage, featureService, featureCollection, fileGeodatabase,
+                            geojson, scenepackage, vectortilepackage, imageCollection,
+                            mapService, and sqliteGeodatabase are valid entries. This is an
+                            optional parameter.
         ================    ===============================================================
 
         :return:
@@ -4095,25 +4103,31 @@ class Item(dict):
             "f" : "json"
         }
         buildInitialCache = False
-
-        if self['type'] == 'Service Definition':
-            fileType = 'serviceDefinition'
-        elif self['type'] == 'Feature Collection':
-            fileType = 'featureCollection'
-        elif self['type'] == 'CSV':
-            fileType = 'CSV'
-        elif self['type'] == 'Shapefile':
-            fileType = 'shapefile'
-        elif self['type'] == 'File Geodatabase':
-            fileType = 'fileGeodatabase'
-        elif self['type'] == 'Vector Tile Package':
-            fileType = 'vectortilepackage'
-        elif self['type'] == 'Scene Package':
-            fileType = 'scenePackage'
-        elif self['type'] == 'Tile Package':
-            fileType = 'tilePackage'
-        elif self['type'] == 'SQLite Geodatabase':
-            fileType = 'sqliteGeodatabase'
+        if file_type is None:
+            if self['type'] == 'Service Definition':
+                fileType = 'serviceDefinition'
+            elif self['type'] == 'Feature Collection':
+                fileType = 'featureCollection'
+            elif self['type'] == 'CSV':
+                fileType = 'CSV'
+            elif self['type'] == 'Shapefile':
+                fileType = 'shapefile'
+            elif self['type'] == 'File Geodatabase':
+                fileType = 'fileGeodatabase'
+            elif self['type'] == 'Vector Tile Package':
+                fileType = 'vectortilepackage'
+            elif self['type'] == 'Scene Package':
+                fileType = 'scenePackage'
+            elif self['type'] == 'Tile Package':
+                fileType = 'tilePackage'
+            elif self['type'] == 'SQLite Geodatabase':
+                fileType = 'sqliteGeodatabase'
+            elif self['type'] == 'GeoJson':
+                fileType = 'geojson'
+            else:
+                raise ValueError("A file_type must be provide, data format not recognized")
+        else:
+            fileType = file_type
         try:
             folder = self.ownerFolder
         except:
