@@ -10,7 +10,7 @@ import pandas as pd
 import json
 import warnings
 #--------------------------------------------------------------------------
-def from_layer(layer):
+def from_layer(layer, **kwargs):
     """
     Converts a Feature Service Layer to a Pandas' DataFrame
 

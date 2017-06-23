@@ -292,6 +292,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         from .io import from_featureclass
         return from_featureclass(filename=filename, **kwargs)
     #----------------------------------------------------------------------
+    @staticmethod
+    def from_layer(self, layer, **kwargs):
+        """
+        Returns a SpatialDataFrame from a FeatureLayer or Table object.
+        Inputs:
+         :param layer: FeatureLayer or Table
+         :param gis: GIS object
+        Returns a SpatialDataFrame
+        """
+        from .io import from_layer
+        return from_layer(layer=layer, **kwargs)
+    #----------------------------------------------------------------------
     def to_featureclass(self,
                         out_location, out_name,
                         overwrite=True, skip_invalid=True):
