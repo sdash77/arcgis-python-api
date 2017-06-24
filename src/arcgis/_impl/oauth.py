@@ -47,7 +47,7 @@ class OAuth(object):
         step. Apps need to direct the browser to this URL. client_id,
         response_type, and redirect_uri are required parameters. There are
         other optional parameters as well, and they;'re described below.
-        The response_type parameter determines the type of grant—implicit
+        The response_type parameter determines the type of grant - implicit
         or authorization. A response_type of token implies implicit grant
         and code implies authorization code grant.
         Implicit grants are typically used by JavaScript applications, and
@@ -68,7 +68,7 @@ class OAuth(object):
         Parameters:
          :client_id: The ID of the registered application. Also referred to
           as APPID.
-         :response_type: The type of grant—implicit or authorization.
+         :response_type: The type of grant - implicit or authorization.
           Values: token, code
           token implies implicit grant and code implies authorization code
           grant.
