@@ -79,7 +79,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
-
+        if (HASARCPY == False and \
+           gis is None ) or \
+           (HASARCPY == False and \
+            gis and (gis._con._auth is None or \
+                     gis._con._auth.lower() == "anon")):
+            raise Exception("Cannot create the SpatialDataFrame, you must" +\
+                            "have ArcPy installed or have an autheticated GIS.")
         sr = kwargs.pop('sr', None)
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
@@ -285,6 +291,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         from .io import from_featureclass
         return from_featureclass(filename=filename, **kwargs)
+    #----------------------------------------------------------------------
+    @staticmethod
+    def from_layer(self, layer, **kwargs):
+        """
+        Returns a SpatialDataFrame from a FeatureLayer or Table object.
+        Inputs:
+         :param layer: FeatureLayer or Table
+         :param gis: GIS object
+        Returns a SpatialDataFrame
+        """
+        from .io import from_layer
+        return from_layer(layer=layer, **kwargs)
     #----------------------------------------------------------------------
     def to_featureclass(self,
                         out_location, out_name,
