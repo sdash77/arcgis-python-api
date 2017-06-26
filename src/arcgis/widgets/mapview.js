@@ -353,6 +353,17 @@ define('mapview', [
                 console.log('***on_load');
                 IPython.keyboard_manager.enable();
                 evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
+                // Disable navigation by default, so scrolling the page doesn't scroll the map
+                evt.map.disableMapNavigation();
+                // When the user tries to pan the map, allow this
+                evt.map.on('mouse-drag-start', function(){
+                   evt.map.enableMapNavigation();
+                });
+
+                // Restore the no-scroll behaviour when the mouse leaves the map
+                evt.map.on('mouse-out', function(){
+                   evt.map.disableMapNavigation();
+                });
                 // create the draw toolbar, it activates only when mode=draw_*
                 that.toolbar = new Draw(evt.map);
                 // hook up events
@@ -387,11 +398,11 @@ define('mapview', [
             }
 
             function onMouseClick(event) {
-                console.log("User clicked at " + event.screenPoint.x + ", " + event.screenPoint.y +
-                            " on the screen. The map coordinate at this point is " +
-                            event.mapPoint.x + ", " + event.mapPoint.y
-
-                );
+                that.map.enableMapNavigation();
+                //console.log("User clicked at " + event.screenPoint.x + ", " + event.screenPoint.y +
+                //            " on the screen. The map coordinate at this point is " +
+                //            event.mapPoint.x + ", " + event.mapPoint.y
+                //);
                 //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
                 //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
                 //console.log(normalizedVal);
@@ -901,7 +912,7 @@ define('mapview', [
         },
 
         extent_changed: function () {
-            console.log("changing extent");
+            console.log("changing extent@@@@@");
 
             var ext = JSON.parse(this.model.get('_extent'));
 
