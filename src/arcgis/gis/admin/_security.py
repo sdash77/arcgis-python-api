@@ -5,6 +5,76 @@ from ..._impl.connection import _ArcGISConnection
 from .. import GIS
 from ._base import BasePortalAdmin
 ########################################################################
+class PasswordPolicy(BasePortalAdmin):
+    """
+    Manages a GIS Security Policy.  Administrators can view, update or
+    reset the site's security policy.
+    """
+    _gis = None
+    _con = None
+    _url = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
+        """Constructor"""
+        super(PasswordPolicy, self).__init__(url=url,
+                                             gis=gis,
+                                             **kwargs)
+        initialize = kwargs.pop("initialize", False)
+        if isinstance(gis, _ArcGISConnection):
+            self._con = gis
+        elif isinstance(gis, GIS):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError(
+                "connection must be of type GIS or _ArcGISConnection")
+        if initialize:
+            self._init(self._gis)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    @property
+    def policy(self):
+        """gets/sets the current security policy"""
+        if self._properties is None:
+            self._init()
+        return self._properties
+    #----------------------------------------------------------------------
+    @policy.setter
+    def policy(self, value=None):
+        """gets/sets the current security policy"""
+        url = "%s/update" % self._url
+        from ..._impl.common._mixins import PropertyMap
+        if value is None:
+            value = self.properties['passwordPolicy']
+        if isinstance(value, (dict, PropertyMap)):
+            value = dict(value)
+        else:
+            raise ValueError("Input must be a dictionary of PropertyMap")
+        params = {"f" : "json",
+                  }
+        for k,v in value.items():
+            params[k] = v
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def reset(self):
+        """
+        resets the security policy to the default install settings
+        """
+        url = "%s/reset" % self._url
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+########################################################################
 class Security(BasePortalAdmin):
     """
     This resource is an umbrella for a collection of system-wide resources

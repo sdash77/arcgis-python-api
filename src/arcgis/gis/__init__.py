@@ -3217,7 +3217,7 @@ class User(dict):
         """
         from .._impl.notification import Notification
         result = []
-        url = "%s/community/users/%s/notifications" % (self._portal.url, self.username)
+        url = "%s/community/users/%s/notifications" % (self._portal.resturl, self.username)
         params = {"f" : "json"}
         ns = self._portal.con.get(url, params)
         if "notifications" in ns:

@@ -158,3 +158,13 @@ class PortalAdminManager(BasePortalAdmin):
             url = "%s/system" % self._url
             self._system = System(url=url, gis=self._gis)
         return self._system
+    #----------------------------------------------------------------------
+    @property
+    def password_policy(self):
+        """tools to manage a Site's password policy"""
+        if self._pp is None:
+            from ._security import PasswordPolicy
+            url = "%s/portals/self/securityPolicy" % (self._gis._portal.resturl)
+            self._pp = PasswordPolicy(url=url,
+                                      gis=self._gis)
+        return self._pp
