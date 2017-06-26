@@ -393,7 +393,10 @@ class Collaboration(dict):
         """
         params = {'f' : "json"}
         data_path = "%s/delete" % self._basepath
-        return self._portal.con.post(data_path, params)
+        resp = self._portal.con.post(data_path, params)
+        if 'success' in resp:
+            return resp['success']
+        return resp
     #----------------------------------------------------------------------
     def remove_workspace(self, workspace_id):
         """

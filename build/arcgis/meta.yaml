@@ -5,7 +5,7 @@
 
 package:
     name: arcgis
-    version: '1.2b2'
+    version: '1.2.0'
 source:
     path: ../../src
 build:
@@ -15,6 +15,7 @@ requirements:
         - python
         - setuptools
         - six
+        - pandas
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
         - pywin32          [win]
@@ -22,6 +23,7 @@ requirements:
     run:
         - python
         - six
+        - pandas
         - ipywidgets >=5.2.2
         - widgetsnbextension >=1.2.6
         - pywin32          [win]

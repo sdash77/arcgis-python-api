@@ -128,6 +128,10 @@ class GIS(object):
         if url is None:
             url = "http://www.arcgis.com"
 
+        if username is not None and password is None:
+            from getpass import getpass
+            password = getpass('Enter password: ')
+
         self._url = url
         self._username = username
         self._password = password
