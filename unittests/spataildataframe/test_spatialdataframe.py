@@ -6,9 +6,10 @@ ssl._create_default_https_context = ssl._create_unverified_context
 import unittest
 import pandas as pd
 import os, shutil, arcpy
+arcpy.env.overwriteOutput = True
 from arcgis.geometry import _types
 from arcgis import SpatialDataFrame
-from arcgis.server import Service
+from arcgis._impl._server import Service
 from arcgis.features._data.geodataset.io import from_layer, to_featureclass, to_sqlite, from_featureclass
 #############################################################################
 #@unittest.SkipTest
@@ -45,7 +46,7 @@ class IOTest(unittest.TestCase):
     """tests the spatial dataframe io functions"""
     def _construct_featureclass(self):
         import uuid
-        fc = "a" + uuid.uuid4().hex[:7]
+        fc = "a" + uuid.uuid4().hex[:6] + "a"
         return arcpy.CreateRandomPoints_management(out_path=arcpy.env.scratchGDB,
                                                          out_name=fc)[0]
     #----------------------------------------------------------------------
