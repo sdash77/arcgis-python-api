@@ -13,6 +13,8 @@ Contents:
    :caption: arcgis
 
    arcgis.gis
+   arcgis.gis.admin
+   arcgis.gis.server
    arcgis.env
    arcgis.features.toc
    arcgis.raster.toc

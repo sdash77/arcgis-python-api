@@ -8,6 +8,13 @@ arcgis.features module
 
 .. automodule:: arcgis.features
 
+Spatial DataFrame
+--------------
+.. autoclass:: arcgis.features.SpatialDataFrame
+	:inherited-members:
+    :members:
+    :undoc-members:
+
 Feature
 --------------
 .. autoclass:: arcgis.features.Feature
