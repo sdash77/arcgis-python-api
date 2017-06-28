@@ -15,13 +15,6 @@ arcgis.features.FeatureLayer
     :inherited-members:
     :members:
     :undoc-members:
-
-arcgis.features.SpatialDataFrame
---------------
-.. autoclass:: arcgis.features.SpatialDataFrame
-    :inherited-members:
-    :members:
-    :undoc-members:
 	
 arcgis.features.Table
 --------------
@@ -46,5 +39,12 @@ arcgis.features.FeatureSet
 arcgis.features.FeatureCollection
 --------------
 .. autoclass:: arcgis.features.FeatureCollection
+    :members:
+    :undoc-members:
+    
+arcgis.features.SpatialDataFrame
+--------------
+.. autoclass:: arcgis.features.SpatialDataFrame
+    :inherited-members:
     :members:
     :undoc-members:

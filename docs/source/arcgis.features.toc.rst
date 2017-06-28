@@ -8,13 +8,6 @@ arcgis.features module
 
 .. automodule:: arcgis.features
 
-Spatial DataFrame
---------------
-.. autoclass:: arcgis.features.SpatialDataFrame
-	:inherited-members:
-    :members:
-    :undoc-members:
-
 Feature
 --------------
 .. autoclass:: arcgis.features.Feature
@@ -54,11 +47,18 @@ FeatureCollection
     :members:
     :undoc-members:
 
+SpatialDataFrame
+--------------
+.. autoclass:: arcgis.features.SpatialDataFrame
+    :members:
+    :undoc-members:
+    
 Submodules
 --------------
 .. toctree::
    :maxdepth: 3
 
+   arcgis.features.analysis
    arcgis.features.analyze_patterns
    arcgis.features.enrich_data
    arcgis.features.find_locations

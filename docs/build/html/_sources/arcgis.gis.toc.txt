@@ -87,3 +87,11 @@ RoleManager
     :show-inheritance:
 
 
+Submodules
+--------------
+.. toctree::
+   :maxdepth: 3
+
+   arcgis.gis.admin
+   arcgis.gis.server
+   

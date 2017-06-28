@@ -12,9 +12,7 @@ Contents:
    :maxdepth: 3
    :caption: arcgis
 
-   arcgis.gis
-   arcgis.gis.admin
-   arcgis.gis.server
+   arcgis.gis.toc
    arcgis.env
    arcgis.features.toc
    arcgis.raster.toc
