@@ -69,7 +69,7 @@ class ServerManager(object):
         for server in self._federation.servers['servers']:
             if str(role).lower() == server['serverRole'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
-            elif str(function).lower() == server['serverFunction'].lower():
+            elif str(function).lower() in server['serverFunction'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
         return servers
     #----------------------------------------------------------------------
