@@ -7,6 +7,12 @@ Submodules
 arcgis.gis module
 ------------------
 
+arcgis.gis.admin module
+------------------
+
+arcgis.gis.server module
+------------------
+
 arcgis.env module
 ------------------
 

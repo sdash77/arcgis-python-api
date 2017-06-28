@@ -19,6 +19,7 @@ class AGOLAdminManager(object):
     """
     _gis = None
     _ux = None
+    _pp = None
     _credits = None
     _metadata = None
     _collaborations = None
@@ -79,3 +80,14 @@ class AGOLAdminManager(object):
             from ._metadata import MetadataManager
             self._metadata = MetadataManager(gis=self._gis)
         return self._metadata
+    #----------------------------------------------------------------------
+    @property
+    def password_policy(self):
+        """tools to manage a Site's password policy"""
+        if self._pp is None:
+            from ._security import PasswordPolicy
+            url = "%s/portals/self/securityPolicy" % (self._gis._portal.resturl)
+            self._pp = PasswordPolicy(url=url,
+                                      gis=self._gis)
+        return self._pp
+
