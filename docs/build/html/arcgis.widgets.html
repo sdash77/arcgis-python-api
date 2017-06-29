@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -43,6 +45,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -83,7 +86,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -98,6 +104,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#groupmanager">GroupManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#datastoremanager">DatastoreManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#rolemanager">RoleManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#resourcemanager">ResourceManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.gis.admin.html">arcgis.gis.admin module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#agoladminmanager">AGOLAdminManager</a></li>
@@ -538,8 +545,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -548,23 +557,40 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>arcgis.widgets module</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>arcgis.widgets module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/arcgis.widgets.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/arcgis.widgets.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -609,10 +635,10 @@ This module includes the MapView Jupyter notebook widget for visualizing maps an
 <code class="descname">draw</code><span class="sig-paren">(</span><em>shape</em>, <em>popup=None</em>, <em>symbol=None</em>, <em>attributes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.widgets.MapView.draw" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws a shape.</p>
 <p>Arguments:
-shape is one of [&#8220;circle&#8221;, &#8220;downarrow&#8221;, &#8220;ellipse&#8221;, &#8220;extent&#8221;, &#8220;freehandpolygon&#8221;,
-&#8220;freehandpolyline&#8221;, &#8220;leftarrow&#8221;, &#8220;line&#8221;, &#8220;multipoint&#8221;, &#8220;point&#8221;, &#8220;polygon&#8221;, &#8220;polyline&#8221;,
-&#8220;rectangle&#8221;, &#8220;rightarrow&#8221;, &#8220;triangle&#8221;, &#8220;uparrow&#8221;, or geometry dict object]</p>
-<p>popup is a dict containing &#8220;title&#8221; and &#8220;content&#8221; as keys that will be displayed
+shape is one of [“circle”, “downarrow”, “ellipse”, “extent”, “freehandpolygon”,
+“freehandpolyline”, “leftarrow”, “line”, “multipoint”, “point”, “polygon”, “polyline”,
+“rectangle”, “rightarrow”, “triangle”, “uparrow”, or geometry dict object]</p>
+<p>popup is a dict containing “title” and “content” as keys that will be displayed
 when the shape is clicked</p>
 <p>symbol is a symbol specified in json format as described at <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000</a>
 a default symbol is used is one is not specified.
@@ -652,8 +678,8 @@ associated with the graphic.</p>
 <p>The callback will be called with one argument,
 the clicked widget instance.</p>
 <dl class="docutils">
-<dt>remove</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool (optional)</span><dd>Set to true to remove the callback from the list of callbacks.</dd>
+<dt>remove <span class="classifier-delimiter">:</span> <span class="classifier">bool (optional)</span></dt>
+<dd>Set to true to remove the callback from the list of callbacks.</dd>
 </dl>
 </dd></dl>
 
@@ -664,8 +690,8 @@ the clicked widget instance.</p>
 <p>The callback will be called with two argument,
 the clicked widget instance, and the geometry drawn</p>
 <dl class="docutils">
-<dt>remove</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool (optional)</span><dd>Set to true to remove the callback from the list of callbacks.</dd>
+<dt>remove <span class="classifier-delimiter">:</span> <span class="classifier">bool (optional)</span></dt>
+<dd>Set to true to remove the callback from the list of callbacks.</dd>
 </dl>
 </dd></dl>
 
@@ -704,13 +730,16 @@ the clicked widget instance, and the geometry drawn</p>
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="arcgis.schematics.html" class="btn btn-neutral" title="arcgis.schematics module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.schematics.html" class="btn btn-neutral" title="arcgis.schematics module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -744,7 +773,8 @@ the clicked widget instance, and the geometry drawn</p>
             VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

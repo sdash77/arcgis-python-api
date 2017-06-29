@@ -86,6 +86,13 @@ RoleManager
     :undoc-members:
     :show-inheritance:
 
+ResourceManager
+---------------------------
+.. autoclass:: arcgis.gis.ResourceManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Submodules
 --------------
