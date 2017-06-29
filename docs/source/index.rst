@@ -13,27 +13,6 @@ Contents:
    :caption: arcgis
 
    arcgis.gis.toc
-   arcgis.gis.admin
-   arcgis.gis.server
-   arcgis.env
-   arcgis.features.toc
-   arcgis.raster.toc
-   arcgis.network.toc
-   arcgis.geoanalytics.toc
-   arcgis.geocoding
-   arcgis.geometry
-   arcgis.geoprocessing
-   arcgis.mapping
-   arcgis.realtime
-   arcgis.schematics
-   arcgis.widgets
-   
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
    arcgis.env
    arcgis.features.toc
    arcgis.raster.toc
