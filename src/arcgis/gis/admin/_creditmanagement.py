@@ -73,12 +73,12 @@ class CreditManager(object):
                 "userAssignments" : [{"username" : username, "credits" : credits}]
             }
             path = "portals/self/assignUserCredits"
-            res = self._con.post(path, params)
+            res =  self._con.post(path, params)
             if 'success' in res:
                 return res['success']
             return res
         else:
-            self.deallocate(username=username)
+            return self.deallocate(username=username)
     #----------------------------------------------------------------------
     def deallocate(self, username):
         """
@@ -89,10 +89,10 @@ class CreditManager(object):
         :param username: name whose credit allocation to be removed
 
         """
-        params = {"usernames" : [username], "f" : "json"}
+        params = {"usernames" : [username],
+                  "f" : 'json'}
         path = "portals/self/unassignUserCredits"
         res = self._con.post(path, params)
         if 'success' in res:
             return res['success']
         return res
-
