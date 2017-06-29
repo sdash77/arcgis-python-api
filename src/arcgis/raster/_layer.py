@@ -64,6 +64,43 @@ class ImageryLayer(Layer):
 
         return self._extent
 
+    @property
+    def histograms(self):
+        """
+        Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band. 
+        If not histograms is found, returns None. In this case, call the compute_histograms()
+        :return: 
+            my_hist = imagery_layer.histograms()
+           
+            Structure of the return value:
+            [
+             { #band 1
+              "size":256,
+              "min":560,
+              "max":24568,
+              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
+             }
+             { #band 3
+              "size":256, #number of bins
+              "min":8000,
+              "max":15668,
+              counts: [45,9,690,86580,857,....] #length of this list corresponds 'size'
+             }
+             ....
+            ]
+                    
+        """
+        if self.properties.hasHistograms:
+            #proceed
+            url = self._url + "/histograms"
+            params={'f':'json'}
+            hist_return = self._con.post(url, params, token=self._token)
+
+            #process this into a dict
+            return hist_return['histograms']
+        else:
+            return None
+
     @extent.setter
     def extent(self, value):
         self._extent = value
@@ -120,7 +157,6 @@ class ImageryLayer(Layer):
                       "ascending" : True,
                       "mosaicOperation" : "MT_FIRST"
                     }
-
 
     def filter_by(self, where=None, geometry=None, time=None, lock_rasters=True):
         """
