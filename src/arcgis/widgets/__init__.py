@@ -138,7 +138,11 @@ class MapView(widgets.DOMWidget):
         """
         Adds layers from the provided item
         """
-        if isinstance(item, dict) and 'function_chain' in item:
+        if isinstance(item, list):
+            for lyr in item:
+                self.add_layer(lyr, options)
+
+        elif isinstance(item, dict) and 'function_chain' in item:
             js_layer = item['layer']._lyr_json
             options_dict = {
                     "imageServiceParameters": {
