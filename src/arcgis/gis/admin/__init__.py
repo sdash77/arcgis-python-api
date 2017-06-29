@@ -1,5 +1,10 @@
 """
-initializer for portaladmin sub-package
+Classes for administering your GIS.
+
+The gis.admin property is dynamically set at runtime based on what kind of GIS (ArcGIS Enterprise or ArcGIS Online) an
+administrator connects to.
+For ArcGIS Online GIS, administrators will get an instance of AGOLAdminManager from the gis.admin property.
+For ArcGIS Enterprise GIS , administrators will get an instance of PortalAdminManager from the gis.admin property.
 """
 from .portaladmin import PortalAdminManager
 from .agoladmin import AGOLAdminManager

@@ -1,7 +1,5 @@
 """
-The Server API is a collection of administrative classes designed for
-managing site's ArcGIS Server instances.  The Server and ServerManager are
-the entry point into ensuring a WebGIS stays health and services stay up.
+A collection of classes foradministering an ArcGIS Enterprise's server.
 """
 import ssl
 import logging
@@ -71,7 +69,7 @@ class ServerManager(object):
         for server in self._federation.servers['servers']:
             if str(role).lower() == server['serverRole'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
-            elif str(function).lower() == server['serverFunction'].lower():
+            elif str(function).lower() in server['serverFunction'].lower():
                 servers.append(Server(url=server['adminUrl'], gis=self._gis))
         return servers
     #----------------------------------------------------------------------
@@ -479,7 +477,6 @@ class Server(object):
             if self._servicemanager is None:
                 self._servicemanager = ServiceManager(self)
             return self._servicemanager
-
 ###########################################################################
 class ServiceManager(object):
     """
@@ -2090,7 +2087,6 @@ class User(dict):
         """deletes the current user account"""
         username = self.username
         return self._security.delete_user(username=username)
-
 ########################################################################
 class RoleManager(object):
     """
