@@ -310,7 +310,8 @@ def to_featureclass(df, out_name, out_location=None,
             col_insert[idx_shp] = "SHAPE@"
         existing_fields = [field.name.lower() for field in arcpy.ListFields(fc)]
         for col in col_insert:
-            if col.lower().find('shape') == -1 and \
+            if col.lower() != 'shape@' and \
+               col.lower() != 'shape' and \
                col.lower() not in existing_fields:
                 try:
                     arcpy.AddField_management(in_table=fc, field_name=col,
