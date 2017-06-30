@@ -34,4 +34,4 @@ test:
 about:
     home: https://developers.arcgis.com/python
     license: Esri Master License Agreement (MLA)
-    summary: ArcGIS Python API
+    summary: ArcGIS API for Python
