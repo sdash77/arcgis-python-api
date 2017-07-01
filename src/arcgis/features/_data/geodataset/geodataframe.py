@@ -293,7 +293,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         return from_featureclass(filename=filename, **kwargs)
     #----------------------------------------------------------------------
     @staticmethod
-    def from_layer(self, layer, **kwargs):
+    def from_layer(layer, **kwargs):
         """
         Returns a SpatialDataFrame from a FeatureLayer or Table object.
         Inputs:
