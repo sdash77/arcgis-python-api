@@ -291,7 +291,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             return from_featureclass(filename=filename, **kwargs)
         else:
             raise Exception("Cannot create the SpatialDataFrame, you must" +\
-                            "have ArcPy installed or have an autheticated GIS.")
+                            "have an authenticated GIS.")
     #----------------------------------------------------------------------
     @staticmethod
     def from_layer(layer, **kwargs):
