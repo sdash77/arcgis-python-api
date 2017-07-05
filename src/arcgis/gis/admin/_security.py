@@ -585,7 +585,7 @@ class SSLCertificates(BasePortalAdmin):
                 return True
             return False
         except:
-            return False
+            return True
         return True
     #----------------------------------------------------------------------
     def import_server_certificate(self,
