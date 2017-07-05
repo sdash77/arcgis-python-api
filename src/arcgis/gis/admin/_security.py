@@ -606,16 +606,20 @@ class SSLCertificates(BasePortalAdmin):
         """
         params = {
             "f" : "json",
-            "certPassword" : password,
+            "password" : password,
             "alias" : alias
         }
         files = {
-            "certFile" : certificate
+            "file" : certificate
         }
         url = "%s/importExistingServerCertificate" % self._url
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
+        try:
+            return self._con.post(path=url,
+                                  postdata=params,
+                                  files=files)
+        except:
+            return True
+        return True
     #----------------------------------------------------------------------
     def list(self):
         """
