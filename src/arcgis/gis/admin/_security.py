@@ -583,9 +583,9 @@ class SSLCertificates(BasePortalAdmin):
         except HTTPError as error:
             if error.code == '408' or error.code == 408:
                 return True
-            return True
-        except:
             return False
+        except:
+            return True
         return True
     #----------------------------------------------------------------------
     def import_server_certificate(self,
