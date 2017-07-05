@@ -79,7 +79,7 @@ class MultiPartForm(object):
                               filePath=filepath,
                               mimetype=None)
                 del key, filepath
-        self.boundary = "-%s" % self._make_boundary()
+        self.boundary = "%s" % self._make_boundary()
     #----------------------------------------------------------------------
     def get_content_type(self):
         return 'multipart/form-data; boundary=%s' % self.boundary
@@ -91,15 +91,15 @@ class MultiPartForm(object):
     def _make_boundary(self):
         """ creates a boundary for multipart post (form post)"""
         if six.PY2:
-            return '-===============%s==' % uuid.uuid4().get_hex()
+            return '----------------%s--' % uuid.uuid4().hex
         elif six.PY3:
-            return '-===============%s==' % uuid.uuid4().hex
+            return '----------------%s--' % uuid.uuid4().hex
         else:
             from random import choice
             digits = "0123456789"
             letters = "abcdefghijklmnopqrstuvwxyz"
-            return '-===============%s==' % ''.join(choice(letters + digits) \
-                                                    for i in range(15))
+            return '----------------%s--'.join(choice(letters + digits) \
+                                   for i in range(15))
     #----------------------------------------------------------------------
     def add_file(self, fieldname, filename, filePath, mimetype=None):
         """Add a file to be uploaded.
@@ -894,7 +894,6 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
         handlers = []
-
         if self._auth == "BASIC": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
@@ -948,7 +947,7 @@ class _ArcGISConnection(object):
     def post(self, path, postdata=None, files=None, ssl=False, compress=True,
              is_retry=False, use_ordered_dict=False, add_token=True, verify_cert=True,
              token=DEFAULT_TOKEN, try_json=True, out_folder=None,
-             file_name=None, force_bytes=False):
+             file_name=None, force_bytes=False, add_headers=None):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         # prevent double encoding
         if not is_retry:
@@ -997,11 +996,17 @@ class _ArcGISConnection(object):
             req.add_header('User-agent', self._useragent)
             req.add_header('Content-type', mpf.get_content_type())
             req.add_header('Content-length', len(body))
+            if isinstance(add_headers, list):
+                for ah in add_headers:
+                    req.add_header(ah[0], ah[1])
             req.data = body
             headers = [('Referer', self._referer),
                        ('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
+            if isinstance(add_headers, list):
+                for ah in add_headers:
+                    headers.append(ah)
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 

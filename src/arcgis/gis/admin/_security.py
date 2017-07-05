@@ -559,16 +559,34 @@ class SSLCertificates(BasePortalAdmin):
          :certificate: path to the file path
          :alias: name of the certificate
         """
+        #import requests, os
+        from six.moves.urllib.error import HTTPError
+        #form_data = {'file': (os.path.basename(certificate),
+        #                      open(certificate, 'rb'),
+        #                      'application/pkix-cert')
+        #             }
+
         params = {
             "alias" : alias,
             "f" : "json"
         }
         files = {
-            "rootCACertificate" : certificate
+            'file' : certificate
         }
         url = "%s/importRootOrIntermediate" % self._url
-        return self._con.post(path=url, postdata=params,
-                              files=files)
+        try:
+            res = self._con.post(path=url,
+                                 add_headers=[('Accept', "*/*"), ('Accept-Encoding', 'gzip, deflate'),
+                                              ('User-Agent', 'geosaurus/1.0'), ('Connection', 'keep-alive')],
+                                 postdata=params,
+                                 files=files)
+        except HTTPError as error:
+            if error.code == '408' or error.code == 408:
+                return True
+            return False
+        except:
+            return False
+        return True
     #----------------------------------------------------------------------
     def import_server_certificate(self,
                                   alias,
