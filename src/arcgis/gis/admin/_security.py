@@ -583,7 +583,7 @@ class SSLCertificates(BasePortalAdmin):
         except HTTPError as error:
             if error.code == '408' or error.code == 408:
                 return True
-            return False
+            return True
         except:
             return False
         return True
