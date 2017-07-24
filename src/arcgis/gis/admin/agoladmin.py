@@ -23,6 +23,7 @@ class AGOLAdminManager(object):
     _credits = None
     _metadata = None
     _collaborations = None
+    _ur = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -90,4 +91,15 @@ class AGOLAdminManager(object):
             self._pp = PasswordPolicy(url=url,
                                       gis=self._gis)
         return self._pp
-
+    #----------------------------------------------------------------------
+    @property
+    def usage_reports(self):
+        """
+        provides access to the usage reports of the AGOL organization
+        """
+        if self._ur is None:
+            from ._usage import AGOLUsageReports
+            url = "%sportals/%s/usage" % (self._gis._portal.resturl,
+                                          self._gis.properties.id)
+            self._ur = AGOLUsageReports(url=url, gis=self._gis)
+        return self._ur
