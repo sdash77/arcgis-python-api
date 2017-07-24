@@ -33,6 +33,7 @@ class PortalAdminManager(BasePortalAdmin):
     _metadata = None
     _collaborations = None
     _servers = None
+    _pp = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
