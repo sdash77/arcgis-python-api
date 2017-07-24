@@ -231,3 +231,65 @@ class UX(object):
         # Update the portal self with these banner values
         update_result = self._gis.update_properties(text['default'])
         return update_result
+
+    def get_banner(self, download_path):
+        """
+        Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
+        code as your banner.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        download_path     required string. Folder path to download the banner file.
+        ================  ===============================================================
+         
+         :return: Path to downloaded banner file.
+        """
+        #create a portal resource manager obj
+        portal_resources = _PortalResourceManager(self._gis)
+
+        #find existing banner resource file
+        resource_list = portal_resources.list()
+        e_banner = [banner for banner in resource_list if banner['key'].startswith('banner')]
+
+        #loop through and remove existing banner resource file
+        for banner in e_banner:
+
+            try:
+                download_path = portal_resources.get(banner['key'], download_path)
+
+            except:
+                continue
+        return download_path
+
+    def get_background(self, download_path):
+        """
+        Get your organization's home page background image. You can use the `set_background()` method to set an image
+        as the home page background image.
+
+        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        download_path     required string. Folder path to download the background file.
+        ================  ===============================================================
+
+        :return: Path to downloaded background file.
+        """
+
+        #create a portal resource manager obj
+        portal_resources = _PortalResourceManager(self._gis)
+
+        #find existing banner resource file
+        resource_list = portal_resources.list()
+        e_background = [banner for banner in resource_list if banner['key'].startswith('background')]
+
+        #loop through and remove existing banner resource file
+        for background in e_background:
+
+            try:
+                download_path = portal_resources.get(background['key'], download_path)
+
+            except:
+                continue
+        return download_path

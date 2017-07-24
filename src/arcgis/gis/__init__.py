@@ -481,6 +481,20 @@ class _PortalResourceManager(object):
             return resp['resources']
         return resp
 
+    def get(self, resource_name, download_path=None):
+        """
+        Download or get a portal resource item
+        :param resource_name: Name of the file or resource to get
+        :param out_file_name: Name of the file to write on disk
+        :return: 
+        """
+        data_path = 'portals/self/resources/' + resource_name
+        if not download_path:
+            download_path = self._workdir
+
+        download_path = self._portal.con.get(path=data_path, file_name=resource_name,
+                                        out_folder=download_path, try_json=False, force_bytes=False)
+        return download_path
 
 ###########################################################################
 class Datastore(dict):
