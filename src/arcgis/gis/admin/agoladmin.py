@@ -24,6 +24,7 @@ class AGOLAdminManager(object):
     _metadata = None
     _collaborations = None
     _ur = None
+    _license = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -103,3 +104,15 @@ class AGOLAdminManager(object):
                                           self._gis.properties.id)
             self._ur = AGOLUsageReports(url=url, gis=self._gis)
         return self._ur
+    #----------------------------------------------------------------------
+    @property
+    def license(self):
+        """
+        provides a set of tools to access and manage user licenses and
+        entitlements.
+        """
+        if self._license is None:
+            from ._license import LicenseManager
+            url = self._gis._portal.resturl + "portals/self/purchases"
+            self._license = LicenseManager(url=url, gis=self._gis)
+        return self._license
