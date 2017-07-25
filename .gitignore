@@ -64,3 +64,5 @@ src/.vscode/settings.json
 
 # Unittest outputs
 /unittests/test-results/
+/*.wpr
+/*.wpu
