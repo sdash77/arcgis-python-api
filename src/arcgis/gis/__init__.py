@@ -486,7 +486,7 @@ class _PortalResourceManager(object):
         Download or get a portal resource item
         :param resource_name: Name of the file or resource to get
         :param out_file_name: Name of the file to write on disk
-        :return: 
+        :return:
         """
         data_path = 'portals/self/resources/' + resource_name
         if not download_path:
@@ -3097,6 +3097,8 @@ class User(dict):
             a boolean, that indicates success
 
         """
+        if self.level == '1':
+            raise ValueError("Level 1 user cannot be assigned a new role.")
         if isinstance(role, Role):
             role = role.role_id
         passed = self._portal.update_user_role(self.username, role)
