@@ -958,7 +958,7 @@ class UserManager(object):
         self._portal = gis._portal
 
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
-               provider='arcgis', idp_username=None, level=2):
+               provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """ This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account.
 
@@ -993,6 +993,8 @@ class UserManager(object):
         email             required string, must be an email address
         ----------------  -------------------------------------------------------------------------------
         description       An optional description string for the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         An optional string, URL to user image
         ----------------  -------------------------------------------------------------------------------
         role              The role for the user account. The default value is org_user.
                           Values: org_user | org_publisher | org_admin | org_viewer
@@ -1071,7 +1073,13 @@ class UserManager(object):
                 'level' : level
             }
             self._portal.con.post(createuser_url, params)
-            return self.get(username)
+            user = self.get(username)
+            if thumbnail is not None:
+                ret = user.update(thumbnail=thumbnail)
+                if not ret:
+                    _log.error('Unable to update the thumbnail for  ' + username)
+            return user
+
 
 
     def signup(self, username, password, fullname, email):
