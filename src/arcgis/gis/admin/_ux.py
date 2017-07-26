@@ -551,7 +551,7 @@ class UX(object):
                     'supportedQueryFormats': 'JSON, AMF', 'tables': [],
                     'supportedExtensions': 'KmlServer', 'mapName': 'Layers', 'maxRecordCount': 1000,
                     'minScale': 591657527.591555}}, {'visibility': True,
-                    'styleUrl': 'https://agsapipor1.esri.com/portal/sharing/rest/content/items/e46739b3cba24573b005736a63f2e270/resources/styles/root.json',
+                    'styleUrl': '%scontent/items/e46739b3cba24573b005736a63f2e270/resources/styles/root.json' % self._portal.resturl.replace("http://","https://"),
                     'opacity': 1, 'title': 'World Topographic Map', 'type': 'VectorTileLayer', 'layerType': 'VectorTileLayer', 'id': 'VectorTile_2333'}]}
         if basemap is None:
             basemap = default
