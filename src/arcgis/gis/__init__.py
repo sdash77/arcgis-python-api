@@ -142,8 +142,19 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
-        self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file, self._cert_file,
-                                       verify_cert=self._verify_cert, client_id=self._client_id)
+
+        try:
+            self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file,
+                                           self._cert_file, verify_cert=self._verify_cert,
+                                           client_id=self._client_id)
+        except Exception as e:
+            if str(type(e.args[0])) == "<class 'ssl.SSLError'>":
+                raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
+                                   "If you trust this server and want to proceed, add 'verify_cert=False' as an "
+                                   "argument when connecting to the GIS.")
+            else:
+                raise RuntimeError(e.args)
+
         if url.lower().find("www.arcgis.com") > -1 and \
            self._portal.is_logged_in:
             from six.moves.urllib_parse import urlparse
