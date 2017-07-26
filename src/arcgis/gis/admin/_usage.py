@@ -182,11 +182,7 @@ class AGOLUsageReports(BasePortalAdmin):
                                postdata=params)
           return res
      #----------------------------------------------------------------------
-     def groups(self):
-          """"""
-          pass
-     #----------------------------------------------------------------------
-     def applications(self):
+     def applications(self, start_time=None, time_frame='week'):
           """
           Creates a usage report for all registered application logins for a
           given organization on ArcGIS Online.

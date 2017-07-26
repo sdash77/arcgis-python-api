@@ -25,6 +25,7 @@ class AGOLAdminManager(object):
     _collaborations = None
     _ur = None
     _license = None
+    _usage = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -71,6 +72,17 @@ class AGOLAdminManager(object):
             from ._creditmanagement import CreditManager
             self._credits = CreditManager(gis=self._gis)
         return self._credits
+    #----------------------------------------------------------------------
+    @property
+    def usage_reports(self):
+        """
+        provides methods to gather and analyze usage data on your organization.
+        """
+        if self._usage is None:
+            from ._usage import AGOLUsageReports
+            url = "%sportals/self/usage" % self._gis._portal.resturl
+            self._usage = AGOLUsageReports(url=url, gis=self._gis)
+        return self._usage
 
     #----------------------------------------------------------------------
     @property
