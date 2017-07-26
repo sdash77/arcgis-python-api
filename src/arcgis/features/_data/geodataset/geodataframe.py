@@ -300,7 +300,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         Inputs:
          :param layer: FeatureLayer or Table
          :param gis: GIS object
-        Returns a SpatialDataFrame
+        Returns a SpatialDataFrame for services with geometry and Panda's
+        Dataframe for table services.
         """
         from .io import from_layer
         return from_layer(layer=layer, **kwargs)
