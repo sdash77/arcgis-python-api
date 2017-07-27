@@ -34,6 +34,7 @@ class PortalAdminManager(BasePortalAdmin):
     _collaborations = None
     _servers = None
     _pp = None
+    _license = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -169,3 +170,15 @@ class PortalAdminManager(BasePortalAdmin):
             self._pp = PasswordPolicy(url=url,
                                       gis=self._gis)
         return self._pp
+    #----------------------------------------------------------------------
+    @property
+    def license(self):
+        """
+        provides a set of tools to access and manage user licenses and
+        entitlements.
+        """
+        if self._license is None:
+            from ._license import LicenseManager
+            url = self._gis._portal.resturl + "portals/self/purchases"
+            self._license = LicenseManager(url=url, gis=self._gis)
+        return self._license

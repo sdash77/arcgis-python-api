@@ -5,12 +5,12 @@ class UX(object):
     """Helper class for modifying the portal home page. This class is not created by users directly. An instance of
     the class, called 'ux', is available as a property of the GIS object. Users call methods on this 'ux' object
     to set banner, background, logo, name etc."""
-
+    #----------------------------------------------------------------------
     def __init__(self, gis):
         """Creates helper object to manage portal home page, resources, update resources"""
         self._gis = gis
         self._portal = gis._portal
-
+    #----------------------------------------------------------------------
     def set_banner(self, banner_file=None, is_built_in=False, custom_html = None):
         """
         Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
@@ -105,7 +105,7 @@ class UX(object):
         # Update the portal self with these banner values
         update_result = self._gis.update_properties({"rotatorPanels": rotator_panel})
         return update_result
-
+    #----------------------------------------------------------------------
     def set_logo(self, logo_file=None):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
@@ -149,7 +149,146 @@ class UX(object):
         # Update the portal self with these banner values
         update_result = self._gis.update_properties({"thumbnail": key_val})
         return update_result
+    #----------------------------------------------------------------------
+    def get_logo(self, download_path):
+        """
+        Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        download_path     required string. Folder path to download the logo file.
+        ================  ===============================================================
 
+         :return: Path to downloaded logo file.
+        """
+        portal_resources = _PortalResourceManager(self._gis)
+        props = self._gis.properties
+        if 'thumbnail' in props:
+            resource = props['thumbnail']
+            if resource is not None and \
+               len(str(resource)) > 0:
+                output = portal_resources.get(resource_name=resource,
+                                              download_path=download_path)
+                return output
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def name(self):
+        """
+        Returns the site's name.  The name can get defined using the 'set_name()'.
+
+         :return: string of the name of the site
+        """
+        return self._gis.properties['name']
+    #----------------------------------------------------------------------
+    @name.setter
+    def name(self, name):
+        """
+        Allows for the setting of a site's name.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        name              required string. Name of the site.
+        ================  ===============================================================
+
+
+         :return: boolean
+        """
+        return self._gis.update_properties({"name": name})
+    #----------------------------------------------------------------------
+    @property
+    def description(self):
+        """
+        Returns the site's description.
+
+         :return: dictionary
+        """
+        return self._gis.properties['description']
+    #----------------------------------------------------------------------
+    @property
+    def description_visibility(self):
+        """
+        Returns the site's description visibility
+
+         :return: boolean
+        """
+        return self._gis.properties['showHomePageDescription']
+    #----------------------------------------------------------------------
+    @description_visibility.setter
+    def description_visibility(self, visiblity):
+        """
+        Allows for the setting of a site's description.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        visiblity         optional boolean. If True, the desciptive text will show on the
+                          home page. If False, the descriptive text will not be displayed
+        ================  ===============================================================
+
+         :return: boolean
+        """
+        return self._gis.update_properties({'showHomePageDescription' : visiblity})
+    #----------------------------------------------------------------------
+    @description.setter
+    def description(self, description=None):
+        """
+        Allows for the setting of a site's description.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        description       optional string. descriptive text of the site. If None, the
+                          value is reset to default.
+        ================  ===============================================================
+
+         :return: boolean
+        """
+        if description is None:
+            description = "<br/>"
+        return self._gis.update_properties({'description': description})
+    #----------------------------------------------------------------------
+    @property
+    def featured_content(self):
+        """
+        Returns the featured content group information.  The information
+        can then be set using the 'set_featured_content()'.
+
+          :return: dictionary
+
+        :Usage Example:
+
+        >>> data = ux.get_featured_content()
+        >>> ux.set_featured_content(data)
+        True
+
+        """
+        return {'group' : self._gis.properties['homePageFeaturedContent'],
+                'count' : self._gis.properties['homePageFeaturedContentCount']}
+    #----------------------------------------------------------------------
+    @featured_content.setter
+    def featured_content(self, content):
+        """
+        Sets the featured content group for the homepage.
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        content           optional dictionary, defines the group and count of the feature
+                          content area on an organizational site.  A value of None will
+                          reset the value back to the install defaults.
+                          Example:
+                          {'group': <group id>, 'count' : 12}
+        ================  ===============================================================
+
+         :return: boolean
+        """
+        from .. import Group
+        if 'group' in content and \
+           isinstance(content['group'], Group):
+            content['homePageFeaturedContent'] = content['group'].groupid
+        if content is None:
+            content = {'homePageFeaturedContent': "",
+                        'homePageFeaturedContentCount' : 12}
+        return self._gis.update_properties(content)
+    #----------------------------------------------------------------------
     def set_background(self, background_file=None, is_built_in=True):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -202,36 +341,7 @@ class UX(object):
         # Update the portal self with these banner values
         update_result = self._gis.update_properties({"backgroundImage": background_update_val})
         return update_result
-
-    def set_name_description(self, name, description):
-        """
-        Configure your home page by setting the organization's name and description
-
-        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        name              required string. Specify a name for the organization
-        ----------------  ---------------------------------------------------------------
-        description       required string. Specify a description about the organization
-        ================  ===============================================================
-
-        :return: True | False
-        """
-
-        # Add resource
-        key_val = 'localizedOrgProperties'
-        text = {'default':{'name':name,
-                           'description':description}}
-
-        portal_resources = _PortalResourceManager(self._gis)
-        add_result = portal_resources.add(key_val, text=text)
-
-        # Update the portal self with these banner values
-        update_result = self._gis.update_properties(text['default'])
-        return update_result
-
+    #----------------------------------------------------------------------
     def get_banner(self, download_path):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -241,7 +351,7 @@ class UX(object):
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the banner file.
         ================  ===============================================================
-         
+
          :return: Path to downloaded banner file.
         """
         #create a portal resource manager obj
@@ -260,7 +370,7 @@ class UX(object):
             except:
                 continue
         return download_path
-
+    #----------------------------------------------------------------------
     def get_background(self, download_path):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -293,3 +403,110 @@ class UX(object):
             except:
                 continue
         return download_path
+    #----------------------------------------------------------------------
+    @property
+    def enable_comments(self):
+        """
+        Turn on item comments
+        """
+        return self._gis.properties['commentsEnabled']
+    #----------------------------------------------------------------------
+    @enable_comments.setter
+    def enable_comments(self, enable=False):
+        """
+        Sets the comments property on the items
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        enable            optional boolean. If True, the comments for the site are turned
+                          on.  False will disable comments (default)
+        ================  ===============================================================
+
+         :return: boolean
+
+        """
+        return self._gis.update_properties({'commentsEnabled' : enable})
+
+    #----------------------------------------------------------------------
+    @property
+    def default_extent(self):
+        """
+        returns the site's default extent
+
+          :return: dictionary
+        """
+        return self._gis.properties['defaultExtent']
+    #----------------------------------------------------------------------
+    @default_extent.setter
+    def default_extent(self, extent):
+        """
+        defines the site's default extent
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        extent            optional dictionary. The default extent defines where a webmap
+                          will open.
+                          If a value of None is given, the default extent will be provided.
+                          Example Extent (default):
+                          {"type":"extent","xmin":-17999999.999994524,"ymin":-11999999.999991827,
+                          "xmax":17999999.999994524,"ymax":15999999.999982955,
+                          "spatialReference":{"wkid":102100}}
+        ================  ===============================================================
+
+          :return: boolean
+        """
+        if extent is None:
+            extent = {"type":"extent","xmin":-17999999.999994524,"ymin":-11999999.999991827,
+                      "xmax":17999999.999994524,"ymax":15999999.999982955,
+                      "spatialReference":{"wkid":102100}}
+        return self._gis.update_properties({'defaultExtent' : extent})
+    #----------------------------------------------------------------------
+    @property
+    def default_basemap(self):
+        """
+        returns the site's default extent
+
+          :return: dictionary
+        """
+        return self._gis.properties['defaultBasemap']
+    #----------------------------------------------------------------------
+    @default_basemap.setter
+    def default_basemap(self, basemap):
+        """
+        The Default Basemap opens when users click New Map. Set the group
+        in the Basemap Gallery above and choose the map to open. It will
+        open at the default extent you set.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        basemap           optional string. The new default basemap to set. If None, the
+                          default value will be set.
+        ================  ===============================================================
+        """
+        if basemap is None:
+            basemap = ""
+        return self._gis.update_properties({'defaultBasemap' : basemap})
+    #----------------------------------------------------------------------
+    @property
+    def vector_basemap(self):
+        """
+        gets/sets the default vector basemap
+        """
+        return self._gis.properties['defaultVectorBasemap']
+    #----------------------------------------------------------------------
+    @vector_basemap.setter
+    def vector_basemap(self, basemap):
+        """
+        gets/sets the default vector basemap
+
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        basemap           required dictionary. The new default vector basemap to set for
+                          a given site.
+        ================  ===============================================================
+        """
+        return self._gis.update_properties({'defaultVectorBasemap' : basemap})

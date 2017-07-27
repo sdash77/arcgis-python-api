@@ -497,7 +497,7 @@ class _PortalResourceManager(object):
         Download or get a portal resource item
         :param resource_name: Name of the file or resource to get
         :param out_file_name: Name of the file to write on disk
-        :return: 
+        :return:
         """
         data_path = 'portals/self/resources/' + resource_name
         if not download_path:
@@ -3136,13 +3136,15 @@ class User(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        reassign_to       optional string, new owner of items and groups
+        reassign_to       optional string or User, new owner of items and groups
         ================  ========================================================
 
         :return:
             a boolean indicating whether the operation succeeded or failed.
 
         """
+        if isinstance(reassign_to, User):
+            reassign_to = reassign_to.username
         return self._portal.delete_user(self.username, reassign_to)
 
     def reassign_to(self, target_username):
@@ -3159,13 +3161,16 @@ class User(dict):
         ================  ===========================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------
-        target_username   required string, user who will own items/groups after this.
+        target_username   required string or User, user who will own items/groups
+                          after this.
         ================  ===========================================================
 
         :return:
             a boolean indicating success
 
         """
+        if isinstance(target_username, User):
+            target_username = target_username.username
         return self._portal.reassign_user(self.username, target_username)
 
     def get_thumbnail(self):
