@@ -506,53 +506,7 @@ class UX(object):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         basemap           required dictionary. The new default vector basemap to set for
-                          a given site. If None, the default value will be set.
+                          a given site.
         ================  ===============================================================
         """
-        default = {'title': 'Topographic',
-                   'baseMapLayers': [{'url': 'https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer',
-                    'opacity': 1, 'title': 'World_Hillshade', 'visibility': True, 'id': 'World_Hillshade_3805','layerType': 'ArcGISTiledMapServiceLayer',
-                    'resourceInfo': {'maxImageWidth': 4096, 'supportedImageFormatTypes': 'PNG32,PNG24,PNG,JPG,DIB,TIFF,EMF,PS,PDF,GIF,SVG,SVGZ,BMP',
-                    'maxScale': 70.5310735, 'currentVersion': 10.3, 'layers': [{'subLayerIds': 'Portal for ArcGIS', 'maxScale': 0,
-                    'name': 'World Hillshade', 'parentLayerId': -1, 'defaultVisibility': True, 'id': 0, 'minScale': 0}],
-                    'fullExtent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 'xmax': 20037507.067161843,
-                    'ymin': -19971868.88040857, 'xmin': -20037507.067161843, 'ymax': 19971868.8804085}, 'initialExtent': {
-                    'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 'xmax': 30599101.86264427, 'ymin': 2308674.751313245,
-                    'xmin': -30599101.86264427, 'ymax': 19971868.880408503}, 'singleFusedMapCache': True, 'exportTilesAllowed': False,
-                    'tileInfo': {'cols': 256, 'origin': {'y': 20037508.342787, 'x': -20037508.342787}, 'compressionQuality': 90,
-                    'format': 'JPEG', 'dpi': 96, 'lods': [{'level': 0, 'scale': 591657527.591555, 'resolution': 156543.03392800014},
-                    {'level': 1, 'scale': 295828763.795777, 'resolution': 78271.51696399994},
-                    {'level': 2, 'scale': 147914381.897889, 'resolution': 39135.75848200009},
-                    {'level': 3, 'scale': 73957190.948944, 'resolution': 19567.87924099992},
-                    {'level': 4, 'scale': 36978595.474472, 'resolution': 9783.93962049996},
-                    {'level': 5, 'scale': 18489297.737236, 'resolution': 4891.96981024998},
-                    {'level': 6, 'scale': 9244648.868618, 'resolution': 2445.98490512499},
-                    {'level': 7, 'scale': 4622324.434309, 'resolution': 1222.992452562495},
-                    {'level': 8, 'scale': 2311162.217155, 'resolution': 611.4962262813797},
-                    {'level': 9, 'scale': 1155581.108577, 'resolution': 305.74811314055756},
-                    {'level': 10, 'scale': 577790.554289, 'resolution': 152.87405657041106},
-                    {'level': 11, 'scale': 288895.277144, 'resolution': 76.43702828507324},
-                    {'level': 12, 'scale': 144447.638572, 'resolution': 38.21851414253662},
-                    {'level': 13, 'scale': 72223.819286, 'resolution': 19.10925707126831},
-                    {'level': 14, 'scale': 36111.909643, 'resolution': 9.554628535634155},
-                    {'level': 15, 'scale': 18055.954822, 'resolution': 4.77731426794937},
-                    {'level': 16, 'scale': 9027.977411, 'resolution': 2.388657133974685},
-                    {'level': 17, 'scale': 4513.988705, 'resolution': 1.1943285668550503},
-                    {'level': 18, 'scale': 2256.994353, 'resolution': 0.5971642835598172},
-                    {'level': 19, 'scale': 1128.497176, 'resolution': 0.29858214164761665},
-                    {'level': 20, 'scale': 564.248588, 'resolution': 0.14929107082380833},
-                    {'level': 21, 'scale': 282.124294, 'resolution': 0.07464553541190416},
-                    {'level': 22, 'scale': 141.062147, 'resolution': 0.03732276770595208},
-                    {'level': 23, 'scale': 70.5310735, 'resolution': 0.01866138385297604}],
-                    'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 'rows': 256},
-                    'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                    'capabilities': 'Map,Tilemap', 'maxImageHeight': 4096,
-                    'supportsDynamicLayers': False, 'units': 'esriMeters',
-                    'supportedQueryFormats': 'JSON, AMF', 'tables': [],
-                    'supportedExtensions': 'KmlServer', 'mapName': 'Layers', 'maxRecordCount': 1000,
-                    'minScale': 591657527.591555}}, {'visibility': True,
-                    'styleUrl': '%scontent/items/e46739b3cba24573b005736a63f2e270/resources/styles/root.json' % self._portal.resturl.replace("http://","https://"),
-                    'opacity': 1, 'title': 'World Topographic Map', 'type': 'VectorTileLayer', 'layerType': 'VectorTileLayer', 'id': 'VectorTile_2333'}]}
-        if basemap is None:
-            basemap = default
         return self._gis.update_properties({'defaultVectorBasemap' : basemap})
