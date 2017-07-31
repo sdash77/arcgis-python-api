@@ -61,6 +61,7 @@ class PasswordPolicy(BasePortalAdmin):
             params[k] = v
         res = self._con.post(url, params)
         if 'success' in res:
+            self._properties = None
             return res['success']
         return res
     #----------------------------------------------------------------------

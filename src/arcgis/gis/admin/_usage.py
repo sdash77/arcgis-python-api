@@ -10,7 +10,9 @@ from ...gis import GIS
 from ._base import BasePortalAdmin
 ########################################################################
 class AGOLUsageReports(BasePortalAdmin):
-     """"""
+     """
+     Compiles Simple Usage Reports from ArcGIS Online
+     """
      _json_dict = {}
      _json = None
      _con = None
@@ -249,7 +251,7 @@ class AGOLUsageReports(BasePortalAdmin):
                                     postdata=params)
           return res
      #----------------------------------------------------------------------
-     def custom(self, start_time,
+     def _custom(self, start_time,
                 end_time, vars=None,
                 period=None, groupby=None,
                 name=None, stype=None,

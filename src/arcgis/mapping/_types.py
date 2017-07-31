@@ -224,8 +224,35 @@ class MapImageLayerManager(_GISResource):
         params = {
             "f": "json"
         }
-        return self._post(url, params)
+        return self._con._post(url, params)
 
+    #----------------------------------------------------------------------
+    @property
+    def rerun_job(self, job_id, code):
+        """
+        The rerun job operation supports re-running a canceled job from a
+        hosted map service. The result of this operation is a response
+        indicating success or failure with error code and description.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        code                required string, parameter used to re-run a given
+                            jobs with a specific error
+                            code: ALL | ERROR | CANCELED
+        ---------------     ----------------------------------------------------
+        job_id              required string, job to reprocess
+        ===============     ====================================================
+
+        :returns:
+           boolean or dictionary
+        """
+        url = self._url + "/jobs/%s/rerun" % job_id
+        params = {
+            "f" : "json",
+            "rerun": code
+        }
+        return self._con._post(url, params)
     # ----------------------------------------------------------------------
     def edit_tile_service(self,
                           service_definition=None,
@@ -263,6 +290,42 @@ class MapImageLayerManager(_GISResource):
             params["maxExportTileCount"] = int(max_export_tile_count)
         url = self._url + "/edit"
         return self._con.post(url, params)
+    #----------------------------------------------------------------------
+    def delete_tiles(self, levels, extent=None ):
+        """
+        Deletes tiles for the current cache
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        extent              optional dictionary,  If specified, the tiles within
+                            this extent will be deleted or will be deleted based
+                            on the service's full extent.
+                            Example:
+                            6224324.092137296,487347.5253569535,
+                            11473407.698535524,4239488.369818687
+                            the minx, miny, maxx, maxy values or,
+                            {"xmin":6224324.092137296,"ymin":487347.5253569535,
+                            "xmax":11473407.698535524,"ymax":4239488.369818687,
+                            "spatialReference":{"wkid":102100}} the JSON
+                            representation of the Extent object.
+        ---------------     ----------------------------------------------------
+        levels              required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ===============     ====================================================
+
+        :returns:
+           dictionary
+        """
+        params = {
+            "f" : "json",
+            "levels" : levels,
+        }
+        if extent:
+            params['extent'] = extent
+        url = self._url + "/deleteTiles"
+        return self._con.post(url, params)
+
 
 
 class MapImageLayer(Layer):

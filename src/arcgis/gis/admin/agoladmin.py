@@ -74,18 +74,6 @@ class AGOLAdminManager(object):
         return self._credits
     #----------------------------------------------------------------------
     @property
-    def usage_reports(self):
-        """
-        provides methods to gather and analyze usage data on your organization.
-        """
-        if self._usage is None:
-            from ._usage import AGOLUsageReports
-            url = "%sportals/self/usage" % self._gis._portal.resturl
-            self._usage = AGOLUsageReports(url=url, gis=self._gis)
-        return self._usage
-
-    #----------------------------------------------------------------------
-    @property
     def metadata(self):
         """
         resources to work with metadata on GIS

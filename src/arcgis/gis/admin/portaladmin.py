@@ -75,6 +75,8 @@ class PortalAdminManager(BasePortalAdmin):
     @property
     def metadata(self):
         """
+        returns a set of tools to work with ArcGIS Enterprise metadata
+        settings.
         """
         if self._metadata is None:
             from ._metadata import MetadataManager
