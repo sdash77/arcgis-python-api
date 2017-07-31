@@ -45,10 +45,13 @@ class FeatureSetConversionTest(unittest.TestCase):
 class IOTest(unittest.TestCase):
     """tests the spatial dataframe io functions"""
     def _construct_featureclass(self):
-        import uuid
-        fc = "a" + uuid.uuid4().hex[:6] + "a"
+        import uuid, os
+        import arcpy
+        fc = os.path.basename(arcpy.CreateUniqueName(base_name="a" + uuid.uuid4().hex[:6] + "a",
+                                                     workspace=arcpy.env.scratchGDB))#
+
         return arcpy.CreateRandomPoints_management(out_path=arcpy.env.scratchGDB,
-                                                         out_name=fc)[0]
+                                                   out_name=fc)[0]
     #----------------------------------------------------------------------
     def setUp(self):
         self._dir = arcpy.env.scratchFolder#r"c:\temp\testing"
