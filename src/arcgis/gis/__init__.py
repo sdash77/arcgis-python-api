@@ -4362,6 +4362,98 @@ class Item(dict):
             print('Folder not found for given owner')
             return None
 
+    #----------------------------------------------------------------------
+    def create_tile_service(self,
+                             title,
+                             #level,
+                             origin=None,
+                             lods=None,
+                             spatial_reference=None,
+                             build_cache=False):
+        """
+        allows publishers and administrators to publish hosted feature
+        layers and hosted feature layer views as a tile service.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        title             required string, name of the new service
+                          Example:
+                          "SeasideHeightsNJTiles"
+        ----------------  ---------------------------------------------------------------
+        min_scale         required float, the smallest scale to view data
+                          Example: 577790.0
+        ----------------  ---------------------------------------------------------------
+        max_scale         required float, the largest scale to view data.
+                          Example: 80000.0
+        ----------------  ---------------------------------------------------------------
+        cache_info        optional dictionary, if not none, administrator provides the
+                          tile cache info for the service.  The default is the AGOL scheme
+        ----------------  ---------------------------------------------------------------
+        build_cache       optional boolean, default False, if True, the cache will be
+                          built at publishing time.  This will increase the time it takes
+                          to publish the service.
+        ================  ===============================================================
+
+        """
+        if self.type.lower() == 'Feature Service'.lower():
+            p = self.layers[0].container
+            if cache_info is None:
+                cache_info = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                              'rows': 256, 'preciseDpi': 96, 'cols': 256, 'dpi': 96,
+                              'origin': {'y': 20037508.342787, 'x': -20037508.342787},
+                              'lods': [{'level': 0, 'scale': 591657527.591555, 'resolution': 156543.033928},
+                                       {'level': 1, 'scale': 295828763.795777, 'resolution': 78271.5169639999},
+                                       {'level': 2, 'scale': 147914381.897889, 'resolution': 39135.7584820001},
+                                       {'level': 3, 'scale': 73957190.948944, 'resolution': 19567.8792409999},
+                                       {'level': 4, 'scale': 36978595.474472, 'resolution': 9783.93962049996},
+                                       {'level': 5, 'scale': 18489297.737236, 'resolution': 4891.96981024998},
+                                       {'level': 6, 'scale': 9244648.868618, 'resolution': 2445.98490512499},
+                                       {'level': 7, 'scale': 4622324.434309, 'resolution': 1222.99245256249},
+                                       {'level': 8, 'scale': 2311162.217155, 'resolution': 611.49622628138},
+                                       {'level': 9, 'scale': 1155581.108577, 'resolution': 305.748113140558},
+                                       {'level': 10, 'scale': 577790.554289, 'resolution': 152.874056570411},
+                                       {'level': 11, 'scale': 288895.277144, 'resolution': 76.4370282850732},
+                                       {'level': 12, 'scale': 144447.638572, 'resolution': 38.2185141425366},
+                                       {'level': 13, 'scale': 72223.819286, 'resolution': 19.1092570712683},
+                                       {'level': 14, 'scale': 36111.909643, 'resolution': 9.55462853563415},
+                                       {'level': 15, 'scale': 18055.954822, 'resolution': 4.77731426794937},
+                                       {'level': 16, 'scale': 9027.977411, 'resolution': 2.38865713397468},
+                                       {'level': 17, 'scale': 4513.988705, 'resolution': 1.19432856685505},
+                                       {'level': 18, 'scale': 2256.994353, 'resolution': 0.597164283559817},
+                                       {'level': 19, 'scale': 1128.497176, 'resolution': 0.298582141647617},
+                                       {'level': 20, 'scale': 564.248588, 'resolution': 0.14929107082380833},
+                                       {'level': 21, 'scale': 282.124294, 'resolution': 0.07464553541190416},
+                                       {'level': 22, 'scale': 141.062147, 'resolution': 0.03732276770595208}]
+                              }
+            pp = {"minScale":min_scale,"maxScale":max_scale,"name":title,
+                  "tilingSchema":{"tileCacheInfo": cache_info,
+                  "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
+                  "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
+                  "packetSize":128}},"cacheOnDemand":True,
+                  "cacheOnDemandMinScale":144448,
+                  "capabilities":"Map,ChangeTracking"}
+            import json
+
+
+
+            params = {
+                "f" : "json",
+                "outputType" : "tiles",
+                "buildInitialCache" : build_cache,
+                "itemid" : self.itemid,
+                "filetype" : "featureService",
+                "publishParameters" : json.dumps(pp)
+            }
+            url = "%s/content/users/%s/publish" % (self._portal.resturl,
+                                                   self._gis.users.me.username)
+            res = self._gis._con.post(url, params)
+            serviceitem_id = self._check_publish_status(res['services'], folder=None)
+            return self._gis.content.get(serviceitem_id)
+        else:
+            raise ValueError("Input must of type FeatureService")
+        return
+
     def protect(self, enable=True):
         """ Enable or disable delete protection on the item
 
