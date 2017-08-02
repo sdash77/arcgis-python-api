@@ -4221,7 +4221,16 @@ class Item(dict):
 
 
         """
-        owner_name = self._portal.logged_in_user()['username']
+        if isinstance(owner, User):
+            owner_name = owner.username
+        elif isinstance(owner, str):
+            user = self._gis.users.get(owner)
+            if user is None:
+                owner_name = self._portal.logged_in_user()['username']
+            else:
+                owner_name = user.username
+        else:
+            owner_name = self._portal.logged_in_user()['username']
 
         folder_id = None
         if folder is not None:
