@@ -183,6 +183,7 @@ define('mapview', [
      "esri/InfoTemplate",
      "esri/toolbars/draw",
      "esri/layers/KMLLayer",
+     "esri/layers/VectorTileLayer",
      "esri/layers/RasterFunction",
      "esri/layers/MosaicRule",
      "esri/layers/ArcGISImageServiceLayer",
@@ -218,6 +219,7 @@ define('mapview', [
      InfoTemplate,
      Draw,
      KMLLayer,
+     VectorTileLayer,
      RasterFunction,
      MosaicRule,
      ArcGISImageServiceLayer,
@@ -380,14 +382,14 @@ define('mapview', [
 
 
             // JS map events
-            
+
             function onExtentChange(evt){
                 //console.log('#####EXTENTCHANGE')
               var extent = evt.extent,
                   zoomed = evt.levelChange;
                 that.extent_change(extent, zoomed);
             }
-            
+
             function onDrawEnd(evtObj) {
                 var geometry = evtObj.geometry;
 
@@ -425,39 +427,39 @@ define('mapview', [
         on_load: function(evt) {
             console.log('***on_load');
             evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
-    
+
             // create the draw toolbar, it activates only when mode=draw_*
             this.toolbar = new Draw(evt.map);
-    
+
             // hook up events
             this.toolbar.on("draw-end", this.onDrawEnd);
             //map.on("extent-change", onExtentChange);
-            //evt.map.target.on("click", this.onMouseClick);   
-            evt.map.on("click", this.onMouseClick);   
+            //evt.map.target.on("click", this.onMouseClick);
+            evt.map.on("click", this.onMouseClick);
         },
-    
+
         onDrawEnd : function(evtObj){
             var geometry = evtObj.geometry;
-    
+
             var graphic = this.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
-    
+
             this.toolbar.deactivate();
             //this.draw_end(geometry);
                         this.model.set('mode','navigate');
             this.touch();
             this.send({event: 'draw-end', message: geometry});
         },
-    
+
         onMouseClick: function(event) {
             console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
                         " on the screen. The map coordinate at this point is " +
                         event.mapPoint.x + ", " + event.mapPoint.y
-    
+
             );
             //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
             //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
             //console.log(normalizedVal);
-            
+
             //this.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
             this.send({event: 'mouseclick', message: event.mapPoint});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
         },
@@ -546,6 +548,10 @@ define('mapview', [
                         domStyle.set("loading", "display", "none");
                     });
                 }
+                else if (newlayer.type == "VectorTileLayer") {
+                    var vtl = new VectorTileLayer(newlayer.url);
+                    this.map.addLayer(vtl);
+                }
                 else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer")) {
                     console.log("FeatureLayer " + newlayer.url);
 
@@ -553,16 +559,16 @@ define('mapview', [
                         "outFields": ["*"]
                     });
 
-                    
-                    
-                    
-                    
-                    
+
+
+
+
+
                     if (newlayer.options != null) {
                         var lyr_options = JSON.parse(newlayer.options);
 
-                        
-                        
+
+
                         if (lyr_options.opacity != null) {
                             console.log('***opacity:' + lyr_options.opacity)
                             layer.setOpacity(lyr_options.opacity);
@@ -578,7 +584,7 @@ define('mapview', [
                             var heatmapRenderer = new HeatmapRenderer();
                             layer.setRenderer(heatmapRenderer);
                         }
-                        
+
 
                         console.log("ClassedSizeRend0:" + lyr_options.renderer);
                         console.log("ClassedSizeRend:" + lyr_options.field_name);
@@ -624,11 +630,11 @@ define('mapview', [
                                 basemap: that.map.getBasemap(),
                                 classificationMethod: "quantile"
                             };
-                            
+
                             var renderer_properties = Object.assign(default_properties, lyr_options);
-                            
+
                             console.log(renderer_properties);
-                            
+
                             smartMapping.createClassedColorRenderer(renderer_properties).then(function (response) {
                                 layer.setRenderer(response.renderer);
                                 layer.redraw();
@@ -646,45 +652,45 @@ define('mapview', [
                                 basemap: that.map.getBasemap(),
                                 classificationMethod: "quantile"
                             };
-                            
+
                             var renderer_properties = Object.assign(default_properties, lyr_options);
-                            
+
                             console.log(renderer_properties);
-                            
+
                             smartMapping.createClassedSizeRenderer(renderer_properties).then(function (response) {
                                 layer.setRenderer(response.renderer);
                                 layer.redraw();
                                 //createLegend(map, layer, field);
                             });
                         }
-                        
 
-                        
+
+
                     }
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     if (newlayer.opacity != null) {
                         layer.setOpacity(newlayer.opacity);
                     }
@@ -764,11 +770,11 @@ define('mapview', [
                     var opacity = -1;
                     if (newlayer.options != null) {
                         var imgsvc_options = JSON.parse(newlayer.options);
-                        
+
                         if (imgsvc_options.opacity) {
                             opacity = imgsvc_options.opacity;
                         }
-                        
+
                         if (imgsvc_options.swipelayer) {
                             swipelayer = imgsvc_options.swipelayer;
                         }
@@ -796,7 +802,7 @@ define('mapview', [
                         console.log("******Setting opacity ");
                         layer.setOpacity(opacity);
                     }
-                    
+
                     this.map.addLayer(layer);
 
                     if (swipelayer) {
@@ -964,14 +970,14 @@ define('mapview', [
             this.touch();
             this.send({ event: 'draw-end', message: geometry });
         },
-        
+
         extent_change(extent, zoomed) {
             //console.log(JSON.stringify(extent));
             //console.log(zoomed);
             this.model.set('_jsextent', JSON.stringify(extent));
             this.touch();
         },
-        
+
 
         events: {
             // Dictionary of events and their handlers.

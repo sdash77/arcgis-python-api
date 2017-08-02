@@ -388,125 +388,6 @@ class GIS(object):
 
         return mapwidget
 
-class _PortalResourceManager(object):
-    """Helper class to manage portal resources in a GIS"""
-
-    def __init__(self, gis):
-        """Creates helper object to manage custom roles in the GIS"""
-        self._gis = gis
-        self._portal = gis._portal
-        self._is_portal = self._gis.properties.isPortal
-
-
-    def add(self, key=None, path=None, text=None, **kwargs):
-        """
-        The add resource operation allows the administrator to add a file
-        resource, for example, the organization's logo or custom banner.
-        The resource can be used by any member of the organization. File
-        resources use storage space from your quota and are scanned for
-        viruses.
-
-        Parameters:
-         :key: look up key for file
-         :path: file path to the resource to upload
-         :text: text value to add to the site's resources
-         :access: (optional) sets the resources access level the default
-         is public. Values: public, org, orgprivate
-        Output:
-         boolean
-        """
-        access = kwargs.pop("access", None)
-        files = None
-        if key is None and path:
-            key = os.path.basename(path)
-        elif key is None and path is None:
-            raise ValueError("key must be populated is path is null")
-        url = "portals/self/addresource"
-        postdata = {
-            "f" : "json",
-                "key" : key,
-        }
-        if path:
-            files = {
-                'file' : path
-            }
-        if text:
-            if isinstance(text, dict):
-                postdata['text'] = json.dumps(text)
-            elif isinstance(text, str):
-                from arcgis._impl.common._utils import _to_utf8
-                postdata['text'] = _to_utf8(text)
-        else:
-            if self._portal.is_arcgisonline == False:
-                postdata['text'] = ""
-        if self._is_portal == False:
-            url = "portals/%s/addResource" % self._gis.properties.id
-            if text is None:
-                postdata['text'] = ""
-            if access:
-                postdata['access'] = access
-            else:
-                postdata['access'] = 'public'
-
-        resp = self._portal.con.post(url,
-                                     postdata, files=files)
-        if 'success' in resp:
-            return resp['success']
-        return resp
-
-    def delete(self, key):
-        """
-        The Remove Resource operation allows the administrator to remove
-        a file resource.
-
-        Parameters:
-         :key: The name of the resource to delete.
-        Output:
-         boolean
-        """
-        postdata = {
-                "f" : "json",
-                "key" : key,
-            }
-        resp = self._portal.con.post('portals/self/removeresource',
-                                     postdata)
-        if 'success' in resp:
-            return resp['success']
-        return resp
-
-    #----------------------------------------------------------------------
-    def list(self, start=1, num=100):
-        """
-        returns a list of resources uploaded to portal.  The items can be
-        images, files and other content used to stylize and modify a
-        portal's appearance.
-        """
-        postdata = {
-            "f" : "json",
-            'start' : start,
-            'num' : num
-        }
-        resp = self._portal.con.post('portals/self/resources',
-                                     postdata)
-        if 'resources' in resp:
-            return resp['resources']
-        return resp
-
-    def get(self, resource_name, download_path=None):
-        """
-        Download or get a portal resource item
-        :param resource_name: Name of the file or resource to get
-        :param out_file_name: Name of the file to write on disk
-        :return:
-        """
-        data_path = 'portals/self/resources/' + resource_name
-        if not download_path:
-            download_path = self._workdir
-
-        download_path = self._portal.con.get(path=data_path, file_name=resource_name,
-                                        out_folder=download_path, try_json=False, force_bytes=False)
-        return download_path
-
 ###########################################################################
 class Datastore(dict):
     """
@@ -4327,6 +4208,9 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dict containing the folder 'id',
                           such as the dict obtained from the folders property.
+        ----------------  ---------------------------------------------------------------
+        owner             optional string or Owner object, The name of the user to
+                          move to.
         ================  ===============================================================
 
         :return:
@@ -4340,7 +4224,16 @@ class Item(dict):
 
 
         """
-        owner_name = self._portal.logged_in_user()['username']
+        if isinstance(owner, User):
+            owner_name = owner.username
+        elif isinstance(owner, str):
+            user = self._gis.users.get(owner)
+            if user is None:
+                owner_name = self._portal.logged_in_user()['username']
+            else:
+                owner_name = user.username
+        else:
+            owner_name = self._portal.logged_in_user()['username']
 
         folder_id = None
         if folder is not None:
@@ -4361,6 +4254,93 @@ class Item(dict):
         else:
             print('Folder not found for given owner')
             return None
+
+    #----------------------------------------------------------------------
+    def create_tile_service(self,
+                             title,
+                             min_scale,
+                             max_scale,
+                             cache_info=None,
+                             build_cache=False):
+        """
+        allows publishers and administrators to publish hosted feature
+        layers and hosted feature layer views as a tile service.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        title             required string, name of the new service
+                          Example:
+                          "SeasideHeightsNJTiles"
+        ----------------  ---------------------------------------------------------------
+        min_scale         required float, the smallest scale to view data
+                          Example: 577790.0
+        ----------------  ---------------------------------------------------------------
+        max_scale         required float, the largest scale to view data.
+                          Example: 80000.0
+        ----------------  ---------------------------------------------------------------
+        cache_info        optional dictionary, if not none, administrator provides the
+                          tile cache info for the service.  The default is the AGOL scheme
+        ----------------  ---------------------------------------------------------------
+        build_cache       optional boolean, default False, if True, the cache will be
+                          built at publishing time.  This will increase the time it takes
+                          to publish the service.
+        ================  ===============================================================
+
+        """
+        if self.type.lower() == 'Feature Service'.lower():
+            p = self.layers[0].container
+            if cache_info is None:
+                cache_info = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                              'rows': 256, 'preciseDpi': 96, 'cols': 256, 'dpi': 96,
+                              'origin': {'y': 20037508.342787, 'x': -20037508.342787},
+                              'lods': [{'level': 0, 'scale': 591657527.591555, 'resolution': 156543.033928},
+                                       {'level': 1, 'scale': 295828763.795777, 'resolution': 78271.5169639999},
+                                       {'level': 2, 'scale': 147914381.897889, 'resolution': 39135.7584820001},
+                                       {'level': 3, 'scale': 73957190.948944, 'resolution': 19567.8792409999},
+                                       {'level': 4, 'scale': 36978595.474472, 'resolution': 9783.93962049996},
+                                       {'level': 5, 'scale': 18489297.737236, 'resolution': 4891.96981024998},
+                                       {'level': 6, 'scale': 9244648.868618, 'resolution': 2445.98490512499},
+                                       {'level': 7, 'scale': 4622324.434309, 'resolution': 1222.99245256249},
+                                       {'level': 8, 'scale': 2311162.217155, 'resolution': 611.49622628138},
+                                       {'level': 9, 'scale': 1155581.108577, 'resolution': 305.748113140558},
+                                       {'level': 10, 'scale': 577790.554289, 'resolution': 152.874056570411},
+                                       {'level': 11, 'scale': 288895.277144, 'resolution': 76.4370282850732},
+                                       {'level': 12, 'scale': 144447.638572, 'resolution': 38.2185141425366},
+                                       {'level': 13, 'scale': 72223.819286, 'resolution': 19.1092570712683},
+                                       {'level': 14, 'scale': 36111.909643, 'resolution': 9.55462853563415},
+                                       {'level': 15, 'scale': 18055.954822, 'resolution': 4.77731426794937},
+                                       {'level': 16, 'scale': 9027.977411, 'resolution': 2.38865713397468},
+                                       {'level': 17, 'scale': 4513.988705, 'resolution': 1.19432856685505},
+                                       {'level': 18, 'scale': 2256.994353, 'resolution': 0.597164283559817},
+                                       {'level': 19, 'scale': 1128.497176, 'resolution': 0.298582141647617},
+                                       {'level': 20, 'scale': 564.248588, 'resolution': 0.14929107082380833},
+                                       {'level': 21, 'scale': 282.124294, 'resolution': 0.07464553541190416},
+                                       {'level': 22, 'scale': 141.062147, 'resolution': 0.03732276770595208}]
+                              }
+            pp = {"minScale":min_scale,"maxScale":max_scale,"name":title,
+                  "tilingSchema":{"tileCacheInfo": cache_info,
+                  "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
+                  "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
+                  "packetSize":128}},"cacheOnDemand":True,
+                  "cacheOnDemandMinScale":144448,
+                  "capabilities":"Map,ChangeTracking"}
+            params = {
+                "f" : "json",
+                "outputType" : "tiles",
+                "buildInitialCache" : build_cache,
+                "itemid" : self.itemid,
+                "filetype" : "featureService",
+                "publishParameters" : json.dumps(pp)
+            }
+            url = "%s/content/users/%s/publish" % (self._portal.resturl,
+                                                   self._gis.users.me.username)
+            res = self._gis._con.post(url, params)
+            serviceitem_id = self._check_publish_status(res['services'], folder=None)
+            return self._gis.content.get(serviceitem_id)
+        else:
+            raise ValueError("Input must of type FeatureService")
+        return
 
     def protect(self, enable=True):
         """ Enable or disable delete protection on the item
@@ -4512,7 +4492,7 @@ class Item(dict):
                                                  self.id)
         params = {"f" : "json",
                   'rating' : float(value)}
-        res = self._portal.con.post(url, params)
+        self._portal.con.post(url, params)
     #----------------------------------------------------------------------
     def delete_rating(self):
         """

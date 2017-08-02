@@ -1,4 +1,4 @@
-from .. import _PortalResourceManager
+from ._resources import PortalResourceManager
 
 ###########################################################################
 class UX(object):
@@ -39,7 +39,7 @@ class UX(object):
         # check if banner has to be removed
         if not banner_file:
             #remove code
-            portal_resources = _PortalResourceManager(self._gis)
+            portal_resources = PortalResourceManager(self._gis)
             #find existing banner resource file
             resource_list = portal_resources.list()
             e_banner = [banner for banner in resource_list if banner['key'].startswith('banner')]
@@ -68,7 +68,7 @@ class UX(object):
             else:
                 raise RuntimeError('Invalid image extension')
 
-            portal_resources = _PortalResourceManager(self._gis)
+            portal_resources = PortalResourceManager(self._gis)
             add_result = portal_resources.add(key_val, banner_file)
 
             if add_result and custom_html:
@@ -123,7 +123,7 @@ class UX(object):
         """
 
         # Add resource file
-        portal_resources = _PortalResourceManager(self._gis)
+        portal_resources = PortalResourceManager(self._gis)
         key_val=""
         # find image extension
         if logo_file:
@@ -161,7 +161,7 @@ class UX(object):
 
          :return: Path to downloaded logo file.
         """
-        portal_resources = _PortalResourceManager(self._gis)
+        portal_resources = PortalResourceManager(self._gis)
         props = self._gis.properties
         if 'thumbnail' in props:
             resource = props['thumbnail']
@@ -327,7 +327,7 @@ class UX(object):
             else:
                 raise RuntimeError('Invalid image extension')
 
-            portal_resources = _PortalResourceManager(self._gis)
+            portal_resources = PortalResourceManager(self._gis)
             add_result = portal_resources.add(key_val, background_file)
             if not add_result:
                 raise RuntimeError("Error adding background image as a resource file")
@@ -355,7 +355,7 @@ class UX(object):
          :return: Path to downloaded banner file.
         """
         #create a portal resource manager obj
-        portal_resources = _PortalResourceManager(self._gis)
+        portal_resources = PortalResourceManager(self._gis)
 
         #find existing banner resource file
         resource_list = portal_resources.list()
@@ -388,7 +388,7 @@ class UX(object):
         """
 
         #create a portal resource manager obj
-        portal_resources = _PortalResourceManager(self._gis)
+        portal_resources = PortalResourceManager(self._gis)
 
         #find existing banner resource file
         resource_list = portal_resources.list()
