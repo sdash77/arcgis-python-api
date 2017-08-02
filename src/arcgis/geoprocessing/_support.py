@@ -137,7 +137,7 @@ def _analysis_job_status(gptool, task_url, job_info):
                         if msg['type'] == 'esriJobMessageTypeInformative':
                             _log.info(msg['description'])
                         elif msg['type'] == 'esriJobMessageTypeWarning':
-                            _log.warn(msg['description'])
+                            _log.warning(msg['description'])
                         elif msg['type'] == 'esriJobMessageTypeError':
                             _log.error(msg['description'])
                             # print(msg['description'], file=sys.stderr)
