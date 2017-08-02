@@ -4208,6 +4208,9 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dict containing the folder 'id',
                           such as the dict obtained from the folders property.
+        ----------------  ---------------------------------------------------------------
+        owner             optional string or Owner object, The name of the user to
+                          move to.
         ================  ===============================================================
 
         :return:
