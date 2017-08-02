@@ -2,7 +2,8 @@
 Entry point to working with local enterprise GIS functions
 """
 from ..._impl.connection import _ArcGISConnection
-from ...gis import GIS, _PortalResourceManager
+from ...gis import GIS
+from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 ########################################################################
 class AGOLAdminManager(object):
@@ -37,7 +38,7 @@ class AGOLAdminManager(object):
         self._ux = ux
         self._collaborations = collaborations
         self._metadata = metadata
-        self.resource_manager = _PortalResourceManager(gis=self._gis)
+        self.resources = PortalResourceManager(gis=self._gis)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._gis._portal.resturl)

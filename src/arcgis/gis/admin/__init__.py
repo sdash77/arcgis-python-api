@@ -20,4 +20,5 @@ from ._collaboration import Collaboration, CollaborationManager
 from ._ux import UX
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
-__all__ = ['PortalAdminManager']
+from ._resources import PortalResourceManager
+__all__ = ['PortalAdminManager', 'AGOLAdminManager']

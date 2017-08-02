@@ -3,6 +3,7 @@ Entry point to working with local enterprise GIS functions
 """
 from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
+from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 ########################################################################
 class PortalAdminManager(BasePortalAdmin):
@@ -50,7 +51,7 @@ class PortalAdminManager(BasePortalAdmin):
         else:
             raise ValueError(
                 "connection must be of type GIS or _ArcGISConnection")
-        self.resource_manager = _PortalResourceManager(gis=self._gis)
+        self.resources = PortalResourceManager(gis=self._gis)
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
