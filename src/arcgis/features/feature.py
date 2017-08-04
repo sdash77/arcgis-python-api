@@ -292,13 +292,13 @@ class FeatureSet(object):
 
                 if geometry_type is None:
                     if isinstance(geometry, Polyline):
-                        self._geometryType = "esriGeometryPolyline"
+                        self._geometry_type = "esriGeometryPolyline"
                     elif isinstance(geometry, Polygon):
-                        self._geometryType = "esriGeometryPolygon"
+                        self._geometry_type = "esriGeometryPolygon"
                     elif isinstance(geometry, Point):
-                        self._geometryType = "esriGeometryPoint"
+                        self._geometry_type = "esriGeometryPoint"
                     elif isinstance(geometry, MultiPoint):
-                        self._geometryType = "esriGeometryMultipoint"
+                        self._geometry_type = "esriGeometryMultipoint"
                 # else:
                 #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
