@@ -69,65 +69,86 @@ class Geocoder(_GISResource):
         """
         The geocode method geocodes one location per request.
 
-        Inputs:
-           address - Specifies the location to be geocoded. This can be a string
-           containing the street address, place name, postal code, or POI.
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        address             required list of strings or dictionaries.
+                            Specifies the location to be geocoded. This can be
+                            a string containing the street address, place name,
+                            postal code, or POI.
 
-            Alternatively, this can be a dictionary containing the various address
-            fields accepted by the corresponding geocode service. These fields are
-            listed in the addressFields property of the associated geocoder.
-            For example, if the addressFields of a geocoder includes fields
-            with the following names: Street, City, State and Zone, then the address argument
-            is of the form:
-            {
-              Street: "1234 W Main St",
-              City: "Small Town",
-              State: "WA",
-              Zone: "99027"
-            }
+                            Alternatively, this can be a dictionary containing
+                            the various address fields accepted by the
+                            corresponding geocoder. These fields are listed in
+                            the addressFields property of the associated
+                            geocoder. For example, if the address_fields of a
+                            geocoder includes fields with the following names:
+                            Street, City, State and Zone, then the address
+                            argument is of the form:
+                            {
+                              Street: "1234 W Main St",
+                              City: "Small Town",
+                              State: "WA",
+                              Zone: "99027"
+                            }
+        ---------------     ----------------------------------------------------
+        search_extent       optional string, A set of bounding box coordinates
+                            that limit the search area to a specific region.
+                            This is especially useful for applications in which
+                            a user will search for places and addresses only
+                            within the current map extent.
+        ---------------     ----------------------------------------------------
+        location            optionl [x,y], Defines an origin point location that
+                            is used with the distance parameter to sort
+                            geocoding candidates based upon their proximity to
+                            the location.
+        ---------------     ----------------------------------------------------
+        distance            optional float, Specifies the radius of an area
+                            around a point location which is used to boost the
+                            rank of geocoding candidates so that candidates
+                            closest to the location are returned first. The
+                            distance value is in meters.
+        ---------------     ----------------------------------------------------
+        out_sr              optional dictionary, The spatial reference of the
+                            x/y coordinates returned by a geocode request. This
+                            is useful for applications using a map with a spatial
+                            reference different than that of the geocode service.
+        ---------------     ----------------------------------------------------
+        category            optional string, A place or address type which can
+                            be used to filter find results. The parameter
+                            supports input of single category values or multiple
+                            comma-separated values. The category parameter can be
+                            passed in a request with or without the text
+                            parameter.
+        ---------------     ----------------------------------------------------
+        out_fields          optional string, name of all the fields to inlcude.
+                            The default is "*" which means all fields.
+        ---------------     ----------------------------------------------------
+        max_location        optional integer, The number of locations to be
+                            returned from the service. The default is 20.
+        ---------------     ----------------------------------------------------
+        magic_key           The find operation retrieves results quicker when
+                            you pass a valid text and magickey value.
+        ---------------     ----------------------------------------------------
+        for_storage         Specifies whether the results of the operation will
+                            be persisted. The default value is false, which
+                            indicates the results of the operation can't be
+                            stored, but they can be temporarily displayed on a
+                            map for instance. If you store the results, in a
+                            database for example, you need to set this parameter
+                            to true.
+        ---------------     ----------------------------------------------------
+        geocoder            Optional, the geocoder to be used. If not specified,
+                            the active GIS's first geocoder is used.
+        ---------------     ----------------------------------------------------
+        as_featureset       optional boolean, if True, the result set will be a
+                            FeatureSet instead of a dictionary. False is default
+        ===============     ====================================================
 
-           search_extent - A set of bounding box coordinates that limit the search
-            area to a specific region. This is especially useful for
-            applications in which a user will search for places and
-            addresses only within the current map extent.
-           location - Defines an origin point location that is used with
-            the distance parameter to sort geocoding candidates based upon
-            their proximity to the location. The distance parameter
-            specifies the radial distance from the location in meters. The
-            priority of candidates within this radius is boosted relative
-            to those outside the radius.
-           distance - Specifies the radius of an area around a point
-            location which is used to boost the rank of geocoding
-            candidates so that candidates closest to the location are
-            returned first. The distance value is in meters.
-           out_sr - The spatial reference of the x/y coordinates returned by
-            a geocode request. This is useful for applications using a map
-            with a spatial reference different than that of the geocode
-            service.
-           category - A place or address type which can be used to filter
-            find results. The parameter supports input of single category
-            values or multiple comma-separated values. The category
-            parameter can be passed in a request with or without the text
-            parameter.
-           out_fields - The list of fields to be returned in the response.
-           maxLocation - The maximum number of locations to be returned by
-            a search, up to the maximum number allowed by the service. If
-            not specified, then one location will be returned.
+        :returns:
+           dictionary or FeatureSet
 
-           magic_key - The find operation retrieves results quicker when you
-            pass in valid text and magic_key values than when you don't pass
-            in magic_key. However, to get these advantages, you need to make
-            a prior request to suggest, which provides a magic_key. This may
-            or may not be relevant to your workflow.
-
-           for_storage - Specifies whether the results of the operation will
-            be persisted. The default value is false, which indicates the
-            results of the operation can't be stored, but they can be
-            temporarily displayed on a map for instance. If you store the
-            results, in a database for example, you need to set this
-            parameter to true.
-        """
-        # self.url +
+    """
         url = self.url + "/findAddressCandidates"
 
         params = {
@@ -142,8 +163,6 @@ class Geocoder(_GISResource):
             else:
                 print("address should be a string (single line address) or dictionary "
                       "(with address fields as keys)")
-
-        # params['text'] = text
 
         if not magic_key is None:
             params['magicKey'] = magic_key
@@ -181,7 +200,7 @@ class Geocoder(_GISResource):
 
             return FeatureSet(features=features, spatial_reference=sr)#resp['candidates']
         elif resp is not None and as_featureset == False:
-            return resp
+            return resp['candidates']
         else:
             return []
 
@@ -192,6 +211,8 @@ class Geocoder(_GISResource):
         x/y location. You pass the coordinates of a point location to the
         geocoding service, and the service returns the address that is
         closest to the location.
+
+
         Input:
            location - a list defined as [X,Y] or a JSON Point
         """
@@ -460,70 +481,81 @@ def geocode(address,
     """
     The geocode function geocodes one location per request.
 
-    Inputs:
+    ===============     ====================================================
+    **Argument**        **Description**
+    ---------------     ----------------------------------------------------
+    address             required list of strings or dictionaries.
+                        Specifies the location to be geocoded. This can be
+                        a string containing the street address, place name,
+                        postal code, or POI.
 
-       address - Specifies the location to be geocoded. This can be a string
-       containing the street address, place name, postal code, or POI.
+                        Alternatively, this can be a dictionary containing
+                        the various address fields accepted by the
+                        corresponding geocoder. These fields are listed in
+                        the addressFields property of the associated
+                        geocoder. For example, if the address_fields of a
+                        geocoder includes fields with the following names:
+                        Street, City, State and Zone, then the address
+                        argument is of the form:
+                        {
+                          Street: "1234 W Main St",
+                          City: "Small Town",
+                          State: "WA",
+                          Zone: "99027"
+                        }
+    ---------------     ----------------------------------------------------
+    search_extent       optional string, A set of bounding box coordinates
+                        that limit the search area to a specific region.
+                        This is especially useful for applications in which
+                        a user will search for places and addresses only
+                        within the current map extent.
+    ---------------     ----------------------------------------------------
+    location            optionl [x,y], Defines an origin point location that
+                        is used with the distance parameter to sort
+                        geocoding candidates based upon their proximity to
+                        the location.
+    ---------------     ----------------------------------------------------
+    distance            optional float, Specifies the radius of an area
+                        around a point location which is used to boost the
+                        rank of geocoding candidates so that candidates
+                        closest to the location are returned first. The
+                        distance value is in meters.
+    ---------------     ----------------------------------------------------
+    out_sr              optional dictionary, The spatial reference of the
+                        x/y coordinates returned by a geocode request. This
+                        is useful for applications using a map with a spatial
+                        reference different than that of the geocode service.
+    ---------------     ----------------------------------------------------
+    category            optional string, A place or address type which can
+                        be used to filter find results. The parameter
+                        supports input of single category values or multiple
+                        comma-separated values. The category parameter can be
+                        passed in a request with or without the text
+                        parameter.
+    ---------------     ----------------------------------------------------
+    out_fields          optional string, name of all the fields to inlcude.
+                        The default is "*" which means all fields.
+    ---------------     ----------------------------------------------------
+    max_location        optional integer, The number of locations to be
+                        returned from the service. The default is 20.
+    ---------------     ----------------------------------------------------
+    magic_key           The find operation retrieves results quicker when
+                        you pass a valid text and magickey value.
+    ---------------     ----------------------------------------------------
+    for_storage         Specifies whether the results of the operation will
+                        be persisted. The default value is false, which
+                        indicates the results of the operation can't be
+                        stored, but they can be temporarily displayed on a
+                        map for instance. If you store the results, in a
+                        database for example, you need to set this parameter
+                        to true.
+    ---------------     ----------------------------------------------------
+    geocoder            Optional, the geocoder to be used. If not specified,
+                        the active GIS's first geocoder is used.
+    ===============     ====================================================
 
-        Alternatively, this can be a dictionary containing the various address fields accepted
-        by the corresponding geocoder. These fields are listed in the addressFields property of
-        the associated geocoder. For example, if the address_fields of a geocoder includes fields
-        with the following names: Street, City, State and Zone, then the
-        address argument is of the form:
-        {
-          Street: "1234 W Main St",
-          City: "Small Town",
-          State: "WA",
-          Zone: "99027"
-        }
-
-       search_extent - A set of bounding box coordinates that limit the search
-        area to a specific region. This is especially useful for
-        applications in which a user will search for places and
-        addresses only within the current map extent.
-
-       location - Defines an origin point location that is used with
-        the distance parameter to sort geocoding candidates based upon
-        their proximity to the location. The distance parameter
-        specifies the radial distance from the location in meters. The
-        priority of candidates within this radius is boosted relative
-        to those outside the radius.
-
-       distance - Specifies the radius of an area around a point
-        location which is used to boost the rank of geocoding
-        candidates so that candidates closest to the location are
-        returned first. The distance value is in meters.
-
-       out_sr - The spatial reference of the x/y coordinates returned by
-        a geocode request. This is useful for applications using a map
-        with a spatial reference different than that of the geocode
-        service.
-
-       category - A place or address type which can be used to filter
-        find results. The parameter supports input of single category
-        values or multiple comma-separated values. The category
-        parameter can be passed in a request with or without the text
-        parameter.
-       out_fields - The list of fields to be returned in the response.
-
-       maxLocation - The maximum number of locations to be returned by
-        a search, up to the maximum number allowed by the service. If
-        not specified, then one location will be returned.
-
-       magic_key - The find operation retrieves results quicker when you
-        pass in valid text and magicKey values than when you don't pass
-        in magicKey. However, to get these advantages, you need to make
-        a prior request to suggest, which provides a magicKey. This may
-        or may not be relevant to your workflow.
-
-       for_storage - Specifies whether the results of the operation will
-        be persisted. The default value is false, which indicates the
-        results of the operation can't be stored, but they can be
-        temporarily displayed on a map for instance. If you store the
-        results, in a database for example, you need to set this
-        parameter to true.
-
-       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
+    :returns:
+       dictionary
 
     """
     as_featureset = False
@@ -551,6 +583,7 @@ def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
     x/y location. You pass the coordinates of a point location to the
     geocoding service, and the service returns the address that is
     closest to the location.
+
     Input:
 
        location - a list defined as [X,Y] or a Point Geometry object
