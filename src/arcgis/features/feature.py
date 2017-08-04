@@ -442,7 +442,10 @@ class FeatureSet(object):
                 arcpy_found = False
             from pandas.io.json import json_normalize
             from arcgis.features import SpatialDataFrame
-            if self.geometry_type is not None:
+            if len(self.features) == 0:
+                import pandas as pd
+                return pd.DataFrame()
+            elif self.geometry_type is not None:
                 if self.spatial_reference and \
                    'wkt' in self.spatial_reference.keys():
                     sr = SpatialReference(self.spatial_reference)
@@ -545,7 +548,7 @@ class FeatureSet(object):
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']
         else:
-            fields = {'fields': []}
+            fields = []
         if 'features' in featureset_dict:
             for feat in featureset_dict['features']:
                 features.append(Feature.from_dict(feat))
