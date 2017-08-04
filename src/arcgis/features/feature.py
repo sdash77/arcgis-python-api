@@ -545,7 +545,7 @@ class FeatureSet(object):
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']
         else:
-            fields = {'fields': []}
+            fields = []
         if 'features' in featureset_dict:
             for feat in featureset_dict['features']:
                 features.append(Feature.from_dict(feat))
