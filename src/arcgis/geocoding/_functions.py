@@ -1,10 +1,12 @@
 """
 Types and functions for geocoding.
 """
+import copy
 from ..gis import _GISResource
 import arcgis.env
 import logging
-
+from ..features import FeatureSet
+from ..geometry import Geometry
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -62,7 +64,8 @@ class Geocoder(_GISResource):
                  out_fields="*",
                  max_locations=20,
                  magic_key=None,
-                 for_storage=False):
+                 for_storage=False,
+                 as_featureset=False):
         """
         The geocode method geocodes one location per request.
 
@@ -168,13 +171,22 @@ class Geocoder(_GISResource):
 
         resp = self._con.post(url, params, token=self._token)
 
-        if resp is not None:
-            return resp['candidates']
+        if resp is not None and as_featureset:
+            features = []
+            sr = resp['spatialReference']
+            for c in resp['candidates']:
+                geom = c['location']
+                geom['spatialReference'] = sr
+                features.append({'geometry' : Geometry(geom), 'attributes' : c['attributes']})
+
+            return FeatureSet(features=features, spatial_reference=sr)#resp['candidates']
+        elif resp is not None and as_featureset == False:
+            return resp
         else:
             return []
 
     def _reverse_geocode(self, location, distance=None, out_sr=None, lang_code=None,
-                         return_intersection=False, for_storage=False):
+                         return_intersection=False, for_storage=False, as_featureset=False):
         """
         The reverseGeocode operation determines the address at a particular
         x/y location. You pass the coordinates of a point location to the
@@ -204,16 +216,21 @@ class Geocoder(_GISResource):
             params['returnIntersection'] = return_intersection
         if for_storage:
             params['forStorage'] = for_storage
-
         resp = self._con.post(url, params, token=self._token)
-
+        if resp is not None and as_featureset:
+            geom = copy.copy(resp['location'])
+            del resp['location']
+            fs = FeatureSet(features=[{'geometry' : Geometry(geom),
+                                       "attributes" : resp['address']}])
+            return fs
         return resp
 
     def _batch_geocode(self,
                        addresses,
                        source_country=None,
                        category=None,
-                       out_sr=None):
+                       out_sr=None,
+                       as_featureset=False):
         """
         The batch_geocode() method geocodes an entire list of addresses.
         Geocoding many addresses at once is also known as bulk geocoding.
@@ -294,13 +311,21 @@ class Geocoder(_GISResource):
         params['addresses'] = {"records": addr_recordset}
 
         resp = self._con.post(url, params, token=self._token)
-        if resp is not None:
+        if resp is not None and as_featureset:
+            sr = resp['spatialReference']
+
             matches = [None] * len(addresses)
             locations = resp['locations']
             for location in locations:
-                matches[location['attributes']['ResultID']] = location
-
-            return matches
+                geom = copy.copy(location['location'])
+                if 'spatialReference' not in geom:
+                    geom['spatialReference'] = sr
+                att = location['attributes']
+                matches[location['attributes']['ResultID']] = {'geometry': Geometry(geom),
+                                                               "attributes" : att }
+            return FeatureSet(features=matches, spatial_reference=sr)
+        elif resp is not None and as_featureset == False:
+            return resp
         else:
             return []
 
@@ -501,6 +526,7 @@ def geocode(address,
        geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
 
     """
+    as_featureset = False
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._geocode(
@@ -513,7 +539,8 @@ def geocode(address,
         out_fields,
         max_locations,
         magic_key,
-        for_storage)
+        for_storage,
+        as_featureset)
 
 
 def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
@@ -554,7 +581,8 @@ def batch_geocode(addresses,
                   source_country=None,
                   category=None,
                   out_sr=None,
-                  geocoder=None):
+                  geocoder=None,
+                  as_featureset=False):
     """
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
@@ -602,8 +630,10 @@ def batch_geocode(addresses,
         reference json object for the returned addresses. For a list of
         valid WKID values, see Projected coordinate systems and
         Geographic coordinate systems.
-
-       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
+       geocoder - Optional, the geocoder to be used. If not specified,
+        the active GIS's first geocoder is used.
+       as_featureset - optional boolean, if True, the result is returned as a FeatureSet object.
+        The default is False
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
@@ -611,7 +641,8 @@ def batch_geocode(addresses,
         addresses,
         source_country,
         category,
-        out_sr)
+        out_sr,
+        as_featureset)
 
 
 def suggest(text,
