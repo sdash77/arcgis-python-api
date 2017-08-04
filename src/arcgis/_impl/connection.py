@@ -156,12 +156,7 @@ class MultiPartForm(object):
         textwriter = io.TextIOWrapper(
             buf, 'utf8', newline='', write_through=True)
 
-        for (key, value) in self.form_fields:
-            textwriter.write(
-                '--{boundary}\r\n'
-                'Content-Disposition: form-data; name="{key}"\r\n\r\n'
-                '{value}\r\n'.format(
-                    boundary=boundary, key=key, value=value))
+
         for(key, filename, mimetype, filepath) in self.files:
             if os.path.isfile(filepath):
                 textwriter.write(
@@ -174,6 +169,13 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 textwriter.write('\r\n')
+                
+        for (key, value) in self.form_fields:
+            textwriter.write(
+                '--{boundary}\r\n'
+                'Content-Disposition: form-data; name="{key}"\r\n\r\n'
+                '{value}\r\n'.format(
+                    boundary=boundary, key=key, value=value))
         textwriter.write('--{}--\r\n\r\n'.format(boundary))
         self.form_data = buf.getvalue()
 ########################################################################
