@@ -574,6 +574,109 @@ class _FeatureAnalysisTools(_AsyncService):
             process_info = job_values['processInfo']
             return { "hot_spots_result_layer":hot_spots_result_layer, "process_info":process_info, }
 
+    def find_outliers(self,
+                     analysis_layer,
+                     analysis_field=None,
+                     divided_by_field=None,
+                     bounding_polygon_layer=None,
+                     aggregation_polygon_layer=None,
+                     permutations=None,
+                     shape_type=None,
+                     cell_size=None,
+                     cell_units=None,
+                     distance_band=None,
+                     band_units=None,
+                     output_name=None,
+                     context=None):
+        """
+        The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
+
+        The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the spatial pattern associated with these features could very likely be the result of random processes and random chance.
+
+        Parameters
+        ----------
+        analysis_layer : Required layer (see Feature Input in documentation)
+            The point or polygon feature layer for which outliers will be calculated.
+        analysis_field : Optional string
+            The numeric field that will be analyzed.
+        divided_by_field : Optional string, The numeric field in the analysis_layer that will be used to normalize your data.
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the analysis layer is points and no analysisField is specified, you can provide polygon features that define where incidents could have occurred.
+        aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+        permutations : Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing. Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
+
+           - Speed implements 199 permutations and results in p-values with a precision of 0.01.
+           - Balance implements 499 permutations and results in p-values with a precision of 0.002.
+           - Precision implements 999 permutations and results in p-values with a precision of 0.001.
+           Values: Speed | Balance | Precision
+        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+
+          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
+        cell_size : The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
+        cell_units : The units of the cellSize value. You must provide a value if cellSize has been set.
+          Values: Miles | Feet | Kilometers | Meters
+        distance_band : The spatial extent of the analysis neighborhood. This value determines which features are analyzed together in order to assess local clustering.
+        band_units : The units of the distanceBand value. You must provide a value if distanceBand has been set.
+          Values: Miles | Feet | Kilometers | Meters
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        Item it output_name is set.
+        dict with the following keys:
+           "find_outliers_result_layer" : layer (FeatureCollection)
+           "process_info" : list of messages
+
+        """
+
+        task ="FindOutliers"
+
+        params = {}
+
+        params["analysisLayer"] = super()._feature_input(analysis_layer)
+        if analysis_field is not None:
+            params["analysisField"] = analysis_field
+        if divided_by_field is not None:
+            params["dividedByField"] = divided_by_field
+        if bounding_polygon_layer is not None:
+            params["boundingPolygonLayer"] = super()._feature_input(bounding_polygon_layer)
+        if aggregation_polygon_layer is not None:
+            params["aggregationPolygonLayer"] = super()._feature_input(aggregation_polygon_layer)
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if permutations is not None:
+            params['permutations'] = permutations
+        if shape_type:
+            params['shapeType'] = shape_type
+        if cell_size:
+            params['cellSize'] = cell_size
+        if cell_units:
+            params['cellSizeUnits'] = cell_units
+        if distance_band:
+            params['distanceBand'] = distance_band
+        if band_units:
+            params['distanceBandUnits'] = band_units
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info)
+        if output_name is not None:
+            itemid = job_values['outliersResultLayer']['itemId']
+            item = arcgis.gis.Item(self._gis, itemid)
+            return item
+        else:
+            find_outlier_result_layer = arcgis.features.FeatureCollection(job_values['outliersResultLayer'])
+            process_info = job_values['processInfo']
+            return { "find_outlier_layer" : find_outlier_result_layer,
+                     "process_info" : process_info }
 
     def create_buffers(self,
                        input_layer,
