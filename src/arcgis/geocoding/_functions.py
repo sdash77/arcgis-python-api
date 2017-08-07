@@ -584,23 +584,31 @@ def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
     geocoding service, and the service returns the address that is
     closest to the location.
 
-    Input:
+    ===============     ====================================================
+    **Argument**        **Description**
+    ---------------     ----------------------------------------------------
+    location            required list/Point Geometry
+    ---------------     ----------------------------------------------------
+    distance            optional float, radial distance in meteres to
+                        search for an address.  The default is 100 meters.
+    ---------------     ----------------------------------------------------
+    out_sr              optional integer, spatial reference of the x/y
+                        coordinate returned.
+    ---------------     ----------------------------------------------------
+    return_intersection optional Boolean, which specifies whether the
+                        service should return the nearest street
+                        intersection or the nearest address to the input
+                        location
+    ---------------     ----------------------------------------------------
+    for_storage         optional boolean, specifies whether the results of
+                        the operation will be persisted
+    ---------------     ----------------------------------------------------
+    geocoder            optional geocoder, the geocoder to be used. If not
+                        specified, the active GIS's first geocoder is used.
+    ===============     ====================================================
 
-       location - a list defined as [X,Y] or a Point Geometry object
-
-       distance - allows you to specify a radial distance in meters to search for an address from the specified location.
-                  If no distance value is specified then the value is assumed to be 100 meters.
-
-       out_sr - spatial reference of the x/y coordinates returned.
-
-       lang_code - sets the language in which reverse-geocoded addresses are returned.
-
-       return_intersection - Boolean which specifies whether the service should return the nearest street intersection
-                             or the nearest address to the input location
-
-       for_storage - specifies whether the results of the operation will be persisted
-
-       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
+    :returns:
+       dictionary
     """
 
     if geocoder is None:
@@ -620,53 +628,65 @@ def batch_geocode(addresses,
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
 
-    Inputs:
+    ===============     ====================================================
+    **Argument**        **Description**
+    ---------------     ----------------------------------------------------
+    addresses           required list of strings or dictionaries.
+                        A list of addresses to be geocoded.
+                        For passing in the location name as a single line of text -
+                        single field batch geocoding - use a string.
+                        For passing in the location name as multiple lines of text
+                        multifield batch geocoding - use the address fields described
+                        in the Geocoder documentation.
+                         The maximum number of addresses that can be geocoded in a
+                         single request is limited to the SuggestedBatchSize property of
+                         the locator.
+                         Syntax:
+                          addresses = ["380 New York St, Redlands, CA",
+                          "1 World Way, Los Angeles, CA",
+                          "1200 Getty Center Drive, Los Angeles, CA",
+                          "5905 Wilshire Boulevard, Los Angeles, CA",
+                          "100 Universal City Plaza, Universal City, CA 91608",
+                          "4800 Oak Grove Dr, Pasadena, CA 91109"]
 
-       addresses - A list of addresses to be geocoded.
-       For passing in the location name as a single line of text -
-       single field batch geocoding - use a string.
-       For passing in the location name as multiple lines of text
-       multifield batch geocoding - use the address fields described
-       in the Geocoder documentation.
-        The maximum number of addresses that can be geocoded in a
-        single request is limited to the SuggestedBatchSize property of
-        the locator.
-        Syntax:
-         addresses = ["380 New York St, Redlands, CA",
-         "1 World Way, Los Angeles, CA",
-         "1200 Getty Center Drive, Los Angeles, CA",
-         "5905 Wilshire Boulevard, Los Angeles, CA",
-         "100 Universal City Plaza, Universal City, CA 91608",
-         "4800 Oak Grove Dr, Pasadena, CA 91109"]
+                          OR
 
-         OR
+                          addresses= [{
+                             "Address": "380 New York St.",
+                             "City": "Redlands",
+                             "Region": "CA",
+                             "Postal": "92373"
+                         },{
+                             "Address": "1 World Way",
+                             "City": "Los Angeles",
+                             "Region": "CA",
+                             "Postal": "90045"
+                         }]
+    ---------------     ----------------------------------------------------
+    source_country      optional string, The source_country parameter is
+                        only supported by geocoders published using StreetMap
+                        Premium locators.
+                        Added at 10.3 and only supported by geocoders published
+                        with ArcGIS 10.3 for Server and later versions.
+    ---------------     ----------------------------------------------------
+    category            The category parameter is only supported by geocode
+                        services published using StreetMap Premium locators.
+    ---------------     ----------------------------------------------------
+    out_sr              optional dictionary, The spatial reference of the
+                        x/y coordinates returned by a geocode request. This
+                        is useful for applications using a map with a spatial
+                        reference different than that of the geocode service.
+    ---------------     ----------------------------------------------------
+    as_featureset       optional boolean, if True, the result set is
+                        returned as a FeatureSet object, else it is a
+                        dictionary.
+    ---------------     ----------------------------------------------------
+    geocoder            Optional, the geocoder to be used. If not specified,
+                        the active GIS's first geocoder is used.
+    ===============     ====================================================
 
-         addresses= [{
-            "Address": "380 New York St.",
-            "City": "Redlands",
-            "Region": "CA",
-            "Postal": "92373"
-        },{
-            "Address": "1 World Way",
-            "City": "Los Angeles",
-            "Region": "CA",
-            "Postal": "90045"
-        }]
-
-       source_country - The source_country parameter is only supported by
-        geocoders published using StreetMap Premium locators.
-        Added at 10.3 and only supported by geocoders published
-        with ArcGIS 10.3 for Server and later versions.
-       category - The category parameter is only supported by geocode
-        services published using StreetMap Premium locators.
-       out_sr - The well-known ID of the spatial reference, or a spatial
-        reference json object for the returned addresses. For a list of
-        valid WKID values, see Projected coordinate systems and
-        Geographic coordinate systems.
-       geocoder - Optional, the geocoder to be used. If not specified,
-        the active GIS's first geocoder is used.
-       as_featureset - optional boolean, if True, the result is returned as a FeatureSet object.
-        The default is False
+    :returns:
+       dictionary or FeatureSet
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
@@ -705,42 +725,48 @@ def suggest(text,
     a suggested match is obtained. A client application can provide a
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
-    Inputs:
 
-       text - The input text provided by a user that is used by the
-        suggest operation to generate a list of possible matches. This
-        is a required parameter.
-
-       location -  Defines an origin point location that is used with
-        the distance parameter to sort suggested candidates based on
-        their proximity to the location. The distance parameter
-        specifies the radial distance from the location in meters. The
-        priority of candidates within this radius is boosted relative
-        to those outside the radius.
-        This is useful in mobile applications where a user wants to
-        search for places in the vicinity of their current GPS
-        location. It is also useful for web mapping applications where
-        a user wants to find places within or near the map extent.
-        The location parameter can be specified without specifying a
-        distance. If distance is not specified, it defaults to 2000
-        meters.
-        The object can be an common.geometry.Point or X/Y list object
-
-       distance - Specifies the radius around the point defined in the
-        location parameter to create an area, which is used to boost
-        the rank of suggested candidates so that candidates closest to
-        the location are returned first. The distance value is in
-        meters.
-        If the distance parameter is specified, the location parameter
-        must be specified as well.
-        It is important to note that the location and distance
-        parameters allow searches to extend beyond the specified search
-        radius. They are not used to filter results, but rather to rank
-        resulting candidates based on their distance from a location.
-       category - The category parameter is only supported by geocode
-        services published using StreetMap Premium locators.
-
-       geocoder - Optional, the geocoder to be used. If not specified, the active GIS's first geocoder is used.
+    ===============     =====================================================
+    **Argument**        **Description**
+    ---------------     -----------------------------------------------------
+    text                The input text provided by a user that is used by the
+                        suggest operation to generate a list of possible
+                        matches. This is a required parameter.
+    ---------------     -----------------------------------------------------
+    location            Defines an origin point location that is used with
+                        the distance parameter to sort suggested candidates
+                        based on their proximity to the location. The
+                        distance parameter specifies the radial distance from
+                        the location in meters. The priority of candidates
+                        within this radius is boosted relative to those
+                        outside the radius.
+                        This is useful in mobile applications where a user
+                        wants to search for places in the vicinity of their
+                        current GPS location. It is also useful for web
+                        mapping applications where a user wants to find
+                        places within or near the map extent.
+                        The location parameter can be specified without
+                        specifying a distance. If distance is not specified,
+                        it defaults to 2000 meters.
+    ---------------     -----------------------------------------------------
+    distance            Specifies the radius around the point defined in the
+                        location parameter to create an area, which is used to boost
+                        the rank of suggested candidates so that candidates closest to
+                        the location are returned first. The distance value is in
+                        meters.
+                        If the distance parameter is specified, the location parameter
+                        must be specified as well.
+                        It is important to note that the location and distance
+                        parameters allow searches to extend beyond the specified search
+                        radius. They are not used to filter results, but rather to rank
+                        resulting candidates based on their distance from a location.
+    ---------------     -----------------------------------------------------
+    category            The category parameter is only supported by geocode
+                        services published using StreetMap Premium locators.
+    ---------------     ------------------------------------------------------
+    geocoder            Optional, the geocoder to be used. If not specified,
+                        the active GIS's first geocoder is used.
+    ===============     =====================================================
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
