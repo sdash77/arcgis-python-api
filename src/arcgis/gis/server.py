@@ -81,7 +81,7 @@ class ServerManager(object):
         """
         return self._federation.servers['servers']
     #----------------------------------------------------------------------
-    def federate(self,
+    def _federate(self,
                  url,
                  admin_url,
                  username,
@@ -119,7 +119,7 @@ class ServerManager(object):
         self._server_list = None
         return res
     #----------------------------------------------------------------------
-    def unfederate(self, server_id):
+    def _unfederate(self, server_id):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
@@ -1673,7 +1673,7 @@ class DataStoreManager(object):
         return self._ds._register_data_item(item)
     #----------------------------------------------------------------------
     @property
-    def items(self):
+    def data_items(self):
         """ This resource lists data items that are the root of all other
             data items in the data store.
         """
@@ -1694,7 +1694,7 @@ class DataStoreManager(object):
         """
         return self._ds.make_primary(datastore_name, machine_name)
     #----------------------------------------------------------------------
-    def remove_datastore(self, item_name, machine_name):
+    def remove_datastore_machine(self, item_name, machine_name):
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
@@ -2421,7 +2421,7 @@ class DirectoryManager(object):
         return '<%s at %s>' % (type(self).__name__, self._system._url)
     #----------------------------------------------------------------------
     @property
-    def directories(self):
+    def all(self):
         """
         Server directories are used by GIS services as a location to output
         items such as map images, tile caches, and geoprocessing results.
