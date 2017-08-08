@@ -1493,9 +1493,11 @@ def _is_shapefile(data):
 
 class ContentManager(object):
     """
-    Helper class for managing GIS content. This class is not created by users directly.
-    An instance of this class, called 'content', is available as a property of the Gis object.
-    Users call methods on this 'content' object to manipulate (create, get, search...) items.
+    Helper class for managing content in ArcGIS Online or ArcGIS Enterprise. 
+    This class is not created by users directly. An instance of this class, 
+    called 'content', is available as a property of the GIS object. Users 
+    call methods on this 'content' object to manipulate (create, get, search,
+    etc) items.
     """
     def __init__(self, gis):
         self._gis = gis
@@ -1504,79 +1506,85 @@ class ContentManager(object):
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
-            .. note::
-                That content can be a file (such as a service definition, shapefile, CSV, layer package,
-                file geodatabase, geoprocessing package, map package) or it can be a URL (to an ArcGIS Server
-                service, WMS service, or an application).
+        .. note::
+            Content can be a file (such as a service definition, shapefile,
+            CSV, layer package, file geodatabase, geoprocessing package,
+            map package) or it can be a URL (to an ArcGIS Server service,
+            WMS service, or an application).
 
-                If you are uploading a package or other file, provide a path or URL
-                to the file in the data argument.
+            If you are uploading a package or other file, provide a path or
+            URL to the file in the data argument.
 
-                From a technical perspective, none of the item properties below are required.  However,
-                it is strongly recommended that title, type, typeKeywords, tags, snippet, and description
-                be provided.
-
-
-            ===============     ====================================================
-            **Argument**        **Description**
-            ---------------     ----------------------------------------------------
-            item_properties     required dictionary, see below for the keys and
-                                values
-            ---------------     ----------------------------------------------------
-            data                optional string, either a path or URL to the data
-            ---------------     ----------------------------------------------------
-            thumbnail           optional string, either a path or URL to an image
-            ---------------     ----------------------------------------------------
-            metadata            optional string, either a path or URL to metadata.
-            ---------------     ----------------------------------------------------
-            owner               optional string, defaults to logged in user.
-            ---------------     ----------------------------------------------------
-            folder              optional string, name of folder where placing item
-            ===============     ====================================================
+            From a technical perspective, none of the item_properties (see
+            table below *Key:Value Dictionary Options for Argument 
+            item_properties*) are required.  However, it is strongly 
+            recommended that arguments title, type, typeKeywords, tags,
+            snippet, and description be provided.
 
 
-            =================  ============================================================================
-             **Key**            **Value**
-            -----------------  ----------------------------------------------------------------------------
-            type               optional string, indicates type of item.  See URL 1 below for valid values.
-            -----------------  ----------------------------------------------------------------------------
-            typeKeywords       optinal string list.  Lists all sub-types.  See URL 1 for valid values.
-            -----------------  ----------------------------------------------------------------------------
-            description        optional string.  Description of the item.
-            -----------------  ----------------------------------------------------------------------------
-            title              optional string.  Name of the item.
-            -----------------  ----------------------------------------------------------------------------
-            url                optional string.  URL to item that are based on URLs.
-            -----------------  ----------------------------------------------------------------------------
-            text               optional string.  For text based items such as Feature Collections & WebMaps
-            -----------------  ----------------------------------------------------------------------------
-            tags               optional string of comma-separated values, or list of strings.
-                               Used for searches on items.
-            -----------------  ----------------------------------------------------------------------------
-            snippet            optional string.  Provides a very short summary of the what the item is.
-            -----------------  ----------------------------------------------------------------------------
-            extent             optional string with comma separated values for min x, min y, max x, max y.
-            -----------------  ----------------------------------------------------------------------------
-            spatialReference   optional string.  Coordinate system that the item is in.
-            -----------------  ----------------------------------------------------------------------------
-            accessInformation  optional string.  Information on the source of the content.
-            -----------------  ----------------------------------------------------------------------------
-            licenseInfo        optinal string, any license information or restrictions regarding content.
-            -----------------  ----------------------------------------------------------------------------
-            culture            optional string.  Locale, country and language information.
-            -----------------  ----------------------------------------------------------------------------
-            access             optional string.  Valid values: private, shared, org, or public.
-            -----------------  ----------------------------------------------------------------------------
-            commentsEnabled    optional boolean.  Default is true.  Controls whether comments are allowed.
-            -----------------  ----------------------------------------------------------------------------
-            culture            optional string.  Language and country information.
-            =================  ============================================================================
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        data                Optional string. Either a path or URL to the data.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ---------------     --------------------------------------------------------------------
+        owner               Optional string. Defaults to the logged in user.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Name of the folder where placing item.
+        ===============     ====================================================================
+
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        -----------------  ---------------------------------------------------------------------
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                           or not allowed (false).
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Language and country information.
+        =================  =====================================================================
 
 
         URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
-            :return:
-                 The item if successfully added, None if unsuccessful.
+        :return:
+           The item if successfully added, None if unsuccessful.
             """
 
         if data is not None:
@@ -1653,68 +1661,91 @@ class ContentManager(object):
                        create_params=None,
                        service_type="featureService",
                        owner=None, folder=None, item_properties=None):
-        """ Creates a service in the Portal
+        """ Creates a service in the Portal.
 
-        Arguments
-            name                    required string, the unique name of the service
-            service_description     optional string, description of the service
-            has_static_data         optional boolean, indicating whether the data changes
-            max_record_count        optional int, ,maximum number of records in query operations
-            supported_query_formats optional string, formats in which query results are returned
-            capabilities            optional string, Specify service capabilities.
-                                    If left unspecified, 'Image,Catalog,Metadata,Download,Pixels'
-                                    are used for image services, and 'Query'
-                                    are used for feature services, and 'Query' otherwise
-            description             optional string, a user-friendly description for the published dataset.
-            copyright_text          optional string, copyright information associated with the dataset.
-            wkid                    optional int, the well known id of the spatial reference for the service.
-                                    All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
 
-            create_params           optional dict, containing all create parameters. If this parameter is used, all the parameters above are ignored
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        name                       Required string. The unique name of the service.
+        -----------------------    -------------------------------------------------------------
+        service_description        Optional string. Description of the service.
+        -----------------------    -------------------------------------------------------------
+        has_static_data            Optional boolean. Indicating whether the data can change.  Default is True, data is not allowed to change.
+        -----------------------    -------------------------------------------------------------
+        max_record_count           Optional integer. Maximum number of records in query operations.
+        -----------------------    -------------------------------------------------------------
+        supported_query_formats    Optional string. Formats in which query results are returned.
+        -----------------------    -------------------------------------------------------------
+        capabilities               Optional string. Specify service capabilities.
+                                   If left unspecified, 'Image,Catalog,Metadata,Download,Pixels'
+                                   are used for image services, and 'Query'
+                                   is used for feature services, and 'Query' otherwise
+        -----------------------    -------------------------------------------------------------
+        description                Optional string. A user-friendly description for the published dataset.
+        -----------------------    -------------------------------------------------------------
+        copyright_text             Optional string. The copyright information associated with the dataset.
+        -----------------------    -------------------------------------------------------------
+        wkid                       Optional integer. The well known id (WKID) of the spatial reference for the service.
+                                   All layers added to a hosted feature service need to have the same spatial 
+                                   reference defined for the feature service. When creating a new 
+                                   empty service without specifying its spatial reference, the spatial 
+                                   reference of the hosted feature service is set to the first layer added to that feature service.
+        -----------------------    -------------------------------------------------------------
+        create_params              Optional dictionary. Add all create_service parameters into a dictionary. If this parameter is used, 
+                                   all the parameters above are ignored.
+        -----------------------    -------------------------------------------------------------
+        service_type               Optional string. The type of service to be created.  Currently the options are imageService or featureService.
+        -----------------------    -------------------------------------------------------------
+        owner                      Optional string. The username of the owner of the service being created.
+        -----------------------    -------------------------------------------------------------
+        folder                     Optional string. The name of folder in which to create the service.
+        -----------------------    -------------------------------------------------------------
+        item_properties            Optional dictionary. See below for the keys and values
+        =======================    =============================================================
+        
 
-            service_type            optional string, the type of service to be created, imageService, featureService
+        *Key:Value Dictionary Options for Argument item_properties*
 
-            owner                   optional string, the username of the owner
-            folder                  optional string, name of folder in which to create the service
-            item_properties         optional dict, see below for the keys and values
 
-            =================  ============================================================================
-             **Key**            **Value**
-            -----------------  ----------------------------------------------------------------------------
-            type               optional string, indicates type of item.  See URL 1 below for valid values.
-            -----------------  ----------------------------------------------------------------------------
-            typeKeywords       optional string list.  Lists all sub-types.  See URL 1 for valid values.
-            -----------------  ----------------------------------------------------------------------------
-            description        optional string.  Description of the item.
-            -----------------  ----------------------------------------------------------------------------
-            title              optional string.  Name of the item.
-            -----------------  ----------------------------------------------------------------------------
-            url                optional string.  URL to item that are based on URLs.
-            -----------------  ----------------------------------------------------------------------------
-            tags               optional string of comma-separated values, or list of strings.
-                               Used for searches on items.
-            -----------------  ----------------------------------------------------------------------------
-            snippet            optional string.  Provides a very short summary of the what the item is.
-            -----------------  ----------------------------------------------------------------------------
-            extent             optional string with comma separated values for min x, min y, max x, max y.
-            -----------------  ----------------------------------------------------------------------------
-            spatialReference   optional string.  Coordinate system that the item is in.
-            -----------------  ----------------------------------------------------------------------------
-            accessInformation  optional string.  Information on the source of the content.
-            -----------------  ----------------------------------------------------------------------------
-            licenseInfo        optinal string, any license information or restrictions regarding content.
-            -----------------  ----------------------------------------------------------------------------
-            culture            optional string.  Locale, country and language information.
-            -----------------  ----------------------------------------------------------------------------
-            access             optional string.  Valid values: private, shared, org, or public.
-            -----------------  ----------------------------------------------------------------------------
-            commentsEnabled    optional boolean.  Default is true.  Controls whether comments are allowed.
-            -----------------  ----------------------------------------------------------------------------
-            culture            optional string.  Language and country information.
-            =================  ============================================================================
-
-            :return:
-                 The item for the service, if successfully created, None if unsuccessful.
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        -----------------  ---------------------------------------------------------------------
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                           or not allowed (false).
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Language and country information.
+        =================  =====================================================================
+        
+        :return:
+             The item for the service, if successfully created, None if unsuccessful.
         """
         if capabilities is None:
             if service_type == 'imageService':
@@ -1743,11 +1774,16 @@ class ContentManager(object):
 
     def get(self, itemid):
         """ Returns the item object for the specified itemid.
+        
+        
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        itemid                     Required string. The item identifier.
+        =======================    =============================================================
 
-        Arguments
-            itemid        required string, the item identifier
         :return:
-            None if the item is not found and returns an item object if the item is found
+            None if the item is not found, or returns an item object if the item is found.
         """
         try:
             item = self._portal.get_item(itemid)
@@ -1765,40 +1801,39 @@ class ContentManager(object):
         """ Searches for portal items.
 
         .. note::
-            A few things that will be helpful to know.
+            A few things that will be helpful to know...
 
-            1. The query syntax has quite a few features that can't
-                be adequately described here.  The query syntax is
-                available in ArcGIS help.  A short version of that URL
-                is http://bitly.com/1fJ8q31.
+            1. The query syntax has many features that can't be adequately 
+               described here.  The query syntax is available in ArcGIS Help.  
+               A short version of that URL is http://bitly.com/1fJ8q31.
 
-            2. Most of the time when searching items you want to
-                search within your organization in ArcGIS Online
-                or within your Portal.  As a convenience, the method
-                automatically appends your organization id to the query by
-                default.  If you want content from outside your org
-                set outside_org to True.
+            2. Most of the time when searching for items, you'll want to
+               search within your organization in ArcGIS Online
+               or within your Portal.  As a convenience, the method
+               automatically appends your organization id to the query by
+               default.  If you want content from outside your organization
+               set outside_org to True.
 
-        ================  ===================================================================================
+        ================  ==========================================================================
         **Argument**      **Description**
-        ----------------  -----------------------------------------------------------------------------------
-        query             required string, query string.  See notes.
-        ----------------  -----------------------------------------------------------------------------------
-        item_type         optional string, set type of item to search.
+        ----------------  --------------------------------------------------------------------------
+        query             Required string. A query string.  See notes above.
+        ----------------  --------------------------------------------------------------------------
+        item_type         Optional string. Set type of item to search.
                           http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
-        ----------------  -----------------------------------------------------------------------------------
-        sort_field        optional string, valid values can be title, uploaded, type, owner, modified,
+        ----------------  --------------------------------------------------------------------------
+        sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
-        ----------------  -----------------------------------------------------------------------------------
-        sort_order        optional string, valid values are asc or desc
-        ----------------  -----------------------------------------------------------------------------------
-        max_items         optional int, maximum number of items returned, default is 10
-        ----------------  -----------------------------------------------------------------------------------
-        outside_org       optional boolean, controls whether to search outside your org (default is False)
-        ================  ===================================================================================
+        ----------------  --------------------------------------------------------------------------
+        sort_order        Optional string. Valid values are asc or desc.
+        ----------------  --------------------------------------------------------------------------
+        max_items         Optional integer. Maximum number of items returned, default is 10.
+        ----------------  --------------------------------------------------------------------------
+        outside_org       Optional boolean. Controls whether to search outside your org (default is False, do not search ourside your org).
+        ================  ==========================================================================
 
         :return:
-        Returns a list of items matching the specified query
+            A list of items matching the specified query.
         """
         itemlist = []
         if query is not None and query != '' and item_type is not None:
@@ -1842,20 +1877,23 @@ class ContentManager(object):
     # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
     def create_folder(self, folder, owner=None):
-        """ Creates a folder with the given name, for the given owner. Does nothing if the
-        folder already exists. If owner is not specified, does so for the logged in user.
+        """ 
+        Creates a folder with the given folder name, for the given owner. Does
+        nothing if the folder already exists. If owner is not specified, owner
+        is set as the logged in user.
 
-        ================  ===============================================================
+
+        ================  ==========================================================================
         **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        folder            required string, the name of the folder to create for the owner
-        ----------------  ---------------------------------------------------------------
-        owner             optional string or User, folder owner, None for logged in user
-        ================  ===============================================================
+        ----------------  --------------------------------------------------------------------------
+        folder            Required string. The name of the folder to create for the owner.
+        ----------------  --------------------------------------------------------------------------
+        owner             Optional string. User, folder owner, None for logged in user.
+        ================  ==========================================================================
 
         :return:
-            a json object like the following:
-            {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"} if the folder was created, None otherwise.
+            A json object like the following if the folder was created:
+            {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"}; None otherwise.
         """
         if folder != '/': # we don't create root folder
             if owner is None:
@@ -1872,18 +1910,21 @@ class ContentManager(object):
         return None
 
     def delete_folder(self, folder, owner=None):
-        """ Deletes a folder for the given owner (logged in user by default) with the given folder name.
+        """ 
+        Deletes a folder for the given owner (logged in user by default) with
+        the given folder name.
 
-        ================  ===============================================================
+
+        ================  ==========================================================================
         **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        folder            required string, the name of the folder to delete
-        ----------------  ---------------------------------------------------------------
-        owner             optional string or User, folder owner, None for logged in user
-        ================  ===============================================================
+        ----------------  --------------------------------------------------------------------------
+        folder            Required string. The name of the folder to delete.
+        ----------------  --------------------------------------------------------------------------
+        owner             Optional string. User, folder owner, None for logged in user is the default.
+        ================  ==========================================================================
 
         :return:
-            True if succeeded, False otherwise
+            True if folder deletion succeeded, False if folder deletion failed.
         """
         if folder != '/':
             if owner is None:
@@ -1897,18 +1938,30 @@ class ContentManager(object):
 
     def import_data(self, df, address_fields=None, **kwargs):
         """
-        Imports a Pandas data frame, that has an address column, or an arcgis spatial dataframe
-        into the GIS.
+        Imports a Pandas data frame (that has an address column), or an arcgis
+        spatial dataframe into the GIS.
 
-        Spatial dataframes are imported into the GIS and published as feature layers.
-        Pandas dataframes that have an address column are imported as an in memory feature collection.
-        Note: By default, there is a limit of 1,000 rows/features for Pandas dataframes. This limit isn't there for spatial dataframes.
+        Spatial dataframes are imported into the GIS and published as feature
+        layers. Pandas dataframes that have an address column are imported as
+        an in-memory feature collection.
+        Note: By default, there is a limit of 1,000 rows/features for Pandas 
+        dataframes. This limit isn't there for spatial dataframes.
 
-        df : pandas dataframe or arcgis.SpatialDataFrame
-        address_fields : dict containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
-        title: optional title of the item. This is used for spatial dataframe objects.
-        tags: optional tags when publishing a spatial dataframe to the the GIS
-        Returns feature collection or feature layer, that can be used for analysis, visualization or published to the GIS as an item
+        ================  ==========================================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------------------------
+        df                Required string. Pandas dataframe or arcgis.SpatialDataFrame
+        ----------------  --------------------------------------------------------------------------
+        address_fields    Optional dictionary. Dictionary containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }.
+        ----------------  --------------------------------------------------------------------------
+        title             Optional string. Title of the item. This is used for spatial dataframe objects.
+        ----------------  --------------------------------------------------------------------------
+        tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
+        ================  ==========================================================================
+        
+        :return:
+             Feature collection or feature layer that can be used for analysis,
+             visualization or published to the GIS as an item.
         """
         from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
 
@@ -2011,8 +2064,22 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name, service_type):
-        """
-        Returns True is the specified service_name is available for the specified service_type
+        """ For a desired service name, determines if that service name is
+            available for use or not.
+        
+            ================  ======================================================================
+            **Argument**      **Description**
+            ----------------  ----------------------------------------------------------------------
+            service_name      Required string. A desired service name.
+            ----------------  ----------------------------------------------------------------------
+            service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
+            ================  ======================================================================
+      
+            :return:
+                 True if the specified service_name is available for the
+                 specified service_type, False if the service_name is
+                 unavailable.
+        
         """
         path = "portals/self/isServiceNameAvailable"
 
@@ -3729,13 +3796,12 @@ class Item(dict):
     def unshare(self, groups):
         """ Stops sharing the item with the specified list of groups
 
-        ================  ========================================================
+        ================  =========================================================================================
         **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        groups            optional list of group names as strings, or, list of
-                            arcgis.gis.Group objects.
-                          You can also pass a comma-separated list of group IDs
-        ================  ========================================================
+        ----------------  -----------------------------------------------------------------------------------------
+        groups            Optional string list. List of group names as strings, or list of arcgis.gis.Group objects. You can also pass a comma-separated list of group IDs.
+        ================  =========================================================================================
+        
 
         :return:
             dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
