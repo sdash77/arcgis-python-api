@@ -2104,7 +2104,7 @@ class ResourceManager(object):
         self._portal = gis._portal
         self._item = item
 
-    def add(self, file, folder_name=None, file_name=None, text=None, archive=False):
+    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False):
         """The add resources operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
@@ -2120,7 +2120,7 @@ class ResourceManager(object):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              required string, path to the file that needs to be added
+        file              optional string, path to the file that needs to be added
         ----------------  ---------------------------------------------------------------
         folder_name       optional string, provide a folder name if the file has to be
                           added to a folder under resources
@@ -2129,7 +2129,8 @@ class ResourceManager(object):
                           resource uploaded, or to be used together with text as file name for it.
         ----------------  ---------------------------------------------------------------
         text              optional string, text input to be added as a file resource,
-                          used together with file_name.
+                          used together with file_name. If this resource is used, then
+                          file_name become required.
         ----------------  ---------------------------------------------------------------
         archive           optional bool, default = False.  If True, file resources
                           added are extracted and files are uploaded to respective folders.
@@ -2153,14 +2154,16 @@ class ResourceManager(object):
                         }
             }
         """
-
+        if not file and (not text or not file_name):
+            raise ValueError("Please provide a valid file or text/file_name.")
         query_url = 'content/users/'+ self._item.owner +\
                         '/items/' + self._item.itemid + '/addResources'
 
         files = [] #create a list of named tuples to hold list of files
-        if not os.path.isfile(os.path.abspath(file)):
+        if file and os.path.isfile(os.path.abspath(file)):
+            files.append(('file',file, os.path.basename(file)))
+        elif file and os.path.isfile(os.path.abspath(file)) == False:
             raise RuntimeError("File(" + file + ") not found.")
-        files.append(('file',file, os.path.basename(file)))
 
         params = {}
         params['f'] = 'json'
@@ -2173,7 +2176,8 @@ class ResourceManager(object):
             params['text'] = text
         params['archive'] = 'true' if archive else 'false'
 
-        resp = self._portal.con.post(query_url, params, files=files, compress=False)
+        resp = self._portal.con.post(query_url, params,
+                                     files=files, compress=False)
         return resp
 
     def update(self, file, folder_name=None, file_name=None, text=None):
@@ -2338,8 +2342,7 @@ class ResourceManager(object):
         This operation is only available to the item owner and the organization administrator.
 
         :return:
-            If succeeded a Python dictionary of the form
-            { 'success': True }
+            If succeeded a boolean of True will be returned.
 
             else a dictionary with error info
             {"error": {"code": 404,
@@ -2361,8 +2364,10 @@ class ResourceManager(object):
         params = {'f':'json',
                   'resource': safe_file_format if safe_file_format else "",
                   'deleteAll':delete_all}
-
-        return self._portal.con.post(query_url, postdata=params)
+        res = self._portal.con.post(query_url, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
 
 class Group(dict):
     """

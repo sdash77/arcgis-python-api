@@ -482,7 +482,7 @@ class Jobs(BaseServer):
             self._init()
         return self._jobs
     #----------------------------------------------------------------------
-    def get_job(self, job_id):
+    def get(self, job_id):
         """
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.

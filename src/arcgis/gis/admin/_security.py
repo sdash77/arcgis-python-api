@@ -560,12 +560,9 @@ class SSLCertificates(BasePortalAdmin):
          :certificate: path to the file path
          :alias: name of the certificate
         """
-        #import requests, os
+
         from six.moves.urllib.error import HTTPError
-        #form_data = {'file': (os.path.basename(certificate),
-        #                      open(certificate, 'rb'),
-        #                      'application/pkix-cert')
-        #             }
+
 
         params = {
             "alias" : alias,
@@ -870,7 +867,7 @@ class EnterpriseUsers(BasePortalAdmin):
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
-    def create(self,
+    def _create(self,
                username,
                password,
                first_name,
