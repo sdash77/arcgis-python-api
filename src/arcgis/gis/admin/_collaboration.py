@@ -261,6 +261,99 @@ class CollaborationManager(object):
         return con.post(path=data_path,
                         postdata=params,
                         files=files)
+
+    # ----------------------------------------------------------------------
+    def collaborate_with(self, guest_gis, collaboration_name, collaboration_description):
+        """
+        A high level method to quickly establish a collaboration between two GIS. This method uses defaults
+        wherever applicable and internally calls the `create`, `accept_invitation` and `invite_participant` methods.
+        This method will create a new group and a new workspace in both the host and guest GIS for this collaboration.
+        Invitation and response files created during the collaborations will be downloaded to the current working
+        directory.
+        
+        Use the other methods if you need fine-grained control over how the collaboration is set up.
+        :param guest_gis: GIS object of the guest org or Enterprise 
+        :param collaboration_name: A generic name for the collaboration. This name is used with prefixes such as 
+        wksp_<your_collab_name>, grp_<your_collab_name> to create the collaboration workspace and groups.
+        :param collaboration_description: A generic description for the collaboration.
+        :return: returns True / False
+        """
+
+        # create a group in the host
+        host_group = self._gis.groups.create(title="grp_" + collaboration_name, tags='collaboration',
+                                             description='Group for ' + collaboration_description)
+
+        #create a collaboration in the host
+        host_first_name = ""
+        host_last_name = ""
+        host_email = ""
+        if hasattr(self._gis.users.me, 'firstName'):
+            host_first_name = self._gis.users.me.firstName
+            host_last_name = self._gis.users.me.lastName
+        elif hasattr(self._gis.users.me, 'fullName'):
+            sp = self._gis.users.me.fullName.split()
+            host_first_name = sp[0]
+            if len(sp) > 1:
+                host_last_name = sp[1]
+            else:
+                host_last_name=host_first_name
+        if hasattr(self._gis.users.me, 'email'):
+            host_email = self._gis.users.me.email
+
+        host_collab = self.create(name='collab_' + collaboration_name, description=collaboration_description,
+                                  workspace_name='wksp_' + collaboration_name,
+                                  workspace_description='Workspace for ' + collaboration_description,
+                                  portal_group_id=host_group.id,
+                                  host_contact_first_name=host_first_name,
+                                  host_contact_last_name=host_last_name,
+                                  host_contact_email_address=host_email)
+
+        #Invite guest GIS as participant
+        config = [{host_collab.workspaces[0]['id']:"sendAndReceive"}]
+        invite_file = host_collab.invite_participant(config, guest_gis=guest_gis)
+
+        #Create a group in guest GIS
+        guest_group = guest_gis.groups.create(title='grp_' + collaboration_name, tags='collaboration',
+                                              description='Group for ' + collaboration_description)
+
+        #Accept invitation in guest GIS
+        guest_first_name = ""
+        guest_last_name = ""
+        guest_email = ""
+        if hasattr(guest_gis.users.me, 'firstName'):
+            guest_first_name = guest_gis.users.me.firstName
+            guest_last_name = guest_gis.users.me.lastName
+        elif hasattr(guest_gis.users.me, 'fullName'):
+            sp = self._gis.users.me.fullName.split()
+            guest_first_name = sp[0]
+            if len(sp) > 1:
+                guest_last_name = sp[1]
+            else:
+                guest_last_name = guest_first_name
+        if hasattr(guest_gis.users.me, 'email'):
+            guest_email = guest_gis.users.me.email
+        response = guest_gis.admin.collaborations.accept_invitation(first_name=guest_first_name,
+                                                                    last_name=guest_last_name,
+                                                                    email=guest_email,
+                                                                    invitation_file=invite_file)
+
+        #Export response from guest GIS
+        guest_collab = None
+        response_file = None
+        if response['success']:
+            guest_collab = Collaboration(guest_gis.admin.collaborations, host_collab.id)
+            response_file = guest_collab.export_invitation('./')
+        else:
+            raise Exception("Unable to accept collaboration in the guest GIS")
+
+        #Add guest group to guest collab
+        group_add_result = guest_collab.add_group_to_workspace(guest_group, guest_collab.workspaces[0])
+
+        #Accept response back in the host GIS
+        host_collab.import_invitation_response(response_file)
+
+        return True
+
 ###########################################################################
 class Collaboration(dict):
     """
@@ -519,7 +612,8 @@ class Collaboration(dict):
                            config_json,
                            expiration=24,
                            guest_portal_url=None,
-                           guest_gis=None):
+                           guest_gis=None,
+                           save_path=None):
         """
         As a collaboration host, once you have set up a new collaboration,
         you are ready to invite other portals as participants in your
@@ -550,9 +644,10 @@ class Collaboration(dict):
           ]
          :expiration: The time in UTC when the invitation to collaborate
           should expire.
-         :guest_portal_url: The URL of the participating portal that you want
+         :guest_portal_url: The URL of the participating org or Enterprise that you want
           to invite to the collaboration.
          :guest_gis: GIS object to the guest collaboration site (optional)
+         :save_path: Path to download the invitation file to.
         Output:
          contents of a file that contains the invitation information
         """
@@ -572,7 +667,8 @@ class Collaboration(dict):
         con = self._portal.con
         return con.post(path=data_path,
                        postdata=params,
-                       verify_cert=False)
+                       verify_cert=False,
+                        out_folder = save_path)
     #----------------------------------------------------------------------
     def get_participant(self, portal_id):
         """
