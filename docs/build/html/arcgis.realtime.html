@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -28,10 +30,11 @@
   
 
   
-    <link rel="stylesheet" href="_static/theme_override.css" type="text/css" />
-  
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
         <link rel="next" title="arcgis.schematics module" href="arcgis.schematics.html"/>
         <link rel="prev" title="arcgis.mapping module" href="arcgis.mapping.html"/> 
@@ -43,6 +46,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -83,7 +87,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -516,7 +523,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.mapping.html#get-layout-templates">get_layout_templates</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">arcgis.realtime module</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.realtime module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#streamlayer">StreamLayer</a></li>
 </ul>
 </li>
@@ -540,8 +547,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -554,19 +563,36 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>arcgis.realtime module</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>arcgis.realtime module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/arcgis.realtime.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/arcgis.realtime.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -584,7 +610,7 @@ to subscribe to the streamed feature data or broadcast updates or alerts.</p>
 <em class="property">class </em><code class="descclassname">arcgis.realtime.</code><code class="descname">StreamLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.realtime.StreamLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stream layers allow Python scripts to subscribe to the feature data streamed from the GIS using the
 GeoEvent Processor or broadcast updates or alerts. This class can be used to perform continuous processing and
-analysis of real-time data as it&#8217;s received.</p>
+analysis of real-time data as it’s received.</p>
 <dl class="attribute">
 <dt id="arcgis.realtime.StreamLayer.filter">
 <code class="descname">filter</code><a class="headerlink" href="#arcgis.realtime.StreamLayer.filter" title="Permalink to this definition">¶</a></dt>
@@ -603,7 +629,7 @@ and return the specified fields</p>
 <code class="descname">subscribe</code><span class="sig-paren">(</span><em>on_features</em>, <em>on_open=None</em>, <em>on_disconnect=None</em>, <em>on_error=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.realtime.StreamLayer.subscribe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows Python scripts to subscribe to the feature data streamed from the GIS using the
 GeoEvent Processor. Subscribing to the streamed data can be used to perform continuous processing and analysis
-of real-time data as it&#8217;s received.
+of real-time data as it’s received.
 :param on_features: callback function that is called every time features are streamed to the client
 :param on_open: callback function called when the connection to the streaming server is created
 :param on_disconnect: callback function called when the connection to the streaming server is closed
@@ -617,15 +643,18 @@ of real-time data as it&#8217;s received.
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.schematics.html" class="btn btn-neutral float-right" title="arcgis.schematics module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.schematics.html" class="btn btn-neutral float-right" title="arcgis.schematics module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.mapping.html" class="btn btn-neutral" title="arcgis.mapping module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.mapping.html" class="btn btn-neutral" title="arcgis.mapping module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -659,7 +688,8 @@ of real-time data as it&#8217;s received.
             VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

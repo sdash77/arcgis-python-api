@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -28,10 +30,11 @@
   
 
   
-    <link rel="stylesheet" href="_static/theme_override.css" type="text/css" />
-  
 
   
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
         <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
         <link rel="next" title="arcgis.features.use_proximity module" href="arcgis.features.use_proximity.html"/>
@@ -44,6 +47,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -84,7 +88,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -225,7 +232,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.features.manage_data.html#overlay-layers">overlay_layers</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="">arcgis.features.summarize_data module</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.features.summarize_data module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#aggregate-points">aggregate_points</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#summarize-nearby">summarize_nearby</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#summarize-within">summarize_within</a></li>
@@ -541,8 +548,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -555,21 +564,38 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
           <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
-      
-    <li>arcgis.features.summarize_data module</li>
+        
+      <li>arcgis.features.summarize_data module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/arcgis.features.summarize_data.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/arcgis.features.summarize_data.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -617,8 +643,8 @@ of points for each unique groupByField value is calculated.</dd>
 </dl>
 <dl class="docutils">
 <dt>dict with the following keys:</dt>
-<dd>&#8220;aggregated_layer&#8221; : layer (FeatureCollection)
-&#8220;group_summary&#8221; : layer (FeatureCollection)</dd>
+<dd>“aggregated_layer” : layer (FeatureCollection)
+“group_summary” : layer (FeatureCollection)</dd>
 </dl>
 </dd></dl>
 
@@ -627,7 +653,7 @@ of points for each unique groupByField value is calculated.</dd>
 <h2>summarize_nearby<a class="headerlink" href="#summarize-nearby" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.summarize_data.summarize_nearby">
-<code class="descclassname">summarize_data.</code><code class="descname">summarize_nearby</code><span class="sig-paren">(</span><em>sum_nearby_layer</em>, <em>summary_layer</em>, <em>near_type='StraightLine'</em>, <em>distances=[]</em>, <em>units='Meters'</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day='GeoLocal'</em>, <em>return_boundaries=True</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_nearby" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">summarize_nearby</code><span class="sig-paren">(</span><em>sum_nearby_layer</em>, <em>summary_layer</em>, <em>near_type=’StraightLine’</em>, <em>distances=[]</em>, <em>units=’Meters’</em>, <em>time_of_day=None</em>, <em>time_zone_for_time_of_day=’GeoLocal’</em>, <em>return_boundaries=True</em>, <em>sum_shape=True</em>, <em>shape_units=None</em>, <em>summary_fields=[]</em>, <em>group_by_field=None</em>, <em>minority_majority=False</em>, <em>percent_shape=False</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.summarize_data.summarize_nearby" title="Permalink to this definition">¶</a></dt>
 <dd><p>The SummarizeNearby task finds features that are within a specified distance of features in the input layer.
 Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
 drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate
@@ -666,8 +692,8 @@ the summaryLayer within each polygon in sumWithinLayer.</dd>
 points.</dd>
 <dt>summary_fields <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span></dt>
 <dd>A list of field names and statistical summary type that you wish to calculate for all features in the
-summaryLayer that are within each polygon in the sumWithinLayer . Eg: [&#8220;fieldname1 summary&#8221;,
-&#8220;fieldname2 summary&#8221;]</dd>
+summaryLayer that are within each polygon in the sumWithinLayer . Eg: [“fieldname1 summary”,
+“fieldname2 summary”]</dd>
 <dt>group_by_field <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
 <dd>Specify a field from the summaryLayer features to calculate statistics separately for each unique value of the
 field.</dd>
@@ -687,8 +713,8 @@ shape (eg. length for lines) for each unique groupByField value is calculated.</
 </dl>
 <dl class="docutils">
 <dt>dict with the following keys:</dt>
-<dd>&#8220;result_layer&#8221; : layer (FeatureCollection)
-&#8220;group_by_summary&#8221; : layer (FeatureCollection)</dd>
+<dd>“result_layer” : layer (FeatureCollection)
+“group_by_summary” : layer (FeatureCollection)</dd>
 </dl>
 </dd></dl>
 
@@ -718,7 +744,7 @@ the summaryLayer within each polygon in sumWithinLayer.</dd>
 points.</dd>
 <dt>summary_fields <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span></dt>
 <dd>A list of field names and statistical summary type that you wish to calculate for all features in the
-summaryLayer that are within each polygon in the sumWithinLayer. Eg:[&#8220;fieldname1 summary&#8221;, &#8220;fieldname2 summary&#8221;]</dd>
+summaryLayer that are within each polygon in the sumWithinLayer. Eg:[“fieldname1 summary”, “fieldname2 summary”]</dd>
 <dt>group_by_field <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
 <dd>Specify a field from the summaryLayer features to calculate statistics separately for each unique attribute
 value.</dd>
@@ -738,8 +764,8 @@ shape (eg. length for lines) for each unique groupByField value is calculated.</
 </dl>
 <dl class="docutils">
 <dt>dict with the following keys:</dt>
-<dd>&#8220;result_layer&#8221; : layer (FeatureCollection)
-&#8220;group_by_summary&#8221; : layer (FeatureCollection)</dd>
+<dd>“result_layer” : layer (FeatureCollection)
+“group_by_summary” : layer (FeatureCollection)</dd>
 </dl>
 </dd></dl>
 
@@ -748,15 +774,18 @@ shape (eg. length for lines) for each unique groupByField value is calculated.</
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.features.use_proximity.html" class="btn btn-neutral float-right" title="arcgis.features.use_proximity module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.features.use_proximity.html" class="btn btn-neutral float-right" title="arcgis.features.use_proximity module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.features.manage_data.html" class="btn btn-neutral" title="arcgis.features.manage_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.features.manage_data.html" class="btn btn-neutral" title="arcgis.features.manage_data module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -790,7 +819,8 @@ shape (eg. length for lines) for each unique groupByField value is calculated.</
             VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>
