@@ -113,6 +113,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#creditmanager">CreditManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#passwordpolicy">PasswordPolicy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#ux">UX</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#federation">Federation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#logs">Logs</a></li>
@@ -653,6 +654,8 @@
 </li>
         <li><a href="arcgis.gis.toc.html#arcgis.gis.ResourceManager.add">(arcgis.gis.ResourceManager method)</a>
 </li>
+        <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalResourceManager.add">(arcgis.gis.admin.PortalResourceManager method)</a>
+</li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.DataStoreManager.add">(arcgis.gis.server.DataStoreManager method)</a>
 </li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.DirectoryManager.add">(arcgis.gis.server.DirectoryManager method)</a>
@@ -701,6 +704,10 @@
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Group.add_users">add_users() (arcgis.gis.Group method)</a>
 </li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.add_workspace">add_workspace() (arcgis.gis.admin.Collaboration method)</a>
+</li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.agg">agg() (arcgis.features.SpatialDataFrame method)</a>
+</li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.aggregate">aggregate() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.summarize_data.html#arcgis.features.summarize_data.aggregate_points">aggregate_points() (arcgis.features.summarize_data method)</a>
 
@@ -758,12 +765,12 @@
 </li>
       <li><a href="arcgis.features.elevation.html#module-arcgis.features.elevation">arcgis.features.elevation (module)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.enrich_data.html#module-arcgis.features.enrich_data">arcgis.features.enrich_data (module)</a>
 </li>
       <li><a href="arcgis.features.find_locations.html#module-arcgis.features.find_locations">arcgis.features.find_locations (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.manage_data.html#module-arcgis.features.manage_data">arcgis.features.manage_data (module)</a>
 </li>
       <li><a href="arcgis.features.managers.html#module-arcgis.features.managers">arcgis.features.managers (module)</a>
@@ -1028,10 +1035,6 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.combine_first">combine_first() (arcgis.features.SpatialDataFrame method)</a>
 </li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.combineAdd">combineAdd() (arcgis.features.SpatialDataFrame method)</a>
-</li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.combineMult">combineMult() (arcgis.features.SpatialDataFrame method)</a>
-</li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.comments">comments (arcgis.gis.Item attribute)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.composite_band">composite_band() (arcgis.raster.functions method)</a>
@@ -1092,10 +1095,10 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.convert_objects">convert_objects() (arcgis.features.SpatialDataFrame method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.raster.analytics.html#arcgis.raster.analytics.convert_raster_to_feature">convert_raster_to_feature() (arcgis.raster.analytics method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.convex_hull">convex_hull() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -1184,6 +1187,8 @@
       </ul></li>
       <li><a href="arcgis.geoanalytics.analyze_patterns.html#arcgis.geoanalytics.analyze_patterns.create_space_time_cube">create_space_time_cube() (arcgis.geoanalytics.analyze_patterns method)</a>
 </li>
+      <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.create_tile_service">create_tile_service() (arcgis.gis.Item method)</a>
+</li>
       <li><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerCollectionManager.create_view">create_view() (arcgis.features.managers.FeatureLayerCollectionManager method)</a>
 </li>
       <li><a href="arcgis.features.find_locations.html#arcgis.features.find_locations.create_viewshed">create_viewshed() (arcgis.features.find_locations method)</a>
@@ -1258,6 +1263,10 @@
 </li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.Server.datastores">datastores (arcgis.gis.server.Server attribute)</a>
 </li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.default_basemap">default_basemap (arcgis.gis.admin.UX attribute)</a>
+</li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.default_extent">default_extent (arcgis.gis.admin.UX attribute)</a>
+</li>
       <li><a href="arcgis.features.managers.html#arcgis.features.managers.AttachmentManager.delete">delete() (arcgis.features.managers.AttachmentManager method)</a>
 
       <ul>
@@ -1272,6 +1281,8 @@
         <li><a href="arcgis.gis.toc.html#arcgis.gis.User.delete">(arcgis.gis.User method)</a>
 </li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.delete">(arcgis.gis.admin.Collaboration method)</a>
+</li>
+        <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalResourceManager.delete">(arcgis.gis.admin.PortalResourceManager method)</a>
 </li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.SSLCertificate.delete">(arcgis.gis.admin.SSLCertificate method)</a>
 </li>
@@ -1310,6 +1321,8 @@
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.delete_relationship">delete_relationship() (arcgis.gis.Item method)</a>
 </li>
+      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayerManager.delete_tiles">delete_tiles() (arcgis.mapping.MapImageLayerManager method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.densify">densify() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -1326,11 +1339,17 @@
         <li><a href="arcgis.html#arcgis.derive_new_locations">(in module arcgis)</a>
 </li>
       </ul></li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.describe">describe() (arcgis.features.SpatialDataFrame method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="arcgis.gis.toc.html#arcgis.gis.Role.description">description (arcgis.gis.Role attribute)</a>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.describe">describe() (arcgis.features.SpatialDataFrame method)</a>
+</li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.description">description (arcgis.gis.admin.UX attribute)</a>
+
+      <ul>
+        <li><a href="arcgis.gis.toc.html#arcgis.gis.Role.description">(arcgis.gis.Role attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.description_visibility">description_visibility (arcgis.gis.admin.UX attribute)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.FeatureSet.df">df (arcgis.features.FeatureSet attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureSet.df">[1]</a>
 </li>
@@ -1456,6 +1475,8 @@
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.User.enable">enable() (arcgis.gis.User method)</a>
 </li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.enable_comments">enable_comments (arcgis.gis.admin.UX attribute)</a>
+</li>
       <li><a href="arcgis.widgets.html#arcgis.widgets.MapView.end_time">end_time (arcgis.widgets.MapView attribute)</a>
 </li>
       <li><a href="arcgis.features.enrich_data.html#arcgis.features.enrich_data.enrich_layer">enrich_layer() (arcgis.features.enrich_data method)</a>
@@ -1488,10 +1509,10 @@
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.erase">erase() (arcgis.features.SpatialDataFrame method)</a>, <a href="arcgis.features.toc.html#arcgis.features.SpatialDataFrame.erase">[1]</a>
 </li>
-      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.estimate_export_tiles_size">estimate_export_tiles_size() (arcgis.mapping.MapImageLayer method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.estimate_export_tiles_size">estimate_export_tiles_size() (arcgis.mapping.MapImageLayer method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.eval">eval() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.ewm">ewm() (arcgis.features.SpatialDataFrame method)</a>
@@ -1563,6 +1584,8 @@
       <li><a href="arcgis.features.html#arcgis.features.Feature">Feature (class in arcgis.features)</a>, <a href="arcgis.features.toc.html#arcgis.features.Feature">[1]</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.FeatureCollection">FeatureCollection (class in arcgis.features)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureCollection">[1]</a>
+</li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.featured_content">featured_content (arcgis.gis.admin.UX attribute)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.FeatureLayer">FeatureLayer (class in arcgis.features)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayer">[1]</a>
 </li>
@@ -1825,6 +1848,8 @@
 </li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Machines.get">(arcgis.gis.admin.Machines method)</a>
 </li>
+        <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalResourceManager.get">(arcgis.gis.admin.PortalResourceManager method)</a>
+</li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.SSLCertificates.get">(arcgis.gis.admin.SSLCertificates method)</a>
 </li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.DataStoreManager.get">(arcgis.gis.server.DataStoreManager method)</a>
@@ -1844,6 +1869,10 @@
         <li><a href="arcgis.geometry.html#arcgis.geometry.Geometry.get_area">(arcgis.geometry.Geometry method)</a>
 </li>
       </ul></li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.get_background">get_background() (arcgis.gis.admin.UX method)</a>
+</li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.get_banner">get_banner() (arcgis.gis.admin.UX method)</a>
+</li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.get_data">get_data() (arcgis.gis.Item method)</a>
 </li>
       <li><a href="arcgis.geoanalytics.toc.html#arcgis.geoanalytics.get_datastores">get_datastores() (arcgis.geoanalytics method)</a>
@@ -1884,6 +1913,8 @@
         <li><a href="arcgis.features.managers.html#arcgis.features.managers.SyncManager.get_list">(arcgis.features.managers.SyncManager method)</a>
 </li>
       </ul></li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.get_logo">get_logo() (arcgis.gis.admin.UX method)</a>
+</li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Group.get_members">get_members() (arcgis.gis.Group method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.get_part">get_part() (arcgis.features.SpatialDataFrame method)</a>
@@ -2002,8 +2033,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iat">iat (arcgis.features.SpatialDataFrame attribute)</a>
 </li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.icol">icol() (arcgis.features.SpatialDataFrame method)</a>
-</li>
       <li><a href="arcgis.widgets.html#arcgis.widgets.MapView.id">id (arcgis.widgets.MapView attribute)</a>
 </li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.identify">identify() (arcgis.mapping.MapImageLayer method)</a>
@@ -2011,8 +2040,6 @@
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.idxmax">idxmax() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.idxmin">idxmin() (arcgis.features.SpatialDataFrame method)</a>
-</li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iget_value">iget_value() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iloc">iloc (arcgis.features.SpatialDataFrame attribute)</a>
 </li>
@@ -2084,8 +2111,6 @@
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Group.invite_users">invite_users() (arcgis.gis.Group method)</a>
 </li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.irow">irow() (arcgis.features.SpatialDataFrame method)</a>
-</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.is_copy">is_copy (arcgis.features.SpatialDataFrame attribute)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.is_empty">is_empty (arcgis.features.SpatialDataFrame attribute)</a>
@@ -2123,8 +2148,6 @@
 </li>
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iteritems">iteritems() (arcgis.features.SpatialDataFrame method)</a>
-</li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iterkv">iterkv() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iterrows">iterrows() (arcgis.features.SpatialDataFrame method)</a>
 </li>
@@ -2240,6 +2263,12 @@
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.less_than_equal">less_than_equal() (arcgis.raster.functions method)</a>
 </li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.AGOLAdminManager.license">license (arcgis.gis.admin.AGOLAdminManager attribute)</a>
+
+      <ul>
+        <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalAdminManager.license">(arcgis.gis.admin.PortalAdminManager attribute)</a>
+</li>
+      </ul></li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.System.licenses">licenses (arcgis.gis.admin.System attribute)</a>
 
       <ul>
@@ -2258,6 +2287,8 @@
         <li><a href="arcgis.gis.toc.html#arcgis.gis.ResourceManager.list">(arcgis.gis.ResourceManager method)</a>
 </li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Machines.list">(arcgis.gis.admin.Machines method)</a>
+</li>
+        <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalResourceManager.list">(arcgis.gis.admin.PortalResourceManager method)</a>
 </li>
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.SSLCertificates.list">(arcgis.gis.admin.SSLCertificates method)</a>
 </li>
@@ -2392,6 +2423,8 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.median">median() (arcgis.features.SpatialDataFrame method)</a>
 </li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.melt">melt() (arcgis.features.SpatialDataFrame method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.memory_usage">memory_usage() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.merge">merge() (arcgis.features.SpatialDataFrame method)</a>
@@ -2458,8 +2491,12 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="arcgis.gis.toc.html#arcgis.gis.Role.name">name (arcgis.gis.Role attribute)</a>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.name">name (arcgis.gis.admin.UX attribute)</a>
+
+      <ul>
+        <li><a href="arcgis.gis.toc.html#arcgis.gis.Role.name">(arcgis.gis.Role attribute)</a>
 </li>
+      </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.ndim">ndim (arcgis.features.SpatialDataFrame attribute)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.ndvi">ndvi() (arcgis.raster.functions method)</a>
@@ -2483,6 +2520,8 @@
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.notnull">notnull() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.nsmallest">nsmallest() (arcgis.features.SpatialDataFrame method)</a>
+</li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.nunique">nunique() (arcgis.features.SpatialDataFrame method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2588,6 +2627,8 @@
 </li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalAdminManager">PortalAdminManager (class in arcgis.gis.admin)</a>
 </li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalResourceManager">PortalResourceManager (class in arcgis.gis.admin)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.position_along_line">position_along_line() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -2602,10 +2643,10 @@
 </li>
       <li><a href="arcgis.env.html#arcgis.env.process_spatial_reference">process_spatial_reference (in module arcgis.env)</a>
 </li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.prod">prod() (arcgis.features.SpatialDataFrame method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.prod">prod() (arcgis.features.SpatialDataFrame method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.product">product() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.elevation.html#arcgis.features.elevation.profile">profile() (arcgis.features.elevation method)</a>
@@ -2828,6 +2869,8 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.reproject">reproject() (arcgis.features.SpatialDataFrame method)</a>, <a href="arcgis.features.toc.html#arcgis.features.SpatialDataFrame.reproject">[1]</a>
 </li>
+      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayerManager.rerun_job">rerun_job (arcgis.mapping.MapImageLayerManager attribute)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.resample">resample() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -2998,8 +3041,6 @@
 </li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.set_logo">set_logo() (arcgis.gis.admin.UX method)</a>
 </li>
-      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.set_name_description">set_name_description() (arcgis.gis.admin.UX method)</a>
-</li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.set_null">set_null() (arcgis.raster.functions method)</a>
 </li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.Role.set_privileges">set_privileges() (arcgis.gis.server.Role method)</a>
@@ -3075,8 +3116,6 @@
       <li><a href="arcgis.network.toc.html#arcgis.network.ServiceAreaLayer.solve_service_area">solve_service_area() (arcgis.network.ServiceAreaLayer method)</a>
 </li>
       <li><a href="arcgis.network.analysis.html#arcgis.network.analysis.solve_vehicle_routing_problem">solve_vehicle_routing_problem() (arcgis.network.analysis method)</a>
-</li>
-      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.sort">sort() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.sort_index">sort_index() (arcgis.features.SpatialDataFrame method)</a>
 </li>
@@ -3272,6 +3311,8 @@
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.to_excel">to_excel() (arcgis.features.SpatialDataFrame method)</a>
 </li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.to_feather">to_feather() (arcgis.features.SpatialDataFrame method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.to_featureclass">to_featureclass() (arcgis.features.SpatialDataFrame method)</a>, <a href="arcgis.features.toc.html#arcgis.features.SpatialDataFrame.to_featureclass">[1]</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.to_featurelayer">to_featurelayer() (arcgis.features.SpatialDataFrame method)</a>, <a href="arcgis.features.toc.html#arcgis.features.SpatialDataFrame.to_featurelayer">[1]</a>
@@ -3333,6 +3374,8 @@
 </li>
       </ul></li>
       <li><a href="arcgis.raster.analytics.html#arcgis.raster.analytics.train_classifier">train_classifier() (arcgis.raster.analytics method)</a>
+</li>
+      <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.transform">transform() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.geometry.html#arcgis.geometry.Geometry.translate">translate() (arcgis.geometry.Geometry method)</a>
 </li>
@@ -3482,6 +3525,8 @@
 </li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.Server.usage">usage (arcgis.gis.server.Server attribute)</a>
 </li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.AGOLAdminManager.usage_reports">usage_reports (arcgis.gis.admin.AGOLAdminManager attribute)</a>
+</li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.User">User (class in arcgis.gis)</a>
 
       <ul>
@@ -3538,14 +3583,14 @@
 </li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.validate_invitation_response">validate_invitation_response() (arcgis.gis.admin.Collaboration method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.FeatureLayer.validate_sql">validate_sql() (arcgis.features.FeatureLayer method)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayer.validate_sql">[1]</a>
 
       <ul>
         <li><a href="arcgis.features.html#arcgis.features.Table.validate_sql">(arcgis.features.Table method)</a>, <a href="arcgis.features.toc.html#arcgis.features.Table.validate_sql">[1]</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.FeatureSet.value">value (arcgis.features.FeatureSet attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureSet.value">[1]</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.values">values (arcgis.features.SpatialDataFrame attribute)</a>
@@ -3553,6 +3598,8 @@
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.var">var() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.variety">variety() (arcgis.raster.functions method)</a>
+</li>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.UX.vector_basemap">vector_basemap (arcgis.gis.admin.UX attribute)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.vector_field_renderer">vector_field_renderer() (arcgis.raster.functions method)</a>
 </li>

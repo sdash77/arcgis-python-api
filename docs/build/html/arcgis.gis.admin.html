@@ -115,6 +115,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#creditmanager">CreditManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#passwordpolicy">PasswordPolicy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#ux">UX</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#federation">Federation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#logs">Logs</a></li>
@@ -635,6 +636,13 @@ portal participates</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="arcgis.gis.admin.AGOLAdminManager.license">
+<code class="descname">license</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.license" title="Permalink to this definition">¶</a></dt>
+<dd><p>provides a set of tools to access and manage user licenses and
+entitlements.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="arcgis.gis.admin.AGOLAdminManager.metadata">
 <code class="descname">metadata</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>resources to work with metadata on GIS</p>
@@ -644,6 +652,12 @@ portal participates</p>
 <dt id="arcgis.gis.admin.AGOLAdminManager.password_policy">
 <code class="descname">password_policy</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.password_policy" title="Permalink to this definition">¶</a></dt>
 <dd><p>tools to manage a Site’s password policy</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.AGOLAdminManager.usage_reports">
+<code class="descname">usage_reports</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.usage_reports" title="Permalink to this definition">¶</a></dt>
+<dd><p>provides access to the usage reports of the AGOL organization</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -687,6 +701,13 @@ portal participates</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="arcgis.gis.admin.PortalAdminManager.license">
+<code class="descname">license</code><a class="headerlink" href="#arcgis.gis.admin.PortalAdminManager.license" title="Permalink to this definition">¶</a></dt>
+<dd><p>provides a set of tools to access and manage user licenses and
+entitlements.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="arcgis.gis.admin.PortalAdminManager.logs">
 <code class="descname">logs</code><a class="headerlink" href="#arcgis.gis.admin.PortalAdminManager.logs" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a class to work with the portal logs</p>
@@ -703,7 +724,9 @@ to accept requests.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.admin.PortalAdminManager.metadata">
 <code class="descname">metadata</code><a class="headerlink" href="#arcgis.gis.admin.PortalAdminManager.metadata" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>returns a set of tools to work with ArcGIS Enterprise metadata
+settings.</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.admin.PortalAdminManager.password_policy">
@@ -1453,6 +1476,169 @@ reset the site’s security policy.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="portalresourcemanager">
+<h2>PortalResourceManager<a class="headerlink" href="#portalresourcemanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.gis.admin.PortalResourceManager">
+<em class="property">class </em><code class="descclassname">arcgis.gis.admin.</code><code class="descname">PortalResourceManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.PortalResourceManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Helper class to manage a GIS’ resources</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>gis</td>
+<td>required GIS, connection to ArcGIS Online or ArcGIS Enterprise</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="arcgis.gis.admin.PortalResourceManager.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>key=None</em>, <em>path=None</em>, <em>text=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.PortalResourceManager.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>The add resource operation allows the administrator to add a file
+resource, for example, the organization’s logo or custom banner.
+The resource can be used by any member of the organization. File
+resources use storage space from your quota and are scanned for
+viruses.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>key</td>
+<td>optional string, look up key for file</td>
+</tr>
+<tr class="row-odd"><td>path</td>
+<td>optional string, file path to the local resource to upload</td>
+</tr>
+<tr class="row-even"><td>text</td>
+<td>optional string, text value to add to the site’s resources</td>
+</tr>
+<tr class="row-odd"><td>access</td>
+<td>optional string, sets the access level for the resource. The
+default is ‘public’.
+Values: public, org, orgprivate</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.PortalResourceManager.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><em>key</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.PortalResourceManager.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Remove Resource operation allows the administrator to remove
+a file resource.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>key</td>
+<td>optional string, look up key for file to delete</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.PortalResourceManager.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>resource_name</em>, <em>download_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.PortalResourceManager.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download or get a portal resource item</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>resource_name</td>
+<td>optional string, key/name of data</td>
+</tr>
+<tr class="row-odd"><td>download_path</td>
+<td>optional string, save folder location</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">path to data or raw data if not file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.PortalResourceManager.list">
+<code class="descname">list</code><span class="sig-paren">(</span><em>start=1</em>, <em>num=100</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.PortalResourceManager.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a list of resources uploaded to portal.  The items can be
+images, files and other content used to stylize and modify a
+portal’s appearance.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>start</td>
+<td>optional int, start location of the search. The default is
+a value of 1</td>
+</tr>
+<tr class="row-odd"><td>num</td>
+<td>optional int, the number of search results to return at one
+time. The value ranges between 1-100 (max).
+Default: 100</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="ux">
 <h2>UX<a class="headerlink" href="#ux" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -1462,6 +1648,195 @@ reset the site’s security policy.</p>
 <p>Helper class for modifying the portal home page. This class is not created by users directly. An instance of
 the class, called ‘ux’, is available as a property of the GIS object. Users call methods on this ‘ux’ object
 to set banner, background, logo, name etc.</p>
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.default_basemap">
+<code class="descname">default_basemap</code><a class="headerlink" href="#arcgis.gis.admin.UX.default_basemap" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the site’s default extent</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.default_extent">
+<code class="descname">default_extent</code><a class="headerlink" href="#arcgis.gis.admin.UX.default_extent" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the site’s default extent</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.description">
+<code class="descname">description</code><a class="headerlink" href="#arcgis.gis.admin.UX.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the site’s description.</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.description_visibility">
+<code class="descname">description_visibility</code><a class="headerlink" href="#arcgis.gis.admin.UX.description_visibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the site’s description visibility</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.enable_comments">
+<code class="descname">enable_comments</code><a class="headerlink" href="#arcgis.gis.admin.UX.enable_comments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn on item comments</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.featured_content">
+<code class="descname">featured_content</code><a class="headerlink" href="#arcgis.gis.admin.UX.featured_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the featured content group information.  The information
+can then be set using the ‘set_featured_content()’.</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Usage Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">ux</span><span class="o">.</span><span class="n">get_featured_content</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ux</span><span class="o">.</span><span class="n">set_featured_content</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.UX.get_background">
+<code class="descname">get_background</code><span class="sig-paren">(</span><em>download_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.UX.get_background" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get your organization’s home page background image. You can use the <cite>set_background()</cite> method to set an image
+as the home page background image.</p>
+<p>For more information, refer to <a class="reference external" href="http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm">http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm</a></p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>download_path</td>
+<td>required string. Folder path to download the background file.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Path to downloaded background file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.UX.get_banner">
+<code class="descname">get_banner</code><span class="sig-paren">(</span><em>download_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.UX.get_banner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get your organization’s home page banner image. You can use the <cite>set_banner()</cite> method to set an image or custom HTML
+code as your banner.
+================  ===============================================================
+<strong>Argument</strong>      <strong>Description</strong>
+—————-  —————————————————————
+download_path     required string. Folder path to download the banner file.
+================  ===============================================================</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">Path to downloaded banner file.</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.admin.UX.get_logo">
+<code class="descname">get_logo</code><span class="sig-paren">(</span><em>download_path</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.UX.get_logo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get your organization’s logo/thumbnail. You can use the <cite>set_logo()</cite> method to set an image as your logo.
+================  ===============================================================
+<strong>Argument</strong>      <strong>Description</strong>
+—————-  —————————————————————
+download_path     required string. Folder path to download the logo file.
+================  ===============================================================</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">Path to downloaded logo file.</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.name">
+<code class="descname">name</code><a class="headerlink" href="#arcgis.gis.admin.UX.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the site’s name.  The name can get defined using the ‘set_name()’.</p>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body">string of the name of the site</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+</dd></dl>
+
 <dl class="method">
 <dt id="arcgis.gis.admin.UX.set_background">
 <code class="descname">set_background</code><span class="sig-paren">(</span><em>background_file=None</em>, <em>is_built_in=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.UX.set_background" title="Permalink to this definition">¶</a></dt>
@@ -1589,36 +1964,10 @@ banner is remove.</dd>
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="arcgis.gis.admin.UX.set_name_description">
-<code class="descname">set_name_description</code><span class="sig-paren">(</span><em>name</em>, <em>description</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.UX.set_name_description" title="Permalink to this definition">¶</a></dt>
-<dd><p>Configure your home page by setting the organization’s name and description</p>
-<p>For more information, refer to <a class="reference external" href="http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm">http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm</a></p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="20%" />
-<col width="80%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>name</td>
-<td>required string. Specify a name for the organization</td>
-</tr>
-<tr class="row-odd"><td>description</td>
-<td>required string. Specify a description about the organization</td>
-</tr>
-</tbody>
-</table>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True | False</td>
-</tr>
-</tbody>
-</table>
+<dl class="attribute">
+<dt id="arcgis.gis.admin.UX.vector_basemap">
+<code class="descname">vector_basemap</code><a class="headerlink" href="#arcgis.gis.admin.UX.vector_basemap" title="Permalink to this definition">¶</a></dt>
+<dd><p>gets/sets the default vector basemap</p>
 </dd></dl>
 
 </dd></dl>

@@ -115,6 +115,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#creditmanager">CreditManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#passwordpolicy">PasswordPolicy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#ux">UX</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#federation">Federation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#logs">Logs</a></li>
@@ -607,7 +608,7 @@
 <h2>profile<a class="headerlink" href="#profile" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.elevation.profile">
-<code class="descclassname">elevation.</code><code class="descname">profile</code><span class="sig-paren">(</span><em>input_line_features: arcgis.features.feature.FeatureSet = {‘exceededTransferLimit’: False, ‘spatialReference’: {‘latestWkid’: 3857, ‘wkid’: 102100}, ‘geometryType’: ‘esriGeometryPolyline’, ‘fields’: [{‘name’: ‘OID’, ‘type’: ‘esriFieldTypeOID’, ‘alias’: ‘OID’}, {‘name’: ‘Shape_Length’, ‘type’: ‘esriFieldTypeDouble’, ‘alias’: ‘Shape_Length’}], ‘displayFieldName’: ”, ‘features’: []}, profile_id_field: str = None, dem_resolution: str = None, maximum_sample_distance: float = None, maximum_sample_distance_units: str = ‘Meters’, gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.profile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">elevation.</code><code class="descname">profile</code><span class="sig-paren">(</span><em>input_line_features: arcgis.features.feature.FeatureSet = {‘features’: [], ‘displayFieldName’: ”, ‘exceededTransferLimit’: False, ‘fields’: [{‘type’: ‘esriFieldTypeOID’, ‘name’: ‘OID’, ‘alias’: ‘OID’}, {‘type’: ‘esriFieldTypeDouble’, ‘name’: ‘Shape_Length’, ‘alias’: ‘Shape_Length’}], ‘geometryType’: ‘esriGeometryPolyline’, ‘spatialReference’: {‘wkid’: 102100, ‘latestWkid’: 3857}}, profile_id_field: str = None, dem_resolution: str = None, maximum_sample_distance: float = None, maximum_sample_distance_units: str = ‘Meters’, gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.profile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns elevation profiles for the input line features.</p>
 <p>Parameters:</p>
 <blockquote>
@@ -636,7 +637,7 @@
 <h2>viewshed<a class="headerlink" href="#viewshed" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.elevation.viewshed">
-<code class="descclassname">elevation.</code><code class="descname">viewshed</code><span class="sig-paren">(</span><em>input_points: arcgis.features.feature.FeatureSet = {‘exceededTransferLimit’: False, ‘spatialReference’: {‘latestWkid’: 3857, ‘wkid’: 102100}, ‘geometryType’: ‘esriGeometryPoint’, ‘fields’: [{‘name’: ‘OID’, ‘type’: ‘esriFieldTypeOID’, ‘alias’: ‘OID’}, {‘name’: ‘offseta’, ‘type’: ‘esriFieldTypeDouble’, ‘alias’: ‘offseta’}, {‘name’: ‘offsetb’, ‘type’: ‘esriFieldTypeDouble’, ‘alias’: ‘offsetb’}], ‘displayFieldName’: ”, ‘features’: []}, maximum_distance: float = None, maximum_distance_units: str = ‘Meters’, dem_resolution: str = None, observer_height: float = None, observer_height_units: str = ‘Meters’, surface_offset: float = None, surface_offset_units: str = ‘Meters’, generalize_viewshed_polygons: bool = True, gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.viewshed" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">elevation.</code><code class="descname">viewshed</code><span class="sig-paren">(</span><em>input_points: arcgis.features.feature.FeatureSet = {‘features’: [], ‘displayFieldName’: ”, ‘exceededTransferLimit’: False, ‘fields’: [{‘type’: ‘esriFieldTypeOID’, ‘name’: ‘OID’, ‘alias’: ‘OID’}, {‘type’: ‘esriFieldTypeDouble’, ‘name’: ‘offseta’, ‘alias’: ‘offseta’}, {‘type’: ‘esriFieldTypeDouble’, ‘name’: ‘offsetb’, ‘alias’: ‘offsetb’}], ‘geometryType’: ‘esriGeometryPoint’, ‘spatialReference’: {‘wkid’: 102100, ‘latestWkid’: 3857}}, maximum_distance: float = None, maximum_distance_units: str = ‘Meters’, dem_resolution: str = None, observer_height: float = None, observer_height_units: str = ‘Meters’, surface_offset: float = None, surface_offset_units: str = ‘Meters’, generalize_viewshed_polygons: bool = True, gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.viewshed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns polygons of visible areas for a given set of input observation points.</p>
 <p>Parameters:</p>
 <blockquote>

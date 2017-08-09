@@ -503,15 +503,17 @@ class ServiceManager(object):
         """ returns a list of all folders """
         return self._svcmgr.folders
 
-    def list(self, folder='/'):
+    def list(self, folder='/', refresh=False):
         """
         returns a list of services in the specified folder
 
         Parameters:
         :param folder: name of the folder to list services from
+        :param refresh: Bool, default is False. If True, the list of services will be 
+        requested to the server, else the list will be returned from cache.
         """
         if folder != self._currentFolder or \
-           self._services is None:
+           self._services is None or refresh:
             self._currentFolder = folder
             self._svcmgr.folder = folder
             services =  self._svcmgr.services
