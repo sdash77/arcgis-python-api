@@ -36,6 +36,7 @@ class PortalAdminManager(BasePortalAdmin):
     _servers = None
     _pp = None
     _license = None
+    _livingatlas = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -186,3 +187,14 @@ class PortalAdminManager(BasePortalAdmin):
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
+    #----------------------------------------------------------------------
+    @property
+    def living_atlas(self):
+        """
+        provides a set of tools to manage and setup Living Atlas content.
+        """
+        if self._livingatlas is None:
+            from ._livingatlas import LivingAtlas
+            url = self._url + "/system/content/livingatlas"
+            self._livingatlas = LivingAtlas(url=url, gis=self._gis)
+        return self._livingatlas
