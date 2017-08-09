@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -30,11 +28,10 @@
   
 
   
+    <link rel="stylesheet" href="_static/theme_override.css" type="text/css" />
+  
 
   
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="arcgis 1.2.0 documentation" href="index.html"/>
         <link rel="up" title="arcgis.geoanalytics module" href="arcgis.geoanalytics.toc.html"/>
         <link rel="next" title="arcgis.geoanalytics.manage_data module" href="arcgis.geoanalytics.manage_data.html"/>
@@ -47,7 +44,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -88,10 +84,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -429,7 +422,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.analyze_patterns.html#create-space-time-cube">create_space_time_cube</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.geoanalytics.find_locations module</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="">arcgis.geoanalytics.find_locations module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#find-similar-locations">find_similar_locations</a></li>
 </ul>
 </li>
@@ -548,10 +541,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -564,38 +555,21 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.geoanalytics.toc.html">arcgis.geoanalytics module</a> &raquo;</li>
-        
-      <li>arcgis.geoanalytics.find_locations module</li>
-    
-    
+      
+    <li>arcgis.geoanalytics.find_locations module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
-            <a href="_sources/arcgis.geoanalytics.find_locations.rst.txt" rel="nofollow"> View page source</a>
+          
+            <a href="_sources/arcgis.geoanalytics.find_locations.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -609,7 +583,7 @@
 <h2>find_similar_locations<a class="headerlink" href="#find-similar-locations" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geoanalytics.find_locations.find_similar_locations">
-<code class="descclassname">find_locations.</code><code class="descname">find_similar_locations</code><span class="sig-paren">(</span><em>input_layer</em>, <em>search_layer</em>, <em>analysis_fields</em>, <em>most_or_least_similar: str = ‘MostSimilar’</em>, <em>match_method: str = ‘AttributeValues’</em>, <em>number_of_results: int = 10</em>, <em>append_fields: str = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.find_locations.find_similar_locations" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">find_locations.</code><code class="descname">find_similar_locations</code><span class="sig-paren">(</span><em>input_layer</em>, <em>search_layer</em>, <em>analysis_fields</em>, <em>most_or_least_similar: str='MostSimilar'</em>, <em>match_method: str='AttributeValues'</em>, <em>number_of_results: int=10</em>, <em>append_fields: str=None</em>, <em>output_name: str=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.find_locations.find_similar_locations" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><blockquote>
 <div><p>Based on criteria you specify, find similar locations by measuring the similarity of locations in your candidate search layer to one or more reference locations.</p>
@@ -625,9 +599,9 @@
 <p>analysis_fields: Analysis Fields (str). Required parameter.</p>
 <dl class="docutils">
 <dt>most_or_least_similar: Most Or Least Similar (str). Required parameter.</dt>
-<dd>Choice list:[‘MostSimilar’, ‘LeastSimilar’, ‘Both’]</dd>
+<dd>Choice list:[&#8216;MostSimilar&#8217;, &#8216;LeastSimilar&#8217;, &#8216;Both&#8217;]</dd>
 <dt>match_method: Match Method (str). Required parameter.</dt>
-<dd>Choice list:[‘AttributeValues’, ‘AttributeProfiles’]</dd>
+<dd>Choice list:[&#8216;AttributeValues&#8217;, &#8216;AttributeProfiles&#8217;]</dd>
 </dl>
 <p>number_of_results: Number Of Results (int). Required parameter.</p>
 <p>append_fields: Fields To Append To Output (str). Optional parameter.</p>
@@ -645,18 +619,15 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.geoanalytics.manage_data.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.manage_data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.geoanalytics.manage_data.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.manage_data module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.geoanalytics.analyze_patterns.html" class="btn btn-neutral" title="arcgis.geoanalytics.analyze_patterns module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.geoanalytics.analyze_patterns.html" class="btn btn-neutral" title="arcgis.geoanalytics.analyze_patterns module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -690,8 +661,7 @@
             VERSION:'1.2.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>
