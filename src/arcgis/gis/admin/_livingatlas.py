@@ -376,3 +376,4 @@ class LivingAtlas(BasePortalAdmin):
         else:
             return False
         return False
+
