@@ -509,7 +509,7 @@ class ServiceManager(object):
 
         Parameters:
         :param folder: name of the folder to list services from
-        :param refresh: Bool, default is False. If True, the list of services will be 
+        :param refresh: Bool, default is False. If True, the list of services will be
         requested to the server, else the list will be returned from cache.
         """
         if folder != self._currentFolder or \
@@ -1480,6 +1480,7 @@ class DataStoreManager(object):
     def list(self):
         """returns a list of datastore objects"""
         stores = []
+        self._ds._datastores = None
         for d in self._ds.datastores:
             stores.append(Datastore(d))
             del d
@@ -1538,6 +1539,7 @@ class DataStoreManager(object):
         Output:
               the data item is registered successfully, None otherwise
         """
+        self._ds._datastores = None
         return self._ds.add_folder(name=name,
                                    server_path=server_path,
                                    client_path=client_path)
@@ -1553,6 +1555,7 @@ class DataStoreManager(object):
         Output:
               True if the data item is registered successfully, False otherwise
         """
+        self._ds._datastores = None
         return self._ds.add(name=name, item=item)
     #----------------------------------------------------------------------
     def add_bigdata(self,
@@ -1566,6 +1569,7 @@ class DataStoreManager(object):
         Output:
               the data item if registered successfully, None otherwise
         """
+        self._ds._datastores = None
         return self._ds.add_bigdata(name=name,
                                     server_path=server_path)
     #----------------------------------------------------------------------
@@ -1584,6 +1588,7 @@ class DataStoreManager(object):
         Output:
             the data item is registered successfully, None otherwise
         """
+        self._ds._datastores = None
         return self._ds.add_database(name,
                                      conn_str,
                                      client_conn_str,
