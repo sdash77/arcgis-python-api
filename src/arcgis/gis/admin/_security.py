@@ -867,7 +867,7 @@ class EnterpriseUsers(BasePortalAdmin):
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
-    def _create(self,
+    def create(self,
                username,
                password,
                first_name,
