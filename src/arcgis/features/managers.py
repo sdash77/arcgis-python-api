@@ -132,7 +132,9 @@ class SyncManager(object):
                data_format="json",
                replica_options=None,
                wait=False,
-               out_path=None):
+               out_path=None,
+               sync_direction=None,
+               target_type="client"):
         """
         The create operation is performed on a feature layer collection
         resource. This operation creates the replica between the feature
@@ -215,21 +217,23 @@ class SyncManager(object):
            wait - if async, wait to pause the process until the async operation is completed.
            out_path - folder path to save the file
         """
-        return self._fs._create_replica(replica_name,
-                                        layers,
-                                        layer_queries,
-                                        geometry_filter,
-                                        replica_sr,
-                                        transport_type,
-                                        return_attachments,
-                                        return_attachments_databy_url,
-                                        asynchronous,
-                                        attachments_sync_direction,
-                                        sync_model,
-                                        data_format,
-                                        replica_options,
-                                        wait,
-                                        out_path)
+        return self._fs._create_replica(replica_name=replica_name,
+                                        layers=layers,
+                                        layer_queries=layer_queries,
+                                        geometry_filter=geometry_filter,
+                                        replica_sr=replica_sr,
+                                        transport_type=transport_type,
+                                        return_attachments=return_attachments,
+                                        return_attachments_data_by_url=return_attachments_databy_url,
+                                        asynchronous=asynchronous,
+                                        sync_direction=sync_direction, # MISSING PARAMETER
+                                        target_type=target_type, # Missing Parameter
+                                        attachments_sync_direction=attachments_sync_direction,
+                                        sync_model=sync_model,
+                                        data_format=data_format,
+                                        replica_options=replica_options,
+                                        wait=wait,
+                                        out_path=out_path)
 
     # ----------------------------------------------------------------------
     def synchronize(self,

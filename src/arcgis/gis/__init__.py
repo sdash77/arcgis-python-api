@@ -1344,7 +1344,8 @@ class GroupManager(object):
     def create(self, title, tags, description=None,
                snippet=None, access='public', thumbnail=None,
                is_invitation_only=False, sort_field='avgRating',
-               sort_order='desc', is_view_only=False, ):
+               sort_order='desc', is_view_only=False, auto_join=False,
+               provider_group_name=None):
         """ Creates a group and returns it if successful.
 
         ================  =========================================================
@@ -1372,6 +1373,12 @@ class GroupManager(object):
         sort_order        optional string, asc or desc for ascending or descending.
         ----------------  ---------------------------------------------------------
         is_view_only      optional boolean, defines whether the group is searchable
+        ----------------  ---------------------------------------------------------
+        auto_join         optional boolean, Only applies to org accounts. If true,
+                          this group will allow joined without requesting
+                          membership approval. Default is false.
+        ----------------  ---------------------------------------------------------
+        provider_group_name  optional string, name of the domain group
         ================  =========================================================
 
         :return:
@@ -1379,11 +1386,16 @@ class GroupManager(object):
         """
         if type(tags) is list:
             tags = ",".join(tags)
-        group = self._portal.create_group_from_dict({
+        params = {
             'title' : title, 'tags' : tags, 'description' : description,
             'snippet' : snippet, 'access' : access, 'sortField' : sort_field,
             'sortOrder' : sort_order, 'isViewOnly' : is_view_only,
-            'isinvitationOnly' : is_invitation_only}, thumbnail)
+            'isinvitationOnly' : is_invitation_only,
+            'autoJoin': auto_join}
+        if provider_group_name:
+            params['provider'] = provider
+            params['providerGroupName'] = provider_group_name
+        group = self._portal.create_group_from_dict(params, thumbnail)
         #print(groupid)
         if group is not None:
             return Group(self._gis, group['id'], group)
