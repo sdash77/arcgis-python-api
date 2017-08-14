@@ -98,7 +98,7 @@ class MapView(widgets.DOMWidget):
         symbol is a symbol specified in json format as described at http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000
         a default symbol is used is one is not specified.
         Tip: a helper utility to get the symbol format for several predefined symbols is available at
-        https://developers.arcgis.com/javascript/3/samples/portal_symbols/
+        http://esri.github.io/arcgis-python-api/tools/symbol.html
 
         attributes is a dict containing name value pairs of fields and field values
         associated with the graphic.
