@@ -564,7 +564,7 @@ class ServerConnection(object):
             # Send the request and read the response
             headers = [('User-Agent', self._useragent)]
             if self._referer and \
-                self._auth.lower() == 'pki':
+                self._auth.lower() != 'pki':
                 headers.append(('Referer', self._referer))
 
             if compress:
@@ -736,7 +736,7 @@ class ServerConnection(object):
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
             if self._referer and \
-               self._auth.lower() == 'pki':
+               self._auth.lower() != 'pki':
                 headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
@@ -756,7 +756,7 @@ class ServerConnection(object):
                 encoded_postdata = urlencode(postdata)
             headers = [('User-Agent', self._useragent)]
             if self._referer and \
-                self._auth.lower() == 'pki':
+                self._auth.lower() != 'pki':
                 headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))

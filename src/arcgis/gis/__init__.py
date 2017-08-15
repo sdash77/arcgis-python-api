@@ -2572,7 +2572,13 @@ class Group(dict):
              A dictionary with a key of "not_added" which contains the users that were not
              added to the group.
         """
-        return self._portal.add_group_users(usernames, self.groupid)
+        users = []
+        for u in usernames:
+            if isinstance(u, str):
+                users.append(u)
+            elif isinstance(u, User):
+                users.append(u.username)
+        return self._portal.add_group_users(users, self.groupid)
 
     def remove_users(self, usernames):
         """ Remove users from this group.
@@ -2587,7 +2593,14 @@ class Group(dict):
             a dictionary with a key notRemoved that is a list of users not removed.
 
         """
-        return self._portal.remove_group_users(usernames, self.groupid)
+        users = []
+        for u in usernames:
+            if isinstance(u, str):
+                users.append(u)
+            elif isinstance(u, User):
+                users.append(u.username)
+
+        return self._portal.remove_group_users(users, self.groupid)
 
     def invite_users(self, usernames, role='group_member', expiration=10080):
         """ Invites users to this group.

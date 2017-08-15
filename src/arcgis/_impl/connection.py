@@ -1026,18 +1026,19 @@ class _ArcGISConnection(object):
                 for ah in add_headers:
                     req.add_header(ah[0], ah[1])
             req.data = body
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent),
+            headers = [('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
+            if self._referer:
+                headers.append(('Referer', self._referer))
             if isinstance(add_headers, list):
                 for ah in add_headers:
                     headers.append(ah)
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers(verify_cert)
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers(verify_cert)
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
 
@@ -1053,7 +1054,7 @@ class _ArcGISConnection(object):
                 encoded_postdata = urlencode(postdata)
             if self._referer:
                 headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+                           ('User-Agent', self._useragent)]
             else:
                 headers = [('User-Agent', self._useragent)]
             if compress:
