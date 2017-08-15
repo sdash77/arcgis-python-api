@@ -1484,7 +1484,7 @@ class DataStoreManager(object):
         for d in self._ds.datastores:
             stores.append(Datastore(d))
             del d
-        return stores#self._ds.datastores
+        return stores
     #----------------------------------------------------------------------
     @property
     def config(self):

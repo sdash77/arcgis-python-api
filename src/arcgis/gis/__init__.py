@@ -181,13 +181,16 @@ class GIS(object):
            self._con._auth is not None and \
            hasattr(self.users.me, 'role') and \
            self.users.me.role == "org_admin":
-            if self.properties.isPortal == True:
-                from .admin.portaladmin import PortalAdminManager
-                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
-                                                gis=self)
-            else:
-                from .admin.agoladmin import AGOLAdminManager
-                self.admin = AGOLAdminManager(gis=self)
+            try:
+                if self.properties.isPortal == True:
+                    from .admin.portaladmin import PortalAdminManager
+                    self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                    gis=self)
+                else:
+                    from .admin.agoladmin import AGOLAdminManager
+                    self.admin = AGOLAdminManager(gis=self)
+            except:
+                pass
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
