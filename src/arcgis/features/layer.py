@@ -272,7 +272,8 @@ class FeatureLayer(Layer):
                 resultOffset -  This option can be used for fetching query
                                 results by skipping the specified number of
                                 records and starting from the next record
-                                (that is, resultOffset + 1th).
+                                (that is, resultOffset + 1th). This option is
+                                ignored if return_all_records is True (i.e. by default).
                 resultRecordCount - This option can be used for fetching
                                     query results up to the
                                     resultRecordCount specified. When
@@ -281,7 +282,8 @@ class FeatureLayer(Layer):
                                     defaults it to maxRecordCount. The
                                     maximum value for this parameter is the
                                     value of the layer's maxRecordCount
-                                    property.
+                                    property. This option is ignored if
+                                    return_all_records is True (i.e. by default).
                 quanitizationParameters - Used to project the geometry onto
                                           a virtual grid, likely
                                           representing pixels on the screen.
