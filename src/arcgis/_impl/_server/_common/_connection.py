@@ -215,6 +215,7 @@ class ServerConnection(object):
     _portal_connection = None
     _TOKEN_TIME = None
     _REFRESH_WHEN = None
+    _handlers = None
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
@@ -561,13 +562,16 @@ class ServerConnection(object):
 
         try:
             # Send the request and read the response
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            headers = [('User-Agent', self._useragent)]
+            if self._referer and \
+                self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
+
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers()
+            opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
             #request.install_opener(opener)
             req = request.Request(url)
@@ -728,15 +732,18 @@ class ServerConnection(object):
             req.add_header('Content-type', mpf.get_content_type())
             req.add_header('Content-length', len(body))
             req.data = body
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent),
+            headers = [('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
+            if self._referer and \
+               self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers()
+            #handlers = self.get_handlers()
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
 
@@ -747,8 +754,10 @@ class ServerConnection(object):
             encoded_postdata = None
             if postdata:
                 encoded_postdata = urlencode(postdata)
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            headers = [('User-Agent', self._useragent)]
+            if self._referer and \
+                self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 

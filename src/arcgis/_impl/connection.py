@@ -169,7 +169,7 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 textwriter.write('\r\n')
-                
+
         for (key, value) in self.form_fields:
             textwriter.write(
                 '--{boundary}\r\n'
@@ -218,6 +218,7 @@ class _ArcGISConnection(object):
     _connection = None
     _portal_connection = None
     _service_url = None
+    _handlers = None
 
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
@@ -252,16 +253,16 @@ class _ArcGISConnection(object):
         self.token = None
         self._server_token = None
         self._connection = connection # second connection
-
+        self._useragent = 'geosaurus/' + __version__
         self._verify_cert = verify_cert
 
         # Setup the referer and user agent
         if baseurl:
-            if not referer:
+            if not referer and \
+               cert_file is None and \
+               key_file is None:
                 referer = "http"#urlparse(baseurl).netloc
             self._referer = referer
-            self._useragent = 'geosaurus/' + __version__
-
             parsed_url = urlparse(self.baseurl)
             self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))
 
@@ -477,9 +478,26 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
         """generates a server token using Portal token"""
+        if self._auth.lower() == "pki":
+            from urllib.request import HTTPCookieProcessor
+            token = ""
+            cj = None
+            for handler in self._handlers:
+                if isinstance(handler, (HTTPCookieProcessor)):
+                    from urllib.parse import unquote
+                    for cookie in handler.cookiejar:
+                        if cookie.name.lower() == "esri_auth":
+                            auth = json.loads(unquote(cookie.value))
+                            if 'token' in auth:
+                                token = auth['token']
+                                break
+                        del cookie
+                        #print( [cookie.name, cookie.value, cookie.domain])
 
+        else:
+            token = self.token
         postdata = {'serverURL':serverUrl,
-                    'token': self.token,
+                    'token': token,
                     'expiration':str(expiration),
                     'f': 'json',
                     'request':'getToken',
@@ -784,13 +802,19 @@ class _ArcGISConnection(object):
 
         try:
             # Send the request and read the response
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            if self._auth.lower() == "pki":
+                if self._useragent is None:
+                    self._useragent = 'geosaurus/' + __version__
+                headers = [('User-Agent', self._useragent)]
+            else:
+                headers = [('Referer', self._referer),
+                           ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers(
+                    verify_cert=self._verify_cert)
+            opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
             resp = opener.open(url)
 
@@ -1002,18 +1026,19 @@ class _ArcGISConnection(object):
                 for ah in add_headers:
                     req.add_header(ah[0], ah[1])
             req.data = body
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent),
+            headers = [('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
+            if self._referer:
+                headers.append(('Referer', self._referer))
             if isinstance(add_headers, list):
                 for ah in add_headers:
                     headers.append(ah)
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers(verify_cert)
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers(verify_cert)
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
 
@@ -1027,13 +1052,16 @@ class _ArcGISConnection(object):
             encoded_postdata = None
             if postdata:
                 encoded_postdata = urlencode(postdata)
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            if self._referer:
+                headers = [('Referer', self._referer),
+                           ('User-Agent', self._useragent)]
+            else:
+                headers = [('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers(verify_cert)
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers(verify_cert)
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
             #print("***"+url)
