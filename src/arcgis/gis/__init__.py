@@ -3424,6 +3424,12 @@ class Item(dict):
                 self._hydrate()
             return dict.__getitem__(self, k)
 
+    @property
+    def homepage(self):
+        """returns the URL to the HTML page for the item"""
+        itemid = self.itemid
+        return "%s/home/item.html?id=%s" % (self._portal.resturl.replace("/sharing/rest/", ""), itemid)
+
     def download(self, save_path=None):
         """
         Downloads the data to the specified folder or a temporary folder if a folder isn't provided
