@@ -67,15 +67,65 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         Required Parameters:
           None
-        Optional:
-          :data: panda's dataframe containing attribute information
-          :geometry: list/array/geoseries of arcgis.geometry objects
-          :sr: spatial reference of the dataframe.  This can be the factory
-           code, WKT string, arcpy.SpatialReference object, or
-           arcgis.SpatailReference object.
-          :gis: passing a gis.GIS object set to Pro will ensure arcpy is
-           installed and a full swatch of functionality is available to
-           the end user.
+
+        =====================  ===============================================================
+        **optional argument**      **Description**
+        ---------------------  ---------------------------------------------------------------
+        data                   optional Panda's dataframe, object containing the attribute
+                               information.
+        ---------------------  ---------------------------------------------------------------
+        index                  optional Index or array-like
+                               Index to use for resulting frame. Will default to np.arange(n)
+                               if no indexing information part of input data and no index
+                               provided
+        ---------------------  ---------------------------------------------------------------
+        columns                optional Index or array-like, Column labels to use for
+                               resulting frame. Will default to np.arange(n) if no column
+                               labels are provided
+        ---------------------  ---------------------------------------------------------------
+        dtype                  dytpe, default None, Data type to force, otherwise infer
+        ---------------------  ---------------------------------------------------------------
+        copy                   optional boolean, default False. Copy data from inputs.
+        ---------------------  ---------------------------------------------------------------
+        geometry               optional list, default None, list/array/geoseries of
+                               arcgis.geometry objects
+        ---------------------  ---------------------------------------------------------------
+        sr                     optional spatial reference of the dataframe.
+        ---------------------  ---------------------------------------------------------------
+        gis                    optional gis.GIS object, default None. The GIS object allowes
+                               users to use non-public GIS information.
+        =====================  ===============================================================
+
+        Example: Creating SpatialDataFrame from a CSV
+
+        df = pd.read_csv(r'D:\ipython_working_folder\joel\store_locations.csv', index_col='OBJECTID')
+        geoms = []
+        for i in range(0, len(df)):
+            x = df.iloc[i]['X']
+            y = df.iloc[i]['Y']
+            geoms.append(Point({"x" : x, "y" : y, "spatialReference" : {"wkid" : 4326}}))
+        sdf = arcgis.features.SpatialDataFrame(data=df, geometry=geoms)
+
+        Example: Creating SpatailDataFrame Using List Comprehension
+
+        coords = [[1,2], [3,4]]
+        sdf = SpatialDataFrame(df,
+                     geometry=[arcgis.geometry.Geometry({'x':r[0],
+                     'y':r[1], 'spatialReference':{'wkid':4326}}) for r in coords])
+
+        .. Note: When passing in a geometry to the SpatialDataFrame, always assign it to the parameter geometry=<var>
+
+        Example: Creating From Feature Class
+
+        sdf = SpatialDataFrame.from_featureclass(r"c:\temp\data.gdb\cities)
+
+        Example: Create A SpatialDataFrame from a Service
+
+        gis = GIS(username="user1", password="password2")
+        item = gis.content.search("Roads")[0]
+        feature_layer = item.layers[0]
+        sdf = SpatialDataFrame.from_layer(feature_layer)
+
         """
         gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
