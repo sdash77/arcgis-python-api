@@ -26,6 +26,10 @@ def _date_handler(obj):
         return _date_handler(int(obj))
     elif isinstance(obj, decimal.Decimal):
         return float(obj)
+    elif isinstance(obj, (numpy.float, numpy.float32, numpy.float64)):
+        return float(obj)
+    elif isinstance(obj, numpy.ndarray):
+        return obj.tolist()
     else:
         return obj
 #----------------------------------------------------------------------
