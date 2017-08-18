@@ -1,5 +1,5 @@
 """
-The **gis** module provides an information model for GIS hosted 
+The **gis** module provides an information model for GIS hosted
 within ArcGIS Online or ArcGIS Enterprise.
 This module provides functionality to manage
 (create, read, update and delete) GIS users, groups and content. This module
@@ -61,12 +61,102 @@ class GIS(object):
 
     The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
+
+    Constructs a GIS object given a url and user credentials to ArcGIS Online
+    or an ArcGIS Portal. User credentials can be passed in using username/password
+    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
+    PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
+
+    If no url is provided, ArcGIS Online is used. If username/password
+    or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
+
+    A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
+    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+    The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
+    or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
+    saved in the configuration file by that profile name.
+
+    See https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/ for examples.
+
+
+    ================    ===============================================================
+    **Argument**        **Description**
+    ----------------    ---------------------------------------------------------------
+    url                 optional string, if URL is None, then the URL will be ArcGIS
+                        Online.  This should be a web address to either a local portal
+                        or to ArcGIS Online in the form:
+                        For Portal Example:
+                        <scheme>://<host>/<web_adatpor>
+
+    ----------------    ---------------------------------------------------------------
+    username            optional string, login user name (case sensative)
+    ----------------    ---------------------------------------------------------------
+    password            optional string, if a username is provided, a password is
+                        expected.  This is case sensative. If the password is not
+                        provided, user is prompted.
+    ----------------    ---------------------------------------------------------------
+    key_file            optional string, file path to a user's key certificate
+    ----------------    ---------------------------------------------------------------
+    cert_file           optional string, file path to a user's key certificate
+    ----------------    ---------------------------------------------------------------
+    verify_cert         optional boolean, if a site has an invalid certificate, set the
+                        value to False.  This will ensure that all SSL certification
+                        are ignore.  The default is True.
+                        **warning** setting the value to False can be a security risk.
+    ----------------    ---------------------------------------------------------------
+    set_active          optional boolean, the default is True.  If True, the GIS object
+                        will be used as the default GIS object throughout the whole
+                        scripting session.
+    ----------------    ---------------------------------------------------------------
+    client_id           optional string, used for OAuth athentication.  This is the
+                        client ID value.
+    ----------------    ---------------------------------------------------------------
+    profile             optional string, if set the profile contains login information
+                        for a given site.
+    ================    ===============================================================
+
+    In addition to explicitly named variable, the GIS object supports optional key word
+    arguments
+
+    ================    ===============================================================
+    **kwargs**          **Description**
+    ----------------    ---------------------------------------------------------------
+    proxy_host          optional string, host name of the proxy server
+    ----------------    ---------------------------------------------------------------
+    proxy_port          optional integer, proxy host port.  The default is 80.
+    ================    ===============================================================
+
+    Usage Example 1: Anonymous Login to ArcGIS Online:
+
+    gis = GIS()
+
+    Usage Example 2: Built-in Login to ArcGIS Online:
+
+    gis = GIS(username="someuser", password="secret1234")
+
+    Usage Example 3: Built-in Login to ArcGIS Enterprise
+
+    gis = GIS(url="http://pythonplayground.esri.com/portal",
+              username="user1", password="password1")
+
+    Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
+
+    gis = GIS(url="http://pythonplayground.esri.com/portal",
+              username="user1", password="password1",
+              verify_cert=False)
+
+
+    Usage Example 5: Anonymous ArcGIS Online Login with Proxy
+
+    gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
+
+
     """
     _server_list = None
     # admin = None
     # oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
-                 verify_cert=True, set_active=True, client_id=None, profile=None):
+                 verify_cert=True, set_active=True, client_id=None, profile=None, **kwargs):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
@@ -82,6 +172,9 @@ class GIS(object):
         or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
         saved in the configuration file by that profile name.
         """
+        self._proxy_host = kwargs.pop('proxy_host', None)
+        self._proxy_port = kwargs.pop('proxy_port', 80)
+
         from arcgis._impl.tools import _Tools
 
         if profile is not None:
@@ -144,8 +237,12 @@ class GIS(object):
         self._datastores_list = None
 
         try:
-            self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file,
-                                           self._cert_file, verify_cert=self._verify_cert,
+            self._portal = portalpy.Portal(self._url, self._username,
+                                           self._password, self._key_file,
+                                           self._cert_file,
+                                           proxy_host=self._proxy_host,
+                                           proxy_port=self._proxy_port,
+                                           verify_cert=self._verify_cert,
                                            client_id=self._client_id)
         except Exception as e:
             if str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -169,7 +266,9 @@ class GIS(object):
                                            self._key_file,
                                            self._cert_file,
                                            verify_cert=self._verify_cert,
-                                           client_id=self._client_id)
+                                           client_id=self._client_id,
+                                           proxy_port=self._proxy_port,
+                                           proxy_host=self._proxy_host)
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
@@ -194,61 +293,6 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-
-    #@property
-    #def _servers(self):
-        #"""
-        #The list of server objects for servers federated with the GIS.
-        #"""
-        #if self._con._auth is None or \
-           #self._con._auth.lower() == "anon":
-            #return None
-        #from arcgis.gis.server import Server
-        #if self._server_list:
-            #return self._server_list
-
-        #self._server_list = []
-        #try:
-            #is_portal = self.properties.isPortal
-            #if self.properties.isPortal == False:
-                #res = self._portal.con.post("portals/self/urls", {"f": "json"})
-                #if 'urls' in res:
-                    #urls = res['urls']
-                    #servers = []
-                    #for stype in ['features', 'tiles']:
-                        #if stype in urls:
-                            #for scheme in ['http', 'https']:
-                                #if scheme in urls[stype]:
-                                    #for url in urls[stype][scheme]:
-                                        #surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/services".format(
-                                            #scheme=scheme,
-                                            #portalid=self.properties.id,
-                                            #url=url)
-                                        #admin_surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/admin".format(
-                                            #scheme=scheme,
-                                            #portalid=self.properties.id,
-                                            #url=url)
-                                        #servers.append(
-                                            ##surl
-                                            #Server(url=surl,
-                                                   #gis=self,
-                                                   #is_agol=True)
-                                        #)
-                    #self._server_list = servers
-            #else:
-                #res = self._portal.con.post("portals/self/servers", {"f": "json"})
-                #servers = res['servers']
-                #admin_url = None
-                #for server in servers:
-                    #admin_url = server['adminUrl']
-                    #try:
-                        #self._server_list.append(Server(url=admin_url, gis=self))
-                    #except:
-                        #_log.error("Could not access the servers at: " + admin_url)
-
-        #except:
-            #_log.error("Could not access the servers associated with this site.")
-        #return self._server_list
 
     @_lazy_property
     def users(self):
@@ -305,12 +349,12 @@ class GIS(object):
 
     def update_properties(self, properties_dict):
         """Updates the GIS's properties from those in properties_dict.
-        
+
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item_properties     Required dictionary. 
+        item_properties     Required dictionary.
         ===============     ====================================================================
 
 
@@ -492,7 +536,7 @@ class Datastore(dict):
     @property
     def ref_count(self):
         """
-        The total number of references to this data item that exist on the server. You can use this 
+        The total number of references to this data item that exist on the server. You can use this
         property to determine if this data item can be safely deleted (or taken down for maintenance).
         """
         data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
@@ -524,14 +568,14 @@ class Datastore(dict):
     def update(self, item):
         """
         Edits this data item to update its connection information.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required dictionary. The representation of the updated item.
         ===============     ====================================================================
 
-  
+
         :return:
            True if successful.
         """
@@ -589,7 +633,7 @@ class DatastoreManager(object):
     This class is not created by users directly.
     Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
     arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
-    Users call methods on this 'datastores' object to manage the datastores in a site 
+    Users call methods on this 'datastores' object to manage the datastores in a site
     federated with the portal.
     """
     def __init__(self, gis, admin_url, server):
@@ -853,20 +897,20 @@ class DatastoreManager(object):
                types=None, id=None):
         """
            You can use this operation to search through the various data
-           items registered in the server's data store. Searching without 
-           specifying the parent path and other parameters returns a list 
+           items registered in the server's data store. Searching without
+           specifying the parent path and other parameters returns a list
            of all registered data items.
 
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        parentPath          Optional string. The path of the parent under which to find items. 
+        parentPath          Optional string. The path of the parent under which to find items.
                             Pass '/' to get the root data items.
         ---------------     --------------------------------------------------------------------
         ancestorPath        Optional string. The path of the ancestor under which to find items.
         ---------------     --------------------------------------------------------------------
-        types               Optional string. A comma separated filter for the type of the items. 
+        types               Optional string. A comma separated filter for the type of the items.
                             Types include folder, egdb, bigDataFileShare, datadir.
         ---------------     --------------------------------------------------------------------
         id                  Optional string. A filter to search by the ID of the item.
@@ -3507,15 +3551,15 @@ class Item(dict):
         """
         Downloads the data to the specified folder or a temporary folder if a folder is not provided.
 
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save_path           Optional string. Folder location to download the file to.
         ===============     ====================================================================
-        
-        
-        :return: 
+
+
+        :return:
            The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
@@ -3535,28 +3579,28 @@ class Item(dict):
         Available only to users with an organizational subscription.
         Invokable only by the service item owner or an administrator.
         This is useful for long running exports that could hold up a script.
-        
-        
+
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Required string. The desired name of the exported service item.
         ---------------     --------------------------------------------------------------------
-        export_format       Required string. The format to export the data to. Allowed types: 'Shapefile', 
+        export_format       Required string. The format to export the data to. Allowed types: 'Shapefile',
                             'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML'
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
-                            and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/ 
+                            and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
                             for guidance.
         ---------------     --------------------------------------------------------------------
-        wait                Optional boolean. Default is True, which forces a wait for the 
-                            export to complete; use False for when it is okay to proceed while 
+        wait                Optional boolean. Default is True, which forces a wait for the
+                            export to complete; use False for when it is okay to proceed while
                             the export continues to completion.
         ===============     ====================================================================
 
 
         :return:
-           Item or dictionary.  Item is returned when wait=True. A dictionary describing the status of 
+           Item or dictionary.  Item is returned when wait=True. A dictionary describing the status of
            the item is returned when wait=False.
         """
         import time
@@ -3599,12 +3643,12 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_id              Optional string. The job ID returned during publish, generateFeatures, 
+        job_id              Optional string. The job ID returned during publish, generateFeatures,
                             export, and createService calls.
         ---------------     --------------------------------------------------------------------
-        job_type            Optional string. The type of asynchronous job for which the status 
-                            has to be checked. Default is none, which checks the item's status. 
-                            This parameter is optional unless used with the operations listed 
+        job_type            Optional string. The type of asynchronous job for which the status
+                            has to be checked. Default is none, which checks the item's status.
+                            This parameter is optional unless used with the operations listed
                             below. Values: `publish`, generateFeatures, export, and createService
         ===============     ====================================================================
 
@@ -3649,15 +3693,15 @@ class Item(dict):
         """
         Downloads the thumbnail for this item.
 
-    
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save_folder          Optional string. Folder location to download the item's thumbnail to.
         ===============     ====================================================================
-    
-    
-        :return: 
+
+
+        :return:
            For a successful download of the thumbnail, a file path. None if the item does not have a thumbnail.
         """
         if self.thumbnail is None:
@@ -3738,19 +3782,19 @@ class Item(dict):
         return self.update(metadata=xml_file)
 
     def download_metadata(self, save_folder=None):
-        """ 
-        Downloads the item metadata for the specified item id. Items with metadata have 'Metadata' 
+        """
+        Downloads the item metadata for the specified item id. Items with metadata have 'Metadata'
         in their typeKeywords.
 
-    
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save_folder          Optional string. Folder location to download the item's metadata to.
         ===============     ====================================================================
-    
-    
-        :return: 
+
+
+        :return:
            For a successful download of metadata, a file path. None if the item does not have metadata.
         """
         metadataurlpath = 'content/items/' + self.itemid + '/info/metadata/metadata.xml'
@@ -3878,7 +3922,7 @@ class Item(dict):
         Allows the administrator to reassign a single item from one user to another.
 
         .. note::
-            If you wish to move all of a user's items (and groups) to another user then use the 
+            If you wish to move all of a user's items (and groups) to another user then use the
             user.reassign_to() method.  This method only moves one item at a time.
 
         ================  ========================================================
@@ -3911,17 +3955,17 @@ class Item(dict):
         ======================  ========================================================
         **Argument**            **Description**
         ----------------------  --------------------------------------------------------
-        everyone                Optional boolean. Default is False, don't share with 
+        everyone                Optional boolean. Default is False, don't share with
                                 everyone.
         ----------------------  --------------------------------------------------------
-        org                     Optional boolean. Default is False, don't share with 
+        org                     Optional boolean. Default is False, don't share with
                                 the organization.
         ----------------------  --------------------------------------------------------
         groups                  Optional list of group names as strings, or a list of
-                                arcgis.gis.Group objects, or a comma-separated list of 
+                                arcgis.gis.Group objects, or a comma-separated list of
                                 group IDs.
         ----------------------  --------------------------------------------------------
-        allow_members_to_edit   Optional boolean. Default is False, to allow item to be 
+        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
                                 shared with groups that allow shared update
         ======================  ========================================================
 
@@ -3968,7 +4012,7 @@ class Item(dict):
         ================  =========================================================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
-        groups            Optional list of group names as strings, or a list of arcgis.gis.Group objects, 
+        groups            Optional list of group names as strings, or a list of arcgis.gis.Group objects,
                           or a comma-separated list of group IDs.
         ================  =========================================================================================
 
@@ -4033,7 +4077,7 @@ class Item(dict):
             to the file in the data argument.
 
             For item_properties, pass in arguments for only the properties you want to be updated.
-            All other properties will be untouched.  For example, if you want to update only the 
+            All other properties will be untouched.  For example, if you want to update only the
             item's description, then only provide the description argument in item_properties.
 
 
@@ -4111,22 +4155,22 @@ class Item(dict):
     def get_data(self, try_json=True):
         """
         Retrieves the data component of an item and returns the data associated with an item.
-        
+
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        try_json            Optional string. Default is True. For JSON/text files, if try_json 
-                            is True, the method tries to convert the data to a Python dictionary 
-                            (use json.dumps(data) to convert the dictionary to a string), 
-                            otherwise the data is returned as a string. 
+        try_json            Optional string. Default is True. For JSON/text files, if try_json
+                            is True, the method tries to convert the data to a Python dictionary
+                            (use json.dumps(data) to convert the dictionary to a string),
+                            otherwise the data is returned as a string.
         ===============     ====================================================================
 
 
         :return:
            Dependent on the content type of the data.
-           For non-JSON/text data, binary files are returned and the path to the downloaded file. 
-           For JSON/text files, a Python dictionary or a string.  All others will be a byte array, 
+           For non-JSON/text data, binary files are returned and the path to the downloaded file.
+           For JSON/text files, a Python dictionary or a string.  All others will be a byte array,
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
         item_data = self._portal.get_item_data(self.itemid, try_json)
@@ -4161,15 +4205,15 @@ class Item(dict):
 
     def related_items(self, rel_type, direction="forward"):
         """
-        Retrieves the items related to this item. Relationsships can be added and deleted using 
+        Retrieves the items related to this item. Relationsships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
 
 	===============     ====================================================================
 	**Argument**        **Description**
 	---------------     --------------------------------------------------------------------
-	rel_type            Required string.  The type of the related item; is one of 
-	                    ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
-	                    'Service2Data', 'Service2Service']. See Relationship types in 
+	rel_type            Required string.  The type of the related item; is one of
+	                    ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
+	                    'Service2Data', 'Service2Service']. See Relationship types in
 	                    REST API help for more information on this parameter.
 	---------------     --------------------------------------------------------------------
 	direction           Required string. One of ['forward', 'reverse']
@@ -4179,8 +4223,8 @@ class Item(dict):
 	:return:
 	   The list of related items.
 	"""
-        
-        
+
+
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
         if not direction in self._RELATIONSHIP_DIRECTIONS:
@@ -4198,16 +4242,16 @@ class Item(dict):
 
     def add_relationship(self, rel_item, rel_type):
         """ Adds a relationship from this item to rel_item.
-        
+
         .. note::
-            Relationships are not tied to an item. They are directional links from an origin item 
-            to a destination item and have a type. The type defines the valid origin and destination 
-            item types as well as some rules. See Relationship types in REST API help for more information. 
-            Users don't have to own the items they relate unless so defined by the rules of the relationship 
+            Relationships are not tied to an item. They are directional links from an origin item
+            to a destination item and have a type. The type defines the valid origin and destination
+            item types as well as some rules. See Relationship types in REST API help for more information.
+            Users don't have to own the items they relate unless so defined by the rules of the relationship
             type.
-        
+
             Users can only delete relationships they create.
-        
+
             Relationships are deleted automatically if one of the two items is deleted.
 
 
@@ -4216,9 +4260,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_item            Required string.  The related item ID.
         ---------------     --------------------------------------------------------------------
-        rel_type            Required string.  The type of the related item; is one of 
-                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
-                            'Service2Data', 'Service2Service']. See Relationship types in 
+        rel_type            Required string.  The type of the related item; is one of
+                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
+                            'Service2Data', 'Service2Service']. See Relationship types in
                             REST API help for more information on this parameter.
         ===============     ====================================================================
 
@@ -4242,7 +4286,7 @@ class Item(dict):
             return resp.get('success')
 
     def delete_relationship(self, rel_item, rel_type):
-        """ 
+        """
         Deletes a relationship between this item and the rel_item.
 
 
@@ -4251,9 +4295,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_item            Required string.  The related item ID.
         ---------------     --------------------------------------------------------------------
-        rel_type            Required string.  The type of the related item; is one of 
-                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
-                            'Service2Data', 'Service2Service']. See Relationship types in 
+        rel_type            Required string.  The type of the related item; is one of
+                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
+                            'Service2Data', 'Service2Service']. See Relationship types in
                             REST API help for more information on this parameter.
         ===============     ====================================================================
 
@@ -4293,7 +4337,7 @@ class Item(dict):
 
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
-        
+
         .. note::
             ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
 
@@ -4502,7 +4546,7 @@ class Item(dict):
         return Item(self._gis, serviceitem_id)
 
     def move(self, folder, owner=None):
-        """ 
+        """
         Moves this item to the folder with the given name.
 
         ================  ===============================================================
@@ -4586,7 +4630,7 @@ class Item(dict):
                           built at publishing time.  This will increase the time it takes
                           to publish the service.
         ================  ===============================================================
-        
+
         :return:
            The item if successfully added, None if unsuccessful.
 
@@ -4653,7 +4697,7 @@ class Item(dict):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        enable            Optional boolean. Default is True which enables delete 
+        enable            Optional boolean. Default is True which enables delete
                           protection, False to disable delete protection.
         ================  ===============================================================
 
@@ -4676,7 +4720,7 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        ret                 Required dictionary. Represents the result of a publish REST call. 
+        ret                 Required dictionary. Represents the result of a publish REST call.
                             This dict should contain the `serviceItemId` and `jobId` of the publishing job.
         ---------------     --------------------------------------------------------------------
         folder              Required string. Obtained from self.ownerFolder
@@ -4686,7 +4730,7 @@ class Item(dict):
         :return:
            The status.
         """
-        
+
         import time
         try:
             serviceitem_id = ret[0]['serviceItemId']
@@ -4803,11 +4847,11 @@ class Item(dict):
         currently rated item, the new rating will overwrite the existing
         rating. A user cannot rate their own item. Available only to
         authenticated users.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required float. The rating to be applied for the item. The value 
+        value               Required float. The rating to be applied for the item. The value
                             must be a floating point number between 1.0 and 5.0.
         ===============     ====================================================================
 
