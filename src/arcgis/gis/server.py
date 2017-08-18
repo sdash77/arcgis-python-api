@@ -47,8 +47,8 @@ class ServerManager(object):
                 self._server_list.append(Server(url=admin_url,
                                                 gis=self._gis,
                                                 info=server,
-                                                proxy_host=self._gis.proxy_host,
-                                                proxy_port=self._gis.proxy_port))
+                                                proxy_host=self._gis._proxy_host,
+                                                proxy_port=self._gis._proxy_port))
             except:
                 _log.warn("Could not access the server at " + admin_url)
 
