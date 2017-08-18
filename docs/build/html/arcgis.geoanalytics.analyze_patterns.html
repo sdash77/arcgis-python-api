@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.geoanalytics.toc.html">arcgis.geoanalytics module</a> &raquo;</li>
-        
-      <li>arcgis.geoanalytics.analyze_patterns module</li>
-    
-    
+      
+    <li>arcgis.geoanalytics.analyze_patterns module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.geoanalytics.analyze_patterns.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -612,7 +587,7 @@ find_hot_spots identifies statistically significant clustering in the spatial pa
 <h2>calculate_density<a class="headerlink" href="#calculate-density" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geoanalytics.analyze_patterns.calculate_density">
-<code class="descclassname">analyze_patterns.</code><code class="descname">calculate_density</code><span class="sig-paren">(</span><em>input_layer</em>, <em>fields: str = None</em>, <em>weight: str = ‘Uniform’</em>, <em>bin_type: str = ‘Square’</em>, <em>bin_size: float = None</em>, <em>bin_size_unit: str = None</em>, <em>time_step_interval: int = None</em>, <em>time_step_interval_unit: str = None</em>, <em>time_step_repeat_interval: int = None</em>, <em>time_step_repeat_interval_unit: str = None</em>, <em>time_step_reference: datetime.datetime = None</em>, <em>radius: float = None</em>, <em>radius_unit: str = None</em>, <em>area_units: str = ‘SquareKilometers’</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.analyze_patterns.calculate_density" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analyze_patterns.</code><code class="descname">calculate_density</code><span class="sig-paren">(</span><em>input_layer</em>, <em>fields: str = None</em>, <em>weight: str = 'Uniform'</em>, <em>bin_type: str = 'Square'</em>, <em>bin_size: float = None</em>, <em>bin_size_unit: str = None</em>, <em>time_step_interval: int = None</em>, <em>time_step_interval_unit: str = None</em>, <em>time_step_repeat_interval: int = None</em>, <em>time_step_repeat_interval_unit: str = None</em>, <em>time_step_reference: datetime.datetime = None</em>, <em>radius: float = None</em>, <em>radius_unit: str = None</em>, <em>area_units: str = 'SquareKilometers'</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.analyze_patterns.calculate_density" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parameters:</p>
 <blockquote>
 <div><p>input_layer: Input Points (Feature layer). Required parameter.</p>
@@ -660,7 +635,7 @@ find_hot_spots identifies statistically significant clustering in the spatial pa
 <h2>find_hot_spots<a class="headerlink" href="#find-hot-spots" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geoanalytics.analyze_patterns.find_hot_spots">
-<code class="descclassname">analyze_patterns.</code><code class="descname">find_hot_spots</code><span class="sig-paren">(</span><em>point_layer</em>, <em>bin_size: float = 5</em>, <em>bin_size_unit: str = ‘Miles’</em>, <em>neighborhood_distance: float = 5</em>, <em>neighborhood_distance_unit: str = ‘Miles’</em>, <em>time_step_interval: int = None</em>, <em>time_step_interval_unit: str = None</em>, <em>time_step_alignment: str = None</em>, <em>time_step_reference: datetime.datetime = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.analyze_patterns.find_hot_spots" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analyze_patterns.</code><code class="descname">find_hot_spots</code><span class="sig-paren">(</span><em>point_layer</em>, <em>bin_size: float = 5</em>, <em>bin_size_unit: str = 'Miles'</em>, <em>neighborhood_distance: float = 5</em>, <em>neighborhood_distance_unit: str = 'Miles'</em>, <em>time_step_interval: int = None</em>, <em>time_step_interval_unit: str = None</em>, <em>time_step_alignment: str = None</em>, <em>time_step_reference: datetime.datetime = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.analyze_patterns.find_hot_spots" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parameters:</p>
 <blockquote>
 <div><p>point_layer: Input Points (FeatureSet). Required parameter.</p>
@@ -733,18 +708,15 @@ summary field values are evaluated.</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.geoanalytics.find_locations.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.find_locations module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.geoanalytics.find_locations.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.find_locations module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.geoanalytics.toc.html" class="btn btn-neutral" title="arcgis.geoanalytics module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.geoanalytics.toc.html" class="btn btn-neutral" title="arcgis.geoanalytics module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -778,8 +750,7 @@ summary field values are evaluated.</p>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

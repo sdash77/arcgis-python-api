@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -48,7 +46,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -89,10 +86,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -549,10 +543,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -561,40 +553,23 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
-      <li>arcgis.mapping module</li>
-    
-    
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>arcgis.mapping module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.mapping.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -652,7 +627,7 @@ entire map extent specified.</p>
 <p>MapImageLayer does not display tiled images. To display tiled map service layers, see TileLayer.</p>
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.estimate_export_tiles_size">
-<code class="descname">estimate_export_tiles_size</code><span class="sig-paren">(</span><em>exportBy</em>, <em>levels</em>, <em>tilePackage=False</em>, <em>exportExtent=’DEFAULTEXTENT’</em>, <em>areaOfInterest=None</em>, <em>asynchronous=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.estimate_export_tiles_size" title="Permalink to this definition">¶</a></dt>
+<code class="descname">estimate_export_tiles_size</code><span class="sig-paren">(</span><em>exportBy</em>, <em>levels</em>, <em>tilePackage=False</em>, <em>exportExtent='DEFAULTEXTENT'</em>, <em>areaOfInterest=None</em>, <em>asynchronous=True</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.estimate_export_tiles_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>The estimateExportTilesSize operation is an asynchronous task that
 allows estimation of the size of the tile package or the cache data
 set that you download using the Export Tiles operation. This
@@ -713,7 +688,7 @@ is set to False, the function will wait until the task completes.</p>
 
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.export_map">
-<code class="descname">export_map</code><span class="sig-paren">(</span><em>bbox</em>, <em>bboxSR=None</em>, <em>size=‘600</em>, <em>550’</em>, <em>dpi=200</em>, <em>imageSR=None</em>, <em>image_format=’png’</em>, <em>layerDefFilter=None</em>, <em>layers=None</em>, <em>transparent=False</em>, <em>timeFilter=None</em>, <em>layerTimeOptions=None</em>, <em>dynamicLayers=None</em>, <em>mapScale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.export_map" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export_map</code><span class="sig-paren">(</span><em>bbox</em>, <em>bboxSR=None</em>, <em>size='600</em>, <em>550'</em>, <em>dpi=200</em>, <em>imageSR=None</em>, <em>image_format='png'</em>, <em>layerDefFilter=None</em>, <em>layers=None</em>, <em>transparent=False</em>, <em>timeFilter=None</em>, <em>layerTimeOptions=None</em>, <em>dynamicLayers=None</em>, <em>mapScale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.export_map" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>The export operation is performed on a map service resource.
 The result of this operation is a map image resource. This
@@ -800,7 +775,7 @@ specified bounding box (bbox).</dd>
 
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.export_tiles">
-<code class="descname">export_tiles</code><span class="sig-paren">(</span><em>levels</em>, <em>exportBy=’LevelID’</em>, <em>tilePackage=False</em>, <em>exportExtent=’DEFAULT’</em>, <em>optimizeTilesForSize=True</em>, <em>compressionQuality=0</em>, <em>areaOfInterest=None</em>, <em>asynchronous=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.export_tiles" title="Permalink to this definition">¶</a></dt>
+<code class="descname">export_tiles</code><span class="sig-paren">(</span><em>levels</em>, <em>exportBy='LevelID'</em>, <em>tilePackage=False</em>, <em>exportExtent='DEFAULT'</em>, <em>optimizeTilesForSize=True</em>, <em>compressionQuality=0</em>, <em>areaOfInterest=None</em>, <em>asynchronous=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.export_tiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>The exportTiles operation is performed as an asynchronous task and
 allows client applications to download map tiles from a server for
 offline use. This operation is performed on a Map Service that
@@ -895,7 +870,7 @@ manually.</dd>
 
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.find">
-<code class="descname">find</code><span class="sig-paren">(</span><em>searchText</em>, <em>layers</em>, <em>contains=True</em>, <em>searchFields=”</em>, <em>sr=”</em>, <em>layerDefs=”</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=”</em>, <em>geometryPrecision=”</em>, <em>dynamicLayers=”</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>gdbVersion=”</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.find" title="Permalink to this definition">¶</a></dt>
+<code class="descname">find</code><span class="sig-paren">(</span><em>searchText</em>, <em>layers</em>, <em>contains=True</em>, <em>searchFields=''</em>, <em>sr=''</em>, <em>layerDefs=''</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=''</em>, <em>geometryPrecision=''</em>, <em>dynamicLayers=''</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>gdbVersion=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.find" title="Permalink to this definition">¶</a></dt>
 <dd><p>performs the map service find operation</p>
 </dd></dl>
 
@@ -906,7 +881,7 @@ manually.</dd>
 
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.generate_kml">
-<code class="descname">generate_kml</code><span class="sig-paren">(</span><em>save_location</em>, <em>docName</em>, <em>layers</em>, <em>layerOptions=’composite’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.generate_kml" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generate_kml</code><span class="sig-paren">(</span><em>save_location</em>, <em>docName</em>, <em>layers</em>, <em>layerOptions='composite'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.generate_kml" title="Permalink to this definition">¶</a></dt>
 <dd><p>The generateKml operation is performed on a map service resource.
 The result of this operation is a KML document wrapped in a KMZ
 file. The document contains a network link to the KML Service
@@ -939,7 +914,7 @@ values: composite | separateImage |</p>
 
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayer.identify">
-<code class="descname">identify</code><span class="sig-paren">(</span><em>geometry</em>, <em>mapExtent</em>, <em>imageDisplay</em>, <em>tolerance</em>, <em>geometryType=’esriGeometryPoint’</em>, <em>sr=None</em>, <em>layerDefs=None</em>, <em>time_value=None</em>, <em>layerTimeOptions=None</em>, <em>layers=’top’</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=None</em>, <em>geometryPrecision=None</em>, <em>dynamicLayers=None</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>gdbVersion=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.identify" title="Permalink to this definition">¶</a></dt>
+<code class="descname">identify</code><span class="sig-paren">(</span><em>geometry</em>, <em>mapExtent</em>, <em>imageDisplay</em>, <em>tolerance</em>, <em>geometryType='esriGeometryPoint'</em>, <em>sr=None</em>, <em>layerDefs=None</em>, <em>time_value=None</em>, <em>layerTimeOptions=None</em>, <em>layers='top'</em>, <em>returnGeometry=True</em>, <em>maxAllowableOffset=None</em>, <em>geometryPrecision=None</em>, <em>dynamicLayers=None</em>, <em>returnZ=False</em>, <em>returnM=False</em>, <em>gdbVersion=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayer.identify" title="Permalink to this definition">¶</a></dt>
 <dd><p>The identify operation is performed on a map service resource
 to discover features at a geographic location. The result of this
 operation is an identify results resource. Each identified result
@@ -1230,7 +1205,7 @@ this fonts resource is represented in Vector Tile Style resource.</p>
 
 <dl class="method">
 <dt id="arcgis.mapping.VectorTileLayer.tile_sprite">
-<code class="descname">tile_sprite</code><span class="sig-paren">(</span><em>out_format=’sprite.json’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.VectorTileLayer.tile_sprite" title="Permalink to this definition">¶</a></dt>
+<code class="descname">tile_sprite</code><span class="sig-paren">(</span><em>out_format='sprite.json'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.VectorTileLayer.tile_sprite" title="Permalink to this definition">¶</a></dt>
 <dd><p>This resource returns sprite image and metadata</p>
 </dd></dl>
 
@@ -1249,7 +1224,7 @@ returned in PBF format. If a tile is not found, an error is returned.</p>
 <h2>export_map<a class="headerlink" href="#export-map" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.mapping.export_map">
-<code class="descclassname">mapping.</code><code class="descname">export_map</code><span class="sig-paren">(</span><em>web_map_as_json: str = None</em>, <em>format: str = ‘PDF’</em>, <em>layout_template: str = ‘MAP_ONLY’</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.export_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">mapping.</code><code class="descname">export_map</code><span class="sig-paren">(</span><em>web_map_as_json: str = None</em>, <em>format: str = 'PDF'</em>, <em>layout_template: str = 'MAP_ONLY'</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.export_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function takes the state of the web map(for example, included services, layer visibility
 settings, client-side graphics, and so forth) and returns either (a) a page layout or
 (b) a map without page surrounds of the specified area of interest in raster or vector format.
@@ -1298,18 +1273,15 @@ Parameters:</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.realtime.html" class="btn btn-neutral float-right" title="arcgis.realtime module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.realtime.html" class="btn btn-neutral float-right" title="arcgis.realtime module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.geoprocessing.html" class="btn btn-neutral" title="arcgis.geoprocessing module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.geoprocessing.html" class="btn btn-neutral" title="arcgis.geoprocessing module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1343,8 +1315,7 @@ Parameters:</p>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

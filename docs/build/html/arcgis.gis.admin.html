@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
-        
-      <li>arcgis.gis.admin module</li>
-    
-    
+      
+    <li>arcgis.gis.admin module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.gis.admin.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -860,7 +835,7 @@ wksp_&lt;your_collab_name&gt;, grp_&lt;your_collab_name&gt; to create the collab
 
 <dl class="method">
 <dt id="arcgis.gis.admin.CollaborationManager.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>description</em>, <em>workspace_name</em>, <em>workspace_description</em>, <em>portal_group_id</em>, <em>host_contact_first_name</em>, <em>host_contact_last_name</em>, <em>host_contact_email_address</em>, <em>access_mode=’sendAndReceive’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.CollaborationManager.create" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>description</em>, <em>workspace_name</em>, <em>workspace_description</em>, <em>portal_group_id</em>, <em>host_contact_first_name</em>, <em>host_contact_last_name</em>, <em>host_contact_email_address</em>, <em>access_mode='sendAndReceive'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.CollaborationManager.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>The create method creates a collaboration. The host
 of the collaboration is the portal where it is created. The initial
 workspace for the collaboration is also created. A portal group in
@@ -1873,32 +1848,6 @@ The image repeats horizontally if it is smaller than the browser or device windo
 a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on
 smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size.</p>
 <p>For more information, refer to <a class="reference external" href="http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm">http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm</a></p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="18%" />
-<col width="82%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>background_file</td>
-<td><dl class="first last docutils">
-<dt>optional string. If using a custom background, specify path to image file.</dt>
-<dd>To remove an existing background, specify None for this argument and
-False for is_built_in argument.</dd>
-</dl>
-</td>
-</tr>
-<tr class="row-odd"><td>is_built_in</td>
-<td><dl class="first last docutils">
-<dt>optional bool, default=True. The built-in background is set by default.</dt>
-<dd>If uploading a custom image, this parameter is ignored.</dd>
-</dl>
-</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2177,73 +2126,9 @@ recovered after executing this operation.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.Logs.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time=None</em>, <em>level=’WARNING’</em>, <em>query_filter=’*’</em>, <em>page_size=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Logs.query" title="Permalink to this definition">¶</a></dt>
+<code class="descname">query</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time=None</em>, <em>level='WARNING'</em>, <em>query_filter='*'</em>, <em>page_size=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Logs.query" title="Permalink to this definition">¶</a></dt>
 <dd><p>The query operation allows you to aggregate, filter, and page
 through logs written by the portal.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="20%" />
-<col width="80%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>start_time</td>
-<td>required datetime/integer. The most recent time to query.
-Time can be specified as a portal timestamp (format in
-“%Y-%m-%dT%H:%M:%S”) or in milliseconds since UNIX epoch. For
-:Examples:
-Datetime Object: datetime.datetime.now()
-Timestamp: “2015-08-01T15:17:20,123”
-Milliseconds: 1312237040123
-Default: datetime.datetime.now()</td>
-</tr>
-<tr class="row-odd"><td>end_time</td>
-<td>optional datetime/integer, The oldest time to include in the
-result set. You can use this to limit the query to the last
-number of minutes, hours, days, months, and years as needed.
-Datetime Object: datetime.datetime.now()
-Timestamp: “2015-08-01T15:17:20,123”
-Milliseconds: 1312237040123
-Default: datetime.datetime.now()</td>
-</tr>
-<tr class="row-even"><td>level</td>
-<td>optional string, Can be one of [OFF, SEVERE, WARNING, INFO,
-FINE, VERBOSE, DEBUG]. Returns only records with a log level at
-or more severe than the level specified.
-Default: WARNING</td>
-</tr>
-<tr class="row-odd"><td>query_filter</td>
-<td><p class="first">optional string, Filtering is allowed by any combination of
-codes, users, and source components. The filter accepts a comma
-delimited list of filter definitions. If any definition is
-omitted, it defaults to all (“*”).
-:Example:
-{“codes”:[204000-205999,212015,219114], “users”:[“admin”,”jcho”],</p>
-<blockquote>
-<div>“source”: [“PORTAL ADMIN”]}</div></blockquote>
-<p>The source of logged events are generated from the sharing,
-administrative, and portal components of the software.
-For example:</p>
-<blockquote class="last">
-<div><ul class="simple">
-<li>Events related to publishing and users are categorized under
-SHARING.</li>
-<li>Events related to security and indexing are categorized under
-PORTAL ADMIN.</li>
-<li>Events related to installing the software are categorized
-under PORTAL.</li>
-</ul>
-</div></blockquote>
-</td>
-</tr>
-<tr class="row-even"><td>page_size</td>
-<td>optional integer, the number of log records to return. The
-default is 1000</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2507,7 +2392,7 @@ the key store.</p>
 <dd><p>Manages the Portal’s SSL Certificates</p>
 <dl class="method">
 <dt id="arcgis.gis.admin.SSLCertificates.generate">
-<code class="descname">generate</code><span class="sig-paren">(</span><em>alias</em>, <em>common_name</em>, <em>organization</em>, <em>key_algorithm=’RSA’</em>, <em>validity=90</em>, <em>key_size=2048</em>, <em>signature_algorithm=’SHA256withRSA’</em>, <em>unit=”</em>, <em>city=”</em>, <em>state=”</em>, <em>country_code=”</em>, <em>alt_name=”</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.SSLCertificates.generate" title="Permalink to this definition">¶</a></dt>
+<code class="descname">generate</code><span class="sig-paren">(</span><em>alias</em>, <em>common_name</em>, <em>organization</em>, <em>key_algorithm='RSA'</em>, <em>validity=90</em>, <em>key_size=2048</em>, <em>signature_algorithm='SHA256withRSA'</em>, <em>unit=''</em>, <em>city=''</em>, <em>state=''</em>, <em>country_code=''</em>, <em>alt_name=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.SSLCertificates.generate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use this operation to create a self-signed certificate or as a
 starting point for getting a production-ready CA-signed
 certificate. The portal will generate a certificate for you and
@@ -2687,7 +2572,7 @@ within Portal for ArcGIS. The resource returns the total number of
 members in the system.</p>
 <dl class="method">
 <dt id="arcgis.gis.admin.EnterpriseUsers.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>first_name</em>, <em>last_name</em>, <em>email</em>, <em>role=’org_user’</em>, <em>level=2</em>, <em>provider=’arcgis’</em>, <em>idp_username=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseUsers.create" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>first_name</em>, <em>last_name</em>, <em>email</em>, <em>role='org_user'</em>, <em>level=2</em>, <em>provider='arcgis'</em>, <em>idp_username=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseUsers.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation is used to pre-create built-in or enterprise
 accounts within the portal. The provider parameter is used to
 indicate the type of user account.</p>
@@ -2780,7 +2665,7 @@ an administrator to force a refresh.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.EnterpriseUsers.search">
-<code class="descname">search</code><span class="sig-paren">(</span><em>query=”</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseUsers.search" title="Permalink to this definition">¶</a></dt>
+<code class="descname">search</code><span class="sig-paren">(</span><em>query=''</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseUsers.search" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation searches users in the configured enterprise user
 store. You can narrow down the search using the filter parameter.</p>
 <dl class="docutils">
@@ -2835,7 +2720,7 @@ enterprise groups within the portal. The resource returns the total
 number of groups in the system.</p>
 <dl class="method">
 <dt id="arcgis.gis.admin.EnterpriseGroups.get_group_users">
-<code class="descname">get_group_users</code><span class="sig-paren">(</span><em>name</em>, <em>query=”</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.get_group_users" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_group_users</code><span class="sig-paren">(</span><em>name</em>, <em>query=''</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.get_group_users" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation returns the users that are currently assigned to the
 enterprise group within the enterprise user/group store. You can
 use the filter parameter to narrow down the user search.</p>
@@ -2859,7 +2744,7 @@ use the filter parameter to narrow down the user search.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.EnterpriseGroups.get_user_groups">
-<code class="descname">get_user_groups</code><span class="sig-paren">(</span><em>username</em>, <em>query=”</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.get_user_groups" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_user_groups</code><span class="sig-paren">(</span><em>username</em>, <em>query=''</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.get_user_groups" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation lists the groups assigned to a user account in the
 configured enterprise group store.</p>
 <dl class="docutils">
@@ -2907,7 +2792,7 @@ force a refresh.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.EnterpriseGroups.search">
-<code class="descname">search</code><span class="sig-paren">(</span><em>query=”</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.search" title="Permalink to this definition">¶</a></dt>
+<code class="descname">search</code><span class="sig-paren">(</span><em>query=''</em>, <em>max_count=255</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.EnterpriseGroups.search" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation searches groups in the configured enterprise group
 store. You can narrow down the search using the filter parameter.</p>
 <dl class="docutils">
@@ -2939,7 +2824,7 @@ store. You can narrow down the search using the filter parameter.</p>
 administrators can create, export, import, and join sites.</p>
 <dl class="method">
 <dt id="arcgis.gis.admin.Site.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>full_name</em>, <em>email</em>, <em>content_store</em>, <em>description=”</em>, <em>question_idx=None</em>, <em>question_ans=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Site.create" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>full_name</em>, <em>email</em>, <em>content_store</em>, <em>description=''</em>, <em>question_idx=None</em>, <em>question_ans=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Site.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>The create site operation initializes and configures Portal for
 ArcGIS for use. It must be the first operation invoked after
 installation. Creating a new site involves:</p>
@@ -3217,7 +3102,7 @@ property to reverse proxy URL.</li>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.System.reindex">
-<code class="descname">reindex</code><span class="sig-paren">(</span><em>mode=’FULL’</em>, <em>includes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.System.reindex" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reindex</code><span class="sig-paren">(</span><em>mode='FULL'</em>, <em>includes=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.System.reindex" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation allows you to generate or update the indexes for
 content; such as users, groups, and items stored in the database
 (store). During the process of upgrading an earlier version of
@@ -3271,7 +3156,7 @@ for licensing to define sets of privileges for registered members and
 their assigned roles.</p>
 <dl class="method">
 <dt id="arcgis.gis.admin.Licenses.entitlements">
-<code class="descname">entitlements</code><span class="sig-paren">(</span><em>app=’arcgisprodesktop’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Licenses.entitlements" title="Permalink to this definition">¶</a></dt>
+<code class="descname">entitlements</code><span class="sig-paren">(</span><em>app='arcgisprodesktop'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Licenses.entitlements" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation returns the currently queued entitlements for a
 product, such as ArcGIS Pro or Navigator for ArcGIS, and applies
 them when their start dates become effective. It’s possible that
@@ -3360,7 +3245,7 @@ the website.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.admin.Licenses.remove_entitlement">
-<code class="descname">remove_entitlement</code><span class="sig-paren">(</span><em>app=’arcgisprodesktop’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Licenses.remove_entitlement" title="Permalink to this definition">¶</a></dt>
+<code class="descname">remove_entitlement</code><span class="sig-paren">(</span><em>app='arcgisprodesktop'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Licenses.remove_entitlement" title="Permalink to this definition">¶</a></dt>
 <dd><p>deletes an entitlement from a site</p>
 </dd></dl>
 
@@ -3491,18 +3376,15 @@ Adaptor configured with the portal.</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.toc.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.gis.toc.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3536,8 +3418,7 @@ Adaptor configured with the portal.</p>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

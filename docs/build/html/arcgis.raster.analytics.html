@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.raster.toc.html">arcgis.raster module</a> &raquo;</li>
-        
-      <li>arcgis.raster.analytics module</li>
-    
-    
+      
+    <li>arcgis.raster.analytics module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.raster.analytics.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -651,26 +626,30 @@ used as the output for the tool.</p>
 <h2>interpolate_points<a class="headerlink" href="#interpolate-points" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.interpolate_points">
-<code class="descclassname">analytics.</code><code class="descname">interpolate_points</code><span class="sig-paren">(</span><em>input_point_features</em>, <em>interpolate_field</em>, <em>optimize_for=’BALANCE’</em>, <em>transform_data=False</em>, <em>size_of_local_models=None</em>, <em>number_of_neighbors=None</em>, <em>output_cell_size=None</em>, <em>output_prediction_error=False</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.interpolate_points" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">interpolate_points</code><span class="sig-paren">(</span><em>input_point_features</em>, <em>interpolate_field</em>, <em>optimize_for='BALANCE'</em>, <em>transform_data=False</em>, <em>size_of_local_models=None</em>, <em>number_of_neighbors=None</em>, <em>output_cell_size=None</em>, <em>output_prediction_error=False</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.interpolate_points" title="Permalink to this definition">¶</a></dt>
 <dd><p>This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
 takes point data with values at each point and returns a raster of predicted values:</p>
-<ul class="simple">
+<ul>
 <li><dl class="first docutils">
 <dt>An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to</dt>
-<dd>predict pollution levels at locations that don’t have sensors, such as locations with at-risk populations-
-schools or hospitals, for example.</dd>
+<dd><p class="first last">predict pollution levels at locations that don’t have sensors, such as locations with at-risk populations-
+schools or hospitals, for example.</p>
+</dd>
 </dl>
 </li>
-<li>Predict heavy metal concentrations in crops based on samples taken from individual plants.</li>
+<li><p class="first">Predict heavy metal concentrations in crops based on samples taken from individual plants.</p>
+</li>
 <li><dl class="first docutils">
 <dt>Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical</dt>
-<dd>conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
-for each location in the field.</dd>
+<dd><p class="first last">conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
+for each location in the field.</p>
+</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid</dt>
-<dd>rain).</dd>
+<dd><p class="first last">rain).</p>
+</dd>
 </dl>
 </li>
 </ul>
@@ -768,7 +747,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
 <h2>summarize_raster_within<a class="headerlink" href="#summarize-raster-within" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.summarize_raster_within">
-<code class="descclassname">analytics.</code><code class="descname">summarize_raster_within</code><span class="sig-paren">(</span><em>input_zone_layer</em>, <em>input_raster_layer_to_summarize</em>, <em>zone_field=’Value’</em>, <em>statistic_type=’Mean’</em>, <em>ignore_missing_values=True</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.summarize_raster_within" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">summarize_raster_within</code><span class="sig-paren">(</span><em>input_zone_layer</em>, <em>input_raster_layer_to_summarize</em>, <em>zone_field='Value'</em>, <em>statistic_type='Mean'</em>, <em>ignore_missing_values=True</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.summarize_raster_within" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
 <dt>input_zone_layer <span class="classifier-delimiter">:</span> <span class="classifier">Required layer - area layer to summarize a raster layer within defined boundaries.</span></dt>
 <dd>The layer that defines the boundaries of the areas, or zones, that will be summarized.
@@ -891,7 +870,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
 <h2>segment<a class="headerlink" href="#segment" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.segment">
-<code class="descclassname">analytics.</code><code class="descname">segment</code><span class="sig-paren">(</span><em>input_raster</em>, <em>spectral_detail=‘15.5’</em>, <em>spatial_detail=‘15’</em>, <em>minimum_segment_size_in_pixels=‘20’</em>, <em>band_indexes=‘0</em>, <em>1</em>, <em>2’</em>, <em>remove_tiling_artifacts=’false’</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.segment" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">segment</code><span class="sig-paren">(</span><em>input_raster</em>, <em>spectral_detail='15.5'</em>, <em>spatial_detail='15'</em>, <em>minimum_segment_size_in_pixels='20'</em>, <em>band_indexes='0</em>, <em>1</em>, <em>2'</em>, <em>remove_tiling_artifacts='false'</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.segment" title="Permalink to this definition">¶</a></dt>
 <dd><p>input_raster : Required string</p>
 <p>spectral_detail : Required string</p>
 <p>spatial_detail : Required string</p>
@@ -913,7 +892,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
 <h2>train_classifier<a class="headerlink" href="#train-classifier" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.train_classifier">
-<code class="descclassname">analytics.</code><code class="descname">train_classifier</code><span class="sig-paren">(</span><em>input_raster</em>, <em>input_training_sample_json</em>, <em>classifier_parameters</em>, <em>segmented_raster=None</em>, <em>segment_attributes=’COLOR;MEAN’</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.train_classifier" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">train_classifier</code><span class="sig-paren">(</span><em>input_raster</em>, <em>input_training_sample_json</em>, <em>classifier_parameters</em>, <em>segmented_raster=None</em>, <em>segment_attributes='COLOR;MEAN'</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.train_classifier" title="Permalink to this definition">¶</a></dt>
 <dd><p>input_raster : Required string</p>
 <p>input_training_sample_json : Required string</p>
 <p>segmented_raster : Optional string</p>
@@ -956,7 +935,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
 <h2>convert_raster_to_feature<a class="headerlink" href="#convert-raster-to-feature" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.convert_raster_to_feature">
-<code class="descclassname">analytics.</code><code class="descname">convert_raster_to_feature</code><span class="sig-paren">(</span><em>input_raster</em>, <em>field=’Value’</em>, <em>output_type=’Point’</em>, <em>simplify_lines_or_polygons=True</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.convert_raster_to_feature" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">convert_raster_to_feature</code><span class="sig-paren">(</span><em>input_raster</em>, <em>field='Value'</em>, <em>output_type='Point'</em>, <em>simplify_lines_or_polygons=True</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.convert_raster_to_feature" title="Permalink to this definition">¶</a></dt>
 <dd><p>This service tool converts imagery data to feature class vector data.</p>
 <p>input_raster : Required string</p>
 <dl class="docutils">
@@ -984,7 +963,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
 <h2>copy_raster<a class="headerlink" href="#copy-raster" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.analytics.copy_raster">
-<code class="descclassname">analytics.</code><code class="descname">copy_raster</code><span class="sig-paren">(</span><em>input_raster</em>, <em>output_cellsize=None</em>, <em>resampling_method=’NEAREST’</em>, <em>clip_setting=None</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.copy_raster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">analytics.</code><code class="descname">copy_raster</code><span class="sig-paren">(</span><em>input_raster</em>, <em>output_cellsize=None</em>, <em>resampling_method='NEAREST'</em>, <em>clip_setting=None</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.copy_raster" title="Permalink to this definition">¶</a></dt>
 <dd><p>input_raster : Required string</p>
 <p>output_cellsize : Optional string</p>
 <dl class="docutils">
@@ -1007,18 +986,15 @@ A RuntimeError is raised if a service by that name already exists</dd>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.raster.functions.html" class="btn btn-neutral float-right" title="arcgis.raster.functions module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.raster.functions.html" class="btn btn-neutral float-right" title="arcgis.raster.functions module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.raster.toc.html" class="btn btn-neutral" title="arcgis.raster module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.raster.toc.html" class="btn btn-neutral" title="arcgis.raster module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1052,8 +1028,7 @@ A RuntimeError is raised if a service by that name already exists</dd>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

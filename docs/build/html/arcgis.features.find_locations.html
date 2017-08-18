@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.features.toc.html">arcgis.features module</a> &raquo;</li>
-        
-      <li>arcgis.features.find_locations module</li>
-    
-    
+      
+    <li>arcgis.features.find_locations module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.features.find_locations.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -705,7 +680,7 @@ on expressions.</dd>
 <h2>create_viewshed<a class="headerlink" href="#create-viewshed" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.find_locations.create_viewshed">
-<code class="descclassname">find_locations.</code><code class="descname">create_viewshed</code><span class="sig-paren">(</span><em>input_layer</em>, <em>dem_resolution=’Finest’</em>, <em>maximum_distance=None</em>, <em>max_distance_units=’Meters’</em>, <em>observer_height=None</em>, <em>observer_height_units=’Meters’</em>, <em>target_height=None</em>, <em>target_height_units=’Meters’</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.create_viewshed" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">find_locations.</code><code class="descname">create_viewshed</code><span class="sig-paren">(</span><em>input_layer</em>, <em>dem_resolution='Finest'</em>, <em>maximum_distance=None</em>, <em>max_distance_units='Meters'</em>, <em>observer_height=None</em>, <em>observer_height_units='Meters'</em>, <em>target_height=None</em>, <em>target_height_units='Meters'</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.create_viewshed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates areas that are visible based on locations you specify.</p>
 <p>input_layer : Required layer (see Feature Input in documentation)</p>
 <p>dem_resolution : Optional string</p>
@@ -730,7 +705,7 @@ on expressions.</dd>
 <h2>create_watersheds<a class="headerlink" href="#create-watersheds" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.find_locations.create_watersheds">
-<code class="descclassname">find_locations.</code><code class="descname">create_watersheds</code><span class="sig-paren">(</span><em>input_layer</em>, <em>search_distance=None</em>, <em>search_units=’Meters’</em>, <em>source_database=’FINEST’</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.create_watersheds" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">find_locations.</code><code class="descname">create_watersheds</code><span class="sig-paren">(</span><em>input_layer</em>, <em>search_distance=None</em>, <em>search_units='Meters'</em>, <em>source_database='FINEST'</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.create_watersheds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates catchment areas based on locations you specify.</p>
 <p>input_layer : Required layer (see Feature Input in documentation)</p>
 <p>search_distance : Optional float</p>
@@ -755,7 +730,7 @@ on expressions.</dd>
 <h2>trace_downstream<a class="headerlink" href="#trace-downstream" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.find_locations.trace_downstream">
-<code class="descclassname">find_locations.</code><code class="descname">trace_downstream</code><span class="sig-paren">(</span><em>input_layer</em>, <em>split_distance=None</em>, <em>split_units=’Kilometers’</em>, <em>max_distance=None</em>, <em>max_distance_units=’Kilometers’</em>, <em>bounding_polygon_layer=None</em>, <em>source_database=None</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.trace_downstream" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">find_locations.</code><code class="descname">trace_downstream</code><span class="sig-paren">(</span><em>input_layer</em>, <em>split_distance=None</em>, <em>split_units='Kilometers'</em>, <em>max_distance=None</em>, <em>max_distance_units='Kilometers'</em>, <em>bounding_polygon_layer=None</em>, <em>source_database=None</em>, <em>generalize=True</em>, <em>output_name=None</em>, <em>context=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.find_locations.trace_downstream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determine the flow paths in a downstream direction from the locations you specify.</p>
 <p>input_layer : Required layer (see Feature Input in documentation)</p>
 <p>split_distance : Optional float</p>
@@ -779,18 +754,15 @@ on expressions.</dd>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.features.manage_data.html" class="btn btn-neutral float-right" title="arcgis.features.manage_data module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.features.manage_data.html" class="btn btn-neutral float-right" title="arcgis.features.manage_data module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.features.enrich_data.html" class="btn btn-neutral" title="arcgis.features.enrich_data module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.features.enrich_data.html" class="btn btn-neutral" title="arcgis.features.enrich_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -824,8 +796,7 @@ on expressions.</dd>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.geoanalytics.toc.html">arcgis.geoanalytics module</a> &raquo;</li>
-        
-      <li>arcgis.geoanalytics.summarize_data module</li>
-    
-    
+      
+    <li>arcgis.geoanalytics.summarize_data module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.geoanalytics.summarize_data.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -667,7 +642,7 @@ summarize_within calculates statistics for area features and attributes that ove
 <h2>join_features<a class="headerlink" href="#join-features" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geoanalytics.summarize_data.join_features">
-<code class="descclassname">summarize_data.</code><code class="descname">join_features</code><span class="sig-paren">(</span><em>target_layer</em>, <em>join_layer</em>, <em>join_operation: str = ‘JoinOneToOne’</em>, <em>join_fields: str = None</em>, <em>summary_fields: str = None</em>, <em>spatial_relationship: str = None</em>, <em>spatial_near_distance: float = None</em>, <em>spatial_near_distance_unit: str = None</em>, <em>temporal_relationship: str = None</em>, <em>temporal_near_distance: int = None</em>, <em>temporal_near_distance_unit: str = None</em>, <em>attribute_relationship: str = None</em>, <em>join_condition: str = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.summarize_data.join_features" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">join_features</code><span class="sig-paren">(</span><em>target_layer</em>, <em>join_layer</em>, <em>join_operation: str = 'JoinOneToOne'</em>, <em>join_fields: str = None</em>, <em>summary_fields: str = None</em>, <em>spatial_relationship: str = None</em>, <em>spatial_near_distance: float = None</em>, <em>spatial_near_distance_unit: str = None</em>, <em>temporal_relationship: str = None</em>, <em>temporal_near_distance: int = None</em>, <em>temporal_near_distance_unit: str = None</em>, <em>attribute_relationship: str = None</em>, <em>join_condition: str = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.summarize_data.join_features" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Using either feature layers or tabular data, you can join features and records based on specific relationships between the input layers or tables. Joins will be determined by spatial, temporal, and attribute relationships, and summary statistics can be optionally calculated.</p>
 <p>For example</p>
@@ -720,7 +695,7 @@ summarize_within calculates statistics for area features and attributes that ove
 <h2>reconstruct_tracks<a class="headerlink" href="#reconstruct-tracks" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.geoanalytics.summarize_data.reconstruct_tracks">
-<code class="descclassname">summarize_data.</code><code class="descname">reconstruct_tracks</code><span class="sig-paren">(</span><em>input_layer</em>, <em>track_fields: str</em>, <em>method: str = ‘Planar’</em>, <em>buffer_field: str = None</em>, <em>summary_fields: str = None</em>, <em>time_split: int = None</em>, <em>time_split_unit: str = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.summarize_data.reconstruct_tracks" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">summarize_data.</code><code class="descname">reconstruct_tracks</code><span class="sig-paren">(</span><em>input_layer</em>, <em>track_fields: str</em>, <em>method: str = 'Planar'</em>, <em>buffer_field: str = None</em>, <em>summary_fields: str = None</em>, <em>time_split: int = None</em>, <em>time_split_unit: str = None</em>, <em>output_name: str = None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.geoanalytics.summarize_data.reconstruct_tracks" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><blockquote>
 <div><p>Using a time-enabled layer of point or polygon features that represent an instant in time, this tool determines which input features belong in a track and will order the inputs sequentially in time. Statistics are optionally calculated for the input features within each track.</p>
@@ -841,18 +816,15 @@ For example, suppose you have GPS measurements of hurricanes every 10 minutes. E
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.geoanalytics.use_proximity.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.use_proximity module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.geoanalytics.use_proximity.html" class="btn btn-neutral float-right" title="arcgis.geoanalytics.use_proximity module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.geoanalytics.manage_data.html" class="btn btn-neutral" title="arcgis.geoanalytics.manage_data module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.geoanalytics.manage_data.html" class="btn btn-neutral" title="arcgis.geoanalytics.manage_data module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -886,8 +858,7 @@ For example, suppose you have GPS measurements of hurricanes every 10 minutes. E
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

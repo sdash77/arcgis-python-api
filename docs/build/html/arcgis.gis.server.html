@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -550,10 +544,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -562,42 +554,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
-        
-      <li>arcgis.gis.server module</li>
-    
-    
+      
+    <li>arcgis.gis.server module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.gis.server.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -1392,7 +1367,7 @@ called ‘services’, is available as a property of the Server object. Users ca
 managing services.</p>
 <dl class="method">
 <dt id="arcgis.gis.server.ServiceManager.create_folder">
-<code class="descname">create_folder</code><span class="sig-paren">(</span><em>folder</em>, <em>description=”</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServiceManager.create_folder" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create_folder</code><span class="sig-paren">(</span><em>folder</em>, <em>description=''</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServiceManager.create_folder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a unique folder
 Parameters:</p>
 <blockquote>
@@ -1479,7 +1454,7 @@ GeoDataServer | GPServer | GlobeServer | SearchServer</p>
 
 <dl class="method">
 <dt id="arcgis.gis.server.ServiceManager.list">
-<code class="descname">list</code><span class="sig-paren">(</span><em>folder=’/’</em>, <em>refresh=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServiceManager.list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">list</code><span class="sig-paren">(</span><em>folder='/'</em>, <em>refresh=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServiceManager.list" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a list of services in the specified folder</p>
 <p>Parameters:
 :param folder: name of the folder to list services from
@@ -1644,7 +1619,7 @@ messages.</p>
 
 <dl class="method">
 <dt id="arcgis.gis.server.LogManager.count_error_reports">
-<code class="descname">count_error_reports</code><span class="sig-paren">(</span><em>machine=’*’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.count_error_reports" title="Permalink to this definition">¶</a></dt>
+<code class="descname">count_error_reports</code><span class="sig-paren">(</span><em>machine='*'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.count_error_reports" title="Permalink to this definition">¶</a></dt>
 <dd><p>This operation counts the number of error reports (crash
 reports) that have been generated on each machine.
 Parameters:</p>
@@ -1670,7 +1645,7 @@ Parameters:</p>
 
 <dl class="method">
 <dt id="arcgis.gis.server.LogManager.edit">
-<code class="descname">edit</code><span class="sig-paren">(</span><em>level=’WARNING’</em>, <em>log_dir=None</em>, <em>max_age=90</em>, <em>max_report_count=10</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.edit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">edit</code><span class="sig-paren">(</span><em>level='WARNING'</em>, <em>log_dir=None</em>, <em>max_age=90</em>, <em>max_report_count=10</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.edit" title="Permalink to this definition">¶</a></dt>
 <dd><p>The log settings are for the entire site.
 Parameters:</p>
 <blockquote>
@@ -1715,7 +1690,7 @@ Parameters:</p>
 
 <dl class="method">
 <dt id="arcgis.gis.server.LogManager.query">
-<code class="descname">query</code><span class="sig-paren">(</span><em>start_time=None</em>, <em>end_time=None</em>, <em>since_server_start=False</em>, <em>level=’WARNING’</em>, <em>services=’*’</em>, <em>machines=’*’</em>, <em>server=’*’</em>, <em>codes=None</em>, <em>process_IDs=None</em>, <em>export=False</em>, <em>export_type=’CSV’</em>, <em>out_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.query" title="Permalink to this definition">¶</a></dt>
+<code class="descname">query</code><span class="sig-paren">(</span><em>start_time=None</em>, <em>end_time=None</em>, <em>since_server_start=False</em>, <em>level='WARNING'</em>, <em>services='*'</em>, <em>machines='*'</em>, <em>server='*'</em>, <em>codes=None</em>, <em>process_IDs=None</em>, <em>export=False</em>, <em>export_type='CSV'</em>, <em>out_path=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.LogManager.query" title="Permalink to this definition">¶</a></dt>
 <dd><p>The query operation on the logs resource provides a way to
 aggregate, filter, and page through logs across the entire site.
 Parameters:</p>
@@ -1741,7 +1716,7 @@ Parameters:</p>
 :param server: Server object</p>
 <dl class="method">
 <dt id="arcgis.gis.server.ReportManager.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>reportname</em>, <em>queries</em>, <em>metadata=None</em>, <em>since=’LAST_DAY’</em>, <em>from_value=None</em>, <em>to_value=None</em>, <em>aggregation_interval=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ReportManager.create" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create</code><span class="sig-paren">(</span><em>reportname</em>, <em>queries</em>, <em>metadata=None</em>, <em>since='LAST_DAY'</em>, <em>from_value=None</em>, <em>to_value=None</em>, <em>aggregation_interval=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ReportManager.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a new usage report. A usage report is created by submitting
 a JSON representation of the usage report to this operation.</p>
 <dl class="docutils">
@@ -1909,7 +1884,7 @@ statistics are persisted forever.</dd>
 
 <dl class="method">
 <dt id="arcgis.gis.server.ReportManager.quick_report">
-<code class="descname">quick_report</code><span class="sig-paren">(</span><em>since=’LAST_WEEK’</em>, <em>queries=’services/’</em>, <em>metrics=’RequestsFailed’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ReportManager.quick_report" title="Permalink to this definition">¶</a></dt>
+<code class="descname">quick_report</code><span class="sig-paren">(</span><em>since='LAST_WEEK'</em>, <em>queries='services/'</em>, <em>metrics='RequestsFailed'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ReportManager.quick_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>The operation quick_report generates an on the fly usage report for
 a service, services, or folder.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -2075,7 +2050,7 @@ server_path - the path to the folder from the server</div></blockquote>
 
 <dl class="method">
 <dt id="arcgis.gis.server.DataStoreManager.add_database">
-<code class="descname">add_database</code><span class="sig-paren">(</span><em>name</em>, <em>conn_str</em>, <em>client_conn_str=None</em>, <em>conn_type=’shared’</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.DataStoreManager.add_database" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_database</code><span class="sig-paren">(</span><em>name</em>, <em>conn_str</em>, <em>client_conn_str=None</em>, <em>conn_type='shared'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.DataStoreManager.add_database" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers a database with the data store.
 Input</p>
 <blockquote>
@@ -2868,7 +2843,7 @@ directories. If you no longer need the server directory, you must
 remove the directory by using the Unregister Directory operation.</p>
 <dl class="method">
 <dt id="arcgis.gis.server.DirectoryManager.add">
-<code class="descname">add</code><span class="sig-paren">(</span><em>name</em>, <em>physicalPath</em>, <em>directoryType</em>, <em>maxFileAge</em>, <em>cleanupMode=’NONE’</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.DirectoryManager.add" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add</code><span class="sig-paren">(</span><em>name</em>, <em>physicalPath</em>, <em>directoryType</em>, <em>maxFileAge</em>, <em>cleanupMode='NONE'</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.DirectoryManager.add" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers a new server directory. While registering the server
 directory, you can also specify the directory’s cleanup parameters</p>
 <dl class="docutils">
@@ -2987,18 +2962,15 @@ services directory.</td>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3032,8 +3004,7 @@ services directory.</td>
             VERSION:'1.2.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>
