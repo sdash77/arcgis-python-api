@@ -1,5 +1,5 @@
 """
-A collection of classes foradministering an ArcGIS Enterprise's server.
+A collection of classes for administering an ArcGIS Enterprise's server.
 """
 import ssl
 import logging
