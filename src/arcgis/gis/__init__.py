@@ -1,5 +1,5 @@
 """
-The **gis** module provides an information model for GIS hosted
+The **gis** module provides an information model for GIS hosted 
 within ArcGIS Online or ArcGIS Enterprise.
 This module provides functionality to manage
 (create, read, update and delete) GIS users, groups and content. This module
@@ -55,7 +55,7 @@ class GIS(object):
     .. _gis:
 
     A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
-    (search, create, retrieve) GIS resources such as content, users and groups.
+    (search, create, retrieve) GIS resources such as content, users, and groups.
 
     Additionally, the GIS object has properties to query it's state, accessible using the properties attribute.
 
@@ -164,7 +164,7 @@ class GIS(object):
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
 
         A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-        specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+        specifying a profile name. The profile is stored in the users home directory in a configuration file named arcgisprofile.
         The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
         or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
         saved in the configuration file by that profile name.
@@ -344,7 +344,19 @@ class GIS(object):
         return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
-        """Updates the GIS's properties from those in properties_dict"""
+        """Updates the GIS's properties from those in properties_dict.
+        
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. 
+        ===============     ====================================================================
+
+
+        :return:
+           The item if successfully added, None if unsuccessful.
+        """
         postdata = self._portal._postdata()
         postdata.update(properties_dict)
 
@@ -434,7 +446,7 @@ class GIS(object):
 ###########################################################################
 class Datastore(dict):
     """
-    Represents a datastore (folder, database or bigdata fileshare) within the GIS's data store
+    Represents a datastore (folder, database or bigdata fileshare) within the GIS's data store.
     """
     def __init__(self, datastore, path):
         dict.__init__(self)
@@ -483,7 +495,7 @@ class Datastore(dict):
     @property
     def manifest(self):
         """
-        The manifest resource for bigdata fileshares,
+        The manifest resource for bigdata fileshares.
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -520,7 +532,8 @@ class Datastore(dict):
     @property
     def ref_count(self):
         """
-        The total number of references to this data item that exist on the server. You can use this property to determine if this data item can be safely deleted (or taken down for maintenance).
+        The total number of references to this data item that exist on the server. You can use this 
+        property to determine if this data item can be safely deleted (or taken down for maintenance).
         """
         data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
 
@@ -533,7 +546,7 @@ class Datastore(dict):
 
     def delete(self):
         """
-        Unregisters this data item from the data store
+        Unregisters this data item from the data store.
         """
         params = {
             "f" : "json" ,
@@ -551,11 +564,16 @@ class Datastore(dict):
     def update(self, item):
         """
         Edits this data item to update its connection information.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required dictionary. The representation of the updated item.
+        ===============     ====================================================================
 
-        Input
-            item - the dict representation of the updated item
-        Output:
-              True if successful
+  
+        :return:
+           True if successful.
         """
         params = {
             "f" : "json" ,
@@ -572,10 +590,10 @@ class Datastore(dict):
     def validate(self):
         """
         Validates that this data item's path (for file shares) or connection string (for databases)
-        is accessible to every server node in the site
+        is accessible to every server node in the site.
 
-        Output:
-              True if successful
+        :return:
+           True if successful.
         """
         params = { "f" : "json" }
         path = self._admin_url + "/data/items" + self.datapath
@@ -611,7 +629,8 @@ class DatastoreManager(object):
     This class is not created by users directly.
     Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
     arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
-    Users call methods on this 'datastores' object to manage the datastores in a site federated with the portal.
+    Users call methods on this 'datastores' object to manage the datastores in a site 
+    federated with the portal.
     """
     def __init__(self, gis, admin_url, server):
         self._gis = gis
@@ -658,15 +677,24 @@ class DatastoreManager(object):
                    name,
                    server_path,
                    client_path=None):
+
         """
         Registers a folder with the data store.
-        Input
-            name - unique fileshare name on the server
-            server_path - the path to the folder from the server (and client, if shared path)
-            client_path - if folder is replicated, the path to the folder from the client
-            if folder is shared, don't set this parameter
-        Output:
-              the data item is registered successfully, None otherwise
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The unique fileshare name on the server.
+        ---------------     --------------------------------------------------------------------
+        server_path         Required string. The path to the folder from the server (and client, if shared path).
+        ---------------     --------------------------------------------------------------------
+        client_path         Optional string. If folder is replicated, the path to the folder from the client.
+        ===============     ====================================================================
+
+
+        :return:
+           The folder is registered successfully, None otherwise.
         """
         conn_type = "shared"
         if client_path is not None:
@@ -701,11 +729,19 @@ class DatastoreManager(object):
                     server_path=None):
         """
         Registers a bigdata fileshare with the data store.
-        Input
-            name - unique bigdata fileshare name on the server
-            server_path - the path to the folder from the server
-        Output:
-              the data item if registered successfully, None otherwise
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The unique bigdata fileshare name on the server.
+        ---------------     --------------------------------------------------------------------
+        server_path         Optional string. The path to the folder from the server.
+        ===============     ====================================================================
+
+
+        :return:
+           The big data fileshare is registered successfully, None otherwise.
         """
         output = None
         path = self._admin_url + "/data/registerItem"
@@ -746,13 +782,23 @@ class DatastoreManager(object):
                      conn_type="shared"):
         """
         Registers a database with the data store.
-        Input
-            name - unique database name on the server
-            conn_str - the path to the folder from the server (and client, if shared or serverOnly database)
-            client_conn_str: connection string for client to connect to replicated enterprise database>
-            conn_type - "<shared|replicated|serverOnly>"
-        Output:
-            the data item is registered successfully, None otherwise
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The unique database name on the server.
+        ---------------     --------------------------------------------------------------------
+        conn_str            Required string. the path to the folder from the server (and client, if shared or serverOnly database).
+        ---------------     --------------------------------------------------------------------
+        client_conn_str     Optional string. The connection string for client to connect to replicated enterprise database.
+        ---------------     --------------------------------------------------------------------
+        conn_type           Optional string. Choice of "<shared|replicated|serverOnly>", shared is the default.
+        ===============     ====================================================================
+
+
+        :return:
+           The database is registered successfully, None otherwise.
         """
 
         item = {
@@ -790,11 +836,19 @@ class DatastoreManager(object):
             item):
         """
         Registers a new data item with the data store.
-        Input
-            item - The disct representing the data item.
-            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
-        Output:
-              True if the data item is registered successfully, False otherwise
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The name of the item to be added on the server.
+        ---------------     --------------------------------------------------------------------
+        item                Required dictionary. The dictionary representing the data item.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        ===============     ====================================================================
+
+
+        :return:
+           The new data item is registered successfully, None otherwise.
         """
         params = {
             "f" : "json"
@@ -811,12 +865,19 @@ class DatastoreManager(object):
             return None
 
     def get(self, path):
-        """ Returns the data item object at the given path
+        """
+        Returns the data item object at the given path.
 
-        Arguments
-            path        required string, the data item path
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        path                Required string. The path for the data item.
+        ===============     ====================================================================
+
+
         :return:
-            None if the data item is not found at that path and the data item object if its found
+           None if the data item is not found at that path, and the data item object if it is found.
         """
         params = { "f" : "json" }
         urlpath = self._admin_url + "/data/items" + path
@@ -832,16 +893,28 @@ class DatastoreManager(object):
                types=None, id=None):
         """
            You can use this operation to search through the various data
-           items registered in the server's data store. Searching without specifying the parent_path and other parameters returns a lists of all registered data items
-           Inputs:
-              parentPath - The path of the parent under which to find items. To get the root data items, pass '/'
-              ancestorPath - The path of the ancestor under which to find
-                             items.
-              types - A comma separated filter for the type of the items. Types include folder, egdb, bigDataFileShare, datadir
-              id - A filter to search by the ID of the item
+           items registered in the server's data store. Searching without 
+           specifying the parent path and other parameters returns a list 
+           of all registered data items.
 
-            :return:
-            Returns a list of data items matching the specified query
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        parentPath          Optional string. The path of the parent under which to find items. 
+                            Pass '/' to get the root data items.
+        ---------------     --------------------------------------------------------------------
+        ancestorPath        Optional string. The path of the ancestor under which to find items.
+        ---------------     --------------------------------------------------------------------
+        types               Optional string. A comma separated filter for the type of the items. 
+                            Types include folder, egdb, bigDataFileShare, datadir.
+        ---------------     --------------------------------------------------------------------
+        id                  Optional string. A filter to search by the ID of the item.
+        ===============     ====================================================================
+
+
+        :return:
+           A list of data items matching the specified query.
         """
         params = {
             "f" : "json",
@@ -3466,15 +3539,24 @@ class Item(dict):
 
     @property
     def homepage(self):
-        """returns the URL to the HTML page for the item"""
+        """Returns the URL to the HTML page for the item."""
         itemid = self.itemid
         return "%s/home/item.html?id=%s" % (self._portal.resturl.replace("/sharing/rest/", ""), itemid)
 
     def download(self, save_path=None):
         """
-        Downloads the data to the specified folder or a temporary folder if a folder isn't provided
-        :param save_path: Optional, location to download the file as a string
-        :return: Returns download path if data was available else None.
+        Downloads the data to the specified folder or a temporary folder if a folder is not provided.
+
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        save_path           Optional string. Folder location to download the file to.
+        ===============     ====================================================================
+        
+        
+        :return: 
+           The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
         if not save_path:
@@ -3489,24 +3571,33 @@ class Item(dict):
 
     def export(self, title, export_format, parameters=None, wait=True):
         """
-        Exports a service item to the specified output format.
+        Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
         Invokable only by the service item owner or an administrator.
+        This is useful for long running exports that could hold up a script.
+        
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Required string. The desired name of the exported service item.
+        ---------------     --------------------------------------------------------------------
+        export_format       Required string. The format to export the data to. Allowed types: 'Shapefile', 
+                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML'
+        ---------------     --------------------------------------------------------------------
+        parameters          Optional string. A JSON object describing the layers to be exported
+                            and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/ 
+                            for guidance.
+        ---------------     --------------------------------------------------------------------
+        wait                Optional boolean. Default is True, which forces a wait for the 
+                            export to complete; use False for when it is okay to proceed while 
+                            the export continues to completion.
+        ===============     ====================================================================
 
-        Parameters:
-         :export_format: The format to export the data to.
-          Allowed types: 'Shapefile', 'CSV',
-                   'File Geodatabase', 'Feature Collection',
-                   'GeoJson', 'Scene Package', 'KML']
-         :parameters: A JSON object describing the layers to be exported
-          and the export parameters for each layer.
-         :wait: boolean value that
-        Output:
-         Item or dictionary.  Item is returned when wait=True. A dictionary
-         describing the status of the item is returned when wait=False.
-         This means the user has to check if the item is exported
-         successfully.  This is useful for long running exports that could
-         hold up a script.
+
+        :return:
+           Item or dictionary.  Item is returned when wait=True. A dictionary describing the status of 
+           the item is returned when wait=False.
         """
         import time
         formats = ['Shapefile',
@@ -3539,20 +3630,27 @@ class Item(dict):
     #----------------------------------------------------------------------
     def status(self, job_id=None, job_type=None):
         """
-           Inquire about status when publishing an item, adding an item in
-           async mode, or adding with a multipart upload. "Partial" is
-           available for Add Item Multipart, when only a part is uploaded
-           and the item is not committed.
+        Provides the status when publishing an item, adding an item in
+        async mode, or adding with a multipart upload. "Partial" is
+        available for Add Item Multipart, when only a part is uploaded
+        and the item is not committed.
 
-           Input:
-              job_type The type of asynchronous job for which the status has
-                      to be checked. Default is none, which check the
-                      item's status.  This parameter is optional unless
-                      used with the operations listed below.
-                      Values: publish, generateFeatures, export,
-                              and createService
-              job_id - The job ID returned during publish, generateFeatures,
-                      export, and createService calls.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_id              Optional string. The job ID returned during publish, generateFeatures, 
+                            export, and createService calls.
+        ---------------     --------------------------------------------------------------------
+        job_type            Optional string. The type of asynchronous job for which the status 
+                            has to be checked. Default is none, which checks the item's status. 
+                            This parameter is optional unless used with the operations listed 
+                            below. Values: `publish`, generateFeatures, export, and createService
+        ===============     ====================================================================
+
+
+        :return:
+           The status of a publishing item.
         """
         params = {
             "f" : "json"
@@ -3566,13 +3664,11 @@ class Item(dict):
                                     params)
     #----------------------------------------------------------------------
     def get_thumbnail(self):
-        """ Returns the bytes that make up the thumbnail for this item.
+        """
+        Retrieves the bytes that make up the thumbnail for this item.
 
-        Arguments
-            None.
-
-        Returns
-            bytes that represent the item.
+        :return:
+           Bytes that represent the item.
 
         Example
 
@@ -3590,7 +3686,20 @@ class Item(dict):
                 return self._portal.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
     def download_thumbnail(self, save_folder=None):
-        """ Downloads the item thumbnail for this item, returns file path. """
+        """
+        Downloads the thumbnail for this item.
+
+    
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        save_folder          Optional string. Folder location to download the item's thumbnail to.
+        ===============     ====================================================================
+    
+    
+        :return: 
+           For a successful download of the thumbnail, a file path. None if the item does not have a thumbnail.
+        """
         if self.thumbnail is None:
             self._hydrate()
         thumbnail_file = self.thumbnail
@@ -3614,7 +3723,7 @@ class Item(dict):
             return None
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image """
+        """ URL to the thumbnail image. """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             if self._gis.properties.portalName == 'ArcGIS Online':
@@ -3626,9 +3735,9 @@ class Item(dict):
             return thumbnail_url_path
     @property
     def metadata(self):
-        """ Returns the item metadata for the specified item.
+        """ Retrieves the item metadata for the specified item.
             Returns None if the item does not have metadata.
-            Items with metadata have 'Metadata' in their typeKeywords
+            Items with metadata have 'Metadata' in their typeKeywords.
         """
         metadataurlpath = 'content/items/' + self.itemid  + '/info/metadata/metadata.xml'
         try:
@@ -3669,9 +3778,20 @@ class Item(dict):
         return self.update(metadata=xml_file)
 
     def download_metadata(self, save_folder=None):
-        """ Downloads the item metadata for the specified item id, returns file path.
-            Returns None if the item does not have metadata.
-            Items with metadata have 'Metadata' in their typeKeywords
+        """ 
+        Downloads the item metadata for the specified item id. Items with metadata have 'Metadata' 
+        in their typeKeywords.
+
+    
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        save_folder          Optional string. Folder location to download the item's metadata to.
+        ===============     ====================================================================
+    
+    
+        :return: 
+           For a successful download of metadata, a file path. None if the item does not have metadata.
         """
         metadataurlpath = 'content/items/' + self.itemid + '/info/metadata/metadata.xml'
         if not save_folder:
@@ -3794,24 +3914,25 @@ class Item(dict):
         return '<%s title:"%s" type:%s owner:%s>' % (type(self).__name__, self.title, self._ux_item_type(), self.owner)
 
     def reassign_to(self, target_owner, target_folder=None):
-        """ Allows the administrator to reassign a single item from one user to another.
+        """
+        Allows the administrator to reassign a single item from one user to another.
 
         .. note::
-             	If you wish to move all of a user's items (and groups) to another user then use the
-                user.reassign_to() method.  This method only moves one item at a time.
+            If you wish to move all of a user's items (and groups) to another user then use the 
+            user.reassign_to() method.  This method only moves one item at a time.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           required string, unique identifier for the item
+        item_id           Required string. The unique identifier for the item.
         ----------------  --------------------------------------------------------
-        target_owner      required string, desired owner of the item
+        target_owner      Required string. The new desired owner of the item.
         ----------------  --------------------------------------------------------
-        target_folder     optional string, folder to move the item to.
+        target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
 
         :return:
-            a boolean, indicating success
+            A boolean indicating success (True) with the ID of the reassigned item, or failure (False).
 
         """
         try:
@@ -3824,24 +3945,28 @@ class Item(dict):
             return resp
 
     def share(self, everyone=False, org=False, groups=None, allow_members_to_edit=False):
-        """ Shares an item with the specified list of groups
+        """
+        Shares an item with the specified list of groups.
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        everyone          optional boolean, share with everyone
-        ----------------  --------------------------------------------------------
-        org               optional boolean, share with the organization
-        ----------------  --------------------------------------------------------
-        groups            optional list of group names as strings, or, list of
-                            arcgis.gis.Group objects
-                          You can also pass a comma-separated list of group IDs
-        ----------------  --------------------------------------------------------
-        allow_members_to_edit  optional boolean to allow item to be shared with groups that allow shared update
-        ================  ========================================================
+        ======================  ========================================================
+        **Argument**            **Description**
+        ----------------------  --------------------------------------------------------
+        everyone                Optional boolean. Default is False, don't share with 
+                                everyone.
+        ----------------------  --------------------------------------------------------
+        org                     Optional boolean. Default is False, don't share with 
+                                the organization.
+        ----------------------  --------------------------------------------------------
+        groups                  Optional list of group names as strings, or a list of
+                                arcgis.gis.Group objects, or a comma-separated list of 
+                                group IDs.
+        ----------------------  --------------------------------------------------------
+        allow_members_to_edit   Optional boolean. Default is False, to allow item to be 
+                                shared with groups that allow shared update
+        ======================  ========================================================
 
         :return:
-            dict with key "notSharedWith" containing array of groups with which the item could not be shared.
+            A dictionary with key "notSharedWith" containing array of groups with which the item could not be shared.
 
         """
         try:
@@ -3876,17 +4001,20 @@ class Item(dict):
             return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
 
     def unshare(self, groups):
-        """ Stops sharing the item with the specified list of groups
+        """
+        Stops sharing of the item with the specified list of groups.
+
 
         ================  =========================================================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
-        groups            Optional string list. List of group names as strings, or list of arcgis.gis.Group objects. You can also pass a comma-separated list of group IDs.
+        groups            Optional list of group names as strings, or a list of arcgis.gis.Group objects, 
+                          or a comma-separated list of group IDs.
         ================  =========================================================================================
 
 
         :return:
-            dict with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
+            Dictionary with key "notUnsharedFrom" containing array of groups from which the item could not be unshared.
         """
         try:
             folder = self.ownerFolder
@@ -3923,7 +4051,7 @@ class Item(dict):
         """ Deletes an item.
 
         :return:
-            a boolean, indicating success
+            A boolean indicating success (True) or failure (False).
 
         """
         try:
@@ -3937,71 +4065,73 @@ class Item(dict):
 
 
         .. note::
-            That content can be a file (such as a layer package, geoprocessing package,
-            map package) or it can be a URL (to an ArcGIS Server service, WMS service,
+            Content can be a file (such as a layer package, geoprocessing package,
+            map package) or a URL (to an ArcGIS Server service, WMS service,
             or an application).
 
-            If you are uploading a package or other file, provide a path or URL
+            To upload a package or other file, provide a path or URL
             to the file in the data argument.
 
-            Only pass in arguments for properties you want to update.
-            All other properties will be left as they are.  If you
-            want to update description, then only provide
-            the description argument in item_properties.
+            For item_properties, pass in arguments for only the properties you want to be updated.
+            All other properties will be untouched.  For example, if you want to update only the 
+            item's description, then only provide the description argument in item_properties.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  optional dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata
-        ============     ====================================================
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        data                Optional string. Either a path or URL to the data.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ===============     ====================================================================
 
 
-        ================  ============================================================================
-         **Key**           **Value**
-        ----------------  ----------------------------------------------------------------------------
-        type              optional string, indicates type of item.  See URL 1 below for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
-        ----------------  ----------------------------------------------------------------------------
-        description       optional string.  Description of the item.
-        ----------------  ----------------------------------------------------------------------------
-        title             optional string.  Name of the item.
-        ----------------  ----------------------------------------------------------------------------
-        url               optional string.  URL to item that are based on URLs.
-        ----------------  ----------------------------------------------------------------------------
-        tags              optional string of comma-separated values.  Used for searches on items.
-        ----------------  ----------------------------------------------------------------------------
-        snippet           optional string.  Provides a very short summary of the what the item is.
-        ----------------  ----------------------------------------------------------------------------
-        extent            optional string with comma separated values for min x, min y, max x, max y.
-        ----------------  ----------------------------------------------------------------------------
-        spatialReference  optional string.  Coordinate system that the item is in.
-        ----------------  ----------------------------------------------------------------------------
-        accessInformation optional string.  Information on the source of the content.
-        ----------------  ----------------------------------------------------------------------------
-        licenseInfo       optinal string, any license information or restrictions regarding the content.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Locale, country and language information.
-        ----------------  ----------------------------------------------------------------------------
-        access            optional string.  Valid values: private, shared, org, or public.
-        ----------------  ----------------------------------------------------------------------------
-        commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
-        ----------------  ----------------------------------------------------------------------------
-        culture           optional string.  Language and country information.
-        ================  ============================================================================
+        *Key:Value Dictionary Options for Argument item_properties*
+
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        -----------------  ---------------------------------------------------------------------
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                           or not allowed (false).
+        =================  =====================================================================
 
 
         URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
 
         :return:
-             a boolean, that indicates success.
+           A boolean indicating success (True) or failure (False).
         """
         try:
             folder = self.ownerFolder
@@ -4019,12 +4149,26 @@ class Item(dict):
         return ret
 
     def get_data(self, try_json=True):
-        """Returns the data for the item.
-        Binary files are downloaded and the path to the downloaded file is returned.
-        For JSON/text files, if try_json is True, the method tries to convert it to a Python dict and returns it, else
-        returns the data as a string. Zero byte files will return None.
-        To convert this dict to string use json.dumps(data).
-        Else, returns the data as a byte array, that can be converted to string using data.decode('utf-8')"""
+        """
+        Retrieves the data component of an item and returns the data associated with an item.
+        
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        try_json            Optional string. Default is True. For JSON/text files, if try_json 
+                            is True, the method tries to convert the data to a Python dictionary 
+                            (use json.dumps(data) to convert the dictionary to a string), 
+                            otherwise the data is returned as a string. 
+        ===============     ====================================================================
+
+
+        :return:
+           Dependent on the content type of the data.
+           For non-JSON/text data, binary files are returned and the path to the downloaded file. 
+           For JSON/text files, a Python dictionary or a string.  All others will be a byte array, 
+           that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
+        """
         item_data = self._portal.get_item_data(self.itemid, try_json)
 
         if item_data == '':
@@ -4042,11 +4186,11 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
-        """ Returns items and urls, etc that this items depends upon  """
+        """ Returns items, urls, etc that this item is dependent on.  """
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
-        """ Returns items and urls, etc dependend upon this item. """
+        """ Returns items, urls, etc that are dependent to this item. """
         return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
@@ -4056,9 +4200,27 @@ class Item(dict):
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
     def related_items(self, rel_type, direction="forward"):
-        """ Returns items related to this item. Relationsships can be added and deleted using item.add_relationship() and item.delete_relationship() respectively.
-        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']
-        direction is one of ['forward', 'reverse'] """
+        """
+        Retrieves the items related to this item. Relationsships can be added and deleted using 
+        item.add_relationship() and item.delete_relationship(), respectively.
+
+	===============     ====================================================================
+	**Argument**        **Description**
+	---------------     --------------------------------------------------------------------
+	rel_type            Required string.  The type of the related item; is one of 
+	                    ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
+	                    'Service2Data', 'Service2Service']. See Relationship types in 
+	                    REST API help for more information on this parameter.
+	---------------     --------------------------------------------------------------------
+	direction           Required string. One of ['forward', 'reverse']
+	===============     ====================================================================
+
+
+	:return:
+	   The list of related items.
+	"""
+        
+        
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
         if not direction in self._RELATIONSHIP_DIRECTIONS:
@@ -4076,17 +4238,33 @@ class Item(dict):
 
     def add_relationship(self, rel_item, rel_type):
         """ Adds a relationship from this item to rel_item.
-        Relationships are not tied to an item. They are directional links from an origin item
-        to a destination item and have a type. The type defines the valid origin and destination
-        item types as well as some rules. See Relationship types in REST API help for more information.
-        Users don't have to own the items they relate unless so defined by the rules of the
-        relationship type.
-        Users can only delete relationships they create.
-        Relationships are deleted automatically if one of the two items is deleted.
+        
+        .. note::
+            Relationships are not tied to an item. They are directional links from an origin item 
+            to a destination item and have a type. The type defines the valid origin and destination 
+            item types as well as some rules. See Relationship types in REST API help for more information. 
+            Users don't have to own the items they relate unless so defined by the rules of the relationship 
+            type.
+        
+            Users can only delete relationships they create.
+        
+            Relationships are deleted automatically if one of the two items is deleted.
 
-        rel_item is the related item
-        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']. See Relationship types in REST API help for more information on this parameter
-        Returns True if the relationship was added
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rel_item            Required string.  The related item ID.
+        ---------------     --------------------------------------------------------------------
+        rel_type            Required string.  The type of the related item; is one of 
+                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
+                            'Service2Data', 'Service2Service']. See Relationship types in 
+                            REST API help for more information on this parameter.
+        ===============     ====================================================================
+
+
+        :return:
+           Returns True if the relationship was added, False if the add failed.
         """
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
@@ -4104,10 +4282,24 @@ class Item(dict):
             return resp.get('success')
 
     def delete_relationship(self, rel_item, rel_type):
-        """ Deletes a relationship between this item and the rel_item.
-        rel_item is the related item
-        rel_type is one of ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data', 'Service2Service']
-        Returns True if the relationship was deleted
+        """ 
+        Deletes a relationship between this item and the rel_item.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rel_item            Required string.  The related item ID.
+        ---------------     --------------------------------------------------------------------
+        rel_type            Required string.  The type of the related item; is one of 
+                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code', 
+                            'Service2Data', 'Service2Service']. See Relationship types in 
+                            REST API help for more information on this parameter.
+        ===============     ====================================================================
+
+
+        :return:
+           Returns True if the relationship was deleted, False if the deletion failed.
         """
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
@@ -4130,7 +4322,7 @@ class Item(dict):
         Publishers can create feature, tiled map, vector tile and scene services.
 
         Feature services can be created using input files of type csv, shapefile, serviceDefinition, featureCollection, and fileGeodatabase.
-        CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
+        CSV files that contain location fields (i.e. address fields or XY fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
 
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
@@ -4141,35 +4333,38 @@ class Item(dict):
 
         Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
+        
+        .. note::
+            ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
 
-        ================    ===============================================================
-        **Argument**        **Description**
-        ----------------    ---------------------------------------------------------------
-        publish_parameters  dictionary containing publish instructions and customizations.
-                            Cannot be combined with overwrite.
-        ----------------    ---------------------------------------------------------------
-        address_fields      dict containing mapping of df columns to address fields,
-                            eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
-        ----------------    ---------------------------------------------------------------
-        output_type         Only used when a feature service is published as a tile service.
-                            eg: output_type='Tiles'
-        ----------------    ---------------------------------------------------------------
-        overwrite           If True, the hosted feature service is overwritten.
-                            Only available in ArcGIS Online and Portal for ArcGIS 10.5 or later.
-        ----------------    ---------------------------------------------------------------
-        file_type           Some formats are not automatically detected, when this occurs, the
-                            file_type can be specified: serviceDefinition,shapefile,csv,
-                            tilePackage, featureService, featureCollection, fileGeodatabase,
-                            geojson, scenepackage, vectortilepackage, imageCollection,
-                            mapService, and sqliteGeodatabase are valid entries. This is an
-                            optional parameter.
-        ================    ===============================================================
+
+        ===================    ===============================================================
+        **Argument**           **Description**
+        -------------------    ---------------------------------------------------------------
+        publish_parameters     Optional dictionary. containing publish instructions and customizations.
+                               Cannot be combined with overwrite.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/ for details.
+        -------------------    ---------------------------------------------------------------
+        address_fields         Optional dictionary. containing mapping of df columns to address fields,
+                               eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
+        -------------------    ---------------------------------------------------------------
+        output_type            Optional string.  Only used when a feature service is published as a tile service.
+                               eg: output_type='Tiles'
+        -------------------    ---------------------------------------------------------------
+        overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
+                               Only available in ArcGIS Online and Portal for ArcGIS 10.5 or later.
+        -------------------    ---------------------------------------------------------------
+        file_type              Optional string.  Some formats are not automatically detected, when this occurs, the
+                               file_type can be specified: serviceDefinition,shapefile,csv,
+                               tilePackage, featureService, featureCollection, fileGeodatabase,
+                               geojson, scenepackage, vectortilepackage, imageCollection,
+                               mapService, and sqliteGeodatabase are valid entries. This is an
+                               optional parameter.
+        ===================    ===============================================================
+
 
         :return:
-            an arcgis.gis.Item object corresponding to the published web layer
+            An arcgis.gis.Item object corresponding to the published web layer.
 
-        .. note::
-             	ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
         """
 
         import time
@@ -4347,29 +4542,27 @@ class Item(dict):
         return Item(self._gis, serviceitem_id)
 
     def move(self, folder, owner=None):
-        """ Move this item to the folder with the given name.
+        """ 
+        Moves this item to the folder with the given name.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        folder            required string, the name of the folder to move the item to.
+        folder            Required string. The name of the folder to move the item to.
                           Use '/' for the root folder. For other folders, pass in the
-                          folder name as a string, or a dict containing the folder 'id',
-                          such as the dict obtained from the folders property.
+                          folder name as a string, or a dictionary containing the folder ID,
+                          such as the dictionary obtained from the folders property.
         ----------------  ---------------------------------------------------------------
-        owner             optional string or Owner object, The name of the user to
+        owner             Optional string or Owner object.  The name of the user to
                           move to.
         ================  ===============================================================
 
         :return:
-            a json object like the following:
-            {
-               "success": true | false,
+            A json object like the following:
+            {"success": true | false,
                "itemId": "<item id>",
                "owner": "<owner username>",
-               "folder": "<folder id>"
-            }
-
+               "folder": "<folder id>"}
 
         """
         if isinstance(owner, User):
@@ -4411,31 +4604,34 @@ class Item(dict):
                              cache_info=None,
                              build_cache=False):
         """
-        allows publishers and administrators to publish hosted feature
+        Allows publishers and administrators to publish hosted feature
         layers and hosted feature layer views as a tile service.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        title             required string, name of the new service
-                          Example:
-                          "SeasideHeightsNJTiles"
+        title             Required string. The name of the new service.
+                          Example: "SeasideHeightsNJTiles"
         ----------------  ---------------------------------------------------------------
-        min_scale         required float, the smallest scale to view data
+        min_scale         Required float. The smallest scale at which to view data.
                           Example: 577790.0
         ----------------  ---------------------------------------------------------------
-        max_scale         required float, the largest scale to view data.
+        max_scale         Required float. The largest scale at which to view data.
                           Example: 80000.0
         ----------------  ---------------------------------------------------------------
-        cache_info        optional dictionary, if not none, administrator provides the
-                          tile cache info for the service.  The default is the AGOL scheme
+        cache_info        Optional dictionary. If not none, administrator provides the
+                          tile cache info for the service. The default is the AGOL scheme.
         ----------------  ---------------------------------------------------------------
-        build_cache       optional boolean, default False, if True, the cache will be
+        build_cache       Optional boolean. Default is False; if True, the cache will be
                           built at publishing time.  This will increase the time it takes
                           to publish the service.
         ================  ===============================================================
+        
+        :return:
+           The item if successfully added, None if unsuccessful.
 
         """
+
         if self.type.lower() == 'Feature Service'.lower():
             p = self.layers[0].container
             if cache_info is None:
@@ -4491,23 +4687,22 @@ class Item(dict):
         return
 
     def protect(self, enable=True):
-        """ Enable or disable delete protection on the item
+        """
+        Enables or disables delete protection on this item.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        enable            optional boolean, True to enable delete protection, False to
-                          to disable it
+        enable            Optional boolean. Default is True which enables delete 
+                          protection, False to disable delete protection.
         ================  ===============================================================
 
         :return:
-            a json object like the following:
-            {
-               "success": true | false
-            }
-
+            A json object like the following:
+            {"success": true | false}
 
         """
+
         try:
             folder = self.ownerFolder
         except:
@@ -4515,13 +4710,23 @@ class Item(dict):
         return self._portal.protect_item(self.itemid, self.owner, folder, enable)
 
     def _check_publish_status(self, ret, folder):
-        """
-        Internal method to check the status of a publishing job.
-        :param ret: Dictionary representing the result of a publish REST call. This dict should contain the
-                    `serviceItemId` and `jobId` of the publishing job
-        :param folder: obtained from self.ownerFolder
+        """ Internal method to check the status of a publishing job.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        ret                 Required dictionary. Represents the result of a publish REST call. 
+                            This dict should contain the `serviceItemId` and `jobId` of the publishing job.
+        ---------------     --------------------------------------------------------------------
+        folder              Required string. Obtained from self.ownerFolder
+        ===============     ====================================================================
+
+
         :return:
+           The status.
         """
+        
         import time
         try:
             serviceitem_id = ret[0]['serviceItemId']
@@ -4569,7 +4774,7 @@ class Item(dict):
     @property
     def comments(self):
         """
-        returns a list of comments on a given item
+        Returns a list of comments for a given item.
         """
         from .._impl.comments import Comment
         cs = []
@@ -4596,10 +4801,16 @@ class Item(dict):
         Adds a comment to an item. Available only to authenticated users
         who have access to the item.
 
-        Parameters:
-         :comment: text comment to a specific item
-        Output:
-         comment ID is successful, None on failure
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        comment             Required string. Text to be added as a comment to a specific item.
+        ===============     ====================================================================
+
+
+        :return:
+           Comment ID if successful, None on failure.
         """
         params = {
             "f" : "json",
@@ -4614,6 +4825,7 @@ class Item(dict):
     @property
     def rating(self):
         """
+        :return:
         Returns the rating given by the current user to the item, if any.
         """
         url = "%s/content/items/%s/rating" % (self._portal.url, self.id)
@@ -4631,10 +4843,15 @@ class Item(dict):
         currently rated item, the new rating will overwrite the existing
         rating. A user cannot rate their own item. Available only to
         authenticated users.
+        
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required float. The rating to be applied for the item. The value 
+                            must be a floating point number between 1.0 and 5.0.
+        ===============     ====================================================================
 
-        Parameters:
-         :value: Rating to set for the item. Rating must be a floating
-          point number between 1.0 and 5.0.
+
         """
         url = "%s/content/items/%s/addRating" % (self._portal.url,
                                                  self.id)
@@ -4644,7 +4861,7 @@ class Item(dict):
     #----------------------------------------------------------------------
     def delete_rating(self):
         """
-        Removes the rating the calling user added for the specified item
+        Removes the rating the calling user added for the specified item.
         """
         url = "%s/content/items/%s/deleteRating" % (self._portal.url,
                                                     self.id)

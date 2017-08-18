@@ -568,7 +568,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/arcgis.features.enrich_data.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/arcgis.features.enrich_data.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -594,27 +594,27 @@ your data locations. For example: What kind of people live here? What do people 
 their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
 features that includes all demographic and geographic information from given data collections.</p>
 <dl class="docutils">
-<dt>input_layer</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span><dd>Feature layer to enrich with new data</dd>
-<dt>data_collections</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>Data collections you wish to add to your features.</dd>
-<dt>analysis_variables</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span><dd>A subset of specific variables instead of dataCollections.</dd>
-<dt>country</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The two character country code that specifies the country of the input features. Eg. US (United States),
+<dt>input_layer <span class="classifier-delimiter">:</span> <span class="classifier">Required layer (see Feature Input in documentation)</span></dt>
+<dd>Feature layer to enrich with new data</dd>
+<dt>data_collections <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span></dt>
+<dd>Data collections you wish to add to your features.</dd>
+<dt>analysis_variables <span class="classifier-delimiter">:</span> <span class="classifier">Optional list of strings</span></dt>
+<dd>A subset of specific variables instead of dataCollections.</dd>
+<dt>country <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
+<dd>The two character country code that specifies the country of the input features. Eg. US (United States),
 FR (France), GB (United Kingdom) etc.</dd>
-<dt>buffer_type</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
+<dt>buffer_type <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
+<dd>Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
 radius.</dd>
-<dt>distance</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional float</span><dd>A double value that defines the straight-line distance or time (when drivingTime is used).</dd>
-<dt>units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
+<dt>distance <span class="classifier-delimiter">:</span> <span class="classifier">Optional float</span></dt>
+<dd>A double value that defines the straight-line distance or time (when drivingTime is used).</dd>
+<dt>units <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
+<dd>The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
 calculate the area.</dd>
-<dt>output_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional properties such as output feature service name.</dd>
-<dt>context</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span><dd>Additional settings such as processing extent and output spatial reference.</dd>
+<dt>output_name <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
+<dd>Additional properties such as output feature service name.</dd>
+<dt>context <span class="classifier-delimiter">:</span> <span class="classifier">Optional string</span></dt>
+<dd>Additional settings such as processing extent and output spatial reference.</dd>
 <dt>gis :</dt>
 <dd>Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</dd>
 </dl>

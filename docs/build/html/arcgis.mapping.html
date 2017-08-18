@@ -565,7 +565,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/arcgis.mapping.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/arcgis.mapping.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -587,7 +587,7 @@ MapImageLayer and VectorTileLayer</p>
 <dt id="arcgis.mapping.WebMap">
 <em class="property">class </em><code class="descclassname">arcgis.mapping.</code><code class="descname">WebMap</code><span class="sig-paren">(</span><em>webmapitem</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.WebMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">collections.OrderedDict</span></code></p>
-<p>Represents a webmap and provides access to it&#8217;s basemaps and operational layers as well
+<p>Represents a webmap and provides access to it’s basemaps and operational layers as well
 as functionality to visualize and interact with them.
 <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/">http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/</a></p>
 <dl class="method">
@@ -604,7 +604,7 @@ as functionality to visualize and interact with them.
 <dt id="arcgis.mapping.WebScene">
 <em class="property">class </em><code class="descclassname">arcgis.mapping.</code><code class="descname">WebScene</code><span class="sig-paren">(</span><em>websceneitem</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.WebScene" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">collections.OrderedDict</span></code></p>
-<p>Represents a web scene and provides access to it&#8217;s basemaps and operational layers as well
+<p>Represents a web scene and provides access to it’s basemaps and operational layers as well
 as functionality to visualize and interact with them.</p>
 <dl class="method">
 <dt id="arcgis.mapping.WebScene.update">
@@ -671,9 +671,9 @@ areaOfInterest - (Optional) The areaOfInterest polygon allows</p>
 <div>exporting tiles within the specified polygon areas. This parameter
 supersedes exportExtent parameter. Also excepts geometry.Polygon.</div></blockquote>
 <dl class="docutils">
-<dt>Example: { &#8220;features&#8221;: [{&#8220;geometry&#8221;:{&#8220;rings&#8221;:[[[-100,35],</dt>
+<dt>Example: { “features”: [{“geometry”:{“rings”:[[[-100,35],</dt>
 <dd>[-100,45],[-90,45],[-90,35],[-100,35]]],
-&#8220;spatialReference&#8221;:{&#8220;wkid&#8221;:4326}}}]}</dd>
+“spatialReference”:{“wkid”:4326}}}]}</dd>
 <dt>asynchronous - (optional) the estimate function is run asynchronously</dt>
 <dd><p class="first">requiring the tool status to be checked manually to force it to
 run synchronously the tool will check the status until the
@@ -700,7 +700,7 @@ Inputs:</p>
 <dt>bbox - (Required) The extent (bounding box) of the exported</dt>
 <dd>image. Unless the bboxSR parameter has been specified, the bbox
 is assumed to be in the spatial reference of the map.
-Example: bbox=&#8221;-104,35.6,-94.32,41&#8221;</dd>
+Example: bbox=”-104,35.6,-94.32,41”</dd>
 </dl>
 <p>size - size of image in pixels
 dpi - dots per inch
@@ -830,10 +830,10 @@ the tiled map service.</p>
 <blockquote>
 <div><p>Syntax: &lt;xmin&gt;, &lt;ymin&gt;, &lt;xmax&gt;, &lt;ymax&gt;
 Example 1: -104,35.6,-94.32,41
-Example 2: {&#8220;xmin&#8221; : -109.55, &#8220;ymin&#8221; : 25.76,</p>
+Example 2: {“xmin” : -109.55, “ymin” : 25.76,</p>
 <blockquote>
-<div>&#8220;xmax&#8221; : -86.39, &#8220;ymax&#8221; : 49.94,
-&#8220;spatialReference&#8221; : {&#8220;wkid&#8221; : 4326}}</div></blockquote>
+<div>“xmax” : -86.39, “ymax” : 49.94,
+“spatialReference” : {“wkid” : 4326}}</div></blockquote>
 </div></blockquote>
 </div></blockquote>
 <dl class="docutils">
@@ -859,9 +859,9 @@ quality of tiles.</div></blockquote>
 <dd>exporting tiles within the specified polygon areas. This parameter
 supersedes the exportExtent parameter. Must be geometry.Polygon
 object.</dd>
-<dt>Example: { &#8220;features&#8221;: [{&#8220;geometry&#8221;:{&#8220;rings&#8221;:[[[-100,35],</dt>
+<dt>Example: { “features”: [{“geometry”:{“rings”:[[[-100,35],</dt>
 <dd>[-100,45],[-90,45],[-90,35],[-100,35]]],
-&#8220;spatialReference&#8221;:{&#8220;wkid&#8221;:4326}}}]}</dd>
+“spatialReference”:{“wkid”:4326}}}]}</dd>
 <dt>asynchronous - default True, this value ensures the returns are returned</dt>
 <dd>to the user instead of the user having the check the job status
 manually.</dd>
@@ -1015,7 +1015,7 @@ This parameter only applies if returnGeometry=true.</dd>
 <dl class="attribute">
 <dt id="arcgis.mapping.MapImageLayer.item_info">
 <code class="descname">item_info</code><a class="headerlink" href="#arcgis.mapping.MapImageLayer.item_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the service&#8217;s item&#8217;s infomation</p>
+<dd><p>returns the service’s item’s infomation</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1031,7 +1031,7 @@ This parameter only applies if returnGeometry=true.</dd>
 <dl class="attribute">
 <dt id="arcgis.mapping.MapImageLayer.metadata">
 <code class="descname">metadata</code><a class="headerlink" href="#arcgis.mapping.MapImageLayer.metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the service&#8217;s XML metadata file</p>
+<dd><p>returns the service’s XML metadata file</p>
 </dd></dl>
 
 <dl class="method">
@@ -1079,14 +1079,14 @@ code and description.</p>
 <tr class="row-even"><td>extent</td>
 <td>optional dictionary,  If specified, the tiles within
 this extent will be deleted or will be deleted based
-on the service&#8217;s full extent.
+on the service’s full extent.
 Example:
 6224324.092137296,487347.5253569535,
 11473407.698535524,4239488.369818687
 the minx, miny, maxx, maxy values or,
-{&#8220;xmin&#8221;:6224324.092137296,&#8221;ymin&#8221;:487347.5253569535,
-&#8220;xmax&#8221;:11473407.698535524,&#8221;ymax&#8221;:4239488.369818687,
-&#8220;spatialReference&#8221;:{&#8220;wkid&#8221;:102100}} the JSON
+{“xmin”:6224324.092137296,”ymin”:487347.5253569535,
+“xmax”:11473407.698535524,”ymax”:4239488.369818687,
+“spatialReference”:{“wkid”:102100}} the JSON
 representation of the Extent object.</td>
 </tr>
 <tr class="row-odd"><td>levels</td>
@@ -1108,12 +1108,12 @@ Example, 0-5,10,11-20 or 1,2,3 or 0-5</td>
 <dl class="method">
 <dt id="arcgis.mapping.MapImageLayerManager.edit_tile_service">
 <code class="descname">edit_tile_service</code><span class="sig-paren">(</span><em>service_definition=None</em>, <em>min_scale=None</em>, <em>max_scale=None</em>, <em>source_item_id=None</em>, <em>export_tiles_allowed=False</em>, <em>max_export_tile_count=100000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayerManager.edit_tile_service" title="Permalink to this definition">¶</a></dt>
-<dd><p>This operation updates a Tile Service&#8217;s properties</p>
+<dd><p>This operation updates a Tile Service’s properties</p>
 <dl class="docutils">
 <dt>Inputs:</dt>
 <dd><p class="first">service_definition - updates a service definition
 min_scale - sets the services minimum scale for caching
-max_scale - sets the service&#8217;s maximum scale for caching
+max_scale - sets the service’s maximum scale for caching
 source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
 export_tiles_allowed - sets the value to let users export tiles
 max_export_tile_count - sets the maximum amount of tiles to be exported</p>
@@ -1237,10 +1237,10 @@ Parameters:</p>
 <div><p>web_map_as_json: Web Map as JSON (str). Required parameter.  A JSON representation of the state of the map to be exported as it appears in the web application. See the WebMap specification in the ArcGIS Help to understand how this text should be formatted. The ArcGIS web APIs (for JavaScript, Flex, Silverlight, etc.) allow developers to easily get this JSON string from the map.</p>
 <dl class="docutils">
 <dt>format: Format (str). Optional parameter.  The format in which the map image for printing will be delivered. The following strings are accepted.For example:PNG8 (default if the parameter is left blank)PDFPNG32JPGGIFEPSSVGSVGZ</dt>
-<dd>Choice list:[&#8216;PDF&#8217;, &#8216;PNG32&#8217;, &#8216;PNG8&#8217;, &#8216;JPG&#8217;, &#8216;GIF&#8217;, &#8216;EPS&#8217;, &#8216;SVG&#8217;, &#8216;SVGZ&#8217;]</dd>
+<dd>Choice list:[‘PDF’, ‘PNG32’, ‘PNG8’, ‘JPG’, ‘GIF’, ‘EPS’, ‘SVG’, ‘SVGZ’]</dd>
 <dt>layout_template: Layout Template (str). Optional parameter.  Either a name of a template from the list or the keyword MAP_ONLY. When MAP_ONLY is chosen or an empty string is passed in, the output map does not contain any page layout surroundings (for example title, legends, scale bar, and so forth)</dt>
 <dd><blockquote class="first">
-<div>Choice list:[&#8216;A3 Landscape&#8217;, &#8216;A3 Portrait&#8217;, &#8216;A4 Landscape&#8217;, &#8216;A4 Portrait&#8217;, &#8216;Letter ANSI A Landscape&#8217;, &#8216;Letter ANSI A Portrait&#8217;, &#8216;Tabloid ANSI B Landscape&#8217;, &#8216;Tabloid ANSI B Portrait&#8217;, &#8216;MAP_ONLY&#8217;]</div></blockquote>
+<div>Choice list:[‘A3 Landscape’, ‘A3 Portrait’, ‘A4 Landscape’, ‘A4 Portrait’, ‘Letter ANSI A Landscape’, ‘Letter ANSI A Portrait’, ‘Tabloid ANSI B Landscape’, ‘Tabloid ANSI B Portrait’, ‘MAP_ONLY’]</div></blockquote>
 <p class="last">gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</p>
 </dd>
 </dl>
@@ -1257,8 +1257,8 @@ Parameters:</p>
 <h2>get_layout_templates<a class="headerlink" href="#get-layout-templates" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.mapping.get_layout_templates">
-<code class="descclassname">mapping.</code><code class="descname">get_layout_templates</code><span class="sig-paren">(</span><em>gis=None</em><span class="sig-paren">)</span> &rarr; str<a class="headerlink" href="#arcgis.mapping.get_layout_templates" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function returns the content of the GIS&#8217;s layout templates formatted as dict.</p>
+<code class="descclassname">mapping.</code><code class="descname">get_layout_templates</code><span class="sig-paren">(</span><em>gis=None</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#arcgis.mapping.get_layout_templates" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns the content of the GIS’s layout templates formatted as dict.</p>
 <p>Parameters:</p>
 <p>gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.</p>
 <dl class="docutils">
