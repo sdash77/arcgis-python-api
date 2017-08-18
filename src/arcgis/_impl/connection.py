@@ -920,6 +920,16 @@ class _ArcGISConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
         handlers = []
+
+        if self.proxy_host: #simple proxy support
+            from urllib.request import ProxyHandler
+            if self.proxy_port is None:
+                self.proxy_port = 80
+            proxies = {"http":"http://%s:%s" % (self.proxy_host, self.proxy_port),
+                       "https":"https://%s:%s" % (self.proxy_host, self.proxy_port)}
+            proxy_support = ProxyHandler(proxies)
+            handlers.append(proxy_support)
+
         if self._auth == "BASIC": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
@@ -959,6 +969,8 @@ class _ArcGISConnection(object):
 
         cj = cookiejar.CookieJar()
         handlers.append(request.HTTPCookieProcessor(cj))
+
+
 
         if not verify_cert or not self._verify_cert:
             ctx = ssl.create_default_context()

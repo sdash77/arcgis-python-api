@@ -61,12 +61,99 @@ class GIS(object):
 
     The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
+
+    Constructs a GIS object given a url and user credentials to ArcGIS Online
+    or an ArcGIS Portal. User credentials can be passed in using username/password
+    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
+    PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
+
+    If no url is provided, ArcGIS Online is used. If username/password
+    or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
+
+    A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
+    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+    The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
+    or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
+    saved in the configuration file by that profile name.
+
+
+    ================    ===============================================================
+    **Argument**        **Description**
+    ----------------    ---------------------------------------------------------------
+    url                 optional string, if URL is None, then the URL will be ArcGIS
+                        Online.  This should be a web address to either a local portal
+                        or to ArcGIS Online in the form:
+                        For Portal Example:
+                        <scheme>://<host>/<web_adatpor>
+
+    ----------------    ---------------------------------------------------------------
+    username            optional string, login user name (case sensative)
+    ----------------    ---------------------------------------------------------------
+    password            optional string, if a username is provided, a password is
+                        expected.  This is case sensative.
+    ----------------    ---------------------------------------------------------------
+    key_file            optional string, file path to a user's key certificate
+    ----------------    ---------------------------------------------------------------
+    cert_file           optional string, file path to a user's key certificate
+    ----------------    ---------------------------------------------------------------
+    verify_cert         optional boolean, if a site has an invalid certificate, set the
+                        value to False.  This will ensure that all SSL certification
+                        are ignore.  The default is True.
+                        **warning** setting the value to False can be a security risk.
+    ----------------    ---------------------------------------------------------------
+    set_active          optional boolea, the default is True.  If True, the GIS object
+                        will be used as the default GIS object throughout the whole
+                        scripting session.
+    ----------------    ---------------------------------------------------------------
+    client_id           optional string, used for OAuth athentication.  This is the
+                        client ID value.
+    ----------------    ---------------------------------------------------------------
+    profile             optional string, if set the profile contains login information
+                        for a given site.
+    ================    ===============================================================
+
+    In addition to explicitly named variable, the GIS object supports optional key word
+    arguments
+
+    ================    ===============================================================
+    **kwargs**          **Description**
+    ----------------    ---------------------------------------------------------------
+    proxy_host          optional string, host name of the proxy server
+    ----------------    ---------------------------------------------------------------
+    proxy_port          optional integer, proxy host port.  The default is 80.
+    ================    ===============================================================
+
+    Usage Example 1: Anonymous Login to ArcGIS Online:
+
+    gis = GIS()
+
+    Usage Example 2: Built-in Login to ArcGIS Online:
+
+    gis = GIS(username="someuser", password="secret1234")
+
+    Usage Example 3: Built-in Login to ArcGIS Enterprise
+
+    gis = GIS(url="http://pythonplayground.esri.com/portal",
+              username="user1", password="password1")
+
+    Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
+
+    gis = GIS(url="http://pythonplayground.esri.com/portal",
+              username="user1", password="password1",
+              verify_cert=False)
+
+
+    Usage Example 5: Anonymous ArcGIS Online Login with Proxy
+
+    gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
+
+
     """
     _server_list = None
     # admin = None
     # oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
-                 verify_cert=True, set_active=True, client_id=None, profile=None):
+                 verify_cert=True, set_active=True, client_id=None, profile=None, **kwargs):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
         or an ArcGIS Portal. User credentials can be passed in using username/password
@@ -142,10 +229,16 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
+        self.proxy_host = kwargs.pop('proxy_host', None)
+        self.proxy_port = kwargs.pop('proxy_port', 80)
 
         try:
-            self._portal = portalpy.Portal(self._url, self._username, self._password, self._key_file,
-                                           self._cert_file, verify_cert=self._verify_cert,
+            self._portal = portalpy.Portal(self._url, self._username,
+                                           self._password, self._key_file,
+                                           self._cert_file,
+                                           proxy_host=self.proxy_host,
+                                           proxy_port=self.proxy_port,
+                                           verify_cert=self._verify_cert,
                                            client_id=self._client_id)
         except Exception as e:
             if str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -169,7 +262,9 @@ class GIS(object):
                                            self._key_file,
                                            self._cert_file,
                                            verify_cert=self._verify_cert,
-                                           client_id=self._client_id)
+                                           client_id=self._client_id,
+                                           proxy_port=self.proxy_port,
+                                           proxy_host=self.proxy_host)
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
@@ -194,61 +289,6 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-
-    #@property
-    #def _servers(self):
-        #"""
-        #The list of server objects for servers federated with the GIS.
-        #"""
-        #if self._con._auth is None or \
-           #self._con._auth.lower() == "anon":
-            #return None
-        #from arcgis.gis.server import Server
-        #if self._server_list:
-            #return self._server_list
-
-        #self._server_list = []
-        #try:
-            #is_portal = self.properties.isPortal
-            #if self.properties.isPortal == False:
-                #res = self._portal.con.post("portals/self/urls", {"f": "json"})
-                #if 'urls' in res:
-                    #urls = res['urls']
-                    #servers = []
-                    #for stype in ['features', 'tiles']:
-                        #if stype in urls:
-                            #for scheme in ['http', 'https']:
-                                #if scheme in urls[stype]:
-                                    #for url in urls[stype][scheme]:
-                                        #surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/services".format(
-                                            #scheme=scheme,
-                                            #portalid=self.properties.id,
-                                            #url=url)
-                                        #admin_surl = "{scheme}://{url}/{portalid}/ArcGIS/rest/admin".format(
-                                            #scheme=scheme,
-                                            #portalid=self.properties.id,
-                                            #url=url)
-                                        #servers.append(
-                                            ##surl
-                                            #Server(url=surl,
-                                                   #gis=self,
-                                                   #is_agol=True)
-                                        #)
-                    #self._server_list = servers
-            #else:
-                #res = self._portal.con.post("portals/self/servers", {"f": "json"})
-                #servers = res['servers']
-                #admin_url = None
-                #for server in servers:
-                    #admin_url = server['adminUrl']
-                    #try:
-                        #self._server_list.append(Server(url=admin_url, gis=self))
-                    #except:
-                        #_log.error("Could not access the servers at: " + admin_url)
-
-        #except:
-            #_log.error("Could not access the servers associated with this site.")
-        #return self._server_list
 
     @_lazy_property
     def users(self):

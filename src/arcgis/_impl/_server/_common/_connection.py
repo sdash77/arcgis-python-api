@@ -682,6 +682,16 @@ class ServerConnection(object):
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
         cj = cookiejar.CookieJar()
+
+        if self.proxy_host: # Simple Proxy Support
+            from urllib.request import ProxyHandler
+            if self.proxy_port is None:
+                self.proxy_port = 80
+            proxies = {"http":"http://%s:%s" % (self.proxy_host, self.proxy_port),
+                       "https":"https://%s:%s" % (self.proxy_host, self.proxy_port)}
+            proxy_support = ProxyHandler(proxies)
+            handlers.append(proxy_support)
+
         handlers.append(request.HTTPCookieProcessor(cj))
         return handlers
     #----------------------------------------------------------------------
