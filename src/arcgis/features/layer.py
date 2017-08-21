@@ -201,110 +201,110 @@ class FeatureLayer(Layer):
                         esriSRUnit_Foot | esriSRUnit_Kilometer |
                         esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
                 time_filter - a TimeFilter object where either the start time
-                            or start and end time are defined to limit the
-                            search results for a given time.  The values in
-                            the timeFilter should be as UTC timestampes in
-                            milliseconds.  No checking occurs to see if they
-                            are in the right format.
+                              or start and end time are defined to limit the
+                              search results for a given time.  The values in
+                              the timeFilter should be as UTC timestampes in
+                              milliseconds.  No checking occurs to see if they
+                              are in the right format.
                 geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                                spatial relationship with another geometry
-                maxAllowableOffset - This option can be used to specify the
-                                     maxAllowableOffset to be used for
-                                     generalizing geometries returned by
-                                     the query operation.
-                                     The maxAllowableOffset is in the units
-                                     of outSR. If outSR is not specified,
-                                     maxAllowableOffset is assumed to be in
-                                     the unit of the spatial reference of
-                                     the map.
-                outSR - The spatial reference of the returned geometry.
-                geometryPrecision -  This option can be used to specify the
-                                     number of decimal places in the
-                                     response geometries returned by the
-                                     Query operation.
-                gdbVersion - Geodatabase version to query
-                returnGeometry - If true, geometry is returned with the query. Default is true.
-                returnDistinctValues -  If true, it returns distinct values
-                                        based on the fields specified in
-                                        outFields. This parameter applies
-                                        only if the
-                                        supportsAdvancedQueries property of
-                                        the layer is true.
-                returnIdsOnly -  If true, the response only includes an
-                                 array of object IDs. Otherwise, the
-                                 response is a feature set. The default is
-                                 false.
-                returnCountOnly -  If true, the response only includes the
-                                   count (number of features/records) that
-                                   would be returned by a query. Otherwise,
-                                   the response is a feature set. The
-                                   default is false. This option supersedes
-                                   the returnIdsOnly parameter. If
-                                   returnCountOnly = true, the response will
-                                   return both the count and the extent.
-                returnExtentOnly -  If true, the response only includes the
-                                    extent of the features that would be
-                                    returned by the query. If
-                                    returnCountOnly=true, the response will
-                                    return both the count and the extent.
-                                    The default is false. This parameter
-                                    applies only if the
-                                    supportsReturningQueryExtent property
-                                    of the layer is true.
-                orderByFields - One or more field names on which the
-                                features/records need to be ordered. Use
-                                ASC or DESC for ascending or descending,
-                                respectively, following every field to
-                                control the ordering.
-                groupByFieldsForStatistics - One or more field names on
-                                             which the values need to be
-                                             grouped for calculating the
-                                             statistics.
-                outStatistics - The definitions for one or more field-based
-                                statistics to be calculated.
-                returnZ -  If true, Z values are included in the results if
-                           the features have Z values. Otherwise, Z values
+                                  spatial relationship with another geometry
+                max_allowable_offset - This option can be used to specify the
+                                       maxAllowableOffset to be used for
+                                       generalizing geometries returned by
+                                       the query operation.
+                                       The maxAllowableOffset is in the units
+                                       of outSR. If outSR is not specified,
+                                       maxAllowableOffset is assumed to be in
+                                       the unit of the spatial reference of
+                                       the map.
+                out_sr - The spatial reference of the returned geometry.
+                geometry_precision -  This option can be used to specify the
+                                      number of decimal places in the
+                                      response geometries returned by the
+                                      Query operation.
+                gdb_version - Geodatabase version to query
+                return_geometry - If true, geometry is returned with the query. Default is true.
+                return_distinct_values -  If true, it returns distinct values
+                                          based on the fields specified in
+                                          outFields. This parameter applies
+                                          only if the
+                                          supportsAdvancedQueries property of
+                                          the layer is true.
+                return_ids_only -  If true, the response only includes an
+                                   array of object IDs. Otherwise, the
+                                   response is a feature set. The default is
+                                   false.
+                return_count_only -  If true, the response only includes the
+                                     count (number of features/records) that
+                                     would be returned by a query. Otherwise,
+                                     the response is a feature set. The
+                                     default is false. This option supersedes
+                                     the returnIdsOnly parameter. If
+                                     returnCountOnly = true, the response will
+                                     return both the count and the extent.
+                return_extent_only -  If true, the response only includes the
+                                      extent of the features that would be
+                                      returned by the query. If
+                                      returnCountOnly=true, the response will
+                                      return both the count and the extent.
+                                      The default is false. This parameter
+                                      applies only if the
+                                      supportsReturningQueryExtent property
+                                      of the layer is true.
+                order_by_fields - One or more field names on which the
+                                  features/records need to be ordered. Use
+                                  ASC or DESC for ascending or descending,
+                                  respectively, following every field to
+                                  control the ordering.
+                group_by_fields_for_statistics - One or more field names on
+                                                 which the values need to be
+                                                 grouped for calculating the
+                                                 statistics.
+                out_statistics - The definitions for one or more field-based
+                                 statistics to be calculated.
+                return_z -  If true, Z values are included in the results if
+                            the features have Z values. Otherwise, Z values
+                            are not returned. The default is false.
+                return_m - If true, M values are included in the results if
+                           the features have M values. Otherwise, M values
                            are not returned. The default is false.
-                returnM - If true, M values are included in the results if
-                          the features have M values. Otherwise, M values
-                          are not returned. The default is false.
-                multipatchOption - This option dictates how the geometry of
-                                   a multipatch feature will be returned.
-                resultOffset -  This option can be used for fetching query
-                                results by skipping the specified number of
-                                records and starting from the next record
-                                (that is, resultOffset + 1th). This option is
-                                ignored if return_all_records is True (i.e. by default).
-                resultRecordCount - This option can be used for fetching
-                                    query results up to the
-                                    resultRecordCount specified. When
-                                    resultOffset is specified but this
-                                    parameter is not, the map service
-                                    defaults it to maxRecordCount. The
-                                    maximum value for this parameter is the
-                                    value of the layer's maxRecordCount
-                                    property. This option is ignored if
-                                    return_all_records is True (i.e. by default).
-                quanitizationParameters - Used to project the geometry onto
+                multipatch_option - This option dictates how the geometry of
+                                    a multipatch feature will be returned.
+                result_offset -  This option can be used for fetching query
+                                 results by skipping the specified number of
+                                 records and starting from the next record
+                                 (that is, resultOffset + 1th). This option is
+                                 ignored if return_all_records is True (i.e. by default).
+                result_record_count - This option can be used for fetching
+                                      query results up to the
+                                      result_record_count specified. When
+                                      result_offset is specified but this
+                                      parameter is not, the map service
+                                      defaults it to max_record_count. The
+                                      maximum value for this parameter is the
+                                      value of the layer's max_record_count
+                                      property. This option is ignored if
+                                      return_all_records is True (i.e. by default).
+                quantization_parameters - Used to project the geometry onto
                                           a virtual grid, likely
                                           representing pixels on the screen.
-                returnCentroid - Used to return the geometry centroid
-                                 associated with each feature returned. If
-                                 true, the result includes the geometry
-                                 centroid. The default is false.
+                return_centroid - Used to return the geometry centroid
+                                  associated with each feature returned. If
+                                  true, the result includes the geometry
+                                  centroid. The default is false.
                 return_all_records - When True, the query operation will call
-                                    the service until all records that satisfy
-                                    the where_clause are returned. Note: result_offset
-                                    and result_record_count will be ignored
-                                    if return_all_records is True. Also, if
-                                    return_count_only, return_ids_only, or
-                                    return_extent_only are True, this parameter
-                                    will be ignored.
+                                     the service until all records that satisfy
+                                     the where_clause are returned. Note: result_offset
+                                     and result_record_count will be ignored
+                                     if return_all_records is True. Also, if
+                                     return_count_only, return_ids_only, or
+                                     return_extent_only are True, this parameter
+                                     will be ignored.
                kwargs - optional parameters that can be passed to the Query
-                 function.  This will allow users to pass additional
-                 parameters not explicitly implemented on the function. A
-                 complete list of functions available is documented on the
-                 Query REST API.
+                        function.  This will allow users to pass additional
+                        parameters not explicitly implemented on the function. A
+                        complete list of functions available is documented on the
+                        Query REST API.
             Output:
                A FeatureSet containing the features matching the query
                unless another return type is specified, such as count
@@ -320,7 +320,7 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-        if out_fields:
+        if out_fields != '*':
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
@@ -337,7 +337,7 @@ class FeatureLayer(Layer):
         if result_offset and not return_all_records:
             params['resultOffset'] = result_offset
         if quanitization_parameters:
-            params['quanitizationParameters'] = quanitization_parameters
+            params['quantizationParameters'] = quantization_parameters
         if multipatch_option:
             params['multipatchOption'] = multipatch_option
         if order_by_fields:
@@ -380,6 +380,9 @@ class FeatureLayer(Layer):
                 params[key] = val
         if len(kwargs) > 0:
             for key, val in kwargs.items():
+                if key in ('returnCountOnly','returnExtentOnly','returnIdsOnly') and val:
+                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
+                    return_all_records = False
                 params[key] = val
                 del key, val
 
