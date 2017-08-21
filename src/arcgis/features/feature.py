@@ -81,7 +81,7 @@ class Feature(object):
         """ returns a value for a given field name """
         if field_name in self.fields:
             return self._dict['attributes'][field_name]
-        elif field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
+        elif field_name is not None and field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
             return self._dict['geometry']
         return None
 

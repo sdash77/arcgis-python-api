@@ -223,6 +223,7 @@ class FeatureLayer(Layer):
                                      response geometries returned by the
                                      Query operation.
                 gdbVersion - Geodatabase version to query
+                returnGeometry - If true, geometry is returned with the query. Default is true.
                 returnDistinctValues -  If true, it returns distinct values
                                         based on the fields specified in
                                         outFields. This parameter applies
@@ -311,7 +312,6 @@ class FeatureLayer(Layer):
         url = self._url + "/query"
         params = {"f": "json"}
         params['where'] = where
-        params['outFields'] = out_fields
         params['returnGeometry'] = return_geometry
         params['returnDistinctValues'] = return_distinct_values
         params['returnCentroid'] = return_centroid
@@ -320,6 +320,16 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
+        if out_fields:
+            try:
+                # Check if object id field is in out_fields.
+                # If it isn't, add it
+                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
+                if object_id_field not in out_fields.split(','):
+                    out_fields = object_id_field + "," + out_fields
+            except (IndexError, AttributeError):
+                pass
+            params['outFields'] = out_fields
         if return_count_only or return_extent_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
@@ -728,8 +738,17 @@ class FeatureLayer(Layer):
 
         elif deletes is not None and \
                 isinstance(deletes, FeatureSet):
-            params['deletes'] = ",".join(
-                [str(feat.get_value(field_name=deletes.object_id_field_name)) for feat in deletes.features])
+
+            field_name = None
+            if deletes.object_id_field_name:
+                field_name = deletes.object_id_field_name
+            elif self.properties.objectIdField in deletes.fields:
+                field_name = self.properties.objectIdField
+            else:
+                print('deletes FeatureSet must have object_id_field_name parameter set')
+
+            if field_name:
+                params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
 
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
