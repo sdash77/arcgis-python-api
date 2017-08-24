@@ -30,6 +30,9 @@ class MapView(widgets.DOMWidget):
     # value = Unicode('Hello World!').tag(sync=True)
 
     basemap = Unicode('topo').tag(sync=True)
+    basemaps = List([]).tag(sync=True)
+    gallery_basemaps = List([]).tag(sync=True)
+    _gbasemaps_def = List([]).tag(sync=True)
     width = Unicode('100%').tag(sync=True)
     zoom = Int(2).tag(sync=True)
     id = Unicode('').tag(sync=True)
@@ -58,8 +61,6 @@ class MapView(widgets.DOMWidget):
 
         self.on_msg(self._handle_map_msg)
 
-        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic",
-                         "terrain", "osm"]
         self._swipe_div = 'swipeDiv' + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 
         self._gis = kwargs.pop('gis', None)
@@ -74,6 +75,27 @@ class MapView(widgets.DOMWidget):
             self._token_info = json.dumps(token_info)
             # if self._gis.properties.portalName != 'ArcGIS Online':
             self._arcgis_url = self._gis._con.baseurl + 'content/items'
+
+        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans",
+                         "national-geographic", "terrain", "osm", "topo-vector", "streets-vector",
+                         "gray-vector", "dark-gray-vector", "streets-navigation-vector",
+                         "streets-night-vector", "streets-relief-vector"]
+
+        # Get the Basemaps associated with this Portal/AGOL
+        if self._gis is not None:
+            basemaplayers= []
+            basemaps = []
+            bmquery = self._gis.properties['basemapGalleryGroupQuery']
+            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+            if len(basemapsgrp) == 1:
+                for bm in basemapsgrp[0].content():
+                    basemaps.append(bm.title.lower().replace(" ", "_")) # item title will be name
+                    item_data = bm.get_data()  # we have to get JSON definition to pass through
+                    basemaplayers.append(item_data['baseMap']['baseMapLayers'])
+                nm = self._gis.properties['defaultBasemap']['title']
+                self.basemap = nm.lower().replace(" ", "_")  # change the default basemap from 'topo' to org default
+                self.gallery_basemaps = basemaps  # set gallery_basemaps of json definitions
+                self._gbasemaps_def = basemaplayers
 
         self.item = kwargs.pop('item', None)
         if self.item is not None:
