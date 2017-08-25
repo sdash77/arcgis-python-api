@@ -159,6 +159,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#output-datastore">output_datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
@@ -864,7 +865,7 @@ milliseconds.  No checking occurs to see if they
 are in the right format.</dd>
 <dt>geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a</dt>
 <dd>spatial relationship with another geometry</dd>
-<dt>maxAllowableOffset - This option can be used to specify the</dt>
+<dt>max_allowable_offset - This option can be used to specify the</dt>
 <dd>maxAllowableOffset to be used for
 generalizing geometries returned by
 the query operation.
@@ -874,14 +875,15 @@ maxAllowableOffset is assumed to be in
 the unit of the spatial reference of
 the map.</dd>
 </dl>
-<p>outSR - The spatial reference of the returned geometry.
-geometryPrecision -  This option can be used to specify the</p>
+<p>out_sr - The spatial reference of the returned geometry.
+geometry_precision -  This option can be used to specify the</p>
 <blockquote>
 <div>number of decimal places in the
 response geometries returned by the
 Query operation.</div></blockquote>
-<p>gdbVersion - Geodatabase version to query
-returnDistinctValues -  If true, it returns distinct values</p>
+<p>gdb_version - Geodatabase version to query
+return_geometry - If true, geometry is returned with the query. Default is true.
+return_distinct_values -  If true, it returns distinct values</p>
 <blockquote>
 <div>based on the fields specified in
 outFields. This parameter applies
@@ -889,11 +891,11 @@ only if the
 supportsAdvancedQueries property of
 the layer is true.</div></blockquote>
 <dl class="docutils">
-<dt>returnIdsOnly -  If true, the response only includes an</dt>
+<dt>return_ids_only -  If true, the response only includes an</dt>
 <dd>array of object IDs. Otherwise, the
 response is a feature set. The default is
 false.</dd>
-<dt>returnCountOnly -  If true, the response only includes the</dt>
+<dt>return_count_only -  If true, the response only includes the</dt>
 <dd>count (number of features/records) that
 would be returned by a query. Otherwise,
 the response is a feature set. The
@@ -901,7 +903,7 @@ default is false. This option supersedes
 the returnIdsOnly parameter. If
 returnCountOnly = true, the response will
 return both the count and the extent.</dd>
-<dt>returnExtentOnly -  If true, the response only includes the</dt>
+<dt>return_extent_only -  If true, the response only includes the</dt>
 <dd>extent of the features that would be
 returned by the query. If
 returnCountOnly=true, the response will
@@ -910,44 +912,44 @@ The default is false. This parameter
 applies only if the
 supportsReturningQueryExtent property
 of the layer is true.</dd>
-<dt>orderByFields - One or more field names on which the</dt>
+<dt>order_by_fields - One or more field names on which the</dt>
 <dd>features/records need to be ordered. Use
 ASC or DESC for ascending or descending,
 respectively, following every field to
 control the ordering.</dd>
-<dt>groupByFieldsForStatistics - One or more field names on</dt>
+<dt>group_by_fields_for_statistics - One or more field names on</dt>
 <dd>which the values need to be
 grouped for calculating the
 statistics.</dd>
-<dt>outStatistics - The definitions for one or more field-based</dt>
+<dt>out_statistics - The definitions for one or more field-based</dt>
 <dd>statistics to be calculated.</dd>
-<dt>returnZ -  If true, Z values are included in the results if</dt>
+<dt>return_z -  If true, Z values are included in the results if</dt>
 <dd>the features have Z values. Otherwise, Z values
 are not returned. The default is false.</dd>
-<dt>returnM - If true, M values are included in the results if</dt>
+<dt>return_m - If true, M values are included in the results if</dt>
 <dd>the features have M values. Otherwise, M values
 are not returned. The default is false.</dd>
-<dt>multipatchOption - This option dictates how the geometry of</dt>
+<dt>multipatch_option - This option dictates how the geometry of</dt>
 <dd>a multipatch feature will be returned.</dd>
-<dt>resultOffset -  This option can be used for fetching query</dt>
+<dt>result_offset -  This option can be used for fetching query</dt>
 <dd>results by skipping the specified number of
 records and starting from the next record
 (that is, resultOffset + 1th). This option is
 ignored if return_all_records is True (i.e. by default).</dd>
-<dt>resultRecordCount - This option can be used for fetching</dt>
+<dt>result_record_count - This option can be used for fetching</dt>
 <dd>query results up to the
-resultRecordCount specified. When
-resultOffset is specified but this
+result_record_count specified. When
+result_offset is specified but this
 parameter is not, the map service
-defaults it to maxRecordCount. The
+defaults it to max_record_count. The
 maximum value for this parameter is the
-value of the layer’s maxRecordCount
+value of the layer’s max_record_count
 property. This option is ignored if
 return_all_records is True (i.e. by default).</dd>
-<dt>quanitizationParameters - Used to project the geometry onto</dt>
+<dt>quantization_parameters - Used to project the geometry onto</dt>
 <dd>a virtual grid, likely
 representing pixels on the screen.</dd>
-<dt>returnCentroid - Used to return the geometry centroid</dt>
+<dt>return_centroid - Used to return the geometry centroid</dt>
 <dd>associated with each feature returned. If
 true, the result includes the geometry
 centroid. The default is false.</dd>
@@ -1292,7 +1294,7 @@ milliseconds.  No checking occurs to see if they
 are in the right format.</dd>
 <dt>geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a</dt>
 <dd>spatial relationship with another geometry</dd>
-<dt>maxAllowableOffset - This option can be used to specify the</dt>
+<dt>max_allowable_offset - This option can be used to specify the</dt>
 <dd>maxAllowableOffset to be used for
 generalizing geometries returned by
 the query operation.
@@ -1302,14 +1304,15 @@ maxAllowableOffset is assumed to be in
 the unit of the spatial reference of
 the map.</dd>
 </dl>
-<p>outSR - The spatial reference of the returned geometry.
-geometryPrecision -  This option can be used to specify the</p>
+<p>out_sr - The spatial reference of the returned geometry.
+geometry_precision -  This option can be used to specify the</p>
 <blockquote>
 <div>number of decimal places in the
 response geometries returned by the
 Query operation.</div></blockquote>
-<p>gdbVersion - Geodatabase version to query
-returnDistinctValues -  If true, it returns distinct values</p>
+<p>gdb_version - Geodatabase version to query
+return_geometry - If true, geometry is returned with the query. Default is true.
+return_distinct_values -  If true, it returns distinct values</p>
 <blockquote>
 <div>based on the fields specified in
 outFields. This parameter applies
@@ -1317,11 +1320,11 @@ only if the
 supportsAdvancedQueries property of
 the layer is true.</div></blockquote>
 <dl class="docutils">
-<dt>returnIdsOnly -  If true, the response only includes an</dt>
+<dt>return_ids_only -  If true, the response only includes an</dt>
 <dd>array of object IDs. Otherwise, the
 response is a feature set. The default is
 false.</dd>
-<dt>returnCountOnly -  If true, the response only includes the</dt>
+<dt>return_count_only -  If true, the response only includes the</dt>
 <dd>count (number of features/records) that
 would be returned by a query. Otherwise,
 the response is a feature set. The
@@ -1329,7 +1332,7 @@ default is false. This option supersedes
 the returnIdsOnly parameter. If
 returnCountOnly = true, the response will
 return both the count and the extent.</dd>
-<dt>returnExtentOnly -  If true, the response only includes the</dt>
+<dt>return_extent_only -  If true, the response only includes the</dt>
 <dd>extent of the features that would be
 returned by the query. If
 returnCountOnly=true, the response will
@@ -1338,44 +1341,44 @@ The default is false. This parameter
 applies only if the
 supportsReturningQueryExtent property
 of the layer is true.</dd>
-<dt>orderByFields - One or more field names on which the</dt>
+<dt>order_by_fields - One or more field names on which the</dt>
 <dd>features/records need to be ordered. Use
 ASC or DESC for ascending or descending,
 respectively, following every field to
 control the ordering.</dd>
-<dt>groupByFieldsForStatistics - One or more field names on</dt>
+<dt>group_by_fields_for_statistics - One or more field names on</dt>
 <dd>which the values need to be
 grouped for calculating the
 statistics.</dd>
-<dt>outStatistics - The definitions for one or more field-based</dt>
+<dt>out_statistics - The definitions for one or more field-based</dt>
 <dd>statistics to be calculated.</dd>
-<dt>returnZ -  If true, Z values are included in the results if</dt>
+<dt>return_z -  If true, Z values are included in the results if</dt>
 <dd>the features have Z values. Otherwise, Z values
 are not returned. The default is false.</dd>
-<dt>returnM - If true, M values are included in the results if</dt>
+<dt>return_m - If true, M values are included in the results if</dt>
 <dd>the features have M values. Otherwise, M values
 are not returned. The default is false.</dd>
-<dt>multipatchOption - This option dictates how the geometry of</dt>
+<dt>multipatch_option - This option dictates how the geometry of</dt>
 <dd>a multipatch feature will be returned.</dd>
-<dt>resultOffset -  This option can be used for fetching query</dt>
+<dt>result_offset -  This option can be used for fetching query</dt>
 <dd>results by skipping the specified number of
 records and starting from the next record
 (that is, resultOffset + 1th). This option is
 ignored if return_all_records is True (i.e. by default).</dd>
-<dt>resultRecordCount - This option can be used for fetching</dt>
+<dt>result_record_count - This option can be used for fetching</dt>
 <dd>query results up to the
-resultRecordCount specified. When
-resultOffset is specified but this
+result_record_count specified. When
+result_offset is specified but this
 parameter is not, the map service
-defaults it to maxRecordCount. The
+defaults it to max_record_count. The
 maximum value for this parameter is the
-value of the layer’s maxRecordCount
+value of the layer’s max_record_count
 property. This option is ignored if
 return_all_records is True (i.e. by default).</dd>
-<dt>quanitizationParameters - Used to project the geometry onto</dt>
+<dt>quantization_parameters - Used to project the geometry onto</dt>
 <dd>a virtual grid, likely
 representing pixels on the screen.</dd>
-<dt>returnCentroid - Used to return the geometry centroid</dt>
+<dt>return_centroid - Used to return the geometry centroid</dt>
 <dd>associated with each feature returned. If
 true, the result includes the geometry
 centroid. The default is false.</dd>

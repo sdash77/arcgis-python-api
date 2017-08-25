@@ -159,6 +159,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#output-datastore">output_datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
@@ -577,7 +578,7 @@
             
   <div class="section" id="module-arcgis.gis">
 <span id="arcgis-gis-module"></span><h1>arcgis.gis module<a class="headerlink" href="#module-arcgis.gis" title="Permalink to this headline">¶</a></h1>
-<p>The <strong>gis</strong> module provides an information model for GIS hosted 
+<p>The <strong>gis</strong> module provides an information model for GIS hosted
 within ArcGIS Online or ArcGIS Enterprise.
 This module provides functionality to manage
 (create, read, update and delete) GIS users, groups and content. This module
@@ -586,12 +587,111 @@ is the most important and provides the entry point into the GIS.</p>
 <h2>GIS<a class="headerlink" href="#gis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.gis.GIS">
-<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em>, <em>profile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em>, <em>profile=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p id="id1">A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
 (search, create, retrieve) GIS resources such as content, users, and groups.</p>
 <p>Additionally, the GIS object has properties to query it’s state, accessible using the properties attribute.</p>
 <p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
 as well as the results of your analysis. To create a new map, call the map() method.</p>
+<p>Constructs a GIS object given a url and user credentials to ArcGIS Online
+or an ArcGIS Portal. User credentials can be passed in using username/password
+pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
+PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.</p>
+<p>If no url is provided, ArcGIS Online is used. If username/password
+or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.</p>
+<p>A persisted profile for the GIS can be created by giving the GIS and it’s authorization credentials and
+specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
+or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
+saved in the configuration file by that profile name.</p>
+<p>See <a class="reference external" href="https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/">https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/</a> for examples.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>url</td>
+<td>optional string, if URL is None, then the URL will be ArcGIS
+Online.  This should be a web address to either a local portal
+or to ArcGIS Online in the form:
+For Portal Example:
+&lt;scheme&gt;://&lt;host&gt;/&lt;web_adatpor&gt;</td>
+</tr>
+<tr class="row-odd"><td>username</td>
+<td>optional string, login user name (case sensative)</td>
+</tr>
+<tr class="row-even"><td>password</td>
+<td>optional string, if a username is provided, a password is
+expected.  This is case sensative. If the password is not
+provided, user is prompted.</td>
+</tr>
+<tr class="row-odd"><td>key_file</td>
+<td>optional string, file path to a user’s key certificate</td>
+</tr>
+<tr class="row-even"><td>cert_file</td>
+<td>optional string, file path to a user’s key certificate</td>
+</tr>
+<tr class="row-odd"><td>verify_cert</td>
+<td>optional boolean, if a site has an invalid certificate, set the
+value to False.  This will ensure that all SSL certification
+are ignore.  The default is True.
+<strong>warning</strong> setting the value to False can be a security risk.</td>
+</tr>
+<tr class="row-even"><td>set_active</td>
+<td>optional boolean, the default is True.  If True, the GIS object
+will be used as the default GIS object throughout the whole
+scripting session.</td>
+</tr>
+<tr class="row-odd"><td>client_id</td>
+<td>optional string, used for OAuth athentication.  This is the
+client ID value.</td>
+</tr>
+<tr class="row-even"><td>profile</td>
+<td>optional string, if set the profile contains login information
+for a given site.</td>
+</tr>
+</tbody>
+</table>
+<p>In addition to explicitly named variable, the GIS object supports optional key word
+arguments</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>kwargs</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>proxy_host</td>
+<td>optional string, host name of the proxy server</td>
+</tr>
+<tr class="row-odd"><td>proxy_port</td>
+<td>optional integer, proxy host port.  The default is 80.</td>
+</tr>
+</tbody>
+</table>
+<p>Usage Example 1: Anonymous Login to ArcGIS Online:</p>
+<p>gis = GIS()</p>
+<p>Usage Example 2: Built-in Login to ArcGIS Online:</p>
+<p>gis = GIS(username=”someuser”, password=”secret1234”)</p>
+<p>Usage Example 3: Built-in Login to ArcGIS Enterprise</p>
+<dl class="docutils">
+<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
+<dd>username=”user1”, password=”password1”)</dd>
+</dl>
+<p>Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors</p>
+<dl class="docutils">
+<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
+<dd>username=”user1”, password=”password1”,
+verify_cert=False)</dd>
+</dl>
+<p>Usage Example 5: Anonymous ArcGIS Online Login with Proxy</p>
+<p>gis = GIS(proxy_host=‘127.0.0.1’, proxy_port=8888)</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.gis.GIS.content" title="Permalink to this definition">¶</a></dt>
@@ -703,10 +803,10 @@ who have access to the item.</p>
 <dd><p>Adds a relationship from this item to rel_item.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p>Relationships are not tied to an item. They are directional links from an origin item 
-to a destination item and have a type. The type defines the valid origin and destination 
-item types as well as some rules. See Relationship types in REST API help for more information. 
-Users don’t have to own the items they relate unless so defined by the rules of the relationship 
+<p>Relationships are not tied to an item. They are directional links from an origin item
+to a destination item and have a type. The type defines the valid origin and destination
+item types as well as some rules. See Relationship types in REST API help for more information.
+Users don’t have to own the items they relate unless so defined by the rules of the relationship
 type.</p>
 <p>Users can only delete relationships they create.</p>
 <p class="last">Relationships are deleted automatically if one of the two items is deleted.</p>
@@ -891,7 +991,7 @@ REST API help for more information on this parameter.</td>
 <dl class="method">
 <dt id="arcgis.gis.Item.download_metadata">
 <code class="descname">download_metadata</code><span class="sig-paren">(</span><em>save_folder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.download_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads the item metadata for the specified item id. Items with metadata have ‘Metadata’ 
+<dd><p>Downloads the item metadata for the specified item id. Items with metadata have ‘Metadata’
 in their typeKeywords.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -984,7 +1084,7 @@ the export continues to completion.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Item or dictionary.  Item is returned when wait=True. A dictionary describing the status of 
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Item or dictionary.  Item is returned when wait=True. A dictionary describing the status of
 the item is returned when wait=False.</td>
 </tr>
 </tbody>
@@ -1017,8 +1117,8 @@ otherwise the data is returned as a string.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Dependent on the content type of the data.
-For non-JSON/text data, binary files are returned and the path to the downloaded file. 
-For JSON/text files, a Python dictionary or a string.  All others will be a byte array, 
+For non-JSON/text data, binary files are returned and the path to the downloaded file.
+For JSON/text files, a Python dictionary or a string.  All others will be a byte array,
 that can be converted to string using data.decode(‘utf-8’). Zero byte files will return None.</td>
 </tr>
 </tbody>
@@ -1225,7 +1325,7 @@ optional parameter.</td>
 <dd><p>Allows the administrator to reassign a single item from one user to another.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">If you wish to move all of a user’s items (and groups) to another user then use the 
+<p class="last">If you wish to move all of a user’s items (and groups) to another user then use the
 user.reassign_to() method.  This method only moves one item at a time.</p>
 </div>
 <table border="1" class="docutils">
@@ -1261,7 +1361,7 @@ user.reassign_to() method.  This method only moves one item at a time.</p>
 <dl class="method">
 <dt id="arcgis.gis.Item.related_items">
 <code class="descname">related_items</code><span class="sig-paren">(</span><em>rel_type</em>, <em>direction='forward'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.related_items" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieves the items related to this item. Relationsships can be added and deleted using 
+<dd><p>Retrieves the items related to this item. Relationsships can be added and deleted using
 item.add_relationship() and item.delete_relationship(), respectively.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -1414,7 +1514,7 @@ or an application).</p>
 <p>To upload a package or other file, provide a path or URL
 to the file in the data argument.</p>
 <p class="last">For item_properties, pass in arguments for only the properties you want to be updated.
-All other properties will be untouched.  For example, if you want to update only the 
+All other properties will be untouched.  For example, if you want to update only the
 item’s description, then only provide the description argument in item_properties.</p>
 </div>
 <table border="1" class="docutils">
@@ -2164,7 +2264,7 @@ group are sorted.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Datastore.ref_count">
 <code class="descname">ref_count</code><a class="headerlink" href="#arcgis.gis.Datastore.ref_count" title="Permalink to this definition">¶</a></dt>
-<dd><p>The total number of references to this data item that exist on the server. You can use this 
+<dd><p>The total number of references to this data item that exist on the server. You can use this
 property to determine if this data item can be safely deleted (or taken down for maintenance).</p>
 </dd></dl>
 
@@ -3205,7 +3305,7 @@ your org</td>
 This class is not created by users directly.
 Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
 arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
-Users call methods on this ‘datastores’ object to manage the datastores in a site 
+Users call methods on this ‘datastores’ object to manage the datastores in a site
 federated with the portal.</p>
 <dl class="method">
 <dt id="arcgis.gis.DatastoreManager.add">
@@ -3383,8 +3483,8 @@ If you specify the property as True, users will not be able to publish geoproces
 <code class="descname">search</code><span class="sig-paren">(</span><em>parent_path=None</em>, <em>ancestor_path=None</em>, <em>types=None</em>, <em>id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.DatastoreManager.search" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div>You can use this operation to search through the various data
-items registered in the server’s data store. Searching without 
-specifying the parent path and other parameters returns a list 
+items registered in the server’s data store. Searching without
+specifying the parent path and other parameters returns a list
 of all registered data items.</div></blockquote>
 <table border="1" class="docutils">
 <colgroup>

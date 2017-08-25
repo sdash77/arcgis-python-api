@@ -157,6 +157,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#output-datastore">output_datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
@@ -618,13 +619,112 @@
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arcgis" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.GIS">
-<em class="property">class </em><code class="descclassname">arcgis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em>, <em>profile=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.GIS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em>, <em>profile=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p id="gis">A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
 (search, create, retrieve) GIS resources such as content, users, and groups.</p>
 <p>Additionally, the GIS object has properties to query it’s state, accessible using the properties attribute.</p>
 <p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
 as well as the results of your analysis. To create a new map, call the map() method.</p>
+<p>Constructs a GIS object given a url and user credentials to ArcGIS Online
+or an ArcGIS Portal. User credentials can be passed in using username/password
+pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
+PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.</p>
+<p>If no url is provided, ArcGIS Online is used. If username/password
+or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.</p>
+<p>A persisted profile for the GIS can be created by giving the GIS and it’s authorization credentials and
+specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
+or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
+saved in the configuration file by that profile name.</p>
+<p>See <a class="reference external" href="https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/">https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/</a> for examples.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>url</td>
+<td>optional string, if URL is None, then the URL will be ArcGIS
+Online.  This should be a web address to either a local portal
+or to ArcGIS Online in the form:
+For Portal Example:
+&lt;scheme&gt;://&lt;host&gt;/&lt;web_adatpor&gt;</td>
+</tr>
+<tr class="row-odd"><td>username</td>
+<td>optional string, login user name (case sensative)</td>
+</tr>
+<tr class="row-even"><td>password</td>
+<td>optional string, if a username is provided, a password is
+expected.  This is case sensative. If the password is not
+provided, user is prompted.</td>
+</tr>
+<tr class="row-odd"><td>key_file</td>
+<td>optional string, file path to a user’s key certificate</td>
+</tr>
+<tr class="row-even"><td>cert_file</td>
+<td>optional string, file path to a user’s key certificate</td>
+</tr>
+<tr class="row-odd"><td>verify_cert</td>
+<td>optional boolean, if a site has an invalid certificate, set the
+value to False.  This will ensure that all SSL certification
+are ignore.  The default is True.
+<strong>warning</strong> setting the value to False can be a security risk.</td>
+</tr>
+<tr class="row-even"><td>set_active</td>
+<td>optional boolean, the default is True.  If True, the GIS object
+will be used as the default GIS object throughout the whole
+scripting session.</td>
+</tr>
+<tr class="row-odd"><td>client_id</td>
+<td>optional string, used for OAuth athentication.  This is the
+client ID value.</td>
+</tr>
+<tr class="row-even"><td>profile</td>
+<td>optional string, if set the profile contains login information
+for a given site.</td>
+</tr>
+</tbody>
+</table>
+<p>In addition to explicitly named variable, the GIS object supports optional key word
+arguments</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>kwargs</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>proxy_host</td>
+<td>optional string, host name of the proxy server</td>
+</tr>
+<tr class="row-odd"><td>proxy_port</td>
+<td>optional integer, proxy host port.  The default is 80.</td>
+</tr>
+</tbody>
+</table>
+<p>Usage Example 1: Anonymous Login to ArcGIS Online:</p>
+<p>gis = GIS()</p>
+<p>Usage Example 2: Built-in Login to ArcGIS Online:</p>
+<p>gis = GIS(username=”someuser”, password=”secret1234”)</p>
+<p>Usage Example 3: Built-in Login to ArcGIS Enterprise</p>
+<dl class="docutils">
+<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
+<dd>username=”user1”, password=”password1”)</dd>
+</dl>
+<p>Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors</p>
+<dl class="docutils">
+<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
+<dd>username=”user1”, password=”password1”,
+verify_cert=False)</dd>
+</dl>
+<p>Usage Example 5: Anonymous ArcGIS Online Login with Proxy</p>
+<p>gis = GIS(proxy_host=‘127.0.0.1’, proxy_port=8888)</p>
 <dl class="attribute">
 <dt id="arcgis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.GIS.content" title="Permalink to this definition">¶</a></dt>
