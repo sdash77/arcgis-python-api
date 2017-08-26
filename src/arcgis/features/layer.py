@@ -329,7 +329,7 @@ class FeatureLayer(Layer):
                     out_fields = object_id_field + "," + out_fields
             except (IndexError, AttributeError):
                 pass
-            params['outFields'] = out_fields
+        params['outFields'] = out_fields
         if return_count_only or return_extent_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
