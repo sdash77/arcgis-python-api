@@ -508,6 +508,7 @@ class FeatureSet(object):
         features = []
         index = 0
         sr = None
+        df = df.fillna('')
         if isinstance(df, SpatialDataFrame):
             df_rows = df.copy()
             del df_rows['SHAPE']
@@ -523,7 +524,7 @@ class FeatureSet(object):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(json.dumps(geoms[0])),
+                        "geometry": json.loads(json.dumps(geoms[index])),
                         "attributes": row
                     })
             else:
