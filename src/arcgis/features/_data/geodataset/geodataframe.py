@@ -340,7 +340,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
              gis._con._auth.lower() != "anon":
             return from_featureclass(filename=filename, **kwargs)
         else:
-            raise Exception("Cannot create the SpatialDataFrame, you must" +\
+            raise Exception("Cannot create the SpatialDataFrame, you must " +\
                             "have an authenticated GIS.")
     #----------------------------------------------------------------------
     @staticmethod
