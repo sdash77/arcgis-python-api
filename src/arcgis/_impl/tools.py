@@ -225,6 +225,7 @@ class _AsyncService(_GISService):
         else:
             raise Exception("Unable to get analysis job results.")
 
+
     def _feature_input(self, input_layer):
 
         point_fs = {
@@ -340,7 +341,7 @@ class _AsyncService(_GISService):
         input_layer_url = ""
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type.lower() == 'feature service':
-                input_param =  {"url": input_layer.layers[0].url }
+                input_param = input_layer.layers[0]._lyr_dict
             elif input_layer.type.lower() == 'feature collection':
                 fcdict = input_layer.get_data()
                 fc = arcgis.features.FeatureCollection(fcdict['layers'][0])
@@ -349,17 +350,19 @@ class _AsyncService(_GISService):
                 raise TypeError("item type must be feature service or feature collection")
 
         elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
-            input_layer_url = input_layer.layers[0].url #["url"]
-            input_param =  {"url": input_layer_url }
+            input_param = input_layer.layers[0]._lyr_dict
+
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
             input_param =  input_layer.properties
+
         elif isinstance(input_layer, arcgis.gis.Layer):
-            input_layer_url = input_layer.url
-            input_param =  {"url": input_layer_url }
+            input_param = input_layer._lyr_dict
+
         elif isinstance(input_layer, tuple): # geocoding location, convert to point featureset
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+
         elif isinstance(input_layer, dict): # could add support for geometry one day using geometry -> featureset
             if 'location' in input_layer: # geocoder result
                 geom = arcgis.geometry.Geometry(input_layer['location'])

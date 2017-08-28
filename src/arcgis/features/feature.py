@@ -81,7 +81,7 @@ class Feature(object):
         """ returns a value for a given field name """
         if field_name in self.fields:
             return self._dict['attributes'][field_name]
-        elif field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
+        elif field_name is not None and field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
             return self._dict['geometry']
         return None
 
@@ -508,6 +508,7 @@ class FeatureSet(object):
         features = []
         index = 0
         sr = None
+        df = df.fillna('')
         if isinstance(df, SpatialDataFrame):
             df_rows = df.copy()
             del df_rows['SHAPE']
@@ -523,7 +524,7 @@ class FeatureSet(object):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(json.dumps(geoms[0])),
+                        "geometry": json.loads(json.dumps(geoms[index])),
                         "attributes": row
                     })
             else:

@@ -50,6 +50,7 @@ def _set_context(params):
     out_sr = arcgis.env.out_spatial_reference
     process_sr = arcgis.env.process_spatial_reference
     out_extent = arcgis.env.analysis_extent
+    output_datastore = arcgis.env.output_datastore
     
     context = {}
     set_context = False
@@ -62,6 +63,9 @@ def _set_context(params):
         set_context = True
     if process_sr is not None:
         context['processSR'] = {'wkid': int(process_sr)}
+        set_context = True
+    if output_datastore is not None:
+        context['dataStore'] = output_datastore
         set_context = True
 
     if set_context:

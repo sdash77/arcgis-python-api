@@ -346,7 +346,11 @@ class Geocoder(_GISResource):
                                                                "attributes" : att }
             return FeatureSet(features=matches, spatial_reference=sr)
         elif resp is not None and as_featureset == False:
-            return resp
+            matches = [None] * len(addresses)
+            locations = resp['locations']
+            for location in locations:
+                matches[location['attributes']['ResultID']] = location
+            return matches
         else:
             return []
 

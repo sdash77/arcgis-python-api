@@ -319,6 +319,71 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if extent:
             m.extent = extent
         return m
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_df(df, address_column="address", geocoder=None):
+        """
+        Returns a SpatialDataFrame from a dataframe with an address column.
+        Inputs:
+         df: Pandas dataframe with an address column
+        Optional Parameters:
+         address_column: string, default "address". This is the name of a
+               column in the specified dataframe that contains
+               addresses (as strings). The addresses are batch geocoded using
+               the GIS's first configured geocoder and their locations used as
+               the geometry of the spatial dataframe. Ignored if the
+               'geometry' parameter is also specified.
+
+        geocoder:  the geocoder to be used. If not specified,
+                        the active GIS's first geocoder is used.
+
+        NOTE: Credits will be consumed for batch_geocoding, from
+        the first configured geocoder in the GIS
+
+        """
+        from arcgis.geocoding import get_geocoders, geocode, batch_geocode
+        if geocoder is None:
+            geocoder = arcgis.env.active_gis._tools.geocoders[0]
+
+        geoms = []
+        if address_column in df.columns:
+            # batch geocode addresses in the address column and use them as the geometry
+            batch_size = geocoder.properties.locatorProperties.MaxBatchSize
+            N = len(df)
+            geoms = []
+            for i in range(0, N, batch_size):
+                start = i
+                stop = i + batch_size if i + batch_size < N else N
+                # print('Geocoding from ' + str(start) + ' to ' + str(stop))
+
+                res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
+                for index in range(len(res)):
+                    address = df.ix[start + index, address_column]
+                    try:
+                        loc = res[index]['location']
+                        x = loc['x']
+                        y = loc['y']
+                        # self.ix[start + index, 'x'] = x
+                        # self.ix[start + index, 'y'] = y
+                        geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y}))
+
+                    except:
+                        x, y = None, None
+                        try:
+                            loc = geocode(address, geocoder=geocoder)[0]['location']
+                            x = loc['x']
+                            y = loc['y']
+                        except:
+                            print('Unable to geocode address: ' + address)
+                            pass
+                        # self.ix[start + index, 'x'] = x
+                        # self.ix[start + index, 'y'] = y
+                        geoms.append(None)
+        else:
+            raise ValueError("Address column not found in dataframe")
+
+        return SpatialDataFrame(df, geometry=geoms)
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(filename, **kwargs):
@@ -340,7 +405,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
              gis._con._auth.lower() != "anon":
             return from_featureclass(filename=filename, **kwargs)
         else:
-            raise Exception("Cannot create the SpatialDataFrame, you must" +\
+            raise Exception("Cannot create the SpatialDataFrame, you must " +\
                             "have an authenticated GIS.")
     #----------------------------------------------------------------------
     @staticmethod

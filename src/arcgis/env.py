@@ -35,6 +35,13 @@ The spatial reference that the geoprocessor will use to perform geometry operati
 out_spatial_reference is not specified, the output geometries are in the spatial reference of the
 process spatial reference.
 
+output_datastore
+================
+
+.. py:data:: output_datastore
+The data store where GeoAnalytics results should be stored. The supported values of this parameter are "relational" and
+"spatiotemporal". By default, results are stored in the spatiotemporal data store. It is recommended that results are
+stored in the spatiotemporal data store due to the scalability of the spatiotemporal big data store.
 
 return_z
 ========
@@ -73,6 +80,11 @@ out_spatial_reference = None
 #: out_spatial_reference is not specified, the output geometries are in the spatial reference of the
 #: process spatial reference.
 process_spatial_reference = None
+
+#: The data store where GeoAnalytics results should be stored. The supported values of this parameter are "relational" and
+#: "spatiotemporal". By default, results are stored in the spatiotemporal data store. It is recommended that results be
+#: stored in the spatiotemporal data store due to the scalability of the spatiotemporal big data store.
+output_datastore = None
 
 #: The processing extent used by analysis tools
 analysis_extent = None

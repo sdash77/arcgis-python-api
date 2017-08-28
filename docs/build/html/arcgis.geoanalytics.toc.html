@@ -159,6 +159,7 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#analysis-extent">analysis_extent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#out-spatial-reference">out_spatial_reference</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#process-spatial-reference">process_spatial_reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#output-datastore">output_datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-z">return_z</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#return-m">return_m</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.env.html#verbose">verbose</a></li>
@@ -580,6 +581,32 @@
 <p>The arcgis.geoanalytics module provides types and functions for distributed analysis of large datasets.
 These GeoAnalytics tools work with big data registered in the GISs datastores as well as with feature layers.</p>
 <p>Use arcgis.geoanalytics.is_analysis_supported(gis) to check if geoanalytics is supported in your GIS.</p>
+<p>Note: GeoAnalytics operations use the following context parameters defined in the <cite>arcgis.env</cite> module:</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="27%" />
+<col width="73%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Context parameter</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>out_spatial_reference</td>
+<td>Used for setting the output spatial reference</td>
+</tr>
+<tr class="row-odd"><td>process_spatial_reference</td>
+<td>Used for setting the processing spatial reference.</td>
+</tr>
+<tr class="row-even"><td>analysis_extent</td>
+<td>Used for setting the analysis extent.</td>
+</tr>
+<tr class="row-odd"><td>output_datastore</td>
+<td>Used for setting the output datastore to be used.</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
 <div class="section" id="get-datastores">
 <h2>get_datastores<a class="headerlink" href="#get-datastores" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
