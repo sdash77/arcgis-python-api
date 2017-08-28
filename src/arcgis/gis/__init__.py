@@ -2124,7 +2124,7 @@ class ContentManager(object):
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop('tags', 'FGDB')
             os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % "a" + uuid4().hex[:5])
+            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
                 fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
                                                       out_name="publish.gdb")[0]
