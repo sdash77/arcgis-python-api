@@ -339,7 +339,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                         the active GIS's first geocoder is used.
 
         NOTE: Credits will be consumed for batch_geocoding, from
-        the first configured geocoder in the GIS
+        the GIS to which the geocoder belongs.
 
         """
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
