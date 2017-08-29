@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis module &mdash; arcgis 1.2.1 documentation</title>
+  <title>arcgis.gis module &mdash; arcgis 1.2.2 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.1 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.2 documentation" href="index.html"/>
         <link rel="next" title="arcgis.gis.admin module" href="arcgis.gis.admin.html"/>
         <link rel="prev" title="API Reference for the ArcGIS API for Python" href="index.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.1
+                1.2.2
               </div>
             
           
@@ -845,6 +845,60 @@ REST API help for more information on this parameter.</td>
 <dt id="arcgis.gis.Item.comments">
 <code class="descname">comments</code><a class="headerlink" href="#arcgis.gis.Item.comments" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of comments for a given item.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.Item.copy_feature_layer_collection">
+<code class="descname">copy_feature_layer_collection</code><span class="sig-paren">(</span><em>service_name</em>, <em>layers=None</em>, <em>tables=None</em>, <em>folder=None</em>, <em>description=None</em>, <em>snippet=None</em>, <em>owner=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Item.copy_feature_layer_collection" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation allows users to copy existing Feature Layer Collections and select the
+layers/tables that the user wants in the service.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>service_name</td>
+<td>Required string. It is the name of the service.</td>
+</tr>
+<tr class="row-odd"><td>layers</td>
+<td>Optional list/string.  This is a either a list of integers or a comma
+seperated list of integers as a string.  Each index value represents
+a layer in the feature layer collection.</td>
+</tr>
+<tr class="row-even"><td>tables</td>
+<td>Optional list/string. This is a either a list of integers or a comma
+seperated list of integers as a string.  Each index value represents
+a table in the feature layer collection.</td>
+</tr>
+<tr class="row-odd"><td>folder</td>
+<td>Optional string. This is the name of the folder to place in.  The
+default is None, which means the root folder.</td>
+</tr>
+<tr class="row-even"><td>description</td>
+<td>Optional string. This is the Item description of the service.</td>
+</tr>
+<tr class="row-odd"><td>snippet</td>
+<td>Optional string. This is the Item’s snippet of the service. It is
+no longer than 250 characters.</td>
+</tr>
+<tr class="row-even"><td>owner</td>
+<td>Optional string/User. The default is the current user, but if you
+want the service to be owned by another user, pass in this value.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Item on success. None on failure</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3940,7 +3994,7 @@ used together with file_name.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.1',
+            VERSION:'1.2.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

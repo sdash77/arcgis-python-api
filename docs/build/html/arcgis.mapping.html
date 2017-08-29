@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.mapping module &mdash; arcgis 1.2.1 documentation</title>
+  <title>arcgis.mapping module &mdash; arcgis 1.2.2 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.1 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.2 documentation" href="index.html"/>
         <link rel="next" title="arcgis.realtime module" href="arcgis.realtime.html"/>
         <link rel="prev" title="arcgis.geoprocessing module" href="arcgis.geoprocessing.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.1
+                1.2.2
               </div>
             
           
@@ -1172,6 +1172,43 @@ code: ALL | ERROR | CANCELED</td>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="arcgis.mapping.MapImageLayerManager.update_tiles">
+<code class="descname">update_tiles</code><span class="sig-paren">(</span><em>levels=None</em>, <em>extent=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.mapping.MapImageLayerManager.update_tiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>The starts tile generation for ArcGIS Online.  The levels of detail
+and the extent are provided to determine the area where tiles need
+to be rebuilt.</p>
+<p>..Note: This operation is for ArcGIS Online only.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="20%" />
+<col width="80%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>levels</td>
+<td>Optional string, The level of details to update
+example: “1,2,10,20”</td>
+</tr>
+<tr class="row-odd"><td>extent</td>
+<td>Optional string, the area to update as Xmin, YMin, XMax, YMax
+example: “-100,-50,200,500”</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Dictionary. If the product is not ArcGIS Online tile service, the
+result will be None.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -1313,7 +1350,7 @@ Parameters:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.1',
+            VERSION:'1.2.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
