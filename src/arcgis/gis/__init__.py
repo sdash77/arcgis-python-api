@@ -4688,8 +4688,23 @@ class Item(dict):
                                         self.owner, folder, buildInitialCache)
 
         #Check publishing job status
-        serviceitem_id = self._check_publish_status(ret, folder)
 
+        if buildInitialCache and \
+           self._gis._portal.is_arcgisonline and \
+           fileType.lower() == 'tilepackage':
+            from ..mapping._types import MapImageLayer
+            if len(ret) > 0 and \
+               'success' in ret[0] and \
+               ret[0]['success'] == False:
+                raise Exception(ret[0]['error'])
+            ms_url = self._gis.content.get(ret[0]['serviceItemId']).url
+            ms = MapImageLayer(url=ms_url, gis=self._gis)
+            serviceitem_id = ret[0]['serviceItemId']
+            try:
+                ret = ms.manager.update_tiles()
+            except: pass
+        else:
+            serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
     def move(self, folder, owner=None):
@@ -4832,6 +4847,20 @@ class Item(dict):
                                                    self._gis.users.me.username)
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res['services'], folder=None)
+            if self._gis._portal.is_arcgisonline:
+                from ..mapping._types import MapImageLayer
+                ms_url = self._gis.content.get(serviceitem_id).url
+                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                extent = ",".join([str(ms.properties['fullExtent']['xmin']),
+                                   str(ms.properties['fullExtent']['ymin']),
+                                   str(ms.properties['fullExtent']['xmax']),
+                                   str(ms.properties['fullExtent']['ymax'])])
+                lods = []
+                for lod in cache_info['lods']:
+                    if lod['scale'] <= min_scale and \
+                       lod['scale'] >= max_scale:
+                        lods.append(str(lod['level']))
+                ms.manager.update_tiles(levels=",".join(lods), extent=extent)
             return self._gis.content.get(serviceitem_id)
         else:
             raise ValueError("Input must of type FeatureService")

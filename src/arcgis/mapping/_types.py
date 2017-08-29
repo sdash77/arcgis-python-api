@@ -225,7 +225,41 @@ class MapImageLayerManager(_GISResource):
             "f": "json"
         }
         return self._con._post(url, params)
+    #----------------------------------------------------------------------
+    def update_tiles(self, levels=None, extent=None):
+        """
+        The starts tile generation for ArcGIS Online.  The levels of detail
+        and the extent are provided to determine the area where tiles need
+        to be rebuilt.
 
+
+        ..Note: This operation is for ArcGIS Online only.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        levels              Optional string, The level of details to update
+                            example: "1,2,10,20"
+        ---------------     ----------------------------------------------------
+        extent              Optional string, the area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500"
+        ===============     ====================================================
+
+        :returns:
+           Dictionary. If the product is not ArcGIS Online tile service, the
+           result will be None.
+        """
+        if self._gis._portal.is_arcgisonline:
+            url = "%s/updateTiles" % self._url
+            params = {
+                "f" : "json"
+            }
+            if levels:
+                params['levels'] = levels
+            if extent:
+                params['extent'] = extent
+            return self._con.post(url, params)
+        return None
     #----------------------------------------------------------------------
     @property
     def rerun_job(self, job_id, code):
@@ -399,7 +433,7 @@ class MapImageLayer(Layer):
             addText = "admin/"
             part1 = url[:res[1]]
             part2 = url[res[1]:]
-            adminURL = "%s%s%s" % (part1, addText, part2)
+            adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
 
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
