@@ -147,7 +147,8 @@ def zipws(path, outfile, keep=True):
     path = os.path.normpath(path)
     for (dirpath, dirnames, filenames) in os.walk(path):
         for file in filenames:
-            if not file.endswith('.lock'):
+            if not file.endswith('.lock') and\
+               not file.endswith('.zip'):
                 try:
                     if keep:
                         zipobj.write(
