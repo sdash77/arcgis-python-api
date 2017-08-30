@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features module &mdash; arcgis 1.2.1 documentation</title>
+  <title>arcgis.features module &mdash; arcgis 1.2.2 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.1 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.2 documentation" href="index.html"/>
         <link rel="next" title="arcgis.features.analysis module" href="arcgis.features.analysis.html"/>
         <link rel="prev" title="arcgis.env module" href="arcgis.env.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.1
+                1.2.2
               </div>
             
           
@@ -1876,6 +1876,31 @@ Make a deep copy, i.e. also copy data</td>
 </dd></dl>
 
 <dl class="staticmethod">
+<dt id="arcgis.features.SpatialDataFrame.from_df">
+<em class="property">static </em><code class="descname">from_df</code><span class="sig-paren">(</span><em>df</em>, <em>address_column='address'</em>, <em>geocoder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.SpatialDataFrame.from_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a SpatialDataFrame from a dataframe with an address column.
+Inputs:</p>
+<blockquote>
+<div>df: Pandas dataframe with an address column</div></blockquote>
+<dl class="docutils">
+<dt>Optional Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>address_column: string, default “address”. This is the name of a</dt>
+<dd>column in the specified dataframe that contains
+addresses (as strings). The addresses are batch geocoded using
+the GIS’s first configured geocoder and their locations used as
+the geometry of the spatial dataframe. Ignored if the
+‘geometry’ parameter is also specified.</dd>
+</dl>
+</dd>
+<dt>geocoder:  the geocoder to be used. If not specified,</dt>
+<dd>the active GIS’s first geocoder is used.</dd>
+</dl>
+<p>NOTE: Credits will be consumed for batch_geocoding, from
+the GIS to which the geocoder belongs.</p>
+</dd></dl>
+
+<dl class="staticmethod">
 <dt id="arcgis.features.SpatialDataFrame.from_featureclass">
 <em class="property">static </em><code class="descname">from_featureclass</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.SpatialDataFrame.from_featureclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a SpatialDataFrame from a feature class.
@@ -2238,7 +2263,7 @@ in the store wherever possible</dd>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.1',
+            VERSION:'1.2.2',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

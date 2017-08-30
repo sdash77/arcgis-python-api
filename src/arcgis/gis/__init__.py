@@ -4516,6 +4516,7 @@ class Item(dict):
         :return:
             An arcgis.gis.Item object corresponding to the published web layer.
 
+        For publish_parameters, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
         """
 
         import time
