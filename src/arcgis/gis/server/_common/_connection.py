@@ -215,6 +215,7 @@ class ServerConnection(object):
     _portal_connection = None
     _TOKEN_TIME = None
     _REFRESH_WHEN = None
+    _handlers = None
     def __init__(self, baseurl=None, tokenurl=None, username=None,
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
@@ -561,13 +562,16 @@ class ServerConnection(object):
 
         try:
             # Send the request and read the response
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            headers = [('User-Agent', self._useragent)]
+            if self._referer and \
+                self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
+
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers()
+            opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
             #request.install_opener(opener)
             req = request.Request(url)
@@ -605,7 +609,7 @@ class ServerConnection(object):
                             return self.get(newpath, ssl, compress, try_json, is_retry=True)
                         elif errorcode == 498:
                             raise RuntimeError('Invalid token')
-                        self._handle_json_error(resp_json['error'], "")
+                        self._handle_json_error(resp_json['error'])
                         return None
                 except AttributeError:
                     # Top-level JSON object isnt a dict, so can't have an error
@@ -678,6 +682,16 @@ class ServerConnection(object):
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
 
         cj = cookiejar.CookieJar()
+
+        if self.proxy_host: # Simple Proxy Support
+            from urllib.request import ProxyHandler
+            if self.proxy_port is None:
+                self.proxy_port = 80
+            proxies = {"http":"http://%s:%s" % (self.proxy_host, self.proxy_port),
+                       "https":"https://%s:%s" % (self.proxy_host, self.proxy_port)}
+            proxy_support = ProxyHandler(proxies)
+            handlers.append(proxy_support)
+
         handlers.append(request.HTTPCookieProcessor(cj))
         return handlers
     #----------------------------------------------------------------------
@@ -728,15 +742,18 @@ class ServerConnection(object):
             req.add_header('Content-type', mpf.get_content_type())
             req.add_header('Content-length', len(body))
             req.data = body
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent),
+            headers = [('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
+            if self._referer and \
+               self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
+            if self._handlers is None:
+                self._handlers = self.get_handlers()
+            #handlers = self.get_handlers()
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
 
@@ -747,8 +764,10 @@ class ServerConnection(object):
             encoded_postdata = None
             if postdata:
                 encoded_postdata = urlencode(postdata)
-            headers = [('Referer', self._referer),
-                       ('User-Agent', self._useragent)]
+            headers = [('User-Agent', self._useragent)]
+            if self._referer and \
+                self._auth.lower() != 'pki':
+                headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 
@@ -816,7 +835,6 @@ class ServerConnection(object):
                 errormessage = errormessage + "\n" + errordetail
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
         raise RuntimeError(errormessage)
-
 ########################################################################
 class _StrictURLopener(request.FancyURLopener):
     def http_error_default(self, url, fp, errcode, errmsg, headers):
