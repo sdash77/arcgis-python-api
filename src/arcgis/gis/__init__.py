@@ -5106,7 +5106,8 @@ class _GISResource(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None):
-        from .._impl._server._common import ServerConnection
+
+        from .server._common import ServerConnection
         from .._impl.connection import _ArcGISConnection
         self._hydrated = False
         self.url = url

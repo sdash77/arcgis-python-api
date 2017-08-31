@@ -14,18 +14,33 @@ import os
 import re
 import json
 from .._common import BaseServer
+from .._common.util import contextmanager, _tempinput
 ########################################################################
 class DataStoreManager(BaseServer):
     """
-       This resource provides information about the data holdings of the
-       server. This information is used by ArcGIS for Desktop and other
-       clients to validate data paths referenced by GIS services.
-       You can register new data items with the server by using the
-       Register Data Item operation. Use the Find Data Items operation to
-       search through the hierarchy of data items.
-       The Compute Ref Count operation counts and lists all references to a
-       specific data item. This operation helps you determine if a
-       particular data item can be safely deleted or refreshed.
+    This resource provides information about the data holdings of the
+    server. Data items are used by ArcGIS for Desktop and other clients to
+    validate data paths referenced by GIS services.
+
+    You can register new data items with the server by using the Register
+    Data Item operation. Use the Find Data Items operation to search
+    through the hierarchy of data items.
+
+    A relational data store type represents a database platform that has
+    been registered for use on a portal's hosting server by the ArcGIS
+    Server administrator. Each relational data store type describes the
+    properties ArcGIS Server requires in order to connect to an instance of
+    a database for a particular platform. At least one registered
+    relational data store type is required before client applications such
+    as Insights for ArcGIS can create Relational Database Connection portal
+    items.
+
+    The Compute Ref Count operation counts and lists all references to a
+    specific data item. This operation helps you determine if a particular
+    data item can be safely deleted or refreshed.
+
+    Parameters:
+       :param server: Server object
     """
     _con = None
     _json_dict = None
@@ -64,9 +79,9 @@ class DataStoreManager(BaseServer):
     def __repr__(self):
         return '<%s for %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
-    @property
-    def datastores(self):
+    def list(self):
         """returns a list of datastore objects"""
+        self._datastores = None
         if self._datastores is None:
             self._datastores = []
             for item in self.items['rootItems']:
@@ -689,8 +704,9 @@ class Datastore(BaseServer):
         params = {
             'f': 'json'
         }
-        res = self._con.post(data_item_manifest_url, params, verify_cert=False)
+
         try:
+            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
             return res['datasets']
         except:
             return None

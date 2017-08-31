@@ -4,7 +4,6 @@
 
 """
 from __future__ import absolute_import
-
 from .._common import BaseServer
 from . import _machines, _clusters
 from . import _data, _info
@@ -13,14 +12,17 @@ from . import _security, _services
 from . import _system
 from . import _uploads, _usagereports
 from . import _mode
+from .. import Catalog
+from arcgis._impl.connection import _ArcGISConnection
+from .._common import ServerConnection
 ########################################################################
-class SiteManager(BaseServer):
+class Server(BaseServer):
     """
     Wrapper for the ArcGIS Server REST API
 
     Inputs:
        url - Administration REST URL
-       connection - connection class to access arcgis server's admin api
+       connection - gis/connection class to access arcgis server's admin api
        initialize - default is false.  False means the object does not make
                     any REST calls until the object is actually needed,
                     whereas True means the object's properties are
@@ -30,20 +32,62 @@ class SiteManager(BaseServer):
     _con = None
     _json_dict = None
     _json = None
+    _catalog = None
+    _sitemanager = None
     #----------------------------------------------------------------------
-    def __init__(self, connection, url,
-                 initialize=False):
+    def __init__(self, gis, url,
+                 initialize=False,
+                 **kwargs):
         """Constructor"""
-        super(SiteManager, self).__init__(connection=connection,
-                                          url=url)
+        super(Server, self).__init__(gis=gis,
+                                     url=url)
+        self._catalog = kwargs.pop('catalog', None)
         if not url.lower().endswith('/admin'):
             url = "%s/admin" % url
         self._url = url
-        self._con = connection
+        if hasattr(gis, '_con'):
+            self._con = gis._con
+        elif hasattr(gis, '_portal'):
+            self._con = gis._portal._con
+        elif isinstance(gis, (_ArcGISConnection,
+                              ServerConnection)):
+            self._con = gis
+        else:
+            raise ValueError("Invalid Connection Type: Must be GIS/_ArcGISConnection/ServerConnection Object")
         if initialize:
-            self._init(connection=connection)
+            self._init(connection=self._con)
     #----------------------------------------------------------------------
-    def create(self,
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def _publish_sd(self,
+                    sd_file,
+                    folder=None):
+        """
+        publishes a service definition file to arcgis server
+        """
+        if sd_file.lower().endswith('.sd') == False:
+            return False
+        catalog = self._catalog
+        if 'System' not in catalog.folders:
+            return False
+
+        service = catalog.find(service_name="PublishingTools", folder='System')
+        if service is None:
+            service = catalog.find(service_name="PublishingToolsEx", folder='System')
+        if service is None:
+            return False
+        status, res = self.uploads.upload(path=sd_file, description="sd file")
+        if status:
+            uid = res['item']['itemID']
+            res = service.publish_service_definition(in_sdp_id=uid)
+            return True
+        return False
+    #----------------------------------------------------------------------
+    def _create(self,
                username,
                password,
                config_store_connection,
@@ -99,7 +143,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def join(self, admin_url, username, password):
+    def _join(self, admin_url, username, password):
         """
         The Join Site operation is used to connect a server machine to an
         existing site. This is considered a 'push' mechanism, in which a
@@ -131,7 +175,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def delete(self):
+    def _delete(self):
         """
         Deletes the site configuration and releases all server resources.
         This is an unrecoverable operation. This operation is well suited
@@ -154,7 +198,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def export(self, location=None):
+    def _export(self, location=None):
         """
         Exports the site configuration to a location you specify as input
         to this operation.
@@ -177,7 +221,7 @@ class SiteManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def import_site(self, location):
+    def _import_site(self, location):
         """
         This operation imports a site configuration into the currently
         running site. Importing a site means replacing all site
@@ -238,7 +282,7 @@ class SiteManager(BaseServer):
                               postdata=params)
     #----------------------------------------------------------------------
     @property
-    def public_key(self):
+    def _public_key(self):
         """gets the public key"""
         url = self._url + "/publicKey"
         params = {
@@ -255,14 +299,14 @@ class SiteManager(BaseServer):
         if isinstance(self.resources, list) and \
            'machines' in self.resources:
             url = self._url + "/machines"
-            return _machines.Machines(url,
-                                      connection=self._con,
-                                      initialize=False)
+            return _machines.MachineManager(url,
+                                            connection=self._con,
+                                            initialize=False)
         else:
             return None
     #----------------------------------------------------------------------
     @property
-    def data(self):
+    def datastores(self):
         """returns the reference to the data functions as a class"""
         if self.properties is None:
             self._init()
@@ -285,7 +329,25 @@ class SiteManager(BaseServer):
                           initialize=True)
     #----------------------------------------------------------------------
     @property
-    def clusters(self):
+    def site(self):
+        """
+        A site is a collection of server resources. This collection
+        includes server machines that are installed with ArcGIS Server,
+        including GIS services, data and so on. The site resource also
+        lists the current version of the software.
+        When you install ArcGIS Server on a server machine for the first
+        time, you must create a new site. Subsequently, newer server
+        machines can join your site and increase its computing power. Once
+        a site is no longer required, you can delete the site, which will
+        cause all of the resources to be cleaned up.
+        """
+        if self._sitemanager:
+            if self._sitemanager is None:
+                self._sitemanager = SiteManager(self._sm)
+            return self._sitemanager
+    #----------------------------------------------------------------------
+    @property
+    def _clusters(self):
         """returns the clusters functions if supported in resources"""
         if self.properties is None:
             self._init()
@@ -326,14 +388,14 @@ class SiteManager(BaseServer):
         if isinstance(self.resources, list) and \
            'usagereports' in self.resources:
             url = self._url + "/usagereports"
-            return _usagereports.UsageReports(url=url,
+            return _usagereports.ReportManager(url=url,
                                               connection=self._con,
                                               initialize=True)
         else:
             return None
     #----------------------------------------------------------------------
     @property
-    def kml(self):
+    def _kml(self):
         """returns the kml functions for server"""
         url = self._url + "/kml"
         return _kml.KML(url=url,
@@ -348,14 +410,14 @@ class SiteManager(BaseServer):
         if isinstance(self.resources, list) and \
            'logs' in self.resources:
             url = self._url + "/logs"
-            return _logs.Log(url=url,
-                             connection=self._con,
-                             initialize=True)
+            return _logs.LogManager(url=url,
+                                    connection=self._con,
+                                    initialize=True)
         else:
             return None
     #----------------------------------------------------------------------
     @property
-    def security(self):
+    def _security(self):
         """returns an object to work with the site security"""
         if self.resources is None:
             self._init()
@@ -369,6 +431,11 @@ class SiteManager(BaseServer):
             return None
     #----------------------------------------------------------------------
     @property
+    def users(self):
+        """returns an object to control the manager"""
+        return self._security.users
+    #----------------------------------------------------------------------
+    @property
     def system(self):
         """returns an object to work with the site system"""
         if self.resources is None:
@@ -376,9 +443,9 @@ class SiteManager(BaseServer):
         if isinstance(self.resources, list) and \
            "system" in self.resources:
             url = self._url + "/system"
-            return _system.System(url=url,
-                                  connection=self._con,
-                                  initialize=True)
+            return _system.SystemManager(url=url,
+                                         connection=self._con,
+                                         initialize=True)
         else:
             return None
     #----------------------------------------------------------------------
@@ -408,3 +475,202 @@ class SiteManager(BaseServer):
                               connection=self._con,
                               initialize=True)
         return None
+
+
+########################################################################
+class SiteManager(object):
+    """
+    A site is a collection of server resources. This collection includes
+    server machines that are installed with ArcGIS Server, including GIS
+    services, data and so on. The site resource also lists the current
+    version of the software.
+    When you install ArcGIS Server on a server machine for the first time,
+    you must create a new site. Subsequently, newer server machines can
+    join your site and increase its computing power. Once a site is no
+    longer required, you can delete the site, which will cause all of
+    the resources to be cleaned up.
+
+    Parameters:
+     :server: arcgis.gis.server object
+    """
+    _sm = None
+    #----------------------------------------------------------------------
+    def __init__(self, server, initialize=False):
+        """Constructor"""
+        self._sm = server
+        isinstance(self._sm, SiteManager)
+
+        if initialize:
+            self._sm._init()
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the site """
+        return self._sm.properties
+    #----------------------------------------------------------------------
+    def create(self,
+               username,
+               password,
+               config_store_connection,
+               directories,
+               cluster=None,
+               logs_settings=None,
+               run_async=False):
+        """
+        This is the first operation that you must invoke when you install
+        ArcGIS Server for the first time. Creating a new site involves:
+
+          -Allocating a store to save the site configuration
+          -Configuring the server machine and registering it with the site
+          -Creating a new cluster configuration that includes the server
+           machine
+          -Configuring server directories
+          -Deploying the services that are marked to auto-deploy
+
+        Because of the sheer number of tasks, it usually takes a little
+        while for this operation to complete. Once a site has been created,
+        you can publish GIS services and deploy them to your server
+        machines.
+
+        Parameters:
+           username - The name of the administrative account to be used by
+             the site. This can be changed at a later stage.
+           password - The credentials of the administrative account.
+           configStoreConnection - A JSON object representing the
+             connection to the configuration store. By default, the
+             configuration store will be maintained in the ArcGIS Server
+             installation directory.
+           directories - A JSON object representing a collection of server
+             directories to create. By default, the server directories will
+             be created locally.
+           cluster - An optional cluster configuration. By default, the
+             site will create a cluster called 'default' with the first
+             available port numbers starting from 4004.
+           logsSettings - Optional log settings.
+           runAsync - A flag to indicate if the operation needs to be run
+             asynchronously. Values: true | false
+        """
+        return self._sm._create(username,
+                               password,
+                               config_store_connection,
+                               directories,
+                               cluster,
+                               logs_settings,
+                               run_async)
+    #----------------------------------------------------------------------
+    def join(self, admin_url, username, password):
+        """
+        The Join Site operation is used to connect a server machine to an
+        existing site. This is considered a 'push' mechanism, in which a
+        server machine pushes its configuration to the site. For the
+        operation to be successful, you need to provide an account with
+        administrative privileges to the site.
+        When an attempt is made to join a site, the site validates the
+        administrative credentials, then returns connection information
+        about its configuration store back to the server machine. The
+        server machine then uses the connection information to work with
+        the configuration store.
+        If this is the first server machine in your site, use the Create
+        Site operation instead.
+
+        Parameters:
+           admin_url - The site URL of the currently live site. This is
+            typically the Administrator Directory URL of one of the server
+            machines of a site.
+           username - The name of an administrative account for the site.
+           password - The password of the administrative account.
+        """
+        return self._sm._join(admin_url, username, password)
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes the site configuration and releases all server resources.
+        This is an unrecoverable operation. This operation is well suited
+        for development or test servers that need to be cleaned up
+        regularly. It can also be performed prior to uninstall. Use caution
+        with this option because it deletes all services, settings, and
+        other configurations.
+        This operation performs the following tasks:
+          - Stops all server machines participating in the site. This in
+            turn stops all GIS services hosted on the server machines.
+          - All services and cluster configurations are deleted.
+          - All server machines are unregistered from the site.
+          - All server machines are unregistered from the site.
+          - The configuration store is deleted.
+        """
+        return self._sm._delete()
+    #----------------------------------------------------------------------
+    def export(self, location=None):
+        """
+        Exports the site configuration to a location you specify as input
+        to this operation.
+
+        Parameters:
+           location - A path to a folder accessible to the server where the
+            exported site configuration will be written. If a location is
+            not specified, the server writes the exported site
+            configuration file to directory owned by the server and returns
+            a virtual path (an HTTP URL) to that location from where it can
+            be downloaded.
+
+        """
+        return self._sm._export(location)
+    #----------------------------------------------------------------------
+    def import_site(self, location):
+        """
+        This operation imports a site configuration into the currently
+        running site. Importing a site means replacing all site
+        configurations (including GIS services, security configurations,
+        and so on) of the currently running site with those contained in
+        the site configuration file you supply as input. The input site
+        configuration file can be obtained through the exportSite
+        operation.
+        This operation will restore all information included in the backup,
+        as noted in exportSite. When it is complete, this operation returns
+        a report as the response. You should review this report and fix any
+        problems it lists to ensure your site is fully functioning again.
+        The importSite operation lets you restore your site from a backup
+        that you created using the exportSite operation.
+
+        Parameters:
+           location - A file path to an exported configuration or an ID
+            referencing the stored configuration on the server.
+        """
+        return self._sm._import_site(location=location)
+    #----------------------------------------------------------------------
+    def upgrade(self, run_async=False):
+        """
+        This is the first operation that must be invoked during an ArcGIS
+        Server upgrade. Once the new software version has been installed
+        and the setup has completed, this operation will be available. A
+        successful run of this operation will complete the upgrade of
+        ArcGIS Server.
+
+        **caution**
+        If errors are returned with the upgrade operation, you must address
+        the errors before you may continue. For example, if you encounter
+        an error about an invalid license, you will need to re-authorize
+        the software using a valid license and you may then retry this
+        operation.
+
+        **note**
+        This operation is available only when a server machine is currently
+        being upgraded. It will not be available after a successful upgrade
+        of a server machine.
+
+        Paramters:
+         :run_async: A flag to indicate if the operation needs to be run
+          asynchronously. The default value is false.
+        """
+        return self._sm._upgrade(run_async)
+    #----------------------------------------------------------------------
+    @property
+    def public_key(self):
+        """gets the public key"""
+        return self._sm._public_key

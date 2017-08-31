@@ -10,7 +10,7 @@ import six
 from .._common import BaseServer
 
 ########################################################################
-class UsageReports(BaseServer):
+class ReportManager(BaseServer):
     """
     This resource is a collection of all the usage reports created within
     your site. The Create Usage Report operation lets you define a new
@@ -27,7 +27,7 @@ class UsageReports(BaseServer):
                  connection,
                  initialize=False):
         """Constructor"""
-        super(UsageReports, self).__init__(url, connection)
+        super(ReportManager, self).__init__(url, connection)
         if url.lower().endswith('/usagereports'):
             self._url = url
         else:
@@ -36,15 +36,20 @@ class UsageReports(BaseServer):
         if initialize:
             self._init(connection)
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
     @property
     def metrics(self):
         """gets the metrics values"""
-        if self._metrics is None:
+        if self._properties is None:
             self._init()
-        return self._metrics
+        return self.properties.metrics
     #----------------------------------------------------------------------
-    @property
-    def reports(self):
+    def list(self):
         """returns a list of reports on the server"""
         if self.properties is None:
             self._init()
@@ -52,13 +57,13 @@ class UsageReports(BaseServer):
         if isinstance(self.properties['metrics'], list):
             for r in self.properties['metrics']:
                 url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
-                self._reports.append(UsageReport(url=url,
-                                                 connection=self._con))
+                self._reports.append(Report(url=url,
+                                            connection=self._con))
                 del url
         return self._reports
     #----------------------------------------------------------------------
     @property
-    def usage_settings(self):
+    def settings(self):
         """
         The usage reports settings are applied to the entire site. A GET
         request returns the current usage reports settings. When usage
@@ -79,10 +84,10 @@ class UsageReports(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def edit_settings(self,
-                      interval,
-                      enabled=True,
-                      max_history=0):
+    def edit(self,
+             interval,
+             enabled=True,
+             max_history=0):
         """
         The usage reports settings are applied to the entire site. A POST
         request updates the usage reports settings.
@@ -110,14 +115,14 @@ class UsageReports(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def create_usage_report(self,
-                            reportname,
-                            queries,
-                            metadata=None,
-                            since="LAST_DAY",
-                            from_value=None,
-                            to_value=None,
-                            aggregation_interval=None):
+    def create(self,
+               reportname,
+               queries,
+               metadata=None,
+               since="LAST_DAY",
+               from_value=None,
+               to_value=None,
+               aggregation_interval=None):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
@@ -318,13 +323,13 @@ class UsageReports(BaseServer):
                                        queries=queries,
                                        since=since,
                                        metadata=metadata)
-        if isinstance(res, UsageReport):
+        if isinstance(res, Report):
             data = res.query()
             res.delete()
             return data
         return res
 ########################################################################
-class UsageReport(BaseServer):
+class Report(BaseServer):
     """
     A Usage Report is used to obtain ArcGIS Server usage data for specified
     resources during a given time period. It specifies the parameters for
@@ -347,7 +352,7 @@ class UsageReport(BaseServer):
     def __init__(self, url, connection,
                  initialize=False):
         """Constructor"""
-        super(UsageReport, self).__init__(url, connection)
+        super(Report, self).__init__(url, connection)
         self._con = connection
         self._url = url
         if initialize:
