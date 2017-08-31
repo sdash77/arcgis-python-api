@@ -32,7 +32,7 @@ class ServiceFactory(type):
                  server=None,
                  initialize=False):
         """generates the proper type of layer from a given url"""
-        from .. import Catalog
+        from .. import ServiceDirectory
         hasLayer = False
         if url is None and \
            item is None:
@@ -43,7 +43,7 @@ class ServiceFactory(type):
         if isinstance(server, ServerConnection) or \
            hasattr(server, 'token'):
             connection = server
-        elif isinstance(server, (GIS, Catalog)):
+        elif isinstance(server, (GIS, ServiceDirectory)):
             connection = server._con
         else:
             try:
@@ -52,13 +52,13 @@ class ServiceFactory(type):
                                                          nl=parsed.netloc,
                                                          wa=parsed.path[1:].split('/')[0])
                 connection = ServerConnection(baseurl=site_url) # anonymous connection
-                server = Catalog(url=site_url)
+                server = ServiceDirectory(url=site_url)
             except:
                 parsed = urlparse(url)
                 site_url = "https://{nl}/rest/services".format(scheme=parsed.scheme,
                                                                   nl=parsed.netloc)
                 connection = ServerConnection(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
-                server = Catalog(url=site_url)
+                server = ServiceDirectory(url=site_url)
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))

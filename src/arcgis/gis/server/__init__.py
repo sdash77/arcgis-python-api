@@ -5,7 +5,7 @@ Provides access to the Catalog, Service, and Manager classes for ArcGIS
 Server
 
 """
-from .catalog import Catalog
+from .catalog import ServiceDirectory
 from ._service import Service
 from .sm import ServerManager
 from .admin import Server

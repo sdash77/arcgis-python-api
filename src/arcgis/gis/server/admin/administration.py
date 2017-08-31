@@ -12,7 +12,7 @@ from . import _security, _services
 from . import _system
 from . import _uploads, _usagereports
 from . import _mode
-from .. import Catalog
+from .. import ServiceDirectory
 from arcgis._impl.connection import _ArcGISConnection
 from .._common import ServerConnection
 ########################################################################

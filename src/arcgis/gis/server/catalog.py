@@ -10,7 +10,7 @@ from arcgis.gis import GIS
 _log = logging.getLogger()
 
 ########################################################################
-class Catalog(BaseServer):
+class ServiceDirectory(BaseServer):
     """
     Represents a user view of the server
     """
@@ -28,7 +28,7 @@ class Catalog(BaseServer):
                  verify_cert=False,
                  **kwargs):
         """Constructor"""
-        super(Catalog, self)
+        super(ServiceDirectory, self)
 
         if url.lower().find('/rest') == -1 and \
            url.endswith('/rest') == False:

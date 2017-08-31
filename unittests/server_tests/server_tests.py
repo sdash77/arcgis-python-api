@@ -17,7 +17,7 @@ URLS = [
 import os
 import arcgis
 from arcgis.gis import GIS
-from arcgis.gis.server import Catalog
+from arcgis.gis.server import ServiceDirectory
 from arcgis.gis.server import ServerManager
 from arcgis.gis.server import Server
 
@@ -54,7 +54,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0],
                                                self._gis.properties.id)]
             for server in url:
-                c = Catalog(url=server, portal_connection=self._gis, is_agol=True)
+                c = ServiceDirectory(url=server, portal_connection=self._gis, is_agol=True)
                 break
             html = c.report()
             res.append(isinstance(html, str))
@@ -71,7 +71,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0],
                                                self._gis.properties.id)]
             for server in url:
-                c = Catalog(url=server, portal_connection=self._gis, is_agol=True)
+                c = ServiceDirectory(url=server, portal_connection=self._gis, is_agol=True)
                 break
             s = c.get(name="06_14_2016__Info_Lookup_Link")
             if s is None:
@@ -84,7 +84,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl, self._gis.properties.id), params={'f': 'json'})
             url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0], self._gis.properties.id)]
             for server in url:
-                c = Catalog(url=server, portal_connection=self._gis, is_agol=True)
+                c = ServiceDirectory(url=server, portal_connection=self._gis, is_agol=True)
                 break
             s = c.get(name="IDONTEXIST")
             self.assertIsNone(s)
@@ -94,7 +94,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl, self._gis.properties.id), params={'f': 'json'})
             url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0], self._gis.properties.id)]
             for server in url:
-                res.append(isinstance(Catalog(url=server, portal_connection=self._gis, is_agol=True), Catalog))
+                res.append(isinstance(ServiceDirectory(url=server, portal_connection=self._gis, is_agol=True), Catalog))
             self.assertTrue(all(res))
 
 #############################################################################
@@ -132,53 +132,53 @@ class ServerCatalogCreationTests(unittest.TestCase):
     def test_931_catalog(self):
         """catalog 931"""
         url_931 = URLS[1]
-        server = Catalog(url=url_931)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_931)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_101_catalog(self):
         """catalog 10.1 Anonymous"""
         url_101 = URLS[0]
-        server = Catalog(url=url_101)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_101)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_1005_catalog(self):
         """catalog 10.05 Anonymous """
         url_1005 = URLS[2]
-        server = Catalog(url=url_1005)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_1005)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_1002_catalog(self):
         """catalog 10.02 Anonymous"""
         url_1002 = URLS[3]
-        server = Catalog(url=url_1002)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_1002)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_1041_catalog(self):
         """catalog 10.41"""
         url_1041 = URLS[4]
-        server = Catalog(url=url_1041)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_1041)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_105_catalog(self):
         """catalog 10.5"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_105)
+        self.assertIsInstance(server, ServiceDirectory)
     #----------------------------------------------------------------------
     def test_105_catalog_token_login(self):
         """catalog 10.5"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                         username=self._username,
                         password=self._password,
                         tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
-        self.assertIsInstance(server, Catalog)
+        self.assertIsInstance(server, ServiceDirectory)
         self.assertGreaterEqual(len(server.list()), 1)
     #---------------------------------------------------------------------
     def test_105_catalog_admin(self):
         """test getting the admin object to server from direct connection"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                              username=self._username,
                             password=self._password,
                             tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
@@ -187,8 +187,8 @@ class ServerCatalogCreationTests(unittest.TestCase):
     def test_105_catalog_ANON(self):
         """catalog 10.5 Anonymous"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105)
-        self.assertIsInstance(server, Catalog)
+        server = ServiceDirectory(url=url_105)
+        self.assertIsInstance(server, ServiceDirectory)
 ############################################################################
 #@unittest.SkipTest
 class ServerPropertyTest(unittest.TestCase):
@@ -203,7 +203,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_content(self):
         """catalog 10.5 content"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                         username=self._username,
                         password=self._password).admin
 
@@ -212,7 +212,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_data_storemanager(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin.datastores
@@ -221,7 +221,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_info(self):
         """catalog 10.5 info"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin.info
@@ -230,7 +230,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_kml(self):
         """catalog 10.5 kml"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin._kml
@@ -239,7 +239,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_log(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin.logs
@@ -248,7 +248,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_services(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin.services
@@ -257,7 +257,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_usage(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
         ds = server.usagereports
@@ -266,7 +266,7 @@ class ServerPropertyTest(unittest.TestCase):
     def test_users(self):
         """catalog 10.5 data"""
         url_105 = URLS[5]
-        server = Catalog(url=url_105,
+        server = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
         ds = server.admin.users
@@ -285,10 +285,10 @@ class catalog_info_test(unittest.TestCase):
         self._username = "arcgis_python_api"
         self._password = "password1"
         url_105 = URLS[5]
-        self._server_auth = Catalog(url=url_105,
+        self._server_auth = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
-        self._server_noauth = Catalog(url=URLS[0])
+        self._server_noauth = ServiceDirectory(url=URLS[0])
     #----- No Auth Test ---------------------------------------------------
     def test_info_noauth(self):
         if hasattr(self._server_noauth, 'admin'):
@@ -314,10 +314,10 @@ class server_logs_test(unittest.TestCase):
         self._username = "arcgis_python_api"
         self._password = "password1"
         url_105 = URLS[5]
-        self._server_auth = Catalog(url=url_105,
+        self._server_auth = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
-        self._server_noauth = Catalog(url=URLS[0])
+        self._server_noauth = ServiceDirectory(url=URLS[0])
     #-------- Auth Test ---------------------------------------------------
     def test_logs_auth(self):
         logs = self._server_auth.logs
@@ -338,7 +338,7 @@ class server_machines_test(unittest.TestCase):
         url_105 = URLS[5]
         self._username = "arcgis_python_api"
         self._password = "password1"
-        self._server_auth = Catalog(url=url_105,
+        self._server_auth = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
     #-------- Auth Test ---------------------------------------------------
@@ -368,7 +368,7 @@ class server_usagereports_test(unittest.TestCase):
         url_105 = URLS[5]
         self._username = "arcgis_python_api"
         self._password = "password1"
-        self._server_auth = Catalog(url=url_105,
+        self._server_auth = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
         self.usagereports = self._server_auth.usagereports
@@ -399,7 +399,7 @@ class server_userandusers_test(unittest.TestCase):
         url_105 = URLS[5]
         self._username = "arcgis_python_api"
         self._password = "password1"
-        self._server_auth = Catalog(url=url_105,
+        self._server_auth = ServiceDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
         self.users = self._server_auth.users
