@@ -12,21 +12,71 @@ from . import _security, _services
 from . import _system
 from . import _uploads, _usagereports
 from . import _mode
-from .. import ServiceDirectory
+from .. import  ServicesDirectory
 from arcgis._impl.connection import _ArcGISConnection
 from .._common import ServerConnection
 ########################################################################
 class Server(BaseServer):
     """
-    Wrapper for the ArcGIS Server REST API
+    ArcGIS Server Administration REST API
 
-    Inputs:
-       url - Administration REST URL
-       connection - gis/connection class to access arcgis server's admin api
-       initialize - default is false.  False means the object does not make
-                    any REST calls until the object is actually needed,
-                    whereas True means the object's properties are
-                    initialized at creation.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    string required. The web address to the ArcGIS Server administration
+                           end point.
+
+                           Example: https://mysite.com/arcgis/admin
+
+                           The URL should be formatted as follows:
+                           <scheme>://<host>:<port (optional)>/<web adapter>/admin
+    ------------------     --------------------------------------------------------------------
+    gis                    required ServicesDirectioy object, this is the connection object
+                           that holds the credentials for the site.
+    ==================     ====================================================================
+
+    =====================     ====================================================================
+    **Optional Argument**     **Description**
+    ---------------------     --------------------------------------------------------------------
+    baseurl                   optional string, the root URL to a site.
+                              Example: https://mysite.com/arcgis
+    ---------------------     --------------------------------------------------------------------
+    tokenurl                  optional string. Used when a site if federated or when the token
+                              URL differs from the site's baseurl.  If a site is federated, the
+                              token URL will return as the Portal token and ArcGIS Server users
+                              will not validate correctly.
+    ---------------------     --------------------------------------------------------------------
+    username                  optional string, login username for BUILT-IN security
+    ---------------------     --------------------------------------------------------------------
+    password                  optional string, a secret word or phrase that must be used to gain
+                              access to the account above.
+    ---------------------     --------------------------------------------------------------------
+    key_file                  optional string, path to PKI ket file
+    ---------------------     --------------------------------------------------------------------
+    cert_file                 optional string, path to PKI cert file
+    ---------------------     --------------------------------------------------------------------
+    proxy_host                optional string, web address to the proxy host
+
+                              Example: proxy.mysite.com
+    ---------------------     --------------------------------------------------------------------
+    proxy_port                optional integer, default is 80. The port where the proxy resided on
+    ---------------------     --------------------------------------------------------------------
+    expiration                optional integer. The Default is 60. This is the length of time a
+                              token is valid for.
+                              Example 1440 is one week.
+    ---------------------     --------------------------------------------------------------------
+    all_ssl                   optional boolean. The default is False. If True, all calls will be
+                              made over HTTPS instead of HTTP.
+    ---------------------     --------------------------------------------------------------------
+    portal_connection         optional GIS. This is used when a site is federated. It is the
+                              ArcGIS Online or Portal GIS object used.
+    ---------------------     --------------------------------------------------------------------
+    initialize                optional boolean.  The default is False.  If True, the object will
+                              attempt to reach out to the URL resource and populate at creation
+                              time.
+    =====================     ====================================================================
+
     """
     _url = None
     _con = None
@@ -35,16 +85,29 @@ class Server(BaseServer):
     _catalog = None
     _sitemanager = None
     #----------------------------------------------------------------------
-    def __init__(self, gis, url,
-                 initialize=False,
+    def __init__(self,
+                 url,
+                 gis=None,
+                 #initialize=False,
                  **kwargs):
         """Constructor"""
+        if gis is None and len(kwargs) > 0:
+            if 'baseurl' not in kwargs:
+                kwargs['baseurl'] = url
+            gis = ServerConnection(**kwargs)
+        initialize = kwargs.pop('initialize', False)
         super(Server, self).__init__(gis=gis,
-                                     url=url)
-        self._catalog = kwargs.pop('catalog', None)
+                                     url=url,
+                                     initialize=initialize,
+                                     **kwargs)
+
+        self._catalog = kwargs.pop('servicesdirectory', None)
         if not url.lower().endswith('/admin'):
             url = "%s/admin" % url
         self._url = url
+
+        #else:
+        #    raise ValueError("You must provide either a GIS or login credentials to use this object.")
         if hasattr(gis, '_con'):
             self._con = gis._con
         elif hasattr(gis, '_portal'):
@@ -53,7 +116,7 @@ class Server(BaseServer):
                               ServerConnection)):
             self._con = gis
         else:
-            raise ValueError("Invalid Connection Type: Must be GIS/_ArcGISConnection/ServerConnection Object")
+            raise ValueError("Invalid gis Type: Must be GIS/ServicesDirectory Object")
         if initialize:
             self._init(connection=self._con)
     #----------------------------------------------------------------------
@@ -434,6 +497,40 @@ class Server(BaseServer):
     def users(self):
         """returns an object to control the manager"""
         return self._security.users
+    #----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        The Services Directory can help you discover information about
+        services available on a particular server. A service represents a
+        local GIS resource whose functionality has been made available on
+        the server to a wider audience. For example, an ArcGIS Server
+        administrator can publish an ArcMap document (.mxd) as a map
+        service. Developers and clients can display the map service and
+        query its contents.
+
+        The Services Directory is available as part of the REST services
+        infrastructure available with ArcGIS Server installations. It
+        enables you to list the services available, including secured
+        services when you provide a proper login. For each service, a set
+        of general properties are displayed. For map services, these
+        properties include the spatial extent, spatial reference
+        (coordinate system) and supported operations. Layers are also
+        listed, with links to details about layers, which includes layer
+        fields and extent. The Services Directory can execute simple
+        queries on layers.
+
+        The Services Directory is also useful for finding information about
+        non-map service types. For example, you can use the Services
+        Directory to determine the required address format for a geocode
+        service, or the necessary model inputs for a geoprocessing service.
+        """
+        from .. import ServicesDirectory
+        if self._catalog is None:
+            url = self._url.lower().replace("/admin", "")
+            self._catalog = ServicesDirectory(url=url,
+                                              con=self._con)
+        return self._catalog
     #----------------------------------------------------------------------
     @property
     def system(self):

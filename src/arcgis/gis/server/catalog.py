@@ -8,9 +8,8 @@ from ._service import Service
 from arcgis.gis import GIS
 
 _log = logging.getLogger()
-
 ########################################################################
-class ServiceDirectory(BaseServer):
+class ServicesDirectory(BaseServer):
     """
     Represents a user view of the server
     """
@@ -28,7 +27,7 @@ class ServiceDirectory(BaseServer):
                  verify_cert=False,
                  **kwargs):
         """Constructor"""
-        super(ServiceDirectory, self)
+        super(ServicesDirectory, self)
 
         if url.lower().find('/rest') == -1 and \
            url.endswith('/rest') == False:
@@ -43,6 +42,7 @@ class ServiceDirectory(BaseServer):
         self._cert_file = cert_file
         self._portal_connection = kwargs.pop('portal_connection', None)
         self._is_agol = kwargs.pop("is_agol", False)
+        con = kwargs.pop('con', None)
         if verify_cert == False:
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context
@@ -61,21 +61,24 @@ class ServiceDirectory(BaseServer):
                 self._con = self._portal_connection._portal.con
             elif hasattr(self._portal_connection, 'post'):
                 self._con = self._portal_connection
+        elif con:
+            self._con = con
         else:
             self._con = ServerConnection(baseurl=url,
-                                     username=username,
-                                     password=password,
-                                     key_file=key_file,
-                                     cert_file=cert_file,
-                                     portal_connection=self._portal_connection,
-                                     **kwargs)
+                                         username=username,
+                                         password=password,
+                                         key_file=key_file,
+                                         cert_file=cert_file,
+                                         portal_connection=self._portal_connection,
+                                         **kwargs)
         self._gis = kwargs.pop('gis', None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
             try:
                 from .admin.administration import Server
                 self.admin = Server(gis=self._con,
                                     url=self._adminurl,
-                                    initialize=True)
+                                    servicesdirectory=self,
+                                    initialize=False)
             except: pass
         self._init(self._con)
     #----------------------------------------------------------------------
@@ -144,6 +147,7 @@ class ServiceDirectory(BaseServer):
                                                               s['name'],
                                                               s['type']),
                                             server=self._con))
+
                 except:
                     url ="%s/%s/%s" % (self._url, s['name'], s['type'])
                     _log.warning("Could not load service: %s" % url)

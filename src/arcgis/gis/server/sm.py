@@ -37,7 +37,7 @@ class ServerManager(object):
     #----------------------------------------------------------------------
     def list(self):
         """gets all servers in a GIS"""
-        from . import ServiceDirectory
+        from . import ServicesDirectory
         if self._server_list is not None:
             return self._server_list
 
@@ -49,7 +49,7 @@ class ServerManager(object):
         for server in servers:
             try:
                 admin_url = server['adminUrl']
-                c = ServiceDirectory(url=admin_url, portal_connection=self._gis._portal.con)
+                c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con,)
                 self._server_list.append(c.admin)
                 self._catalog_list.append(c)
             except:
