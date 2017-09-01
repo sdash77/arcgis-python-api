@@ -1,0 +1,773 @@
+"""
+   Adminstration.py allows users to control ArcGIS Server 10.1+
+   through the Administration REST API
+
+"""
+from __future__ import absolute_import
+from .._common import BaseServer
+from . import _machines, _clusters
+from . import _data, _info
+from . import _kml, _logs
+from . import _security, _services
+from . import _system
+from . import _uploads, _usagereports
+from . import _mode
+from .. import  ServicesDirectory
+from arcgis._impl.connection import _ArcGISConnection
+from .._common import ServerConnection
+########################################################################
+class Server(BaseServer):
+    """
+    ArcGIS Server Administration REST API
+
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    string required. The web address to the ArcGIS Server administration
+                           end point.
+
+                           Example: https://mysite.com/arcgis/admin
+
+                           The URL should be formatted as follows:
+                           <scheme>://<host>:<port (optional)>/<web adapter>/admin
+    ------------------     --------------------------------------------------------------------
+    gis                    required ServicesDirectioy object, this is the connection object
+                           that holds the credentials for the site.
+    ==================     ====================================================================
+
+    =====================     ====================================================================
+    **Optional Argument**     **Description**
+    ---------------------     --------------------------------------------------------------------
+    baseurl                   optional string, the root URL to a site.
+                              Example: https://mysite.com/arcgis
+    ---------------------     --------------------------------------------------------------------
+    tokenurl                  optional string. Used when a site if federated or when the token
+                              URL differs from the site's baseurl.  If a site is federated, the
+                              token URL will return as the Portal token and ArcGIS Server users
+                              will not validate correctly.
+    ---------------------     --------------------------------------------------------------------
+    username                  optional string, login username for BUILT-IN security
+    ---------------------     --------------------------------------------------------------------
+    password                  optional string, a secret word or phrase that must be used to gain
+                              access to the account above.
+    ---------------------     --------------------------------------------------------------------
+    key_file                  optional string, path to PKI ket file
+    ---------------------     --------------------------------------------------------------------
+    cert_file                 optional string, path to PKI cert file
+    ---------------------     --------------------------------------------------------------------
+    proxy_host                optional string, web address to the proxy host
+
+                              Example: proxy.mysite.com
+    ---------------------     --------------------------------------------------------------------
+    proxy_port                optional integer, default is 80. The port where the proxy resided on
+    ---------------------     --------------------------------------------------------------------
+    expiration                optional integer. The Default is 60. This is the length of time a
+                              token is valid for.
+                              Example 1440 is one week.
+    ---------------------     --------------------------------------------------------------------
+    all_ssl                   optional boolean. The default is False. If True, all calls will be
+                              made over HTTPS instead of HTTP.
+    ---------------------     --------------------------------------------------------------------
+    portal_connection         optional GIS. This is used when a site is federated. It is the
+                              ArcGIS Online or Portal GIS object used.
+    ---------------------     --------------------------------------------------------------------
+    initialize                optional boolean.  The default is False.  If True, the object will
+                              attempt to reach out to the URL resource and populate at creation
+                              time.
+    =====================     ====================================================================
+
+    """
+    _url = None
+    _con = None
+    _json_dict = None
+    _json = None
+    _catalog = None
+    _sitemanager = None
+    #----------------------------------------------------------------------
+    def __init__(self,
+                 url,
+                 gis=None,
+                 #initialize=False,
+                 **kwargs):
+        """Constructor"""
+        if gis is None and len(kwargs) > 0:
+            if 'baseurl' not in kwargs:
+                kwargs['baseurl'] = url
+            gis = ServerConnection(**kwargs)
+        initialize = kwargs.pop('initialize', False)
+        super(Server, self).__init__(gis=gis,
+                                     url=url,
+                                     initialize=initialize,
+                                     **kwargs)
+
+        self._catalog = kwargs.pop('servicesdirectory', None)
+        if not url.lower().endswith('/admin'):
+            url = "%s/admin" % url
+        self._url = url
+
+        #else:
+        #    raise ValueError("You must provide either a GIS or login credentials to use this object.")
+        if hasattr(gis, '_con'):
+            self._con = gis._con
+        elif hasattr(gis, '_portal'):
+            self._con = gis._portal._con
+        elif isinstance(gis, (_ArcGISConnection,
+                              ServerConnection)):
+            self._con = gis
+        else:
+            raise ValueError("Invalid gis Type: Must be GIS/ServicesDirectory Object")
+        if initialize:
+            self._init(connection=self._con)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def _publish_sd(self,
+                    sd_file,
+                    folder=None):
+        """
+        publishes a service definition file to arcgis server
+        """
+        if sd_file.lower().endswith('.sd') == False:
+            return False
+        catalog = self._catalog
+        if 'System' not in catalog.folders:
+            return False
+
+        service = catalog.find(service_name="PublishingTools", folder='System')
+        if service is None:
+            service = catalog.find(service_name="PublishingToolsEx", folder='System')
+        if service is None:
+            return False
+        status, res = self.uploads.upload(path=sd_file, description="sd file")
+        if status:
+            uid = res['item']['itemID']
+            res = service.publish_service_definition(in_sdp_id=uid)
+            return True
+        return False
+    #----------------------------------------------------------------------
+    def _create(self,
+               username,
+               password,
+               config_store_connection,
+               directories,
+               cluster=None,
+               logs_settings=None,
+               run_async=False):
+        """
+        This is the first operation that you must invoke when you install
+        ArcGIS Server for the first time. Creating a new site involves:
+
+          -Allocating a store to save the site configuration
+          -Configuring the server machine and registering it with the site
+          -Creating a new cluster configuration that includes the server
+           machine
+          -Configuring server directories
+          -Deploying the services that are marked to auto-deploy
+
+        Because of the sheer number of tasks, it usually takes a little
+        while for this operation to complete. Once a site has been created,
+        you can publish GIS services and deploy them to your server
+        machines.
+
+        Inputs:
+           username - The name of the administrative account to be used by
+             the site. This can be changed at a later stage.
+           password - The credentials of the administrative account.
+           configStoreConnection - A JSON object representing the
+             connection to the configuration store. By default, the
+             configuration store will be maintained in the ArcGIS Server
+             installation directory.
+           directories - A JSON object representing a collection of server
+             directories to create. By default, the server directories will
+             be created locally.
+           cluster - An optional cluster configuration. By default, the
+             site will create a cluster called 'default' with the first
+             available port numbers starting from 4004.
+           logsSettings - Optional log settings.
+           runAsync - A flag to indicate if the operation needs to be run
+             asynchronously. Values: true | false
+        """
+        url = self._url + "/createNewSite"
+        params = {
+            "f" : "json",
+            "cluster" : cluster,
+            "directories" : directories,
+            "username" : username,
+            "password" : password,
+            "configStoreConnection" : config_store_connection,
+            "logSettings" : logs_settings,
+            "runAsync" : run_async
+        }
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    def _join(self, admin_url, username, password):
+        """
+        The Join Site operation is used to connect a server machine to an
+        existing site. This is considered a 'push' mechanism, in which a
+        server machine pushes its configuration to the site. For the
+        operation to be successful, you need to provide an account with
+        administrative privileges to the site.
+        When an attempt is made to join a site, the site validates the
+        administrative credentials, then returns connection information
+        about its configuration store back to the server machine. The
+        server machine then uses the connection information to work with
+        the configuration store.
+        If this is the first server machine in your site, use the Create
+        Site operation instead.
+
+        Inputs:
+           admin_url - The site URL of the currently live site. This is
+            typically the Administrator Directory URL of one of the server
+            machines of a site.
+           username - The name of an administrative account for the site.
+           password - The password of the administrative account.
+        """
+        url = self._url + "/joinSite"
+        params = {
+            "f" : "json",
+            "adminURL" : admin_url,
+            "username" : username,
+            "password" : password
+        }
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    def _delete(self):
+        """
+        Deletes the site configuration and releases all server resources.
+        This is an unrecoverable operation. This operation is well suited
+        for development or test servers that need to be cleaned up
+        regularly. It can also be performed prior to uninstall. Use caution
+        with this option because it deletes all services, settings, and
+        other configurations.
+        This operation performs the following tasks:
+          - Stops all server machines participating in the site. This in
+            turn stops all GIS services hosted on the server machines.
+          - All services and cluster configurations are deleted.
+          - All server machines are unregistered from the site.
+          - All server machines are unregistered from the site.
+          - The configuration store is deleted.
+        """
+        url = self._url + "/deleteSite"
+        params = {
+            "f" : "json"
+        }
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    def _export(self, location=None):
+        """
+        Exports the site configuration to a location you specify as input
+        to this operation.
+
+        Inputs:
+           location - A path to a folder accessible to the server where the
+            exported site configuration will be written. If a location is
+            not specified, the server writes the exported site
+            configuration file to directory owned by the server and returns
+            a virtual path (an HTTP URL) to that location from where it can
+            be downloaded.
+
+        """
+        url = self._url + "/exportSite"
+        params = {
+            "f" : "json"
+        }
+        if location is not None:
+            params['location'] = location
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    def _import_site(self, location):
+        """
+        This operation imports a site configuration into the currently
+        running site. Importing a site means replacing all site
+        configurations (including GIS services, security configurations,
+        and so on) of the currently running site with those contained in
+        the site configuration file you supply as input. The input site
+        configuration file can be obtained through the exportSite
+        operation.
+        This operation will restore all information included in the backup,
+        as noted in exportSite. When it is complete, this operation returns
+        a report as the response. You should review this report and fix any
+        problems it lists to ensure your site is fully functioning again.
+        The importSite operation lets you restore your site from a backup
+        that you created using the exportSite operation.
+
+        Input:
+           location - A file path to an exported configuration or an ID
+            referencing the stored configuration on the server.
+        """
+        url = self._url + "/importSite"
+        params = {
+            "f" : "json",
+            "location" : location
+        }
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    def upgrade(self, run_async=False):
+        """
+        This is the first operation that must be invoked during an ArcGIS
+        Server upgrade. Once the new software version has been installed
+        and the setup has completed, this operation will be available. A
+        successful run of this operation will complete the upgrade of
+        ArcGIS Server.
+
+        **caution**
+        If errors are returned with the upgrade operation, you must address
+        the errors before you may continue. For example, if you encounter
+        an error about an invalid license, you will need to re-authorize
+        the software using a valid license and you may then retry this
+        operation.
+
+        **note**
+        This operation is available only when a server machine is currently
+        being upgraded. It will not be available after a successful upgrade
+        of a server machine.
+
+        Paramters:
+         :run_async: A flag to indicate if the operation needs to be run
+          asynchronously. The default value is false.
+        """
+        url = self._url + "/upgrade"
+        params = {
+            "f" : "json",
+            "runAsync" : run_async
+        }
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    @property
+    def _public_key(self):
+        """gets the public key"""
+        url = self._url + "/publicKey"
+        params = {
+            "f" : "json",
+        }
+        return self._con.get(path=url,
+                             params=params)
+    #----------------------------------------------------------------------
+    @property
+    def machines(self):
+        """gets a reference to the machines object"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'machines' in self.resources:
+            url = self._url + "/machines"
+            return _machines.MachineManager(url,
+                                            connection=self._con,
+                                            initialize=False)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def datastores(self):
+        """returns the reference to the data functions as a class"""
+        if self.properties is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "data" in self.resources:
+            url = self._url + "/data"
+            return _data.DataStoreManager(url=url,
+                                          connection=self._con)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def info(self):
+        """
+        A read-only resource that returns meta information about the server
+        """
+        url = self._url + "/info"
+        return _info.Info(url=url,
+                          connection=self._con,
+                          initialize=True)
+    #----------------------------------------------------------------------
+    @property
+    def site(self):
+        """
+        A site is a collection of server resources. This collection
+        includes server machines that are installed with ArcGIS Server,
+        including GIS services, data and so on. The site resource also
+        lists the current version of the software.
+        When you install ArcGIS Server on a server machine for the first
+        time, you must create a new site. Subsequently, newer server
+        machines can join your site and increase its computing power. Once
+        a site is no longer required, you can delete the site, which will
+        cause all of the resources to be cleaned up.
+        """
+        if self._sitemanager:
+            if self._sitemanager is None:
+                self._sitemanager = SiteManager(self._sm)
+            return self._sitemanager
+    #----------------------------------------------------------------------
+    @property
+    def _clusters(self):
+        """returns the clusters functions if supported in resources"""
+        if self.properties is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "clusters" in self.resources:
+            url = self._url + "/clusters"
+            return _clusters.Cluster(url=url,
+                                     connection=self._con,
+                                     initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def services(self):
+        """
+        Gets the services object which will provide the ArcGIS Server's
+        admin information about services and folders.
+        """
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'services' in self.resources:
+            url = self._url + "/services"
+            return _services.ServiceManager(url=url,
+                                            connection=self._con,
+                                            initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def usagereports(self):
+        """
+        Gets the services object which will provide the ArcGIS Server's
+        admin information about the usagereports.
+        """
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'usagereports' in self.resources:
+            url = self._url + "/usagereports"
+            return _usagereports.ReportManager(url=url,
+                                              connection=self._con,
+                                              initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def _kml(self):
+        """returns the kml functions for server"""
+        url = self._url + "/kml"
+        return _kml.KML(url=url,
+                        connection=self._con,
+                        initialize=True)
+    #----------------------------------------------------------------------
+    @property
+    def logs(self):
+        """returns an object to work with the site logs"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'logs' in self.resources:
+            url = self._url + "/logs"
+            return _logs.LogManager(url=url,
+                                    connection=self._con,
+                                    initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def _security(self):
+        """returns an object to work with the site security"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "security" in self.resources:
+            url = self._url + "/security"
+            return _security.Security(url=url,
+                                      connection=self._con,
+                                      initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def users(self):
+        """returns an object to control the manager"""
+        return self._security.users
+    #----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        The Services Directory can help you discover information about
+        services available on a particular server. A service represents a
+        local GIS resource whose functionality has been made available on
+        the server to a wider audience. For example, an ArcGIS Server
+        administrator can publish an ArcMap document (.mxd) as a map
+        service. Developers and clients can display the map service and
+        query its contents.
+
+        The Services Directory is available as part of the REST services
+        infrastructure available with ArcGIS Server installations. It
+        enables you to list the services available, including secured
+        services when you provide a proper login. For each service, a set
+        of general properties are displayed. For map services, these
+        properties include the spatial extent, spatial reference
+        (coordinate system) and supported operations. Layers are also
+        listed, with links to details about layers, which includes layer
+        fields and extent. The Services Directory can execute simple
+        queries on layers.
+
+        The Services Directory is also useful for finding information about
+        non-map service types. For example, you can use the Services
+        Directory to determine the required address format for a geocode
+        service, or the necessary model inputs for a geoprocessing service.
+        """
+        from .. import ServicesDirectory
+        if self._catalog is None:
+            url = self._url.lower().replace("/admin", "")
+            self._catalog = ServicesDirectory(url=url,
+                                              con=self._con)
+        return self._catalog
+    #----------------------------------------------------------------------
+    @property
+    def system(self):
+        """returns an object to work with the site system"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "system" in self.resources:
+            url = self._url + "/system"
+            return _system.SystemManager(url=url,
+                                         connection=self._con,
+                                         initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def uploads(self):
+        """returns an object to work with the site uploads"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           "uploads" in self.resources:
+            url = self._url + "/uploads"
+            return _uploads.Uploads(url=url,
+                                    connection=self._con,
+                                    initialize=True)
+        else:
+            return None
+    #----------------------------------------------------------------------
+    @property
+    def mode(self):
+        """returns the class that works with Mode"""
+        if self.resources is None:
+            self._init()
+        if isinstance(self.resources, list) and \
+           'mode' in self.resources:
+            url = self._url + "/mode"
+            return _mode.Mode(url=url,
+                              connection=self._con,
+                              initialize=True)
+        return None
+
+
+########################################################################
+class SiteManager(object):
+    """
+    A site is a collection of server resources. This collection includes
+    server machines that are installed with ArcGIS Server, including GIS
+    services, data and so on. The site resource also lists the current
+    version of the software.
+    When you install ArcGIS Server on a server machine for the first time,
+    you must create a new site. Subsequently, newer server machines can
+    join your site and increase its computing power. Once a site is no
+    longer required, you can delete the site, which will cause all of
+    the resources to be cleaned up.
+
+    Parameters:
+     :server: arcgis.gis.server object
+    """
+    _sm = None
+    #----------------------------------------------------------------------
+    def __init__(self, server, initialize=False):
+        """Constructor"""
+        self._sm = server
+        isinstance(self._sm, SiteManager)
+
+        if initialize:
+            self._sm._init()
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._sm._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the site """
+        return self._sm.properties
+    #----------------------------------------------------------------------
+    def create(self,
+               username,
+               password,
+               config_store_connection,
+               directories,
+               cluster=None,
+               logs_settings=None,
+               run_async=False):
+        """
+        This is the first operation that you must invoke when you install
+        ArcGIS Server for the first time. Creating a new site involves:
+
+          -Allocating a store to save the site configuration
+          -Configuring the server machine and registering it with the site
+          -Creating a new cluster configuration that includes the server
+           machine
+          -Configuring server directories
+          -Deploying the services that are marked to auto-deploy
+
+        Because of the sheer number of tasks, it usually takes a little
+        while for this operation to complete. Once a site has been created,
+        you can publish GIS services and deploy them to your server
+        machines.
+
+        Parameters:
+           username - The name of the administrative account to be used by
+             the site. This can be changed at a later stage.
+           password - The credentials of the administrative account.
+           configStoreConnection - A JSON object representing the
+             connection to the configuration store. By default, the
+             configuration store will be maintained in the ArcGIS Server
+             installation directory.
+           directories - A JSON object representing a collection of server
+             directories to create. By default, the server directories will
+             be created locally.
+           cluster - An optional cluster configuration. By default, the
+             site will create a cluster called 'default' with the first
+             available port numbers starting from 4004.
+           logsSettings - Optional log settings.
+           runAsync - A flag to indicate if the operation needs to be run
+             asynchronously. Values: true | false
+        """
+        return self._sm._create(username,
+                               password,
+                               config_store_connection,
+                               directories,
+                               cluster,
+                               logs_settings,
+                               run_async)
+    #----------------------------------------------------------------------
+    def join(self, admin_url, username, password):
+        """
+        The Join Site operation is used to connect a server machine to an
+        existing site. This is considered a 'push' mechanism, in which a
+        server machine pushes its configuration to the site. For the
+        operation to be successful, you need to provide an account with
+        administrative privileges to the site.
+        When an attempt is made to join a site, the site validates the
+        administrative credentials, then returns connection information
+        about its configuration store back to the server machine. The
+        server machine then uses the connection information to work with
+        the configuration store.
+        If this is the first server machine in your site, use the Create
+        Site operation instead.
+
+        Parameters:
+           admin_url - The site URL of the currently live site. This is
+            typically the Administrator Directory URL of one of the server
+            machines of a site.
+           username - The name of an administrative account for the site.
+           password - The password of the administrative account.
+        """
+        return self._sm._join(admin_url, username, password)
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes the site configuration and releases all server resources.
+        This is an unrecoverable operation. This operation is well suited
+        for development or test servers that need to be cleaned up
+        regularly. It can also be performed prior to uninstall. Use caution
+        with this option because it deletes all services, settings, and
+        other configurations.
+        This operation performs the following tasks:
+          - Stops all server machines participating in the site. This in
+            turn stops all GIS services hosted on the server machines.
+          - All services and cluster configurations are deleted.
+          - All server machines are unregistered from the site.
+          - All server machines are unregistered from the site.
+          - The configuration store is deleted.
+        """
+        return self._sm._delete()
+    #----------------------------------------------------------------------
+    def export(self, location=None):
+        """
+        Exports the site configuration to a location you specify as input
+        to this operation.
+
+        Parameters:
+           location - A path to a folder accessible to the server where the
+            exported site configuration will be written. If a location is
+            not specified, the server writes the exported site
+            configuration file to directory owned by the server and returns
+            a virtual path (an HTTP URL) to that location from where it can
+            be downloaded.
+
+        """
+        return self._sm._export(location)
+    #----------------------------------------------------------------------
+    def import_site(self, location):
+        """
+        This operation imports a site configuration into the currently
+        running site. Importing a site means replacing all site
+        configurations (including GIS services, security configurations,
+        and so on) of the currently running site with those contained in
+        the site configuration file you supply as input. The input site
+        configuration file can be obtained through the exportSite
+        operation.
+        This operation will restore all information included in the backup,
+        as noted in exportSite. When it is complete, this operation returns
+        a report as the response. You should review this report and fix any
+        problems it lists to ensure your site is fully functioning again.
+        The importSite operation lets you restore your site from a backup
+        that you created using the exportSite operation.
+
+        Parameters:
+           location - A file path to an exported configuration or an ID
+            referencing the stored configuration on the server.
+        """
+        return self._sm._import_site(location=location)
+    #----------------------------------------------------------------------
+    def upgrade(self, run_async=False):
+        """
+        This is the first operation that must be invoked during an ArcGIS
+        Server upgrade. Once the new software version has been installed
+        and the setup has completed, this operation will be available. A
+        successful run of this operation will complete the upgrade of
+        ArcGIS Server.
+
+        **caution**
+        If errors are returned with the upgrade operation, you must address
+        the errors before you may continue. For example, if you encounter
+        an error about an invalid license, you will need to re-authorize
+        the software using a valid license and you may then retry this
+        operation.
+
+        **note**
+        This operation is available only when a server machine is currently
+        being upgraded. It will not be available after a successful upgrade
+        of a server machine.
+
+        Paramters:
+         :run_async: A flag to indicate if the operation needs to be run
+          asynchronously. The default value is false.
+        """
+        return self._sm._upgrade(run_async)
+    #----------------------------------------------------------------------
+    @property
+    def public_key(self):
+        """gets the public key"""
+        return self._sm._public_key

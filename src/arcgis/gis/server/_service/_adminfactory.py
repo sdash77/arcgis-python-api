@@ -21,7 +21,7 @@ from arcgis.mapping._types import SceneLayer
 from .._common import ServerConnection
 from ._geodataservice import GeoData
 from ._layerfactory import Service
-from ....gis.server import Service as AdminService
+from ..admin._services import Service as AdminService
 class AdminServiceFactory(type):
     """
     Generates an Administrative Service Object from a url or service object
@@ -42,11 +42,12 @@ class AdminServiceFactory(type):
             parent = Service(url=url, server=gis)
             return AdminServiceGen(parent, gis)
         else:
+            connection = service._con
             admin_url = "%s.%s" % (
                 os.path.dirname(url).lower().replace(
                     "/rest/", "/admin/"),
                 os.path.basename(url))
-            return AdminService(url=admin_url, server=gis)
+            return AdminService(url=admin_url, connection=connection, server=gis)
         return type.__call__(cls, service, gis, False)
 ###########################################################################
 @add_metaclass(AdminServiceFactory)
@@ -62,6 +63,7 @@ class AdminServiceGen(object):
        item - Portal or AGOL Item class
     """
     def __init__(self, service, gis):
+        iterable = None
         if iterable is None:
             iterable = ()
         super(AdminService, self).__init__(service, gis)

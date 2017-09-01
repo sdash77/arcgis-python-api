@@ -8,7 +8,7 @@ from __future__ import print_function
 from .._common import BaseServer
 
 ########################################################################
-class System(BaseServer):
+class SystemManager(BaseServer):
     """
     The System resource is a collection of miscellaneous server-wide
     resources such as server properties, server directories, the
@@ -23,7 +23,7 @@ class System(BaseServer):
     def __init__(self, url, connection,
                  initialize=False):
         """Constructor"""
-        super(System, self).__init__(connection=connection,
+        super(SystemManager, self).__init__(connection=connection,
                                      url=url)
         self._con = connection
         if url.lower().endswith("/system"):
@@ -33,6 +33,12 @@ class System(BaseServer):
         if initialize:
             self._init(connection)
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
     @property
     def server_properties(self):
         """gets the server properties for the site as an object"""
@@ -41,7 +47,7 @@ class System(BaseServer):
                                 initialize=True)
     #----------------------------------------------------------------------
     @property
-    def server_directories(self):
+    def _directories(self):
         """returns the server directory object in a list"""
         directs = []
         url = self._url + "/directories"
@@ -57,7 +63,11 @@ class System(BaseServer):
                                 initialize=True))
         return directs
     #----------------------------------------------------------------------
-    def get_directory(self, name):
+    def directories(self):
+        """returns the server directory object in a list"""
+        return DirectoryManager(system=self)
+    #----------------------------------------------------------------------
+    def _get_directory(self, name):
         """
         Gets a single directory registered with ArcGIS Server
 
@@ -77,7 +87,7 @@ class System(BaseServer):
                                        initialize=True)
         return None
     #----------------------------------------------------------------------
-    def register(self,
+    def _register(self,
                  name,
                  physica_path,
                  directory_type,
@@ -248,7 +258,7 @@ class System(BaseServer):
         return ConfigurationStore(url=url,
                                   connection=self._con)
     #----------------------------------------------------------------------
-    def clear_rest_cache(self):
+    def clear_cache(self):
         """
         This operation clears the cache on all REST handlers in the system.
         While the server typically manages the REST cache for you, use this
@@ -293,7 +303,7 @@ class System(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def edit_services_directory(self,
+    def _edit_services_directory(self,
                                 allowed_origins,
                                 arcgis_com_map,
                                 arcgis_com_map_text,
@@ -605,6 +615,12 @@ class ServerProperties(BaseServer):
         if initialize:
             self._init(connection)
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
     def update(self, properties):
         """
         This operation allows you to update the server property
@@ -619,6 +635,110 @@ class ServerProperties(BaseServer):
         if 'status' in res:
             return res['status'] == 'success'
         return res
+########################################################################
+class DirectoryManager(object):
+    """
+    A collection of all the server directories is listed under this
+    resource.
+    You can add a new directory using the Register Directory operation. You
+    can then configure GIS services to use one or more of these
+    directories. If you no longer need the server directory, you must
+    remove the directory by using the Unregister Directory operation.
+    """
+    _system = None
+    def __init__(self, system):
+        self._system = system
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._system._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._system._url)
+    #----------------------------------------------------------------------
+    def all(self):
+        """
+        Server directories are used by GIS services as a location to output
+        items such as map images, tile caches, and geoprocessing results.
+        In addition, some directories contain configurations that power the
+        GIS services.
+        """
+        return self._system._directories
+    #----------------------------------------------------------------------
+    def edit_services_directory(self,
+            allowedOrigins,
+            arcgis_com_map,
+            arcgis_com_map_text,
+            jsapi_arcgis,
+            jsapi_arcgis_css,
+            jsapi_arcgis_css2,
+            jsapi_arcgis_sdk,
+            serviceDirEnabled):
+        """
+        With this operation you can enable or disable the HTML view of
+        ArcGIS REST API (also known as the Services Directory). You can
+        also adjust the JavaScript and map viewer previews of services in
+        the Services Directory so that they work with your own locally
+        hosted JavaScript API and map viewer.
+
+        Parameters:
+         :allowedOrigins: Comma-separated list of URLs of domains allowed to make
+          requests. * can be used to denote all domains.
+         :arcgis_com_map: URL of the map viewer application used for service
+          previews. Defaults to the ArcGIS.com map viewer but could be used
+          to point at your own Portal for ArcGIS map viewer.
+         :arcgis_com_map_text:
+         :jsapi_arcgis: The URL of the JavaScript API to use for service
+          previews. Defaults to the online ArcGIS API for JavaScript, but
+          could be pointed at your own locally-installed instance of the
+          JavaScript API.
+         :jsapi_arcgis_css: CSS file associated with the ArcGIS API for
+          JavaScript. Defaults to the online Dojo tundra.css.
+         :jsapi_arcgis_css2:Additional CSS file associated with the ArcGIS
+          API for JavaScript. Defaults to the online esri.css.
+         :jsapi_arcgis_sdk: URL of the ArcGIS API for JavaScript help.
+         :serviceDirEnabled: Flag to enable/disable the HTML view of the
+          services directory.
+        """
+        return self._system._edit_services_directory(allowedOrigins, arcgis_com_map,
+                                                     arcgis_com_map_text,
+                                                     jsapi_arcgis,
+                                                     jsapi_arcgis_css,
+                                                     jsapi_arcgis_css2,
+                                                     jsapi_arcgis_sdk,
+                                                     serviceDirEnabled)
+    #----------------------------------------------------------------------
+    def get(self, name):
+        """
+        Gets a single directory registered with ArcGIS Server
+
+        Parameters:
+         :name: name of the registered directory
+        """
+        return self._system._get_directory(name=name)
+    #----------------------------------------------------------------------
+    def add(self,
+            name,
+            physicalPath,
+            directoryType,
+            maxFileAge,
+            cleanupMode="NONE",
+            description=None):
+        """
+        Registers a new server directory. While registering the server
+        directory, you can also specify the directory's cleanup parameters
+
+        Parameters:
+         :name: The name of the server directory.
+         :physicalPath: The absolute physical path of the server directory.
+         :directoryType: The type of server directory.
+         :cleanupMode: Defines if files in the server directory needs to be
+          cleaned up.
+         :maxFileAge: Defines how long a file in the directory needs to be
+          kept before it is deleted.
+         :description:  An optional description for the server directory.
+        """
+        return self._system._register(name, physicalPath, directoryType,
+                                      maxFileAge, cleanupMode, description)
 ########################################################################
 class ServerDirectory(BaseServer):
     """
@@ -672,7 +792,7 @@ class ServerDirectory(BaseServer):
             self._init(connection)
     #----------------------------------------------------------------------
     def edit(self,
-             physica_path,
+             physical_path,
              cleanup_mode,
              max_age,
              description):
@@ -700,7 +820,7 @@ class ServerDirectory(BaseServer):
         url = self._url + "/edit"
         params = {
             "f" : "json",
-            "physicalPath" : physica_path,
+            "physicalPath" : physical_path,
             "cleanupMode" : cleanup_mode,
             "maxFileAge" : max_age,
             "description" : description
@@ -731,7 +851,7 @@ class ServerDirectory(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def recover_directory(self):
+    def recover(self):
         """
         If the shared server directories for a site are unavailable, a site
         in read-only mode will operate in a degraded capacity that allows

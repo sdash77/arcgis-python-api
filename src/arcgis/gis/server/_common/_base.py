@@ -5,10 +5,12 @@ from __future__ import absolute_import
 import json
 from collections import OrderedDict
 from ._connection import ServerConnection
-#from arcgis._impl.common._mixins import  PropertyMap
-from ...common._mixins import PropertyMap#..._impl.common._mixins import PropertyMap
+from arcgis._impl.connection import _ArcGISConnection
+from arcgis.gis import GIS
+from arcgis._impl.common._mixins import PropertyMap
 ###########################################################################
 class BaseServer(object):
+    """class most server object inherit from"""
     _con = None
     _url = None
     _json_dict = None
@@ -18,8 +20,14 @@ class BaseServer(object):
         """class initializer"""
         super(BaseServer, self).__init__()
         self._url = url
-        if isinstance(connection, ServerConnection):
+        gis = kwargs.pop('gis', None)
+        if connection is None and \
+           isinstance(gis, GIS):
+            connection = gis._portal.con
+        if isinstance(connection, (ServerConnection, _ArcGISConnection)):
             self._con = connection
+        elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            self._con = gis
         else:
             raise ValueError("connection must be of type SiteConnection")
         if initialize:
@@ -43,6 +51,12 @@ class BaseServer(object):
             self._json_dict = {}
             self._properties = PropertyMap({})
     #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -62,8 +76,7 @@ class BaseServer(object):
             for k,v in self._json_dict.items():
                 if k.lower() == name.lower():
                     return v
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
-                                                                        name))
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
     #----------------------------------------------------------------------
     def __getitem__(self, key):
         """helps make object function like a dictionary object"""
@@ -89,19 +102,6 @@ class BaseServer(object):
         """gets/sets the service url"""
         self._url = value
         self.refresh()
-    #----------------------------------------------------------------------
-    def __str__(self):
-        if self._json_dict is None:
-            self._init()
-        val = self._json_dict
-        if val is None:
-            return "{}"
-        return json.dumps(self._json_dict)
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return "{classname}({data})".format(
-            classname=self.__class__.__name__,
-            data=self.__str__())
     #----------------------------------------------------------------------
     def __iter__(self):
         """creates iterable for classes properties"""

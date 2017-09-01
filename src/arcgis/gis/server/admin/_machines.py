@@ -15,9 +15,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 import json
 from .._common import BaseServer
-from ...common._mixins import PropertyMap
+from arcgis._impl.common._mixins import PropertyMap
 ########################################################################
-class Machines(BaseServer):
+class MachineManager(BaseServer):
     """
        This resource represents a collection of all the server machines that
        have been registered with the site. It other words, it represents
@@ -45,7 +45,7 @@ class Machines(BaseServer):
                connection - SiteConnection object
                initialize - loads the machine information
         """
-        super(Machines, self).__init__(connection=connection,
+        super(MachineManager, self).__init__(connection=connection,
                                        url=url)
         self._url = url
         self._con = connection
@@ -80,7 +80,6 @@ class Machines(BaseServer):
             self._json_dict = {}
             self._properties = PropertyMap({})
     #----------------------------------------------------------------------
-    @property
     def list(self):
         """  returns the list of machines in the cluster """
         if self._machines is None:

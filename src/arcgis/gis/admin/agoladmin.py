@@ -118,3 +118,14 @@ class AGOLAdminManager(object):
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
+    #----------------------------------------------------------------------
+    @property
+    def urls(self):
+        """
+        returns the URLs to the Hosting and Tile Server for ArcGIS Online
+        """
+        res = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl,
+                                                              self._gis.properties.id),
+                                      params={'f': 'json'})
+        return res
+

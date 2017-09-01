@@ -10,7 +10,7 @@ from .._common import BaseServer
 
 
 ########################################################################
-class Log(BaseServer):
+class LogManager(BaseServer):
     """ Log of a server """
     _url = None
     _con = None
@@ -24,12 +24,18 @@ class Log(BaseServer):
                url - admin url
                connection - SiteConnection class
         """
-        super(Log, self).__init__(connection=connection,
+        super(LogManager, self).__init__(connection=connection,
                                   url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     def count_error_reports(self, machine="*"):
         """ This operation counts the number of error reports (crash
@@ -73,11 +79,11 @@ class Log(BaseServer):
         except:
             return ""
     #----------------------------------------------------------------------
-    def edit_settings(self,
-                      level="WARNING",
-                      log_dir=None,
-                      max_age=90,
-                      max_report_count=10):
+    def edit(self,
+             level="WARNING",
+             log_dir=None,
+             max_age=90,
+             max_report_count=10):
         """
            The log settings are for the entire site.
            Inputs:

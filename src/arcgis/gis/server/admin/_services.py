@@ -8,7 +8,7 @@ import json
 import tempfile
 from .._common import BaseServer
 from .parameters import Extension
-
+from arcgis._impl.common._mixins import PropertyMap
 ########################################################################
 class ServiceManager(BaseServer):
     """ returns information about the services on AGS """
@@ -16,6 +16,7 @@ class ServiceManager(BaseServer):
     _url = None
     _con = None
     _json_dict = None
+    _currentFolder = None
     _folderName = None
     _folders = None
     _foldersDetail = None
@@ -38,16 +39,35 @@ class ServiceManager(BaseServer):
         self._con = connection
         self._url = url
         self._currentURL = url
+        self._currentFolder = '/'
         if initialize:
             self._init(connection)
     #----------------------------------------------------------------------
+    def _init(self, connection=None):
+        """loads the properties into the class"""
+        if connection is None:
+            connection = self._con
+        params = {"f":"json"}
+        try:
+            result = connection.get(path=self._currentURL,
+                                    params=params)
+            if isinstance(result, dict):
+                self._json_dict = result
+                self._properties = PropertyMap(result)
+            else:
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
+    #----------------------------------------------------------------------
     @property
-    def folder(self):
+    def _folder(self):
         """ returns current folder """
         return self._folderName
     #----------------------------------------------------------------------
-    @folder.setter
-    def folder(self, folder):
+    @_folder.setter
+    def _folder(self, folder):
         """gets/set the current folder"""
 
         if folder == "" or\
@@ -60,7 +80,7 @@ class ServiceManager(BaseServer):
             self._webEncrypted = None
             self._init()
             self._folderName = folder
-        elif folder in self.folders:
+        elif folder.lower() in [f.lower() for f in self.folders]:
             self._currentURL = self._url + "/%s" % folder
             self._services = None
             self._description = None
@@ -79,15 +99,27 @@ class ServiceManager(BaseServer):
             self._folders.append("/")
         return self._folders
     #----------------------------------------------------------------------
-    @property
-    def description(self):
-        """ returns the decscription """
-        if self._description is None:
-            self._init()
-        return self._description
+    def list(self, folder=None, refresh=True):
+        """
+        returns a list of services in the specified folder
+
+        Parameters:
+        :param folder: name of the folder to list services from
+        :param refresh: Bool, default is False. If True, the list of services will be
+        requested to the server, else the list will be returned from cache.
+        """
+        if folder is None:
+            folder = '/'
+        if folder != self._currentFolder or \
+           self._services is None or refresh:
+            self._currentFolder = folder
+            self._folder = folder
+            return self._services_list
+
+        return self._services_list
     #----------------------------------------------------------------------
     @property
-    def services(self):
+    def _services_list(self):
         """ returns the services in the current folder """
         self._services = []
         params = {
@@ -184,7 +216,7 @@ class ServiceManager(BaseServer):
             url = self._url
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
-    def can_create_service(self,
+    def _can_create_service(self,
                            service,
                            options=None,
                            folder_name=None,
@@ -245,7 +277,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def list_folder_permissions(self, folder_name):
+    def folder_permissions(self, folder_name):
         """
            Lists principals which have permissions for the folder.
            Input:
@@ -320,7 +352,7 @@ class ServiceManager(BaseServer):
         else:
             return False
     #----------------------------------------------------------------------
-    def delete_service(self, name, service_type, folder=None):
+    def _delete_service(self, name, service_type, folder=None):
         """
            deletes a service from AGS
            Inputs:
@@ -346,7 +378,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def service_report(self, folder=None):
+    def _service_report(self, folder=None):
         """
            provides a report on all items in a given folder
            Inputs:
@@ -461,8 +493,8 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def rename_service(self, name, service_type,
-                       new_name, folder=None):
+    def _rename_service(self, name, service_type,
+                        new_name, folder=None):
         """
            Renames a published AGS Service
            Inputs:
@@ -706,7 +738,8 @@ class Service(BaseServer):
     def __init__(self,
                  url,
                  connection,
-                 initialize=False):
+                 initialize=False,
+                 **kwargs):
         """Constructor
             Inputs:
                url - admin url
@@ -716,13 +749,12 @@ class Service(BaseServer):
         """
         super(Service, self).__init__(connection=connection,
                                       url=url)
+        self._service_manager = kwargs.pop('service_manager', None)
         self._url = url
         self._currentURL = url
         self._con = connection
         if initialize:
             self._init(connection)
-    def __str__(self):
-        return json.dumps(self._json_dict)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """ populates server admin information """
@@ -740,18 +772,25 @@ class Service(BaseServer):
         attributes = [attr for attr in dir(self)
                       if not attr.startswith('__') and \
                       not attr.startswith('_')]
+        self._properties = PropertyMap(json_dict)
         for k, v in json_dict.items():
             if k.lower() == "extensions":
                 self._extensions = []
                 for ext in v:
                     self._extensions.append(Extension.fromJSON(ext))
                     del ext
-            elif k in attributes:
-                setattr(self, "_"+ k, json_dict[k])
-            else:
-                setattr(self, k, v)
+            #elif k in attributes:
+            #    setattr(self, "_"+ k, json_dict[k])
+            #else:
+            #    setattr(self, k, v)
             del k
             del v
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     def refresh(self):
         """refreshes the object's values by re-querying the service"""
@@ -847,6 +886,22 @@ class Service(BaseServer):
         self.stop()
         self.start()
         return True
+
+    def rename(self, new_name):
+        """Renames this service to the new name"""
+        params = {
+            "f": "json",
+            "serviceName": self.properties.serviceName,
+            "serviceType": self.properties.type,
+            "serviceNewName": new_name
+        }
+
+        u_url = self._url[:self._url.rfind('/')] + "/renameService"
+
+        res = self._service._con.post(path=u_url, postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def delete(self):
         """deletes a service from arcgis server"""

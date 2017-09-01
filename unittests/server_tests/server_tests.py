@@ -1,537 +1,517 @@
 """
 Tests Related to Server API Frame
 """
-#import ssl
-#ssl._create_default_https_context = ssl._create_unverified_context
-#import unittest
-#import pandas as pd
-#import os, shutil, arcpy
-#from arcgis.server import Server, Service
-#from arcgis import server as arcgisserver
-#URLS = [
-    #"http://sampleserver1.arcgisonline.com/ArcGIS/rest/services", # 10.1
-    #"http://sampleserver2.arcgisonline.com/ArcGIS/rest/services", # 9.31
-    #"http://sampleserver3.arcgisonline.com/ArcGIS/rest/services", # 10.05
-    #"http://sampleserver4.arcgisonline.com/ArcGIS/rest/services", # 10.02
-    #"https://sampleserver6.arcgisonline.com/arcgis/rest", # 10.41
-    #"http://acpythondev.esri.com/arcgis/rest" # 10.5
-#]
-#import os
-#import arcgis
-#from arcgis.server import Server
-#from arcgis.gis import GIS
-#from arcgis import SpatialDataFrame
-#from arcgis.server import Service
-#from arcgis.data.geodataset import from_layer, to_featureclass, to_sqlite, from_featureclass
-#############################################################################
-##@unittest.SkipTest
-#class ServerAGOLTest(unittest.TestCase):
-    #"""test the AGOL Server functionality"""
-    #def setUp(self):
-        #self._gis = GIS('https://devext.arcgis.com', 'geodev', '12345fish')
-    #def test_portal_agol(self):
-        #from arcgis.gis import GIS
-        #self.assertTrue(len(self._gis.servers)>0)
-    #def test_all_agol_server(self):
-        #from arcgis.server._view import Catalog
-        #res = []
-        #for server in self._gis.servers:
-            #isinstance(server, Server)
-            #res.append(isinstance(server.catalog, Catalog))
-        #self.assertTrue(all(res))
-#############################################################################
-##@unittest.SkipTest
-#class ServerPortalTest(unittest.TestCase):
-    #"""tests the connection to arcgis server object from portal"""
-    #def setUp(self):
-        #self._gis = GIS('https://dev003246.esri.com/portal', 'andrew', 'password1')
-    #def test_portal_105(self):
-        #from arcgis.gis import GIS
-        #gis = GIS('https://dev003246.esri.com/portal', 'andrew', 'password1')
-        #self.assertTrue(len(gis.servers)>0)
-    #def test_all_agol_server(self):
-        #from arcgis.server._view import Catalog
-        #res = []
-        #for server in self._gis.servers:
-            #isinstance(server, Server)
-            #server.catalog
-            #res.append(isinstance(server.catalog, Catalog))
-        #self.assertTrue(all(res))
-    #def test_services(self):
-        #from arcgis.server._view import Catalog
-        #res = []
-        #server = self._gis.servers[0]
-        #isinstance(server, Server)
-        #server.services
-        #for service in server.services:
-            #res.append(service is not None)
-        #self.assertTrue(all(res))
-#############################################################################
-##@unittest.SkipTest
-#class ServerCatalogTests(unittest.TestCase):
-    #"""
-    #test server login
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-    ##----------------------------------------------------------------------
-    ##@unittest.SkipTest
-    #def test_931_catalog(self):
-        #"""catalog 931"""
-        #url_931 = URLS[1]
-        #server = Server(url=url_931)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_101_catalog(self):
-        #"""catalog 931"""
-        #url_101 = URLS[0]
-        #server = Server(url=url_101)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_1005_catalog(self):
-        #"""catalog 931"""
-        #url_1005 = URLS[2]
-        #server = Server(url=url_1005)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_1002_catalog(self):
-        #"""catalog 931"""
-        #url_1002 = URLS[3]
-        #server = Server(url=url_1002)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_1041_catalog(self):
-        #"""catalog 931"""
-        #url_1041 = URLS[4]
-        #server = Server(url=url_1041)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_105_catalog(self):
-        #"""catalog 931"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105)
-        #self.assertIsInstance(server, Server)
-    ##----------------------------------------------------------------------
-    #def test_105_catalog_token_login(self):
-        #"""catalog 931"""
-        #url_105 = URLS[5]
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+import unittest
+import pandas as pd
+import os, shutil, arcpy
+URLS = [
+    "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services", # 10.1
+    "http://sampleserver2.arcgisonline.com/ArcGIS/rest/services", # 9.31
+    "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services", # 10.05
+    "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services", # 10.02
+    "https://sampleserver6.arcgisonline.com/arcgis/rest", # 10.41
+    "http://acpythondev.esri.com/arcgis/rest" # 10.5
+]
+import os
+import arcgis
+from arcgis.gis import GIS
+from arcgis.gis.server import  ServicesDirectory
+from arcgis.gis.server import ServerManager
+from arcgis.gis.server import Server
 
-        #server = Server(url=url_105,
-                        #username=self._username,
-                        #password=self._password,
-                        #tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
-        #content = server.catalog
-        #idx = -1
-        ##for f in content.folders:
-            ##if f.lower() == 'system':
-                ##idx = content.folders.index(f)
-        ##content.folder = content.folders[idx]
-        ##if idx == -1:
-            ##self.assertGreater(idx, -1, 'Login failed for local server')
-        #self.assertIsInstance(server, Server)
-        #self.assertGreaterEqual(len(content.services), 1)
-    ##----------------------------------------------------------------------
-    #def test_105_catalog_ANON(self):
-        #"""catalog 931"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105)
-        #self.assertIsInstance(server, Server)
+from arcgis.gis.server.admin._clusters import Cluster, ClusterProtocol, Clusters
+from arcgis.gis.server.admin._data import Datastore, DataStoreManager
+from arcgis.gis.server.admin._info import Info
+from arcgis.gis.server.admin._kml import KML
+from arcgis.gis.server.admin._logs import LogManager
+from arcgis.gis.server.admin._machines import Machine, MachineManager
+from arcgis.gis.server.admin._mode import Mode
+from arcgis.gis.server.admin._security import Role, RoleManager, Security, User, UserManager
+from arcgis.gis.server.admin._services import Extension, Service, ServiceManager
+from arcgis.gis.server.admin._uploads import Uploads
+from arcgis.gis.server.admin._usagereports import Report, ReportManager
 #############################################################################
-##@unittest.SkipTest
-#class ServerPropertyTest(unittest.TestCase):
-    #"""
-    #test server login & properties on class
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-    ##----------------------------------------------------------------------
-    #def test_connection(self):
-        #"""catalog 10.5 connection"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                        #username=self._username,
-                        #password=self._password)
-        #self.assertIsInstance(server.connection, arcgisserver._common.ServerConnection)
-    ##----------------------------------------------------------------------
-    #def test_content(self):
-        #"""catalog 10.5 content"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                        #username=self._username,
-                        #password=self._password)
+AGOL_URL = None
+AGOL_USERNAME = None
+AGOL_PASSWORD = None
 
-        #self.assertIsInstance(server.catalog,
-                              #arcgisserver._view.Catalog)
-    ##def test_data(self):
-        ##"""catalog 10.5 data"""
-        ##url_105 = URLS[5]
-        ##server = Server(url=url_105,
-                            ##username=self._username,
-                            ##password=self._password)
-        ##self.assertIsInstance(server.data,
-                              ##arcgisserver.admin._data.Data)
-    #def test_data_storemanager(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.datastore
-        #self.assertIsInstance(server.datastore,
-                              #arcgisserver.admin._data.DataStoreManager)
-    #def test_info(self):
-        #"""catalog 10.5 info"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.info
-        #self.assertIsInstance(ds,
-                              #arcgisserver.admin._info.Info)
-    #def test_kml(self):
-        #"""catalog 10.5 kml"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.kml
-        #self.assertIsInstance(ds,
-                              #arcgisserver.admin._kml.KML)
-    #def test_me(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #from arcgis.server._server import User
-        #ds = server.me
-        #self.assertIsInstance(ds,
-                              #(str, User))
-    #def test_log(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.logs
-        #self.assertIsInstance(ds,
-                              #arcgisserver.admin._logs.Log)
-    #def test_services(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.services
-        #self.assertIsInstance(ds,
-                              #arcgisserver.admin._services.ServiceManager)
-    #def test_usage(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.usage
-        #self.assertIsInstance(ds,
-                              #arcgisserver.admin._usagereports.UsageReports)
-    #def test_users(self):
-        #"""catalog 10.5 data"""
-        #url_105 = URLS[5]
-        #server = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #ds = server.users
-        #self.assertIsInstance(ds,
-                              #arcgisserver._server.UserManager)
+if AGOL_USERNAME and AGOL_PASSWORD:
+    #@unittest.SkipTest
+    class ServerAGOLTest(unittest.TestCase):
+        """test the AGOL Server functionality"""
+        def setUp(self):
+            self._gis = GIS(url=AGOL_URL,
+                            username=AGOL_USERNAME,
+                            password=AGOL_PASSWORD)
+        #@unittest.SkipTest
+        def test_reports(self):
+            res = []
+            urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl,
+                                                                   self._gis.properties.id),
+                                      params={'f': 'json'})
+            url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0],
+                                               self._gis.properties.id)]
+            for server in url:
+                c =  ServicesDirectory(url=server, portal_connection=self._gis, is_agol=True)
+                break
+            html = c.report()
+            res.append(isinstance(html, str))
+            df = c.report(as_html=False)
+            res.append(isinstance(df, pd.DataFrame))
+            self.assertTrue(all(res))
+        #@unittest.SkipTest
+        def test_get_found(self):
+            from arcgis.features import FeatureLayerCollection
+            res = []
+            urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl,
+                                                                   self._gis.properties.id),
+                                      params={'f': 'json'})
+            url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0],
+                                               self._gis.properties.id)]
+            for server in url:
+                c =  ServicesDirectory(url=server, portal_connection=self._gis, is_agol=True)
+                break
+            s = c.get(name="06_14_2016__Info_Lookup_Link")
+            if s is None:
+                s = c.get(name="02_2016__Gas_Transmission_Facility_Layers_PD")
+            self.assertIsInstance(s, FeatureLayerCollection)
+        #@unittest.SkipTest
+        def test_get_not_found(self):
+            from arcgis.features import FeatureLayerCollection
+            res = []
+            urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl, self._gis.properties.id), params={'f': 'json'})
+            url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0], self._gis.properties.id)]
+            for server in url:
+                c =  ServicesDirectory(url=server, portal_connection=self._gis, is_agol=True)
+                break
+            s = c.get(name="IDONTEXIST")
+            self.assertIsNone(s)
+        #@unittest.SkipTest
+        def test_agol_server(self):
+            res = []
+            urls = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl, self._gis.properties.id), params={'f': 'json'})
+            url = ["%s://%s/%s/arcgis/rest/services" % ("https", urls['urls']['features']['https'][0], self._gis.properties.id)]
+            for server in url:
+                res.append(isinstance( ServicesDirectory(url=server, portal_connection=self._gis, is_agol=True), ServicesDirectory))
+            self.assertTrue(all(res))
+
 #############################################################################
-##@unittest.SkipTest
-#class catalog_servermanager_test(unittest.TestCase):
-    #"""
-    #test server catalog view for a server
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #url_105 = URLS[5]
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #self._server_noauth = Server(url=URLS[0])
-    ##----------------------------------------------------------------------
-    #def test_content_auth(self):
-        #"""test the functions that can be created"""
-        #content = self._server_auth.catalog
-        #self.assertIsInstance(content, arcgisserver._view.catalog.Catalog)
-    #def test_location_auth(self):
-        #location = self._server_auth.catalog.location
-        #self.assertIsInstance(location, str)
-    #def test_current_version(self):
-        #c = self._server_auth.catalog.current_version
-        #self.assertIsInstance(c, (str, float, int))
-    #def test_user_auth(self):
-        #user = self._server_auth.catalog.user
-        #self.assertEqual(user['user']['username'], self._username)
-    #def test_services_auth(self):
-        #services = self._server_auth.catalog.services
-        #self.assertIsInstance(services, (list, tuple))
-    #def test_folders_auth(self):
-        #folders = self._server_auth.catalog.folders
-        #self.assertIsInstance(folders, (list, tuple))
-    #def test_folder_get_auth(self):
-        #folder = self._server_auth.catalog.folder
-        #self.assertEqual(folder.lower(), 'root')
-    #def test_folder_set_auth(self):
-        #if len(self._server_auth.catalog.folders) > 1:
-            #self._server_auth.catalog.folder = \
-                #self._server_auth.catalog.folders[1]
-            #self.assertEqual(self._server_auth.catalog.folder,
-                             #self._server_auth.catalog.folders[1])
+#@unittest.SkipTest
+class ServerPortalTest(unittest.TestCase):
+    """tests the connection to arcgis server object from portal"""
+    def setUp(self):
+        self._gis = GIS('https://dev003246.esri.com/portal', 'andrew', 'password1')
+    def test_server_portal_not_gis(self):
+        """tests creating a Server object"""
+        from arcgis.gis.server import Server
+        s = Server(url="https://dev003247.esri.com:6443/arcgis", gis=None,
+               username="admin", password="esri.agp",
+               tokenurl="https://dev003247.esri.com:6443/arcgis/admin/generateToken")
+        self.assertIsInstance(s, Server)
+    #@unittest.SkipTest
+    def test_portal_get_server_manager(self):
+        """tests getting server manager object"""
+        from arcgis.gis import GIS
+        from arcgis.gis.server import ServerManager, Server
+        gis = self._gis
+        self.assertIsInstance(gis.admin.servers, ServerManager)
+    #@unittest.SkipTest
+    def test_list_servers(self):
+        """tests the server listing function on server manager"""
+        sm = self._gis.admin.servers
 
-    ##--- Begin No Anonymous Tests -----------------------------------------
-    #def test_content_no_auth(self):
-        #""""""
-        #content = self._server_noauth.catalog
-        #self.assertIsInstance(content, arcgisserver._view.catalog.Catalog)
-    #def test_location_noauth(self):
-        #location = self._server_noauth.catalog.location
-        #self.assertIsInstance(location, str)
-    #def test_services_noauth(self):
-        #services = self._server_noauth.catalog.services
-        #self.assertIsInstance(services, (list, tuple))
-    #def test_folders_noauth(self):
-        #folders = self._server_noauth.catalog.folders
-        #self.assertIsInstance(folders, (list, tuple))
-    #def test_folder_get_noauth(self):
-        #folder = self._server_noauth.catalog.folder
-        #self.assertEqual(folder.lower(), 'root')
-    #def test_folder_set_noauth(self):
-        #if len(self._server_noauth.catalog.folders) > 1:
-            #self._server_auth.catalog.folder = self._server_auth.catalog.folders[1]
-            #self.assertEqual(self._server_auth.catalog.folder,
-                             #self._server_auth.catalog.folders[1])
-#############################################################################
-##@unittest.SkipTest
-#class catalog_info_test(unittest.TestCase):
-    #"""
-    #test server catalog view for a server
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #url_105 = URLS[5]
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #self._server_noauth = Server(url=URLS[0])
-    ##----- No Auth Test ---------------------------------------------------
-    #def test_info_noauth(self):
-        #info = self._server_noauth.info
-        #self.assertIs(info, None)
-    ##-------- Auth Test ---------------------------------------------------
-    #def test_info_auth(self):
-        #info = self._server_auth.info
-        #self.assertIsInstance(info, arcgisserver.admin._info.Info)
-    #def test_info_auth_timezones(self):
-        #info = self._server_auth.info
-        #self.assertIsInstance(info.available_time_zones(), dict)
-#############################################################################
-##@unittest.SkipTest
-#class server_logs_test(unittest.TestCase):
-    #"""
-    #test server catalog view for a server
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #url_105 = URLS[5]
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #self._server_noauth = Server(url=URLS[0])
-    ##----- No Auth Test ---------------------------------------------------
-    #def test_logs_noauth(self):
-        #info = self._server_noauth.logs
-        #self.assertIs(info, None)
-    ##-------- Auth Test ---------------------------------------------------
-    #def test_logs_auth(self):
-        #logs = self._server_auth.logs
-        #self.assertIsInstance(logs,
-                              #arcgisserver.admin._logs.Log)
-    #def test_query_logs(self):
-        #logs = self._server_auth.logs
-        #results = logs.query()
-        #self.assertIsInstance(results, dict)
-#############################################################################
-##@unittest.SkipTest
-#class server_machines_test(unittest.TestCase):
-    #"""
-    #test server machines module
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #url_105 = URLS[5]
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-    ##-------- Auth Test ---------------------------------------------------
-    #def test_machines_auth(self):
+        self.assertTrue(all(sm.list()))
+    #@unittest.SkipTest
+    def test_validate(self):
+        """tests validate servers"""
+        sm = self._gis.admin.servers
+        self.assertIsInstance(sm.validate(), (bool, int))
+############################################################################
+#@unittest.SkipTest
+class ServerCatalogCreationTests(unittest.TestCase):
+    """
+    test server login
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+    #----------------------------------------------------------------------
+    def test_931_catalog(self):
+        """catalog 931"""
+        url_931 = URLS[1]
+        server =  ServicesDirectory(url=url_931)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_101_catalog(self):
+        """catalog 10.1 Anonymous"""
+        url_101 = URLS[0]
+        server =  ServicesDirectory(url=url_101)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_1005_catalog(self):
+        """catalog 10.05 Anonymous """
+        url_1005 = URLS[2]
+        server =  ServicesDirectory(url=url_1005)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_1002_catalog(self):
+        """catalog 10.02 Anonymous"""
+        url_1002 = URLS[3]
+        server =  ServicesDirectory(url=url_1002)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_1041_catalog(self):
+        """catalog 10.41"""
+        url_1041 = URLS[4]
+        server =  ServicesDirectory(url=url_1041)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_105_catalog(self):
+        """catalog 10.5"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105)
+        self.assertIsInstance(server,  ServicesDirectory)
+    #----------------------------------------------------------------------
+    def test_105_catalog_token_login(self):
+        """catalog 10.5"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                        username=self._username,
+                        password=self._password,
+                        tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
+        self.assertIsInstance(server,  ServicesDirectory)
+        self.assertGreaterEqual(len(server.list()), 1)
+    #---------------------------------------------------------------------
+    def test_105_catalog_admin(self):
+        """test getting the admin object to server from direct connection"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                             username=self._username,
+                            password=self._password,
+                            tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken")
+        self.assertIsInstance(server.admin, Server)
+    #----------------------------------------------------------------------
+    def test_105_catalog_ANON(self):
+        """catalog 10.5 Anonymous"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105)
+        self.assertIsInstance(server,  ServicesDirectory)
+############################################################################
+#@unittest.SkipTest
+class ServerPropertyTest(unittest.TestCase):
+    """
+    test server login & properties on class
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+    #----------------------------------------------------------------------
+    def test_content(self):
+        """catalog 10.5 content"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                        username=self._username,
+                        password=self._password).admin
 
-        #machines = self._server_auth._sm.machines
-        #isinstance(machines, arcgisserver.admin._machines.Machines)
-        #self.assertIsInstance(machines,
-                              #arcgisserver.admin._machines.Machines)
-    #def test_machines(self):
-        #machines = self._server_auth._sm.machines
-        #isinstance(machines, arcgisserver.admin._machines.Machines)
-        #self.assertIsInstance(machines.machines, (list, tuple))
-    #def test_get_machine(self):
-        #machines = self._server_auth._sm.machines
-        #isinstance(machines, arcgisserver.admin._machines.Machines)
-        #self.assertIsInstance(machines.get_machine(machine_name=machines.machines[0].machineName),
-                              #arcgisserver.admin._machines.Machine)
-#############################################################################
-##@unittest.SkipTest
-#class server_usagereports_test(unittest.TestCase):
-    #"""
-    #test server usage module
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #url_105 = URLS[5]
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #self.usagereports = self._server_auth.usage
-    ##-------- Auth Test ---------------------------------------------------
-    #def test_reports(self):
-        #isinstance(self.usagereports, arcgisserver.admin._usagereports.UsageReports)
-        #self.assertIsInstance(self.usagereports.reports, (list, tuple))
-    #def test_metrics(self):
-        #self.assertIsNotNone(self.usagereports.metrics)
-    #def test_usage_settings(self):
-        #self.assertIsNotNone(self.usagereports.usage_settings)
-    #def test_report(self):
-        #report = self.usagereports.reports[0]
-        #self.assertIsInstance(report, arcgisserver.admin._usagereports.UsageReport)
-    #def test_report_query(self):
-        #report = self.usagereports.reports[0]
-        #isinstance(report, arcgisserver.admin._usagereports.UsageReport)
-        #res = report.query()
-        #self.assertIsInstance(res, dict)
-#############################################################################
-##@unittest.SkipTest
-#class server_userandusers_test(unittest.TestCase):
-    #"""
-    #test server usage module
-    #"""
-    ##----------------------------------------------------------------------
-    #def setUp(self):
-        #url_105 = URLS[5]
-        #self._username = "arcgis_python_api"
-        #self._password = "password1"
-        #self._server_auth = Server(url=url_105,
-                            #username=self._username,
-                            #password=self._password)
-        #self.users = self._server_auth.users
+        self.assertIsInstance(server,
+                              Server)
+    def test_data_storemanager(self):
+        """catalog 10.5 data"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin.datastores
+        self.assertIsInstance(ds,
+                              DataStoreManager)
+    def test_info(self):
+        """catalog 10.5 info"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin.info
+        self.assertIsInstance(ds,
+                              Info)
+    def test_kml(self):
+        """catalog 10.5 kml"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin._kml
+        self.assertIsInstance(ds,
+                              KML)
+    def test_log(self):
+        """catalog 10.5 data"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin.logs
+        self.assertIsInstance(ds,
+                              LogManager)
+    def test_services(self):
+        """catalog 10.5 data"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin.services
+        self.assertIsInstance(ds,
+                              ServiceManager)
+    def test_usage(self):
+        """catalog 10.5 data"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+        ds = server.usagereports
+        self.assertIsInstance(ds,
+                              ReportManager)
+    def test_users(self):
+        """catalog 10.5 data"""
+        url_105 = URLS[5]
+        server =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password)
+        ds = server.admin.users
+        self.assertIsInstance(ds,
+                              UserManager)
+############################################################################
 
-    ##-------- Auth Test ---------------------------------------------------
-    #def test_users(self):
-        #from arcgis.server._server import UserManager, User
-        #self.assertIsInstance(self.users, UserManager)
-        #isinstance(self.users, UserManager)
-    #def test_create_user(self):
-        #from arcgis.server._server import UserManager, User
-        #if len(self.users.search("BobSmith1")) > 0:
-            #self.users.search("BobSmith1")[0].delete()
-        #user = self.users.create(username="BobSmith1", password="lovetheapi1",
-                          #firstname="B", lastname="d", email="d@esri.com", description="account")
+############################################################################
+#@unittest.SkipTest
+class catalog_info_test(unittest.TestCase):
+    """
+    test server catalog view for a server
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+        url_105 = URLS[5]
+        self._server_auth =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+        self._server_noauth =  ServicesDirectory(url=URLS[0])
+    #----- No Auth Test ---------------------------------------------------
+    def test_info_noauth(self):
+        if hasattr(self._server_noauth, 'admin'):
+            self.assertTrue(False)
+        self.assertTrue(True)
+    #-------- Auth Test ---------------------------------------------------
+    #@unittest.SkipTest
+    def test_info_auth(self):
+        info = self._server_auth.info
+        self.assertIsInstance(info, Info)
+    #@unittest.SkipTest
+    def test_info_auth_timezones(self):
+        info = self._server_auth.info
+        self.assertIsInstance(info.available_time_zones(), dict)
+############################################################################
+#@unittest.SkipTest
+class server_logs_test(unittest.TestCase):
+    """
+    test server catalog view for a server
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+        url_105 = URLS[5]
+        self._server_auth =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+        self._server_noauth =  ServicesDirectory(url=URLS[0])
+    #-------- Auth Test ---------------------------------------------------
+    def test_logs_auth(self):
+        logs = self._server_auth.logs
+        self.assertIsInstance(logs,
+                              LogManager)
+    def test_query_logs(self):
+        logs = self._server_auth.logs
+        results = logs.query()
+        self.assertIsInstance(results, dict)
+############################################################################
+#@unittest.SkipTest
+class server_machines_test(unittest.TestCase):
+    """
+    test server machines module
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        url_105 = URLS[5]
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+        self._server_auth =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+    #-------- Auth Test ---------------------------------------------------
+    def test_machines_auth(self):
 
-        #self.assertIsInstance(user, User)
-    #def test_get(self):
-        #from arcgis.server._server import UserManager, User
-        #isinstance(self.users, UserManager)
-        #user = self.users.get(username="BobSmith1")
-        #self.assertIsInstance(user, (list, User))
-    #def test_me(self):
-        #from arcgis.server._server import UserManager, User
-        #self.assertIsInstance(self.users.me, User)
-    #def test_search(self):
-        #from arcgis.server._server import UserManager, User
-        #self.assertIsInstance(self.users.search(username="Bob"), list)
-    #def test_roles(self):
-        #from arcgis.server._server import UserManager, User, RoleManager
-        #roles = self.users.roles
-        #self.assertIsInstance(roles, RoleManager)
+        machines = self._server_auth.machines
+        isinstance(machines, MachineManager)
+        self.assertIsInstance(machines,
+                              MachineManager)
+    def test_machines(self):
+        machines = self._server_auth.machines
+        isinstance(machines, MachineManager)
+        self.assertIsInstance(machines.list(), (list, tuple))
+    def test_get_machine(self):
+        machines = self._server_auth.machines
+        isinstance(machines, MachineManager)
+        self.assertIsInstance(machines.get(machine_name=machines.list()[0].properties.machineName),
+                              Machine)
+############################################################################
+#@unittest.SkipTest
+class server_usagereports_test(unittest.TestCase):
+    """
+    test server usage module
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        url_105 = URLS[5]
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+        self._server_auth =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+        self.usagereports = self._server_auth.usagereports
+    #-------- Auth Test ---------------------------------------------------
+    def test_reports(self):
+        isinstance(self.usagereports, ReportManager)
+        self.assertIsInstance(self.usagereports.list(), (list, tuple))
+    def test_metrics(self):
+        self.assertIsNotNone(self.usagereports.metrics)
+    def test_usage_settings(self):
+        self.assertIsNotNone(self.usagereports.settings)
+    def test_report(self):
+        report = self.usagereports.list()[0]
+        self.assertIsInstance(report, Report)
+    def test_report_query(self):
+        report = self.usagereports.list()[0]
+        isinstance(report, Report)
+        res = report.query()
+        self.assertIsInstance(res, dict)
+############################################################################
+#@unittest.SkipTest
+class server_userandusers_test(unittest.TestCase):
+    """
+    test server usage module
+    """
+    #----------------------------------------------------------------------
+    def setUp(self):
+        url_105 = URLS[5]
+        self._username = "arcgis_python_api"
+        self._password = "password1"
+        self._server_auth =  ServicesDirectory(url=url_105,
+                            username=self._username,
+                            password=self._password).admin
+        self.users = self._server_auth.users
 
-    #def test_roles_all(self):
-        #from arcgis.server._server import UserManager, User, RoleManager, Role
-        #roles = self.users.roles
-        #isinstance(roles, RoleManager)
-        #theroles = roles.all()
-        #self.assertIsInstance(theroles, list)
-    #def test_roles_get_role(self):
-        #from arcgis.server._server import UserManager, User, RoleManager, Role
-        #roles = self.users.roles
-        #isinstance(roles, RoleManager)
-        #role = roles.get_role(role_id='admin')
-        #self.assertIsInstance(role, (list, Role))
-    #def test_role_create(self):
-        #from arcgis.server._server import UserManager, User, RoleManager, Role
-        #roles = self.users.roles
-        #isinstance(roles, RoleManager)
-        #if len(roles.get_role(role_id='role1')) == 1:
-            #roles.get_role(role_id='role1')[0].delete()
-        #role = roles.create(name='role1', description='role description')
-        #self.assertTrue(role)
-    #def test_role_update(self):
-        #from arcgis.server._server import UserManager, User, RoleManager, Role
-        #roles = self.users.roles
-        #isinstance(roles, RoleManager)
-        #role = roles.get_role(role_id='role1')[0]
-        #isinstance(role, Role)
+    #-------- Auth Test ---------------------------------------------------
+    #@unittest.SkipTest
+    def test_users(self):
 
-        #self.assertIsInstance(role.update(description="New Description"), (dict, Role, bool))
-    #def test_set_privileges(self):
-        #from arcgis.server._server import UserManager, User, RoleManager, Role
-        #roles = self.users.roles
-        #isinstance(roles, RoleManager)
-        #role = roles.get_role(role_id='role1')[0]
-        #isinstance(role, Role)
-        #self.assertIsInstance(role.set_privileges("publish"), (dict, Role, bool))
-    ##----------------------------------------------------------------------
-    #def test_user(self):
-        #from arcgis.server._server import UserManager, User
-        #user = self.users.search(username="BobSmith1")[0]
-        #self.assertIsInstance(user, (dict, User))
-    ##----------------------------------------------------------------------
-    #def test_user_update(self):
-        #from arcgis.server._server import UserManager, User
-        #user = self.users.search(username="BobSmith1")[0]
-        #isinstance(user, User)
-        #res = user.update(password="pw12356", full_name="Jane Doe", description="description new", email=None)
-        #self.assertTrue(res['status'] == 'success')
-    #def test_user_assign_role(self):
-        #from arcgis.server._server import UserManager, User, Role, RoleManager
-        #roles = self.users.roles
-        #user = self.users.search(username="BobSmith1")[0]
-        #isinstance(user, User)
-        #role = roles.get_role(role_id='role1')[0]
-        #res = user.add_role(role.rolename)
-        #self.assertTrue(res)
+        self.assertIsInstance(self.users, UserManager)
+        isinstance(self.users, UserManager)
+    #@unittest.SkipTest
+    def test_create_user(self):
+
+        if len(self.users.search("BobSmith1")) > 0:
+            self.users.search("BobSmith1")[0].delete()
+        user = self.users.create(username="BobSmith1", password="lovetheapi1",
+                          fullname="b d", email="d@esri.com", description="account")
+
+        self.assertIsInstance(user, User)
+    #@unittest.SkipTest
+    def test_get(self):
+
+        isinstance(self.users, UserManager)
+        user = self.users.get(username="arcgis_python_api")
+        self.assertIsInstance(user, (list, User))
+    #@unittest.SkipTest
+    def test_me(self):
+
+        self.assertIsInstance(self.users.me, User)
+    #@unittest.SkipTest
+    def test_search(self):
+        self.assertIsInstance(self.users.search(username="Bob"), list)
+    #@unittest.SkipTest
+    def test_roles(self):
+        roles = self.users.roles
+        self.assertIsInstance(roles, RoleManager)
+    #@unittest.SkipTest
+    def test_roles_all(self):
+        roles = self.users.roles
+        isinstance(roles, RoleManager)
+        theroles = roles.all()
+        self.assertIsInstance(theroles, list)
+    #@unittest.SkipTest
+    def test_roles_get_role(self):
+
+        roles = self.users.roles
+        isinstance(roles, RoleManager)
+        role = roles.get('admin')
+
+        self.assertIsInstance(role, (list, Role))
+    #@unittest.SkipTest
+    def test_role_create(self):
+
+        roles = self.users.roles
+        isinstance(roles, RoleManager)
+        if len(roles.get('role1')) == 1:
+            roles.get('role1')[0].delete()
+        role = roles.create(name='role1', description='role description')
+        self.assertTrue(role)
+    #@unittest.SkipTest
+    def test_role_update(self):
+
+        roles = self.users.roles
+        isinstance(roles, RoleManager)
+        role = roles.get('role1')[0]
+        isinstance(role, Role)
+
+        self.assertIsInstance(role.update(description="New Description"), (dict, Role, bool))
+    #@unittest.SkipTest
+    def test_set_privileges(self):
+
+        roles = self.users.roles
+        isinstance(roles, RoleManager)
+        role = roles.get('role1')[0]
+        isinstance(role, Role)
+        self.assertIsInstance(role.set_privileges("publish"), (dict, Role, bool))
+    #----------------------------------------------------------------------
+    #@unittest.SkipTest
+    def test_user(self):
+
+        user = self.users.search(username="BobSmith1")[0]
+        self.assertIsInstance(user, (dict, User))
+    #----------------------------------------------------------------------
+    #@unittest.SkipTest
+    def test_user_update(self):
+
+        user = self.users.search(username="BobSmith1")[0]
+        isinstance(user, User)
+        res = user.update(password="pw12356", full_name="Jane Doe", description="description new", email=None)
+        self.assertTrue(res)
+    #@unittest.SkipTest
+    def test_user_assign_role(self):
+
+        roles = self.users.roles
+        user = self.users.search(username="BobSmith1")[0]
+        isinstance(user, User)
+        role = roles.get('role1')[0]
+        res = user.add_role(role.rolename)
+        self.assertTrue(res)
 
 
-##--------------------------------------------------------------------------
-#if __name__ == "__main__":
-    #unittest.main()
+#--------------------------------------------------------------------------
+if __name__ == "__main__":
+    unittest.main()
 

@@ -49,6 +49,9 @@ class _GISService(object):
             self._gis = gis
             self._con = gis._con
             self._token = None
+        elif hasattr(gis, 'token'): # means it is a connection object
+            self._gis = None
+            self._con = gis
         else:
             self._gis = gis
             self._con = gis._con

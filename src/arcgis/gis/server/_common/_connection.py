@@ -193,7 +193,47 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             cert_file=self.cert,
                                             timeout=timeout)
 class ServerConnection(object):
-    """"""
+    """
+
+    =====================     ====================================================================
+    **Argument**              **Description**
+    ---------------------     --------------------------------------------------------------------
+    baseurl                   optional string, the root URL to a site.
+                              Example: https://mysite.com/arcgis
+    ---------------------     --------------------------------------------------------------------
+    tokenurl                  optional string. Used when a site if federated or when the token
+                              URL differs from the site's baseurl.  If a site is federated, the
+                              token URL will return as the Portal token and ArcGIS Server users
+                              will not validate correctly.
+    ---------------------     --------------------------------------------------------------------
+    username                  optional string, login username for BUILT-IN security
+    ---------------------     --------------------------------------------------------------------
+    password                  optional string, a secret word or phrase that must be used to gain
+                              access to the account above.
+    ---------------------     --------------------------------------------------------------------
+    key_file                  optional string, path to PKI ket file
+    ---------------------     --------------------------------------------------------------------
+    cert_file                 optional string, path to PKI cert file
+    ---------------------     --------------------------------------------------------------------
+    proxy_host                optional string, web address to the proxy host
+
+                              Example: proxy.mysite.com
+    ---------------------     --------------------------------------------------------------------
+    proxy_port                optional integer, default is 80. The port where the proxy resided on
+    ---------------------     --------------------------------------------------------------------
+    expiration                optional integer. The Default is 60. This is the length of time a
+                              token is valid for.
+                              Example 1440 is one week.
+    ---------------------     --------------------------------------------------------------------
+    all_ssl                   optional boolean. The default is False. If True, all calls will be
+                              made over HTTPS instead of HTTP.
+    ---------------------     --------------------------------------------------------------------
+    portal_connection         optional GIS. This is used when a site is federated. It is the
+                              ArcGIS Online or Portal GIS object used.
+    =====================     ====================================================================
+
+
+    """
     baseurl = None
     key_file = None
     cert_file = None

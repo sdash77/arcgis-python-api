@@ -20,7 +20,7 @@ from arcgis.schematics import SchematicLayers
 from arcgis.mapping._types import SceneLayer
 from .._common import ServerConnection
 from ._geodataservice import GeoData
-
+#from .
 class ServiceFactory(type):
     """
     Generates a geometry object from a given set of
@@ -32,8 +32,7 @@ class ServiceFactory(type):
                  server=None,
                  initialize=False):
         """generates the proper type of layer from a given url"""
-        from .. import Server
-        from .._view.catalog import Catalog
+        from .. import  ServicesDirectory
         hasLayer = False
         if url is None and \
            item is None:
@@ -41,9 +40,10 @@ class ServiceFactory(type):
         elif url is None and item is not None:
             url = item.url
 
-        if isinstance(server, ServerConnection):
+        if isinstance(server, ServerConnection) or \
+           hasattr(server, 'token'):
             connection = server
-        elif isinstance(server, (Server, GIS, Catalog)):
+        elif isinstance(server, (GIS,  ServicesDirectory)):
             connection = server._con
         else:
             try:
@@ -52,13 +52,13 @@ class ServiceFactory(type):
                                                          nl=parsed.netloc,
                                                          wa=parsed.path[1:].split('/')[0])
                 connection = ServerConnection(baseurl=site_url) # anonymous connection
-                server = Server(url=site_url)
+                server =  ServicesDirectory(url=site_url)
             except:
                 parsed = urlparse(url)
-                site_url = "{scheme}://{nl}/rest/services".format(scheme=parsed.scheme,
+                site_url = "https://{nl}/rest/services".format(scheme=parsed.scheme,
                                                                   nl=parsed.netloc)
-                connection = Server(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
-                server = Server(url=site_url)
+                connection = ServerConnection(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
+                server =  ServicesDirectory(url=site_url)
         base_name = os.path.basename(url)
         if base_name.isdigit():
             base_name = os.path.basename(url.replace("/" +base_name, ""))
