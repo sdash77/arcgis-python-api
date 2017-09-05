@@ -170,7 +170,6 @@ require.undef('mapview');
 
 define('mapview', [
      "jupyter-js-widgets",
-     "esri/basemaps",
      "esri/map",
      "esri/config",
      "esri/Color",
@@ -207,7 +206,6 @@ define('mapview', [
      "dojo/domReady!"
 ], function (
      widgets,
-     esriBasemaps,
      Map,
      esriConfig,
      Color,
@@ -322,17 +320,6 @@ define('mapview', [
                 } else {
 
                     //that.$el.append("<div id='"+that.model.get('_swipe_div')+"'>");
-                    var bms = that.model.get('gallery_basemaps');
-                    // If the gallery_basemaps is not empty, then we must be using a group
-                    if (bms.length > 0) {
-                        var bmdefs = that.model.get('_gbasemaps_def');
-                        for (var i=0;i < bms.length;i++) {
-                            esriBasemaps[bms[i]] = {
-                                baseMapLayers: bmdefs[i],
-                                title: bms[i]
-                            };
-                        }
-                    }
 
                     if (that.model.get('_extent').indexOf("{") > -1) {
                         var ext = JSON.parse(that.model.get('_extent'));
@@ -350,7 +337,9 @@ define('mapview', [
                             extent: newExtent
                         });
 
+
                     } else {
+
                         that.map = new Map(that.el, {
                             basemap: that.model.get('basemap'),
                             center: that.model.get('center').reverse(),

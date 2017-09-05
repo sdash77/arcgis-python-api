@@ -1,4 +1,4 @@
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping
 
