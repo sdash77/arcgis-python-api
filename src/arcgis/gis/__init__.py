@@ -1092,7 +1092,53 @@ class UserManager(object):
                     _log.error('Unable to update the thumbnail for  ' + username)
             return user
 
+    #----------------------------------------------------------------------
+    def update_user_level(self, user, level):
+        """
+        The Update User Level operation (POST only) allows administrators
+        of an organization to update the level of a user. Administrators can
+        leverage two levels of membership when assigning roles and
+        privileges to members, membership levels allow organizations to
+        control access to some ArcGIS capabilities for some members while
+        granting more complete access to other members. Level 1 membership
+        is designed for members who need privileges to view and interact
+        with existing content, while Level 2 membership is for those who
+        contribute, create, and share content and groups, in addition to
+        other tasks.
+        Maximum user quota of an organization at the given level is checked
+        before allowing the update.
 
+        Built-in roles including organization administrator, publisher, and
+        user are assigned as Level 2, members with custom roles can be
+        assigned as Level 1 or Level 2.
+
+        Level 1 membership allows for limited capabilities given through a
+        maximum of 8 privileges: portal:user:joinGroup,
+        portal:user:viewOrgGroups, portal:user:viewOrgItems,
+        portal:user:viewOrgUsers, premium:user:geocode,
+        premium:user:networkanalysis, premium:user:demographics, and
+        premium:user:elevation. If updating the role of a Level 1 user with
+        a custom role that has more privileges than the eight, additional
+        privileges will be disabled for the user to ensure restriction.
+
+        Level 1 users are not allowed to own any content or group which can
+        be reassigned to other users through the Reassign Item and Reassign
+        Group operations before downgrading them. The operation will also
+        fail if the user being updated has got licenses assigned to premium
+        apps that are not allowed at the targeting level.
+        """
+        url = "%s/portals/self/updateUserLevel" % self._portal.resturl
+        if isinstance(user, User):
+            user = user.username
+        params = {
+            'user' : user,
+            'level' : level,
+            'f' : 'json'
+        }
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
 
     def signup(self, username, password, fullname, email):
         """ Signs up users to an instance of Portal for ArcGIS.
