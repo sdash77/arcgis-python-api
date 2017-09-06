@@ -448,6 +448,26 @@ class FeatureLayerCollectionManager(_GISResource):
         self._fs._populate_layers()
 
         return res
+    #----------------------------------------------------------------------
+    def generate_mapservice_definition(self):
+        """
+        This operation returns a map service JSON that can be used to
+        create a service.
+
+        If a service does not support this operation, None is returned.
+
+        :returns:
+           dictionary
+        """
+        params = {
+            'f' : 'json',
+        }
+        url = "%s/generateMapServiceDefinition" % self._url
+        try:
+            res = self._con.post(url, params)
+        except:
+            res = None
+        return res
     # ----------------------------------------------------------------------
     def create_view(self,
                     name,
