@@ -3081,7 +3081,10 @@ class User(dict):
                     </div>
                 </div>
                 """
-
+    @property
+    def groups(self):
+        """returns a list of Group objects the current user belongs to"""
+        return [Group(self._gis, group['id']) for group in self['groups']]
     #----------------------------------------------------------------------
     def update_level(self, level):
         """
