@@ -126,7 +126,7 @@ class Server(BaseServer):
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
-    def _publish_sd(self,
+    def publish_sd(self,
                     sd_file,
                     folder=None):
         """
