@@ -234,7 +234,7 @@ class ServerPropertyTest(unittest.TestCase):
         server =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password)
-        ds = server.admin.info
+        ds = server.admin._info
         self.assertIsInstance(ds,
                               Info)
     def test_kml(self):
@@ -270,7 +270,7 @@ class ServerPropertyTest(unittest.TestCase):
         server =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
-        ds = server.usagereports
+        ds = server.usage
         self.assertIsInstance(ds,
                               ReportManager)
     def test_users(self):
@@ -307,11 +307,11 @@ class catalog_info_test(unittest.TestCase):
     #-------- Auth Test ---------------------------------------------------
     #@unittest.SkipTest
     def test_info_auth(self):
-        info = self._server_auth.info
+        info = self._server_auth._info
         self.assertIsInstance(info, Info)
     #@unittest.SkipTest
     def test_info_auth_timezones(self):
-        info = self._server_auth.info
+        info = self._server_auth._info
         self.assertIsInstance(info.available_time_zones(), dict)
 ############################################################################
 #@unittest.SkipTest
@@ -381,20 +381,20 @@ class server_usagereports_test(unittest.TestCase):
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
-        self.usagereports = self._server_auth.usagereports
+        self.usage = self._server_auth.usage
     #-------- Auth Test ---------------------------------------------------
     def test_reports(self):
-        isinstance(self.usagereports, ReportManager)
-        self.assertIsInstance(self.usagereports.list(), (list, tuple))
+        isinstance(self.usage, ReportManager)
+        self.assertIsInstance(self.usage.list(), (list, tuple))
     def test_metrics(self):
-        self.assertIsNotNone(self.usagereports.metrics)
+        self.assertIsNotNone(self.usage.properties.metrics)
     def test_usage_settings(self):
-        self.assertIsNotNone(self.usagereports.settings)
+        self.assertIsNotNone(self.usage.settings)
     def test_report(self):
-        report = self.usagereports.list()[0]
+        report = self.usage.list()[0]
         self.assertIsInstance(report, Report)
     def test_report_query(self):
-        report = self.usagereports.list()[0]
+        report = self.usage.list()[0]
         isinstance(report, Report)
         res = report.query()
         self.assertIsInstance(res, dict)
@@ -457,7 +457,7 @@ class server_userandusers_test(unittest.TestCase):
 
         roles = self.users.roles
         isinstance(roles, RoleManager)
-        role = roles.get('admin')
+        role = roles.get_role('admin')
 
         self.assertIsInstance(role, (list, Role))
     #@unittest.SkipTest
@@ -465,8 +465,8 @@ class server_userandusers_test(unittest.TestCase):
 
         roles = self.users.roles
         isinstance(roles, RoleManager)
-        if len(roles.get('role1')) == 1:
-            roles.get('role1')[0].delete()
+        if len(roles.get_role('role1')) == 1:
+            roles.get_role('role1')[0].delete()
         role = roles.create(name='role1', description='role description')
         self.assertTrue(role)
     #@unittest.SkipTest
@@ -474,7 +474,7 @@ class server_userandusers_test(unittest.TestCase):
 
         roles = self.users.roles
         isinstance(roles, RoleManager)
-        role = roles.get('role1')[0]
+        role = roles.get_role('role1')[0]
         isinstance(role, Role)
 
         self.assertIsInstance(role.update(description="New Description"), (dict, Role, bool))
@@ -483,7 +483,7 @@ class server_userandusers_test(unittest.TestCase):
 
         roles = self.users.roles
         isinstance(roles, RoleManager)
-        role = roles.get('role1')[0]
+        role = roles.get_role('role1')[0]
         isinstance(role, Role)
         self.assertIsInstance(role.set_privileges("publish"), (dict, Role, bool))
     #----------------------------------------------------------------------
@@ -506,7 +506,7 @@ class server_userandusers_test(unittest.TestCase):
         roles = self.users.roles
         user = self.users.search(username="BobSmith1")[0]
         isinstance(user, User)
-        role = roles.get('role1')[0]
+        role = roles.get_role('role1')[0]
         res = user.add_role(role.rolename)
         self.assertTrue(res)
 
