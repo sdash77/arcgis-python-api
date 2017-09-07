@@ -449,7 +449,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         return res
     #----------------------------------------------------------------------
-    def generate_mapservice_definition(self):
+    def _generate_mapservice_definition(self):
         """
         This operation returns a map service JSON that can be used to
         create a service.
