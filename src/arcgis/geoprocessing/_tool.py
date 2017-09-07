@@ -495,7 +495,8 @@ class _AsyncResource(_GISResource):
                     if job_response.get("jobStatus") == "esriJobFailed":
                         raise Exception("Job failed.")
                     elif job_response.get("jobStatus") == "esriJobCancelled":
-                        raise Exception("Job cancelled.")
+                        #raise Exception("Job cancelled.")
+                        return job_response
                     elif job_response.get("jobStatus") == "esriJobTimedOut":
                         raise Exception("Job timed out.")
 
@@ -983,12 +984,17 @@ class Toolbox(_AsyncResource):
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
-
-            # arams["f"] = "json"
-
             job_info = self._con.post(submit_url, gp_params, token=self._token)
+            try:
+                job_info = super()._analysis_job_status(task_url, job_info)
+            except KeyboardInterrupt:
+                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info['jobId'])
+                params = {'f' : "json"}
+                job_info = self._con.get(path=cancel_url, params=params)
 
-            job_info = super()._analysis_job_status(task_url, job_info)
+                job_info = super()._analysis_job_status(task_url, job_info)
+
+                return job_info
             resp = super()._analysis_job_results(task_url, job_info)
             # print('***'+str(resp))
 
