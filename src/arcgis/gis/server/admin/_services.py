@@ -28,14 +28,17 @@ class ServiceManager(BaseServer):
     _json = None
     #----------------------------------------------------------------------
     def __init__(self, url, connection,
-                 initialize=False):
+                 initialize=False,
+                 sm=None):
         """Constructor
             Inputs:
                url - admin url
                connection - SiteConnection object
         """
+        if sm is None:
+            self._sm = sm
         super(ServiceManager, self).__init__(connection=connection,
-                                             url=url)
+                                             url=url, sm=sm)
         self._con = connection
         self._url = url
         self._currentURL = url
@@ -137,7 +140,7 @@ class ServiceManager(BaseServer):
         return self._services
     #----------------------------------------------------------------------
     @property
-    def extensions(self):
+    def _extensions(self):
         """
         This resource is a collection of all the custom server object
         extensions that have been uploaded and registered with the server.
@@ -152,7 +155,15 @@ class ServiceManager(BaseServer):
         return self._con.get(path=url,
                              params=params)
     #----------------------------------------------------------------------
-    def find_services(self, service_type="*"):
+    def publish_sd(self,
+                   sd_file,
+                   folder=None):
+        """
+        publishes a service definition file to arcgis server
+        """
+        return self._sm._publish_sd(sd_file, folder)
+    #----------------------------------------------------------------------
+    def _find_services(self, service_type="*"):
         """
             returns a list of a particular service type on AGS
             Input:
@@ -197,7 +208,7 @@ class ServiceManager(BaseServer):
             del folder
         return type_services
     #----------------------------------------------------------------------
-    def examine_folder(self, folder=None):
+    def _examine_folder(self, folder=None):
         """
         A folder is a container for GIS services. ArcGIS Server supports a
         single level hierarchy of folders.
@@ -252,7 +263,7 @@ class ServiceManager(BaseServer):
                               postdata=params)
 
     #----------------------------------------------------------------------
-    def add_folder_permission(self, principal, is_allowed=True, folder=None):
+    def _add_folder_permission(self, principal, is_allowed=True, folder=None):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
@@ -277,7 +288,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def folder_permissions(self, folder_name):
+    def _folder_permissions(self, folder_name):
         """
            Lists principals which have permissions for the folder.
            Input:
@@ -291,7 +302,7 @@ class ServiceManager(BaseServer):
         }
         return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def clean_permissions(self, principal):
+    def _clean_permissions(self, principal):
         """
            Cleans all permissions that have been assigned to a role
            (principal). This is typically used when a role is deleted.
@@ -398,7 +409,7 @@ class ServiceManager(BaseServer):
         return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
     @property
-    def types(self):
+    def _types(self):
         """ returns the allowed services types """
         params = {
             "f" : "json"
@@ -407,7 +418,7 @@ class ServiceManager(BaseServer):
         return self._con.get(path=u_url,
                              params=params)
     #----------------------------------------------------------------------
-    def federate(self):
+    def _federate(self):
         """
         This operation is used when federating ArcGIS Server with Portal
         for ArcGIS. It imports any services that you have previously
@@ -431,7 +442,7 @@ class ServiceManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def unfederate(self):
+    def _unfederate(self):
         """
         This operation is used when unfederating ArcGIS Server with Portal
         for ArcGIS. It removes any items from the portal that represent
@@ -454,7 +465,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def unregister_extension(self, extension_filename):
+    def _unregister_extension(self, extension_filename):
         """
         Unregisters all the extensions from a previously registered server
         object extension (.SOE) file.
@@ -473,7 +484,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def update_extension(self, item_id):
+    def _update_extension(self, item_id):
         """
         Updates extensions that have been previously registered with the
         server. All extensions in the new .SOE file must match with
@@ -556,7 +567,7 @@ class ServiceManager(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def stop_services(self, services):
+    def _stop_services(self, services):
         """
         Stops serveral services on a single server
         Inputs:
@@ -595,7 +606,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def start_services(self, services):
+    def _start_services(self, services):
         """
         starts serveral services on a single server
         Inputs:
@@ -634,7 +645,7 @@ class ServiceManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def edit_folder(self, description, web_encrypted=False):
+    def _edit_folder(self, description, web_encrypted=False):
         """
         This operation allows you to change the description of an existing
         folder or change the web encrypted property.
@@ -705,7 +716,6 @@ class Service(BaseServer):
     _recycleInterval = None
     _instancesPerContainer = None
     _maxWaitTime = None
-    _extensions = None
     _minInstancesPerNode = None
     _maxIdleTime = None
     _maxUsageTime = None
@@ -792,24 +802,24 @@ class Service(BaseServer):
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
-    def refresh(self):
+    def _refresh(self):
         """refreshes the object's values by re-querying the service"""
         self._init()
     #----------------------------------------------------------------------
-    def json_properties(self):
+    def _json_properties(self):
         """returns the jsonProperties"""
         if self._jsonProperties is None:
             self._init()
         return self._jsonProperties
     #----------------------------------------------------------------------
     @property
-    def extensions(self):
+    def _extensions(self):
         """lists the extensions on a service"""
         if self._extensions is None:
             self._init()
         return self._extensions
     #----------------------------------------------------------------------
-    def modify_extensions(self,
+    def _modify_extensions(self,
                           extension_objects=None):
         """
         enables/disables a service extension type based on the name
@@ -826,7 +836,7 @@ class Service(BaseServer):
             return res
         return False
     #----------------------------------------------------------------------
-    def has_child_permissions_conflict(self, principal, permission):
+    def _has_child_permissions_conflict(self, principal, permission):
         """
         You can invoke this operation on the resource (folder or service)
         to determine if this resource has a child resource with opposing
@@ -933,7 +943,7 @@ class Service(BaseServer):
         return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
     @property
-    def permissions(self):
+    def _permissions(self):
         """ returns the permissions for the service """
         params = {
             "f" : "json"
@@ -942,7 +952,7 @@ class Service(BaseServer):
         return self._con.get(path=u_url, param_dict=params)
     #----------------------------------------------------------------------
     @property
-    def iteminfo(self):
+    def _iteminfo(self):
         """ returns the item information """
         params = {
             "f" : "json"
@@ -950,7 +960,7 @@ class Service(BaseServer):
         u_url = self._url + "/iteminfo"
         return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
-    def register_extension(self, item_id):
+    def _register_extension(self, item_id):
         """
         Registers a new server object extension file with the server.
         Before you register the file, you need to upload the .SOE file to
@@ -972,7 +982,7 @@ class Service(BaseServer):
                               postdata=params)
 
     #----------------------------------------------------------------------
-    def delete_item_info(self):
+    def _delete_item_info(self):
         """
         Deletes the item information.
         """
@@ -982,7 +992,7 @@ class Service(BaseServer):
         u_url = self._url + "/iteminfo/delete"
         return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
-    def upload_item_info(self, folder, path):
+    def _upload_item_info(self, folder, path):
         """
         Allows for the upload of new itemInfo files such as metadata.xml
         Inputs:
@@ -1002,7 +1012,7 @@ class Service(BaseServer):
                               postdata=params,
                               files=files)
     #----------------------------------------------------------------------
-    def edit_item_info(self, json_dict):
+    def _edit_item_info(self, json_dict):
         """
         Allows for the direct edit of the service's item's information.
         To get the current item information, pull the data by calling
@@ -1022,7 +1032,7 @@ class Service(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def service_manifest(self, file_type="json"):
+    def _service_manifest(self, file_type="json"):
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1045,7 +1055,7 @@ class Service(BaseServer):
                           file_name=os.path.basename(url))
         return open(f, 'r').read()
     #----------------------------------------------------------------------
-    def add_permission(self, principal, is_allowed=True):
+    def _add_permission(self, principal, is_allowed=True):
         """
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child

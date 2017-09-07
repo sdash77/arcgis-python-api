@@ -402,7 +402,7 @@ class DataStoreManager(BaseServer):
                               postdata=params)
     #----------------------------------------------------------------------
     @property
-    def items(self):
+    def data_items(self):
         """ This resource lists data items that are the root of all other
             data items in the data store.
         """
@@ -433,7 +433,7 @@ class DataStoreManager(BaseServer):
         }
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def remove_datastore(self, item_name, machine_name):
+    def remove_datastore_machine(self, item_name, machine_name):
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
@@ -448,7 +448,7 @@ class DataStoreManager(BaseServer):
         }
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def start_datastore(self, item_name, machine_name):
+    def start(self, item_name, machine_name):
         """
         Starts the database instance running on the Data Store machine.
 
@@ -462,7 +462,7 @@ class DataStoreManager(BaseServer):
         }
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def stop_datastore(self, item_name, machine_name):
+    def stop(self, item_name, machine_name):
         """
         Stop the database instance running on the Data Store machine.
 

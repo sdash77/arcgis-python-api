@@ -193,7 +193,7 @@ class UserManager(BaseServer):
                 return res['status']
         return res
     #----------------------------------------------------------------------
-    def get_user_privileges(self, username):
+    def _get_user_privileges(self, username):
         """
            Returns the privilege associated with a user
            Parameters:
@@ -208,7 +208,7 @@ class UserManager(BaseServer):
         url = self._url + "/users/getPrivilege"
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def get_user_roles(self, username, user_filter=None, max_count=None):
+    def _get_user_roles(self, username, user_filter=None, max_count=None):
         """
            This operation returns a list of role names that have been
            assigned to a particular user account.
@@ -229,7 +229,7 @@ class UserManager(BaseServer):
             params['maxCount'] = max_count
         return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def list_users(self, start_index=0, page_size=10):
+    def _list_users(self, start_index=0, page_size=10):
         """
            This operation gives you a pageable view of users in the user
            store. It is intended for iterating over all available user
@@ -253,7 +253,7 @@ class UserManager(BaseServer):
         return self._con.post(path=u_url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def remove_roles_from_user(self, username, roles):
+    def _remove_roles_from_user(self, username, roles):
         """
            This operation removes roles that have been previously assigned
            to a user account. This operation is supported only when the
@@ -275,7 +275,7 @@ class UserManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def delete_user(self, username):
+    def _delete_user(self, username):
         """
            returns a username from the user store
            Parameters:
@@ -293,7 +293,7 @@ class UserManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def remove_users_from_role(self, rolename, users):
+    def _remove_users_from_role(self, rolename, users):
         """
            Removes a role assignment from multiple users.
            Parameters:
@@ -513,7 +513,7 @@ class User(dict):
     def delete(self):
         """deletes the current user account"""
         username = self.username
-        return self._security.delete_user(username=username)
+        return self._security._delete_user(username=username)
 ########################################################################
 class RoleManager(BaseServer):
     """
@@ -661,7 +661,7 @@ class RoleManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def get_privilege_for_role(self, rolename):
+    def _get_privilege_for_role(self, rolename):
         """
            Returns the privilege associated with a role.
            Parameters:
@@ -677,7 +677,7 @@ class RoleManager(BaseServer):
         return self._con.post(path=pURL,
                               postdata=params)
     #----------------------------------------------------------------------
-    def get_user_privileges(self, username):
+    def _get_user_privileges(self, username):
         """
            Returns the privilege associated with a user
            Parameters:
@@ -719,7 +719,7 @@ class RoleManager(BaseServer):
                 roles.append(Role(rolemanager=self, roledict=role))
         return roles
     #----------------------------------------------------------------------
-    def get_roles_by_privilege(self, privilege):
+    def _get_roles_by_privilege(self, privilege):
         """
            Returns the roles associated with a pribilege.
            Parameters:
@@ -734,7 +734,7 @@ class RoleManager(BaseServer):
         }
         return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def get_user_roles(self, username, user_filter=None, max_count=None):
+    def _get_user_roles(self, username, user_filter=None, max_count=None):
         """
            This operation returns a list of role names that have been
            assigned to a particular user account.
@@ -755,7 +755,7 @@ class RoleManager(BaseServer):
             params['maxCount'] = max_count
         return self._con.post(path=u_url, postdata=params)
     #----------------------------------------------------------------------
-    def get_users_within_role(self, rolename, user_filter=None, max_count=20):
+    def _get_users_within_role(self, rolename, user_filter=None, max_count=20):
         """
            You can use this operation to conveniently see all the user
            accounts to whom this role has been assigned.
@@ -798,7 +798,7 @@ class RoleManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def remove_roles_from_user(self, username, roles):
+    def _remove_roles_from_user(self, username, roles):
         """
            This operation removes roles that have been previously assigned
            to a user account. This operation is supported only when the
@@ -820,7 +820,7 @@ class RoleManager(BaseServer):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def remove_users_from_role(self, rolename, users):
+    def _remove_users_from_role(self, rolename, users):
         """
            Removes a role assignment from multiple users.
            Parameters:
@@ -841,7 +841,7 @@ class RoleManager(BaseServer):
         return res
     #----------------------------------------------------------------------
     @property
-    def role_count(self):
+    def count(self):
         """
            returns the number of roles for AGS
         """
@@ -851,7 +851,7 @@ class RoleManager(BaseServer):
         u_url = self._url + "/roles"
         return self._con.get(path=u_url, params=params)
     #----------------------------------------------------------------------
-    def get(self, role_filter=None, max_count=10):
+    def get_role(self, role_id=None, max_count=10):
         """
            You can use this operation to search a specific role or a group
            of roles from the role store. The size of the search results can
@@ -864,7 +864,7 @@ class RoleManager(BaseServer):
         """
         params = {
             "f" : "json",
-            "filter" : role_filter,
+            "filter" : role_id,
             "maxCount" : max_count
         }
         roles = []
@@ -948,7 +948,7 @@ class Role(dict):
         res =  self._security._update_role(rolename=self.rolename,
                                           description=description)
         if res:
-            b = self._security.get(self.rolename, max_count=1)[0]
+            b = self._security.get_role(self.rolename, max_count=1)[0]
             self.__dict__.update(b._roledict)
         return res
     #----------------------------------------------------------------------
@@ -985,7 +985,7 @@ class Role(dict):
         return self._security._assign_privilege(rolename=self.rolename,
                                                privilege=privilage)
     #----------------------------------------------------------------------
-    def add(self, username):
+    def grant(self, username):
         """
         Adds a user to the current role
 
