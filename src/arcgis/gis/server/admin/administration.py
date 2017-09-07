@@ -126,7 +126,7 @@ class Server(BaseServer):
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
-    def _publish_sd(self,
+    def publish_sd(self,
                     sd_file,
                     folder=None):
         """
@@ -138,9 +138,9 @@ class Server(BaseServer):
         if 'System' not in catalog.folders:
             return False
 
-        service = catalog.find(service_name="PublishingTools", folder='System')
+        service = catalog.get(name="PublishingTools", folder='System')
         if service is None:
-            service = catalog.find(service_name="PublishingToolsEx", folder='System')
+            service = catalog.get(name="PublishingToolsEx", folder='System')
         if service is None:
             return False
         status, res = self.uploads.upload(path=sd_file, description="sd file")
