@@ -4748,8 +4748,11 @@ class Item(dict):
             publish_parameters =  res['publishParameters']
             publish_parameters.update(publish_parameters_orig)
 
-        ret = self._portal.publish_item(self.itemid, None, None, fileType, publish_parameters, output_type, overwrite,
-                                        self.owner, folder, buildInitialCache)
+        ret = self._portal.publish_item(self.itemid, None,
+                                        None, fileType,
+                                        publish_parameters, output_type,
+                                        overwrite, self.owner,
+                                        folder, buildInitialCache)
 
         #Check publishing job status
 

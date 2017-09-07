@@ -42,13 +42,6 @@ class ReportManager(BaseServer):
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
-    @property
-    def metrics(self):
-        """gets the metrics values"""
-        if self._properties is None:
-            self._init()
-        return self.properties.metrics
-    #----------------------------------------------------------------------
     def list(self):
         """returns a list of reports on the server"""
         if self.properties is None:

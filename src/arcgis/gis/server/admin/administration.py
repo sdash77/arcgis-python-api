@@ -143,7 +143,7 @@ class Server(BaseServer):
             service = catalog.get(name="PublishingToolsEx", folder='System')
         if service is None:
             return False
-        status, res = self.uploads.upload(path=sd_file, description="sd file")
+        status, res = self._uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res['item']['itemID']
             res = service.publish_service_definition(in_sdp_id=uid)
@@ -312,7 +312,7 @@ class Server(BaseServer):
         return self._con.post(path=url,
                               postdata=params)
     #----------------------------------------------------------------------
-    def upgrade(self, run_async=False):
+    def _upgrade(self, run_async=False):
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -382,7 +382,7 @@ class Server(BaseServer):
             return None
     #----------------------------------------------------------------------
     @property
-    def info(self):
+    def _info(self):
         """
         A read-only resource that returns meta information about the server
         """
@@ -436,12 +436,13 @@ class Server(BaseServer):
             url = self._url + "/services"
             return _services.ServiceManager(url=url,
                                             connection=self._con,
-                                            initialize=True)
+                                            initialize=True,
+                                            sm=self)
         else:
             return None
     #----------------------------------------------------------------------
     @property
-    def usagereports(self):
+    def usage(self):
         """
         Gets the services object which will provide the ArcGIS Server's
         admin information about the usagereports.
@@ -547,7 +548,7 @@ class Server(BaseServer):
             return None
     #----------------------------------------------------------------------
     @property
-    def uploads(self):
+    def _uploads(self):
         """returns an object to work with the site uploads"""
         if self.resources is None:
             self._init()
@@ -561,7 +562,7 @@ class Server(BaseServer):
             return None
     #----------------------------------------------------------------------
     @property
-    def mode(self):
+    def _mode(self):
         """returns the class that works with Mode"""
         if self.resources is None:
             self._init()
