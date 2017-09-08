@@ -11,7 +11,79 @@ _log = logging.getLogger()
 ########################################################################
 class ServicesDirectory(BaseServer):
     """
-    Represents a user view of the server
+    Provides ArcGIS Server Services Directory access.
+
+    The Services Directory allows you to browse the contents of an ArcGIS Server and obtain
+    information that can be useful to endusers for developing applications, performing analysis, or
+    cataloging services. The ServicesDirectory is a view of the ArcGIS Server REST API in a python
+    class.
+
+    With the Services Directory, you can do the following:
+     - Browse the contents of the GIS Server and get service-level metadata
+     - Navigate a series of links to view information about the services on your GIS Server.
+     - Get information to help you develop applications
+
+    When you develop applications with the Python API, you must provide URLs to services and the
+    layers and functionality they expose. The Services Directory provides an interactive way for
+    you to construct those URLs.
+
+    The Services Directory works using REST. REST is an architectural style that allows ArcGIS
+    Server to reveal a hierarchy of information about itself through endpoints, or URLs. When you
+    use the Services Directory, you navigate through a series of links to discover information
+    about the server. Each time you click a link, you see a new page that reveals additional
+    information about what's available on the server. The information that you see on the page is
+    retrieved through REST using the page's URL.
+
+
+    =====================     ====================================================================
+    **Arguments**             **Description**
+    ---------------------     --------------------------------------------------------------------
+    url                       string required. The web address to the ArcGIS Server administration
+                              end point.
+
+                              Example: https://mysite.com/arcgis
+
+                              The URL should be formatted as follows:
+                              <scheme>://<host>:<port (optional)>/<web adapter>
+    ---------------------     --------------------------------------------------------------------
+    baseurl                   optional string, the root URL to a site.
+                              Example: https://mysite.com/arcgis
+    ---------------------     --------------------------------------------------------------------
+    tokenurl                  optional string. Used when a site if federated or when the token
+                              URL differs from the site's baseurl.  If a site is federated, the
+                              token URL will return as the Portal token and ArcGIS Server users
+                              will not validate correctly.
+    ---------------------     --------------------------------------------------------------------
+    username                  optional string, login username for BUILT-IN security
+    ---------------------     --------------------------------------------------------------------
+    password                  optional string, a secret word or phrase that must be used to gain
+                              access to the account above.
+    ---------------------     --------------------------------------------------------------------
+    key_file                  optional string, path to PKI ket file
+    ---------------------     --------------------------------------------------------------------
+    cert_file                 optional string, path to PKI cert file
+    ---------------------     --------------------------------------------------------------------
+    proxy_host                optional string, web address to the proxy host
+
+                              Example: proxy.mysite.com
+    ---------------------     --------------------------------------------------------------------
+    proxy_port                optional integer, default is 80. The port where the proxy resided on
+    ---------------------     --------------------------------------------------------------------
+    expiration                optional integer. The Default is 60. This is the length of time a
+                              token is valid for.
+                              Example 1440 is one week.
+    ---------------------     --------------------------------------------------------------------
+    all_ssl                   optional boolean. The default is False. If True, all calls will be
+                              made over HTTPS instead of HTTP.
+    ---------------------     --------------------------------------------------------------------
+    portal_connection         optional GIS. This is used when a site is federated. It is the
+                              ArcGIS Online or Portal GIS object used.
+    ---------------------     --------------------------------------------------------------------
+    initialize                optional boolean.  The default is False.  If True, the object will
+                              attempt to reach out to the URL resource and populate at creation
+                              time.
+    =====================     ====================================================================
+
     """
     _con = None
     _gis = None

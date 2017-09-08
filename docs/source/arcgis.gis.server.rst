@@ -1,7 +1,5 @@
-arcgis.gis.server module
-====================
-
-.. automodule:: arcgis.gis.server
+arcgis\.gis\.server Package
+===========================
 
 Server
 ---------------
@@ -10,13 +8,21 @@ Server
     :undoc-members:
     :show-inheritance:
 
+ServicesDirectory
+-----------------
+
+.. automodule:: arcgis.gis.server.catalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Service
 --------------
 .. autoclass:: arcgis.gis.server.Service
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 Machine
 ----------------
@@ -129,3 +135,4 @@ DirectoryManager
     :members:
     :undoc-members:
     :show-inheritance:
+

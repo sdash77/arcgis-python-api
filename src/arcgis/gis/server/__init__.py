@@ -10,6 +10,7 @@ from ._service import Service
 from .sm import ServerManager
 from .catalog import ServicesDirectory
 from .admin import Server
+from .admin.administration import SiteManager
 from .admin._clusters import Cluster, ClusterProtocol, Clusters
 from .admin._data import Datastore, DataStoreManager
 from .admin._info import Info
