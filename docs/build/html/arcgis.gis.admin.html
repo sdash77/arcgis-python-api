@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis.admin module &mdash; arcgis 1.2.2 documentation</title>
+  <title>arcgis.gis.admin module &mdash; arcgis 1.2.3 documentation</title>
   
 
   
@@ -35,9 +35,9 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.2 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.3 documentation" href="index.html"/>
         <link rel="up" title="arcgis.gis module" href="arcgis.gis.toc.html"/>
-        <link rel="next" title="arcgis.gis.server module" href="arcgis.gis.server.html"/>
+        <link rel="next" title="arcgis.gis.server Package" href="arcgis.gis.server.html"/>
         <link rel="prev" title="arcgis.gis module" href="arcgis.gis.toc.html"/> 
 
   
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.2.2
+                1.2.3
               </div>
             
           
@@ -130,8 +130,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#webadaptors">WebAdaptors</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server Package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#server">Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#module-arcgis.gis.server.catalog">ServicesDirectory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#service">Service</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#machine">Machine</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#report">Report</a></li>
@@ -630,6 +631,12 @@ entitlements.</p>
 <dt id="arcgis.gis.admin.AGOLAdminManager.password_policy">
 <code class="descname">password_policy</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.password_policy" title="Permalink to this definition">¶</a></dt>
 <dd><p>tools to manage a Site’s password policy</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.admin.AGOLAdminManager.urls">
+<code class="descname">urls</code><a class="headerlink" href="#arcgis.gis.admin.AGOLAdminManager.urls" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the URLs to the Hosting and Tile Server for ArcGIS Online</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1423,7 +1430,11 @@ of the collaboration and validity of the invitation response file.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.admin.Collaboration.workspaces">
 <code class="descname">workspaces</code><a class="headerlink" href="#arcgis.gis.admin.Collaboration.workspaces" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The workspaces resource lists all the workspaces in a given
+collaboration. A workspace is a virtual space in the collaboration
+to which each participating portal is either sending or receiving
+content. Workspaces can only be created by the collaboration owner.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -3382,7 +3393,7 @@ Adaptor configured with the portal.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server Package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="arcgis.gis.toc.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -3416,7 +3427,7 @@ Adaptor configured with the portal.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.2',
+            VERSION:'1.2.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis module &mdash; arcgis 1.2.2 documentation</title>
+  <title>arcgis.gis module &mdash; arcgis 1.2.3 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.2 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.3 documentation" href="index.html"/>
         <link rel="next" title="arcgis.gis.admin module" href="arcgis.gis.admin.html"/>
         <link rel="prev" title="API Reference for the ArcGIS API for Python" href="index.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.2
+                1.2.3
               </div>
             
           
@@ -129,8 +129,9 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#webadaptors">WebAdaptors</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server Package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#server">Server</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#module-arcgis.gis.server.catalog">ServicesDirectory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#service">Service</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#machine">Machine</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#report">Report</a></li>
@@ -695,12 +696,14 @@ verify_cert=False)</dd>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.gis.GIS.content" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The resource manager for GIS content</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.groups">
 <code class="descname">groups</code><a class="headerlink" href="#arcgis.gis.GIS.groups" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The resource manager for GIS groups</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.GIS.map">
@@ -717,7 +720,8 @@ to the specified zoomlevel.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.properties">
 <code class="descname">properties</code><a class="headerlink" href="#arcgis.gis.GIS.properties" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The properties of the GIS</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.GIS.update_properties">
@@ -750,7 +754,8 @@ to the specified zoomlevel.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.users">
 <code class="descname">users</code><a class="headerlink" href="#arcgis.gis.GIS.users" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The resource manager for GIS users</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -1357,6 +1362,7 @@ optional parameter.</td>
 </tr>
 </tbody>
 </table>
+<p>For publish_parameters, see <a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/</a></p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1756,6 +1762,12 @@ user. It is only available to the administrator of the organization</p>
 <dd><p>URL to the thumbnail image</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="arcgis.gis.User.groups">
+<code class="descname">groups</code><a class="headerlink" href="#arcgis.gis.User.groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a list of Group objects the current user belongs to</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="arcgis.gis.User.items">
 <code class="descname">items</code><span class="sig-paren">(</span><em>folder=None</em>, <em>max_items=100</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.User.items" title="Permalink to this definition">¶</a></dt>
@@ -1908,6 +1920,62 @@ JPEG, max size 1 MB</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean indicating success</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.User.update_level">
+<code class="descname">update_level</code><span class="sig-paren">(</span><em>level</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.User.update_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Update User Level operation (Admin only) allows administrators
+of an organization to update the level of a user. Administrators can
+leverage two levels of membership when assigning roles and
+privileges to members, membership levels allow organizations to
+control access to some ArcGIS capabilities for some members while
+granting more complete access to other members. Level 1 membership
+is designed for members who need privileges to view and interact
+with existing content, while Level 2 membership is for those who
+contribute, create, and share content and groups, in addition to
+other tasks.
+Maximum user quota of an organization at the given level is checked
+before allowing the update.</p>
+<p>Built-in roles including organization administrator, publisher, and
+user are assigned as Level 2, members with custom roles can be
+assigned as Level 1 or Level 2.</p>
+<p>Level 1 membership allows for limited capabilities given through a
+maximum of 8 privileges: portal:user:joinGroup,
+portal:user:viewOrgGroups, portal:user:viewOrgItems,
+portal:user:viewOrgUsers, premium:user:geocode,
+premium:user:networkanalysis, premium:user:demographics, and
+premium:user:elevation. If updating the role of a Level 1 user with
+a custom role that has more privileges than the eight, additional
+privileges will be disabled for the user to ensure restriction.</p>
+<p>Level 1 users are not allowed to own any content or group which can
+be reassigned to other users through the Reassign Item and Reassign
+Group operations before downgrading them. The operation will also
+fail if the user being updated has got licenses assigned to premium
+apps that are not allowed at the targeting level.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="27%" />
+<col width="73%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>level</td>
+<td>required integer, The values of 1 or 2. This is the user
+level for the given user.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">boolean</td>
 </tr>
 </tbody>
 </table>
@@ -3927,8 +3995,9 @@ used together with file_name.</td>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.admin.html#webadaptors">WebAdaptors</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server module</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.gis.server.html">arcgis.gis.server Package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.server.html#server">Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.gis.server.html#module-arcgis.gis.server.catalog">ServicesDirectory</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.server.html#service">Service</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.server.html#machine">Machine</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.server.html#report">Report</a></li>
@@ -3994,7 +4063,7 @@ used together with file_name.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.2',
+            VERSION:'1.2.3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
