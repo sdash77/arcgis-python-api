@@ -30,18 +30,18 @@ class Mode(BaseServer):
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
-                 connection,
+                 gis,
                  initialize=False):
         """Constructor"""
-        super(Mode, self).__init__(connection=connection,
+        super(Mode, self).__init__(gis=gis,
                                    url=url)
         if url.lower().endswith('/mode'):
             self._url = url
         else:
             self._url = url + "/mode"
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def update(self,
                siteMode,

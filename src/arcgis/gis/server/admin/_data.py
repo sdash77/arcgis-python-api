@@ -40,7 +40,8 @@ class DataStoreManager(BaseServer):
     data item can be safely deleted or refreshed.
 
     Parameters:
-       :param server: Server object
+       :param url: URL to the Data Store URL
+       :param gis: GIS, Server, or ServicesDirectory object
     """
     _con = None
     _json_dict = None
@@ -52,21 +53,22 @@ class DataStoreManager(BaseServer):
     def __init__(self,
                  url,
                  gis=None,
-                 connection=None):
+                 **kwargs):
         """Constructor
             Inputs:
                url - admin url
                gis - gis object
-               connection - connection object
                initialize - optional initializes the componenents in the class
         """
+        connection = kwargs.pop('connection', None)
         initialize = False
         super(DataStoreManager, self).__init__(
             gis=gis,
-            connection=connection,
             url=url)
-        if gis:
+        if hasattr(gis, '_con'):
             self._con = gis._con
+        elif hasattr(gis, 'post'):
+            self._con = gis
         if connection:
             self._con = connection
         self._url = url
@@ -514,8 +516,9 @@ class DataStoreManager(BaseServer):
 ###########################################################################
 class Datastore(BaseServer):
     """
-    Represents a datastore (folder, database or bigdata fileshare) within
-    the GIS's data store
+    Represents a Single Datastore in DataStoreManager
+
+
     """
     _path = None
     _datastore = None

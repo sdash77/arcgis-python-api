@@ -19,17 +19,17 @@ from arcgis._impl.common._mixins import PropertyMap
 ########################################################################
 class MachineManager(BaseServer):
     """
-       This resource represents a collection of all the server machines that
-       have been registered with the site. It other words, it represents
-       the total computing power of your site. A site will continue to run
-       as long as there is one server machine online.
-       For a server machine to start hosting GIS services, it must be
-       grouped (or clustered). When you create a new site, a cluster called
-       'default' is created for you.
-       The list of server machines in your site can be dynamic. You can
-       register additional server machines when you need to increase the
-       computing power of your site or unregister them if you no longer
-       need them.
+    This resource represents a collection of all the server machines that
+    have been registered with the site. It other words, it represents the
+    total computing power of your site. A site will continue to run as long
+    as there is one server machine online.
+    For a server machine to start hosting GIS services, it must be grouped
+    (or clustered). When you create a new site, a cluster called 'default'
+    is created for you.
+    The list of server machines in your site can be dynamic. You can
+    register additional server machines when you need to increase the
+    computing power of your site or unregister them if you no longer need
+    them.
     """
     _machines = None
     _json_dict = None
@@ -37,20 +37,21 @@ class MachineManager(BaseServer):
     _url = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection object
+               gis - SiteConnection object
                initialize - loads the machine information
         """
-        super(MachineManager, self).__init__(connection=connection,
+
+        super(MachineManager, self).__init__(gis=gis,
                                        url=url)
         self._url = url
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
@@ -69,7 +70,7 @@ class MachineManager(BaseServer):
                     for m in result['machines']:
                         self._machines.append(
                             Machine(url=self._url +"/%s" % m['machineName'],
-                                    connection=self._con)
+                                    gis=self._con)
                         )
                 self._json_dict = result
                 self._properties = PropertyMap(result)
@@ -96,7 +97,7 @@ class MachineManager(BaseServer):
         """
         url = self._url + "/%s" % machine_name
         return Machine(url=url,
-                       connection=self._con)
+                       gis=self._con)
     #----------------------------------------------------------------------
     def register(self, name, admin_url):
         """
@@ -155,30 +156,29 @@ class MachineManager(BaseServer):
 ########################################################################
 class Machine(BaseServer):
     """
-       A server machine represents a machine on which ArcGIS Server
-       software has been installed and licensed. A site is made up one or
-       more of such machines that work together to host GIS services and
-       data and provide administrative capabilities for the site. Each
-       server machine is capable of performing all these tasks and hence a
-       site can be thought of as a distributed peer-to-peer network of such
-       machines.
-       A server machine communicates with its peers over a range of TCP and
-       UDP ports that can be configured using the edit operation. For a
-       server machine to host GIS services, it needs to be added to a
-       cluster. Starting and stopping the server machine enables and
-       disables, respectively, its ability to host GIS services.
-       The administrative capabilities of the server machine are available
-       through the ArcGIS Server Administrator API that can be accessed
-       over HTTP(S). For a server machine to participate in a site, it must
-       be registered with the site. A machine can participate in only one
-       site at a time. To remove a machine permanently from the site, you
-       can use the unregister operation.
-
-       Parameters:
-        :url: web address of the machine
-        :connection: SiteConnection object
-        :initialize: default False, if True, the properties are loaded at
-        creation
+    A server machine represents a machine on which ArcGIS Server
+    software has been installed and licensed. A site is made up one or
+    more of such machines that work together to host GIS services and
+    data and provide administrative capabilities for the site. Each
+    server machine is capable of performing all these tasks and hence a
+    site can be thought of as a distributed peer-to-peer network of such
+    machines.
+    A server machine communicates with its peers over a range of TCP and
+    UDP ports that can be configured using the edit operation. For a
+    server machine to host GIS services, it needs to be added to a
+    cluster. Starting and stopping the server machine enables and
+    disables, respectively, its ability to host GIS services.
+    The administrative capabilities of the server machine are available
+    through the ArcGIS Server Administrator API that can be accessed
+    over HTTP(S). For a server machine to participate in a site, it must
+    be registered with the site. A machine can participate in only one
+    site at a time. To remove a machine permanently from the site, you
+    can use the unregister operation.
+   Parameters:
+    :url: web address of the machine
+    :gis: SiteConnection object
+    :initialize: default False, if True, the properties are loaded at
+    creation
     """
     _appServerMaxHeapSize = None
     _webServerSSLEnabled = None
@@ -197,16 +197,17 @@ class Machine(BaseServer):
     _con = None
     _url = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """
         Constructor
         Inputs:
         url - admin url
-        connection - SiteConnection object
+        gis - SiteConnection object
         initialize - boolean - loads properties at creation of object
         """
-        super(Machine, self).__init__(connection=connection,
+        connection = gis
+        super(Machine, self).__init__(gis=connection,
                                       url=url)
         self._url = url
         self._con = connection

@@ -11,20 +11,26 @@ from .._common import BaseServer
 
 ########################################################################
 class LogManager(BaseServer):
-    """ Log of a server """
+    """
+    Log Mangement of a server
+
+    This resource is accessed through by administrators to check on error
+    messages.
+    """
     _url = None
     _con = None
     _json_dict = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection class
+               gis - SiteConnection class
         """
-        super(LogManager, self).__init__(connection=connection,
+        connection = gis
+        super(LogManager, self).__init__(gis=gis,
                                   url=url)
         self._url = url
         self._con = connection

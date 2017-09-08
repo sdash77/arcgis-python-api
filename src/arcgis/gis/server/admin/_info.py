@@ -12,20 +12,20 @@ class Info(BaseServer):
     _url = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection object
+               gis - SiteConnection object
                initialize - loads the object's properties on runtime
         """
-        super(Info, self).__init__(connection=connection,
-                                      url=url)
-        self._con = connection
+        super(Info, self).__init__(gis=gis,
+                                   url=url)
+        self._con = gis
         self._url = url
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def available_time_zones(self):
         """

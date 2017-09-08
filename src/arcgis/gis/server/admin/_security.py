@@ -28,7 +28,7 @@ class Security(BaseServer):
     _um = None
     _rm = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Parameters:
@@ -36,9 +36,9 @@ class Security(BaseServer):
 
         """
         self._url = url
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection=connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     @property
     def users(self):
@@ -47,7 +47,7 @@ class Security(BaseServer):
         """
         if self._um is None:
             self._um = UserManager(url=self._url,
-                                   connection=self._con,
+                                   gis=self._con,
                                    initialize=False)
         return self._um
     #----------------------------------------------------------------------
@@ -57,7 +57,7 @@ class Security(BaseServer):
         returns an object to manage a site's roles
         """
         if self._rm is None:
-            self._rm = RoleManager(url=self._url, connection=self._con)
+            self._rm = RoleManager(url=self._url, gis=self._con)
         return self._rm
     #----------------------------------------------------------------------
     def disable_primary_site_administrator(self):
@@ -111,13 +111,27 @@ class Security(BaseServer):
 
 ########################################################################
 class UserManager(BaseServer):
-    """ The security resource is a container for all resources and
-        operations that deal with security for your site. Under this
-        resource, you will find resources that represent the users and
-        roles in your current security configuration.
-        Since the content sent to and from this resource (and operations
-        within it) could contain confidential data like passwords, it is
-        recommended that this resource be accessed over HTTPS protocol.
+    """
+    This resource represents all users available in the user store that can
+    administer ArcGIS Server and access the GIS services hosted on the
+    server. In short, it represents the complete user space.
+    As the user space could be potentially large, there isn't any listing
+    of users, but you can use Get Users or Search operations to access
+    their account information.
+    ArcGIS Server is capable of connecting to your enterprise identity
+    stores such as Active Directory or other directory services exposed
+    through the LDAP protocol. Such identity stores are treated as read
+    only, and ArcGIS Server does not attempt to update them. As a result,
+    operations that need to update the identity store (such as adding
+    users, removing users, updating users, assigning roles and removing
+    assigned roles) are not supported when identity stores are read only.
+    On the other hand, you could configure your ArcGIS Server to use the
+    default identity store (shipped with the server) which is treated as a
+    read-write store.
+    The total numbers of users are returned in the response.
+
+    Note:
+       Typically, this resource must be accessed over an HTTPS connection.
     """
     _url = None
     _con = None
@@ -126,7 +140,7 @@ class UserManager(BaseServer):
     _json = None
     _rm = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Parameters:
@@ -134,9 +148,9 @@ class UserManager(BaseServer):
 
         """
         self._url = url
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection=connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -351,7 +365,7 @@ class UserManager(BaseServer):
         """Helper object to manage custom roles for users"""
         if self._rm is None:
             self._rm = RoleManager(self._url,
-                                   connection=self._con)
+                                   gis=self._con)
         return self._rm
     #----------------------------------------------------------------------
     def _find_users(self, criteria=None, max_count=10):
@@ -542,17 +556,17 @@ class RoleManager(BaseServer):
     _json_dict = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Parameters:
                url - security admin url
-               connection - Server Connection Object with Admin Credentials
+               gis - Server Connection Object with Admin Credentials
         """
         self._url = url
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection=connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -899,6 +913,8 @@ class RoleManager(BaseServer):
 class Role(dict):
     """
     represents a single role on server
+
+    **(This is should not be created by a user)**
     """
     _roledict = None
     _security = None

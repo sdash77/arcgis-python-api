@@ -11,7 +11,11 @@ from .parameters import Extension
 from arcgis._impl.common._mixins import PropertyMap
 ########################################################################
 class ServiceManager(BaseServer):
-    """ returns information about the services on AGS """
+    """
+    Helper class for managing services. This class is not created by users directly. An instance of this class,
+    called 'services', is available as a property of the Server object. Users call methods on this 'services' object to
+    managing services.
+    """
     _currentURL = None
     _url = None
     _con = None
@@ -27,24 +31,24 @@ class ServiceManager(BaseServer):
     _services = None
     _json = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False,
                  sm=None):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection object
+               gis - SiteConnection object
         """
         if sm is None:
             self._sm = sm
-        super(ServiceManager, self).__init__(connection=connection,
+        super(ServiceManager, self).__init__(gis=gis,
                                              url=url, sm=sm)
-        self._con = connection
+        self._con = gis
         self._url = url
         self._currentURL = url
         self._currentFolder = '/'
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
@@ -135,7 +139,7 @@ class ServiceManager(BaseServer):
                 u_url = self._currentURL + "/%s.%s" % (s['serviceName'], s['type'])
                 self._services.append(
                     Service(url=u_url,
-                            connection=self._con)
+                            gis=self._con)
                 )
         return self._services
     #----------------------------------------------------------------------
@@ -710,7 +714,12 @@ class ServiceManager(BaseServer):
         return res
 ########################################################################
 class Service(BaseServer):
-    """ Defines a AGS Admin Service """
+    """
+    Represents a GIS administrative service
+
+    **(This should not be created by a user)**
+
+    """
     _con = None
     _frameworkProperties = None
     _recycleInterval = None
@@ -747,24 +756,24 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
-                 connection,
+                 gis,
                  initialize=False,
                  **kwargs):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection object
+               gis - SiteConnection object
                initialize - fills all the properties at object creation is
                             true
         """
-        super(Service, self).__init__(connection=connection,
+        super(Service, self).__init__(gis=gis,
                                       url=url)
         self._service_manager = kwargs.pop('service_manager', None)
         self._url = url
         self._currentURL = url
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """ populates server admin information """

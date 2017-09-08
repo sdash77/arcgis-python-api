@@ -39,14 +39,14 @@ class Uploads(BaseServer):
     _url = None
 
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor"""
         if url.lower().find("uploads") < -1:
             self._url = url + "/uploads"
         else:
             self._url = url
-        self._con = connection
+        self._con = gis
         self._json_dict = {}
         self._json = ""
 

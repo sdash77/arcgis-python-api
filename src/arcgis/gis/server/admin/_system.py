@@ -20,18 +20,18 @@ class SystemManager(BaseServer):
     _url = None
     _resources = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor"""
-        super(SystemManager, self).__init__(connection=connection,
+        super(SystemManager, self).__init__(gis=gis,
                                      url=url)
-        self._con = connection
+        self._con = gis
         if url.lower().endswith("/system"):
             self._url = url
         else:
             self._url = url + "/system"
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -440,7 +440,7 @@ class ConfigurationStore(BaseServer):
 
         Inputs:
            type_value - Type of the configuration store. Values: FILESYSTEM
-           connection - A file path or connection URL to the physical
+           gis - A file path or connection URL to the physical
             location of the store.
            move - default True - A boolean to indicate if you want to move
             the content of the current store to the new store.
