@@ -37,7 +37,7 @@ class ServiceManager(BaseServer):
         """Constructor
             Inputs:
                url - admin url
-               gis - SiteConnection object
+               gis - GIS or Server object
         """
         if sm is None:
             self._sm = sm
@@ -762,7 +762,7 @@ class Service(BaseServer):
         """Constructor
             Inputs:
                url - admin url
-               gis - SiteConnection object
+               gis - GIS or Server object
                initialize - fills all the properties at object creation is
                             true
         """

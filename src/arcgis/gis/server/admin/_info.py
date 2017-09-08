@@ -17,7 +17,7 @@ class Info(BaseServer):
         """Constructor
             Inputs:
                url - admin url
-               gis - SiteConnection object
+               gis - GIS or Server object
                initialize - loads the object's properties on runtime
         """
         super(Info, self).__init__(gis=gis,

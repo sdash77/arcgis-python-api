@@ -27,8 +27,11 @@ class BaseServer(object):
         if gis is None and \
            isinstance(gis, GIS):
             gis = gis._portal.con
+
         if isinstance(gis, (ServerConnection, _ArcGISConnection)):
             self._con = gis
+        elif hasattr(gis, '_con'):
+            self._gis = gis._con
         elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
             self._con = gis
         else:

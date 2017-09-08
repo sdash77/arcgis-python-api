@@ -42,7 +42,7 @@ class MachineManager(BaseServer):
         """Constructor
             Inputs:
                url - admin url
-               gis - SiteConnection object
+               gis - GIS or Server object
                initialize - loads the machine information
         """
 
@@ -176,7 +176,7 @@ class Machine(BaseServer):
     can use the unregister operation.
    Parameters:
     :url: web address of the machine
-    :gis: SiteConnection object
+    :gis: GIS or Server object
     :initialize: default False, if True, the properties are loaded at
     creation
     """
@@ -203,7 +203,7 @@ class Machine(BaseServer):
         Constructor
         Inputs:
         url - admin url
-        gis - SiteConnection object
+        gis - GIS or Server object
         initialize - boolean - loads properties at creation of object
         """
         connection = gis

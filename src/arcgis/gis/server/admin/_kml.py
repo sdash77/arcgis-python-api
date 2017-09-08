@@ -21,7 +21,7 @@ class KML(BaseServer):
         """Constructor
             Inputs:
                url - admin url
-               gis - SiteConnection object
+               gis - GIS or Server object
                initialize - boolean - if true, information loaded at object
                 creation
         """

@@ -356,15 +356,15 @@ class Server(BaseServer):
     @property
     def machines(self):
         """
-        This resource represents a collection of all the _server machines that
+        This resource represents a collection of all the server machines that
         have been registered with the site. It other words, it represents
         the total computing power of your site. A site will continue to run
-        as long as there is one _server machine online.
-        For a _server machine to start hosting GIS services, it must be
+        as long as there is one server machine online.
+        For a server machine to start hosting GIS services, it must be
         grouped (or clustered). When you create a new site, a cluster called
         'default' is created for you.
-        The list of _server machines in your site can be dynamic. You can
-        register additional _server machines when you need to increase the
+        The list of server machines in your site can be dynamic. You can
+        register additional server machines when you need to increase the
         computing power of your site or unregister them if you no longer
         need them.
         """
@@ -383,13 +383,13 @@ class Server(BaseServer):
     def datastores(self):
         """
         This resource provides information about the data holdings of the
-        _server. Data items are used by ArcGIS for Desktop and other clients
+        server. Data items are used by ArcGIS for Desktop and other clients
         to validate data paths referenced by GIS services.
-        You can register new data items with the _server by using the
+        You can register new data items with the server by using the
         Register Data Item operation. Use the Find Data Items operation to
         search through the hierarchy of data items.
         A relational data store type represents a database platform that
-        has been registered for use on a portal's hosting _server by the
+        has been registered for use on a portal's hosting server by the
         ArcGIS Server administrator. Each relational data store type
         describes the properties ArcGIS Server requires in order to connect
         to an instance of a database for a particular platform. At least
@@ -501,7 +501,7 @@ class Server(BaseServer):
         """
         This allows users to access the  ArcGIS Server's logs and lets
         administrators query and find errors and/or problems related to
-        the _server or a service.
+        the server or a service.
 
         Logs are the records written by the various components of ArcGIS
         Server. You can query the logs and change various log settings.
