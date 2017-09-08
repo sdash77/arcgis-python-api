@@ -16,22 +16,28 @@ class BaseServer(object):
     _json_dict = None
     _json = None
     _properties = None
-    def __init__(self, url, connection=None, initialize=True, **kwargs):
+    def __init__(self, url, gis=None, initialize=True, **kwargs):
         """class initializer"""
+        if gis is None and \
+           'connection' in kwargs:
+            connection = kwargs.pop('connection', None)
         super(BaseServer, self).__init__()
         self._url = url
-        gis = kwargs.pop('gis', None)
-        if connection is None and \
+        #gis = kwargs.pop('gis', None)
+        if gis is None and \
            isinstance(gis, GIS):
-            connection = gis._portal.con
-        if isinstance(connection, (ServerConnection, _ArcGISConnection)):
-            self._con = connection
+            gis = gis._portal.con
+
+        if isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            self._con = gis
+        elif hasattr(gis, '_con'):
+            self._gis = gis._con
         elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
             self._con = gis
         else:
-            raise ValueError("connection must be of type SiteConnection")
+            raise ValueError("gis must be of type SiteConnection")
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""

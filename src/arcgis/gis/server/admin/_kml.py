@@ -16,21 +16,21 @@ class KML(BaseServer):
     _url = None
     _json_dict = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor
             Inputs:
                url - admin url
-               connection - SiteConnection object
+               gis - GIS or Server object
                initialize - boolean - if true, information loaded at object
                 creation
         """
-        super(KML, self).__init__(connection=connection,
+        super(KML, self).__init__(gis=gis,
                                   url=url)
-        self._con = connection
+        self._con = gis
         self._url = url
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def create_KMZ(self, kmz_as_json):
         """

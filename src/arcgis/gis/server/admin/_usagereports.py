@@ -12,9 +12,8 @@ from .._common import BaseServer
 ########################################################################
 class ReportManager(BaseServer):
     """
-    This resource is a collection of all the usage reports created within
-    your site. The Create Usage Report operation lets you define a new
-    usage report.
+    Manages and modifies the usage reports for ArcGIS Server
+
     """
     _con = None
     _json_dict = None
@@ -23,18 +22,19 @@ class ReportManager(BaseServer):
     _metrics = None
     _reports = None
     #----------------------------------------------------------------------
-    def __init__(self, url,
-                 connection,
+    def __init__(self,
+                 url,
+                 gis,
                  initialize=False):
         """Constructor"""
-        super(ReportManager, self).__init__(url, connection)
+        super(ReportManager, self).__init__(url=url, gis=gis)
         if url.lower().endswith('/usagereports'):
             self._url = url
         else:
             self._url = url + "/usagereports"
-        self._con = connection
+        self._con = gis
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -51,7 +51,7 @@ class ReportManager(BaseServer):
             for r in self.properties['metrics']:
                 url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
                 self._reports.append(Report(url=url,
-                                            connection=self._con))
+                                            gis=self._con))
                 del url
         return self._reports
     #----------------------------------------------------------------------
@@ -324,6 +324,10 @@ class ReportManager(BaseServer):
 ########################################################################
 class Report(BaseServer):
     """
+    **(This class should not be created by a user)**
+
+    A Single Usage Report returned by ArcGIS Server
+
     A Usage Report is used to obtain ArcGIS Server usage data for specified
     resources during a given time period. It specifies the parameters for
     obtaining server usage data, time range (since from and to parameters),
@@ -342,11 +346,11 @@ class Report(BaseServer):
     _queries = None
     _metadata = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor"""
-        super(Report, self).__init__(url, connection)
-        self._con = connection
+        super(Report, self).__init__(url=url, gis=gis)
+        self._con = gis
         self._url = url
         if initialize:
             self._init()

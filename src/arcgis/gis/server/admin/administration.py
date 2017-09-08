@@ -88,7 +88,6 @@ class Server(BaseServer):
     def __init__(self,
                  url,
                  gis=None,
-                 #initialize=False,
                  **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
@@ -118,7 +117,7 @@ class Server(BaseServer):
         else:
             raise ValueError("Invalid gis Type: Must be GIS/ServicesDirectory Object")
         if initialize:
-            self._init(connection=self._con)
+            self._init(self._con)
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -356,28 +355,58 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def machines(self):
-        """gets a reference to the machines object"""
+        """
+        This resource represents a collection of all the server machines that
+        have been registered with the site. It other words, it represents
+        the total computing power of your site. A site will continue to run
+        as long as there is one server machine online.
+        For a server machine to start hosting GIS services, it must be
+        grouped (or clustered). When you create a new site, a cluster called
+        'default' is created for you.
+        The list of server machines in your site can be dynamic. You can
+        register additional server machines when you need to increase the
+        computing power of your site or unregister them if you no longer
+        need them.
+        """
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
            'machines' in self.resources:
             url = self._url + "/machines"
             return _machines.MachineManager(url,
-                                            connection=self._con,
+                                            gis=self._con,
                                             initialize=False)
         else:
             return None
     #----------------------------------------------------------------------
     @property
     def datastores(self):
-        """returns the reference to the data functions as a class"""
+        """
+        This resource provides information about the data holdings of the
+        server. Data items are used by ArcGIS for Desktop and other clients
+        to validate data paths referenced by GIS services.
+        You can register new data items with the server by using the
+        Register Data Item operation. Use the Find Data Items operation to
+        search through the hierarchy of data items.
+        A relational data store type represents a database platform that
+        has been registered for use on a portal's hosting server by the
+        ArcGIS Server administrator. Each relational data store type
+        describes the properties ArcGIS Server requires in order to connect
+        to an instance of a database for a particular platform. At least
+        one registered relational data store type is required before client
+        applications such as Insights for ArcGIS can create Relational
+        Database Connection portal items.
+        The Compute Ref Count operation counts and lists all references to
+        a specific data item. This operation helps you determine if a
+        particular data item can be safely deleted or refreshed.
+        """
         if self.properties is None:
             self._init()
         if isinstance(self.resources, list) and \
            "data" in self.resources:
             url = self._url + "/data"
             return _data.DataStoreManager(url=url,
-                                          connection=self._con)
+                                          gis=self._con)
         else:
             return None
     #----------------------------------------------------------------------
@@ -388,7 +417,7 @@ class Server(BaseServer):
         """
         url = self._url + "/info"
         return _info.Info(url=url,
-                          connection=self._con,
+                          gis=self._con,
                           initialize=True)
     #----------------------------------------------------------------------
     @property
@@ -418,7 +447,7 @@ class Server(BaseServer):
            "clusters" in self.resources:
             url = self._url + "/clusters"
             return _clusters.Cluster(url=url,
-                                     connection=self._con,
+                                     gis=self._con,
                                      initialize=True)
         else:
             return None
@@ -426,8 +455,8 @@ class Server(BaseServer):
     @property
     def services(self):
         """
-        Gets the services object which will provide the ArcGIS Server's
-        admin information about services and folders.
+        Provides administrator access to the services on ArcGIS Server as a
+        ServerManager Object.
         """
         if self.resources is None:
             self._init()
@@ -435,7 +464,7 @@ class Server(BaseServer):
            'services' in self.resources:
             url = self._url + "/services"
             return _services.ServiceManager(url=url,
-                                            connection=self._con,
+                                            gis=self._con,
                                             initialize=True,
                                             sm=self)
         else:
@@ -444,8 +473,9 @@ class Server(BaseServer):
     @property
     def usage(self):
         """
-        Gets the services object which will provide the ArcGIS Server's
-        admin information about the usagereports.
+        This resource is a collection of all the usage reports created
+        within your site. The Create Usage Report operation lets you define
+        a new usage report.
         """
         if self.resources is None:
             self._init()
@@ -453,7 +483,7 @@ class Server(BaseServer):
            'usagereports' in self.resources:
             url = self._url + "/usagereports"
             return _usagereports.ReportManager(url=url,
-                                              connection=self._con,
+                                              gis=self._con,
                                               initialize=True)
         else:
             return None
@@ -463,19 +493,28 @@ class Server(BaseServer):
         """returns the kml functions for server"""
         url = self._url + "/kml"
         return _kml.KML(url=url,
-                        connection=self._con,
+                        gis=self._con,
                         initialize=True)
     #----------------------------------------------------------------------
     @property
     def logs(self):
-        """returns an object to work with the site logs"""
+        """
+        This allows users to access the  ArcGIS Server's logs and lets
+        administrators query and find errors and/or problems related to
+        the server or a service.
+
+        Logs are the records written by the various components of ArcGIS
+        Server. You can query the logs and change various log settings.
+        **Note**
+        ArcGIS Server Only
+        """
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
            'logs' in self.resources:
             url = self._url + "/logs"
             return _logs.LogManager(url=url,
-                                    connection=self._con,
+                                    gis=self._con,
                                     initialize=True)
         else:
             return None
@@ -489,14 +528,14 @@ class Server(BaseServer):
            "security" in self.resources:
             url = self._url + "/security"
             return _security.Security(url=url,
-                                      connection=self._con,
+                                      gis=self._con,
                                       initialize=True)
         else:
             return None
     #----------------------------------------------------------------------
     @property
     def users(self):
-        """returns an object to control the manager"""
+        """returns operations to work with users"""
         return self._security.users
     #----------------------------------------------------------------------
     @property
@@ -535,14 +574,16 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def system(self):
-        """returns an object to work with the site system"""
+        """
+        provides access to common system configuration settings
+        """
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
            "system" in self.resources:
             url = self._url + "/system"
             return _system.SystemManager(url=url,
-                                         connection=self._con,
+                                         gis=self._con,
                                          initialize=True)
         else:
             return None
@@ -556,7 +597,7 @@ class Server(BaseServer):
            "uploads" in self.resources:
             url = self._url + "/uploads"
             return _uploads.Uploads(url=url,
-                                    connection=self._con,
+                                    gis=self._con,
                                     initialize=True)
         else:
             return None
@@ -570,7 +611,7 @@ class Server(BaseServer):
            'mode' in self.resources:
             url = self._url + "/mode"
             return _mode.Mode(url=url,
-                              connection=self._con,
+                              gis=self._con,
                               initialize=True)
         return None
 

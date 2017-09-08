@@ -17,7 +17,7 @@ class Clusters(BaseServer):
 
     Inputs:
        url - server cluster url
-       connection - SiteConnection class
+       gis - SiteConnection class
        initialize - boolean, false means so not load data, true means load
                     the class' information as creation.
     """
@@ -26,20 +26,21 @@ class Clusters(BaseServer):
     _json = None
     _url = None
     #----------------------------------------------------------------------
-    def __init__(self, url,
-                 connection,
+    def __init__(self,
+                 url,
+                 gis,
                  initialize=False):
         """Constructor"""
-        super(Clusters, self).__init__(connection=connection,
+        super(Clusters, self).__init__(gis=gis,
                                        url=url)
-        self._con = connection
+        self._con = gis
         self._url = url
         if url.lower().endswith("/clusters"):
             self._url = url
         else:
             self._url = url + "/clusters"
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     def create_cluster(self, cluster_name, machine_names="", port=""):
         """
@@ -108,15 +109,15 @@ class Cluster(BaseServer):
     _json = None
     _url = None
     #----------------------------------------------------------------------
-    def __init__(self, url, connection,
+    def __init__(self, url, gis,
                  initialize=False):
         """Constructor"""
-        super(Cluster, self).__init__(connection=connection,
+        super(Cluster, self).__init__(gis=gis,
                                       url=url)
-        self._con = connection
+        self._con = gis
         self._url = url
         if initialize:
-            self._init(connection)
+            self._init(gis)
     #----------------------------------------------------------------------
     @property
     def clusters(self):
@@ -126,7 +127,7 @@ class Cluster(BaseServer):
             for c in self._clusters:
                 url = self._url + "/%s" % c['clusterName']
                 Cs.append(Cluster(url=url,
-                                  connection=self._con,
+                                  gis=self._con,
                                   initialize=True))
             return Cs
         return []
