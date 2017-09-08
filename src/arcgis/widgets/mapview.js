@@ -501,11 +501,11 @@ define('mapview', [
                     } else if (gfx.geometry.type === 'point') {
                         console.log("GEOM TYPE POINT");
 
-                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/pink.png', 32, 32);
+                        gfx.symbol = new PictureMarkerSymbol(nbextensionPath + '/icons/pink.png', 32, 32);
                     } else if (gfx.geometry.type === 'multipoint') {
                         console.log("GEOM TYPE MULTIPOINT");
 
-                        gfx.symbol = new PictureMarkerSymbol('/nbextensions/arcgis/icons/pink.png', 32, 32);
+                        gfx.symbol = new PictureMarkerSymbol(nbextensionPath + '/icons/pink.png', 32, 32);
                     }
                 }
                 this.map.graphics.add(gfx);
@@ -663,33 +663,7 @@ define('mapview', [
                                 //createLegend(map, layer, field);
                             });
                         }
-
-
-
                     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                     if (newlayer.opacity != null) {
                         layer.setOpacity(newlayer.opacity);
