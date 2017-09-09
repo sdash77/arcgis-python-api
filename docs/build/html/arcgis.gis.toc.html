@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis module &mdash; arcgis 1.2.3 documentation</title>
+  <title>arcgis.gis module &mdash; arcgis 1.2.4 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.3 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.2.4 documentation" href="index.html"/>
         <link rel="next" title="arcgis.gis.admin module" href="arcgis.gis.admin.html"/>
         <link rel="prev" title="API Reference for the ArcGIS API for Python" href="index.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.3
+                1.2.4
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#datastore">Datastore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#role">Role</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#layer">Layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#groupapplication">GroupApplication</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contentmanager">ContentManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#usermanager">UserManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#groupmanager">GroupManager</a></li>
@@ -591,17 +592,17 @@ is the most important and provides the entry point into the GIS.</p>
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GIS</code><span class="sig-paren">(</span><em>url=None</em>, <em>username=None</em>, <em>password=None</em>, <em>key_file=None</em>, <em>cert_file=None</em>, <em>verify_cert=True</em>, <em>set_active=True</em>, <em>client_id=None</em>, <em>profile=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS" title="Permalink to this definition">¶</a></dt>
 <dd><p id="id1">A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
 (search, create, retrieve) GIS resources such as content, users, and groups.</p>
-<p>Additionally, the GIS object has properties to query it’s state, accessible using the properties attribute.</p>
-<p>The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+<p>Additionally, the GIS object has properties to query it’s state, which is accessible using the properties attribute.</p>
+<p>The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
 as well as the results of your analysis. To create a new map, call the map() method.</p>
-<p>Constructs a GIS object given a url and user credentials to ArcGIS Online
+<p>The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
 or an ArcGIS Portal. User credentials can be passed in using username/password
 pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
 PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.</p>
 <p>If no url is provided, ArcGIS Online is used. If username/password
 or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.</p>
 <p>A persisted profile for the GIS can be created by giving the GIS and it’s authorization credentials and
-specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile.
 The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
 or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
 saved in the configuration file by that profile name.</p>
@@ -616,49 +617,48 @@ saved in the configuration file by that profile name.</p>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>url</td>
-<td>optional string, if URL is None, then the URL will be ArcGIS
+<td>Optional string. If URL is None, then the URL will be ArcGIS
 Online.  This should be a web address to either a local portal
 or to ArcGIS Online in the form:
-For Portal Example:
-&lt;scheme&gt;://&lt;host&gt;/&lt;web_adatpor&gt;</td>
+&lt;scheme&gt;://&lt;host&gt;/&lt;web_adatpor&gt; (Portal Example)</td>
 </tr>
 <tr class="row-odd"><td>username</td>
-<td>optional string, login user name (case sensative)</td>
+<td>Optional string. The login user name (case sensitive).</td>
 </tr>
 <tr class="row-even"><td>password</td>
-<td>optional string, if a username is provided, a password is
-expected.  This is case sensative. If the password is not
-provided, user is prompted.</td>
+<td>Optional string. If a username is provided, a password is
+expected.  This is case sensitive. If the password is not
+provided, the user is prompted.</td>
 </tr>
 <tr class="row-odd"><td>key_file</td>
-<td>optional string, file path to a user’s key certificate</td>
+<td>Optional string. The file path to a user’s key certificate.</td>
 </tr>
 <tr class="row-even"><td>cert_file</td>
-<td>optional string, file path to a user’s key certificate</td>
+<td>Optional string. The file path to a user’s certificate file.</td>
 </tr>
 <tr class="row-odd"><td>verify_cert</td>
-<td>optional boolean, if a site has an invalid certificate, set the
+<td>Optional boolean. If a site has an invalid certificate, set the
 value to False.  This will ensure that all SSL certification
 are ignore.  The default is True.
-<strong>warning</strong> setting the value to False can be a security risk.</td>
+<strong>Warning</strong> Setting the value to False can be a security risk.</td>
 </tr>
 <tr class="row-even"><td>set_active</td>
-<td>optional boolean, the default is True.  If True, the GIS object
+<td>Optional boolean. The default is True.  If True, the GIS object
 will be used as the default GIS object throughout the whole
 scripting session.</td>
 </tr>
 <tr class="row-odd"><td>client_id</td>
-<td>optional string, used for OAuth athentication.  This is the
+<td>Optional string. Used for OAuth athentication.  This is the
 client ID value.</td>
 </tr>
 <tr class="row-even"><td>profile</td>
-<td>optional string, if set the profile contains login information
+<td>Optional string. If set, the profile contains login information
 for a given site.</td>
 </tr>
 </tbody>
 </table>
-<p>In addition to explicitly named variable, the GIS object supports optional key word
-arguments</p>
+<p>In addition to explicitly named parameters, the GIS object supports optional key word
+arguments:</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="20%" />
@@ -669,58 +669,91 @@ arguments</p>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>proxy_host</td>
-<td>optional string, host name of the proxy server</td>
+<td>Optional string. The host name of the proxy server.</td>
 </tr>
 <tr class="row-odd"><td>proxy_port</td>
-<td>optional integer, proxy host port.  The default is 80.</td>
+<td>Optional integer. The proxy host port.  The default is 80.</td>
 </tr>
 </tbody>
 </table>
-<p>Usage Example 1: Anonymous Login to ArcGIS Online:</p>
-<p>gis = GIS()</p>
-<p>Usage Example 2: Built-in Login to ArcGIS Online:</p>
-<p>gis = GIS(username=”someuser”, password=”secret1234”)</p>
-<p>Usage Example 3: Built-in Login to ArcGIS Enterprise</p>
-<dl class="docutils">
-<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
-<dd>username=”user1”, password=”password1”)</dd>
-</dl>
-<p>Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors</p>
-<dl class="docutils">
-<dt>gis = GIS(url=”<a class="reference external" href="http://pythonplayground.esri.com/portal">http://pythonplayground.esri.com/portal</a>”,</dt>
-<dd>username=”user1”, password=”password1”,
-verify_cert=False)</dd>
-</dl>
-<p>Usage Example 5: Anonymous ArcGIS Online Login with Proxy</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example 1: Anonymous Login to ArcGIS Online</span>
+
+<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example 2: Built-in Login to ArcGIS Online</span>
+
+<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&quot;someuser&quot;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">&quot;secret1234&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example 3: Built-in Login to ArcGIS Enterprise</span>
+
+<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://pythonplayground.esri.com/portal&quot;</span><span class="p">,</span>
+      <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user1&quot;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">&quot;password1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors</span>
+
+<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://pythonplayground.esri.com/portal&quot;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user1&quot;</span><span class="p">,</span> 
+          <span class="n">password</span><span class="o">=</span><span class="s2">&quot;password1&quot;</span><span class="p">,</span> <span class="n">verify_cert</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>gis = GIS(proxy_host=‘127.0.0.1’, proxy_port=8888)</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.content">
 <code class="descname">content</code><a class="headerlink" href="#arcgis.gis.GIS.content" title="Permalink to this definition">¶</a></dt>
-<dd><p>The resource manager for GIS content</p>
+<dd><p>The resource manager for GIS content.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.groups">
 <code class="descname">groups</code><a class="headerlink" href="#arcgis.gis.GIS.groups" title="Permalink to this definition">¶</a></dt>
-<dd><p>The resource manager for GIS groups</p>
+<dd><p>The resource manager for GIS groups.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.GIS.map">
 <code class="descname">map</code><span class="sig-paren">(</span><em>location=None</em>, <em>zoomlevel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS.map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a map widget centered at the location (Address or (lat, long) tuple)
-with the specified zoom-level(integer). If an Address is provided, it is geocoded
+<dd><blockquote>
+<div><p>Creates a map widget centered at the declared location with the specified 
+zoom level. If an address is provided, it is geocoded
 using the GIS’s configured geocoders and if a match is found, the geographic
 extent of the matched address is used as the map extent. If a zoomlevel is also
 provided, the map is centered at the matched address instead and the map is zoomed
 to the specified zoomlevel.</p>
 <p>Note: The map widget is only supported within Jupyter Notebook.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="82%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>location</td>
+<td>Optional string. The address or lat-long tuple of where the map is to be centered.</td>
+</tr>
+<tr class="row-odd"><td>zoomlevel</td>
+<td>Optional integer. The desired zoom level.</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The map widget (displayed in Jupyter Notebook when queried).</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.properties">
 <code class="descname">properties</code><a class="headerlink" href="#arcgis.gis.GIS.properties" title="Permalink to this definition">¶</a></dt>
-<dd><p>The properties of the GIS</p>
+<dd><p>The properties of the GIS.</p>
 </dd></dl>
 
 <dl class="method">
@@ -736,8 +769,9 @@ to the specified zoomlevel.</p>
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
-<tr class="row-even"><td>item_properties</td>
-<td>Required dictionary.</td>
+<tr class="row-even"><td>properties_dict</td>
+<td>Required dictionary. A dictionary of just those properties and
+values that are to be updated.</td>
 </tr>
 </tbody>
 </table>
@@ -754,7 +788,7 @@ to the specified zoomlevel.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.GIS.users">
 <code class="descname">users</code><a class="headerlink" href="#arcgis.gis.GIS.users" title="Permalink to this definition">¶</a></dt>
-<dd><p>The resource manager for GIS users</p>
+<dd><p>The resource manager for GIS users.</p>
 </dd></dl>
 
 </dd></dl>
@@ -849,7 +883,7 @@ REST API help for more information on this parameter.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Item.comments">
 <code class="descname">comments</code><a class="headerlink" href="#arcgis.gis.Item.comments" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of comments for a given item.</p>
+<dd><p>Gets a list of comments for a given item.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1213,13 +1247,13 @@ that can be converted to string using data.decode(‘utf-8’). Zero byte files 
 <dl class="attribute">
 <dt id="arcgis.gis.Item.homepage">
 <code class="descname">homepage</code><a class="headerlink" href="#arcgis.gis.Item.homepage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the URL to the HTML page for the item.</p>
+<dd><p>Gets the URL to the HTML page for the item.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.Item.metadata">
 <code class="descname">metadata</code><a class="headerlink" href="#arcgis.gis.Item.metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieves the item metadata for the specified item.
+<dd><p>Gets and sets the item metadata for the specified item.
 Returns None if the item does not have metadata.
 Items with metadata have ‘Metadata’ in their typeKeywords.</p>
 </dd></dl>
@@ -1297,7 +1331,7 @@ protection, False to disable delete protection.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Item.proxies">
 <code class="descname">proxies</code><a class="headerlink" href="#arcgis.gis.Item.proxies" title="Permalink to this definition">¶</a></dt>
-<dd><p>All ArcGIS Online hosted proxy services set on a registered app
+<dd><p>Gets the ArcGIS Online hosted proxy services set on a registered app
 item with the Registered App type keyword. This resource is only
 available to the item owner and the organization administrator.</p>
 </dd></dl>
@@ -1368,15 +1402,7 @@ optional parameter.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Item.rating">
 <code class="descname">rating</code><a class="headerlink" href="#arcgis.gis.Item.rating" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-</tbody>
-</table>
-<p>Returns the rating given by the current user to the item, if any.</p>
+<dd><p>Gets or sets the rating given by the current user to the item.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2028,28 +2054,28 @@ Role object (from gis.users.roles)</td>
 <dt id="arcgis.gis.Group">
 <em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">Group</code><span class="sig-paren">(</span><em>gis</em>, <em>groupid</em>, <em>groupdict=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">dict</span></code></p>
-<p>Represents a group (for example, San Bernardino Fires) within the GIS (ArcGIS Online or Portal for ArcGIS)</p>
+<p>Represents a group within the GIS (ArcGIS Online or Portal for ArcGIS).</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.add_users">
 <code class="descname">add_users</code><span class="sig-paren">(</span><em>usernames</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.add_users" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds users to this group.
-.. note:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">This</span> <span class="n">method</span> <span class="n">will</span> <span class="n">only</span> <span class="n">work</span> <span class="k">if</span> <span class="n">the</span> <span class="n">user</span> <span class="k">for</span> <span class="n">the</span>
-<span class="n">Portal</span> <span class="nb">object</span> <span class="ow">is</span> <span class="n">either</span> <span class="n">an</span> <span class="n">administrator</span> <span class="k">for</span> <span class="n">the</span> <span class="n">entire</span>
-<span class="n">Portal</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">owner</span> <span class="n">of</span> <span class="n">the</span> <span class="n">group</span><span class="o">.</span>
-</pre></div>
+<dd><p>Adds users to this group.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method will only work if the user for the
+Portal object is either an administrator for the entire
+Portal or the owner of the group.</p>
 </div>
 <table border="1" class="docutils">
 <colgroup>
-<col width="24%" />
-<col width="76%" />
+<col width="19%" />
+<col width="81%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>usernames</td>
-<td>list of usernames</td>
+<td>Required string. The list of usernames to be added.</td>
 </tr>
 </tbody>
 </table>
@@ -2057,8 +2083,11 @@ Role object (from gis.users.roles)</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with a key of “not_added” which contains the users that were not
-added to the group.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A dictionary with a key of notAdded which contains the users that were not </dt>
+<dd>added to the group.</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2067,7 +2096,7 @@ added to the group.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Group.applications">
 <code class="descname">applications</code><a class="headerlink" href="#arcgis.gis.Group.applications" title="Permalink to this definition">¶</a></dt>
-<dd><p>Lists the group applications for the given group. Available to
+<dd><p>Gets the group applications for the given group as a list. Available to
 administrators of the group or administrators of an organization if
 the group is part of one.</p>
 </dd></dl>
@@ -2075,60 +2104,113 @@ the group is part of one.</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.content">
 <code class="descname">content</code><span class="sig-paren">(</span><em>max_items=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.content" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of items shared with this group.</p>
+<dd><p>Gets the list of items shared with this group.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>max_items</td>
+<td>Required integer. The maximum number of items to be returned, defaults to 1000.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The list of items that are shared.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Group.delete">
 <code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes this group.</p>
-<dl class="docutils">
-<dt>Returns</dt>
-<dd>a boolean indicating whether it was successful.</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Group.download_thumbnail">
 <code class="descname">download_thumbnail</code><span class="sig-paren">(</span><em>save_folder=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.download_thumbnail" title="Permalink to this definition">¶</a></dt>
-<dd><p>Downloads the group thumbnail for this group, returns file path.</p>
+<dd><p>Downloads the group thumbnail for this group.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>save_folder</td>
+<td>Optional string. The file path to where the group thumbnail will be downloaded.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The file path to which the group thumbnail is downloaded.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Group.get_members">
 <code class="descname">get_members</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.get_members" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns members of this group.</p>
-<dl class="docutils">
-<dt>Arguments</dt>
-<dd>None.</dd>
-<dt>Returns</dt>
-<dd><p class="first">a dictionary with keys: owner, admins, and users.</p>
-<table border="1" class="last docutils">
+<dd><p>Gets the members of this group.</p>
+<p><em>Key:Value Dictionary Return Values</em></p>
+<blockquote>
+<div><table border="1" class="docutils">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col width="17%" />
+<col width="83%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Key</strong></td>
 <td><strong>Value</strong></td>
 </tr>
 <tr class="row-even"><td>owner</td>
-<td>string value, the group’s owner</td>
+<td>The group’s owner (string).</td>
 </tr>
 <tr class="row-odd"><td>admins</td>
-<td>list of strings, typically this is the same as the owner</td>
+<td>The group’s admins (list of strings). Typically this is the same as the owner.</td>
 </tr>
 <tr class="row-even"><td>users</td>
-<td>list of strings, the members of the group</td>
+<td>The members of the group (list of strings).</td>
 </tr>
 </tbody>
 </table>
-</dd>
-</dl>
-<p>Example (to print users in a group)</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">response</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">get_members</span><span class="p">()</span>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with keys: owner, admins, and users.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example: To print users in a group</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">get_members</span><span class="p">()</span>
 <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;users&#39;</span><span class="p">]</span> <span class="p">:</span>
-    <span class="k">print</span> <span class="n">user</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2136,13 +2218,15 @@ the group is part of one.</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.get_thumbnail">
 <code class="descname">get_thumbnail</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.get_thumbnail" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the bytes that make up the thumbnail for this group.</p>
-<dl class="docutils">
-<dt>Arguments</dt>
-<dd>None</dd>
-<dt>Returns</dt>
-<dd>bytes that represent the image.</dd>
-</dl>
+<dd><p>Gets the bytes that make up the thumbnail for this group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Bytes that represent the image.</td>
+</tr>
+</tbody>
+</table>
 <p>Example</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">response</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">get_thumbnail</span><span class="p">()</span>
 <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
@@ -2160,35 +2244,31 @@ the group is part of one.</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.invite_users">
 <code class="descname">invite_users</code><span class="sig-paren">(</span><em>usernames</em>, <em>role='group_member'</em>, <em>expiration=10080</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.invite_users" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invites users to this group.</p>
+<dd><p>Invites users to this group. The user executing this command must be the group owner.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">A user who is invited to this group will see a list of invitations
-in the “Groups” tab of portal listing invitations.  The user
+in the “Groups” tab of Portal listing invitations.  The user
 can either accept or reject the invitation.</p>
 </div>
-<dl class="docutils">
-<dt>Requires</dt>
-<dd>The user executing the command must be group owner</dd>
-</dl>
 <table border="1" class="docutils">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col width="20%" />
+<col width="80%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
-<tr class="row-even"><td>usernames:</td>
-<td>a required string list of users to invite</td>
+<tr class="row-even"><td>usernames</td>
+<td>Required string. The users to invite as a list.</td>
 </tr>
-<tr class="row-odd"><td>role:</td>
-<td>an optional string, either group_member or group_admin</td>
+<tr class="row-odd"><td>role</td>
+<td>Optional string. Either group_member (the default) or group_admin.</td>
 </tr>
-<tr class="row-even"><td>expiration:</td>
-<td>an optional int, specifies how long the invitation is
-valid for in minutes.</td>
+<tr class="row-even"><td>expiration</td>
+<td>Optional integer. Specifies how long the invitation is
+valid for in minutes.  Default is 10,080 minutes (7 days).</td>
 </tr>
 </tbody>
 </table>
@@ -2196,7 +2276,7 @@ valid for in minutes.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean that indicates whether the call succeeded.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2215,23 +2295,26 @@ the group is private, users will not be able to find it to ask to
 join it.
 Information pertaining to the applying user, such as their full
 name and username, can be sent as part of the group application.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Group.leave">
 <code class="descname">leave</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.leave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes the logged in user from the specified group.</p>
-<dl class="docutils">
-<dt>Requires:</dt>
-<dd>User must be logged in.</dd>
-<dt>Arguments:</dt>
-<dd>None.</dd>
-</dl>
+<dd><p>Removes the logged in user from this group.  It is required 
+that the user be logged in.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean indicating whether the operation was successful.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2251,7 +2334,7 @@ name and username, can be sent as part of the group application.</p>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>target_owner</td>
-<td>required string, username of new group owner</td>
+<td>Required string.  The username of the new group owner.</td>
 </tr>
 </tbody>
 </table>
@@ -2259,7 +2342,7 @@ name and username, can be sent as part of the group application.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean, indicating success</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2271,15 +2354,15 @@ name and username, can be sent as part of the group application.</p>
 <dd><p>Remove users from this group.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="22%" />
-<col width="78%" />
+<col width="20%" />
+<col width="80%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>usernames</td>
-<td>required string, comma-separated list of users</td>
+<td>Required string.  A comma-separated list of users to be removed.</td>
 </tr>
 </tbody>
 </table>
@@ -2287,7 +2370,7 @@ name and username, can be sent as part of the group application.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dictionary with a key notRemoved that is a list of users not removed.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with a key notRemoved that is a list of users not removed.</td>
 </tr>
 </tbody>
 </table>
@@ -2296,52 +2379,51 @@ name and username, can be sent as part of the group application.</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.update">
 <code class="descname">update</code><span class="sig-paren">(</span><em>title=None</em>, <em>tags=None</em>, <em>description=None</em>, <em>snippet=None</em>, <em>access=None</em>, <em>is_invitation_only=None</em>, <em>sort_field=None</em>, <em>sort_order=None</em>, <em>is_view_only=None</em>, <em>thumbnail=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.update" title="Permalink to this definition">¶</a></dt>
-<dd><p>Updates this group.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Only provide the values for the arguments you wish to update.</p>
-</div>
+<dd><p>Updates this group with only values supplied for particular arguments.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="24%" />
-<col width="76%" />
+<col width="23%" />
+<col width="77%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><strong>Argument</strong></td>
 <td><strong>Description</strong></td>
 </tr>
 <tr class="row-even"><td>title</td>
-<td>optional string, name of the group</td>
+<td>Optional string. The new name of the group.</td>
 </tr>
 <tr class="row-odd"><td>tags</td>
-<td>optional string (comma-delimited list of tags) or
-list of tags as strings</td>
+<td>Optional string. A comma-delimited list of new tags, or
+a list of tags as strings.</td>
 </tr>
 <tr class="row-even"><td>description</td>
-<td>optional string, describes group in detail</td>
+<td>Optional string. The new description for the group.</td>
 </tr>
 <tr class="row-odd"><td>snippet</td>
-<td>optional string, &lt;250 characters summarizes group</td>
+<td>Optional string. A new short snippet (&lt;250 characters)
+that summarizes the group.</td>
 </tr>
 <tr class="row-even"><td>access</td>
-<td>optional string, can be private, public, or org</td>
+<td>Optional string. Choices are private, public, or org.</td>
 </tr>
-<tr class="row-odd"><td>thumbnail</td>
-<td>optional string, URL or file location to group image</td>
+<tr class="row-odd"><td>is_invitation_only</td>
+<td>Optional boolean. Defines whether users can join by
+request. True means an invitation is required.</td>
 </tr>
-<tr class="row-even"><td>is_invitation_only</td>
-<td>optional boolean, defines whether users can join by
-request.</td>
-</tr>
-<tr class="row-odd"><td>sort_field</td>
-<td>optional string, specifies how shared items with the
+<tr class="row-even"><td>sort_field</td>
+<td>Optional string. Specifies how shared items with the
 group are sorted.</td>
 </tr>
-<tr class="row-even"><td>sort_order</td>
-<td>optional string, asc or desc for ascending or descending.</td>
+<tr class="row-odd"><td>sort_order</td>
+<td>Optional string. Choices are asc or desc for ascending
+or descending, respectively.</td>
 </tr>
-<tr class="row-odd"><td>is_view_only</td>
-<td>optional boolean, defines whether the group is searchable</td>
+<tr class="row-even"><td>is_view_only</td>
+<td>Optional boolean. Defines whether the group is searchable.
+True means the group is searchable.</td>
+</tr>
+<tr class="row-odd"><td>thumbnail</td>
+<td>Optional string. URL or file location to a new group image.</td>
 </tr>
 </tbody>
 </table>
@@ -2349,7 +2431,7 @@ group are sorted.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a boolean indicating success</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2368,26 +2450,34 @@ group are sorted.</td>
 <dl class="attribute">
 <dt id="arcgis.gis.Datastore.datasets">
 <code class="descname">datasets</code><a class="headerlink" href="#arcgis.gis.Datastore.datasets" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the datasets in the data store (currently implemented for big data file shares.)</p>
+<dd><p>Gets the datasets in the data store, as a dictionary (currently implemented for big data file shares).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.Datastore.delete">
 <code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Datastore.delete" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unregisters this data item from the data store.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.Datastore.manifest">
 <code class="descname">manifest</code><a class="headerlink" href="#arcgis.gis.Datastore.manifest" title="Permalink to this definition">¶</a></dt>
-<dd><p>The manifest resource for bigdata fileshares.</p>
+<dd><p>Gets or sets the manifest resource for bigdata fileshares, as a dictionary.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.Datastore.ref_count">
 <code class="descname">ref_count</code><a class="headerlink" href="#arcgis.gis.Datastore.ref_count" title="Permalink to this definition">¶</a></dt>
-<dd><p>The total number of references to this data item that exist on the server. You can use this
-property to determine if this data item can be safely deleted (or taken down for maintenance).</p>
+<dd><p>Gets the total number of references to this data item that exists on the server. You can use this
+property to determine if this data item can be safely deleted or taken down for maintenance.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2412,7 +2502,7 @@ property to determine if this data item can be safely deleted (or taken down for
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if successful.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2427,7 +2517,7 @@ is accessible to every server node in the site.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if successful.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
 </tr>
 </tbody>
 </table>
@@ -2567,10 +2657,89 @@ GIS. Layer objects can be obtained through the layers attribute on layer Items i
 <dl class="classmethod">
 <dt id="arcgis.gis.Layer.fromitem">
 <em class="property">classmethod </em><code class="descname">fromitem</code><span class="sig-paren">(</span><em>item</em>, <em>index=0</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Layer.fromitem" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the layer at the specified index from a layer item
-:param item: an item representing a layer
-:param index: optional, the index of the layer amongst the item’s layers
-:return: the layer at the specified index</p>
+<dd><p>returns the layer at the specified index from a layer item</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>item</td>
+<td>Required Item. An item representing a layer</td>
+</tr>
+<tr class="row-odd"><td>index</td>
+<td>Optional int. The index of the layer amongst the item’s layers</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the layer at the specified index</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="groupapplication">
+<h2>GroupApplication<a class="headerlink" href="#groupapplication" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="arcgis.gis.GroupApplication">
+<em class="property">class </em><code class="descclassname">arcgis.gis.</code><code class="descname">GroupApplication</code><span class="sig-paren">(</span><em>url</em>, <em>gis</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupApplication" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Represents a single group application on the GIS (ArcGIS Online or
+Portal for ArcGIS).</p>
+<dl class="method">
+<dt id="arcgis.gis.GroupApplication.accept">
+<code class="descname">accept</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupApplication.accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>When a user applies to join a group, a group application is
+created. Group administrators choose to accept this application
+using the Accept Group Application operation. This operation adds
+the applying user to the group then deletes the application. This
+operation also creates a notification for the user indicating that
+the user’s group application was accepted. Available only to group
+owners and admins.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.gis.GroupApplication.decline">
+<code class="descname">decline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupApplication.decline" title="Permalink to this definition">¶</a></dt>
+<dd><p>When a user applies to join a group, a group application is
+created. Group administrators can decline this application using
+the Decline Group Application operation (POST only). This operation
+deletes the application and creates a notification for the user
+indicating that the user’s group application was declined. The
+applying user will not be added to the group. Available only to
+group owners and admins.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A boolean indicating success (True) or failure (False).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.gis.GroupApplication.properties">
+<code class="descname">properties</code><a class="headerlink" href="#arcgis.gis.GroupApplication.properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the properties of the Group application.</p>
 </dd></dl>
 
 </dd></dl>
@@ -2868,7 +3037,7 @@ or not allowed (false).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The item for the service, if successfully created, None if unsuccessful.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The item for the service if successfully created, None if unsuccessful.</td>
 </tr>
 </tbody>
 </table>
@@ -2928,7 +3097,7 @@ the given folder name.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if the item is not found, or returns an item object if the item is found.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The item object if the item is found, None if the item is not found.</td>
 </tr>
 </tbody>
 </table>
@@ -2971,8 +3140,8 @@ dataframes. This limit isn’t there for spatial dataframes.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Feature collection or feature layer that can be used for analysis,
-visualization or published to the GIS as an item.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A feature collection or feature layer that can be used for analysis,
+visualization, or published to the GIS as an item.</td>
 </tr>
 </tbody>
 </table>
@@ -3004,9 +3173,10 @@ available for use or not.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the specified service_name is available for the
-specified service_type, False if the service_name is
-unavailable.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><blockquote>
+<div>True if the specified service_name is available for the</div></blockquote>
+<p>specified service_type, False if the service_name is unavailable.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -3298,16 +3468,17 @@ your org (default is False)</td>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Helper class for managing GIS groups. This class is not created by users directly.
 An instance of this class, called ‘groups’, is available as a property of the Gis object.
-Users call methods on this ‘groups’ object to manipulate (create, get, search…) users.</p>
+Users call methods on this ‘groups’ object to manipulate (create, get, search, etc) users.</p>
 <dl class="method">
 <dt id="arcgis.gis.GroupManager.create">
 <code class="descname">create</code><span class="sig-paren">(</span><em>title</em>, <em>tags</em>, <em>description=None</em>, <em>snippet=None</em>, <em>access='public'</em>, <em>thumbnail=None</em>, <em>is_invitation_only=False</em>, <em>sort_field='avgRating'</em>, <em>sort_order='desc'</em>, <em>is_view_only=False</em>, <em>auto_join=False</em>, <em>provider_group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a group and returns it if successful.</p>
+<dd><p>Creates a group with the values for any particular arguments that are specified.  
+Only title and tags are required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the group, if created, or None</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The group if successfully created, None if unsuccessful.</td>
 </tr>
 </tbody>
 </table>
@@ -3316,26 +3487,56 @@ Users call methods on this ‘groups’ object to manipulate (create, get, searc
 <dl class="method">
 <dt id="arcgis.gis.GroupManager.create_from_dict">
 <code class="descname">create_from_dict</code><span class="sig-paren">(</span><em>dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create_from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a group with parameters specified in the dict
-See help of create() method for parameters
-:return:</p>
-<blockquote>
-<div>the group, if created, or None</div></blockquote>
+<dd><p>Creates a group via a dictionary with the values for any particular arguments that are specified.  
+Only title and tags are required.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>dict</td>
+<td>Required dictionary. A dictionary of entries to create/define the
+group.  See help of the create() method for parameters.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The group if successfully created, None if unsuccessful.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.GroupManager.get">
 <code class="descname">get</code><span class="sig-paren">(</span><em>groupid</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the group object for the specified groupid.</p>
-<dl class="docutils">
-<dt>Arguments</dt>
-<dd>groupid        required string, the group identifier</dd>
-</dl>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>groupid</td>
+<td>Required string. The group identifier.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if the group is not found and returns a group object if the group is found</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The group object if the group is found, None if it is not found.</td>
 </tr>
 </tbody>
 </table>
@@ -3348,22 +3549,21 @@ See help of create() method for parameters
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>A few things that will be helpful to know.</p>
-<ol class="arabic">
+<ol class="last arabic">
 <li><dl class="first docutils">
-<dt>The query syntax has quite a few features that can’t</dt>
-<dd><p class="first last">be adequately described here.  The query syntax is
-available in ArcGIS help.  A short version of that URL
-is <a class="reference external" href="http://bitly.com/1fJ8q31">http://bitly.com/1fJ8q31</a>.</p>
+<dt>The query syntax has many features that can’t</dt>
+<dd><p class="first last">be adequately described here.  The query syntax is</p>
+</dd>
+<dt>available in ArcGIS Help.  A short version of that URL</dt>
+<dd><p class="first last">is <a class="reference external" href="http://bitly.com/1fJ8q31">http://bitly.com/1fJ8q31</a>.</p>
 </dd>
 </dl>
 </li>
 <li><p class="first">Searching without specifying a query parameter returns
 a list of all groups in your organization.</p>
 </li>
-</ol>
-<ol class="last arabic" start="2">
 <li><dl class="first docutils">
-<dt>Most of the time when searching groups you want to</dt>
+<dt>Most of the time when searching for groups, you’ll want to</dt>
 <dd><p class="first last">search within your organization in ArcGIS Online
 or within your Portal.  As a convenience, the method
 automatically appends your organization id to the query by
@@ -3374,44 +3574,14 @@ set outside_org to True.</p>
 </li>
 </ol>
 </div>
-<table border="1" class="docutils">
-<colgroup>
-<col width="22%" />
-<col width="78%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>query</td>
-<td>optional query string on Portal, required for Online.
-If not specified, all groups will be searched. See notes</td>
-</tr>
-<tr class="row-odd"><td>sort_field</td>
-<td>optional string, valid values can be title, owner,
-created</td>
-</tr>
-<tr class="row-even"><td>sort_order</td>
-<td>optional string, valid values are asc or desc</td>
-</tr>
-<tr class="row-odd"><td>max_groups</td>
-<td>optional int, maximum number of groups returned</td>
-</tr>
-<tr class="row-even"><td>outside_org</td>
-<td>optional boolean, controls whether to search outside
-your org</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of groups matching the specified query.</td>
 </tr>
 </tbody>
 </table>
-<p>Returns a list of groups matching the specified query</p>
 </dd></dl>
 
 </dd></dl>
@@ -3454,7 +3624,7 @@ federated with the portal.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The new data item is registered successfully, None otherwise.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The new data item if registered successfully, None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -3485,7 +3655,7 @@ federated with the portal.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The big data fileshare is registered successfully, None otherwise.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The big data fileshare if registered successfully, None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -3522,7 +3692,7 @@ federated with the portal.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The database is registered successfully, None otherwise.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The database if registered successfully, None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -3556,7 +3726,7 @@ federated with the portal.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The folder is registered successfully, None otherwise.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The folder if registered successfully, None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -3565,8 +3735,8 @@ federated with the portal.</p>
 <dl class="attribute">
 <dt id="arcgis.gis.DatastoreManager.config">
 <code class="descname">config</code><a class="headerlink" href="#arcgis.gis.DatastoreManager.config" title="Permalink to this definition">¶</a></dt>
-<dd><p>The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
+<dd><p>Gets or sets the data store configuration properties, which affect the behavior of the data holdings of the server. The properties include:
+blockDataCopy. When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
 When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
 Note:
 If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.</p>
@@ -3594,7 +3764,7 @@ If you specify the property as True, users will not be able to publish geoproces
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if the data item is not found at that path, and the data item object if it is found.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The data item object if found, None otherwise.</td>
 </tr>
 </tbody>
 </table>
@@ -3646,11 +3816,19 @@ Types include folder, egdb, bigDataFileShare, datadir.</td>
 <dl class="method">
 <dt id="arcgis.gis.DatastoreManager.validate">
 <code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.DatastoreManager.validate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validates all items in the datastore and returns True if validated.</p>
-<p>In order for a data item to be registered and used successfully within the GIS’s data store,
-you need to make sure that the path (for file shares) or connection string (for databases)
-is accessible to every server node in the site. To validate all registered data items all
+<dd><p>Validates all items in the datastore. In order for a data item to be registered and 
+used successfully within the GIS’s data store, you need to make sure that the path 
+(for file shares) or connection string (for databases) is accessible to every server 
+node in the site. To validate all registered data items all
 at once, you can invoke this operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the data store items were validated, False if not.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -3666,9 +3844,29 @@ at once, you can invoke this operation.</p>
 <dl class="method">
 <dt id="arcgis.gis.RoleManager.all">
 <code class="descname">all</code><span class="sig-paren">(</span><em>max_roles=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns list of all roles in the GIS
-:param max_roles: the maximum number of roles to be returned
-:return: list of all roles in the GIS</p>
+<dd><p>Returns list of all roles in the GIS</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>max_roles</td>
+<td>Required integer. The maximum number of roles to be returned, defaults to 1000.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of all roles in the GIS</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3680,20 +3878,54 @@ at once, you can invoke this operation.</p>
 <dl class="method">
 <dt id="arcgis.gis.RoleManager.exists">
 <code class="descname">exists</code><span class="sig-paren">(</span><em>role_name</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks to see if a role exists by it’s name
-:role_name: name of the role to look up
-Returns:</p>
-<blockquote>
-<div>boolean</div></blockquote>
+<dd><p>Checks to see if a role exists by it’s name</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>role_name</td>
+<td>Required string. The name of the role to look up.</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>Returns True if the role exists, and False if it does not</dd>
+</dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.RoleManager.get_role">
 <code class="descname">get_role</code><span class="sig-paren">(</span><em>role_id</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.RoleManager.get_role" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the role with the specified role id. Returns list of all roles in the
-GIS if a role_id is not specified
-:param role_id: the role id of the role to get. Leave None to get all roles
-:return: the role with the specified role id or a list of all roles</p>
+GIS if a role_id is not specified</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>role_id</td>
+<td>Required string. The role id of the role to get. Set to None to get all roles</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the role with the specified role id or a list of all roles</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -3830,12 +4062,13 @@ file. Default is the resource file’s name.</td>
 <dt id="arcgis.gis.ResourceManager.list">
 <code class="descname">list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.ResourceManager.list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lists all file resources of an existing item. This resource is only available to
-the item owner and the organization administrator.
-:return:</p>
-<blockquote>
-<div><p>A Python list of dictionaries of the form:
-[</p>
-<blockquote>
+the item owner and the organization administrator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Python list of dictionaries of the form:
+[<blockquote>
 <div><dl class="docutils">
 <dt>{</dt>
 <dd>“resource”: “&lt;resource1&gt;”</dd>
@@ -3843,15 +4076,18 @@ the item owner and the organization administrator.
 <p>},
 {</p>
 <blockquote>
-<div>“resource”: “&lt;resource2&gt;”</div></blockquote>
+<div>”resource”: “&lt;resource2&gt;”</div></blockquote>
 <p>},
 {</p>
 <blockquote>
-<div>“resource”: “&lt;resource3&gt;”</div></blockquote>
+<div>”resource”: “&lt;resource3&gt;”</div></blockquote>
 <p>}</p>
 </div></blockquote>
 <p>]</p>
-</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -4063,7 +4299,7 @@ used together with file_name.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.3',
+            VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
