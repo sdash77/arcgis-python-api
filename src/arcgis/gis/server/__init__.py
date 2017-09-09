@@ -1,9 +1,5 @@
 """
-Server Package Root
-
-Provides access to the Catalog, Service, and Manager classes for ArcGIS
-Server
-
+A collection of classes for administering an ArcGIS Enterprise server.
 """
 from .catalog import ServicesDirectory
 from ._service import Service

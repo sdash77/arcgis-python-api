@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.gis.server Package &mdash; arcgis 1.2.3 documentation</title>
+  <title>arcgis.gis.server module &mdash; arcgis 1.2.3 documentation</title>
   
 
   
@@ -130,7 +130,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#webadaptors">WebAdaptors</a></li>
 </ul>
 </li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.gis.server Package</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">arcgis.gis.server module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#server">Server</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-arcgis.gis.server.catalog">ServicesDirectory</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#service">Service</a></li>
@@ -566,7 +566,7 @@
       
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
       
-    <li>arcgis.gis.server Package</li>
+    <li>arcgis.gis.server module</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -580,15 +580,16 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="arcgis-gis-server-package">
-<h1>arcgis.gis.server Package<a class="headerlink" href="#arcgis-gis-server-package" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-arcgis.gis.server">
+<span id="arcgis-gis-server-module"></span><h1>arcgis.gis.server module<a class="headerlink" href="#module-arcgis.gis.server" title="Permalink to this headline">¶</a></h1>
+<p>A collection of classes for administering an ArcGIS Enterprise server.</p>
 <div class="section" id="server">
 <h2>Server<a class="headerlink" href="#server" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.gis.server.Server">
 <em class="property">class </em><code class="descclassname">arcgis.gis.server.</code><code class="descname">Server</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.Server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">arcgis.gis.server._common._base.BaseServer</span></code></p>
-<p>ArcGIS Server Administration REST API</p>
+<p>An ArcGIS Enterprise server used for hosting services</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -607,8 +608,7 @@ end point.</p>
 </td>
 </tr>
 <tr class="row-odd"><td>gis</td>
-<td>required ServicesDirectioy object, this is the connection object
-that holds the credentials for the site.</td>
+<td>optional GIS, the GIS to which this Server is federated with</td>
 </tr>
 </tbody>
 </table>
