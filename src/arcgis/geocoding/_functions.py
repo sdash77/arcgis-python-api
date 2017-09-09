@@ -481,7 +481,8 @@ def geocode(address,
             max_locations=20,
             magic_key=None,
             for_storage=False,
-            geocoder=None):
+            geocoder=None,
+            as_featureset=False):
     """
     The geocode function geocodes one location per request.
 
@@ -556,13 +557,17 @@ def geocode(address,
     ---------------     ----------------------------------------------------
     geocoder            Optional, the geocoder to be used. If not specified,
                         the active GIS's first geocoder is used.
+    ---------------     ----------------------------------------------------
+    as_featureset       optional boolean, if True, the result set is
+                        returned as a FeatureSet object, else it is a
+                        dictionary.
     ===============     ====================================================
 
     :returns:
        dictionary
 
     """
-    as_featureset = False
+    # as_featureset = False
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
     return geocoder._geocode(

@@ -458,7 +458,10 @@ class FeatureSet(object):
                 attributes = []
                 for feat in self.features:
                     attributes.append(feat.attributes)
-                    geoms.append(Geometry(feat.geometry))
+                    if isinstance(feat.geometry, Geometry):
+                        geoms.append(feat.geometry)
+                    else:
+                        geoms.append(Geometry(feat.geometry))
                     del feat
                 df = json_normalize(attributes)
                 df.columns = df.columns.str.replace('attributes.', '')
