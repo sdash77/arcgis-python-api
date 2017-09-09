@@ -131,26 +131,26 @@ class GIS(object):
     
     .. code-block:: python
     
-        USAGE EXAMPLE 1: Anonymous Login to ArcGIS Online
+        # Usage Example 1: Anonymous Login to ArcGIS Online
 
-    gis = GIS()
-
-    .. code-block:: python
-        
-        USAGE EXAMPLE 2: Built-in Login to ArcGIS Online
-
-    gis = GIS(username="someuser", password="secret1234")
+        gis = GIS()
 
     .. code-block:: python
         
-        USAGE EXAMPLE 3: Built-in Login to ArcGIS Enterprise
+        # Usage Example 2: Built-in Login to ArcGIS Online
 
-    gis = GIS(url="http://pythonplayground.esri.com/portal",
+        gis = GIS(username="someuser", password="secret1234")
+
+    .. code-block:: python
+        
+        # Usage Example 3: Built-in Login to ArcGIS Enterprise
+
+        gis = GIS(url="http://pythonplayground.esri.com/portal",
               username="user1", password="password1")
 
     .. code-block:: python
     
-        USAGE EXAMPLE 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
+        # Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
 
         gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1", 
                   password="password1", verify_cert=False)
@@ -1286,9 +1286,15 @@ class RoleManager(object):
     def exists(self, role_name):
         """
         Checks to see if a role exists by it's name
-        :role_name: name of the role to look up
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        role_name              Required string. The name of the role to look up.
+        ==================     ====================================================================
+
         Returns:
-         boolean
+           Returns True if the role exists, and False if it does not
         """
         for role in self.all():
             if role.name.lower() == role_name.lower():
@@ -1298,8 +1304,15 @@ class RoleManager(object):
     def all(self, max_roles=1000):
         """
         Returns list of all roles in the GIS
-        :param max_roles: the maximum number of roles to be returned
-        :return: list of all roles in the GIS
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        max_roles              Required integer. The maximum number of roles to be returned, defaults to 1000.
+        ==================     ====================================================================
+
+        :return:
+           list of all roles in the GIS
         """
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role['id'], role) for role in roles]
@@ -1309,8 +1322,15 @@ class RoleManager(object):
         """
         Returns the role with the specified role id. Returns list of all roles in the
         GIS if a role_id is not specified
-        :param role_id: the role id of the role to get. Leave None to get all roles
-        :return: the role with the specified role id or a list of all roles
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        role_id                Required string. The role id of the role to get. Set to None to get all roles
+        ==================     ====================================================================
+
+        :return:
+           the role with the specified role id or a list of all roles
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -2438,6 +2458,7 @@ class ResourceManager(object):
         """
         Lists all file resources of an existing item. This resource is only available to
         the item owner and the organization administrator.
+
         :return:
             A Python list of dictionaries of the form:
             [
@@ -2851,11 +2872,11 @@ class Group(dict):
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
-        owner             The group's owner (string).
+            owner             The group's owner (string).
             ----------------  --------------------------------------------------------
-        admins            The group's admins (list of strings). Typically this is the same as the owner.
+            admins            The group's admins (list of strings). Typically this is the same as the owner.
             ----------------  --------------------------------------------------------
-        users             The members of the group (list of strings).
+            users             The members of the group (list of strings).
             ================  ========================================================
 
         
@@ -2865,11 +2886,11 @@ class Group(dict):
 
         .. code-block:: python
 
-           USAGE EXAMPLE: To print users in a group
+            # Usage Example: To print users in a group
     
             response = group.get_members()
             for user in response['users'] :
-                print user
+                print(user)
 
         """
         return self._portal.get_group_members(self.groupid)
@@ -5397,9 +5418,17 @@ class Layer(_GISResource):
     def fromitem(cls, item, index=0):
         """
         returns the layer at the specified index from a layer item
-        :param item: an item representing a layer
-        :param index: optional, the index of the layer amongst the item's layers
-        :return: the layer at the specified index
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. An item representing a layer
+        ------------------     --------------------------------------------------------------------
+        index                  Optional int. The index of the layer amongst the item's layers
+        ==================     ====================================================================
+
+        :return:
+           the layer at the specified index
         """
         return item.layers[index]
 
