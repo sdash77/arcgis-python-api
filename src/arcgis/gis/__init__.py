@@ -59,12 +59,12 @@ class GIS(object):
     A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
     (search, create, retrieve) GIS resources such as content, users, and groups.
 
-    Additionally, the GIS object has properties to query it's state, accessible using the properties attribute.
+    Additionally, the GIS object has properties to query it's state, which is accessible using the properties attribute.
 
-    The GIS provides a mapping widget that can be used in the Jupyter notebook environment for visualizing GIS content
+    The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
 
-    Constructs a GIS object given a url and user credentials to ArcGIS Online
+    The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
     or an ArcGIS Portal. User credentials can be passed in using username/password
     pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
     PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
@@ -73,7 +73,7 @@ class GIS(object):
     or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
 
     A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile
+    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile.
     The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
     or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
     saved in the configuration file by that profile name.
@@ -84,71 +84,80 @@ class GIS(object):
     ================    ===============================================================
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
-    url                 optional string, if URL is None, then the URL will be ArcGIS
+    url                 Optional string. If URL is None, then the URL will be ArcGIS
                         Online.  This should be a web address to either a local portal
                         or to ArcGIS Online in the form:
-                        For Portal Example:
-                        <scheme>://<host>/<web_adatpor>
-
+                        <scheme>://<host>/<web_adatpor> (Portal Example)
     ----------------    ---------------------------------------------------------------
-    username            optional string, login user name (case sensative)
+    username            Optional string. The login user name (case sensitive).
     ----------------    ---------------------------------------------------------------
-    password            optional string, if a username is provided, a password is
-                        expected.  This is case sensative. If the password is not
-                        provided, user is prompted.
+    password            Optional string. If a username is provided, a password is
+                        expected.  This is case sensitive. If the password is not
+                        provided, the user is prompted.
     ----------------    ---------------------------------------------------------------
-    key_file            optional string, file path to a user's key certificate
+    key_file            Optional string. The file path to a user's key certificate.
     ----------------    ---------------------------------------------------------------
-    cert_file           optional string, file path to a user's key certificate
+    cert_file           Optional string. The file path to a user's certificate file.
     ----------------    ---------------------------------------------------------------
-    verify_cert         optional boolean, if a site has an invalid certificate, set the
+    verify_cert         Optional boolean. If a site has an invalid certificate, set the
                         value to False.  This will ensure that all SSL certification
                         are ignore.  The default is True.
-                        **warning** setting the value to False can be a security risk.
+                        **Warning** Setting the value to False can be a security risk.
     ----------------    ---------------------------------------------------------------
-    set_active          optional boolean, the default is True.  If True, the GIS object
+    set_active          Optional boolean. The default is True.  If True, the GIS object
                         will be used as the default GIS object throughout the whole
                         scripting session.
     ----------------    ---------------------------------------------------------------
-    client_id           optional string, used for OAuth athentication.  This is the
+    client_id           Optional string. Used for OAuth athentication.  This is the
                         client ID value.
     ----------------    ---------------------------------------------------------------
-    profile             optional string, if set the profile contains login information
+    profile             Optional string. If set, the profile contains login information
                         for a given site.
     ================    ===============================================================
 
-    In addition to explicitly named variable, the GIS object supports optional key word
-    arguments
+    In addition to explicitly named parameters, the GIS object supports optional key word
+    arguments:
 
     ================    ===============================================================
     **kwargs**          **Description**
     ----------------    ---------------------------------------------------------------
-    proxy_host          optional string, host name of the proxy server
+    proxy_host          Optional string. The host name of the proxy server.
     ----------------    ---------------------------------------------------------------
-    proxy_port          optional integer, proxy host port.  The default is 80.
+    proxy_port          Optional integer. The proxy host port.  The default is 80.
     ================    ===============================================================
 
-    Usage Example 1: Anonymous Login to ArcGIS Online:
+    
+    
+    
+    .. code-block:: python
+    
+        USAGE EXAMPLE 1: Anonymous Login to ArcGIS Online
 
     gis = GIS()
 
-    Usage Example 2: Built-in Login to ArcGIS Online:
+    .. code-block:: python
+        
+        USAGE EXAMPLE 2: Built-in Login to ArcGIS Online
 
     gis = GIS(username="someuser", password="secret1234")
 
-    Usage Example 3: Built-in Login to ArcGIS Enterprise
+    .. code-block:: python
+        
+        USAGE EXAMPLE 3: Built-in Login to ArcGIS Enterprise
 
     gis = GIS(url="http://pythonplayground.esri.com/portal",
               username="user1", password="password1")
 
-    Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
+    .. code-block:: python
+    
+        USAGE EXAMPLE 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
 
-    gis = GIS(url="http://pythonplayground.esri.com/portal",
-              username="user1", password="password1",
-              verify_cert=False)
+        gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1", 
+                  password="password1", verify_cert=False)
 
 
-    Usage Example 5: Anonymous ArcGIS Online Login with Proxy
+    .. code-block:: python
+        USAGE EXAMPLE 5: Anonymous ArcGIS Online Login with Proxy
 
     gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
 
@@ -299,21 +308,21 @@ class GIS(object):
     @_lazy_property
     def users(self):
         """
-        The resource manager for GIS users
+        The resource manager for GIS users.
         """
         return UserManager(self)
 
     @_lazy_property
     def groups(self):
         """
-        The resource manager for GIS groups
+        The resource manager for GIS groups.
         """
         return GroupManager(self)
 
     @_lazy_property
     def content(self):
         """
-        The resource manager for GIS content
+        The resource manager for GIS content.
         """
         return ContentManager(self)
 
@@ -345,7 +354,7 @@ class GIS(object):
     @_lazy_property
     def properties(self):
         """
-        The properties of the GIS
+        The properties of the GIS.
         """
         return PropertyMap(self._get_properties(force=True))
 
@@ -356,7 +365,8 @@ class GIS(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        item_properties     Required dictionary.
+        properties_dict     Required dictionary. A dictionary of just those properties and 
+                            values that are to be updated.
         ===============     ====================================================================
 
 
@@ -386,14 +396,27 @@ class GIS(object):
         return self._portal.get_properties(force)
 
     def map(self, location=None, zoomlevel=None):
-        """Creates a map widget centered at the location (Address or (lat, long) tuple)
-        with the specified zoom-level(integer). If an Address is provided, it is geocoded
+        """
+        Creates a map widget centered at the declared location with the specified 
+        zoom level. If an address is provided, it is geocoded
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel.
 
         Note: The map widget is only supported within Jupyter Notebook.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        location               Optional string. The address or lat-long tuple of where the map is to be centered.
+        ------------------     --------------------------------------------------------------------
+        zoomlevel              Optional integer. The desired zoom level.
+        ==================     ====================================================================
+        
+
+       :return:
+          The map widget (displayed in Jupyter Notebook when queried).
         """
         try:
             from arcgis.widgets import MapView
@@ -501,7 +524,7 @@ class Datastore(dict):
     @property
     def manifest(self):
         """
-        The manifest resource for bigdata fileshares.
+        Gets or sets the manifest resource for bigdata fileshares, as a dictionary.
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -514,7 +537,7 @@ class Datastore(dict):
     @manifest.setter
     def manifest(self, value):
         """
-        Updates the manifest resource for bigdata fileshares
+        Updates the manifest resource for bigdata file shares.
         """
         manifest_upload_url =  self._admin_url + '/data/items' + self.datapath + '/manifest/update'
 
@@ -538,8 +561,8 @@ class Datastore(dict):
     @property
     def ref_count(self):
         """
-        The total number of references to this data item that exist on the server. You can use this
-        property to determine if this data item can be safely deleted (or taken down for maintenance).
+        Gets the total number of references to this data item that exists on the server. You can use this
+        property to determine if this data item can be safely deleted or taken down for maintenance.
         """
         data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
 
@@ -553,6 +576,10 @@ class Datastore(dict):
     def delete(self):
         """
         Unregisters this data item from the data store.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
+        
         """
         params = {
             "f" : "json" ,
@@ -579,7 +606,7 @@ class Datastore(dict):
 
 
         :return:
-           True if successful.
+           A boolean indicating success (True) or failure (False).
         """
         params = {
             "f" : "json" ,
@@ -599,7 +626,7 @@ class Datastore(dict):
         is accessible to every server node in the site.
 
         :return:
-           True if successful.
+           A boolean indicating success (True) or failure (False).
         """
         params = { "f" : "json" }
         path = self._admin_url + "/data/items" + self.datapath
@@ -618,7 +645,7 @@ class Datastore(dict):
     @property
     def datasets(self):
         """
-        Returns the datasets in the data store (currently implemented for big data file shares.)
+        Gets the datasets in the data store, as a dictionary (currently implemented for big data file shares).
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -653,8 +680,8 @@ class DatastoreManager(object):
     @property
     def config(self):
         """
-        The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
+        Gets or sets the data store configuration properties, which affect the behavior of the data holdings of the server. The properties include:
+        blockDataCopy. When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
         When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
         Note:
         If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
@@ -700,7 +727,7 @@ class DatastoreManager(object):
 
 
         :return:
-           The folder is registered successfully, None otherwise.
+           The folder if registered successfully, None otherwise.
         """
         conn_type = "shared"
         if client_path is not None:
@@ -747,7 +774,7 @@ class DatastoreManager(object):
 
 
         :return:
-           The big data fileshare is registered successfully, None otherwise.
+           The big data fileshare if registered successfully, None otherwise.
         """
         output = None
         path = self._admin_url + "/data/registerItem"
@@ -804,7 +831,7 @@ class DatastoreManager(object):
 
 
         :return:
-           The database is registered successfully, None otherwise.
+           The database if registered successfully, None otherwise.
         """
 
         item = {
@@ -854,7 +881,7 @@ class DatastoreManager(object):
 
 
         :return:
-           The new data item is registered successfully, None otherwise.
+           The new data item if registered successfully, None otherwise.
         """
         params = {
             "f" : "json"
@@ -883,7 +910,7 @@ class DatastoreManager(object):
 
 
         :return:
-           None if the data item is not found at that path, and the data item object if it is found.
+           The data item object if found, None otherwise. 
         """
         params = { "f" : "json" }
         urlpath = self._admin_url + "/data/items" + path
@@ -949,12 +976,14 @@ class DatastoreManager(object):
 
     def validate(self):
         """
-        Validates all items in the datastore and returns True if validated.
-
-        In order for a data item to be registered and used successfully within the GIS's data store,
-        you need to make sure that the path (for file shares) or connection string (for databases)
-        is accessible to every server node in the site. To validate all registered data items all
+        Validates all items in the datastore. In order for a data item to be registered and 
+        used successfully within the GIS's data store, you need to make sure that the path 
+        (for file shares) or connection string (for databases) is accessible to every server 
+        node in the site. To validate all registered data items all
         at once, you can invoke this operation.
+
+        :return:
+           True if the data store items were validated, False if not.
         """
         params = {"f" : "json"}
         path = self._admin_url + "/data/validateAllDataItems"
@@ -1455,7 +1484,7 @@ class GroupManager(object):
     """
     Helper class for managing GIS groups. This class is not created by users directly.
     An instance of this class, called 'groups', is available as a property of the Gis object.
-    Users call methods on this 'groups' object to manipulate (create, get, search...) users.
+    Users call methods on this 'groups' object to manipulate (create, get, search, etc) users.
     """
     def __init__(self, gis):
         self._gis = gis
@@ -1466,43 +1495,50 @@ class GroupManager(object):
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
                provider_group_name=None):
-        """ Creates a group and returns it if successful.
+        """
+        Creates a group with the values for any particular arguments that are specified.  
+        Only title and tags are required.
+    
 
-        ================  =========================================================
+        ====================  =========================================================
         **Argument**      **Description**
-        ----------------  ---------------------------------------------------------
-        title             required string, name of the group
-        ----------------  ---------------------------------------------------------
-        tags              required, comma-delimited list of tags, or list of tags
-                          as strings
-        ----------------  ---------------------------------------------------------
-        description       optional string, describes group in detail
-        ----------------  ---------------------------------------------------------
-        snippet           optional string, <250 characters summarizes group
-        ----------------  ---------------------------------------------------------
-        access            optional string, can be private, public, or org
-        ----------------  ---------------------------------------------------------
-        thumbnail         optional string, URL to group image
-        ----------------  ---------------------------------------------------------
-        is_invitation_only  optional boolean, defines whether users can join by
-                          request.
-        ----------------  ---------------------------------------------------------
-        sort_field        optional string, specifies how shared items with
+        --------------------  ---------------------------------------------------------
+        title                 Required string. The name of the group.
+        --------------------  ---------------------------------------------------------
+        tags                  Required string. A comma-delimited list of tags, or 
+                              list of tags as strings.
+        --------------------  ---------------------------------------------------------
+        description           Optional string. A detailed description of the group.
+        --------------------  ---------------------------------------------------------
+        snippet               Optional string.  A short snippet (<250 characters) 
+                              that summarizes the group.
+        --------------------  ---------------------------------------------------------
+        access                Optional string. Choices are private, public, or org.
+        --------------------  ---------------------------------------------------------
+        thumbnail             Optional string. URL or file location to a group image.
+        --------------------  ---------------------------------------------------------
+        is_invitation_only    Optional boolean. Defines whether users can join by
+                              request. Default is False meaning users can ask to join 
+                              by request or join by invitation.
+        --------------------  ---------------------------------------------------------
+        sort_field            Optional string. Specifies how shared items with
                           the group are sorted.
-        ----------------  ---------------------------------------------------------
-        sort_order        optional string, asc or desc for ascending or descending.
-        ----------------  ---------------------------------------------------------
-        is_view_only      optional boolean, defines whether the group is searchable
-        ----------------  ---------------------------------------------------------
-        auto_join         optional boolean, Only applies to org accounts. If true,
-                          this group will allow joined without requesting
-                          membership approval. Default is false.
-        ----------------  ---------------------------------------------------------
-        provider_group_name  optional string, name of the domain group
-        ================  =========================================================
+        --------------------  ---------------------------------------------------------
+        sort_order            Optional string.  Choices are asc or desc for ascending 
+                              or descending, respectively.
+        --------------------  ---------------------------------------------------------
+        is_view_only          Optional boolean. Defines whether the group is searchable. 
+                              Default is False meaning the group is searchable.
+        --------------------  ---------------------------------------------------------
+        auto_join             Optional boolean. Only applies to org accounts. If True,
+                              this group will allow joining without requesting
+                              membership approval. Default is False.
+        --------------------  ---------------------------------------------------------
+        provider_group_name   Optional string. The name of the domain group.
+        ====================  =========================================================
 
         :return:
-            the group, if created, or None
+            The group if successfully created, None if unsuccessful.
         """
         if type(tags) is list:
             tags = ",".join(tags)
@@ -1524,10 +1560,20 @@ class GroupManager(object):
 
     def create_from_dict(self, dict):
         """
-        Create a group with parameters specified in the dict
-        See help of create() method for parameters
+        Creates a group via a dictionary with the values for any particular arguments that are specified.  
+        Only title and tags are required. 
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        dict                   Required dictionary. A dictionary of entries to create/define the 
+                               group.  See help of the create() method for parameters.
+        ==================     ====================================================================
+    
+    
         :return:
-            the group, if created, or None
+            The group if successfully created, None if unsuccessful.
         """
         thumbnail = dict.pop("thumbnail", None)
 
@@ -1542,12 +1588,19 @@ class GroupManager(object):
             return None
 
     def get(self, groupid):
-        """ Returns the group object for the specified groupid.
+        """
+        Returns the group object for the specified groupid.
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        groupid                Required string. The group identifier.
+        ==================     ====================================================================
+    
 
-        Arguments
-            groupid        required string, the group identifier
         :return:
-            None if the group is not found and returns a group object if the group is found
+           The group object if the group is found, None if it is not found.
         """
         try:
             group = self._portal.get_group(groupid)
@@ -1563,20 +1616,21 @@ class GroupManager(object):
 
     def search(self, query='', sort_field='title', sort_order='asc',
                max_groups=1000, outside_org=False):
-        """ Searches for portal groups.
+        """
+        Searches for portal groups.
 
         .. note::
             A few things that will be helpful to know.
 
-            1. The query syntax has quite a few features that can't
+            1. The query syntax has many features that can't
                 be adequately described here.  The query syntax is
-                available in ArcGIS help.  A short version of that URL
+               available in ArcGIS Help.  A short version of that URL
                 is http://bitly.com/1fJ8q31.
 
             2. Searching without specifying a query parameter returns
                a list of all groups in your organization.
 
-            2. Most of the time when searching groups you want to
+            3. Most of the time when searching for groups, you'll want to
                 search within your organization in ArcGIS Online
                 or within your Portal.  As a convenience, the method
                 automatically appends your organization id to the query by
@@ -1586,22 +1640,23 @@ class GroupManager(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        query             optional query string on Portal, required for Online.
-                          If not specified, all groups will be searched. See notes
+        query             Optional string on Portal, or required string for ArcGIS Online.
+                          If not specified, all groups will be searched. See notes above.
         ----------------  --------------------------------------------------------
-        sort_field        optional string, valid values can be title, owner,
-                          created
+        sort_field        Optional string. Valid values can be title, owner,
+                          created.
         ----------------  --------------------------------------------------------
-        sort_order        optional string, valid values are asc or desc
+        sort_order        Optional string. Valid values are asc or desc.
         ----------------  --------------------------------------------------------
-        max_groups        optional int, maximum number of groups returned
+        max_groups        Optional integer. Maximum number of groups returned, default is 1,000.
         ----------------  --------------------------------------------------------
-        outside_org       optional boolean, controls whether to search outside
-                          your org
+        outside_org       Optional boolean. Controls whether to search outside
+                          your org. Default is False, do not search ourside your org.
         ================  ========================================================
 
+    
         :return:
-        Returns a list of groups matching the specified query
+           A list of groups matching the specified query.
         """
         grouplist = []
         groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
@@ -1877,7 +1932,7 @@ class ContentManager(object):
         =================  =====================================================================
 
         :return:
-             The item for the service, if successfully created, None if unsuccessful.
+             The item for the service if successfully created, None if unsuccessful.
         """
         if capabilities is None:
             if service_type == 'imageService':
@@ -1915,7 +1970,7 @@ class ContentManager(object):
         =======================    =============================================================
 
         :return:
-            None if the item is not found, or returns an item object if the item is found.
+            The item object if the item is found, None if the item is not found.
         """
         try:
             item = self._portal.get_item(itemid)
@@ -2092,8 +2147,8 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-             Feature collection or feature layer that can be used for analysis,
-             visualization or published to the GIS as an item.
+           A feature collection or feature layer that can be used for analysis,
+           visualization, or published to the GIS as an item.
         """
         from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
 
@@ -2209,8 +2264,7 @@ class ContentManager(object):
 
             :return:
                  True if the specified service_name is available for the
-                 specified service_type, False if the service_name is
-                 unavailable.
+               specified service_type, False if the service_name is unavailable.
 
         """
         path = "portals/self/isServiceNameAvailable"
@@ -2503,7 +2557,7 @@ class ResourceManager(object):
 
 class Group(dict):
     """
-    Represents a group (for example, San Bernardino Fires) within the GIS (ArcGIS Online or Portal for ArcGIS)
+    Represents a group within the GIS (ArcGIS Online or Portal for ArcGIS).
     """
     def __init__(self, gis, groupid, groupdict=None):
         dict.__init__(self)
@@ -2613,7 +2667,21 @@ class Group(dict):
                 """
 
     def content(self, max_items=1000):
-        """Returns a list of items shared with this group."""
+        """
+        Gets the list of items shared with this group.
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        max_items              Required integer. The maximum number of items to be returned, defaults to 1000.
+        ==================     ====================================================================
+    
+    
+        :return:
+           The list of items that are shared.
+    
+        """
         itemlist = []
         items = self._portal.search('group:' + self.groupid, max_results=max_items, outside_org=True)
         for item in items:
@@ -2621,22 +2689,22 @@ class Group(dict):
         return itemlist
 
     def delete(self):
-        """ Deletes this group.
+        """
+        Deletes this group.
 
-        Returns
-            a boolean indicating whether it was successful.
+        :return:
+           A boolean indicating success (True) or failure (False).
 
         """
         return self._portal.delete_group(self.groupid)
 
     def get_thumbnail(self):
-        """ Returns the bytes that make up the thumbnail for this group.
+        """
+        Gets the bytes that make up the thumbnail for this group.
 
-        Arguments
-            None
 
-        Returns
-            bytes that represent the image.
+        :return:
+            Bytes that represent the image.
 
         Example
 
@@ -2649,7 +2717,20 @@ class Group(dict):
         return self._portal.get_group_thumbnail(self.groupid)
 
     def download_thumbnail(self, save_folder=None):
-        """ Downloads the group thumbnail for this group, returns file path. """
+        """
+        Downloads the group thumbnail for this group.
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        save_folder            Optional string. The file path to where the group thumbnail will be downloaded.
+        ==================     ====================================================================
+    
+    
+        :return:
+           The file path to which the group thumbnail is downloaded.
+        """
         if self.thumbnail is None:
             self._hydrate()
         thumbnail_file = self.thumbnail
@@ -2674,6 +2755,7 @@ class Group(dict):
 
     def add_users(self, usernames):
         """ Adds users to this group.
+    
         .. note::
             This method will only work if the user for the
             Portal object is either an administrator for the entire
@@ -2682,11 +2764,11 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     list of usernames
+        usernames     Required string. The list of usernames to be added.
         ============  ======================================
 
         :return:
-             A dictionary with a key of "not_added" which contains the users that were not
+           A dictionary with a key of notAdded which contains the users that were not 
              added to the group.
         """
         users = []
@@ -2698,17 +2780,17 @@ class Group(dict):
         return self._portal.add_group_users(users, self.groupid)
 
     def remove_users(self, usernames):
-        """ Remove users from this group.
+        """
+        Remove users from this group.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         required string, comma-separated list of users
+        usernames         Required string.  A comma-separated list of users to be removed.
         ================  ========================================================
 
         :return:
-            a dictionary with a key notRemoved that is a list of users not removed.
-
+            A dictionary with a key notRemoved that is a list of users not removed.
         """
         users = []
         for u in usernames:
@@ -2720,71 +2802,71 @@ class Group(dict):
         return self._portal.remove_group_users(users, self.groupid)
 
     def invite_users(self, usernames, role='group_member', expiration=10080):
-        """ Invites users to this group.
+        """
+        Invites users to this group. The user executing this command must be the group owner.
 
         .. note::
             A user who is invited to this group will see a list of invitations
-            in the "Groups" tab of portal listing invitations.  The user
+            in the "Groups" tab of Portal listing invitations.  The user
             can either accept or reject the invitation.
-
-        Requires
-            The user executing the command must be group owner
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames:        a required string list of users to invite
+        usernames         Required string. The users to invite as a list.
         ----------------  --------------------------------------------------------
-        role:             an optional string, either group_member or group_admin
+        role              Optional string. Either group_member (the default) or group_admin.
         ----------------  --------------------------------------------------------
-        expiration:       an optional int, specifies how long the invitation is
-                          valid for in minutes.
+        expiration        Optional integer. Specifies how long the invitation is
+                          valid for in minutes.  Default is 10,080 minutes (7 days).
         ================  ========================================================
 
         :return:
-            a boolean that indicates whether the call succeeded.
-
+           A boolean indicating success (True) or failure (False).
         """
         return self._portal.invite_group_users(usernames, self.groupid, role, expiration)
 
     def reassign_to(self, target_owner):
-        """ Reassigns this group to another owner.
+        """
+        Reassigns this group to another owner.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      required string, username of new group owner
+        target_owner      Required string.  The username of the new group owner.
         ================  ========================================================
 
         :return:
-            a boolean, indicating success
-
+            A boolean indicating success (True) or failure (False).
         """
         return self._portal.reassign_group(self.groupid, target_owner)
 
     def get_members(self):
-        """ Returns members of this group.
+        """
+        Gets the members of this group.
 
-        Arguments
-            None.
 
-        Returns
-            a dictionary with keys: owner, admins, and users.
+        *Key:Value Dictionary Return Values*
 
             ================  ========================================================
             **Key**           **Value**
             ----------------  --------------------------------------------------------
-            owner             string value, the group's owner
+        owner             The group's owner (string).
             ----------------  --------------------------------------------------------
-            admins            list of strings, typically this is the same as the owner
+        admins            The group's admins (list of strings). Typically this is the same as the owner.
             ----------------  --------------------------------------------------------
-            users             list of strings, the members of the group
+        users             The members of the group (list of strings).
             ================  ========================================================
 
-        Example (to print users in a group)
+        
+        :return:
+            A dictionary with keys: owner, admins, and users.
+
 
         .. code-block:: python
 
+           USAGE EXAMPLE: To print users in a group
+    
             response = group.get_members()
             for user in response['users'] :
                 print user
@@ -2795,40 +2877,43 @@ class Group(dict):
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
                thumbnail=None):
-        """ Updates this group.
+        """
+        Updates this group with only values supplied for particular arguments.
 
-        .. note::
-            Only provide the values for the arguments you wish to update.
 
         ==================  =========================================================
         **Argument**        **Description**
         ------------------  ---------------------------------------------------------
-        title               optional string, name of the group
+        title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
-        tags                optional string (comma-delimited list of tags) or
-                            list of tags as strings
+        tags                Optional string. A comma-delimited list of new tags, or
+                            a list of tags as strings.
         ------------------  ---------------------------------------------------------
-        description         optional string, describes group in detail
+        description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
-        snippet             optional string, <250 characters summarizes group
+        snippet             Optional string. A new short snippet (<250 characters) 
+                            that summarizes the group.
         ------------------  ---------------------------------------------------------
-        access              optional string, can be private, public, or org
+        access              Optional string. Choices are private, public, or org.
         ------------------  ---------------------------------------------------------
-        thumbnail           optional string, URL or file location to group image
+        is_invitation_only  Optional boolean. Defines whether users can join by
+                            request. True means an invitation is required.
         ------------------  ---------------------------------------------------------
-        is_invitation_only  optional boolean, defines whether users can join by
-                            request.
-        ------------------  ---------------------------------------------------------
-        sort_field          optional string, specifies how shared items with the
+        sort_field          Optional string. Specifies how shared items with the
                             group are sorted.
         ------------------  ---------------------------------------------------------
-        sort_order          optional string, asc or desc for ascending or descending.
+        sort_order          Optional string. Choices are asc or desc for ascending 
+                            or descending, respectively.
         ------------------  ---------------------------------------------------------
-        is_view_only        optional boolean, defines whether the group is searchable
+        is_view_only        Optional boolean. Defines whether the group is searchable. 
+                            True means the group is searchable.
+        ------------------  ---------------------------------------------------------
+        thumbnail           Optional string. URL or file location to a new group image.
         ==================  =========================================================
 
+    
         :return:
-            a boolean indicating success
+            A boolean indicating success (True) or failure (False).
         """
         if tags is not None:
             if type(tags) is list:
@@ -2839,16 +2924,13 @@ class Group(dict):
         return resp
 
     def leave(self):
-        """ Removes the logged in user from the specified group.
+        """
+        Removes the logged in user from this group.  It is required 
+        that the user be logged in.
 
-        Requires:
-            User must be logged in.
-
-        Arguments:
-             None.
 
         :return:
-             a boolean indicating whether the operation was successful.
+           A boolean indicating success (True) or failure (False).
         """
         return self._portal.leave_group(self.groupid)
 
@@ -2864,6 +2946,9 @@ class Group(dict):
         join it.
         Information pertaining to the applying user, such as their full
         name and username, can be sent as part of the group application.
+    
+        :return:
+             A boolean indicating success (True) or failure (False).
         """
         url = "community/groups/%s/join" % (self.groupid)
         params = {"f" : "json"}
@@ -2875,7 +2960,7 @@ class Group(dict):
     @property
     def applications(self):
         """
-        Lists the group applications for the given group. Available to
+        Gets the group applications for the given group as a list. Available to
         administrators of the group or administrators of an organization if
         the group is part of one.
         """
@@ -2895,7 +2980,7 @@ class Group(dict):
 class GroupApplication(object):
     """
     Represents a single group application on the GIS (ArcGIS Online or
-    Portal for ArcGIS)
+    Portal for ArcGIS).
     """
     _con = None
     _portal =  None
@@ -2912,7 +2997,7 @@ class GroupApplication(object):
             self._init()
 
     def _init(self):
-        """loads the properties"""
+        """Loads the properties."""
         try:
             res = self._con.get(self._url, {'f':'json'})
             self._properties = PropertyMap(res)
@@ -2923,6 +3008,7 @@ class GroupApplication(object):
 
     @property
     def properties(self):
+        """Gets the properties of the Group application."""
         if self._properties is None:
             self._init()
         return self._properties
@@ -2942,6 +3028,9 @@ class GroupApplication(object):
         operation also creates a notification for the user indicating that
         the user's group application was accepted. Available only to group
         owners and admins.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
         """
         url = "%s/accept" % self._url
         params = {"f" : "json"}
@@ -2959,6 +3048,9 @@ class GroupApplication(object):
         indicating that the user's group application was declined. The
         applying user will not be added to the group. Available only to
         group owners and admins.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
         """
         url = "%s/decline" % self._url
         params = {"f" : "json"}
@@ -3608,7 +3700,7 @@ class Item(dict):
 
     @property
     def homepage(self):
-        """Returns the URL to the HTML page for the item."""
+        """Gets the URL to the HTML page for the item."""
         itemid = self.itemid
         return "%s/home/item.html?id=%s" % (self._portal.resturl.replace("/sharing/rest/", ""), itemid)
 
@@ -3951,7 +4043,7 @@ class Item(dict):
             return thumbnail_url_path
     @property
     def metadata(self):
-        """ Retrieves the item metadata for the specified item.
+        """ Gets and sets the item metadata for the specified item.
             Returns None if the item does not have metadata.
             Items with metadata have 'Metadata' in their typeKeywords.
         """
@@ -5023,7 +5115,7 @@ class Item(dict):
     @property
     def comments(self):
         """
-        Returns a list of comments for a given item.
+        Gets a list of comments for a given item.
         """
         from .._impl.comments import Comment
         cs = []
@@ -5074,8 +5166,7 @@ class Item(dict):
     @property
     def rating(self):
         """
-        :return:
-        Returns the rating given by the current user to the item, if any.
+        Gets or sets the rating given by the current user to the item.
         """
         url = "%s/content/items/%s/rating" % (self._portal.url, self.id)
         params = {"f" : "json"}
@@ -5123,7 +5214,7 @@ class Item(dict):
     @property
     def proxies(self):
         """
-        All ArcGIS Online hosted proxy services set on a registered app
+        Gets the ArcGIS Online hosted proxy services set on a registered app
         item with the Registered App type keyword. This resource is only
         available to the item owner and the organization administrator.
         """
