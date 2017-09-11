@@ -130,12 +130,15 @@ class Server(BaseServer):
         """
         publishes a service definition file to arcgis server
         """
+        import json
         if sd_file.lower().endswith('.sd') == False:
             return False
         catalog = self._catalog
         if 'System' not in catalog.folders:
             return False
-
+        if folder and \
+           folder.lower() not in [f.lower() for f in catalog.folders]:
+            self.services.create_folder(folder)
         service = catalog.get(name="PublishingTools", folder='System')
         if service is None:
             service = catalog.get(name="PublishingToolsEx", folder='System')
@@ -144,7 +147,14 @@ class Server(BaseServer):
         status, res = self._uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res['item']['itemID']
-            res = service.publish_service_definition(in_sdp_id=uid)
+            if folder:
+                config = self._uploads._service_configuration(uid)
+                if 'folderName' in config:
+                    config['folderName'] = folder
+                res = service.publish_service_definition(in_sdp_id=uid,
+                                                         in_config_overwrite=json.dumps(config))
+            else:
+                res = service.publish_service_definition(in_sdp_id=uid)
             return True
         return False
     #----------------------------------------------------------------------
