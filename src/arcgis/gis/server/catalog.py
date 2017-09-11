@@ -195,7 +195,7 @@ class ServicesDirectory(BaseServer):
             res = self._con.get("%s/%s" % (self._url, folder), {"f" : 'json'})
         if 'services' in res:
             for s in res['services']:
-                if s['name'].lower() == name.lower():
+                if s['name'].split('/')[1].lower() == name.lower():
                     return Service(url="%s/%s/%s" % (self._url,
                                                      s['name'],
                                                      s['type']),
@@ -236,8 +236,7 @@ class ServicesDirectory(BaseServer):
         """
         returns a list of server folders
         """
-        if self._properties is None:
-            self._init()
+        self._init()
         if self._is_agol:
             return ['/']
         else:
