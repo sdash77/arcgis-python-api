@@ -2,6 +2,7 @@
 Classes to manage a GIS Collaboration
 """
 from .. import GIS, Group
+import functools
 
 def _lazy_property(fn):
     '''Decorator that makes a property lazy-evaluated.
@@ -10,6 +11,7 @@ def _lazy_property(fn):
     attr_name = '_lazy_' + fn.__name__
 
     @property
+    @functools.wraps(fn)
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))

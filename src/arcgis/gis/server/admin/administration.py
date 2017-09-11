@@ -18,7 +18,7 @@ from .._common import ServerConnection
 ########################################################################
 class Server(BaseServer):
     """
-    ArcGIS Server Administration REST API
+    An ArcGIS Enterprise server used for hosting services
 
 
     ==================     ====================================================================
@@ -32,8 +32,7 @@ class Server(BaseServer):
                            The URL should be formatted as follows:
                            <scheme>://<host>:<port (optional)>/<web adapter>/admin
     ------------------     --------------------------------------------------------------------
-    gis                    required ServicesDirectioy object, this is the connection object
-                           that holds the credentials for the site.
+    gis                    optional GIS, the GIS to which this Server is federated with
     ==================     ====================================================================
 
     =====================     ====================================================================

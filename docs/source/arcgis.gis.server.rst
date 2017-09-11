@@ -1,5 +1,7 @@
-arcgis\.gis\.server Package
+arcgis\.gis\.server module
 ===========================
+
+.. automodule:: arcgis.gis.server
 
 Server
 ---------------
