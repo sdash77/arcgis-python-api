@@ -126,33 +126,33 @@ class GIS(object):
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ================    ===============================================================
 
-    
-    
-    
+
+
+
     .. code-block:: python
-    
+
         # Usage Example 1: Anonymous Login to ArcGIS Online
 
         gis = GIS()
 
     .. code-block:: python
-        
+
         # Usage Example 2: Built-in Login to ArcGIS Online
 
         gis = GIS(username="someuser", password="secret1234")
 
     .. code-block:: python
-        
+
         # Usage Example 3: Built-in Login to ArcGIS Enterprise
 
         gis = GIS(url="http://pythonplayground.esri.com/portal",
               username="user1", password="password1")
 
     .. code-block:: python
-    
+
         # Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
 
-        gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1", 
+        gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1",
                   password="password1", verify_cert=False)
 
 
@@ -365,7 +365,7 @@ class GIS(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        properties_dict     Required dictionary. A dictionary of just those properties and 
+        properties_dict     Required dictionary. A dictionary of just those properties and
                             values that are to be updated.
         ===============     ====================================================================
 
@@ -397,7 +397,7 @@ class GIS(object):
 
     def map(self, location=None, zoomlevel=None):
         """
-        Creates a map widget centered at the declared location with the specified 
+        Creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
@@ -405,7 +405,7 @@ class GIS(object):
         to the specified zoomlevel.
 
         Note: The map widget is only supported within Jupyter Notebook.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -413,7 +413,7 @@ class GIS(object):
         ------------------     --------------------------------------------------------------------
         zoomlevel              Optional integer. The desired zoom level.
         ==================     ====================================================================
-        
+
 
        :return:
           The map widget (displayed in Jupyter Notebook when queried).
@@ -576,10 +576,10 @@ class Datastore(dict):
     def delete(self):
         """
         Unregisters this data item from the data store.
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         """
         params = {
             "f" : "json" ,
@@ -910,7 +910,7 @@ class DatastoreManager(object):
 
 
         :return:
-           The data item object if found, None otherwise. 
+           The data item object if found, None otherwise.
         """
         params = { "f" : "json" }
         urlpath = self._admin_url + "/data/items" + path
@@ -976,9 +976,9 @@ class DatastoreManager(object):
 
     def validate(self):
         """
-        Validates all items in the datastore. In order for a data item to be registered and 
-        used successfully within the GIS's data store, you need to make sure that the path 
-        (for file shares) or connection string (for databases) is accessible to every server 
+        Validates all items in the datastore. In order for a data item to be registered and
+        used successfully within the GIS's data store, you need to make sure that the path
+        (for file shares) or connection string (for databases) is accessible to every server
         node in the site. To validate all registered data items all
         at once, you can invoke this operation.
 
@@ -1516,21 +1516,21 @@ class GroupManager(object):
                sort_order='desc', is_view_only=False, auto_join=False,
                provider_group_name=None):
         """
-        Creates a group with the values for any particular arguments that are specified.  
+        Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
-    
+
 
         ====================  =========================================================
         **Argument**      **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
-        tags                  Required string. A comma-delimited list of tags, or 
+        tags                  Required string. A comma-delimited list of tags, or
                               list of tags as strings.
         --------------------  ---------------------------------------------------------
         description           Optional string. A detailed description of the group.
         --------------------  ---------------------------------------------------------
-        snippet               Optional string.  A short snippet (<250 characters) 
+        snippet               Optional string.  A short snippet (<250 characters)
                               that summarizes the group.
         --------------------  ---------------------------------------------------------
         access                Optional string. Choices are private, public, or org.
@@ -1538,16 +1538,16 @@ class GroupManager(object):
         thumbnail             Optional string. URL or file location to a group image.
         --------------------  ---------------------------------------------------------
         is_invitation_only    Optional boolean. Defines whether users can join by
-                              request. Default is False meaning users can ask to join 
+                              request. Default is False meaning users can ask to join
                               by request or join by invitation.
         --------------------  ---------------------------------------------------------
         sort_field            Optional string. Specifies how shared items with
                           the group are sorted.
         --------------------  ---------------------------------------------------------
-        sort_order            Optional string.  Choices are asc or desc for ascending 
+        sort_order            Optional string.  Choices are asc or desc for ascending
                               or descending, respectively.
         --------------------  ---------------------------------------------------------
-        is_view_only          Optional boolean. Defines whether the group is searchable. 
+        is_view_only          Optional boolean. Defines whether the group is searchable.
                               Default is False meaning the group is searchable.
         --------------------  ---------------------------------------------------------
         auto_join             Optional boolean. Only applies to org accounts. If True,
@@ -1580,18 +1580,18 @@ class GroupManager(object):
 
     def create_from_dict(self, dict):
         """
-        Creates a group via a dictionary with the values for any particular arguments that are specified.  
-        Only title and tags are required. 
-    
-    
+        Creates a group via a dictionary with the values for any particular arguments that are specified.
+        Only title and tags are required.
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        dict                   Required dictionary. A dictionary of entries to create/define the 
+        dict                   Required dictionary. A dictionary of entries to create/define the
                                group.  See help of the create() method for parameters.
         ==================     ====================================================================
-    
-    
+
+
         :return:
             The group if successfully created, None if unsuccessful.
         """
@@ -1610,14 +1610,14 @@ class GroupManager(object):
     def get(self, groupid):
         """
         Returns the group object for the specified groupid.
-    
-    
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         groupid                Required string. The group identifier.
         ==================     ====================================================================
-    
+
 
         :return:
            The group object if the group is found, None if it is not found.
@@ -1674,7 +1674,7 @@ class GroupManager(object):
                           your org. Default is False, do not search ourside your org.
         ================  ========================================================
 
-    
+
         :return:
            A list of groups matching the specified query.
         """
@@ -2690,18 +2690,18 @@ class Group(dict):
     def content(self, max_items=1000):
         """
         Gets the list of items shared with this group.
-    
-    
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         max_items              Required integer. The maximum number of items to be returned, defaults to 1000.
         ==================     ====================================================================
-    
-    
+
+
         :return:
            The list of items that are shared.
-    
+
         """
         itemlist = []
         items = self._portal.search('group:' + self.groupid, max_results=max_items, outside_org=True)
@@ -2740,15 +2740,15 @@ class Group(dict):
     def download_thumbnail(self, save_folder=None):
         """
         Downloads the group thumbnail for this group.
-    
-    
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         save_folder            Optional string. The file path to where the group thumbnail will be downloaded.
         ==================     ====================================================================
-    
-    
+
+
         :return:
            The file path to which the group thumbnail is downloaded.
         """
@@ -2776,7 +2776,7 @@ class Group(dict):
 
     def add_users(self, usernames):
         """ Adds users to this group.
-    
+
         .. note::
             This method will only work if the user for the
             Portal object is either an administrator for the entire
@@ -2789,7 +2789,7 @@ class Group(dict):
         ============  ======================================
 
         :return:
-           A dictionary with a key of notAdded which contains the users that were not 
+           A dictionary with a key of notAdded which contains the users that were not
              added to the group.
         """
         users = []
@@ -2879,7 +2879,7 @@ class Group(dict):
             users             The members of the group (list of strings).
             ================  ========================================================
 
-        
+
         :return:
             A dictionary with keys: owner, admins, and users.
 
@@ -2887,7 +2887,7 @@ class Group(dict):
         .. code-block:: python
 
             # Usage Example: To print users in a group
-    
+
             response = group.get_members()
             for user in response['users'] :
                 print(user)
@@ -2912,7 +2912,7 @@ class Group(dict):
         ------------------  ---------------------------------------------------------
         description         Optional string. The new description for the group.
         ------------------  ---------------------------------------------------------
-        snippet             Optional string. A new short snippet (<250 characters) 
+        snippet             Optional string. A new short snippet (<250 characters)
                             that summarizes the group.
         ------------------  ---------------------------------------------------------
         access              Optional string. Choices are private, public, or org.
@@ -2923,16 +2923,16 @@ class Group(dict):
         sort_field          Optional string. Specifies how shared items with the
                             group are sorted.
         ------------------  ---------------------------------------------------------
-        sort_order          Optional string. Choices are asc or desc for ascending 
+        sort_order          Optional string. Choices are asc or desc for ascending
                             or descending, respectively.
         ------------------  ---------------------------------------------------------
-        is_view_only        Optional boolean. Defines whether the group is searchable. 
+        is_view_only        Optional boolean. Defines whether the group is searchable.
                             True means the group is searchable.
         ------------------  ---------------------------------------------------------
         thumbnail           Optional string. URL or file location to a new group image.
         ==================  =========================================================
 
-    
+
         :return:
             A boolean indicating success (True) or failure (False).
         """
@@ -2946,7 +2946,7 @@ class Group(dict):
 
     def leave(self):
         """
-        Removes the logged in user from this group.  It is required 
+        Removes the logged in user from this group.  It is required
         that the user be logged in.
 
 
@@ -2967,7 +2967,7 @@ class Group(dict):
         join it.
         Information pertaining to the applying user, such as their full
         name and username, can be sent as part of the group application.
-    
+
         :return:
              A boolean indicating success (True) or failure (False).
         """
@@ -3049,7 +3049,7 @@ class GroupApplication(object):
         operation also creates a notification for the user indicating that
         the user's group application was accepted. Available only to group
         owners and admins.
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
         """
@@ -3069,7 +3069,7 @@ class GroupApplication(object):
         indicating that the user's group application was declined. The
         applying user will not be added to the group. Available only to
         group owners and admins.
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
         """
@@ -4723,6 +4723,9 @@ class Item(dict):
                 fileType = 'sqliteGeodatabase'
             elif self['type'] == 'GeoJson':
                 fileType = 'geojson'
+            elif self['type'] == 'Feature Service' and \
+                 'Spatiotemporal' in self['typeKeywords']:
+                fileType = 'featureService'
             else:
                 raise ValueError("A file_type must be provide, data format not recognized")
         else:
@@ -4824,6 +4827,24 @@ class Item(dict):
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 output_type = 'sceneService'
+            elif fileType == 'featureService':
+                name = re.sub(r'[\W_]+', '_', self['title'])
+                c = self._gis.content
+                is_avail = c.is_service_name_available(name, 'featureService')
+                i = 1
+                while is_avail == False:
+                    sname = name + "_%s" % i
+                    is_avail = c.is_service_name_available(sname, 'featureService')
+                    if is_avail:
+                        name = sname
+                        break
+                    i += 1
+                ms = self.layers[0].container.manager
+                publish_parameters = ms._generate_mapservice_definition()
+                output_type = "bdsMapService"
+                buildInitialCache = True
+                if 'serviceName' in publish_parameters:
+                    publish_parameters['serviceName'] = name
 
             elif fileType == 'tilePackage':
                 name = re.sub(r'[\W_]+', '_', self['title'])
