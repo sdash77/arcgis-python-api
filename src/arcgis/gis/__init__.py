@@ -4830,7 +4830,6 @@ class Item(dict):
             elif fileType == 'featureService':
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 c = self._gis.content
-                isinstance(c, ContentManager)
                 is_avail = c.is_service_name_available(name, 'featureService')
                 i = 1
                 while is_avail == False:
