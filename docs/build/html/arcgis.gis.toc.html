@@ -326,7 +326,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#exp2">exp2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#expression">expression</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#extract-band">extract_band</a></li>
-<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float">float</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float">FLOAT</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#float-divide">float_divide</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#floor-divide">floor_divide</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gemi">gemi</a></li>
@@ -335,7 +335,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than-equal">greater_than_equal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gvitm">gvitm</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#hillshade">hillshade</a></li>
-<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">int</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">INT</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#is-null">is_null</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than">less_than</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than-equal">less_than_equal</a></li>
@@ -355,14 +355,14 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mod">mod</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#mode">mode</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#msavi">msavi</a></li>
-<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#multiply">multiply</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#multiply">MULTIPLY</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ndvi">ndvi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#negate">negate</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#not-equal">not_equal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#plus">plus</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#power">power</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pvi">pvi</a></li>
-<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#range">range</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#cellstats-range">cellstats_range</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#remap">remap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#resample">resample</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#round-down">round_down</a></li>
@@ -694,7 +694,7 @@ arguments:</p>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors</span>
 
-<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://pythonplayground.esri.com/portal&quot;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user1&quot;</span><span class="p">,</span> 
+<span class="n">gis</span> <span class="o">=</span> <span class="n">GIS</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://pythonplayground.esri.com/portal&quot;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user1&quot;</span><span class="p">,</span>
           <span class="n">password</span><span class="o">=</span><span class="s2">&quot;password1&quot;</span><span class="p">,</span> <span class="n">verify_cert</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -715,7 +715,7 @@ arguments:</p>
 <dt id="arcgis.gis.GIS.map">
 <code class="descname">map</code><span class="sig-paren">(</span><em>location=None</em>, <em>zoomlevel=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GIS.map" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
-<div><p>Creates a map widget centered at the declared location with the specified 
+<div><p>Creates a map widget centered at the declared location with the specified
 zoom level. If an address is provided, it is geocoded
 using the GIS’s configured geocoders and if a match is found, the geographic
 extent of the matched address is used as the map extent. If a zoomlevel is also
@@ -2084,7 +2084,7 @@ Portal or the owner of the group.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
-<dt>A dictionary with a key of notAdded which contains the users that were not </dt>
+<dt>A dictionary with a key of notAdded which contains the users that were not</dt>
 <dd>added to the group.</dd>
 </dl>
 </td>
@@ -2308,7 +2308,7 @@ name and username, can be sent as part of the group application.</p>
 <dl class="method">
 <dt id="arcgis.gis.Group.leave">
 <code class="descname">leave</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.Group.leave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Removes the logged in user from this group.  It is required 
+<dd><p>Removes the logged in user from this group.  It is required
 that the user be logged in.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3472,7 +3472,7 @@ Users call methods on this ‘groups’ object to manipulate (create, get, searc
 <dl class="method">
 <dt id="arcgis.gis.GroupManager.create">
 <code class="descname">create</code><span class="sig-paren">(</span><em>title</em>, <em>tags</em>, <em>description=None</em>, <em>snippet=None</em>, <em>access='public'</em>, <em>thumbnail=None</em>, <em>is_invitation_only=False</em>, <em>sort_field='avgRating'</em>, <em>sort_order='desc'</em>, <em>is_view_only=False</em>, <em>auto_join=False</em>, <em>provider_group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a group with the values for any particular arguments that are specified.  
+<dd><p>Creates a group with the values for any particular arguments that are specified.
 Only title and tags are required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3487,7 +3487,7 @@ Only title and tags are required.</p>
 <dl class="method">
 <dt id="arcgis.gis.GroupManager.create_from_dict">
 <code class="descname">create_from_dict</code><span class="sig-paren">(</span><em>dict</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create_from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a group via a dictionary with the values for any particular arguments that are specified.  
+<dd><p>Creates a group via a dictionary with the values for any particular arguments that are specified.
 Only title and tags are required.</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -3816,9 +3816,9 @@ Types include folder, egdb, bigDataFileShare, datadir.</td>
 <dl class="method">
 <dt id="arcgis.gis.DatastoreManager.validate">
 <code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.DatastoreManager.validate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Validates all items in the datastore. In order for a data item to be registered and 
-used successfully within the GIS’s data store, you need to make sure that the path 
-(for file shares) or connection string (for databases) is accessible to every server 
+<dd><p>Validates all items in the datastore. In order for a data item to be registered and
+used successfully within the GIS’s data store, you need to make sure that the path
+(for file shares) or connection string (for databases) is accessible to every server
 node in the site. To validate all registered data items all
 at once, you can invoke this operation.</p>
 <table class="docutils field-list" frame="void" rules="none">
