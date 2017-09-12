@@ -803,6 +803,8 @@ class DatastoreManager(object):
 
         if res['success']:
             print("Created Big Data file share for " + name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create Big Data file share: %s" % name)
         elif res['status'] == 'exists':
             print("Big Data file share exists for " + name)
 
