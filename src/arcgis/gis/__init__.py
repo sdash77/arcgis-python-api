@@ -749,6 +749,8 @@ class DatastoreManager(object):
             "f" : "json",
             "item" : item
         }
+        if self._validate_item(item=params['item']) == False:
+            raise Exception("Could not register the folder.")
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -796,6 +798,8 @@ class DatastoreManager(object):
                 }
             })
         }
+        if self._validate_item(item=params['item']) == False:
+            raise Exception("Could not register the path.")
         res = self._portal.con.post(path, params, verify_cert=False)
 
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -803,6 +807,8 @@ class DatastoreManager(object):
 
         if res['success']:
             print("Created Big Data file share for " + name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create Big Data file share: %s" % name)
         elif res['status'] == 'exists':
             print("Big Data file share exists for " + name)
 
@@ -856,6 +862,8 @@ class DatastoreManager(object):
             "f" : "json",
             "item" : item
         }
+        if self._validate_item(params['item']) == False:
+            raise Exception("Invalid item.")
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -888,7 +896,8 @@ class DatastoreManager(object):
         }
 
         params['item'] = item
-
+        if self._validate_item(params['item']) == False:
+            raise Exception("Invalid item.")
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -973,6 +982,19 @@ class DatastoreManager(object):
         for item in res['items']:
             dataitems.append(Datastore(self, item['path']))
         return dataitems
+
+    def _validate_item(self, item):
+        """validates a BDS connection"""
+        url = self._admin_url + "/data/validateDataItem"
+        params = {
+            'f' : 'json',
+            'item' : item
+        }
+        res = self._portal.con.post(url, params, verify_cert=False)
+        try:
+            return res['status'] == 'success'
+        except:
+            return False
 
     def validate(self):
         """
