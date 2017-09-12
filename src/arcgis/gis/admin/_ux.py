@@ -36,8 +36,8 @@ class UX(object):
 
         :return: True | False
         """
-        # check if banner has to be removed
-        if not banner_file:
+        #region check if banner has to be removed
+        if not banner_file and not custom_html:
             #remove code
             portal_resources = PortalResourceManager(self._gis)
             #find existing banner resource file
@@ -53,54 +53,63 @@ class UX(object):
 
             #reset the home page - recurse
             return self.set_banner('banner-2',True)
+        #endregion
 
-        # Add resource if using a custom banner file.
-        rotator_panel = []
-        if not is_built_in:
-            # find image extension
-            from pathlib import Path
-            fpath = Path(banner_file)
-            f_splits = fpath.name.split('.')
-            if len(f_splits) > 1 and f_splits[1] == 'png':
-                key_val = 'banner.png'
-            elif len(f_splits) > 1 and f_splits[1] == 'jpg':
-                key_val = 'banner.jpg'
-            else:
-                raise RuntimeError('Invalid image extension')
+        #region: Set banner using banner file - built-in or new image
+        if banner_file:
+            rotator_panel = []
+            if not is_built_in: #adding a new image file
+                # find image extension
+                from pathlib import Path
+                fpath = Path(banner_file)
+                f_splits = fpath.name.split('.')
+                if len(f_splits) > 1 and f_splits[1] == 'png':
+                    key_val = 'banner.png'
+                elif len(f_splits) > 1 and f_splits[1] == 'jpg':
+                    key_val = 'banner.jpg'
+                else:
+                    raise RuntimeError('Invalid image extension')
 
-            portal_resources = PortalResourceManager(self._gis)
-            add_result = portal_resources.add(key_val, banner_file)
+                portal_resources = PortalResourceManager(self._gis)
+                add_result = portal_resources.add(key_val, banner_file)
 
-            if add_result and custom_html:
-                rotator_panel = [{"id": "banner-custom",
-                                  "innerHTML": custom_html}]
+                if add_result and custom_html:
+                    rotator_panel = [{"id": "banner-custom",
+                                      "innerHTML": custom_html}]
 
-            elif add_result and not custom_html:
-                # set rotator_panel_text
-                rotator_panel = [{"id": "banner-custom",
-                                  "innerHTML": "<img src='{}/portals/self/resources/{}?token=SECURITY_TOKEN' "
-                                               "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px;"
-                                               " -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
-                                               "width:960px;'/>".format(
-                                      self._portal.con.baseurl, key_val)}]
-        else:  # using built-in
-            if not custom_html:  # if no custom html is specified for built-in image
-                rotator_panel = [{"id": banner_file,
-                                  "innerHTML": "<img src='images/{}.jpg' "
-                                               "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px; "
-                                               "-o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
-                                               "width:960px; height:180px;'/><div style='position:absolute; bottom:80px; "
-                                               "left:80px; max-height:65px; width:660px; margin:0;'>"
-                                               "<img src='{}/portals/self/resources/thumbnail.png?token=SECURITY_TOKEN' "
-                                               "class='esriFloatLeading esriTrailingMargin025' style='margin-bottom:0; "
-                                               "max-height:100px;'/><span style='position:absolute; bottom:0; margin-bottom:0; "
-                                               "line-height:normal; font-family:HelveticaNeue,Verdana; font-weight:600; "
-                                               "font-size:32px; color:#369;'>{}</span></div>".format(banner_file,
-                                                                                                     self._portal.con.baseurl,
-                                                                                                     self._gis.properties.name)}]
-            else:  # using custom html
-                rotator_panel = [{"id": banner_file,
-                                  "innerHTML": custom_html}]
+                elif add_result and not custom_html:
+                    # set rotator_panel_text
+                    rotator_panel = [{"id": "banner-custom",
+                                      "innerHTML": "<img src='{}/portals/self/resources/{}?token=SECURITY_TOKEN' "
+                                                   "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px;"
+                                                   " -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
+                                                   "width:960px;'/>".format(
+                                          self._portal.con.baseurl, key_val)}]
+            else:  # using built-in image
+                if not custom_html:  # if no custom html is specified for built-in image
+                    rotator_panel = [{"id": banner_file,
+                                      "innerHTML": "<img src='images/{}.jpg' "
+                                                   "style='-webkit-border-radius:0 0 10px 10px; -moz-border-radius:0 0 10px 10px; "
+                                                   "-o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px; margin-top:0; "
+                                                   "width:960px; height:180px;'/><div style='position:absolute; bottom:80px; "
+                                                   "left:80px; max-height:65px; width:660px; margin:0;'>"
+                                                   "<img src='{}/portals/self/resources/thumbnail.png?token=SECURITY_TOKEN' "
+                                                   "class='esriFloatLeading esriTrailingMargin025' style='margin-bottom:0; "
+                                                   "max-height:100px;'/><span style='position:absolute; bottom:0; margin-bottom:0; "
+                                                   "line-height:normal; font-family:HelveticaNeue,Verdana; font-weight:600; "
+                                                   "font-size:32px; color:#369;'>{}</span></div>".format(banner_file,
+                                                                                                         self._portal.con.baseurl,
+                                                                                                         self._gis.properties.name)}]
+                else:  # using custom html for built-in image
+                    rotator_panel = [{"id": banner_file,
+                                      "innerHTML": custom_html}]
+        #endregion
+
+        #region: Set banner just using a html text
+        elif custom_html:
+            rotator_panel = [{"id": "banner-html",
+                              "innerHTML": custom_html}]
+        #endregion
 
         # Update the portal self with these banner values
         update_result = self._gis.update_properties({"rotatorPanels": rotator_panel})
