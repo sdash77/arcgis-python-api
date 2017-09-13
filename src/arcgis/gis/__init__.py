@@ -1016,7 +1016,7 @@ class UserManager(object):
     """
     Helper class for managing GIS users. This class is not created by users directly.
     An instance of this class, called 'users', is available as a property of the Gis object.
-    Users call methods on this 'users' object to manipulate (create, get, search...) users.
+    Users call methods on this 'users' object to manipulate (create, get, search, etc) users.
     """
     def __init__(self, gis):
         self._gis = gis
@@ -1024,10 +1024,9 @@ class UserManager(object):
 
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
                provider='arcgis', idp_username=None, level=2, thumbnail=None):
-        """ This operation is used to pre-create built-in or enterprise accounts within the portal,
-        or built-in users in an ArcGIS Online organization account.
-
-        The provider parameter is used to indicate the type of user account. Only an administrator
+        """
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level=1
@@ -1043,10 +1042,11 @@ class UserManager(object):
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          required string, must be unique in the Portal,
-                          >=6 characters, =<24 characters
+        username          Required string. The user name, which must be unique in the Portal, and 
+                          6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
-        password          required string, must be >= 8 characters. This is a required parameter only if
+        password          Required string. The password for the user.  It must be at least 8 characters. 
+                          This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
@@ -1055,27 +1055,27 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         lastname          required string, the last name for the user
         ----------------  -------------------------------------------------------------------------------
-        email             required string, must be an email address
+        email             Required string. The email address for the user. This is important to have correct.
         ----------------  -------------------------------------------------------------------------------
-        description       An optional description string for the user account.
+        description       Optional string.  The description of the user account.
         ----------------  -------------------------------------------------------------------------------
-        thumbnail         An optional string, URL to user image
+        thumbnail         Optional string. The URL to user's image.
         ----------------  -------------------------------------------------------------------------------
-        role              The role for the user account. The default value is org_user.
-                          Values: org_user | org_publisher | org_admin | org_viewer
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_publisher, org_admin, org_viewer.
         ----------------  -------------------------------------------------------------------------------
-        provider          The provider for the account. The default value is arcgis.
-                          Values: arcgis | enterprise
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        idp_username       The name of the user as stored by the enterprise user store. This parameter is
-                          only required if the provider parameter is enterprise.
+        idp_username      Optional string. The name of the user as stored by the enterprise user store. 
+                          This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             The account level.
+        level             Optional string. The account level.
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ================  ===============================================================================
 
         :return:
-            the user, if created, else None
+            The user if successfully created, None if unsuccessful.
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
@@ -1146,7 +1146,8 @@ class UserManager(object):
             return user
 
     def signup(self, username, password, fullname, email):
-        """ Signs up users to an instance of Portal for ArcGIS.
+        """
+        Signs up a user to an instance of Portal for ArcGIS.
 
         .. note:
             This method only applies to Portal and not ArcGIS
@@ -1160,18 +1161,18 @@ class UserManager(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        username          required string, must be unique in the Portal,
-                          >4 characters
+        username          Required string. The desired username, which must be unique in the Portal,
+                          and at least 4 characters.
         ----------------  --------------------------------------------------------
-        password          required string, must be >= 8 characters.
+        password          Required string. The passowrd, which must be at least 8 characters.
         ----------------  --------------------------------------------------------
-        fullname          required string, name of the user
+        fullname          Required string. The full name of the user.
         ----------------  --------------------------------------------------------
-        email             required string, must be an email address
+        email             Required string. The email address for the user. This is important to have correct.
         ================  ========================================================
 
         :return:
-            the user, if created, else None
+            The user if successfully created, None if unsuccessful.
 
         """
         success = self._portal.signup(username, password, fullname, email)
@@ -1181,12 +1182,18 @@ class UserManager(object):
             return None
 
     def get(self, username):
-        """ Returns the user object for the specified username.
+        """
+        Returns the user object for the specified username.
 
-        Arguments
-            username        required string, the username whose user object you want.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The user to get as an object.
+        ==================     ====================================================================
+        
+
         :return:
-            None if the user is not found and returns a user object if the user is found
+            The user object if successfully found, None if unsuccessful.
         """
         try:
             with _DisableLogger():
@@ -1202,7 +1209,8 @@ class UserManager(object):
         return None
 
     def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, outside_org=False):
-        """ Searches portal users.
+        """
+        Searches portal users.
 
         Returns a list of users matching the specified query
 
@@ -1229,21 +1237,22 @@ class UserManager(object):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        query             optional string, query string.  See notes. pass None
-                          to get list of all users in the org
+        query             Optional string. The query string.  See notes above. Pass None
+                          to get list of all users in the organization.
         ----------------  --------------------------------------------------------
-        sort_field        optional string, valid values can be username or created
+        sort_field        Optional string. Valid values can be username (the default) or created.
         ----------------  --------------------------------------------------------
-        sort_order        optional string, valid values are asc or desc
+        sort_order        Optional string. Valid values are asc (the default) or desc.
         ----------------  --------------------------------------------------------
-        max_users         optional int, maximum number of users returned
+        max_users         Optional integer. The maximum number of users to be returned. The default is 100.
         ----------------  --------------------------------------------------------
-        outside_org       optional boolean, controls whether to search outside
-                          your org (default is False)
+        outside_org       Optional boolean. This controls whether to search outside
+                          your organization. The default is False (search only 
+                          within your organization).
         ================  ========================================================
 
         :return:
-            A list of users:
+            A list of users.
         """
         if query is None:
             users = self._portal.get_org_users(max_users)
@@ -1260,7 +1269,7 @@ class UserManager(object):
 
     @property
     def me(self):
-        """ Returns the logged in user
+        """ Gets the logged in user.
         """
         meuser = self._portal.logged_in_user()
         if meuser is not None:
@@ -1275,7 +1284,7 @@ class UserManager(object):
 
 
 class RoleManager(object):
-    """Helper class to manage custom roles for users in a GIS"""
+    """Helper class to manage custom roles for users in a GIS."""
 
     def __init__(self, gis):
         """Creates helper object to manage custom roles in the GIS"""
@@ -1284,7 +1293,24 @@ class RoleManager(object):
 
 
     def create(self, name, description, privileges=None):
-        """Creates and returns a custom role with the specified parameters"""
+        """Creates a custom role with the specified parameters.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The custom role's name.
+        ------------------     --------------------------------------------------------------------
+        description            Required string. The custom role's description.
+        ------------------     --------------------------------------------------------------------
+        privileges             Optional string. An array of strings with predefined permissions within  
+                               each privilege.  For supported privileges see 
+                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Privileges/02r3000002wq000000/ 
+        ==================     ====================================================================
+        
+        
+        :return:
+           The custom role if successfully created, None if unsuccessful.
+        """
         if self.exists(role_name=name) == False:
             role_id = self._portal.create_role(name, description)
             if role_id is not None:
@@ -1307,16 +1333,16 @@ class RoleManager(object):
 
     def exists(self, role_name):
         """
-        Checks to see if a role exists by it's name
+        Checks to see if a role exists given the declared role name.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_name              Required string. The name of the role to look up.
+        role_name              Required string. The name of the role to determine if it exists or not.
         ==================     ====================================================================
 
-        Returns:
-           Returns True if the role exists, and False if it does not
+        :return:
+           True if the role exists, and False if it does not.
         """
         for role in self.all():
             if role.name.lower() == role_name.lower():
@@ -1325,7 +1351,7 @@ class RoleManager(object):
 
     def all(self, max_roles=1000):
         """
-        Returns list of all roles in the GIS
+        Provides the list of all roles in the GIS.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1334,7 +1360,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           list of all roles in the GIS
+           The list of all roles in the GIS.
         """
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role['id'], role) for role in roles]
@@ -1342,24 +1368,23 @@ class RoleManager(object):
 
     def get_role(self, role_id):
         """
-        Returns the role with the specified role id. Returns list of all roles in the
-        GIS if a role_id is not specified
+        Retrieves the role with the specified role ID.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role id of the role to get. Set to None to get all roles
+        role_id                Required string. The role ID of the role to get. Set to None to get all roles
         ==================     ====================================================================
 
         :return:
-           the role with the specified role id or a list of all roles
+           The role associated with the specified role ID, or a list of all roles if role_id was set to None.
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
 
 
 class Role(object):
-    """A custom role in the GIS"""
+    """A custom role in the GIS."""
     def __init__(self, gis, role_id, role):
         """Create a custom role"""
         self._gis = gis
@@ -1377,7 +1402,7 @@ class Role(object):
 
     @property
     def name(self):
-        """Name of the custom role"""
+        """Gets and sets the name of the custom role."""
         return self._name
 
     @name.setter
@@ -1388,7 +1413,7 @@ class Role(object):
 
     @property
     def description(self):
-        """Description of the custom role"""
+        """Gets and sets the description of the custom role."""
         return self._description
 
     @description.setter
@@ -1410,10 +1435,11 @@ class Role(object):
     @property
     def privileges(self):
         """
-        Privileges for the custom role as a list of strings
+        Get or sets the privileges for the custom role as a list of strings.
 
         Supported privileges with predefined permissions are:
-        Administrative Privileges:
+        
+        *Administrative Privileges:*
 
         Members
 
@@ -1451,7 +1477,7 @@ class Role(object):
         - marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
         - marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
 
-        Publisher Privileges:
+        *Publisher Privileges:*
 
         Content
 
@@ -1459,7 +1485,7 @@ class Role(object):
         - portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
         - portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
 
-        User Privileges:
+        *User Privileges:*
 
         Groups
 
@@ -1516,7 +1542,11 @@ class Role(object):
             return resp.get('success')
 
     def delete(self):
-        """Deletes this role and returns True if the operation was successful"""
+        """Deletes this role.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
+        """
         resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/delete', self._portal._postdata())
         if resp:
             return resp.get('success')
@@ -2348,30 +2378,29 @@ class ResourceManager(object):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              optional string, path to the file that needs to be added
+        file              Optional string. The path to the file that needs to be added.
         ----------------  ---------------------------------------------------------------
-        folder_name       optional string, provide a folder name if the file has to be
-                          added to a folder under resources
+        folder_name       Optional string. Provide a folder name if the file has to be
+                          added to a folder under resources.
         ----------------  ---------------------------------------------------------------
-        file_name         optional string, file name used to rename an existing file
+        file_name         Optional string. The file name used to rename an existing file
                           resource uploaded, or to be used together with text as file name for it.
         ----------------  ---------------------------------------------------------------
-        text              optional string, text input to be added as a file resource,
+        text              Optional string. Text input to be added as a file resource,
                           used together with file_name. If this resource is used, then
-                          file_name become required.
+                          file_name becomes required.
         ----------------  ---------------------------------------------------------------
-        archive           optional bool, default = False.  If True, file resources
+        archive           Optional boolean. Default is False.  If True, file resources
                           added are extracted and files are uploaded to respective folders.
         ================  ===============================================================
 
         :return:
-            Python dict like the following if succeeded:
+            Python dictionary like the following if it succeeded:
             {
                 "success": True,
                 "itemId": "<item id>",
                 "owner": "<owner username>",
-                "folder": "<folder id>"
-            }
+                "folder": "<folder id>"}
 
             else like the following if it failed:
             {"error": {
@@ -2379,8 +2408,7 @@ class ResourceManager(object):
                         "messageCode": "CONT_0093",
                         "message": "File type not allowed for addResources",
                         "details": []
-                        }
-            }
+                        }}
         """
         if not file and (not text or not file_name):
             raise ValueError("Please provide a valid file or text/file_name.")
@@ -2409,7 +2437,7 @@ class ResourceManager(object):
         return resp
 
     def update(self, file, folder_name=None, file_name=None, text=None):
-        """The update resources operation allows to update existing file resources of an item.
+        """The update resources operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
         is updated to include the size of updated resource files.
 
@@ -2419,40 +2447,38 @@ class ResourceManager(object):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              required string, path to the file on disk to be used for overwriting
-                          an existing file resource
+        file              Required string. The path to the file on disk to be used for 
+                          overwriting an existing file resource.
         ----------------  ---------------------------------------------------------------
-        folder_name       optional string, provide a folder name if the file resource
-                          being updated resides in a folder
+        folder_name       Optional string. Provide a folder name if the file resource
+                          being updated resides in a folder.
         ----------------  ---------------------------------------------------------------
-        file_name         optional string, destination name for the file used to update
-                          an existing resource, or to be used together with text parameter
+        file_name         Optional string. The destination name for the file used to update
+                          an existing resource, or to be used together with the text parameter
                           as file name for it.
 
                           For example, you can use fileName=banner.png to update an existing
                           resource banner.png with a file called billboard.png without
                           renaming the file locally.
         ----------------  ---------------------------------------------------------------
-        text              optional string, text input to be added as a file resource,
+        text              Optional string. Text input to be added as a file resource,
                           used together with file_name.
         ================  ===============================================================
 
         :return:
-            Python dict like the following if succeeded:
+            Python dictionary like the following if it succeeded:
             {
                 "success": True,
                 "itemId": "<item id>",
                 "owner": "<owner username>",
-                "folder": "<folder id>"
-            }
+                "folder": "<folder id>" }
 
             else like the following if it failed:
             {"error": {
                         "code": 404,
                         "message": "Resource does not exist or is inaccessible.",
                         "details": []
-                        }
-            }
+                        } }
         """
 
         query_url = 'content/users/' + self._item.owner + \
@@ -2478,7 +2504,7 @@ class ResourceManager(object):
 
     def list(self):
         """
-        Lists all file resources of an existing item. This resource is only available to
+        Provides a lists all file resources of an existing item. This resource is only available to
         the item owner and the organization administrator.
 
         :return:
@@ -2517,33 +2543,34 @@ class ResourceManager(object):
         return resp_resources
 
     def get(self, file, try_json = True, out_folder = None, out_file_name = None):
-        """Gets a specific file resource of an existing item.
+        """
+        Gets a specific file resource of an existing item.  This operation is only 
+        available to the item owner and the organization administrator.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              required string, path to the file for download.
+        file              Required string. The path to the file to be downloaded.
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
         ----------------  ---------------------------------------------------------------
-        try_json          optional bool. If True, will attempt to convert JSON files to
+        try_json          Optional boolean. If True, will attempt to convert JSON files to
                           Python dictionary objects. Default is True.
         ----------------  ---------------------------------------------------------------
-        out_folder        optional string. Specify the folder into which the file has to
-                          saved. Default is user's temporary directory.
+        out_folder        Optional string. Specify the folder into which the file has to
+                          be saved. Default is user's temporary directory.
         ----------------  ---------------------------------------------------------------
-        out_file_name     optional string. Specify the name to use when downloading the
+        out_file_name     Optional string. Specify the name to use when downloading the
                           file. Default is the resource file's name.
         ================  ===============================================================
 
-        This operation is only available to the item owner and the organization administrator.
 
         :return:
-            Path to the downloaded file if getting a binary file (like a jpeg or png file) or if
-             try_jon = False when getting a JSON file.
+           Path to the downloaded file if getting a binary file (like a jpeg or png file) or if 
+           try_jon = False when getting a JSON file.
 
-            If file is a JSON, returns as a Python dictionary.
+           If file is a JSON, returns as a Python dictionary.
         """
 
         safe_file_format = file.replace(r'\\','/')
@@ -2555,23 +2582,25 @@ class ResourceManager(object):
                                     file_name = out_file_name)
 
     def remove(self, file = None):
-        """Removes a single resource file or all resources. The item size is updated once resource files are deleted.
+        """
+        Removes a single resource file or all resources. The item size is updated once 
+        resource files are deleted. This operation is only available to the item owner 
+        and the organization administrator.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              optional string, path to the file for removal.
+        file              Optional string. The path to the file to be removed.
                           For files in the root, just specify the file name. For files in
                           folders (prefixes), specify using the format
                           <foldername>/<foldername>./../<filename>
 
-                          If not specified, all resource files will be removed
+                          If not specified, all resource files will be removed.
         ================  ===============================================================
 
-        This operation is only available to the item owner and the organization administrator.
 
         :return:
-            If succeeded a boolean of True will be returned.
+            If succeeded a boolean of True will be returned,
 
             else a dictionary with error info
             {"error": {"code": 404,
@@ -3086,7 +3115,7 @@ class GroupApplication(object):
         """
         When a user applies to join a group, a group application is
         created. Group administrators can decline this application using
-        the Decline Group Application operation (POST only). This operation
+        this method. This method
         deletes the application and creates a notification for the user
         indicating that the user's group application was declined. The
         applying user will not be added to the group. Available only to
@@ -3156,7 +3185,11 @@ class User(dict):
         return '<%s username:%s>' % (type(self).__name__, self.username)
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image """
+        """ Retrieves the URL to the thumbnail image.
+        
+        :return:
+           The thumbnail's URL.
+        """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
@@ -3220,21 +3253,22 @@ class User(dict):
                 """
     @property
     def groups(self):
-        """returns a list of Group objects the current user belongs to"""
+        """Gets a list of Group objects the current user belongs to."""
         return [Group(self._gis, group['id']) for group in self['groups']]
     #----------------------------------------------------------------------
     def update_level(self, level):
         """
-        The Update User Level operation (Admin only) allows administrators
+        Allows only administrators
         of an organization to update the level of a user. Administrators can
         leverage two levels of membership when assigning roles and
-        privileges to members, membership levels allow organizations to
+        privileges to members. Membership levels allow organizations to
         control access to some ArcGIS capabilities for some members while
         granting more complete access to other members. Level 1 membership
         is designed for members who need privileges to view and interact
         with existing content, while Level 2 membership is for those who
         contribute, create, and share content and groups, in addition to
         other tasks.
+        
         Maximum user quota of an organization at the given level is checked
         before allowing the update.
 
@@ -3243,11 +3277,11 @@ class User(dict):
         assigned as Level 1 or Level 2.
 
         Level 1 membership allows for limited capabilities given through a
-        maximum of 8 privileges: portal:user:joinGroup,
+        maximum of 8 privileges: `portal:user:joinGroup,
         portal:user:viewOrgGroups, portal:user:viewOrgItems,
         portal:user:viewOrgUsers, premium:user:geocode,
         premium:user:networkanalysis, premium:user:demographics, and
-        premium:user:elevation. If updating the role of a Level 1 user with
+        premium:user:elevation`. If updating the role of a Level 1 user with
         a custom role that has more privileges than the eight, additional
         privileges will be disabled for the user to ensure restriction.
 
@@ -3260,12 +3294,12 @@ class User(dict):
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  required integer, The values of 1 or 2. This is the user
+        level                  Required integer. The values of 1 or 2. This is the user
                                level for the given user.
         =====================  =========================================================
 
         :returns:
-           boolean
+           A boolean indicating success (True) or failure (False).
         """
         if not isinstance(level, int):
             raise ValueError("level must be an integer with values 1 or 2")
@@ -3298,17 +3332,17 @@ class User(dict):
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        password               required string, current password
+        password               Required string. The current password.
         ---------------------  ---------------------------------------------------------
-        new_password           optional string, new password if resetting password
+        new_password           Optional string. The new password if resetting password.
         ---------------------  ---------------------------------------------------------
-        new_security_question  optional int, new security question if desired
+        new_security_question  Optional string. The new security question if desired.
         ---------------------  ---------------------------------------------------------
-        new_security_answer    optional string, new security question answer if desired
+        new_security_answer    Optional string. The new security question answer if desired.
         =====================  =========================================================
 
         :return:
-            a boolean, indicating success
+            A boolean indicating success (True) or failure (False).
 
         """
         return self._portal.reset_user(self.username, password, new_password,
@@ -3321,34 +3355,37 @@ class User(dict):
         .. note::
             Only pass in arguments for properties you want to update.
             All other properties will be left as they are.  If you
-            want to update description, then only provide
+            want to update the description, then only provide
             the description argument.
 
         ================  ==========================================================
         **Argument**      **Description**
         ----------------  ----------------------------------------------------------
-        access            optional string, values: private, org, public
+        access            Optional string. The access level for the user, values 
+                          allowed are private, org, public.
         ----------------  ----------------------------------------------------------
-        preferred_view    optional string, values: Web, GIS, null
+        preferred_view    Optional string. The preferred view for the user, values allowed are Web, GIS, null.
         ----------------  ----------------------------------------------------------
-        description       optional string, a description of the user.
+        description       Optional string. A description of the user.
         ----------------  ----------------------------------------------------------
-        tags              optional string (comma-separated tags) or list of tags
+        tags              Optional string. Tags listed as comma-separated values, or a list of strings.
         ----------------  ----------------------------------------------------------
-        thumbnail         optional string, path or url to a file.  can be PNG, GIF,
-                          JPEG, max size 1 MB
+        thumbnail         Optional string. The path or url to a file of type PNG, GIF,
+                          or JPEG. Maximum allowed size is 1 MB.
         ----------------  ----------------------------------------------------------
-        fullname          optional string, name of the user, only for built-in users
+        fullname          Optional string. The full name of this user, only for built-in users.
         ----------------  ----------------------------------------------------------
-        email             optional string, email address, only for built-in users
+        email             Optional string. The e-mail address of this user, only for built-in users.
         ----------------  ----------------------------------------------------------
-        culture           optional string, two-letter language code, fr for example
+        culture           Optional string. The two-letter language code, fr for example.
         ----------------  ----------------------------------------------------------
-        region            optional string, two-letter country code, FR for example
+        region            Optional string. The two-letter country code, FR for example.
         ================  ==========================================================
+        
+        
 
         :return:
-            a boolean indicating success
+           A boolean indicating success (True) or failure (False).
 
         """
         if tags is not None:
@@ -3362,8 +3399,12 @@ class User(dict):
     #----------------------------------------------------------------------
     def disable(self):
         """
-        The Disable operation (POST only) disables login access for the
-        user. It is only available to the administrator of the organization
+        Disables login access for the
+        user. It is only available to the administrator of the organization.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
+           
         """
         params = {"f" : "json"}
         url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self.username)
@@ -3378,8 +3419,8 @@ class User(dict):
     #----------------------------------------------------------------------
     def enable(self):
         """
-        The Disable operation (POST only) disables login access for the
-        user. It is only available to the administrator of the organization
+        Enables login access for the user. 
+        It is only available to the administrator of the organization.
         """
         params = {"f" : "json"}
         url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self.username)
@@ -3393,25 +3434,25 @@ class User(dict):
         return False
     #----------------------------------------------------------------------
     def update_role(self, role):
-        """ Updates this user's role to org_user, org_publisher, org_admin or a custom role
+        """
+        Updates this user's role to org_user, org_publisher, org_admin, or a custom role.
 
         .. note::
-            There are four types of roles in Portal - user, publisher, administrator and custom roles
+            There are four types of roles in Portal - user, publisher, administrator and custom roles.
             A user can share items, create maps, create groups, etc.  A publisher can
-            do everything a user can do and create hosted services.  An administrator can
-            do everything that is possible in Portal. A custom roles privileges can be customized
+            do everything a user can do and additionally create hosted services.  An administrator can
+            do everything that is possible in Portal. A custom roles privileges can be customized.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        role              required string, one of these values org_user,
-                          org_publisher, org_admin
-                          OR
-                          Role object (from gis.users.roles)
+        role              Required string. Value must be either org_user,
+                          org_publisher, org_admin,
+                          or a custom role object (from gis.users.roles).
         ================  ========================================================
 
         :return:
-            a boolean, that indicates success
+            A boolean indicating success (True) or failure (False).
 
         """
         if isinstance(role, Role):
@@ -3423,22 +3464,24 @@ class User(dict):
         return passed
 
     def delete(self, reassign_to=None):
-        """ Deletes this user from the portal, optionally deleting or reassigning groups and items.
+        """
+        Deletes this user from the portal, optionally deleting or reassigning groups and items.
 
         .. note::
             You can not delete a user in Portal if that user owns groups or items.  If you
-            specify someone in the reassign_to argument then items and groups will be
+            specify someone in the reassign_to argument, then items and groups will be
             transferred to that user.  If that argument is not set then the method
             will fail if the user has items or groups that need to be reassigned.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        reassign_to       optional string or User, new owner of items and groups
+        reassign_to       Optional string. The new owner of the items and groups 
+                          that belong to the user being deleted.
         ================  ========================================================
 
         :return:
-            a boolean indicating whether the operation succeeded or failed.
+            A boolean indicating success (True) or failure (False).
 
         """
         if isinstance(reassign_to, User):
@@ -3446,7 +3489,8 @@ class User(dict):
         return self._portal.delete_user(self.username, reassign_to)
 
     def reassign_to(self, target_username):
-        """ Reassigns all of this user's items and groups to another user.
+        """
+        Reassigns all of this user's items and groups to another user.
 
         Items are transferred to the target user into a folder named
         <user>_<folder> where user corresponds to the user whose items were
@@ -3459,12 +3503,12 @@ class User(dict):
         ================  ===========================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------
-        target_username   required string or User, user who will own items/groups
-                          after this.
+        target_username   Required string. The user who will be the new owner of the 
+                          items and groups from which these are being reassigned from.
         ================  ===========================================================
 
         :return:
-            a boolean indicating success
+            A boolean indicating success (True) or failure (False).
 
         """
         if isinstance(target_username, User):
@@ -3472,17 +3516,15 @@ class User(dict):
         return self._portal.reassign_user(self.username, target_username)
 
     def get_thumbnail(self):
-        """ Returns the bytes that make up the thumbnail for this user.
+        """
+        Returns the bytes that make up the thumbnail for this user.
 
-        Arguments
-            None.
-
-        Returns
-            bytes that represent the image.
-
-        Example
+        :return:
+            Bytes that represent the image.
 
         .. code-block:: python
+
+            Usage Example:             
 
             response = user.get_thumbnail()
             f = open(filename, 'wb')
@@ -3496,7 +3538,19 @@ class User(dict):
                 return self._portal.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
     def download_thumbnail(self, save_folder=None):
-        """ Downloads the item thumbnail for this user, returns file path. """
+        """
+        Downloads the item thumbnail for this user.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        save_folder            Optional string. The desired folder name to download the thumbnail to.
+        ==================     ====================================================================
+        
+        
+        :return:
+           The file path of the downloaded thumbnail.
+        """
         thumbnail_file = self.thumbnail
 
         # Only proceed if a thumbnail exists
@@ -3518,16 +3572,27 @@ class User(dict):
 
     @property
     def folders(self):
-        """list of the user's folders"""
+        """Gets the list of the user's folders"""
         return self._portal.user_folders(self.username)
 
     def items(self, folder=None, max_items=100):
-        """Returns a list of items in the specified folder.
+        """
+        Provides a list of items in the specified folder. For content in the root folder, use 
+        the default value of None for the folder argument. For other folders, pass in the folder 
+        name as a string, or as a dictionary containing
+        the folder ID, such as the dictionary obtained from the folders property.
 
-        For content in the root folder, use the default value of None for the folder.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        folder                 Optional string. The specifc folder (as a string or dictionary) 
+                               to get a list of items in.
+        ------------------     --------------------------------------------------------------------
+        max_items              Optional integer. The maximum number of items to be returned. The default is 100.
+        ==================     ====================================================================
 
-        For other folders, pass in the folder name as a string, or a dict containing
-        the folder 'id', such as the dict obtained from the folders property.
+        :return:
+           The list of items in the specified folder.
         """
         items = []
         folder_id = None
@@ -3552,7 +3617,7 @@ class User(dict):
     @property
     def notifications(self):
         """
-        The list of notifications available for the given user.
+        Gets the list of notifications available for the given user.
         """
         from .._impl.notification import Notification
         result = []
@@ -5460,18 +5525,18 @@ class Layer(_GISResource):
     @classmethod
     def fromitem(cls, item, index=0):
         """
-        returns the layer at the specified index from a layer item
+        Returns the layer at the specified index from a layer item.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. An item representing a layer
+        item                   Required string. An item ID representing a layer.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================
 
         :return:
-           the layer at the specified index
+           The layer at the specified index.
         """
         return item.layers[index]
 
