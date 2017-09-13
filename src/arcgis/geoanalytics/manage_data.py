@@ -26,7 +26,7 @@ def calculate_fields(input_layer,
                      ):
     """
     The Calculate Field task works with a layer to create and populate a
-    new field. The output is a new feature service, that is the same as the
+    new field. The output is a new feature layer, that is the same as the
     input features, with the additional field added.
 
     ================  ===============================================================
@@ -62,7 +62,7 @@ def calculate_fields(input_layer,
     ================  ===============================================================
 
     :returns:
-       Service
+       Feature Layer
     """
     kwargs = locals()
     tool_name = "CalculateField"
