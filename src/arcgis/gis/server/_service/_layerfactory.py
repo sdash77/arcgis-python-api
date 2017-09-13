@@ -107,6 +107,9 @@ class ServiceFactory(type):
                                     gis=server)
         elif base_name.lower() == "vectortileserver":
             return VectorTileLayer(url=url, gis=server)
+        elif base_name.lower() == "BigDataCatalogServer".lower():
+            from arcgis.geoanalytics._bdservice import BigDataCatalog
+            return BigDataCatalog(url=url, gis=server)
         else:
             return Layer(url=url, gis=server)
         return type.__call__(cls, url, connection, item, initialize)
