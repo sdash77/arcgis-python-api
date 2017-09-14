@@ -2217,14 +2217,18 @@ class ContentManager(object):
             raise Exception("SpatialDataFrame's must have either pyshp or" + \
                             " arcpy available to use import_data")
         elif isinstance(df, SpatialDataFrame):
+            import random
+            import string
             temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop('tags', 'FGDB')
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
             if has_arcpy:
+                name = "%s%s.gdb" % (random.choice(string.ascii_lowercase),
+                                     uuid4().hex[:5])
                 fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
-                                                      out_name="publish.gdb")[0]
+                                                      out_name=name)[0]
                 ds = df.to_featureclass(out_location=fgdb,
                                         out_name=os.path.basename(temp_dir))
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
@@ -2238,8 +2242,12 @@ class ContentManager(object):
                               ignore_errors=True)
                 return item.publish()
             elif has_pyshp:
+                import string
+                import random
+                ds = "%s%s.shp" % (random.choice(string.ascii_lowercase),
+                                   uuid4().hex[:5])
                 ds = df.to_featureclass(out_location=temp_dir,
-                                        out_name="export.shp")
+                                        out_name=ds)
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={
