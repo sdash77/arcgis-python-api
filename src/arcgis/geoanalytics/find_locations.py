@@ -17,7 +17,7 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def detect_track_incidents(input_layer,
+def detect_incidents(input_layer,
                            track_fields,
                            start_condition_expression,
                            end_condition_expression,
@@ -59,15 +59,15 @@ def detect_track_incidents(input_layer,
     condition of contanimateLevel < 0.01. This will mark any sequence where
     values exceed 0.03mg/L until they return to a value less than 0.01.
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureSet, The table, point, line or polygon features
-                      containing potential incidents.
-    ----------------  ---------------------------------------------------------------
-    track_fields      required string, The fields used to identify distinct tracks.
-                      There can be multiple track_fields.
-    ----------------  ---------------------------------------------------------------
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  required FeatureSet, The table, point, line or polygon features
+                                 containing potential incidents.
+    --------------------------   ---------------------------------------------------------------
+    track_fields                 required string, The fields used to identify distinct tracks.
+                                 There can be multiple track_fields.
+    --------------------------   ---------------------------------------------------------------
     start_condition_expression   The condition used to identify incidents. If there
                                  is no endConditionExpression specified, any feature
                                  that meets this condition is an incident. If there
@@ -75,31 +75,31 @@ def detect_track_incidents(input_layer,
                                  start_condition_expression and does not meet the
                                  end_condition_expression is an incident.
                                  The expressions are Arcade expressions.
-    ----------------  ---------------------------------------------------------------
-    end_condition_expression   The condition used to identify incidents. If there is
-                               no endConditionExpression specified, any feature that
-                               meets this condition is an incident. If there is an
-                               end condition, any feature that meets the
-                               start_condition_expression and does not meet the
-                               end_condition_expression is an incident. This is an
-                               Arcade expression.
-    ----------------  ---------------------------------------------------------------
-    output_mode       optional string, default value is AllFeatures.  Determines
-                      which features are returned. Two modes are available:
+    --------------------------   ---------------------------------------------------------------
+    end_condition_expression     The condition used to identify incidents. If there is
+                                 no endConditionExpression specified, any feature that
+                                 meets this condition is an incident. If there is an
+                                 end condition, any feature that meets the
+                                 start_condition_expression and does not meet the
+                                 end_condition_expression is an incident. This is an
+                                 Arcade expression.
+    --------------------------   ---------------------------------------------------------------
+    output_mode                  optional string, default value is AllFeatures.  Determines
+                                 which features are returned. Two modes are available:
 
-                       - AllFeatures - All of the input features are returned.
-                       - Incidents - Only features that were found to be incidents
-                                     are returned.
-    ----------------  ---------------------------------------------------------------
-    output_name       optional string, The task will create a feature service of the
-                      results. You define the name of the service.
-    ----------------  ---------------------------------------------------------------
-    gis               optional GIS, the GIS on which this tool runs. If not
-                      specified, the active GIS is used.
-    ================  ===============================================================
+                                 - AllFeatures - All of the input features are returned.
+                                 - Incidents - Only features that were found to be incidents
+                                   are returned.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  optional string, The task will create a feature service of the
+                                 results. You define the name of the service.
+    --------------------------   ---------------------------------------------------------------
+    gis                          optional GIS, the GIS on which this tool runs. If not
+                                 specified, the active GIS is used.
+    ==========================   ===============================================================
 
     :returns:
-       Service
+       Output feature layer item
     """
     kwargs = locals()
     tool_name = "DetectIncidents"
