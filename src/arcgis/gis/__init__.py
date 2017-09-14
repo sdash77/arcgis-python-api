@@ -1042,10 +1042,10 @@ class UserManager(object):
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
+        username          Required string. The user name, which must be unique in the Portal, and 
                           6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
-        password          Required string. The password for the user.  It must be at least 8 characters.
+        password          Required string. The password for the user.  It must be at least 8 characters. 
                           This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
@@ -1067,7 +1067,7 @@ class UserManager(object):
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        idp_username      Optional string. The name of the user as stored by the enterprise user store.
+        idp_username      Optional string. The name of the user as stored by the enterprise user store. 
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level.
@@ -1190,7 +1190,7 @@ class UserManager(object):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as an object.
         ==================     ====================================================================
-
+        
 
         :return:
             The user object if successfully found, None if unsuccessful.
@@ -1247,7 +1247,7 @@ class UserManager(object):
         max_users         Optional integer. The maximum number of users to be returned. The default is 100.
         ----------------  --------------------------------------------------------
         outside_org       Optional boolean. This controls whether to search outside
-                          your organization. The default is False (search only
+                          your organization. The default is False (search only 
                           within your organization).
         ================  ========================================================
 
@@ -1294,7 +1294,7 @@ class RoleManager(object):
 
     def create(self, name, description, privileges=None):
         """Creates a custom role with the specified parameters.
-
+        
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -1302,12 +1302,12 @@ class RoleManager(object):
         ------------------     --------------------------------------------------------------------
         description            Required string. The custom role's description.
         ------------------     --------------------------------------------------------------------
-        privileges             Optional string. An array of strings with predefined permissions within
-                               each privilege.  For supported privileges see
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Privileges/02r3000002wq000000/
+        privileges             Optional string. An array of strings with predefined permissions within  
+                               each privilege.  For supported privileges see 
+                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Privileges/02r3000002wq000000/ 
         ==================     ====================================================================
-
-
+        
+        
         :return:
            The custom role if successfully created, None if unsuccessful.
         """
@@ -1438,7 +1438,7 @@ class Role(object):
         Get or sets the privileges for the custom role as a list of strings.
 
         Supported privileges with predefined permissions are:
-
+        
         *Administrative Privileges:*
 
         Members
@@ -1543,7 +1543,7 @@ class Role(object):
 
     def delete(self):
         """Deletes this role.
-
+        
         :return:
            A boolean indicating success (True) or failure (False).
         """
@@ -2272,12 +2272,12 @@ class ContentManager(object):
                               ignore_errors=True)
                 return item.publish()
             elif has_pyshp:
-                import string
                 import random
-                ds = "%s%s.shp" % (random.choice(string.ascii_lowercase),
+                import string
+                name = "%s%s.shp" % (random.choice(string.ascii_lowercase),
                                    uuid4().hex[:5])
                 ds = df.to_featureclass(out_location=temp_dir,
-                                        out_name=ds)
+                                        out_name=name)
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={
@@ -2455,7 +2455,7 @@ class ResourceManager(object):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        file              Required string. The path to the file on disk to be used for
+        file              Required string. The path to the file on disk to be used for 
                           overwriting an existing file resource.
         ----------------  ---------------------------------------------------------------
         folder_name       Optional string. Provide a folder name if the file resource
@@ -2552,7 +2552,7 @@ class ResourceManager(object):
 
     def get(self, file, try_json = True, out_folder = None, out_file_name = None):
         """
-        Gets a specific file resource of an existing item.  This operation is only
+        Gets a specific file resource of an existing item.  This operation is only 
         available to the item owner and the organization administrator.
 
         ================  ===============================================================
@@ -2575,7 +2575,7 @@ class ResourceManager(object):
 
 
         :return:
-           Path to the downloaded file if getting a binary file (like a jpeg or png file) or if
+           Path to the downloaded file if getting a binary file (like a jpeg or png file) or if 
            try_jon = False when getting a JSON file.
 
            If file is a JSON, returns as a Python dictionary.
@@ -2591,8 +2591,8 @@ class ResourceManager(object):
 
     def remove(self, file = None):
         """
-        Removes a single resource file or all resources. The item size is updated once
-        resource files are deleted. This operation is only available to the item owner
+        Removes a single resource file or all resources. The item size is updated once 
+        resource files are deleted. This operation is only available to the item owner 
         and the organization administrator.
 
         ================  ===============================================================
@@ -3194,7 +3194,7 @@ class User(dict):
 
     def get_thumbnail_link(self):
         """ Retrieves the URL to the thumbnail image.
-
+        
         :return:
            The thumbnail's URL.
         """
@@ -3276,7 +3276,7 @@ class User(dict):
         with existing content, while Level 2 membership is for those who
         contribute, create, and share content and groups, in addition to
         other tasks.
-
+        
         Maximum user quota of an organization at the given level is checked
         before allowing the update.
 
@@ -3369,7 +3369,7 @@ class User(dict):
         ================  ==========================================================
         **Argument**      **Description**
         ----------------  ----------------------------------------------------------
-        access            Optional string. The access level for the user, values
+        access            Optional string. The access level for the user, values 
                           allowed are private, org, public.
         ----------------  ----------------------------------------------------------
         preferred_view    Optional string. The preferred view for the user, values allowed are Web, GIS, null.
@@ -3389,8 +3389,8 @@ class User(dict):
         ----------------  ----------------------------------------------------------
         region            Optional string. The two-letter country code, FR for example.
         ================  ==========================================================
-
-
+        
+        
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -3409,10 +3409,10 @@ class User(dict):
         """
         Disables login access for the
         user. It is only available to the administrator of the organization.
-
+        
         :return:
            A boolean indicating success (True) or failure (False).
-
+           
         """
         params = {"f" : "json"}
         url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self.username)
@@ -3427,7 +3427,7 @@ class User(dict):
     #----------------------------------------------------------------------
     def enable(self):
         """
-        Enables login access for the user.
+        Enables login access for the user. 
         It is only available to the administrator of the organization.
         """
         params = {"f" : "json"}
@@ -3484,7 +3484,7 @@ class User(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        reassign_to       Optional string. The new owner of the items and groups
+        reassign_to       Optional string. The new owner of the items and groups 
                           that belong to the user being deleted.
         ================  ========================================================
 
@@ -3511,7 +3511,7 @@ class User(dict):
         ================  ===========================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------
-        target_username   Required string. The user who will be the new owner of the
+        target_username   Required string. The user who will be the new owner of the 
                           items and groups from which these are being reassigned from.
         ================  ===========================================================
 
@@ -3532,7 +3532,7 @@ class User(dict):
 
         .. code-block:: python
 
-            Usage Example:
+            Usage Example:             
 
             response = user.get_thumbnail()
             f = open(filename, 'wb')
@@ -3548,14 +3548,14 @@ class User(dict):
     def download_thumbnail(self, save_folder=None):
         """
         Downloads the item thumbnail for this user.
-
+        
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         save_folder            Optional string. The desired folder name to download the thumbnail to.
         ==================     ====================================================================
-
-
+        
+        
         :return:
            The file path of the downloaded thumbnail.
         """
@@ -3585,15 +3585,15 @@ class User(dict):
 
     def items(self, folder=None, max_items=100):
         """
-        Provides a list of items in the specified folder. For content in the root folder, use
-        the default value of None for the folder argument. For other folders, pass in the folder
+        Provides a list of items in the specified folder. For content in the root folder, use 
+        the default value of None for the folder argument. For other folders, pass in the folder 
         name as a string, or as a dictionary containing
         the folder ID, such as the dictionary obtained from the folders property.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        folder                 Optional string. The specifc folder (as a string or dictionary)
+        folder                 Optional string. The specifc folder (as a string or dictionary) 
                                to get a list of items in.
         ------------------     --------------------------------------------------------------------
         max_items              Optional integer. The maximum number of items to be returned. The default is 100.
