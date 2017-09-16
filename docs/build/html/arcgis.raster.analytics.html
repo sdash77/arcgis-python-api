@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -47,6 +49,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -87,7 +90,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -549,8 +555,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -559,25 +567,42 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
           <li><a href="arcgis.raster.toc.html">arcgis.raster module</a> &raquo;</li>
-      
-    <li>arcgis.raster.analytics module</li>
+        
+      <li>arcgis.raster.analytics module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="_sources/arcgis.raster.analytics.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -634,27 +659,23 @@ used as the output for the tool.</p>
 <code class="descclassname">analytics.</code><code class="descname">interpolate_points</code><span class="sig-paren">(</span><em>input_point_features</em>, <em>interpolate_field</em>, <em>optimize_for='BALANCE'</em>, <em>transform_data=False</em>, <em>size_of_local_models=None</em>, <em>number_of_neighbors=None</em>, <em>output_cell_size=None</em>, <em>output_prediction_error=False</em>, <em>output_name=None</em>, <em>gis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.analytics.interpolate_points" title="Permalink to this definition">¶</a></dt>
 <dd><p>This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
 takes point data with values at each point and returns a raster of predicted values:</p>
-<ul>
+<ul class="simple">
 <li><dl class="first docutils">
 <dt>An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to</dt>
-<dd><p class="first last">predict pollution levels at locations that don’t have sensors, such as locations with at-risk populations-
-schools or hospitals, for example.</p>
-</dd>
+<dd>predict pollution levels at locations that don’t have sensors, such as locations with at-risk populations-
+schools or hospitals, for example.</dd>
 </dl>
 </li>
-<li><p class="first">Predict heavy metal concentrations in crops based on samples taken from individual plants.</p>
-</li>
+<li>Predict heavy metal concentrations in crops based on samples taken from individual plants.</li>
 <li><dl class="first docutils">
 <dt>Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical</dt>
-<dd><p class="first last">conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
-for each location in the field.</p>
-</dd>
+<dd>conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
+for each location in the field.</dd>
 </dl>
 </li>
 <li><dl class="first docutils">
 <dt>Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid</dt>
-<dd><p class="first last">rain).</p>
-</dd>
+<dd>rain).</dd>
 </dl>
 </li>
 </ul>
@@ -991,15 +1012,18 @@ A RuntimeError is raised if a service by that name already exists</dd>
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.raster.functions.html" class="btn btn-neutral float-right" title="arcgis.raster.functions module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.raster.functions.html" class="btn btn-neutral float-right" title="arcgis.raster.functions module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.raster.toc.html" class="btn btn-neutral" title="arcgis.raster module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.raster.toc.html" class="btn btn-neutral" title="arcgis.raster module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1033,7 +1057,8 @@ A RuntimeError is raised if a service by that name already exists</dd>
             VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

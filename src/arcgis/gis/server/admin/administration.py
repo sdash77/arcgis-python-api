@@ -18,13 +18,13 @@ from .._common import ServerConnection
 ########################################################################
 class Server(BaseServer):
     """
-    An ArcGIS Enterprise server used for hosting services
+    An ArcGIS Enterprise server used for hosting services.
 
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    string required. The web address to the ArcGIS Server administration
+    url                    Required string. The web address to the ArcGIS Server administration
                            end point.
 
                            Example: https://mysite.com/arcgis/admin
@@ -32,48 +32,46 @@ class Server(BaseServer):
                            The URL should be formatted as follows:
                            <scheme>://<host>:<port (optional)>/<web adapter>/admin
     ------------------     --------------------------------------------------------------------
-    gis                    optional GIS, the GIS to which this Server is federated with
+    gis                    Optional string. The GIS object to which this Server is federated with.
     ==================     ====================================================================
 
     =====================     ====================================================================
     **Optional Argument**     **Description**
     ---------------------     --------------------------------------------------------------------
-    baseurl                   optional string, the root URL to a site.
+    baseurl                   Optional string. The root URL to a site.
                               Example: https://mysite.com/arcgis
     ---------------------     --------------------------------------------------------------------
-    tokenurl                  optional string. Used when a site if federated or when the token
+    tokenurl                  Optional string. Used when a site is federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the
                               token URL will return as the Portal token and ArcGIS Server users
                               will not validate correctly.
     ---------------------     --------------------------------------------------------------------
-    username                  optional string, login username for BUILT-IN security
+    username                  Optional string. The login username for BUILT-IN security.
     ---------------------     --------------------------------------------------------------------
-    password                  optional string, a secret word or phrase that must be used to gain
+    password                  Optional string. A secret word or phrase that must be used to gain
                               access to the account above.
     ---------------------     --------------------------------------------------------------------
-    key_file                  optional string, path to PKI ket file
+    key_file                  Optional string. The path to PKI key file.
     ---------------------     --------------------------------------------------------------------
-    cert_file                 optional string, path to PKI cert file
+    cert_file                 Optional string. The path to PKI cert file.
     ---------------------     --------------------------------------------------------------------
-    proxy_host                optional string, web address to the proxy host
+    proxy_host                Optional string. The web address to the proxy host.
 
                               Example: proxy.mysite.com
     ---------------------     --------------------------------------------------------------------
-    proxy_port                optional integer, default is 80. The port where the proxy resided on
+    proxy_port                Optional integer. The port where the proxy resides on, default is 80. 
     ---------------------     --------------------------------------------------------------------
-    expiration                optional integer. The Default is 60. This is the length of time a
-                              token is valid for.
-                              Example 1440 is one week.
+    expiration                Optional integer. This is the length of time a token is valid for.
+                              Example 1440 is one week. The Default is 60. 
     ---------------------     --------------------------------------------------------------------
-    all_ssl                   optional boolean. The default is False. If True, all calls will be
-                              made over HTTPS instead of HTTP.
+    all_ssl                   Optional boolean. If True, all calls will be made over HTTPS instead 
+                              of HTTP. The default is False. 
     ---------------------     --------------------------------------------------------------------
-    portal_connection         optional GIS. This is used when a site is federated. It is the
+    portal_connection         Optional string. This is used when a site is federated. It is the
                               ArcGIS Online or Portal GIS object used.
     ---------------------     --------------------------------------------------------------------
-    initialize                optional boolean.  The default is False.  If True, the object will
-                              attempt to reach out to the URL resource and populate at creation
-                              time.
+    initialize                Optional boolean. If True, the object will attempt to reach out to 
+                              the URL resource and populate at creation time. The default is False.  
     =====================     ====================================================================
 
     """
@@ -128,7 +126,21 @@ class Server(BaseServer):
                     sd_file,
                     folder=None):
         """
-        publishes a service definition file to arcgis server
+        Publishes a service definition file to ArcGIS Server.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        sd_file                Required string. The service definition file to be uploaded and published.
+        ------------------     --------------------------------------------------------------------
+        folder                 Optional string. The folder in which to publish the service definition 
+                               file to.  If this folder is not present, it will be created.  The
+                               default is None in which case the service definition will be published 
+                               to the System folder.
+        ==================     ====================================================================
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
         """
         import json
         if sd_file.lower().endswith('.sd') == False:
@@ -177,28 +189,40 @@ class Server(BaseServer):
           -Configuring server directories
           -Deploying the services that are marked to auto-deploy
 
-        Because of the sheer number of tasks, it usually takes a little
-        while for this operation to complete. Once a site has been created,
+        Because of the sheer number of tasks, it usually takes some time 
+        for this operation to complete. Once a site has been created,
         you can publish GIS services and deploy them to your server
         machines.
+        
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        username                   Required string. The name of the administrative account to be used by 
+                                   the site. This can be changed at a later stage.
+        ----------------------     --------------------------------------------------------------------
+        password                   Required string. The password to the administrative account.
+        ----------------------     --------------------------------------------------------------------
+        configStoreConnection      Required string. A JSON object representing the connection to the 
+                                   configuration store. By default, the configuration store will be 
+                                   maintained in the ArcGIS Server installation directory.
+        ----------------------     --------------------------------------------------------------------
+        directories                Required string. A JSON object representing a collection of server 
+                                   directories to create. By default, the server directories will be 
+                                   created locally.
+        ----------------------     --------------------------------------------------------------------
+        cluster                    Optional string. An optional cluster configuration. By default, the 
+                                   site will create a cluster called 'default' with the first available 
+                                   port numbers starting from 4004.
+        ----------------------     --------------------------------------------------------------------
+        logsSettings               Optional string. Optional log settings, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Log_Settings/02r3000001t6000000/ .
+        ----------------------     --------------------------------------------------------------------
+        runAsync                   Optional boolean. A flag to indicate if the operation needs to be run 
+                                   asynchronously.
+        ======================     ====================================================================
 
-        Inputs:
-           username - The name of the administrative account to be used by
-             the site. This can be changed at a later stage.
-           password - The credentials of the administrative account.
-           configStoreConnection - A JSON object representing the
-             connection to the configuration store. By default, the
-             configuration store will be maintained in the ArcGIS Server
-             installation directory.
-           directories - A JSON object representing a collection of server
-             directories to create. By default, the server directories will
-             be created locally.
-           cluster - An optional cluster configuration. By default, the
-             site will create a cluster called 'default' with the first
-             available port numbers starting from 4004.
-           logsSettings - Optional log settings.
-           runAsync - A flag to indicate if the operation needs to be run
-             asynchronously. Values: true | false
+
+        :return:
+           Success statement.
         """
         url = self._url + "/createNewSite"
         params = {
@@ -229,12 +253,22 @@ class Server(BaseServer):
         If this is the first server machine in your site, use the Create
         Site operation instead.
 
-        Inputs:
-           admin_url - The site URL of the currently live site. This is
-            typically the Administrator Directory URL of one of the server
-            machines of a site.
-           username - The name of an administrative account for the site.
-           password - The password of the administrative account.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        admin_url                  Required string. The site URL of the currently live site. This is 
+                                   typically the Administrator Directory URL of one of the server 
+                                   machines of a site.
+        ----------------------     --------------------------------------------------------------------
+        username                   Required string. The name of the administrative account for this site.
+        ----------------------     --------------------------------------------------------------------
+        password                   Required string. The password to the administrative account.
+        ======================     ====================================================================
+        
+
+        :return:
+           Success statement.
         """
         url = self._url + "/joinSite"
         params = {
@@ -261,6 +295,9 @@ class Server(BaseServer):
           - All server machines are unregistered from the site.
           - All server machines are unregistered from the site.
           - The configuration store is deleted.
+          
+        :return:
+           Success statement.
         """
         url = self._url + "/deleteSite"
         params = {
@@ -273,15 +310,20 @@ class Server(BaseServer):
         """
         Exports the site configuration to a location you specify as input
         to this operation.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        location               Optional string. A path to a folder accessible to the server where 
+                               the exported site configuration will be written. If a location is 
+                               not specified, the server writes the exported site configuration 
+                               file to directory owned by the server and returns a virtual path 
+                               (an HTTP URL) to that location from where it can be downloaded.
+        ==================     ====================================================================
 
-        Inputs:
-           location - A path to a folder accessible to the server where the
-            exported site configuration will be written. If a location is
-            not specified, the server writes the exported site
-            configuration file to directory owned by the server and returns
-            a virtual path (an HTTP URL) to that location from where it can
-            be downloaded.
-
+        
+        :return:
+           Success statement.
         """
         url = self._url + "/exportSite"
         params = {
@@ -307,10 +349,17 @@ class Server(BaseServer):
         problems it lists to ensure your site is fully functioning again.
         The importSite operation lets you restore your site from a backup
         that you created using the exportSite operation.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        location               Required string. A file path to an exported configuration or an ID 
+                               referencing the stored configuration on the server.
+        ==================     ====================================================================
 
-        Input:
-           location - A file path to an exported configuration or an ID
-            referencing the stored configuration on the server.
+
+        :return:
+           A report.
         """
         url = self._url + "/importSite"
         params = {
@@ -328,21 +377,27 @@ class Server(BaseServer):
         successful run of this operation will complete the upgrade of
         ArcGIS Server.
 
-        **caution**
-        If errors are returned with the upgrade operation, you must address
-        the errors before you may continue. For example, if you encounter
-        an error about an invalid license, you will need to re-authorize
-        the software using a valid license and you may then retry this
-        operation.
+        .. note::
+            **caution** If errors are returned with the upgrade operation, 
+            you must address the errors before you may continue. For example, 
+            if you encounter an error about an invalid license, you will need 
+            to re-authorize the software using a valid license and you may 
+            then retry this  operation. 
+            
+            This operation is available only when a server machine is 
+            currently being upgraded. It will not be available after a 
+            successful upgrade of a server machine.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        run_async              Optional boolean. A flag to indicate if the operation needs to be run
+                               asynchronously. The default value is False.
+        ==================     ====================================================================
 
-        **note**
-        This operation is available only when a server machine is currently
-        being upgraded. It will not be available after a successful upgrade
-        of a server machine.
 
-        Paramters:
-         :run_async: A flag to indicate if the operation needs to be run
-          asynchronously. The default value is false.
+        :return:
+           Success statement.
         """
         url = self._url + "/upgrade"
         params = {
@@ -354,7 +409,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _public_key(self):
-        """gets the public key"""
+        """Gets the public key."""
         url = self._url + "/publicKey"
         params = {
             "f" : "json",
@@ -365,6 +420,7 @@ class Server(BaseServer):
     @property
     def machines(self):
         """
+        Gets the list of server machines registered with the site.  
         This resource represents a collection of all the server machines that
         have been registered with the site. It other words, it represents
         the total computing power of your site. A site will continue to run
@@ -391,8 +447,8 @@ class Server(BaseServer):
     @property
     def datastores(self):
         """
-        This resource provides information about the data holdings of the
-        server. Data items are used by ArcGIS for Desktop and other clients
+        Gets the information about the data holdings of the server. 
+        Data items are used by ArcGIS for Desktop and other clients
         to validate data paths referenced by GIS services.
         You can register new data items with the server by using the
         Register Data Item operation. Use the Find Data Items operation to
@@ -422,7 +478,7 @@ class Server(BaseServer):
     @property
     def _info(self):
         """
-        A read-only resource that returns meta information about the server
+        A read-only resource that returns meta information about the server.
         """
         url = self._url + "/info"
         return _info.Info(url=url,
@@ -432,7 +488,7 @@ class Server(BaseServer):
     @property
     def site(self):
         """
-        A site is a collection of server resources. This collection
+        Gets the site's collection of server resources. This collection
         includes server machines that are installed with ArcGIS Server,
         including GIS services, data and so on. The site resource also
         lists the current version of the software.
@@ -449,7 +505,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _clusters(self):
-        """returns the clusters functions if supported in resources"""
+        """Gets the clusters functions if supported in resources."""
         if self.properties is None:
             self._init()
         if isinstance(self.resources, list) and \
@@ -464,7 +520,7 @@ class Server(BaseServer):
     @property
     def services(self):
         """
-        Provides administrator access to the services on ArcGIS Server as a
+        Gives the administrator access to the services on ArcGIS Server as a
         ServerManager Object.
         """
         if self.resources is None:
@@ -482,7 +538,7 @@ class Server(BaseServer):
     @property
     def usage(self):
         """
-        This resource is a collection of all the usage reports created
+        Gets the collection of all the usage reports created
         within your site. The Create Usage Report operation lets you define
         a new usage report.
         """
@@ -499,7 +555,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _kml(self):
-        """returns the kml functions for server"""
+        """Gets the KML functions for a server."""
         url = self._url + "/kml"
         return _kml.KML(url=url,
                         gis=self._con,
@@ -508,7 +564,7 @@ class Server(BaseServer):
     @property
     def logs(self):
         """
-        This allows users to access the  ArcGIS Server's logs and lets
+        Gives users access the ArcGIS Server's logs and lets
         administrators query and find errors and/or problems related to
         the server or a service.
 
@@ -530,7 +586,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _security(self):
-        """returns an object to work with the site security"""
+        """Gets an object to work with the site security."""
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
@@ -544,13 +600,13 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def users(self):
-        """returns operations to work with users"""
+        """Gets operations to work with users."""
         return self._security.users
     #----------------------------------------------------------------------
     @property
     def content(self):
         """
-        The Services Directory can help you discover information about
+        Gets the Services Directory which can help you discover information about
         services available on a particular server. A service represents a
         local GIS resource whose functionality has been made available on
         the server to a wider audience. For example, an ArcGIS Server
@@ -584,7 +640,7 @@ class Server(BaseServer):
     @property
     def system(self):
         """
-        provides access to common system configuration settings
+        Provides access to common system configuration settings.
         """
         if self.resources is None:
             self._init()
@@ -599,7 +655,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _uploads(self):
-        """returns an object to work with the site uploads"""
+        """Gets an object to work with the site uploads."""
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
@@ -613,7 +669,7 @@ class Server(BaseServer):
     #----------------------------------------------------------------------
     @property
     def _mode(self):
-        """returns the class that works with Mode"""
+        """Gets the class that works with Mode."""
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
