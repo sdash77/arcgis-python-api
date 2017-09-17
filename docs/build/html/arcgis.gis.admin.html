@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -555,10 +549,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -567,42 +559,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
-        
-      <li>arcgis.gis.admin module</li>
-    
-    
+      
+    <li>arcgis.gis.admin module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.gis.admin.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -1888,32 +1863,6 @@ The image repeats horizontally if it is smaller than the browser or device windo
 a single, nonrepeating background image, the image should be 1,920 pixels wide (or smaller if your users are on
 smaller screens). The website does not resize the image. You can upload a file up to 1 MB in size.</p>
 <p>For more information, refer to <a class="reference external" href="http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm">http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm</a></p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="18%" />
-<col width="82%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>background_file</td>
-<td><dl class="first last docutils">
-<dt>optional string. If using a custom background, specify path to image file.</dt>
-<dd>To remove an existing background, specify None for this argument and
-False for is_built_in argument.</dd>
-</dl>
-</td>
-</tr>
-<tr class="row-odd"><td>is_built_in</td>
-<td><dl class="first last docutils">
-<dt>optional bool, default=True. The built-in background is set by default.</dt>
-<dd>If uploading a custom image, this parameter is ignored.</dd>
-</dl>
-</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2195,70 +2144,6 @@ recovered after executing this operation.</p>
 <code class="descname">query</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time=None</em>, <em>level='WARNING'</em>, <em>query_filter='*'</em>, <em>page_size=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.admin.Logs.query" title="Permalink to this definition">¶</a></dt>
 <dd><p>The query operation allows you to aggregate, filter, and page
 through logs written by the portal.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="20%" />
-<col width="80%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>start_time</td>
-<td>required datetime/integer. The most recent time to query.
-Time can be specified as a portal timestamp (format in
-“%Y-%m-%dT%H:%M:%S”) or in milliseconds since UNIX epoch. For
-:Examples:
-Datetime Object: datetime.datetime.now()
-Timestamp: “2015-08-01T15:17:20,123”
-Milliseconds: 1312237040123
-Default: datetime.datetime.now()</td>
-</tr>
-<tr class="row-odd"><td>end_time</td>
-<td>optional datetime/integer, The oldest time to include in the
-result set. You can use this to limit the query to the last
-number of minutes, hours, days, months, and years as needed.
-Datetime Object: datetime.datetime.now()
-Timestamp: “2015-08-01T15:17:20,123”
-Milliseconds: 1312237040123
-Default: datetime.datetime.now()</td>
-</tr>
-<tr class="row-even"><td>level</td>
-<td>optional string, Can be one of [OFF, SEVERE, WARNING, INFO,
-FINE, VERBOSE, DEBUG]. Returns only records with a log level at
-or more severe than the level specified.
-Default: WARNING</td>
-</tr>
-<tr class="row-odd"><td>query_filter</td>
-<td><p class="first">optional string, Filtering is allowed by any combination of
-codes, users, and source components. The filter accepts a comma
-delimited list of filter definitions. If any definition is
-omitted, it defaults to all (“*”).
-:Example:
-{“codes”:[204000-205999,212015,219114], “users”:[“admin”,”jcho”],</p>
-<blockquote>
-<div>“source”: [“PORTAL ADMIN”]}</div></blockquote>
-<p>The source of logged events are generated from the sharing,
-administrative, and portal components of the software.
-For example:</p>
-<blockquote class="last">
-<div><ul class="simple">
-<li>Events related to publishing and users are categorized under
-SHARING.</li>
-<li>Events related to security and indexing are categorized under
-PORTAL ADMIN.</li>
-<li>Events related to installing the software are categorized
-under PORTAL.</li>
-</ul>
-</div></blockquote>
-</td>
-</tr>
-<tr class="row-even"><td>page_size</td>
-<td>optional integer, the number of log records to return. The
-default is 1000</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3506,18 +3391,15 @@ Adaptor configured with the portal.</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.gis.server.html" class="btn btn-neutral float-right" title="arcgis.gis.server module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.toc.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.gis.toc.html" class="btn btn-neutral" title="arcgis.gis module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3551,8 +3433,7 @@ Adaptor configured with the portal.</p>
             VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

@@ -13,8 +13,6 @@
 
   
   
-  
-  
 
   
 
@@ -49,7 +47,6 @@
 
 <body class="wy-body-for-nav" role="document">
 
-   
   <div class="wy-grid-for-nav">
 
     
@@ -90,10 +87,7 @@
           
             
             
-              
-            
-            
-              <p class="caption"><span class="caption-text">arcgis</span></p>
+                <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -555,10 +549,8 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">arcgis</a>
-        
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">arcgis</a>
       </nav>
 
 
@@ -567,42 +559,25 @@
         <div class="rst-content">
           
 
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
-
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html">Docs</a> &raquo;</li>
-        
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
-        
-      <li>arcgis.gis.server module</li>
-    
-    
+      
+    <li>arcgis.gis.server module</li>
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/arcgis.gis.server.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -1590,10 +1565,10 @@ for the role</td>
 <dt id="arcgis.gis.server.ServerManager">
 <em class="property">class </em><code class="descclassname">arcgis.gis.server.</code><code class="descname">ServerManager</code><span class="sig-paren">(</span><em>gis</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServerManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Helper class for managing your ArcGIS Server. This class is not created 
-by users directly. An instance of this class, called ‘on-premise GIS’, 
-is available as a property of the Gis object. Administrators call methods 
-on this ‘on-premise GIS’ object to manage and interrogate ArcGIS Servers.</p>
+<p>Helper class for managing your ArcGIS Servers. This class is not created
+by users directly. An instance of this class, called ‘servers’,
+is available as a property of the gis.admin object. Administrators call methods
+on this ‘gis.admin.servers’ object to manage and interrogate ArcGIS Servers.</p>
 <dl class="method">
 <dt id="arcgis.gis.server.ServerManager.get">
 <code class="descname">get</code><span class="sig-paren">(</span><em>role=None</em>, <em>function=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.ServerManager.get" title="Permalink to this definition">¶</a></dt>
@@ -1655,32 +1630,6 @@ access control to a federated server. You can also remove hosting
 server status from an ArcGIS Server. To set a hosting server, an
 enterprise geodatabase must be registered as a managed database
 with the ArcGIS Server.</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="19%" />
-<col width="81%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>Argument</strong></td>
-<td><strong>Description</strong></td>
-</tr>
-<tr class="row-even"><td>server</td>
-<td>Required string. The arcgis.gis.Server object.</td>
-</tr>
-<tr class="row-odd"><td>role</td>
-<td>Required string. State whether the server is either a hosting server
-for the portal, a federated server, or a server with restricted access
-to publishing. The allowed values are HOSTING_SERVER, FEDERATED_SERVER,
-or FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, respectively.</td>
-</tr>
-<tr class="row-even"><td>function</td>
-<td>Optional string. The specific function associated with this server. Provide a
-comma-separated list of values, but it is not recommend that a single
-server have all the server functions. The allowed values are GeoAnalytics,
-RasterAnalytics, and ImageHosting.</td>
-</tr>
-</tbody>
-</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3314,18 +3263,15 @@ services directory.</td>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3359,8 +3305,7 @@ services directory.</td>
             VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
+            HAS_SOURCE:  true
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

@@ -6,10 +6,10 @@ _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
     """
-    Helper class for managing your ArcGIS Server. This class is not created 
-    by users directly. An instance of this class, called 'on-premise GIS', 
-    is available as a property of the Gis object. Administrators call methods 
-    on this 'on-premise GIS' object to manage and interrogate ArcGIS Servers.
+    Helper class for managing your ArcGIS Servers. This class is not created
+    by users directly. An instance of this class, called 'servers',
+    is available as a property of the gis.admin object. Administrators call methods
+    on this 'gis.admin.servers' object to manage and interrogate ArcGIS Servers.
     """
     _gis = None
     _catalog_list = None
