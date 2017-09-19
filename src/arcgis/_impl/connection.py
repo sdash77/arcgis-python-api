@@ -919,9 +919,11 @@ class _ArcGISConnection(object):
                            urlparts.fragment))
     #----------------------------------------------------------------------
     def get_handlers(self, verify_cert=True):
-        handlers = []
+        from urllib.request import HTTPRedirectHandler
+        redirect_handler = HTTPRedirectHandler()
+        handlers = [redirect_handler]
 
-        if self.proxy_host: #simple proxy support
+        if self.proxy_host: # simple proxy support
             from urllib.request import ProxyHandler
             if self.proxy_port is None:
                 self.proxy_port = 80

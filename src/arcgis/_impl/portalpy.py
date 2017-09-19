@@ -1030,7 +1030,11 @@ class Portal(object):
         # forcing a check of the server, then check the server
         if not self._properties or force:
             path = 'accounts/self' if self._is_pre_162 else 'portals/self'
-            resp = self.con.post(path, self._postdata(), ssl=True)
+            try:
+                resp = self.con.post(path, self._postdata(), ssl=True)
+            except:
+                resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
+
             if resp:
                 self._properties = resp
                 self.con.all_ssl = self.is_all_ssl

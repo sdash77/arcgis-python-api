@@ -6,11 +6,10 @@ _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
     """
-    ServerManager is a set of tools to work with your WebGIS that allows
-    administrators to federate, unfederate and manage ArcGIS Servers.
-
-    Parameters:
-     :param gis: on-premise GIS object
+    Helper class for managing your ArcGIS Servers. This class is not created
+    by users directly. An instance of this class, called 'servers',
+    is available as a property of the gis.admin object. Administrators call methods
+    on this 'gis.admin.servers' object to manage and interrogate ArcGIS Servers.
     """
     _gis = None
     _catalog_list = None
@@ -36,7 +35,12 @@ class ServerManager(object):
         return '<%s at %s>' % (type(self).__name__, self._pa._url)
     #----------------------------------------------------------------------
     def list(self):
-        """gets all servers in a GIS"""
+        """
+        Retrieves all servers in a GIS.
+
+        :returns:
+           A list of all servers found in the GIS.
+        """
         from . import ServicesDirectory
         if self._server_list is not None:
             return self._server_list
@@ -59,16 +63,25 @@ class ServerManager(object):
     #----------------------------------------------------------------------
     def get(self, role=None, function=None):
         """
-        returns a server(s) by role or function.
+        Retrieves the ArcGIS Server(s) by role or function. While each argument is optional, 
+        at least one argument must be set with an allowed value other than None.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        role                   Optional string. Limits the returned ArcGIS Servers based on the 
+                               server's role as either a hosting server for the portal, a federated server, 
+                               or a server with restricted access to publishing. The allowed values 
+                               are HOSTING_SERVER, FEDERATED_SERVER, or FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, 
+                               respectively.
+        ------------------     --------------------------------------------------------------------
+        function               Optional string. Limits the returned ArcGIS Servers based on the  
+                               server's function. Provide a comma-separated list of values. The 
+                               allowed values are GeoAnalytics, RasterAnalytics, and ImageHosting.
+        ==================     ====================================================================
 
-        Parameters:
-        :param role: Whether the server is a hosting server for the portal,
-        a federated server, or a server with restricted access to
-        publishing. The allowed values are FEDERATED_SERVER,
-        FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, or HOSTING_SERVER.
-        :param function: Server function associates a specific function
-        with the server. It takes in a comma separated list of values. The
-        allowed values are GeoAnalytics,RasterAnalytics, and ImageHosting.
+        :return:
+           The ArcGIS Server(s) discovered that match the criteria. 
         """
         servers = []
         if role is None and function is None:
@@ -83,8 +96,7 @@ class ServerManager(object):
     @property
     def _server_info(self):
         """
-        returns federation information for all servers associated the
-        WebGIS
+        Gets federation information for all servers associated the WebGIS.
         """
         return self._federation.servers['servers']
     #----------------------------------------------------------------------
@@ -96,28 +108,40 @@ class ServerManager(object):
         """
         This operation enables ArcGIS Servers to be federated with Portal
         for ArcGIS.
-        Parameters:
-         :url: The URL of the GIS server used by external users when
-          accessing the ArcGIS Server site. If the site includes the Web
-          Adaptor, the URL includes the Web Adaptor address, for example,
-          https://webadaptor.domain.com/arcgis. If you've added ArcGIS
-          Server to your organization's reverse proxy server, the URL is
-          the reverse proxy server address (for example,
-          https://reverseproxy.domain.com/myorg). Note that the federation
-          operation will perform a validation check to determine if the
-          provided URL is accessible from the server site. If the resulting
-          validation check fails, a warning will be generated in the Portal
-          for ArcGIS logs. However, federation will not fail if the URL is
-          not validated, as the URL may not be accessible from the server
-          site, such as is the case when the server site is behind a
-          firewall.
-         :admin_url: The URL used for accessing ArcGIS Server when
-          performing administrative operations on the internal network, for
-          example, https://gisserver.domain.com:6443/arcgis.
-         :username: The username of the primary site administrator account
-         :password: password of the username above.
-        Output:
-         server response with server ID
+        
+        .. note::
+            For the url argument - If the site includes the Web Adaptor, 
+            the URL includes the Web Adaptor address, for example, 
+            https://webadaptor.domain.com/arcgis. If you've added ArcGIS Server 
+            to your organization's reverse proxy server, the URL is the reverse 
+            proxy server address (for example, 
+            https://reverseproxy.domain.com/myorg). Note that the federation 
+            operation will perform a validation check to determine if the 
+            provided URL is accessible from the server site. If the resulting 
+            validation check fails, a warning will be generated in the Portal 
+            for ArcGIS logs. However, federation will not fail if the URL is 
+            not validated, as the URL may not be accessible from the server 
+            site, such as is the case when the server site is behind a firewall.
+          
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The URL of the GIS server used by external users when 
+                               accessing the ArcGIS Server site.  See note above.
+        ------------------     --------------------------------------------------------------------
+        admin_url              Required string. The URL used for accessing ArcGIS Server when 
+                               performing administrative operations on the internal network, for 
+                               example, https://gisserver.domain.com:6443/arcgis.
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The username of the primary site administrator account.
+        ------------------     --------------------------------------------------------------------
+        password               Required integer. The password of the username above.
+        ==================     ====================================================================
+        
+
+        :return:
+           The server response with server ID.
         """
         res = self._federation.federate(url,
                                         admin_url,
@@ -130,8 +154,15 @@ class ServerManager(object):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
-        Parameters:
-         :server_id: unique ID of the server
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        server_id              Required string. The unique ID of the server.
+        ==================     ====================================================================
+        
+        
+        :return:
+           The server response with server ID.
         """
         res = self._federation(server_id)
         self._server_list = None
@@ -142,23 +173,29 @@ class ServerManager(object):
         This operation allows you to set an ArcGIS Server federated with
         Portal for ArcGIS as the hosting server or to enforce fine-grained
         access control to a federated server. You can also remove hosting
-        server status from an ArcGIS Server. You can also remove hosting
         server status from an ArcGIS Server. To set a hosting server, an
         enterprise geodatabase must be registered as a managed database
         with the ArcGIS Server.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        server                 Required string. The arcgis.gis.Server object.
+        ------------------     --------------------------------------------------------------------
+        role                   Required string. State whether the server is either a hosting server 
+                               for the portal, a federated server, or a server with restricted access 
+                               to publishing. The allowed values are HOSTING_SERVER, FEDERATED_SERVER, 
+                               or FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, respectively.
+        ------------------     --------------------------------------------------------------------
+        function               Optional string. The specific function associated with this server. Provide a 
+                               comma-separated list of values, but it is not recommend that a single
+                               server have all the server functions. The allowed values are GeoAnalytics, 
+                               RasterAnalytics, and ImageHosting. 
+        ==================     ====================================================================
 
-        Parameters:
-         :param server: arcgis.gis.Server object
-         :param role: Whether the server is a hosting server for the portal, a
-          federated server, or a server with restricted access to
-          publishing. The allowed values are:
-           FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
-           or HOSTING_SERVER.
-         :param function: Function associates a specific function with the
-         server. It takes in a comma separated list of values. The allowed
-         values are GeoAnalytics,RasterAnalytics, and ImageHosting. Values
-         can be comma separated but it is not recommend that a single
-         server have all the server functions
+
+        :return:
+           A status message of 'success' with the ID of the ArcGIS Server.
         """
         if isinstance(server, Server) == False:
             raise ValueError("server must be of type arcgis.gis.Server")
@@ -192,8 +229,8 @@ class ServerManager(object):
         This operation returns information on the status of ArcGIS Servers
         registered with Portal for ArcGIS.
 
-        Output: Boolean.  If false, there is an issue with 1 or more of the
-        Federated Servers.  True means all servers are functioning as
-        expected.
+        :return:
+           True if all servers are functioning as expected, False if there is an 
+           issue with 1 or more of the Federated Servers.  
         """
         return self._federation.validate_all()['status'] == 'success'
