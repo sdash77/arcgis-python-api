@@ -709,7 +709,9 @@ class ServerConnection(object):
     #----------------------------------------------------------------------
     def get_handlers(self):
         handlers = []
-
+        from urllib.request import HTTPRedirectHandler
+        redirect_handler = HTTPRedirectHandler()
+        handlers = [redirect_handler]
         if self._auth == "BASICAUTH": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
