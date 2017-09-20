@@ -83,7 +83,7 @@ class ServicesDirectory(BaseServer):
                               attempt to reach out to the URL resource and populate at creation
                               time.
     ---------------------     --------------------------------------------------------------------
-    verify_cert               optiona booean.  The defaut is True.  If False, any certificate
+    verify_cert               optional booean.  The defaut is True.  If False, any certificate
                               errors will be ignored.  This is useful for new sites or where site
                               that have invalid certificates.
     =====================     ====================================================================
