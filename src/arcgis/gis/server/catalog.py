@@ -82,6 +82,10 @@ class ServicesDirectory(BaseServer):
     initialize                optional boolean.  The default is False.  If True, the object will
                               attempt to reach out to the URL resource and populate at creation
                               time.
+    ---------------------     --------------------------------------------------------------------
+    verify_cert               optiona booean.  The defaut is True.  If False, any certificate
+                              errors will be ignored.  This is useful for new sites or where site
+                              that have invalid certificates.
     =====================     ====================================================================
 
     """
@@ -142,6 +146,7 @@ class ServicesDirectory(BaseServer):
                                          key_file=key_file,
                                          cert_file=cert_file,
                                          portal_connection=self._portal_connection,
+                                         verfiy_cert=verify_cert,
                                          **kwargs)
         self._gis = kwargs.pop('gis', None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
@@ -171,10 +176,21 @@ class ServicesDirectory(BaseServer):
         data = []
         a_template = """<a href="%s?token=%s">URL Link</a>"""
         columns = ['Service Name', 'Service URL']
-        for service in self.list(folder=folder):
-            name = os.path.basename(os.path.dirname(service._url))
-            data.append([name, a_template % (service._url, self._con.token)])
-            del service
+        if folder is None:
+            res = self._con.get(self._url, {"f" : 'json'})
+        elif folder.lower() in [f.lower() for f in self.folders]:
+            res = self._con.get("%s/%s" % (self._url, folder), {"f" : 'json'})
+        if 'services' in res:
+            for s in res['services']:
+                #if s['name'].split('/')[-1].lower() == name.lower():
+                url = "%s/%s/%s" % (self._url,
+                                  s['name'],
+                                  s['type'])
+                data.append([s['name'].split('/')[-1], """<a href="%s">Service</a>""" % url])
+        #for service in self.list(folder=folder):
+            #name = os.path.basename(os.path.dirname(service._url))
+            #data.append([name, a_template % (service._url, self._con.token)])
+            #del service
         df = pd.DataFrame(data=data, columns=columns)
         if as_html:
             table = \
@@ -195,7 +211,7 @@ class ServicesDirectory(BaseServer):
             res = self._con.get("%s/%s" % (self._url, folder), {"f" : 'json'})
         if 'services' in res:
             for s in res['services']:
-                if s['name'].split('/')[1].lower() == name.lower():
+                if s['name'].split('/')[-1].lower() == name.lower():
                     return Service(url="%s/%s/%s" % (self._url,
                                                      s['name'],
                                                      s['type']),

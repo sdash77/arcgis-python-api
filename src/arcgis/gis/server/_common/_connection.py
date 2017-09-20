@@ -260,8 +260,9 @@ class ServerConnection(object):
                  password=None, key_file=None, cert_file=None,
                  expiration=60, all_ssl=False, referer=None,
                  proxy_host=None, proxy_port=None,
-                 portal_connection=None):
+                 portal_connection=None, **kwargs):
         """ The ServerConnection constructor. Requires URL and optionally username/password. """
+        self._verify_cert = kwargs.pop('verify_cert', True)
         self.baseurl = baseurl
         if self._tokenurl is None and \
            portal_connection is None:
@@ -603,8 +604,8 @@ class ServerConnection(object):
         try:
             # Send the request and read the response
             headers = [('User-Agent', self._useragent)]
-            if self._referer and \
-                self._auth.lower() != 'pki':
+            if self._referer:# and \
+                #self._auth.lower() != 'pki':
                 headers.append(('Referer', self._referer))
 
             if compress:
@@ -613,9 +614,10 @@ class ServerConnection(object):
                 self._handlers = self.get_handlers()
             opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
-            #request.install_opener(opener)
-            req = request.Request(url)
-            resp = request.urlopen(req)
+
+            req = request.Request(url,
+                                  headers={i[0] : i[1] for i in headers})
+            resp = opener.open(req)
             resp_data = self._process_response(resp,
                                                out_folder=out_folder,
                                                file_name=file_name)
@@ -711,6 +713,8 @@ class ServerConnection(object):
         handlers = []
         from urllib.request import HTTPRedirectHandler
         redirect_handler = HTTPRedirectHandler()
+        redirect_handler.max_redirections = 30
+        redirect_handler.max_repeats = 30
         handlers = [redirect_handler]
         if self._auth == "BASICAUTH": # used by LDAP
             passman = request.HTTPPasswordMgrWithDefaultRealm()
@@ -720,8 +724,14 @@ class ServerConnection(object):
                                  self._password)
             handlers.append(request.HTTPBasicAuthHandler(passman))
 
-        if self._auth == "PKI":
+        if self._auth == "PKI" or \
+           (self.cert_file is not None and self.key_file is not None):
             handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
+        elif self._portal_connection and \
+             self._portal_connection.cert_file is not None and \
+             self._portal_connection.key_file is not None:
+            handlers.append(HTTPSClientAuthHandler(self._portal_connection.key_file,
+                                                   self._portal_connection.cert_file))
 
         cj = cookiejar.CookieJar()
 
@@ -743,6 +753,8 @@ class ServerConnection(object):
         """ Returns result of an HTTP POST. Supports Multipart requests."""
         #if path.find(" ") > -1:
         path = quote(path, ':/%')
+        out_folder = kwargs.pop('out_folder', tempfile.gettempdir())
+
         url = path
         if url.lower().find("https://") > -1 or\
            url.lower().find("http://") > -1:
@@ -812,15 +824,19 @@ class ServerConnection(object):
                 headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
+            if self._handlers is None:
+                self._handlers = self.get_handlers()
 
-            handlers = self.get_handlers()
-            opener = request.build_opener(*handlers)
-
+            opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
-            #print("***"+url)
-            resp = opener.open(url, data=encoded_postdata.encode())
-            resp_data = self._process_response(resp)
-
+            #request.install_opener(opener)
+            req = request.Request(url,
+                                  data=encoded_postdata.encode('utf-8'),
+                                  headers={i[0] : i[1] for i in headers})
+            resp = opener.open(req)#request.urlopen(req)
+            resp_data = self._process_response(resp,
+                                               out_folder=out_folder,
+                                               file_name=None)
         # Parse the response into JSON
         if _log.isEnabledFor(logging.DEBUG):
             _log.debug('RESPONSE: ' + url + ', ' + resp_data)
