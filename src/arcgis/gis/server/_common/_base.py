@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import json
 from collections import OrderedDict
 from ._connection import ServerConnection
+from urllib.request import HTTPError
 from arcgis._impl.connection import _ArcGISConnection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -53,6 +54,8 @@ class BaseServer(object):
             else:
                 self._json_dict = {}
                 self._properties = PropertyMap({})
+        except HTTPError as err:
+            raise RuntimeError(err)
         except:
             self._json_dict = {}
             self._properties = PropertyMap({})

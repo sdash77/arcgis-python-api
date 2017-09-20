@@ -921,6 +921,8 @@ class _ArcGISConnection(object):
     def get_handlers(self, verify_cert=True):
         from urllib.request import HTTPRedirectHandler
         redirect_handler = HTTPRedirectHandler()
+        redirect_handler.max_redirections = 30
+        redirect_handler.max_repeats = 30
         handlers = [redirect_handler]
 
         if self.proxy_host: # simple proxy support
