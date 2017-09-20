@@ -710,7 +710,6 @@ class ServerConnection(object):
                            urlparts.fragment))
     #----------------------------------------------------------------------
     def get_handlers(self):
-        handlers = []
         from urllib.request import HTTPRedirectHandler
         redirect_handler = HTTPRedirectHandler()
         redirect_handler.max_redirections = 30
