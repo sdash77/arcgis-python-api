@@ -811,9 +811,8 @@ class _ArcGISConnection(object):
                            ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            if self._handlers is None:
-                self._handlers = self.get_handlers(
-                    verify_cert=self._verify_cert)
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
+                self._handlers = self.get_handlers(verify_cert=self._verify_cert)
             opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
             resp = opener.open(url)
@@ -1052,7 +1051,7 @@ class _ArcGISConnection(object):
                     headers.append(ah)
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            if self._handlers is None:
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
                 self._handlers = self.get_handlers(verify_cert)
             opener = request.build_opener(*self._handlers)
 
@@ -1075,7 +1074,8 @@ class _ArcGISConnection(object):
                 headers = [('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            if self._handlers is None:
+
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
                 self._handlers = self.get_handlers(verify_cert)
             opener = request.build_opener(*self._handlers)
 
