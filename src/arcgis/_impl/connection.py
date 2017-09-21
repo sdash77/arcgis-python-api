@@ -218,6 +218,7 @@ class _ArcGISConnection(object):
     _connection = None
     _portal_connection = None
     _service_url = None
+    _handlers = None
 
     #----------------------------------------------------------------------
     def __init__(self, baseurl=None, tokenurl=None, username=None,
@@ -481,8 +482,7 @@ class _ArcGISConnection(object):
             from urllib.request import HTTPCookieProcessor
             token = ""
             cj = None
-            handlers = self.get_handlers(verify_cert=self._verify_cert)
-            for handler in handlers:
+            for handler in self._handlers:
                 if isinstance(handler, (HTTPCookieProcessor)):
                     from urllib.parse import unquote
                     for cookie in handler.cookiejar:
@@ -811,8 +811,9 @@ class _ArcGISConnection(object):
                            ('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            handlers = self.get_handlers(verify_cert=self._verify_cert)
-            opener = request.build_opener(*handlers)
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
+                self._handlers = self.get_handlers(verify_cert=self._verify_cert)
+            opener = request.build_opener(*self._handlers)
             opener.addheaders = headers
             resp = opener.open(url)
 
@@ -1050,8 +1051,9 @@ class _ArcGISConnection(object):
                     headers.append(ah)
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            handlers = self.get_handlers(verify_cert=self._verify_cert)
-            opener = request.build_opener(*handlers)
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
+                self._handlers = self.get_handlers(verify_cert)
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
 
@@ -1072,8 +1074,10 @@ class _ArcGISConnection(object):
                 headers = [('User-Agent', self._useragent)]
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
-            handlers = self.get_handlers(verify_cert=self._verify_cert)
-            opener = request.build_opener(*handlers)
+
+            if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
+                self._handlers = self.get_handlers(verify_cert)
+            opener = request.build_opener(*self._handlers)
 
             opener.addheaders = headers
             #print("***"+url)

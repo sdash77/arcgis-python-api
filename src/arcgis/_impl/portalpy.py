@@ -1033,7 +1033,8 @@ class Portal(object):
             try:
                 resp = self.con.post(path, self._postdata(), ssl=True)
             except:
-                resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
+                if self.con._auth == "PKI":
+                    resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
 
             if resp:
                 self._properties = resp
