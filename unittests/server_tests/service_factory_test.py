@@ -2,7 +2,12 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import unittest
 import pandas as pd
-import os, shutil, arcpy
+import os, shutil
+try:
+    import arcpy
+    HAS_ARCPY = True
+except:
+    HAS_ARCPY = False
 """
 ServiceFactory Tests
 """
