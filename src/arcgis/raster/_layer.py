@@ -3,7 +3,7 @@ import json
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
 from arcgis.geometry import Geometry
-from ..features import FeatureSet
+from arcgis.features import FeatureSet
 import datetime
 
 class ImageryLayer(Layer):
@@ -21,6 +21,8 @@ class ImageryLayer(Layer):
             from .._impl._server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
+        if 'tileInfo' in self.properties:
+            self.tiles = ImageTileManagement(service=self)
         # self._extent = self.properties.initialExtent
 
     @property
@@ -67,11 +69,11 @@ class ImageryLayer(Layer):
     @property
     def histograms(self):
         """
-        Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band. 
+        Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
         If not histograms is found, returns None. In this case, call the compute_histograms()
-        :return: 
+        :return:
             my_hist = imagery_layer.histograms()
-           
+
             Structure of the return value:
             [
              { #band 1
@@ -88,7 +90,7 @@ class ImageryLayer(Layer):
              }
              ....
             ]
-                    
+
         """
         if self.properties.hasHistograms:
             #proceed
@@ -731,7 +733,56 @@ class ImageryLayer(Layer):
             return FeatureSet.from_dict(result)
         else:
             return result
+    #----------------------------------------------------------------------
+    def download_raster(self,
+                        raster_ids,
+                        polygon=None,
+                        extent=None,
+                        out_format=None):
+        """
+        The Download Rasters operation returns information (the file ID)
+        that can be used to download the raw raster files that are
+        associated with a specified set of rasters in the raster catalog.
 
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_ids            required string. A comma-separated list of raster IDs whose files
+                              are to be downloaded.
+        -----------------     --------------------------------------------------------------------
+        polygon               optional Polygon, The geometry to apply for clipping
+        -----------------     --------------------------------------------------------------------
+        extent                optional string. The geometry to apply for clipping
+                              example: "-104,35.6,-94.32,41"
+        -----------------     --------------------------------------------------------------------
+        out_format            optional string. The format of the rasters returned. If not
+                              specified, the rasters will be in their native format.
+                              The format applies when the clip geometry is also specified, and the
+                              format will be honored only when the raster is clipped.
+
+                              To force the Download Rasters operation to convert source images to
+                              a different format, append :Conversion after format string.
+                              Valid formats include: TIFF, Imagine Image, JPEG, BIL, BSQ, BIP,
+                              ENVI, JP2, GIF, BMP, and PNG.
+                              Example: out_format='TIFF'
+        =================     ====================================================================
+        """
+        url = "%s/download" % self._url
+        if self.properties['capabilities'].lower().find('download') == -1:
+            return
+        params = {
+            'f' : 'json',
+            'rasterIds' : raster_ids,
+        }
+        if polygon:
+            params['geometry'] = polygon
+            params['geometryType'] = "esriGeometryPolygon"
+        if extent:
+            params['geometry'] = extent
+            params['geometryType'] = "esriGeometryEnvelope"
+        if out_format:
+            params['format'] = out_format
+        return self._con.post(path=url, postdata=params)
     # ----------------------------------------------------------------------
     def add_rasters(self,
                     raster_type,
@@ -860,6 +911,279 @@ class ImageryLayer(Layer):
         if not service_url is None:
             params['serviceUrl'] = service_url
         return self._con.post(url, params, token=self._token)
+    #----------------------------------------------------------------------
+    def delete_rasters(self, raster_ids):
+        """
+        The Delete Rasters operation deletes one or more rasters in an image service.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_ids            required string. The object IDs of a raster catalog items to be
+                              removed. This is a comma seperated string.
+                              example 1: raster_ids='1,2,3,4' # Multiple IDs
+                              example 2: raster_ids='10' # single ID
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        params = {"f" : 'json',
+                  "rasterIds" : raster_ids}
+        url = "%s/delete" % self._url
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def update_raster(self,
+                      raster_id,
+                      files=None,
+                      item_ids=None,
+                      service_url=None,
+                      compute_statistics=False,
+                      build_pyramids=False,
+                      build_thumbnail=False,
+                      minimum_cell_size_factor=None,
+                      maximum_cell_size_factor=None,
+                      attributes=None,
+                      footprint=None,
+                      geodata_transforms=None,
+                      apply_method="esriGeodataTransformApplyAppend"
+                    ):
+        """
+        The Update Raster operation updates rasters (attributes and
+        footprints, or replaces existing raster files) in an image service.
+        In most cases, this operation is used to update attributes or
+        footprints of existing rasters in an image service. In cases where
+        the original raster needs to be replaced, the new raster can either
+        be items uploaded using the items parameter or URLs of published
+        services using the serviceUrl parameter.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_ids            required integer. The object IDs of a raster catalog items to be
+                              updated.
+        -----------------     --------------------------------------------------------------------
+        files                 optional list. Local source location to the raster to replace the
+                              dataset with.
+                              Example: [r"<path>\data.tiff"]
+        -----------------     --------------------------------------------------------------------
+        item_ids              optional string.  The uploaded items (raster files) being used to
+                              replace existing raster.
+        -----------------     --------------------------------------------------------------------
+        service_url           optional string. The URL of the service to be uploaded to replace
+                              existing raster data. The image service will add this URL to the
+                              mosaic dataset. The serviceUrl is required for the following raster
+                              types: Image Service, Map Service, WCS, and WMS.
+        -----------------     --------------------------------------------------------------------
+        compute_statistics    If true, statistics for the uploaded raster will be computed. The
+                              default is false.
+        -----------------     --------------------------------------------------------------------
+        build_pyramids        optional boolean. If true, builds pyramids for the uploaded raster.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        build_thumbnail       optional boolean. If true, generates a thumbnail for the uploaded
+                              raster. The default is false.
+        -----------------     --------------------------------------------------------------------
+        minimum_cell_size_factor optional float. The factor (times raster resolution) used to
+                                 populate MinPS field (minimum cell size above which raster is
+                                 visible).
+        -----------------     --------------------------------------------------------------------
+        maximum_cell_size_factor optional float. The factor (times raster resolution) used to
+                                 populate MaxPS field (maximum cell size below which raster is
+                                 visible).
+        -----------------     --------------------------------------------------------------------
+        footprint             optional Polygon.  A JSON 2D polygon object that defines the
+                              footprint of the raster. If the spatial reference is not defined, it
+                              will default to the image service's spatial reference.
+        -----------------     --------------------------------------------------------------------
+        attributes            optional dictionary.  Any attribute for the uploaded raster.
+        -----------------     --------------------------------------------------------------------
+        geodata_transforms    optional string. The geodata transformations applied on the updated
+                              rasters. A geodata transformation is a mathematical model that
+                              performs geometric transformation on a raster. It defines how the
+                              pixels will be transformed when displayed or accessed, such as
+                              polynomial, projective, or identity transformations. The geodata
+                              transformations will be applied to the updated dataset.
+        -----------------     --------------------------------------------------------------------
+        apply_method          optional string. Defines how to apply the provided geodataTransform.
+                              The default is esriGeodataTransformApplyAppend.
+                              Values: esriGeodataTransformApplyAppend,
+                                      esriGeodataTransformApplyReplace,
+                                      esriGeodataTransformApplyOverwrite
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        url = "%s/update" % self._url
+        ids = []
+        if files:
+            for f in files:
+                u = self._upload(fp=f)
+                if u:
+                    ids.append(u)
+            item_ids = ",".join(ids)
+        params = {
+            "f" : "json",
+            "rasterId" : raster_id,
+        }
+        if item_ids:
+            params['itemIds'] = item_ids
+        if service_url:
+            params['serviceUrl'] = service_url
+        if compute_statistics:
+            params['computeStatistics'] = compute_statistics
+        if build_pyramids:
+            params['buildPyramids'] = build_pyramids
+        if build_thumbnail:
+            params['buildThumbnail'] = build_thumbnail
+        if minimum_cell_size_factor:
+            params['minimumCellSizeFactor'] = minimum_cell_size_factor
+        if maximum_cell_size_factor:
+            params['maximumCellSizeFactor'] = maximum_cell_size_factor
+        if footprint:
+            params['footprint'] = footprint
+        if attributes:
+            params['attributes'] = attributes
+        if geodata_transforms:
+            params['geodataTransforms'] = geodata_transforms
+        if apply_method:
+            params['geodataTransformApplyMethod'] = apply_method
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def _upload(self, fp, description=None):
+        """uploads a file to the image service"""
+        url = "%s/uploads/upload" % self._url
+        params = {
+            "f" : 'json'
+        }
+        if description:
+            params['description'] = description
+        files = {'file' : fp }
+        res = self._con.post(path=url, postdata=params, files=files)
+        if 'success' in res and res['success']:
+            return res['item']['itemID']
+        return None
+    #----------------------------------------------------------------------
+    def compute_stats_and_histograms(self,
+                                     geometry,
+                                     mosaic_rule=None,
+                                     rendering_rule=None,
+                                     pixel_size=None,
+                                     ):
+        """
+        The result of this operation contains both statistics and histograms
+        computed from the given extent.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              required Polygon or Extent. A geometry that defines the geometry
+                              within which the histogram is computed. The geometry can be an
+                              envelope or a polygon
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           optional dictionary.  Specifies the mosaic rule when defining how
+                              individual images should be mosaicked. When a mosaic rule is not
+                              specified, the default mosaic rule of the image service will be used
+                              (as advertised in the root resource: defaultMosaicMethod,
+                              mosaicOperator, sortField, sortValue).
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        optional dictionary. Specifies the rendering rule for how the
+                              requested image should be rendered.
+        -----------------     --------------------------------------------------------------------
+        pixel_size            optional string. The pixel level being used (or the resolution being
+                              looked at). If pixel size is not specified, then pixelSize will
+                              default to the base resolution of the dataset. The raster at the
+                              specified pixel size in the mosaic dataset will be used for
+                              histogram calculation.
+        =================     ====================================================================
+
+        :returns: dictionary
+
+        """
+        url = "%s/computeStatisticsHistograms" % self._url
+        from arcgis.geometry import Polygon
+        if isinstance(geometry, Polygon):
+            gt = "esriGeometryPolygon"
+        else:
+            gt = "esriGeometryEnvelope"
+        params = {
+            'f' : 'json',
+            'geometry' : geometry,
+            'geometryType' : gt
+        }
+        if pixel_size:
+            params['pixelSize'] = pixel_size
+        if rendering_rule:
+            params['renderingRule'] = rendering_rule
+        if mosaic_rule:
+            params['mosaicRule'] = mosaic_rule
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def compute_tie_points(self,
+                           raster_id,
+                           geodata_transforms):
+        """
+        The result of this operation contains tie points that can be used
+        to match the source image to the reference image. The reference
+        image is configured by the image service publisher. For more
+        information, see Fundamentals for georeferencing a raster dataset.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_id             required integer. Source raster ID.
+        -----------------     --------------------------------------------------------------------
+        geodata_transforms    required dictionary. The geodata transformation that provides a
+                              rough fit of the source image to the reference image. For example, a
+                              first order polynomial transformation that fits the source image to
+                              the expected location.
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        url = "%s/computeTiePoints" % self._url
+        params = {
+            'f' : 'json',
+            'rasterId' : raster_id,
+            'geodataTransform' : geodata_transforms
+        }
+        return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def legend(self,
+               band_ids=None,
+               rendering_rule=None):
+        """
+        The legend information includes the symbol images and labels for
+        each symbol. Each symbol is generally an image of size 20 x 20
+        pixels at 96 DPI. Symbol sizes may vary slightly for some renderer
+        types (e.g., Vector Field Renderer). Additional information in the
+        legend response will include the service name, service type, label,
+        and content type.
+        The legend symbols include the base64 encoded imageData. The
+        symbols returned in response to an image service legend request
+        reflect the default renderer of the image service or the renderer
+        defined by the rendering rule and band Ids.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        band_ids              optional string. If there are multiple bands, you can specify a
+                              single band, or you can change the band combination (red, green,
+                              blue) by specifying the band ID. Band ID is 0 based.
+                              Example: bandIds=2,1,0
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        optional dictionary. Specifies the rendering rule for how the
+                              requested image should be rendered.
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        url = "%s/legend" % self._url
+        params = {'f' : 'json'}
+        if band_ids:
+            params['bandIds'] = band_ids
+        if rendering_rule:
+            params['redneringRule'] = rendering_rule
+        return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
     def colormap(self):
@@ -876,10 +1200,86 @@ class ImageryLayer(Layer):
             return self._con.get(url, params, token=self._token)
         else:
             return None
+    #----------------------------------------------------------------------
+    def compute_class_stats(self,
+                            descriptions,
+                            mosaic_rule="defaultMosaicMethod",
+                            rendering_rule=None,
+                            pixel_size=None
+                            ):
+        """
+        Compute class statistics signatures (used by the maximum likelihood
+        classifier)
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        descriptions        Required list. Class descriptions are training site polygons and
+                            their class descriptions. The structure of the geometry is the same
+                            as the structure of the JSON geometry objects returned by the
+                            ArcGIS REST API.
 
-            # ----------------------------------------------------------------------
+                            :Syntax:
+                            {
+                                "classes":  [  // An list of classes
+                                  {
+                                    "id" : <id>,
+                                    "name" : "<name>",
+                                    "geometry" : <geometry> //polygon
+                                  },
+                                  {
+                                    "id" : <id>,
+                                    "name" : "<name>",
+                                   "geometry" : <geometry>  //polygon
+                                  }
+                                  ...
+                                  ]
+                            }
 
+        ---------------     --------------------------------------------------------------------
+        mosaic_rule         optional string. Specifies the mosaic rule when defining how
+                            individual images should be mosaicked. When a mosaic rule is not
+                            specified, the default mosaic rule of the image service will be used
+                            (as advertised in the root resource: defaultMosaicMethod,
+                            mosaicOperator, sortField, sortValue).
+                            See Mosaic rule objects help for more information:
+                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+        ---------------     --------------------------------------------------------------------
+        rendering_rule      optional dictionary. Specifies the rendering rule for how the
+                            requested image should be rendered.
+                            See the raster function objects for the JSON syntax and examples.
+                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+        ---------------     --------------------------------------------------------------------
+        pixel_size          optional list or dictionary. The pixel level being used (or the
+                            resolution being looked at). If pixel size is not specified, then
+                            pixel_size will default to the base resolution of the dataset.
+                            The structure of the pixel_size parameter is the same as the
+                            structure of the point object returned by the ArcGIS REST API.
+                            In addition to the JSON structure, you can specify the pixel size
+                            with a comma-separated syntax.
+
+                            Syntax:
+                               JSON structure: pixelSize={point}
+                               Point simple syntax: pixelSize=<x>,<y>
+                            Examples:
+                               pixelSize={"x": 0.18, "y": 0.18}
+                               pixelSize=0.18,0.18
+        ===============     ====================================================================
+
+        :returns: dictionary
+        """
+        url = self._url + "/computeClassStatistics"
+        params = {
+            'f': 'json',
+            "classDescriptions" : descriptions,
+            "mosaicRule" : mosaic_rule
+        }
+        if rendering_rule:
+            params['renderingRule'] = rendering_rule
+        if pixel_size:
+            params['pixelSize'] = pixel_size
+        return self._con.post(path=url, postdata=params)
+    # ----------------------------------------------------------------------
     def compute_histograms(self, geometry, mosaic_rule=None,
                                       rendering_rule=None, pixel_size=None):
         """
@@ -1450,3 +1850,465 @@ class ImageryLayer(Layer):
 # Raster.Raster.__iand__      = returnNotImplemented # &=
 # Raster.Raster.__ixor__      = returnNotImplemented # ^=
 # Raster.Raster.__ior__       = returnNotImplemented # |=
+
+########################################################################
+class ImageTileManagement(object):
+    """
+    Manages the Image Layer Tile Functions for Cached
+    """
+    _service = None
+    _url = None
+    _con = None
+    #----------------------------------------------------------------------
+    def __init__(self, service):
+        """Constructor"""
+        if isinstance(service, ImageryLayer):
+            self._service = service
+            self._url = service._url
+            self._con = service._con
+        else:
+            raise ValueError("service must be of type ImageLayer")
+    def _status(self, url, res):
+        """
+        checks the status of the service for async operations
+        """
+        import time
+        if 'jobId' in res:
+            url = url + "/jobs/%s" % res['jobId']
+            while res["jobStatus"] not in ("esriJobSucceeded", "esriJobFailed"):
+                res = self._con.get(path=url, params={'f' : 'json'})
+                if res["jobStatus"] == "esriJobFailed":
+                    return False, res
+                if res['jobStatus'] == 'esriJobSucceeded':
+                    return True, res
+                time.sleep(2)
+        return True, res
+    #----------------------------------------------------------------------
+    def export(self,
+               tile_package=False,
+               extent=None,
+               optimize_for_size=True,
+               compression=75,
+               export_by="LevelID",
+               levels=None,
+               aoi=None
+               ):
+        """
+        The exportTiles operation is performed as an asynchronous task and
+        allows client applications to download map tiles from server for
+        offline use. This operation is performed on a Image Service that
+        allows clients to export cache tiles. The result of this operation
+        is Image Service Job. This job response contains reference to Image
+        Service Result resource that returns the url to resulting tile
+        package (.tpk) or a cache raster dataset.
+
+        export can be enabled in a service by using ArcGIS Desktop or the
+        ArcGIS Server Administrative Site Directory. In ArcGIS Desktop,
+        make an admin or publisher connection to the server, go to service
+        properties and enable "Allow Clients to Export Cache Tiles" in
+        advanced caching page of the Service Editor. You can also specify
+        the maximum tiles clients will be allowed to download. The default
+        maximum allowed tile count is 100,000. To enable this capability
+        using the ArcGIS Servers Administrative Site Directory, edit the
+        service and set the properties exportTilesAllowed=true and
+        maxExportTilesCount=100000.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        tile_package          optional boolean.   Allows exporting either a tile package or a
+                              cache raster data set. If the value is true output will be in tile
+                              package format and if the value is false Cache Raster data set is
+                              returned. The default value is false
+        -----------------     --------------------------------------------------------------------
+        extent                optional string. The extent (bounding box) of the tile package or
+                              the cache dataset to be exported. If extent does not include a
+                              spatial reference, the extent values are assumed to be in the
+                              spatial reference of the map. The default value is full extent of
+                              the tiled map service.
+
+                              Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                              Example: -104,35.6,-94.32,41
+        -----------------     --------------------------------------------------------------------
+        optimize_for_size     optional boolean. Use this parameter to enable compression of JPEG
+                              tiles and reduce the size of the downloaded tile package or the
+                              cache raster data set. Compressing tiles slightly compromises on the
+                              quality of tiles but helps reduce the size of the download. Try out
+                              sample compressions to determine the optimal compression before
+                              using this feature.
+        -----------------     --------------------------------------------------------------------
+        compression           optional integer. When optimizeTilesForSize=true you can specify a
+                              compression factor. The value must be between 0 and 100. Default is
+                              75.
+        -----------------     --------------------------------------------------------------------
+        export_by             optional string. The criteria that will be used to select the tile
+                              service levels to export. The values can be Level IDs, cache scales
+                              or the Resolution (in the case of image services).
+                              Values: LevelID | Resolution | Scale
+                              Default: LevelID
+        -----------------     --------------------------------------------------------------------
+        levels                optional string. Specify the tiled service levels to export. The
+                              values should correspond to Level IDs, cache scales or the
+                              Resolution as specified in exportBy parameter. The values can be
+                              comma separated values or a range.
+
+                              Example 1: 1,2,3,4,5,6,7,8,9
+                              Example 2: 1-4,7-9
+        -----------------     --------------------------------------------------------------------
+        aoi                   optional polygon. The areaOfInterest polygon allows exporting tiles
+                              within the specified polygon areas. This parameter supersedes
+                              extent parameter.
+        =================     ====================================================================
+        """
+        if self._service.properties['exportTilesAllowed'] == False:
+            return None
+
+        url = "%s/%s" % (self._url, "exportTiles")
+        if export_by is None:
+            export_by = "LevelID"
+        params = {
+            "f" : "json",
+            "tilePackage" : tile_package,
+            "exportExtent" : extent,
+            "optimizeTilesForSize" : optimize_for_size,
+            "compressionQuality" : compression,
+            "exportBy" : export_by,
+            "levels" : levels
+        }
+
+        if aoi:
+            params['areaOfInterest'] = aoi
+
+        res = self._con.post(path=url, postdata=params)
+        sid = res['jobId']
+        success, res = self._status(url, res)
+        if success == False:
+            return res
+        else:
+            if "results" in res and \
+               "out_service_url" in res['results']:
+                rurl = url + "/jobs/%s/%s" % (sid, res['results']['out_service_url']['paramUrl'])
+                result_url = self._con.get(path=rurl, params={'f': 'json'})['value']
+                dl_res = self._con.get(path=result_url, params={'f' : 'json'})
+                if 'files' in dl_res:
+                    import tempfile
+                    files = []
+                    for f in dl_res['files']:
+                        files.append(self._con.get(path=f['url'],
+                                                   try_json=False,
+                                                   out_folder=tempfile.gettempdir(),
+                                                   file_name=f['name']))
+                        del f
+                    return files
+                return []
+            return res
+    #----------------------------------------------------------------------
+    def estimate_size(self,
+                      tile_package=False,
+                      extent=None,
+                      optimize_for_size=True,
+                      compression=75,
+                      export_by="LevelID",
+                      levels=None,
+                      aoi=None
+                      ):
+        """
+        The estimate_size operation is an asynchronous task that
+        allows estimation of the size of the tile package or the cache data
+        set that you download using the Export Tiles operation. This
+        operation can also be used to estimate the tile count in a tile
+        package and determine if it will exceced the maxExportTileCount
+        limit set by the administrator of the service. The result of this
+        operation is Image Service Job. This job response contains
+        reference to Image Service Result resource that returns the total
+        size of the cache to be exported (in bytes) and the number of tiles
+        that will be exported.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        tile_package          optional boolean.   Allows exporting either a tile package or a
+                              cache raster data set. If the value is true output will be in tile
+                              package format and if the value is false Cache Raster data set is
+                              returned. The default value is false
+        -----------------     --------------------------------------------------------------------
+        extent                optional string. The extent (bounding box) of the tile package or
+                              the cache dataset to be exported. If extent does not include a
+                              spatial reference, the extent values are assumed to be in the
+                              spatial reference of the map. The default value is full extent of
+                              the tiled map service.
+
+                              Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                              Example: -104,35.6,-94.32,41
+        -----------------     --------------------------------------------------------------------
+        optimize_for_size     optional boolean. Use this parameter to enable compression of JPEG
+                              tiles and reduce the size of the downloaded tile package or the
+                              cache raster data set. Compressing tiles slightly compromises on the
+                              quality of tiles but helps reduce the size of the download. Try out
+                              sample compressions to determine the optimal compression before
+                              using this feature.
+        -----------------     --------------------------------------------------------------------
+        compression           optional integer. When optimizeTilesForSize=true you can specify a
+                              compression factor. The value must be between 0 and 100. Default is
+                              75.
+        -----------------     --------------------------------------------------------------------
+        export_by             optional string. The criteria that will be used to select the tile
+                              service levels to export. The values can be Level IDs, cache scales
+                              or the Resolution (in the case of image services).
+                              Values: LevelID | Resolution | Scale
+                              Default: LevelID
+        -----------------     --------------------------------------------------------------------
+        levels                optional string. Specify the tiled service levels to export. The
+                              values should correspond to Level IDs, cache scales or the
+                              Resolution as specified in exportBy parameter. The values can be
+                              comma separated values or a range.
+
+                              Example 1: 1,2,3,4,5,6,7,8,9
+                              Example 2: 1-4,7-9
+        -----------------     --------------------------------------------------------------------
+        aoi                   optional polygon. The areaOfInterest polygon allows exporting tiles
+                              within the specified polygon areas. This parameter supersedes
+                              extent parameter.
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        if self._service.properties['exportTilesAllowed'] == False:
+            return None
+        url = "%s/%s" % (self._url, "estimateExportTilesSize")
+        if export_by is None:
+            export_by = "LevelID"
+        params = {
+            "f" : "json",
+            "tilePackage" : tile_package,
+            "exportExtent" : extent,
+            "optimizeTilesForSize" : optimize_for_size,
+            "compressionQuality" : compression,
+            "exportBy" : export_by,
+            "levels" : levels
+        }
+
+        if aoi:
+            params['areaOfInterest'] = aoi
+        res = self._con.post(path=url, postdata=params)
+        sid = res['jobId']
+        success, res = self._status(url, res)
+        if success == False:
+            return res
+        else:
+            if "results" in res and \
+               "out_service_url" in res['results']:
+                rurl = url + "/jobs/%s/%s" % (sid, res['results']['out_service_url']['paramUrl'])
+                result_url = self._con.get(path=rurl, params={'f': 'json'})['value']
+                return result_url
+            else:
+                return res
+        return res
+    #----------------------------------------------------------------------
+    def get_job(self, job_id):
+        """
+        Retrieves status and message information about a specific job.
+
+        This is useful for checking jobs that have been launched manually.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        job_id                required string.  Unique ID of a job.
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        url = "%s/jobs/%s" % (self._url, job_id)
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def _get_job_inputs(self, job_id, parameter):
+        """
+        The Image Service input resource represents an input parameter for
+        a Image Service Job. It provides information about the input
+        parameter such as its name, data type, and value. The value is the
+        most important piece of information provided by this resource.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        job_id                required string.  Unique ID of a job.
+        -----------------     --------------------------------------------------------------------
+        parameter             required string.  Name of the job parameter to retrieve.
+        =================     ====================================================================
+
+        :returns: dictionary
+
+        :Example Output Format:
+
+        {"paramName" : "<paramName>","dataType" : "<dataType>","value" : <valueLiteralOrObject>}
+
+        """
+        url = "%s/jobs/%s/inputs/%s" % (self._url, job_id, parameter)
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def _get_job_result(self, job_id, parameter):
+        """
+        The Image Service input resource represents an input parameter for
+        a Image Service Job. It provides information about the input
+        parameter such as its name, data type, and value. The value is the
+        most important piece of information provided by this resource.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        job_id                required string.  Unique ID of a job.
+        -----------------     --------------------------------------------------------------------
+        parameter             required string.  Name of the job parameter to retrieve.
+        =================     ====================================================================
+
+        :returns: dictionary
+
+        :Example Output Format:
+
+        {"paramName" : "<paramName>","dataType" : "<dataType>","value" : <valueLiteralOrObject>}
+
+        """
+        url = "%s/jobs/%s/results/%s" % (self._url, job_id, parameter)
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def image_tile(self, level, row, column, blank_tile=False):
+        """
+        For cached image services, this resource represents a single cached
+        tile for the image. The image bytes for the tile at the specified
+        level, row, and column are directly streamed to the client. If the
+        tile is not found, an HTTP status code of 404 .
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        level                 required integer. The level of detail ID.
+        -----------------     --------------------------------------------------------------------
+        row                   required integer. The row of the cache to pull from.
+        -----------------     --------------------------------------------------------------------
+        column                required integer. The column of the cache to pull from.
+        -----------------     --------------------------------------------------------------------
+        blank_tile            optional boolean.  Default is False. This parameter applies only to
+                              cached image services that are configured with the ability to return
+                              blank or missing tiles for areas where cache is not available. When
+                              False, the server will return a resource not found (HTTP 404)
+                              response instead of a blank or missing tile. When this parameter is
+                              not set, the response will contain the header blank-tile : true
+                              for a blank/missing tile.
+        =================     ====================================================================
+
+        :returns: None or file path (string)
+        """
+        import tempfile, uuid
+        fname = "%s.jpg" % uuid.uuid4().hex
+        params = {'blankTile' : blank_tile}
+        url = "%s/tile/%s/%s/%s" % (self._url, level, row, column)
+        out_folder = tempfile.gettempdir()
+        return self._con.get(path=url,
+                             out_folder=out_folder,
+                             file_name=fname,
+                             params=params,
+                             try_json=False)
+
+########################################################################
+class RasterCatalogItem(object):
+    """
+    Represents a single catalog item.
+    """
+    _properties = None
+    _con = None
+    _url = None
+    _service = None
+    _json_dict = None
+    def __init__(self, service, initialize=True):
+        """class initializer"""
+        self._url = service._url
+        self._con = service._con
+        self._service = service
+        if initialize:
+            self._init(self._con)
+    #----------------------------------------------------------------------
+    def _init(self, connection=None):
+        """loads the properties into the class"""
+        from arcgis._impl.common._mixins import PropertyMap
+        if connection is None:
+            connection = self._con
+        params = {"f":"json"}
+        try:
+            result = connection.get(path=self._url,
+                                    params=params)
+            if isinstance(result, dict):
+                self._json_dict = result
+                self._properties = PropertyMap(result)
+            else:
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except HTTPError as err:
+            raise RuntimeError(err)
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        returns the object properties
+        """
+        if self._properties is None:
+            self._init()
+        return self._properties
+    #----------------------------------------------------------------------
+    def __getattr__(self, name):
+        """adds dot notation to any class"""
+        if self._properties is None:
+            self._init()
+        try:
+            return self._properties.__getitem__(name)
+        except:
+            for k,v in self._json_dict.items():
+                if k.lower() == name.lower():
+                    return v
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+    #----------------------------------------------------------------------
+    def __getitem__(self, key):
+        """helps make object function like a dictionary object"""
+        try:
+            return self._properties.__getitem__(key)
+        except KeyError:
+            for k,v in self._json_dict.items():
+                if k.lower() == key.lower():
+                    return v
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
+                                                                        key))
+        except:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
+                                                                        key))
+    #----------------------------------------------------------------------
+    @property
+    def info(self):
+        """
+        The info resource returns information about the associated raster
+        such as its width, height, number of bands, and pixel type.
+        """
+        url = "%s/info" % self._url
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @property
+    def key_properties(self):
+        """"""
+        url = "%s/info/keyProperties" % self._url
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+
+
+
