@@ -33,7 +33,7 @@ class ImageryLayer(Layer):
     #----------------------------------------------------------------------
     def _catalog_item(self, id):
         """
-        The Raster Catalog Item resource represents a single raster catalog item
+        The Raster Catalog Item property represents a single raster catalog item
         """
 
         return RasterCatalogItem(url="%s/%s" % (self._url, id),
@@ -125,7 +125,7 @@ class ImageryLayer(Layer):
     #----------------------------------------------------------------------
     def attribute_table(self, rendering_rule=None):
         """
-        The attribute_table resource returns categorical mapping of pixel
+        The attribute_table method returns categorical mapping of pixel
         values (for example, a class, group, category, or membership).
 
         =================     ====================================================================
@@ -158,8 +158,8 @@ class ImageryLayer(Layer):
     @property
     def multidimensional_info(self):
         """
-        The multidimensional_info resource returns multidimensional
-        informtion of the Layer. This resource is supported if the
+        The multidimensional_info property returns multidimensional
+        informtion of the Layer. This property is supported if the
         hasMultidimensions property of the Layer is true.
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
@@ -176,7 +176,7 @@ class ImageryLayer(Layer):
                 in_sr,
                 out_sr):
         """
-        The project operation is performed on an image Layer resource.
+        The project operation is performed on an image Layer method.
         This operation projects an array of input geometries from the input
         spatial reference to the output spatial reference. The response
         order of geometries is in the same order as they were requested.
@@ -603,7 +603,7 @@ class ImageryLayer(Layer):
                      ):
         """
         The export_image operation is performed on an imagery layer.
-        The result of this operation is an image resource. This resource
+        The result of this operation is an image method. This method
         provides information about the exported image, such as its URL,
         extent, width, and height.
         In addition to the usual response formats of HTML and JSON, you can
@@ -1152,7 +1152,7 @@ class ImageryLayer(Layer):
                     ):
         """
         This operation is supported at 10.1 and later.
-        The Add Rasters operation is performed on an image Layer resource.
+        The Add Rasters operation is performed on an image Layer method.
         The Add Rasters operation adds new rasters to an image Layer
         (POST only).
         The added rasters can either be uploaded items, using the item_ids
@@ -1547,8 +1547,8 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def colormap(self):
         """
-        The colormap resource returns RGB color representation of pixel
-        values. This resource is supported if the hasColormap property of
+        The colormap method returns RGB color representation of pixel
+        values. This method is supported if the hasColormap property of
         the layer is true.
         """
         if self.properties.hasColormap:
@@ -1647,7 +1647,7 @@ class ImageryLayer(Layer):
                            rendering_rule=None, pixel_size=None):
         """
         The compute_histograms operation is performed on an imagery layer
-        resource. This operation is supported by any imagery layer published with
+        method. This operation is supported by any imagery layer published with
         mosaic datasets or a raster dataset. The result of this operation contains
         both statistics and histograms computed from the given extent.
         Inputs:
@@ -2262,7 +2262,7 @@ class ImageTileManagement(object):
         offline use. This operation is performed on a Image Layer that
         allows clients to export cache tiles. The result of this operation
         is Image Layer Job. This job response contains reference to Image
-        Layer Result resource that returns the url to resulting tile
+        Layer Result method that returns the url to resulting tile
         package (.tpk) or a cache raster dataset.
 
         export can be enabled in a layer by using ArcGIS Desktop or the
@@ -2383,7 +2383,7 @@ class ImageTileManagement(object):
         package and determine if it will exceced the maxExportTileCount
         limit set by the administrator of the layer. The result of this
         operation is Image Layer Job. This job response contains
-        reference to Image Layer Result resource that returns the total
+        reference to Image Layer Result method that returns the total
         size of the cache to be exported (in bytes) and the number of tiles
         that will be exported.
 
@@ -2488,10 +2488,10 @@ class ImageTileManagement(object):
     #----------------------------------------------------------------------
     def _get_job_inputs(self, job_id, parameter):
         """
-        The Image Layer input resource represents an input parameter for
+        The Image Layer input method represents an input parameter for
         a Image Layer Job. It provides information about the input
         parameter such as its name, data type, and value. The value is the
-        most important piece of information provided by this resource.
+        most important piece of information provided by this method.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -2514,10 +2514,10 @@ class ImageTileManagement(object):
     #----------------------------------------------------------------------
     def _get_job_result(self, job_id, parameter):
         """
-        The Image Layer input resource represents an input parameter for
+        The Image Layer input method represents an input parameter for
         a Image Layer Job. It provides information about the input
         parameter such as its name, data type, and value. The value is the
-        most important piece of information provided by this resource.
+        most important piece of information provided by this method.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -2540,7 +2540,7 @@ class ImageTileManagement(object):
     #----------------------------------------------------------------------
     def image_tile(self, level, row, column, blank_tile=False):
         """
-        For cached image services, this resource represents a single cached
+        For cached image services, this method represents a single cached
         tile for the image. The image bytes for the tile at the specified
         level, row, and column are directly streamed to the client. If the
         tile is not found, an HTTP status code of 404 .
@@ -2659,7 +2659,7 @@ class RasterCatalogItem(object):
     @property
     def info(self):
         """
-        The info resource returns information about the associated raster
+        The info property returns information about the associated raster
         such as its width, height, number of bands, and pixel type.
         """
         url = "%s/info" % self._url
@@ -2669,7 +2669,7 @@ class RasterCatalogItem(object):
     @property
     def key_properties(self):
         """
-        The raster keyProperties resource returns key properties of the
+        The raster key_properties property returns key properties of the
         associated raster in an image layer.
         """
         url = "%s/info/keyProperties" % self._url
@@ -2678,7 +2678,7 @@ class RasterCatalogItem(object):
     #----------------------------------------------------------------------
     @property
     def thumbnail(self):
-        """returns a thumbnail of the current resource"""
+        """returns a thumbnail of the current item"""
         import tempfile
         folder = tempfile.gettempdir()
         url = "%s/thumbnail" % self._url
@@ -2703,10 +2703,10 @@ class RasterCatalogItem(object):
               compression=75
               ):
         """
-        The Raster Image resource returns a composite image for a single
-        raster catalog item. You can use this resource for generating
+        The Raster Image method returns a composite image for a single
+        raster catalog item. You can use this method for generating
         dynamic images based on a single catalog item.
-        This resource provides information about the exported image, such
+        This method provides information about the exported image, such
         as its URL, width and height, and extent.
         Apart from the usual response formats of html and json, you can
         also request a format called image for the image. When you specify
@@ -2809,7 +2809,7 @@ class RasterCatalogItem(object):
     @property
     def ics(self):
         """
-        The raster ics resource returns the image coordinate system of the
+        The raster ics property returns the image coordinate system of the
         associated raster in an image layer. The returned ics can be used
         as the SR parameter.
 
@@ -2821,7 +2821,7 @@ class RasterCatalogItem(object):
     @property
     def metadata(self):
         """
-        The metadata resource returns metadata of the image layer or a
+        The metadata property returns metadata of the image layer or a
         raster catalog item. The output format is always XML.
         """
         url = "%s/info/metadata" % self._url
