@@ -132,7 +132,7 @@ class ImageryLayer(Layer):
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
-                              processed. The response is updated service info that reflects a
+                              processed. The response is updated Layer info that reflects a
                               custom processing as defined by the rendering rule. For example, if
                               renderingRule contains an attributeTable function, the response
                               will indicate "hasRasterAttributeTable": true; if the renderingRule
@@ -146,16 +146,21 @@ class ImageryLayer(Layer):
         if "hasRasterAttributeTable" in self.properties and \
            self.properties["hasRasterAttributeTable"]:
             url = "%s/rasterAttributeTable" % self._url
+            params = {'f' : 'json'}
+            if rendering_rule:
+                params['renderingRule'] = rendering_rule
+            elif self._fn:
+                params['renderingRule'] = self._fn
             return self._con.get(path=url,
-                             params={'f': 'json'})
+                             params=params)
         return None
     #----------------------------------------------------------------------
     @property
     def multidimensional_info(self):
         """
         The multidimensional_info resource returns multidimensional
-        informtion of the service. This resource is supported if the
-        hasMultidimensions property of the service is true.
+        informtion of the Layer. This resource is supported if the
+        hasMultidimensions property of the Layer is true.
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
         """
@@ -171,7 +176,7 @@ class ImageryLayer(Layer):
                 in_sr,
                 out_sr):
         """
-        The project operation is performed on an image service resource.
+        The project operation is performed on an image Layer resource.
         This operation projects an array of input geometries from the input
         spatial reference to the output spatial reference. The response
         order of geometries is in the same order as they were requested.
@@ -210,7 +215,7 @@ class ImageryLayer(Layer):
                  ):
         """
 
-        It identifies the content of an image service for a given location
+        It identifies the content of an image Layer for a given location
         and a given mosaic rule. The location can be a point or a polygon.
 
         The identify operation is supported by both mosaic dataset and
@@ -236,7 +241,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         mosaic_rule           optional string.  Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image service will be used
+                              specified, the default mosaic rule of the image Layer will be used
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
         -----------------     --------------------------------------------------------------------
@@ -248,7 +253,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         time_extent           optional list of datetime objects or datetime object.  The time
                               instant or time extent of the raster to be identified. This
-                              parameter is only valid if the image service supports time.
+                              parameter is only valid if the image Layer supports time.
         -----------------     --------------------------------------------------------------------
         return_geometry       optional boolean. Default is False.  Indicates whether or not to
                               return the raster catalog item's footprint. Set it to false when the
@@ -275,11 +280,17 @@ class ImageryLayer(Layer):
             params['geometryType'] = 'esriGeometryPoint'
         if isinstance(geometry, Polygon):
             params['geometryType'] = 'esriGeometryPolygon'
+        if mosaic_rule:
+            params['mosaicRule'] = mosaic_rule
+        elif self._mosaic_rule:
+            params['mosaicRule'] = self._mosaic_rule
 
         if isinstance(rendering_rules, dict):
             params['renderingRule'] = rendering_rules
         elif isinstance(rendering_rules, list):
             params['renderingRules'] = rendering_rules
+        elif self._fn:
+            params['renderingRule'] = self._fn
         else:
             raise ValueError("Invalid Rendering Rules")
         if pixel_size:
@@ -311,15 +322,15 @@ class ImageryLayer(Layer):
                 ):
         """
         The function lets a user measure distance, direction, area,
-        perimeter, and height from an image service. The result of this
+        perimeter, and height from an image Layer. The result of this
         operation includes the name of the raster dataset being used,
         sensor name, and measured values.
         The measure operation can be supported by image services from
         raster datasets and mosaic datasets. Spatial reference is required
         to perform basic measurement (distance, area, and so on). Sensor
         metadata (geodata transformation) needs to be present in the data
-        source used by an image service to enable height measurement (for
-        example, imagery with RPCs). The mosaic dataset or service needs to
+        source used by an image Layer to enable height measurement (for
+        example, imagery with RPCs). The mosaic dataset or Layer needs to
         include DEM to perform 3D measure.
 
         =================     ====================================================================
@@ -354,7 +365,7 @@ class ImageryLayer(Layer):
                                  esriMensurationCentroid3D - Require only from_geometry,
                                  type: {Polygon}, {Envelope}
                               Supported measure operations can be derived from the
-                              mensurationCapabilities in the image service root resource.
+                              mensurationCapabilities in the image Layer root resource.
                               Basic capability supports esriMensurationPoint,
                               esriMensurationDistanceAndAngle, esriMensurationAreaAndPerimeter,
                               and esriMensurationCentroid.
@@ -370,7 +381,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         pixel_size            optional string.  The pixel level (resolution) being measured. If
                               pixel size is not specified, pixel_size will default to the base
-                              resolution of the image service. The raster at the specified pixel
+                              resolution of the image Layer. The raster at the specified pixel
                               size in the mosaic dataset will be used for measurement.
                               Syntax:
                               pixel_size=<x>,<y>
@@ -379,7 +390,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         mosaic_rule           optional string. Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image service will be used
+                              specified, the default mosaic rule of the image Layer will be used
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue). The first visible image is
                               used by measure.
@@ -426,6 +437,8 @@ class ImageryLayer(Layer):
             params['measureOperation'] = measure_operation
         if mosaic_rule:
             params['mosaicRule'] = mosaic_rule
+        elif self._mosaic_rule is not None:
+            params['mosaicRule'] = self._mosaic_rule
         if pixel_size:
             params['pixelSize'] = pixel_size
         if linear_unit:
@@ -679,7 +692,7 @@ class ImageryLayer(Layer):
            mosaic_rule - Specifies the mosaic rule when defining how
                         individual images should be mosaicked. When a mosaic
                         rule is not specified, the default mosaic rule of
-                        the image service will be used (as advertised in
+                        the image Layer will be used (as advertised in
                         the root resource: defaultMosaicMethod,
                         mosaicOperator, sortField, sortValue).
 
@@ -920,7 +933,7 @@ class ImageryLayer(Layer):
                                     based on the fields specified in
                                     outFields. This parameter applies only
                                     if the supportsAdvancedQueries property
-                                    of the image service is true.
+                                    of the image Layer is true.
                out_statistics- the definitions for one or more field-based
                               statistics to be calculated.
                group_by_fields_for_statistics-One or more field names using the
@@ -948,7 +961,7 @@ class ImageryLayer(Layer):
               is None.
               result_record_count - This option fetches query results up to
               the resultRecordCount specified. When resultOffset is
-              specified and this parameter is not, image service defaults
+              specified and this parameter is not, image Layer defaults
               to maxRecordCount. The maximum value for this parameter is
               the value of the layer's maxRecordCount property.
               max_allowable_offset - This option can be used to specify the
@@ -956,7 +969,7 @@ class ImageryLayer(Layer):
               returned by the query operation. The max_allowable_offset is
               in the units of the outSR. If outSR is not specified,
               max_allowable_offset is assumed to be in the unit of the
-              spatial reference of the service.
+              spatial reference of the Layer.
               true_curves -  If true, returns true curves in output
               geometres, otherwise curves get converted to densified
               polylines or polygons.
@@ -1139,16 +1152,16 @@ class ImageryLayer(Layer):
                     ):
         """
         This operation is supported at 10.1 and later.
-        The Add Rasters operation is performed on an image service resource.
-        The Add Rasters operation adds new rasters to an image service
+        The Add Rasters operation is performed on an image Layer resource.
+        The Add Rasters operation adds new rasters to an image Layer
         (POST only).
         The added rasters can either be uploaded items, using the item_ids
         parameter, or published services, using the service_url parameter.
         If item_ids is specified, uploaded rasters are copied to the image
-        service's dynamic image workspace location; if the service_url is
-        specified, the image service adds the URL to the mosaic dataset no
+        Layer's dynamic image workspace location; if the service_url is
+        specified, the image Layer adds the URL to the mosaic dataset no
         raster files are copied. The service_url is required input for the
-        following raster types: Image Service, Map Service, WCS, and WMS.
+        following raster types: Image Layer, Map Service, WCS, and WMS.
 
         Inputs:
 
@@ -1157,16 +1170,16 @@ class ImageryLayer(Layer):
             Syntax: item_ids=<itemId1>,<itemId2>
             Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
                              ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        service_url - The URL of the service to be added. The image service
+        service_url - The URL of the service to be added. The image Layer
          will add this URL to the mosaic dataset. Either item_ids or
          service_url is needed to perform this operation. The service URL is
-         required for the following raster types: Image Service, Map
+         required for the following raster types: Image Layer, Map
          Service, WCS, and WMS.
             Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
         raster_type - The type of raster files being added. Raster types
          define the metadata and processing template for raster files to be
-         added. Allowed values are listed in image service resource.
-            Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Service,Map Service,NITF,WCS,WMS
+         added. Allowed values are listed in image Layer resource.
+            Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
         compute_statistics - If true, statistics for the rasters will be
          computed. The default is false.
             Values: false,true
@@ -1254,7 +1267,7 @@ class ImageryLayer(Layer):
     #----------------------------------------------------------------------
     def delete_rasters(self, raster_ids):
         """
-        The Delete Rasters operation deletes one or more rasters in an image service.
+        The Delete Rasters operation deletes one or more rasters in an image Layer.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -1289,9 +1302,9 @@ class ImageryLayer(Layer):
                     ):
         """
         The Update Raster operation updates rasters (attributes and
-        footprints, or replaces existing raster files) in an image service.
+        footprints, or replaces existing raster files) in an image layer.
         In most cases, this operation is used to update attributes or
-        footprints of existing rasters in an image service. In cases where
+        footprints of existing rasters in an image layer. In cases where
         the original raster needs to be replaced, the new raster can either
         be items uploaded using the items parameter or URLs of published
         services using the serviceUrl parameter.
@@ -1309,10 +1322,10 @@ class ImageryLayer(Layer):
         item_ids              optional string.  The uploaded items (raster files) being used to
                               replace existing raster.
         -----------------     --------------------------------------------------------------------
-        service_url           optional string. The URL of the service to be uploaded to replace
-                              existing raster data. The image service will add this URL to the
+        service_url           optional string. The URL of the layer to be uploaded to replace
+                              existing raster data. The image layer will add this URL to the
                               mosaic dataset. The serviceUrl is required for the following raster
-                              types: Image Service, Map Service, WCS, and WMS.
+                              types: Image Layer, Map Service, WCS, and WMS.
         -----------------     --------------------------------------------------------------------
         compute_statistics    If true, statistics for the uploaded raster will be computed. The
                               default is false.
@@ -1333,7 +1346,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         footprint             optional Polygon.  A JSON 2D polygon object that defines the
                               footprint of the raster. If the spatial reference is not defined, it
-                              will default to the image service's spatial reference.
+                              will default to the image layer's spatial reference.
         -----------------     --------------------------------------------------------------------
         attributes            optional dictionary.  Any attribute for the uploaded raster.
         -----------------     --------------------------------------------------------------------
@@ -1390,7 +1403,7 @@ class ImageryLayer(Layer):
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def _upload(self, fp, description=None):
-        """uploads a file to the image service"""
+        """uploads a file to the image layer"""
         url = "%s/uploads/upload" % self._url
         params = {
             "f" : 'json'
@@ -1422,7 +1435,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         mosaic_rule           optional dictionary.  Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image service will be used
+                              specified, the default mosaic rule of the image layer will be used
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
         -----------------     --------------------------------------------------------------------
@@ -1454,8 +1467,12 @@ class ImageryLayer(Layer):
             params['pixelSize'] = pixel_size
         if rendering_rule:
             params['renderingRule'] = rendering_rule
+        elif 'renderingRule' in self._fn:
+            params['renderingRule'] = self._fn['renderingRule']
         if mosaic_rule:
             params['mosaicRule'] = mosaic_rule
+        elif self._mosaic_rule is not None:
+            params['mosaicRule'] = self._mosaic_rule
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def compute_tie_points(self,
@@ -1464,7 +1481,7 @@ class ImageryLayer(Layer):
         """
         The result of this operation contains tie points that can be used
         to match the source image to the reference image. The reference
-        image is configured by the image service publisher. For more
+        image is configured by the image layer publisher. For more
         information, see Fundamentals for georeferencing a raster dataset.
 
         =================     ====================================================================
@@ -1496,11 +1513,11 @@ class ImageryLayer(Layer):
         each symbol. Each symbol is generally an image of size 20 x 20
         pixels at 96 DPI. Symbol sizes may vary slightly for some renderer
         types (e.g., Vector Field Renderer). Additional information in the
-        legend response will include the service name, service type, label,
+        legend response will include the layer name, layer type, label,
         and content type.
         The legend symbols include the base64 encoded imageData. The
-        symbols returned in response to an image service legend request
-        reflect the default renderer of the image service or the renderer
+        symbols returned in response to an image layer legend request
+        reflect the default renderer of the image layer or the renderer
         defined by the rendering rule and band Ids.
 
         =================     ====================================================================
@@ -1522,7 +1539,9 @@ class ImageryLayer(Layer):
         if band_ids:
             params['bandIds'] = band_ids
         if rendering_rule:
-            params['redneringRule'] = rendering_rule
+            params['renderingRule'] = rendering_rule
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
@@ -1530,7 +1549,7 @@ class ImageryLayer(Layer):
         """
         The colormap resource returns RGB color representation of pixel
         values. This resource is supported if the hasColormap property of
-        the service is true.
+        the layer is true.
         """
         if self.properties.hasColormap:
             url = self._url + "/colormap"
@@ -1579,7 +1598,7 @@ class ImageryLayer(Layer):
         ---------------     --------------------------------------------------------------------
         mosaic_rule         optional string. Specifies the mosaic rule when defining how
                             individual images should be mosaicked. When a mosaic rule is not
-                            specified, the default mosaic rule of the image service will be used
+                            specified, the default mosaic rule of the image layer will be used
                             (as advertised in the root resource: defaultMosaicMethod,
                             mosaicOperator, sortField, sortValue).
                             See Mosaic rule objects help for more information:
@@ -1609,11 +1628,15 @@ class ImageryLayer(Layer):
         :returns: dictionary
         """
         url = self._url + "/computeClassStatistics"
+
         params = {
             'f': 'json',
             "classDescriptions" : descriptions,
             "mosaicRule" : mosaic_rule
         }
+        if self._mosaic_rule is not None and \
+           mosaic_rule is None:
+            params['mosaicRule'] = self._mosaic_rule
         if rendering_rule:
             params['renderingRule'] = rendering_rule
         if pixel_size:
@@ -1621,7 +1644,7 @@ class ImageryLayer(Layer):
         return self._con.post(path=url, postdata=params)
     # ----------------------------------------------------------------------
     def compute_histograms(self, geometry, mosaic_rule=None,
-                                      rendering_rule=None, pixel_size=None):
+                           rendering_rule=None, pixel_size=None):
         """
         The compute_histograms operation is performed on an imagery layer
         resource. This operation is supported by any imagery layer published with
@@ -1634,7 +1657,7 @@ class ImageryLayer(Layer):
          returned by the ArcGIS REST API, or an arcgis.geometry Geometry object
         mosaic_rule - Specifies the mosaic rule when defining how individual
          images should be mosaicked. When a mosaic rule is not specified, the
-         default mosaic rule of the image service will be used (as advertised
+         default mosaic rule of the image layer will be used (as advertised
          in the root resource: defaultMosaicMethod, mosaicOperator, sortField,
          sortValue).
         rendering_rule - Specifies the rendering rule for how the requested
@@ -1692,14 +1715,14 @@ class ImageryLayer(Layer):
         directly.
         The number of sample locations in the response is based on the
         sample_distance or sample_count parameter and cannot exceed the limit of
-        the image service (the default is 1000, which is an approximate limit).
+        the image layer (the default is 1000, which is an approximate limit).
         Inputs:
         geometry - A geometry that defines the location(s) to be sampled. The
          structure of the geometry is the same as the structure of the JSON
          geometry objects returned by the ArcGIS REST API. Applicable geometry
          types are point, multipoint, polyline, polygon, and envelope. When
          spatialReference is omitted in the input geometry, it will be assumed
-         to be the spatial reference of the image service.
+         to be the spatial reference of the image layer.
         geometry_type - The type of geometry specified by the geometry parameter.
          The geometry type can be point, multipoint, polyline, polygon, or envelope.
          Values: esriGeometryPoint,esriGeometryMultipoint,esriGeometryPolyline |
@@ -1718,7 +1741,7 @@ class ImageryLayer(Layer):
          mosaic rule.
         pixel_size - The raster that is visible at the specified pixel size in the
          mosaic dataset will be used for sampling. If pixel_size is not specified,
-         the service's pixel size is used.
+         the layer's pixel size is used.
          The structure of the esri_codephpixelSize parameter is the same as the
          structure of the point object returned by the ArcGIS REST API. In addition
          to the JSON structure, you can specify the pixel size with a simple
@@ -1770,7 +1793,7 @@ class ImageryLayer(Layer):
         """
         returns key properties of the imagery layer, such as band properties
         :param rendering_rule: Specifies the rendering rule for how the requested image should be processed.
-        The response contains updated service information that reflects a custom processing as defined
+        The response contains updated layer information that reflects a custom processing as defined
          by the rendering rule. For example, if renderingRule contains an attributeTable function,
          the response will indicate "hasRasterAttributeTable": true; if the renderingRule contains
           functions that alter the number of bands, the response will indicate correct bandCount.
@@ -1955,8 +1978,8 @@ class ImageryLayer(Layer):
         :param output_name: Optional. If not provided, an Imagery Layer item is created by the method and used as the output.
             You can pass in the name of the output Imagery Layer that should be created by this method to
             be used as the output for the tool.
-            Alternatively, if for_viz is False, you can pass in an existing Image Service Item from your GIS to use that instead
-            A RuntimeError is raised if a service by that name already exists
+            Alternatively, if for_viz is False, you can pass in an existing Image Layer Item from your GIS to use that instead
+            A RuntimeError is raised if a layer by that name already exists
 
         :param for_viz: If True, a new Item is created that uses the applied raster functions for visualization at
             display resolution using on-the-fly image processing.
@@ -2236,21 +2259,21 @@ class ImageTileManagement(object):
         """
         The exportTiles operation is performed as an asynchronous task and
         allows client applications to download map tiles from server for
-        offline use. This operation is performed on a Image Service that
+        offline use. This operation is performed on a Image Layer that
         allows clients to export cache tiles. The result of this operation
-        is Image Service Job. This job response contains reference to Image
-        Service Result resource that returns the url to resulting tile
+        is Image Layer Job. This job response contains reference to Image
+        Layer Result resource that returns the url to resulting tile
         package (.tpk) or a cache raster dataset.
 
-        export can be enabled in a service by using ArcGIS Desktop or the
+        export can be enabled in a layer by using ArcGIS Desktop or the
         ArcGIS Server Administrative Site Directory. In ArcGIS Desktop,
-        make an admin or publisher connection to the server, go to service
+        make an admin or publisher connection to the server, go to layer
         properties and enable "Allow Clients to Export Cache Tiles" in
-        advanced caching page of the Service Editor. You can also specify
+        advanced caching page of the layer Editor. You can also specify
         the maximum tiles clients will be allowed to download. The default
         maximum allowed tile count is 100,000. To enable this capability
         using the ArcGIS Servers Administrative Site Directory, edit the
-        service and set the properties exportTilesAllowed=true and
+        layer and set the properties exportTilesAllowed=true and
         maxExportTilesCount=100000.
 
         =================     ====================================================================
@@ -2358,9 +2381,9 @@ class ImageTileManagement(object):
         set that you download using the Export Tiles operation. This
         operation can also be used to estimate the tile count in a tile
         package and determine if it will exceced the maxExportTileCount
-        limit set by the administrator of the service. The result of this
-        operation is Image Service Job. This job response contains
-        reference to Image Service Result resource that returns the total
+        limit set by the administrator of the layer. The result of this
+        operation is Image Layer Job. This job response contains
+        reference to Image Layer Result resource that returns the total
         size of the cache to be exported (in bytes) and the number of tiles
         that will be exported.
 
@@ -2465,8 +2488,8 @@ class ImageTileManagement(object):
     #----------------------------------------------------------------------
     def _get_job_inputs(self, job_id, parameter):
         """
-        The Image Service input resource represents an input parameter for
-        a Image Service Job. It provides information about the input
+        The Image Layer input resource represents an input parameter for
+        a Image Layer Job. It provides information about the input
         parameter such as its name, data type, and value. The value is the
         most important piece of information provided by this resource.
 
@@ -2491,8 +2514,8 @@ class ImageTileManagement(object):
     #----------------------------------------------------------------------
     def _get_job_result(self, job_id, parameter):
         """
-        The Image Service input resource represents an input parameter for
-        a Image Service Job. It provides information about the input
+        The Image Layer input resource represents an input parameter for
+        a Image Layer Job. It provides information about the input
         parameter such as its name, data type, and value. The value is the
         most important piece of information provided by this resource.
 
@@ -2647,7 +2670,7 @@ class RasterCatalogItem(object):
     def key_properties(self):
         """
         The raster keyProperties resource returns key properties of the
-        associated raster in an image service.
+        associated raster in an image layer.
         """
         url = "%s/info/keyProperties" % self._url
         params = {'f' : 'json'}
@@ -2700,7 +2723,7 @@ class RasterCatalogItem(object):
         -----------------     --------------------------------------------------------------------
         bbox                  required string. The extent (bounding box) of the exported image.
                               Unless the bbox_sr parameter has been specified, the bbox is assumed
-                              to be in the spatial reference of the image service.
+                              to be in the spatial reference of the image layer.
                               Syntax: <xmin>, <ymin>, <xmax>, <ymax>
                               Example: bbox=-104,35.6,-94.32,41
         -----------------     --------------------------------------------------------------------
@@ -2740,6 +2763,7 @@ class RasterCatalogItem(object):
 
         """
         import json
+        try_json = True
         out_folder = None
         out_file = None
         url = "%s/image" % self._url
@@ -2754,6 +2778,7 @@ class RasterCatalogItem(object):
                 ext = 'png'
             else:
                 ext = image_format
+            try_json = False
             out_file = "%s.%s" % (uuid.uuid4().hex, ext)
         else:
             return_format = 'json'
@@ -2777,6 +2802,7 @@ class RasterCatalogItem(object):
 
         return self._con.get(path=url,
                              params=params,
+                             try_json=try_json,
                              file_name=out_file,
                              out_folder=out_folder)
     #----------------------------------------------------------------------
@@ -2784,7 +2810,7 @@ class RasterCatalogItem(object):
     def ics(self):
         """
         The raster ics resource returns the image coordinate system of the
-        associated raster in an image service. The returned ics can be used
+        associated raster in an image layer. The returned ics can be used
         as the SR parameter.
 
 
@@ -2795,7 +2821,7 @@ class RasterCatalogItem(object):
     @property
     def metadata(self):
         """
-        The metadata resource returns metadata of the image service or a
+        The metadata resource returns metadata of the image layer or a
         raster catalog item. The output format is always XML.
         """
         url = "%s/info/metadata" % self._url
