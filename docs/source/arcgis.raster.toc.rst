@@ -15,6 +15,29 @@ ImageryLayer
     :members:
     :undoc-members:
 
+ImageRasterManager
+------------------
+.. autoclass:: arcgis.raster.ImageRasterManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+ImageTileManager
+----------------
+.. autoclass:: arcgis.raster.ImageTileManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+RasterCatalogItem
+-----------------
+.. autoclass:: arcgis.raster.RasterCatalogItem
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+
+
 Submodules
 --------------
 .. toctree::
