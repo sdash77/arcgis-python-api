@@ -26,18 +26,25 @@ class ImageryLayer(Layer):
         except: pass
         if 'tileInfo' in self.properties:
             self.tiles = ImageTileManager(service=self)
-        if str(self.properties['capabilities']).lower().find('catalog') > -1:
-            self.catalog_item = self._catalog_item
+
         if str(self.properties['capabilities']).lower().find('edit') > -1:
             self.management = ImageRasterManager(self)
         # self._extent = self.properties.initialExtent
 
     #----------------------------------------------------------------------
-    def _catalog_item(self, id):
+    def catalog_item(self, id):
         """
         The Raster Catalog Item property represents a single raster catalog item
-        """
 
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        id                    required integer. The id is the 'raster id'.
+        =================     ====================================================================
+
+        """
+        if str(self.properties['capabilities']).lower().find('catalog') == -1:
+            return None
         return RasterCatalogItem(url="%s/%s" % (self._url, id),
                                  service=self)
 
@@ -149,9 +156,9 @@ class ImageryLayer(Layer):
            self.properties["hasRasterAttributeTable"]:
             url = "%s/rasterAttributeTable" % self._url
             params = {'f' : 'json'}
-            if rendering_rule:
+            if rendering_rule is not None:
                 params['renderingRule'] = rendering_rule
-            elif self._fn:
+            elif self._fn is not None:
                 params['renderingRule'] = self._fn
             return self._con.get(path=url,
                              params=params)
@@ -188,7 +195,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         geometries            required dictionary. The array of geometries to be projected.
         -----------------     --------------------------------------------------------------------
-        in_sr                 required string, dictionary, SpatialRerence.  The in_sr can accept a
+        in_sr                 required string, dictionary, SpatialReference.  The in_sr can accept a
                               multitudes of values.  These can be a WKID, image coordinate system
                               (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
@@ -197,7 +204,7 @@ class ImageryLayer(Layer):
                               using 0:icsid; for example, 0:64. The extra 0: is used to avoid
                               conflicts with wkid
         -----------------     --------------------------------------------------------------------
-        out_sr                required string, dictionary, SpatialRerence.  The in_sr can accept a
+        out_sr                required string, dictionary, SpatialReference.  The in_sr can accept a
                               multitudes of values.  These can be a WKID, image coordinate system
                               (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
@@ -299,9 +306,9 @@ class ImageryLayer(Layer):
             params['geometryType'] = 'esriGeometryPoint'
         if isinstance(geometry, Polygon):
             params['geometryType'] = 'esriGeometryPolygon'
-        if mosaic_rule:
+        if mosaic_rule is not None:
             params['mosaicRule'] = mosaic_rule
-        elif self._mosaic_rule:
+        elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
 
         if isinstance(rendering_rules, dict):
@@ -312,9 +319,9 @@ class ImageryLayer(Layer):
             params['renderingRule'] = self._fn
         else:
             raise ValueError("Invalid Rendering Rules")
-        if pixel_size:
+        if pixel_size is not None:
             params['pixelSize'] = pixel_size
-        if time_extent:
+        if time_extent is not None:
             if isinstance(time_extent, datetime.datetime):
                 time_extent = "%s" % int(time_extent.timestamp() * 1000)
             elif isinstance(time_extent, list):
@@ -444,11 +451,11 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
-        if linear_unit:
+        if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
-        if angular_unit:
+        if angular_unit is not None:
             angular_unit = "esri%s" % angular_unit
-        if area_unit:
+        if area_unit is not None:
             area_unit = "esri%s" % area_unit
         measure_operation = "esriMensuration%s" % measure_operation
         url = "%s/measure" % self._url
@@ -463,9 +470,9 @@ class ImageryLayer(Layer):
             params['geometryType'] = "esriGeometryEnvelope"
         if to_geometry:
             params['toGeometry'] = to_geometry
-        if measure_operation:
+        if measure_operation is not None:
             params['measureOperation'] = measure_operation
-        if mosaic_rule:
+        if mosaic_rule is not None:
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
@@ -1157,13 +1164,13 @@ class ImageryLayer(Layer):
             'f' : 'json',
             'rasterIds' : raster_ids,
         }
-        if polygon:
+        if polygon is not None:
             params['geometry'] = polygon
             params['geometryType'] = "esriGeometryPolygon"
-        if extent:
+        if extent is not None:
             params['geometry'] = extent
             params['geometryType'] = "esriGeometryEnvelope"
-        if out_format:
+        if out_format is not None:
             params['format'] = out_format
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
@@ -1458,27 +1465,27 @@ class ImageryLayer(Layer):
             "f" : "json",
             "rasterId" : raster_id,
         }
-        if item_ids:
+        if item_ids is not None:
             params['itemIds'] = item_ids
-        if service_url:
+        if service_url is not None:
             params['serviceUrl'] = service_url
-        if compute_statistics:
+        if compute_statistics is not None:
             params['computeStatistics'] = compute_statistics
-        if build_pyramids:
+        if build_pyramids is not None:
             params['buildPyramids'] = build_pyramids
-        if build_thumbnail:
+        if build_thumbnail is not None:
             params['buildThumbnail'] = build_thumbnail
-        if minimum_cell_size_factor:
+        if minimum_cell_size_factor is not None:
             params['minimumCellSizeFactor'] = minimum_cell_size_factor
-        if maximum_cell_size_factor:
+        if maximum_cell_size_factor is not None:
             params['maximumCellSizeFactor'] = maximum_cell_size_factor
-        if footprint:
+        if footprint is not None:
             params['footprint'] = footprint
-        if attributes:
+        if attributes is not None:
             params['attributes'] = attributes
-        if geodata_transforms:
+        if geodata_transforms is not None:
             params['geodataTransforms'] = geodata_transforms
-        if apply_method:
+        if apply_method is not None:
             params['geodataTransformApplyMethod'] = apply_method
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
@@ -1543,13 +1550,13 @@ class ImageryLayer(Layer):
             'geometry' : geometry,
             'geometryType' : gt
         }
-        if pixel_size:
+        if pixel_size is not None:
             params['pixelSize'] = pixel_size
-        if rendering_rule:
+        if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
         elif 'renderingRule' in self._fn:
             params['renderingRule'] = self._fn['renderingRule']
-        if mosaic_rule:
+        if mosaic_rule is not None:
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
@@ -1616,9 +1623,9 @@ class ImageryLayer(Layer):
         """
         url = "%s/legend" % self._url
         params = {'f' : 'json'}
-        if band_ids:
+        if band_ids is not None:
             params['bandIds'] = band_ids
-        if rendering_rule:
+        if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
         elif self._fn is not None:
             params['renderingRule'] = self._fn
@@ -1717,9 +1724,9 @@ class ImageryLayer(Layer):
         if self._mosaic_rule is not None and \
            mosaic_rule is None:
             params['mosaicRule'] = self._mosaic_rule
-        if rendering_rule:
+        if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
-        if pixel_size:
+        if pixel_size is not None:
             params['pixelSize'] = pixel_size
         return self._con.post(path=url, postdata=params)
     # ----------------------------------------------------------------------
@@ -2351,9 +2358,7 @@ class ImageTileManager(object):
         The export method allows client applications to download map tiles
         from server for offline use. This operation is performed on a
         Image Layer that allows clients to export cache tiles. The result
-        of this operation is Image Layer Job. This job response contains
-        reference to Image Layer Result method that returns the url to
-        resulting tile package (.tpk) or a cache raster dataset.
+        of this operation is Image Layer Job. .
 
         export can be enabled in a layer by using ArcGIS Desktop or the
         ArcGIS Server Administrative Site Directory. In ArcGIS Desktop,
@@ -2472,7 +2477,7 @@ class ImageTileManager(object):
         operation can also be used to estimate the tile count in a tile
         package and determine if it will exceced the maxExportTileCount
         limit set by the administrator of the layer. The result of this
-        operation is Image Layer Job. This job response contains
+        operation is the response size. This job response contains
         reference to Image Layer Result method that returns the total
         size of the cache to be exported (in bytes) and the number of tiles
         that will be exported.
@@ -2890,19 +2895,19 @@ class RasterCatalogItem(object):
         params = {
             'f' : return_format
         }
-        if bbox:
+        if bbox is not None:
             params['bbox'] = bbox
-        if bbox_sr:
+        if bbox_sr is not None:
             params['bboxSR'] = bbox_sr
-        if size:
+        if size is not None:
             params['size'] = size
-        if image_sr:
+        if image_sr is not None:
             params['imageSR'] = image_sr
-        if image_format:
+        if image_format is not None:
             params['format'] = image_format
-        if pixel_type:
+        if pixel_type is not None:
             params['pixelType'] = pixel_type
-        if no_data:
+        if no_data is not None:
             params['noData'] = no_data
 
         return self._con.get(path=url,
