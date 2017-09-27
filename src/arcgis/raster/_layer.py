@@ -28,6 +28,8 @@ class ImageryLayer(Layer):
             self.tiles = ImageTileManagement(service=self)
         if str(self.properties['capabilities']).lower().find('catalog') > -1:
             self.catalog_item = self._catalog_item
+        if str(self.properties['capabilities']).lower().find('edit') > -1:
+            self.management = ImageRasterManagement(self)
         # self._extent = self.properties.initialExtent
 
     #----------------------------------------------------------------------
@@ -1087,11 +1089,11 @@ class ImageryLayer(Layer):
         else:
             return result
     #----------------------------------------------------------------------
-    def download_raster(self,
-                        raster_ids,
-                        polygon=None,
-                        extent=None,
-                        out_format=None):
+    def get_download_info(self,
+                          raster_ids,
+                          polygon=None,
+                          extent=None,
+                          out_format=None):
         """
         The Download Rasters operation returns information (the file ID)
         that can be used to download the raw raster files that are
@@ -1136,8 +1138,58 @@ class ImageryLayer(Layer):
         if out_format:
             params['format'] = out_format
         return self._con.post(path=url, postdata=params)
+    #----------------------------------------------------------------------
+    def get_raster_file(self,
+                        download_info,
+                        out_folder=None):
+        """
+        The Raster File method represents a single raw raster file. The
+        download_info is obtained by using the get_download_info operation.
+
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        download_info         required dictionary. This is derived from the get_downlad_info().
+        -----------------     --------------------------------------------------------------------
+        out_folder            optional string. Path to the file save location. If the value is
+                              None, the OS temporary directory is used.
+        =================     ====================================================================
+
+        :returns: list of files downloaded
+        """
+        import os
+        import tempfile
+        cap = self.properties['capabilities'].lower()
+        if cap.find("download") == -1 or \
+           cap.find('catalog') == -1:
+            return None
+
+        if out_folder is None:
+            out_folder = tempfile.gettempdir()
+        if out_folder and \
+           os.path.isdir(out_folder) == False:
+            os.makedirs(out_folder, exist_ok=True)
+        url = "%s/file" % self._url
+        params = {'f' : 'json'}
+        p = []
+        files = []
+        if 'rasterFiles' in download_info:
+            for f in download_info['rasterFiles']:
+                params = {'f' : 'json'}
+                params['id'] = f['id']
+                for rid in f['rasterIds']:
+                    params["rasterId"] = rid
+                    files.append(self._con.get(path=url,
+                                               params=params,
+                                               out_folder=out_folder,
+                                               file_name=os.path.basename(params['id']))
+                                 )
+                del f
+        return files
+
     # ----------------------------------------------------------------------
-    def add_rasters(self,
+    def _add_rasters(self,
                     raster_type,
                     item_ids=None,
                     service_url=None,
@@ -1265,7 +1317,7 @@ class ImageryLayer(Layer):
             params['serviceUrl'] = service_url
         return self._con.post(url, params, token=self._token)
     #----------------------------------------------------------------------
-    def delete_rasters(self, raster_ids):
+    def _delete_rasters(self, raster_ids):
         """
         The Delete Rasters operation deletes one or more rasters in an image Layer.
 
@@ -1285,7 +1337,7 @@ class ImageryLayer(Layer):
         url = "%s/delete" % self._url
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def update_raster(self,
+    def _update_raster(self,
                       raster_id,
                       files=None,
                       item_ids=None,
@@ -2217,7 +2269,18 @@ class ImageryLayer(Layer):
 ########################################################################
 class ImageTileManagement(object):
     """
-    Manages the Image Layer Tile Functions for Cached
+    Manages the Image Layer Tile Functions for Cached Image Layers.
+
+    .. note :: This object should not be created by a user.
+
+    =================     ====================================================================
+    **Argument**          **Description**
+    -----------------     --------------------------------------------------------------------
+    service               required ImageLayer. The image layer object that is cached.
+    =================     ====================================================================
+
+
+
     """
     _service = None
     _url = None
@@ -2579,7 +2642,23 @@ class ImageTileManagement(object):
 ########################################################################
 class RasterCatalogItem(object):
     """
-    Represents a single catalog item.
+    Represents a single catalog item on an Image Layer.  This class is only
+    to be used with Image Layer objects that have 'Catalog' in the layer's
+    capabilities property.
+
+    .. note :: This object should not be created by a user.
+
+    =================     ====================================================================
+    **Argument**          **Description**
+    -----------------     --------------------------------------------------------------------
+    url                   required string. Web address to the catalog item.
+    -----------------     --------------------------------------------------------------------
+    service               required ImageLayer. The image layer object.
+    -----------------     --------------------------------------------------------------------
+    initialize            optional boolean. Default is true. If false, the properties of the
+                          item will not be loaded until requested.
+    =================     ====================================================================
+
     """
     _properties = None
     _con = None
@@ -2829,6 +2908,256 @@ class RasterCatalogItem(object):
         out_file = "metadata.xml"
         return self._con.get(path=url, params={}, try_json=False,
                              file_name=out_file, out_folder=out_folder)
+########################################################################
+class ImageRasterManagement(object):
+    """
+    This class allows users to update, add, and delete rasters to the
+    Image Layer object.  The functions are only available if the service
+    layer has 'Edit' on it's capabilities property.
+
+    .. note :: This object should not be created by a user.
+
+    =================     ====================================================================
+    **Argument**          **Description**
+    -----------------     --------------------------------------------------------------------
+    service               required ImageLayer. The image layer object where 'Edit' is in the
+                          capabilities.
+    =================     ====================================================================
+    """
+    _service = None
+    #----------------------------------------------------------------------
+    def __init__(self, service):
+        """Constructor"""
+        self._service = service
+    #----------------------------------------------------------------------
+    def add(self,
+            raster_type,
+            item_ids=None,
+            service_url=None,
+            compute_statistics=False,
+            build_pyramids=False,
+            build_thumbnail=False,
+            minimum_cell_size_factor=None,
+            maximum_cell_size_factor=None,
+            attributes=None,
+            geodata_transforms=None,
+            geodata_transform_apply_method="esriGeodataTransformApplyAppend"
+            ):
+        """
+        This operation is supported at 10.1 and later.
+        The Add Rasters operation is performed on an image Layer method.
+        The Add Rasters operation adds new rasters to an image Layer
+        (POST only).
+        The added rasters can either be uploaded items, using the item_ids
+        parameter, or published services, using the service_url parameter.
+        If item_ids is specified, uploaded rasters are copied to the image
+        Layer's dynamic image workspace location; if the service_url is
+        specified, the image Layer adds the URL to the mosaic dataset no
+        raster files are copied. The service_url is required input for the
+        following raster types: Image Layer, Map Service, WCS, and WMS.
+
+        Inputs:
+
+        item_ids - The upload items (raster files) to be added. Either
+         item_ids or service_url is needed to perform this operation.
+            Syntax: item_ids=<itemId1>,<itemId2>
+            Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+                             ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
+        service_url - The URL of the service to be added. The image Layer
+         will add this URL to the mosaic dataset. Either item_ids or
+         service_url is needed to perform this operation. The service URL is
+         required for the following raster types: Image Layer, Map
+         Service, WCS, and WMS.
+            Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
+        raster_type - The type of raster files being added. Raster types
+         define the metadata and processing template for raster files to be
+         added. Allowed values are listed in image Layer resource.
+            Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
+        compute_statistics - If true, statistics for the rasters will be
+         computed. The default is false.
+            Values: false,true
+        build_pyramids - If true, builds pyramids for the rasters. The
+         default is false.
+                Values: false,true
+        build_thumbnail	 - If true, generates a thumbnail for the rasters.
+         The default is false.
+                Values: false,true
+        minimum_cell_size_factor - The factor (times raster resolution) used
+         to populate the MinPS field (maximum cell size above which the
+         raster is visible).
+                Syntax: minimum_cell_size_factor=<minimum_cell_size_factor>
+                Example: minimum_cell_size_factor=0.1
+        maximum_cell_size_factor - The factor (times raster resolution) used
+         to populate MaxPS field (maximum cell size below which raster is
+         visible).
+                Syntax: maximum_cell_size_factor=<maximum_cell_size_factor>
+                Example: maximum_cell_size_factor=10
+        attributes - Any attribute for the added rasters.
+                Syntax:
+                {
+                  "<name1>" : <value1>,
+                  "<name2>" : <value2>
+                }
+                Example:
+                {
+                  "MinPS": 0,
+                  "MaxPS": 20;
+                  "Year" : 2002,
+                  "State" : "Florida"
+                }
+        geodata_transforms - The geodata transformations applied on the
+         added rasters. A geodata transformation is a mathematical model
+         that performs a geometric transformation on a raster; it defines
+         how the pixels will be transformed when displayed or accessed.
+         Polynomial, projective, identity, and other transformations are
+         available. The geodata transformations are applied to the dataset
+         that is added.
+                Syntax:
+                [
+                {
+                  "geodataTransform" : "<geodataTransformName1>",
+                  "geodataTransformArguments" : {<geodataTransformArguments1>}
+                  },
+                  {
+                  "geodataTransform" : "<geodataTransformName2>",
+                  "geodataTransformArguments" : {<geodataTransformArguments2>}
+                  }
+                ]
+         The syntax of the geodataTransformArguments property varies based
+         on the specified geodataTransform name. See Geodata Transformations
+         documentation for more details.
+        geodata_transform_apply_method - This parameter defines how to apply
+         the provided geodataTransform. The default is
+         esriGeodataTransformApplyAppend.
+                Values: esriGeodataTransformApplyAppend |
+                esriGeodataTransformApplyReplace |
+                esriGeodataTransformApplyOverwrite
+
+        """
+        return self._service._add_rasters(raster_type,
+                                          item_ids,
+                                          service_url,
+                                          compute_statistics,
+                                          build_pyramids,
+                                          build_thumbnail,
+                                          minimum_cell_size_factor,
+                                          maximum_cell_size_factor,
+                                          attributes,
+                                          geodata_transforms,
+                                          geodata_transform_apply_method)
+    #----------------------------------------------------------------------
+    def delete(self, raster_ids):
+        """
+        The Delete Rasters operation deletes one or more rasters in an image Layer.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_ids            required string. The object IDs of a raster catalog items to be
+                              removed. This is a comma seperated string.
+                              example 1: raster_ids='1,2,3,4' # Multiple IDs
+                              example 2: raster_ids='10' # single ID
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        return self._service._delete_rasters(raster_ids)
+    #----------------------------------------------------------------------
+    def update(self,
+               raster_id,
+               files=None,
+               item_ids=None,
+               service_url=None,
+               compute_statistics=False,
+               build_pyramids=False,
+               build_thumbnail=False,
+               minimum_cell_size_factor=None,
+               maximum_cell_size_factor=None,
+               attributes=None,
+               footprint=None,
+               geodata_transforms=None,
+               apply_method="esriGeodataTransformApplyAppend"):
+        """
+        The Update Raster operation updates rasters (attributes and
+        footprints, or replaces existing raster files) in an image layer.
+        In most cases, this operation is used to update attributes or
+        footprints of existing rasters in an image layer. In cases where
+        the original raster needs to be replaced, the new raster can either
+        be items uploaded using the items parameter or URLs of published
+        services using the serviceUrl parameter.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_ids            required integer. The object IDs of a raster catalog items to be
+                              updated.
+        -----------------     --------------------------------------------------------------------
+        files                 optional list. Local source location to the raster to replace the
+                              dataset with.
+                              Example: [r"<path>\data.tiff"]
+        -----------------     --------------------------------------------------------------------
+        item_ids              optional string.  The uploaded items (raster files) being used to
+                              replace existing raster.
+        -----------------     --------------------------------------------------------------------
+        service_url           optional string. The URL of the layer to be uploaded to replace
+                              existing raster data. The image layer will add this URL to the
+                              mosaic dataset. The serviceUrl is required for the following raster
+                              types: Image Layer, Map Service, WCS, and WMS.
+        -----------------     --------------------------------------------------------------------
+        compute_statistics    If true, statistics for the uploaded raster will be computed. The
+                              default is false.
+        -----------------     --------------------------------------------------------------------
+        build_pyramids        optional boolean. If true, builds pyramids for the uploaded raster.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        build_thumbnail       optional boolean. If true, generates a thumbnail for the uploaded
+                              raster. The default is false.
+        -----------------     --------------------------------------------------------------------
+        minimum_cell_size_factor optional float. The factor (times raster resolution) used to
+                                 populate MinPS field (minimum cell size above which raster is
+                                 visible).
+        -----------------     --------------------------------------------------------------------
+        maximum_cell_size_factor optional float. The factor (times raster resolution) used to
+                                 populate MaxPS field (maximum cell size below which raster is
+                                 visible).
+        -----------------     --------------------------------------------------------------------
+        footprint             optional Polygon.  A JSON 2D polygon object that defines the
+                              footprint of the raster. If the spatial reference is not defined, it
+                              will default to the image layer's spatial reference.
+        -----------------     --------------------------------------------------------------------
+        attributes            optional dictionary.  Any attribute for the uploaded raster.
+        -----------------     --------------------------------------------------------------------
+        geodata_transforms    optional string. The geodata transformations applied on the updated
+                              rasters. A geodata transformation is a mathematical model that
+                              performs geometric transformation on a raster. It defines how the
+                              pixels will be transformed when displayed or accessed, such as
+                              polynomial, projective, or identity transformations. The geodata
+                              transformations will be applied to the updated dataset.
+        -----------------     --------------------------------------------------------------------
+        apply_method          optional string. Defines how to apply the provided geodataTransform.
+                              The default is esriGeodataTransformApplyAppend.
+                              Values: esriGeodataTransformApplyAppend,
+                                      esriGeodataTransformApplyReplace,
+                                      esriGeodataTransformApplyOverwrite
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
+        return self._service._update_raster(raster_id=raster_id,
+                                            files=files,
+                                            item_ids=item_ids,
+                                            service_url=service_url,
+                                            compute_statistics=compute_statistics,
+                                            build_pyramids=build_pyramids,
+                                            build_thumbnail=build_thumbnail,
+                                            minimum_cell_size_factor=minimum_cell_size_factor,
+                                            maximum_cell_size_factor=maximum_cell_size_factor,
+                                            attributes=attributes,
+                                            footprint=footprint,
+                                            geodata_transforms=geodata_transforms,
+                                            apply_method=apply_method)
+
+
 
 
 
