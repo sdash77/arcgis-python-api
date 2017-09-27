@@ -25,11 +25,11 @@ class ImageryLayer(Layer):
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
         if 'tileInfo' in self.properties:
-            self.tiles = ImageTileManagement(service=self)
+            self.tiles = ImageTileManager(service=self)
         if str(self.properties['capabilities']).lower().find('catalog') > -1:
             self.catalog_item = self._catalog_item
         if str(self.properties['capabilities']).lower().find('edit') > -1:
-            self.management = ImageRasterManagement(self)
+            self.management = ImageRasterManager(self)
         # self._extent = self.properties.initialExtent
 
     #----------------------------------------------------------------------
@@ -178,7 +178,7 @@ class ImageryLayer(Layer):
                 in_sr,
                 out_sr):
         """
-        The project operation is performed on an image Layer method.
+        The project operation is performed on an image layer method.
         This operation projects an array of input geometries from the input
         spatial reference to the output spatial reference. The response
         order of geometries is in the same order as they were requested.
@@ -188,9 +188,23 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         geometries            required dictionary. The array of geometries to be projected.
         -----------------     --------------------------------------------------------------------
-        in_sr                 required string.  A well-known ID wkid of the spatial reference
+        in_sr                 required string, dictionary, SpatialRerence.  The in_sr can accept a
+                              multitudes of values.  These can be a WKID, image coordinate system
+                              (ICSID), or image coordinate system in json/dict format.
+                              Additionally the arcgis.geometry.SpatialReference object is also a
+                              valid entry.
+                              .. note :: An image coordinate system ID can be specified
+                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                              conflicts with wkid
         -----------------     --------------------------------------------------------------------
-        out_sr                required string.  A well-known ID wkid of the spatial reference
+        out_sr                required string, dictionary, SpatialRerence.  The in_sr can accept a
+                              multitudes of values.  These can be a WKID, image coordinate system
+                              (ICSID), or image coordinate system in json/dict format.
+                              Additionally the arcgis.geometry.SpatialReference object is also a
+                              valid entry.
+                              .. note :: An image coordinate system ID can be specified
+                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                              conflicts with wkid
         =================     ====================================================================
 
         :returns: dictionary
@@ -217,7 +231,7 @@ class ImageryLayer(Layer):
                  ):
         """
 
-        It identifies the content of an image Layer for a given location
+        It identifies the content of an image layer for a given location
         and a given mosaic rule. The location can be a point or a polygon.
 
         The identify operation is supported by both mosaic dataset and
@@ -238,24 +252,27 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        geometriy             required dictionary/Point/Polygon.  A geometry that defines the
+        geometry              required dictionary/Point/Polygon.  A geometry that defines the
                               location to be identified. The location can be a point or polygon.
         -----------------     --------------------------------------------------------------------
-        mosaic_rule           optional string.  Specifies the mosaic rule when defining how
+        mosaic_rule           optional string or dict.  Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image Layer will be used
+                              specified, the default mosaic rule of the image layer will be used
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
         -----------------     --------------------------------------------------------------------
         rendering_rules       optional dictionary/list. Specifies the rendering rule for how the
                               requested image should be rendered.
         -----------------     --------------------------------------------------------------------
-        pixel_size            optional string. The pixel level being identified (or the resolution
-                              being looked at).
+        pixel_size            optional string or dict. The pixel level being identified (or the
+                              resolution being looked at).
+                              Syntax:
+                               - JSON structure: pixelSize={point}
+                               - Point simple syntax: pixelSize=<x>,<y>
         -----------------     --------------------------------------------------------------------
         time_extent           optional list of datetime objects or datetime object.  The time
                               instant or time extent of the raster to be identified. This
-                              parameter is only valid if the image Layer supports time.
+                              parameter is only valid if the image layer supports time.
         -----------------     --------------------------------------------------------------------
         return_geometry       optional boolean. Default is False.  Indicates whether or not to
                               return the raster catalog item's footprint. Set it to false when the
@@ -304,6 +321,9 @@ class ImageryLayer(Layer):
                 time_extent = "%s,%s" % (int(time_extent[0].timestamp() * 1000),
                                          int(time_extent[1].timestamp() * 1000))
             params['time'] = time_extent
+        elif time_extent is None and \
+             self._temporal_filter is not None:
+            params['time'] = self._temporal_filter
         if isinstance(return_geometry, bool):
             params['returnGeometry'] = return_geometry
         if isinstance(return_catalog_items, bool):
@@ -324,14 +344,14 @@ class ImageryLayer(Layer):
                 ):
         """
         The function lets a user measure distance, direction, area,
-        perimeter, and height from an image Layer. The result of this
+        perimeter, and height from an image layer. The result of this
         operation includes the name of the raster dataset being used,
         sensor name, and measured values.
         The measure operation can be supported by image services from
         raster datasets and mosaic datasets. Spatial reference is required
         to perform basic measurement (distance, area, and so on). Sensor
         metadata (geodata transformation) needs to be present in the data
-        source used by an image Layer to enable height measurement (for
+        source used by an image layer to enable height measurement (for
         example, imagery with RPCs). The mosaic dataset or Layer needs to
         include DEM to perform 3D measure.
 
@@ -344,85 +364,93 @@ class ImageryLayer(Layer):
         to_geometry           optional Geomerty. A geometry that defines the "to" location of the
                               measurement. The type of geometry must be the same as from_geometry.
         -----------------     --------------------------------------------------------------------
-        measure_operation     optional string. Specifies the type of measure being performed.
+        measure_operation     optional string or dict. Specifies the type of measure being
+                              performed.
 
-                              Values: esriMensurationPoint,esriMensurationDistanceAndAngle,
-                              esriMensurationAreaAndPerimeter,esriMensurationHeightFromBaseAndTop,
-                              esriMensurationHeightFromBaseAndTopShadow,
-                              esriMensurationHeightFromTopAndTopShadow,esriMensurationCentroid,
-                              esriMensurationPoint3D,esriMensurationDistanceAndAngle3D,
-                              esriMensurationAreaAndPerimeter3D,esriMensurationCentroid3D
+                              Values: Point, DistanceAndAngle,AreaAndPerimeter,HeightFromBaseAndTop,
+                              HeightFromBaseAndTopShadow,
+                              HeightFromTopAndTopShadow,Centroid,
+                              Point3D,DistanceAndAngle3D,
+                              AreaAndPerimeter3D,Centroid3D
 
                               Different measureOperation types require different from and to
                               geometries:
-                               - esriMensurationPoint and esriMensurationPoint3D-Require only
+                               - Point and Point3D-Require only
                                  from_geometry, type: {Point}
-                               - esriMensurationDistanceAndAngle, esriMensurationDistanceAndAngle3D,
-                               esriMensurationHeightFromBaseAndTop,
-                               esriMensurationHeightFromBaseAndTopShadow, and
-                               esriMensurationHeightFromTopAndTopShadow - Require both
+                               - DistanceAndAngle, DistanceAndAngle3D,
+                               HeightFromBaseAndTop,
+                               HeightFromBaseAndTopShadow, and
+                               HeightFromTopAndTopShadow - Require both
                                from_geometry and to_geometry, type: {Point}
-                               - esriMensurationAreaAndPerimeter,
-                                 esriMensurationAreaAndPerimeter3D, esriMensurationCentroid, and
-                                 esriMensurationCentroid3D - Require only from_geometry,
+                               - AreaAndPerimeter,
+                                 AreaAndPerimeter3D, Centroid, and
+                                 Centroid3D - Require only from_geometry,
                                  type: {Polygon}, {Envelope}
                               Supported measure operations can be derived from the
-                              mensurationCapabilities in the image Layer root resource.
-                              Basic capability supports esriMensurationPoint,
-                              esriMensurationDistanceAndAngle, esriMensurationAreaAndPerimeter,
-                              and esriMensurationCentroid.
-                              Basic and 3Dcapabilities support esriMensurationPoint3D,
-                              esriMensurationDistanceAndAngle3D,esriMensurationAreaAndPerimeter3D,
-                              and esriMensurationCentroid3D.
+                              mensurationCapabilities in the image layer root resource.
+                              Basic capability supports Point,
+                              DistanceAndAngle, AreaAndPerimeter,
+                              and Centroid.
+                              Basic and 3Dcapabilities support Point3D,
+                              DistanceAndAngle3D,AreaAndPerimeter3D,
+                              and Centroid3D.
                               Base-Top Height capability supports
-                              esriMensurationHeightFromBaseAndTop.
+                              HeightFromBaseAndTop.
                               Top-Top Shadow Height capability supports
-                              esriMensurationHeightFromTopAndTopShadow.
+                              HeightFromTopAndTopShadow.
                               Base-Top Shadow Height capability supports
-                              esriMensurationHeightFromBaseAndTopShadow.
+                              HeightFromBaseAndTopShadow.
         -----------------     --------------------------------------------------------------------
-        pixel_size            optional string.  The pixel level (resolution) being measured. If
-                              pixel size is not specified, pixel_size will default to the base
-                              resolution of the image Layer. The raster at the specified pixel
+        pixel_size            optional string or dict. The pixel level (resolution) being
+                              measured. If pixel size is not specified, pixel_size will default to
+                              the base resolution of the image layer. The raster at the specified pixel
                               size in the mosaic dataset will be used for measurement.
                               Syntax:
-                              pixel_size=<x>,<y>
+                               - JSON structure: pixelSize={point}
+                               - Point simple syntax: pixelSize=<x>,<y>
                               Example:
                               pixel_size=0.18,0.18
         -----------------     --------------------------------------------------------------------
-        mosaic_rule           optional string. Specifies the mosaic rule when defining how
+        mosaic_rule           optional string or dict. Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image Layer will be used
+                              specified, the default mosaic rule of the image layer will be used
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue). The first visible image is
                               used by measure.
         -----------------     --------------------------------------------------------------------
         linear_unit           optional string. The linear unit in which height, length, or
                               perimeters will be calculated. It can be any of the following
-                              esriUnits constant. If the unit is not specified, the default is
-                              esriMeters. The list of valid esriUnits constants include:
-                              esriInches,esriFeet,esriYards,esriMiles,esriNauticalMiles,
-                              esriMillimeters,esriCentimeters,esriDecimeters,esriMeters,
-                              esriKilometers
+                              U constant. If the unit is not specified, the default is
+                              Meters. The list of valid Units constants include:
+                              Inches,Feet,Yards,Miles,NauticalMiles,
+                              Millimeters,Centimeters,Decimeters,Meters,
+                              Kilometers
         -----------------     --------------------------------------------------------------------
         angular_unit          optional string. The angular unit in which directions of line
                               segments will be calculated. It can be one of the following
-                              esriDirectionUnits constants:
-                              esriDURadians, esriDUDecimalDegrees
-                              If the unit is not specified, the default is esriDUDecimalDegrees.
+                              DirectionUnits constants:
+                              DURadians, DUDecimalDegrees
+                              If the unit is not specified, the default is DUDecimalDegrees.
         -----------------     --------------------------------------------------------------------
         area_unit             optional string. The area unit in which areas of polygons will be
-                              calculated. It can be any esriAreaUnits constant. If the unit is not
-                              specified, the default is esriSquareMeters. The list of valid
-                              esriAreaUnits constants include:
-                              esriSquareInches,esriSquareFeet,esriSquareYards,esriAcres,
-                              esriSquareMiles,esriSquareMillimeters,esriSquareCentimeters,
-                              esriSquareDecimeters,esriSquareMeters,esriAres,esriHectares,
-                              esriSquareKilometers
+                              calculated. It can be any AreaUnits constant. If the unit is not
+                              specified, the default is SquareMeters. The list of valid
+                              AreaUnits constants include:
+                              SquareInches,SquareFeet,SquareYards,Acres,
+                              SquareMiles,SquareMillimeters,SquareCentimeters,
+                              SquareDecimeters,SquareMeters,Ares,Hectares,
+                              SquareKilometers
         =================     ====================================================================
 
         :returns: dictionary
         """
+        if linear_unit:
+            linear_unit = "esri%s" % linear_unit
+        if angular_unit:
+            angular_unit = "esri%s" % angular_unit
+        if area_unit:
+            area_unit = "esri%s" % area_unit
+        measure_operation = "esriMensuration%s" % measure_operation
         url = "%s/measure" % self._url
         params = {'f':'json',
                   'fromGeometry' : from_geometry}
@@ -665,10 +693,10 @@ class ImageryLayer(Layer):
            no_data - The pixel value representing no information.
 
            no_data_interpretation - Interpretation of the no_data setting. The
-                               default is esriNoDataMatchAny when no_data is
-                               a number, and esriNoDataMatchAll when no_data
+                               default is NoDataMatchAny when no_data is
+                               a number, and NoDataMatchAll when no_data
                                is a comma-delimited string:
-                               esriNoDataMatchAny,esriNoDataMatchAll.
+                               NoDataMatchAny,NoDataMatchAll.
 
            interpolation - The resampling process of extrapolating the
                            pixel values while transforming the raster
@@ -694,7 +722,7 @@ class ImageryLayer(Layer):
            mosaic_rule - Specifies the mosaic rule when defining how
                         individual images should be mosaicked. When a mosaic
                         rule is not specified, the default mosaic rule of
-                        the image Layer will be used (as advertised in
+                        the image layer will be used (as advertised in
                         the root resource: defaultMosaicMethod,
                         mosaicOperator, sortField, sortValue).
 
@@ -725,7 +753,7 @@ class ImageryLayer(Layer):
                          or otherwise the highest version available.
         """
         import datetime
-
+        no_data_interpretation = "esri%s" % no_data_interpretation
         if size is None:
             size = [1200, 450]
 
@@ -935,7 +963,7 @@ class ImageryLayer(Layer):
                                     based on the fields specified in
                                     outFields. This parameter applies only
                                     if the supportsAdvancedQueries property
-                                    of the image Layer is true.
+                                    of the image layer is true.
                out_statistics- the definitions for one or more field-based
                               statistics to be calculated.
                group_by_fields_for_statistics-One or more field names using the
@@ -963,7 +991,7 @@ class ImageryLayer(Layer):
               is None.
               result_record_count - This option fetches query results up to
               the resultRecordCount specified. When resultOffset is
-              specified and this parameter is not, image Layer defaults
+              specified and this parameter is not, image layer defaults
               to maxRecordCount. The maximum value for this parameter is
               the value of the layer's maxRecordCount property.
               max_allowable_offset - This option can be used to specify the
@@ -1204,14 +1232,14 @@ class ImageryLayer(Layer):
                     ):
         """
         This operation is supported at 10.1 and later.
-        The Add Rasters operation is performed on an image Layer method.
-        The Add Rasters operation adds new rasters to an image Layer
+        The Add Rasters operation is performed on an image layer method.
+        The Add Rasters operation adds new rasters to an image layer
         (POST only).
         The added rasters can either be uploaded items, using the item_ids
         parameter, or published services, using the service_url parameter.
         If item_ids is specified, uploaded rasters are copied to the image
         Layer's dynamic image workspace location; if the service_url is
-        specified, the image Layer adds the URL to the mosaic dataset no
+        specified, the image layer adds the URL to the mosaic dataset no
         raster files are copied. The service_url is required input for the
         following raster types: Image Layer, Map Service, WCS, and WMS.
 
@@ -1222,7 +1250,7 @@ class ImageryLayer(Layer):
             Syntax: item_ids=<itemId1>,<itemId2>
             Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
                              ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        service_url - The URL of the service to be added. The image Layer
+        service_url - The URL of the service to be added. The image layer
          will add this URL to the mosaic dataset. Either item_ids or
          service_url is needed to perform this operation. The service URL is
          required for the following raster types: Image Layer, Map
@@ -1230,7 +1258,7 @@ class ImageryLayer(Layer):
             Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
         raster_type - The type of raster files being added. Raster types
          define the metadata and processing template for raster files to be
-         added. Allowed values are listed in image Layer resource.
+         added. Allowed values are listed in image layer resource.
             Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
         compute_statistics - If true, statistics for the rasters will be
          computed. The default is false.
@@ -1319,7 +1347,7 @@ class ImageryLayer(Layer):
     #----------------------------------------------------------------------
     def _delete_rasters(self, raster_ids):
         """
-        The Delete Rasters operation deletes one or more rasters in an image Layer.
+        The Delete Rasters operation deletes one or more rasters in an image layer.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -1494,11 +1522,11 @@ class ImageryLayer(Layer):
         rendering_rule        optional dictionary. Specifies the rendering rule for how the
                               requested image should be rendered.
         -----------------     --------------------------------------------------------------------
-        pixel_size            optional string. The pixel level being used (or the resolution being
-                              looked at). If pixel size is not specified, then pixelSize will
-                              default to the base resolution of the dataset. The raster at the
-                              specified pixel size in the mosaic dataset will be used for
-                              histogram calculation.
+        pixel_size            optional string or dict. The pixel level being used (or the
+                              resolution being looked at). If pixel size is not specified, then
+                              pixel_size will default to the base resolution of the dataset. The
+                              raster at the specified pixel size in the mosaic dataset will be
+                              used for histogram calculation.
         =================     ====================================================================
 
         :returns: dictionary
@@ -2267,7 +2295,7 @@ class ImageryLayer(Layer):
 # Raster.Raster.__ior__       = returnNotImplemented # |=
 
 ########################################################################
-class ImageTileManagement(object):
+class ImageTileManager(object):
     """
     Manages the Image Layer Tile Functions for Cached Image Layers.
 
@@ -2320,13 +2348,12 @@ class ImageTileManagement(object):
                aoi=None
                ):
         """
-        The exportTiles operation is performed as an asynchronous task and
-        allows client applications to download map tiles from server for
-        offline use. This operation is performed on a Image Layer that
-        allows clients to export cache tiles. The result of this operation
-        is Image Layer Job. This job response contains reference to Image
-        Layer Result method that returns the url to resulting tile
-        package (.tpk) or a cache raster dataset.
+        The export method allows client applications to download map tiles
+        from server for offline use. This operation is performed on a
+        Image Layer that allows clients to export cache tiles. The result
+        of this operation is Image Layer Job. This job response contains
+        reference to Image Layer Result method that returns the url to
+        resulting tile package (.tpk) or a cache raster dataset.
 
         export can be enabled in a layer by using ArcGIS Desktop or the
         ArcGIS Server Administrative Site Directory. In ArcGIS Desktop,
@@ -2453,8 +2480,7 @@ class ImageTileManagement(object):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        tile_package          optional boolean.   Allows exporting either a tile package or a
-                              cache raster data set. If the value is true output will be in tile
+        tile_package          optional boolean.  If the value is true output will be in tile
                               package format and if the value is false Cache Raster data set is
                               returned. The default value is false
         -----------------     --------------------------------------------------------------------
@@ -2531,7 +2557,7 @@ class ImageTileManagement(object):
                 return res
         return res
     #----------------------------------------------------------------------
-    def get_job(self, job_id):
+    def _get_job(self, job_id):
         """
         Retrieves status and message information about a specific job.
 
@@ -2909,7 +2935,7 @@ class RasterCatalogItem(object):
         return self._con.get(path=url, params={}, try_json=False,
                              file_name=out_file, out_folder=out_folder)
 ########################################################################
-class ImageRasterManagement(object):
+class ImageRasterManager(object):
     """
     This class allows users to update, add, and delete rasters to the
     Image Layer object.  The functions are only available if the service
@@ -2945,14 +2971,14 @@ class ImageRasterManagement(object):
             ):
         """
         This operation is supported at 10.1 and later.
-        The Add Rasters operation is performed on an image Layer method.
-        The Add Rasters operation adds new rasters to an image Layer
+        The Add Rasters operation is performed on an image layer method.
+        The Add Rasters operation adds new rasters to an image layer
         (POST only).
         The added rasters can either be uploaded items, using the item_ids
         parameter, or published services, using the service_url parameter.
         If item_ids is specified, uploaded rasters are copied to the image
         Layer's dynamic image workspace location; if the service_url is
-        specified, the image Layer adds the URL to the mosaic dataset no
+        specified, the image layer adds the URL to the mosaic dataset no
         raster files are copied. The service_url is required input for the
         following raster types: Image Layer, Map Service, WCS, and WMS.
 
@@ -2963,7 +2989,7 @@ class ImageRasterManagement(object):
             Syntax: item_ids=<itemId1>,<itemId2>
             Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
                              ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        service_url - The URL of the service to be added. The image Layer
+        service_url - The URL of the service to be added. The image layer
          will add this URL to the mosaic dataset. Either item_ids or
          service_url is needed to perform this operation. The service URL is
          required for the following raster types: Image Layer, Map
@@ -2971,7 +2997,7 @@ class ImageRasterManagement(object):
             Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
         raster_type - The type of raster files being added. Raster types
          define the metadata and processing template for raster files to be
-         added. Allowed values are listed in image Layer resource.
+         added. Allowed values are listed in image layer resource.
             Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
         compute_statistics - If true, statistics for the rasters will be
          computed. The default is false.
@@ -3048,7 +3074,7 @@ class ImageRasterManagement(object):
     #----------------------------------------------------------------------
     def delete(self, raster_ids):
         """
-        The Delete Rasters operation deletes one or more rasters in an image Layer.
+        The Delete Rasters operation deletes one or more rasters in an image layer.
 
         =================     ====================================================================
         **Argument**          **Description**

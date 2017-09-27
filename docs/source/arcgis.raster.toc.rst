@@ -15,16 +15,16 @@ ImageryLayer
     :members:
     :undoc-members:
 
-ImageRasterManagement
----------------------
-.. autoclass:: arcgis.raster.ImageRasterManagement
+ImageRasterManager
+------------------
+.. autoclass:: arcgis.raster.ImageRasterManager
     :inherited-members:
     :members:
     :undoc-members:
 
-ImageTileManagement
--------------------
-.. autoclass:: arcgis.raster.ImageTileManagement
+ImageTileManager
+----------------
+.. autoclass:: arcgis.raster.ImageTileManager
     :inherited-members:
     :members:
     :undoc-members:
