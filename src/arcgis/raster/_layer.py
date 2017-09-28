@@ -493,21 +493,36 @@ class ImageryLayer(Layer):
 
         If lock_rasters is set True, the LockRaster mosaic rule will be applied to the layer, unless overridden
 
-        :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
-                Any legal SQL where clause operating on the fields in the raster
-        :param geometry: spatial filter from arcgis.geometry.filters module to filter results by a
-                                spatial relationship with another geometry
-        :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
-                Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
-                Syntax: time_filter=<timeInstant>
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. A where clause on this layer to filter the imagery
+                              layer by the selection sql statement. Any legal SQL where clause
+                              operating on the fields in the raster
+        -----------------     --------------------------------------------------------------------
+        geometry              optional arcgis.geometry.filters. To filter results by a spatial
+                              relationship with another geometry
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime, date, or timestamp. A temporal filter to this
+                              layer to filter the imagery layer by time using the specified time
+                              instant or the time extent.
 
-                Time extent specified as list of [<startTime>, <endTime>]
-                For time extents one of <startTime> or <endTime> could be None. A None value specified for
-                start time or end time will represent infinity for start or end time respectively.
-                Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
-                timestamp in milliseconds
-        :param lock_rasters: if True, the LockRaster mosaic rule will be applied to the layer, unless overridden
-        :param clear_filters: if True, the applied filters are cleared
+                              Syntax: time_filter=<timeInstant>
+
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp in milliseconds
+        -----------------     --------------------------------------------------------------------
+        lock_rasters          optional boolean. If True, the LockRaster mosaic rule will be
+                              applied to the layer, unless overridden
+        -----------------     --------------------------------------------------------------------
+        clear_filters         optional boolean. If True, the applied filters are cleared
+        =================     ====================================================================
+
+
         :return:
 
         """
@@ -544,22 +559,33 @@ class ImageryLayer(Layer):
         """
         Filters the layer by where clause, geometry and temporal filters
 
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. A where clause on this layer to filter the imagery
+                              layer by the selection sql statement. Any legal SQL where clause
+                              operating on the fields in the raster
+        -----------------     --------------------------------------------------------------------
+        geometry              optional arcgis.geometry.filters. To filter results by a spatial
+                              relationship with another geometry
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime, date, or timestamp. A temporal filter to this
+                              layer to filter the imagery layer by time using the specified time
+                              instant or the time extent.
 
+                              Syntax: time_filter=<timeInstant>
 
-        :param where: a where clause on this layer to filter the imagery layer by the selection sql statement.
-                Any legal SQL where clause operating on the fields in the raster
-        :param geometry: spatial filter from arcgis.geometry.filters module to filter results by a
-                         spatial relationship with another geometry
-        :param time: a temporal filter to this layer to filter the imagery layer by time using the specified time instant or the time extent.
-                Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
-                Syntax: time_filter=<timeInstant>
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp in milliseconds
+        -----------------     --------------------------------------------------------------------
+        lock_rasters          optional boolean. If True, the LockRaster mosaic rule will be
+                              applied to the layer, unless overridden
+        =================     ====================================================================
 
-                Time extent specified as list of [<startTime>, <endTime>]
-                For time extents one of <startTime> or <endTime> could be None. A None value specified for
-                start time or end time will represent infinity for start or end time respectively.
-                Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
-                timestamp in milliseconds
-        :param lock_rasters: bool If True, the LockRaster mosaic rule is applied to the layer, using the filtered objectids
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
@@ -650,114 +676,130 @@ class ImageryLayer(Layer):
         approach, you don't get any information associated with the
         exported image other than the image itself.
 
-        Inputs:
-           bbox - Optional. The extent (bounding box) of the exported image. Unless
-                  the bbox_sr parameter has been specified, the bbox is
-                  assumed to be in the spatial reference of the imagery
-                  layer.
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        bbox                  Optional dict or string. The extent (bounding box) of the exported
+                              image. Unless the bbox_sr parameter has been specified, the bbox is
+                              assumed to be in the spatial reference of the imagery layer.
 
-                  The bbox should be specified as an arcgis.geometry.Envelope object, it's json representation or as
-                  a list or string with this format: '<xmin>, <ymin>, <xmax>, <ymax>'
+                              The bbox should be specified as an arcgis.geometry.Envelope object,
+                              it's json representation or as a list or string with this
+                              format: '<xmin>, <ymin>, <xmax>, <ymax>'
+                              If omitted, the extent of the imagery layer is used
+        -----------------     --------------------------------------------------------------------
+        image_sr              optional string, SpatialReference. The spatial reference of the
+                              exported image. The spatial reference can be specified as either a
+                              well-known ID, it's json representation or as an
+                              arcgis.geometry.SpatialReference object.
+                              If the image_sr is not specified, the image will be exported in the
+                              spatial reference of the imagery layer.
+        -----------------     --------------------------------------------------------------------
+        bbox_sr               optional string, SpatialReference. The spatial reference of the
+                              bbox.
+                              The spatial reference can be specified as either a well-known ID,
+                              it's json representation or as an arcgis.geometry.SpatialReference
+                              object.
+                              If the image_sr is not specified, bbox is assumed to be in the
+                              spatial reference of the imagery layer.
+        -----------------     --------------------------------------------------------------------
+        size                  optional list. The size (width * height) of the exported image in
+                              pixels. If size is not specified, an image with a default size of
+                              400 * 400 will be exported.
+                              Syntax: list of [width, height]
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime.date, datetime.datetime or timestamp string. The
+                              time instant or the time extent of the exported image.
+                              Time instant specified as datetime.date, datetime.datetime or
+                              timestamp in milliseconds since epoch
+                              Syntax: time=<timeInstant>
 
-                  If omitted, the extent of the imagery layer is used
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp
+        -----------------     --------------------------------------------------------------------
+        export_format         optional string. The format of the exported image. The default
+                              format is jpgpng. The jpgpng format returns a JPG if there are no
+                              transparent pixels in the requested extent; otherwise, it returns a
+                              PNG (png32).
 
-           image_sr - The spatial reference of the exported image.
-                  The spatial reference can be specified as either a well-known ID, it's json representation or as an
-                  arcgis.geometry.SpatialReference object.
-                  If the image_sr is not specified, the image will be exported in the spatial reference of the imagery layer.
+                              Values: jpgpng,png,png8,png24,jpg,bmp,gif,tiff,png32,bip,bsq,lerc
+        -----------------     --------------------------------------------------------------------
+        pixel_type            optional string. The pixel type, also known as data type, pertains
+                              to the type of values stored in the raster, such as signed integer,
+                              unsigned integer, or floating point. Integers are whole numbers,
+                              whereas floating points have decimals.
+        -----------------     --------------------------------------------------------------------
+        no_data               optional float. The pixel value representing no information.
+        -----------------     --------------------------------------------------------------------
+        no_data_interpretation optional string. Interpretation of the no_data setting. The default
+                               is NoDataMatchAny when no_data is a number, and NoDataMatchAll when
+                               no_data is a comma-delimited string: NoDataMatchAny,NoDataMatchAll.
+        -----------------     --------------------------------------------------------------------
+        interpolation         optional string. The resampling process of extrapolating the pixel
+                              values while transforming the raster dataset when it undergoes
+                              warping or when it changes coordinate space.
+                              One of: RSP_BilinearInterpolation, RSP_CubicConvolution,
+                              RSP_Majority, RSP_NearestNeighbor
+        -----------------     --------------------------------------------------------------------
+        compression           optional string. Controls how to compress the image when exporting
+                              to TIFF format: None, JPEG, LZ77. It does not control compression on
+                              other formats.
+        -----------------     --------------------------------------------------------------------
+        compression_quality   optional integer. Controls how much loss the image will be subjected
+                              to by the compression algorithm. Valid value ranges of compression
+                              quality are from 0 to 100.
+        -----------------     --------------------------------------------------------------------
+        band_ids              optional list. If there are multiple bands, you can specify a single
+                              band to export, or you can change the band combination (red, green,
+                              blue) by specifying the band number. Band number is 0 based.
+                              Specified as list of ints, eg [2,1,0]
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           optional dict. Specifies the mosaic rule when defining how
+                              individual images should be mosaicked. When a mosaic rule is not
+                              specified, the default mosaic rule of the image layer will be used
+                              (as advertised in the root resource: defaultMosaicMethod,
+                              mosaicOperator, sortField, sortValue).
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        optional dict. Specifies the rendering rule for how the requested
+                              image should be rendered.
+        -----------------     --------------------------------------------------------------------
+        f                     optional string. The response format.  default is json
+                              Values: json,image,kmz
+                              If image format is chosen, the bytes of the exported image are
+                              returned unless save_folder and save_file parameters are also
+                              passed, in which case the image is written to the specified file
+        -----------------     --------------------------------------------------------------------
+        save_folder           optional string. The folder in which the exported image is saved
+                              when f=image
+        -----------------     --------------------------------------------------------------------
+        save_file             optional string. The file in which the exported image is saved when
+                              f=image
+        -----------------     --------------------------------------------------------------------
+        compression_tolerance optional float. Controls the tolerance of the lerc compression
+                              algorithm. The tolerance defines the maximum possible error of pixel
+                              values in the compressed image.
+                              Example: compression_tolerance=0.5 is loseless for 8 and 16 bit
+                              images, but has an accuracy of +-0.5 for floating point data. The
+                              compression tolerance works for the LERC format only.
+        -----------------     --------------------------------------------------------------------
+        adjust_aspect_ratio   optional boolean. Indicates whether to adjust the aspect ratio or
+                              not. By default adjust_aspect_ratio is true, that means the actual
+                              bbox will be adjusted to match the width/height ratio of size
+                              paramter, and the response image has square pixels.
+        -----------------     --------------------------------------------------------------------
+        lerc_version          optional integer. The version of the Lerc format if the user sets
+                              the format as lerc.
+                              Values: 1 or 2
+                              If a version is specified, the server returns the matching version,
+                              or otherwise the highest version available.
+        =================     ====================================================================
 
-           bbox_sr - The spatial reference of the bbox.
-                  The spatial reference can be specified as either a well-known ID, it's json representation or as an
-                  arcgis.geometry.SpatialReference object.
-                  If the image_sr is not specified, bbox is assumed to be in the spatial reference of the imagery layer.
+        :returns: dict or string
 
-           size - The size (width * height) of the exported image in
-                  pixels. If size is not specified, an image with a default
-                  size of 400 * 400 will be exported.
-                  Format: list of [width, height]
-
-           time - The time instant or the time extent of the exported image.
-                    Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
-                    Syntax: time=<timeInstant>
-
-                    Time extent specified as list of [<startTime>, <endTime>]
-                    For time extents one of <startTime> or <endTime> could be None. A None value specified for
-                    start time or end time will represent infinity for start or end time respectively.
-                    Syntax: time=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or timestamp
-
-           export_format - The format of the exported image. The default format is jpgpng.
-                    The jpgpng format returns a JPG if there are no transparent pixels in the requested extent;
-                    otherwise, it returns a PNG (png32).
-
-                    Values: jpgpng,png,png8,png24,jpg,bmp,gif,tiff,png32,bip,bsq,lerc
-
-           pixel_type - The pixel type, also known as data type, pertains to
-                       the type of values stored in the raster, such as
-                       signed integer, unsigned integer, or floating point.
-                       Integers are whole numbers, whereas floating points
-                       have decimals.
-
-           no_data - The pixel value representing no information.
-
-           no_data_interpretation - Interpretation of the no_data setting. The
-                               default is NoDataMatchAny when no_data is
-                               a number, and NoDataMatchAll when no_data
-                               is a comma-delimited string:
-                               NoDataMatchAny,NoDataMatchAll.
-
-           interpolation - The resampling process of extrapolating the
-                           pixel values while transforming the raster
-                           dataset when it undergoes warping or when it
-                           changes coordinate space.
-                           One of: RSP_BilinearInterpolation, RSP_CubicConvolution,
-                            RSP_Majority, RSP_NearestNeighbor
-
-           compression - Controls how to compress the image when exporting
-                         to TIFF format: None, JPEG, LZ77. It does not
-                         control compression on other formats.
-
-           compression_quality - Controls how much loss the image will be
-                                subjected to by the compression algorithm.
-                                Valid value ranges of compression quality
-                                are from 0 to 100.
-
-           band_ids - If there are multiple bands, you can specify a single
-                     band to export, or you can change the band combination
-                     (red, green, blue) by specifying the band number. Band
-                     number is 0 based. Specified as list of ints, eg [2,1,0]
-
-           mosaic_rule - Specifies the mosaic rule when defining how
-                        individual images should be mosaicked. When a mosaic
-                        rule is not specified, the default mosaic rule of
-                        the image layer will be used (as advertised in
-                        the root resource: defaultMosaicMethod,
-                        mosaicOperator, sortField, sortValue).
-
-           rendering_rule - Specifies the rendering rule for how the
-                           requested image should be rendered.
-
-           f - The response format.  default is json
-               Values: json,image,kmz
-               If image format is chosen, the bytes of the exported image are returned unless save_folder and save_file
-               parameters are also passed, in which case the image is written to the specified file
-
-           save_folder - the folder in which the exported image is saved when f=image
-
-           save_file - the file in which the exported image is saved when f=image
-
-           compression_tolerance - Controls the tolerance of the lerc compression algorithm. The tolerance defines the
-               maximum possible error of pixel values in the compressed image. It's a double value.
-               Example: compression_tolerance=0.5 is loseless for 8 and 16 bit images, but has an accuracy of +-0.5 for
-               floating point data. The compression tolerance works for the LERC format only.
-
-            adjust_aspect_ratio -  indicates whether to adjust the aspect ratio or not. By default adjust_aspect_ratio is
-            true, that means the actual bbox will be adjusted to match the width/height ratio of size paramter, and the
-            response image has square pixels. Values: True,False
-
-          lerc_version - The version of the Lerc format if the user sets the format as lerc.
-                         Values: 1 | 2
-                         If a version is specified, the server returns the matching version,
-                         or otherwise the highest version available.
         """
         import datetime
         no_data_interpretation = "esri%s" % no_data_interpretation
@@ -939,80 +981,100 @@ class ImageryLayer(Layer):
          either a set of features or an array of raster IDs (if return_ids_only is set to True),
          count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
 
-            Inputs:
-               where - the selection sql statement. Any legal SQL where clause operating on the fields in the raster
-                        catalog is allowed.
-               out_fields - the attribute fields to return, comma-delimited list of field names.
-               time_filter - The time instant or the time extent of the exported image.
-                    Time instant specified as datetime.date, datetime.datetime or timestamp in milliseconds since epoch
-                    Syntax: time_filter=<timeInstant>
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. A where clause on this layer to filter the imagery
+                              layer by the selection sql statement. Any legal SQL where clause
+                              operating on the fields in the raster
+        -----------------     --------------------------------------------------------------------
+        out_fields            optional string. The attribute fields to return, comma-delimited
+                              list of field names.
+        -----------------     --------------------------------------------------------------------
+        time_filter           optional datetime.date, datetime.datetime or timestamp in
+                              milliseconds. The time instant or the time extent of the exported
+                              image.
 
-                    Time extent specified as list of [<startTime>, <endTime>]
-                    For time extents one of <startTime> or <endTime> could be None. A None value specified for
-                    start time or end time will represent infinity for start or end time respectively.
-                    Syntax: time_filter=[<startTime>, <endTime>] ; specified as datetime.date, datetime.datetime or
-                    timestamp in milliseconds
-               geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                                spatial relationship with another geometry
-               return_geometry - true means a geometry will be returned,
-                                else just the attributes
-               return_ids_only - false is default.  True means only OBJECTIDs
-                               will be returned
-               return_count_only - if True, then an integer is returned only
-                                 based on the sql statement
-               pixel_size-Query visible rasters at a given pixel size. If
-                         pixel_size is not specified, rasters at all
-                         resolutions can be queried.
-               order_by_fields-Order results by one or more field names. Use
-                             ASC or DESC for ascending or descending order,
-                             respectively
-               return_distinct_values-  If true, returns distinct values
-                                    based on the fields specified in
-                                    outFields. This parameter applies only
-                                    if the supportsAdvancedQueries property
-                                    of the image layer is true.
-               out_statistics- the definitions for one or more field-based
+                              Syntax: time_filter=<timeInstant>
+
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp in milliseconds
+        -----------------     --------------------------------------------------------------------
+        geometry_filter       optional arcgis.geometry.filters. Spatial filter from
+                              arcgis.geometry.filters module to filter results by a spatial
+                              relationship with another geometry.
+        -----------------     --------------------------------------------------------------------
+        return_geometry       optional boolean. True means a geometry will be returned, else just
+                              the attributes
+        -----------------     --------------------------------------------------------------------
+        return_ids_only       optional boolean. False is default.  True means only OBJECTIDs will
+                              be returned
+        -----------------     --------------------------------------------------------------------
+        return_count_only     optional boolean. If True, then an integer is returned only based on
+                              the sql statement
+        -----------------     --------------------------------------------------------------------
+        pixel_size            optional dict or list. Query visible rasters at a given pixel size.
+                              If pixel_size is not specified, rasters at all resolutions can be
+                              queried.
+        -----------------     --------------------------------------------------------------------
+        order_by_fields       optional string. Order results by one or more field names. Use ASC
+                              or DESC for ascending or descending order, respectively.
+        -----------------     --------------------------------------------------------------------
+        return_distinct_values optional boolean. If true, returns distinct values based on the
+                               fields specified in out_fields. This parameter applies only if the
+                               supportsAdvancedQueries property of the image layer is true.
+        -----------------     --------------------------------------------------------------------
+        out_statistics        optional dict or string. The definitions for one or more field-based
                               statistics to be calculated.
-               group_by_fields_for_statistics-One or more field names using the
-                                         values that need to be grouped for
-                                         calculating the statistics.
-               out_sr - if the returning geometry needs to be in a different
-                        spatial reference, provide the function with the
-                        desired WKID.
-               return_all_records - boolean, if True(default) all records
-                                    will be returned. False means only the
-                                    limit of records will be returned.
-               object_ids - The object IDs of this raster catalog to be
-                            queried.When this parameter is specified, any
-                            other filter parameters (including where) are
-                            ignored.
-                            When this parameter is specified, setting
-                            returnIdsOnly=true is invalid.
-                            Syntax: objectIds=<objectId1>, <objectId2>
-                            Example: objectIds=37, 462
-              multi_dimensional_def- The filters defined by multiple
-                            dimensional definitions.
-              result_offset - This option fetches query results by skipping
-              a specified number of records. The query results start from
-              the next record (i.e., resultOffset + 1). The Default value
-              is None.
-              result_record_count - This option fetches query results up to
-              the resultRecordCount specified. When resultOffset is
-              specified and this parameter is not, image layer defaults
-              to maxRecordCount. The maximum value for this parameter is
-              the value of the layer's maxRecordCount property.
-              max_allowable_offset - This option can be used to specify the
-              max_allowable_offset to be used for generalizing geometries
-              returned by the query operation. The max_allowable_offset is
-              in the units of the outSR. If outSR is not specified,
-              max_allowable_offset is assumed to be in the unit of the
-              spatial reference of the Layer.
-              true_curves -  If true, returns true curves in output
-              geometres, otherwise curves get converted to densified
-              polylines or polygons.
-            Output:
-               A FeatureSet containing the footprints (features) matching the query when return_geometry is True,
-               else a dictionary containing the expected return type
+        -----------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics optional dict/string. One or more field names using the
+                                       values that need to be grouped for calculating the
+                                       statistics.
+        -----------------     --------------------------------------------------------------------
+        out_sr                optional dict, SpatialReference. If the returning geometry needs to
+                              be in a different spatial reference, provide the function with the
+                              desired WKID.
+        -----------------     --------------------------------------------------------------------
+        return_all_records    optional boolean. If True(default) all records will be returned.
+                              False means only the limit of records will be returned.
+        -----------------     --------------------------------------------------------------------
+        object_ids            optional string. The object IDs of this raster catalog to be
+                              queried. When this parameter is specified, any other filter
+                              parameters (including where) are ignored.
+                              When this parameter is specified, setting return_ids_only=true is
+                              invalid.
+                              Syntax: objectIds=<objectId1>, <objectId2>
+                              Example: objectIds=37, 462
+        -----------------     --------------------------------------------------------------------
+        multi_dimensional_def optional dict. The filters defined by multiple dimensional
+                              definitions.
+        -----------------     --------------------------------------------------------------------
+        result_offset         optional integer. This option fetches query results by skipping a
+                              specified number of records. The query results start from the next
+                              record (i.e., resultOffset + 1). The Default value is None.
+        -----------------     --------------------------------------------------------------------
+        result_record_count   optional integer. This option fetches query results up to the
+                              resultRecordCount specified. When resultOffset is specified and this
+                              parameter is not, image layer defaults to maxRecordCount. The
+                              maximum value for this parameter is the value of the layer's
+                              maxRecordCount property.
+                              max_allowable_offset - This option can be used to specify the
+                              max_allowable_offset to be used for generalizing geometries returned
+                              by the query operation. The max_allowable_offset is in the units of
+                              the out_sr. If outSR is not specified, max_allowable_offset is
+                              assumed to be in the unit of the spatial reference of the Layer.
+        -----------------     --------------------------------------------------------------------
+        true_curves           optional boolean. If true, returns true curves in output geometries,
+                              otherwise curves get converted to densified polylines or polygons.
+        =================     ====================================================================
+
+        :returns: A FeatureSet containing the footprints (features) matching the query when
+                  return_geometry is True, else a dictionary containing the expected return
+                  type.
          """
         params = {"f": "json",
                   "outFields": out_fields,
@@ -1737,25 +1799,48 @@ class ImageryLayer(Layer):
         method. This operation is supported by any imagery layer published with
         mosaic datasets or a raster dataset. The result of this operation contains
         both statistics and histograms computed from the given extent.
-        Inputs:
-        geometry - A geometry that defines the geometry within which the histogram
-         is computed. The geometry can be an envelope or a polygon. The structure of
-         the geometry is the same as the structure of the JSON geometry objects
-         returned by the ArcGIS REST API, or an arcgis.geometry Geometry object
-        mosaic_rule - Specifies the mosaic rule when defining how individual
-         images should be mosaicked. When a mosaic rule is not specified, the
-         default mosaic rule of the image layer will be used (as advertised
-         in the root resource: defaultMosaicMethod, mosaicOperator, sortField,
-         sortValue).
-        rendering_rule - Specifies the rendering rule for how the requested
-         image should be rendered.
-        pixel_size - The pixel level being used (or the resolution being looked at).
-         If pixel size is not specified, then pixel_size will default to the base
-         resolution of the dataset. The raster at the specified pixel size in the
-         mosaic dataset will be used for histogram calculation.
-         The structure of the pixel_size parameter is the same as the structure of
-         the point object returned by the ArcGIS REST API. In addition to the JSON
-         structure, you can specify the pixel size with a simple comma-separated syntax.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              required Polygon or Extent. A geometry that defines the geometry
+                              within which the histogram is computed. The geometry can be an
+                              envelope or a polygon
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           optional string. Specifies the mosaic rule when defining how
+                              individual images should be mosaicked. When a mosaic rule is not
+                              specified, the default mosaic rule of the image layer will be used
+                              (as advertised in the root resource: defaultMosaicMethod,
+                              mosaicOperator, sortField, sortValue).
+                              See Mosaic rule objects help for more information:
+                              http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        Specifies the rendering rule for how the requested image should be
+                              processed. The response is updated Layer info that reflects a
+                              custom processing as defined by the rendering rule. For example, if
+                              renderingRule contains an attributeTable function, the response
+                              will indicate "hasRasterAttributeTable": true; if the renderingRule
+                              contains functions that alter the number of bands, the response will
+                              indicate a correct bandCount value.
+        ---------------     --------------------------------------------------------------------
+        pixel_size          optional list or dictionary. The pixel level being used (or the
+                            resolution being looked at). If pixel size is not specified, then
+                            pixel_size will default to the base resolution of the dataset.
+                            The structure of the pixel_size parameter is the same as the
+                            structure of the point object returned by the ArcGIS REST API.
+                            In addition to the JSON structure, you can specify the pixel size
+                            with a comma-separated syntax.
+
+                            Syntax:
+                               JSON structure: pixelSize={point}
+                               Point simple syntax: pixelSize=<x>,<y>
+                            Examples:
+                               pixelSize={"x": 0.18, "y": 0.18}
+                               pixelSize=0.18,0.18
+        =================     ====================================================================
+
+        :returns: dict
+
         """
 
         url = self._url + "/computeHistograms"
@@ -1803,45 +1888,60 @@ class ImageryLayer(Layer):
         The number of sample locations in the response is based on the
         sample_distance or sample_count parameter and cannot exceed the limit of
         the image layer (the default is 1000, which is an approximate limit).
-        Inputs:
-        geometry - A geometry that defines the location(s) to be sampled. The
-         structure of the geometry is the same as the structure of the JSON
-         geometry objects returned by the ArcGIS REST API. Applicable geometry
-         types are point, multipoint, polyline, polygon, and envelope. When
-         spatialReference is omitted in the input geometry, it will be assumed
-         to be the spatial reference of the image layer.
-        geometry_type - The type of geometry specified by the geometry parameter.
-         The geometry type can be point, multipoint, polyline, polygon, or envelope.
-         Values: esriGeometryPoint,esriGeometryMultipoint,esriGeometryPolyline |
-         esriGeometryPolygon,esriGeometryEnvelope
-        sample_distance - The distance interval used to sample points from the
-         provided path. The unit is the same as the input geometry. If neither
-         sample_count nor sample_distance is provided, no densification can be done
-         for paths (polylines), and a default sample_count (100) is used for areas
-         (polygons or envelopes).
-        sample_count - The approximate number of sample locations from the provided
-         path. If neither sample_count nor sample_distance is provided, no
-         densification can be done for paths (polylines), and a default
-         sample_count (100) is used for areas (polygons or envelopes).
-        mosaic_rule - Specifies the mosaic rule defining the image sort order.
-         Additional filtering can be applied to the where clause and FIDs of a
-         mosaic rule.
-        pixel_size - The raster that is visible at the specified pixel size in the
-         mosaic dataset will be used for sampling. If pixel_size is not specified,
-         the layer's pixel size is used.
-         The structure of the esri_codephpixelSize parameter is the same as the
-         structure of the point object returned by the ArcGIS REST API. In addition
-         to the JSON structure, you can specify the pixel size with a simple
-         comma-separated syntax.
-        return_first_value_only - Indicates whether to return all values at a point,
-         or return the first non-NoData value based on the current mosaic rule.
-         The default is true.
-        interpolation - The resampling method. Default is nearest neighbor.
-         Values: RSP_BilinearInterpolation,RSP_CubicConvolution,RSP_Majority,RSP_NearestNeighbor
-        out_fields - The list of fields to be
-         included in the response. This list is a comma-delimited list of field
-         names. You can also specify the wildcard character (*) as the value of
-         this parameter to include all the field values in the results.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              A geometry that defines the location(s) to be sampled. The
+                              structure of the geometry is the same as the structure of the JSON
+                              geometry objects returned by the ArcGIS REST API. Applicable geometry
+                              types are point, multipoint, polyline, polygon, and envelope. When
+                              spatialReference is omitted in the input geometry, it will be assumed
+                              to be the spatial reference of the image layer.
+        -----------------     --------------------------------------------------------------------
+        geometry_type         optional string. The type of geometry specified by the geometry
+                              parameter.
+                              The geometry type can be point, multipoint, polyline, polygon, or
+                              envelope.
+        -----------------     --------------------------------------------------------------------
+        sample_distance       optional float. The distance interval used to sample points from
+                              the provided path. The unit is the same as the input geometry. If
+                              neither sample_count nor sample_distance is provided, no
+                              densification can be done for paths (polylines), and a default
+                              sample_count (100) is used for areas (polygons or envelopes).
+        -----------------     --------------------------------------------------------------------
+        sample_count          optional integer. The approximate number of sample locations from
+                              the provided path. If neither sample_count nor sample_distance is
+                              provided, no densification can be done for paths (polylines), and a
+                              default sample_count (100) is used for areas (polygons or envelopes).
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           optional dictionary.  Specifies the mosaic rule when defining how
+                              individual images should be mosaicked. When a mosaic rule is not
+                              specified, the default mosaic rule of the image layer will be used
+                              (as advertised in the root resource: defaultMosaicMethod,
+                              mosaicOperator, sortField, sortValue).
+        -----------------     --------------------------------------------------------------------
+        pixel_size            optional string or dict. The pixel level being used (or the
+                              resolution being looked at). If pixel size is not specified, then
+                              pixel_size will default to the base resolution of the dataset. The
+                              raster at the specified pixel size in the mosaic dataset will be
+                              used for histogram calculation.
+        -----------------     --------------------------------------------------------------------
+        return_first_value_only optional boolean. Indicates whether to return all values at a
+                                point, or return the first non-NoData value based on the current
+                                mosaic rule.
+                                The default is true.
+        -----------------     --------------------------------------------------------------------
+        interpolation         optional string. The resampling method. Default is nearest neighbor.
+                              Values: RSP_BilinearInterpolation,RSP_CubicConvolution,
+                                      RSP_Majority,RSP_NearestNeighbor
+        -----------------     --------------------------------------------------------------------
+        out_fields            optional string. The list of fields to be included in the response.
+                              This list is a comma-delimited list of field names. You can also
+                              specify the wildcard character (*) as the value of this parameter to
+                              include all the field values in the results.
+        =================     ====================================================================
+
         """
 
         if not isinstance(geometry, Geometry):
@@ -1879,11 +1979,14 @@ class ImageryLayer(Layer):
     def key_properties(self, rendering_rule=None):
         """
         returns key properties of the imagery layer, such as band properties
-        :param rendering_rule: Specifies the rendering rule for how the requested image should be processed.
-        The response contains updated layer information that reflects a custom processing as defined
-         by the rendering rule. For example, if renderingRule contains an attributeTable function,
-         the response will indicate "hasRasterAttributeTable": true; if the renderingRule contains
-          functions that alter the number of bands, the response will indicate correct bandCount.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        optional dictionary. Specifies the rendering rule for how the
+                              requested image should be rendered.
+        =================     ====================================================================
+
         :return: key properties of the imagery layer
         """
         url = self._url + "/keyProperties"
@@ -1911,30 +2014,52 @@ class ImageryLayer(Layer):
         * The mosaic method, e.g. how the selected rasters are ordered.
         * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
-        :param method:  determines how the selected rasters are ordered.
-            str, can be none,center,nadir,northwest,seamline,viewpoint,attribute,lock-raster
-            required if method is: center,nadir,northwest,seamline,
-            optional otherwise. If no method is passed "none" method is used, which uses the order of records to sort
-            If sort_by and optionally sort_val parameters are specified, "attribute" method is used
-            If lock_rasters are specified, "lock-raster" method is used
-            If a viewpt parameter is passed, "viewpoint" method is used.
-        :param sort_by: optional str, field name when sorting by attributes
-        :param sort_val: optional, a constant value defining a reference or base value for the sort field when sorting by
-            attributes
-        :param lock_rasters: optional, an array of raster Ids. All the rasters with the given list of raster Ids are selected
-            to participate in the mosaic. The rasters will be visible at all pixel sizes regardless of the minimum and
-            maximum pixel size range of the locked rasters.
-        :param viewpt: optional point, used as view point for viewpoint mosaicking method
-        :param asc: optional bool, indicate whether to use ascending or descending order. Default is ascending order.
-        :param where: optional str, where clause to define a subset of rasters used in the mosaic, be aware that the rasters
-            may not be visible at all scales
-        :param fids: optional list of objectids, use the raster id list to define a subset of rasters used in the mosaic, be
-            aware that the rasters may not be visible at all scales.
-        :param muldidef: optional dict, multidemensional definition used for filtering by variable/dimensions.
-            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
-        :param op: optional string, first,last,min,max,mean,blend,sum
-            mosaic operation to resolve overlap pixel values: from first or last raster, use the min, max or mean of the
-            pixel values, or blend them.
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        method                optional string. Determines how the selected rasters are ordered.
+                              str, can be none,center,nadir,northwest,seamline,viewpoint,
+                              attribute,lock-raster
+                              required if method is: center,nadir,northwest,seamline, optional
+                              otherwise. If no method is passed "none" method is used, which uses
+                              the order of records to sort
+                              If sort_by and optionally sort_val parameters are specified,
+                              "attribute" method is used
+                              If lock_rasters are specified, "lock-raster" method is used
+                              If a viewpt parameter is passed, "viewpoint" method is used.
+        -----------------     --------------------------------------------------------------------
+        sort_by               optional string. field name when sorting by attributes
+        -----------------     --------------------------------------------------------------------
+        sort_val              optional string. A constant value defining a reference or base value
+                              for the sort field when sorting by attributes
+        -----------------     --------------------------------------------------------------------
+        lock_rasters          optional, an array of raster Ids. All the rasters with the given
+                              list of raster Ids are selected to participate in the mosaic. The
+                              rasters will be visible at all pixel sizes regardless of the minimum
+                              and maximum pixel size range of the locked rasters.
+        -----------------     --------------------------------------------------------------------
+        viewpt                optional point, used as view point for viewpoint mosaicking method
+        -----------------     --------------------------------------------------------------------
+        asc                   optional bool, indicate whether to use ascending or descending
+                              order. Default is ascending order.
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. where clause to define a subset of rasters used in
+                              the mosaic, be aware that the rasters may not be visible at all
+                              scales
+        -----------------     --------------------------------------------------------------------
+        fids                  optional list of objectids, use the raster id list to define a
+                              subset of rasters used in the mosaic, be aware that the rasters may
+                              not be visible at all scales.
+        -----------------     --------------------------------------------------------------------
+        muldidef              optional dict. multidemensional definition used for filtering by
+                              variable/dimensions.
+                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+        -----------------     --------------------------------------------------------------------
+        op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
+                              to resolve overlap pixel values: from first or last raster, use the
+                              min, max or mean of the pixel values, or blend them.
+        =================     ====================================================================
+
         :return: a mosaic rule defined in the format at
             http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
@@ -2062,19 +2187,28 @@ class ImageryLayer(Layer):
         If for_viz is False, distributed raster analysis is used for generating a new raster information product by
         applying raster functions at source resolution across the extent of the output imagery layer.
 
-        :param output_name: Optional. If not provided, an Imagery Layer item is created by the method and used as the output.
-            You can pass in the name of the output Imagery Layer that should be created by this method to
-            be used as the output for the tool.
-            Alternatively, if for_viz is False, you can pass in an existing Image Layer Item from your GIS to use that instead
-            A RuntimeError is raised if a layer by that name already exists
-
-        :param for_viz: If True, a new Item is created that uses the applied raster functions for visualization at
-            display resolution using on-the-fly image processing.
-            If for_viz is False, distributed raster analysis is used for generating a new raster information product
-            for use in analysis and visualization by applying raster functions at source resolution across the extent of
-            the output imagery layer.
-
-        :param gis: The GIS to be used for saving the output
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        output_name           optional string. If not provided, an Imagery Layer item is created
+                              by the method and used as the output.
+                              You can pass in the name of the output Imagery Layer that should be
+                              created by this method to be used as the output for the tool.
+                              Alternatively, if for_viz is False, you can pass in an existing
+                              Image Layer Item from your GIS to use that instead.
+                              A RuntimeError is raised if a layer by that name already exists
+        -----------------     --------------------------------------------------------------------
+        for_viz               optional boolean. If True, a new Item is created that uses the
+                              applied raster functions for visualization at display resolution
+                              using on-the-fly image processing.
+                              If for_viz is False, distributed raster analysis is used for
+                              generating a new raster information product for use in analysis and
+                              visualization by applying raster functions at source resolution
+                              across the extent of the output imagery layer.
+        -----------------     --------------------------------------------------------------------
+        gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
+                              output
+        =================     ====================================================================
 
         :return : output_raster - Image layer item
         """
