@@ -2926,3 +2926,50 @@ def _get_raster_ra(raster):
         raster_ra = raster
 
     return raster_ra
+
+
+def vector_field(raster1, raster2, input_data_type='Vector-UV', angle_reference_system='Geographic',
+                 output_data_type='Vector-UV', astype=None):
+    """
+    The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
+    into a two-band raster (each band represents U/V or Magnitude/Direction). Data combination type (U-V or Magnitude-Direction)
+    can also be converted interchangeably with this function.
+    For more information, see Vector Field function
+    (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm)
+
+    :param raster1: raster item representing 'U' or 'Magnitude' - imagery layers filtered by where clause, spatial and temporal filters
+    :param raster2: raster item representing 'V' or 'Direction' - imagery layers filtered by where clause, spatial and temporal filters
+    :param input_data_type: string, 'Vector-UV' or 'Vector-MagDir' per input used in 'raster1' and 'raster2'
+    :param angle_reference_system: string, optional when 'input_data_type' is 'Vector-UV', one of "Geographic", "Arithmetic"
+    :param output_data_type: string, 'Vector-UV' or 'Vector-MagDir'
+    :return: the output raster with this function applied to it
+    """
+
+    layer1, raster1, raster_ra1 = _raster_input(raster1)
+    layer2, raster2, raster_ra2 = _raster_input(raster2)
+
+    layer = layer1 if layer1 is not None else layer2
+
+    angle_reference_system_types = {
+        "Geographic" : 0,
+        "Arithmetic" : 1
+    }
+
+    in_angle_reference_system = angle_reference_system_types[angle_reference_system]
+
+    template_dict = {
+        "rasterFunction": "VectorField",
+        "rasterFunctionArguments": {
+            "Raster1": raster1,
+            "Raster2": raster2,
+            "InputDataType": input_data_type,
+            "OutputDataType": output_data_type,
+        }
+    }
+
+    if in_angle_reference_system is not None:
+        template_dict["rasterFunctionArguments"]["AngleReferenceSystem"] = in_angle_reference_system
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
