@@ -263,6 +263,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastercatalogitem">RasterCatalogItem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastermanager">RasterManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerytilemanager">ImageryTileManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -3360,16 +3363,16 @@ If creating an account in an ArcGIS Online org, it can be set as None to let
 the user set their password by clicking on a link that is emailed to him/her.</td>
 </tr>
 <tr class="row-even"><td>firstname</td>
-<td>required string, the first name for the user</td>
+<td>Required string. The first name for the user</td>
 </tr>
 <tr class="row-odd"><td>lastname</td>
-<td>required string, the last name for the user</td>
+<td>Required string. The last name for the user</td>
 </tr>
 <tr class="row-even"><td>email</td>
 <td>Required string. The email address for the user. This is important to have correct.</td>
 </tr>
 <tr class="row-odd"><td>description</td>
-<td>Optional string.  The description of the user account.</td>
+<td>Optional string. The description of the user account.</td>
 </tr>
 <tr class="row-even"><td>thumbnail</td>
 <td>Optional string. The URL to user’s image.</td>
@@ -3561,6 +3564,62 @@ Users call methods on this ‘groups’ object to manipulate (create, get, searc
 <code class="descname">create</code><span class="sig-paren">(</span><em>title</em>, <em>tags</em>, <em>description=None</em>, <em>snippet=None</em>, <em>access='public'</em>, <em>thumbnail=None</em>, <em>is_invitation_only=False</em>, <em>sort_field='avgRating'</em>, <em>sort_order='desc'</em>, <em>is_view_only=False</em>, <em>auto_join=False</em>, <em>provider_group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a group with the values for any particular arguments that are specified.
 Only title and tags are required.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>title</td>
+<td>Required string. The name of the group.</td>
+</tr>
+<tr class="row-odd"><td>tags</td>
+<td>Required string. A comma-delimited list of tags, or
+list of tags as strings.</td>
+</tr>
+<tr class="row-even"><td>description</td>
+<td>Optional string. A detailed description of the group.</td>
+</tr>
+<tr class="row-odd"><td>snippet</td>
+<td>Optional string.  A short snippet (&lt;250 characters)
+that summarizes the group.</td>
+</tr>
+<tr class="row-even"><td>access</td>
+<td>Optional string. Choices are private, public, or org.</td>
+</tr>
+<tr class="row-odd"><td>thumbnail</td>
+<td>Optional string. URL or file location to a group image.</td>
+</tr>
+<tr class="row-even"><td>is_invitation_only</td>
+<td>Optional boolean. Defines whether users can join by
+request. Default is False meaning users can ask to join
+by request or join by invitation.</td>
+</tr>
+<tr class="row-odd"><td>sort_field</td>
+<td>Optional string. Specifies how shared items with
+the group are sorted.</td>
+</tr>
+<tr class="row-even"><td>sort_order</td>
+<td>Optional string.  Choices are asc or desc for ascending
+or descending, respectively.</td>
+</tr>
+<tr class="row-odd"><td>is_view_only</td>
+<td>Optional boolean. Defines whether the group is searchable.
+Default is False meaning the group is searchable.</td>
+</tr>
+<tr class="row-even"><td>auto_join</td>
+<td>Optional boolean. Only applies to org accounts. If True,
+this group will allow joining without requesting
+membership approval. Default is False.</td>
+</tr>
+<tr class="row-odd"><td>provider_group_name</td>
+<td>Optional string. The name of the domain group.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
