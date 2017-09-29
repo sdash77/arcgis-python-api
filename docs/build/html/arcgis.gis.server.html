@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -47,6 +49,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -87,7 +90,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="arcgis.gis.toc.html">arcgis.gis module</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="arcgis.gis.toc.html#gis">GIS</a></li>
@@ -264,6 +270,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerastermanager">ImageRasterManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagetilemanager">ImageTileManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastercatalogitem">RasterCatalogItem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -549,8 +558,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -559,25 +570,42 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
           <li><a href="arcgis.gis.toc.html">arcgis.gis module</a> &raquo;</li>
-      
-    <li>arcgis.gis.server module</li>
+        
+      <li>arcgis.gis.server module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="_sources/arcgis.gis.server.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -922,6 +950,11 @@ ArcGIS Online or Portal GIS object used.</td>
 <td>optional boolean.  The default is False.  If True, the object will
 attempt to reach out to the URL resource and populate at creation
 time.</td>
+</tr>
+<tr class="row-odd"><td>verify_cert</td>
+<td>optional booean.  The defaut is True.  If False, any certificate
+errors will be ignored.  This is useful for new sites or where site
+that have invalid certificates.</td>
 </tr>
 </tbody>
 </table>
@@ -1630,6 +1663,32 @@ access control to a federated server. You can also remove hosting
 server status from an ArcGIS Server. To set a hosting server, an
 enterprise geodatabase must be registered as a managed database
 with the ArcGIS Server.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>server</td>
+<td>Required string. The arcgis.gis.Server object.</td>
+</tr>
+<tr class="row-odd"><td>role</td>
+<td>Required string. State whether the server is either a hosting server
+for the portal, a federated server, or a server with restricted access
+to publishing. The allowed values are HOSTING_SERVER, FEDERATED_SERVER,
+or FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING, respectively.</td>
+</tr>
+<tr class="row-even"><td>function</td>
+<td>Optional string. The specific function associated with this server. Provide a
+comma-separated list of values, but it is not recommend that a single
+server have all the server functions. The allowed values are GeoAnalytics,
+RasterAnalytics, and ImageHosting.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2929,74 +2988,98 @@ you must create a new site. Subsequently, newer server machines can
 join your site and increase its computing power. Once a site is no
 longer required, you can delete the site, which will cause all of
 the resources to be cleaned up.</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><table class="first last docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">server:</th><td class="field-body">arcgis.gis.server object</td>
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>server</td>
+<td>Required string. The arcgis.gis.server object.</td>
 </tr>
 </tbody>
 </table>
-</dd>
-</dl>
 <dl class="method">
 <dt id="arcgis.gis.server.SiteManager.create">
 <code class="descname">create</code><span class="sig-paren">(</span><em>username</em>, <em>password</em>, <em>config_store_connection</em>, <em>directories</em>, <em>cluster=None</em>, <em>logs_settings=None</em>, <em>run_async=False</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.SiteManager.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the first operation that you must invoke when you install
 ArcGIS Server for the first time. Creating a new site involves:</p>
 <blockquote>
-<div><p>-Allocating a store to save the site configuration
--Configuring the server machine and registering it with the site
--Creating a new cluster configuration that includes the server</p>
-<blockquote>
-<div>machine</div></blockquote>
-<p>-Configuring server directories
--Deploying the services that are marked to auto-deploy</p>
+<div><ul class="simple">
+<li>Allocating a store to save the site configuration</li>
+<li>Configuring the server machine and registering it with the site</li>
+<li>Creating a new cluster configuration that includes the server machine</li>
+<li>Configuring server directories</li>
+<li>Deploying the services that are marked to auto-deploy</li>
+</ul>
 </div></blockquote>
 <p>Because of the sheer number of tasks, it usually takes a little
 while for this operation to complete. Once a site has been created,
 you can publish GIS services and deploy them to your server
 machines.</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><dl class="first docutils">
-<dt>username - The name of the administrative account to be used by</dt>
-<dd>the site. This can be changed at a later stage.</dd>
-</dl>
-<p>password - The credentials of the administrative account.
-configStoreConnection - A JSON object representing the</p>
-<blockquote>
-<div>connection to the configuration store. By default, the
-configuration store will be maintained in the ArcGIS Server
-installation directory.</div></blockquote>
-<dl class="docutils">
-<dt>directories - A JSON object representing a collection of server</dt>
-<dd>directories to create. By default, the server directories will
-be created locally.</dd>
-<dt>cluster - An optional cluster configuration. By default, the</dt>
-<dd>site will create a cluster called ‘default’ with the first
-available port numbers starting from 4004.</dd>
-</dl>
-<p>logsSettings - Optional log settings.
-runAsync - A flag to indicate if the operation needs to be run</p>
-<blockquote class="last">
-<div>asynchronously. Values: true | false</div></blockquote>
-</dd>
-</dl>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="71%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>username</td>
+<td>Required string. The name of the administrative account to be used
+by the site. This can be changed at a later stage.</td>
+</tr>
+<tr class="row-odd"><td>password</td>
+<td>Required string. The credentials of the administrative account.</td>
+</tr>
+<tr class="row-even"><td>config_store_connection</td>
+<td>Required string. A JSON object representing the connection to the
+configuration store. By default, the configuration store will be
+maintained in the ArcGIS Server installation directory.</td>
+</tr>
+<tr class="row-odd"><td>directories</td>
+<td>Required string. A JSON object representing a collection of server
+directories to create. By default, the server directories will be
+created locally.</td>
+</tr>
+<tr class="row-even"><td>cluster</td>
+<td>Optional string. An optional cluster configuration. By default, the
+site will create a cluster called ‘default’ with the first
+available port numbers starting from 4004.</td>
+</tr>
+<tr class="row-odd"><td>logs_settings</td>
+<td>Optional string. Optional log settings.</td>
+</tr>
+<tr class="row-even"><td>run_async</td>
+<td>Optional string. A flag to indicate if the operation needs to be
+run asynchronously. The default value is False.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The site if successfully created, None if unsuccessful.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="arcgis.gis.server.SiteManager.delete">
 <code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.SiteManager.delete" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deletes the site configuration and releases all server resources.
-This is an unrecoverable operation. This operation is well suited
+<dd><p>Deletes the site configuration and releases all server resources. 
+This operation is well suited
 for development or test servers that need to be cleaned up
 regularly. It can also be performed prior to uninstall. Use caution
 with this option because it deletes all services, settings, and
-other configurations.
-This operation performs the following tasks:</p>
+other configurations.</p>
+<p>This operation performs the following tasks:</p>
 <blockquote>
 <div><ul class="simple">
 <li>Stops all server machines participating in the site. This in
@@ -3007,6 +3090,18 @@ turn stops all GIS services hosted on the server machines.</li>
 <li>The configuration store is deleted.</li>
 </ul>
 </div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an unrecoverable operation!</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A status indicating success or failure.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3014,18 +3109,32 @@ turn stops all GIS services hosted on the server machines.</li>
 <code class="descname">export</code><span class="sig-paren">(</span><em>location=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.server.SiteManager.export" title="Permalink to this definition">¶</a></dt>
 <dd><p>Exports the site configuration to a location you specify as input
 to this operation.</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>location - A path to a folder accessible to the server where the</dt>
-<dd>exported site configuration will be written. If a location is
-not specified, the server writes the exported site
-configuration file to directory owned by the server and returns
-a virtual path (an HTTP URL) to that location from where it can
-be downloaded.</dd>
-</dl>
-</dd>
-</dl>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>location</td>
+<td>Optional string. A path to a folder accessible to the server
+where the exported site configuration will be written. If a location
+is not specified, the server writes the exported site configuration
+file to directory owned by the server and returns a virtual path
+(an HTTP URL) to that location from where it can be downloaded.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A status indicating success (along with the folder location) or failure.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3037,21 +3146,36 @@ configurations (including GIS services, security configurations,
 and so on) of the currently running site with those contained in
 the site configuration file you supply as input. The input site
 configuration file can be obtained through the exportSite
-operation.
-This operation will restore all information included in the backup,
+operation.</p>
+<p>This operation will restore all information included in the backup,
 as noted in exportSite. When it is complete, this operation returns
 a report as the response. You should review this report and fix any
 problems it lists to ensure your site is fully functioning again.
 The importSite operation lets you restore your site from a backup
 that you created using the exportSite operation.</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><dl class="first last docutils">
-<dt>location - A file path to an exported configuration or an ID</dt>
-<dd>referencing the stored configuration on the server.</dd>
-</dl>
-</dd>
-</dl>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>location</td>
+<td>Required string. A file path to an exported configuration or an ID
+referencing the stored configuration on the server.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A status indicating success (along with site details) or failure.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -3069,29 +3193,48 @@ server machine then uses the connection information to work with
 the configuration store.
 If this is the first server machine in your site, use the Create
 Site operation instead.</p>
-<dl class="docutils">
-<dt>Parameters:</dt>
-<dd><dl class="first docutils">
-<dt>admin_url - The site URL of the currently live site. This is</dt>
-<dd>typically the Administrator Directory URL of one of the server
-machines of a site.</dd>
-</dl>
-<p class="last">username - The name of an administrative account for the site.
-password - The password of the administrative account.</p>
-</dd>
-</dl>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>admin_url</td>
+<td>Required string. The site URL of the currently live site. This is
+typically the Administrator Directory URL of one of the server
+machines of a site.</td>
+</tr>
+<tr class="row-odd"><td>username</td>
+<td>Required string. The name of an administrative account for the site.</td>
+</tr>
+<tr class="row-even"><td>password</td>
+<td>Required string. The password of the administrative account.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A status indicating success or failure.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.server.SiteManager.properties">
 <code class="descname">properties</code><a class="headerlink" href="#arcgis.gis.server.SiteManager.properties" title="Permalink to this definition">¶</a></dt>
-<dd><p>returns the site</p>
+<dd><p>Gets the site properties.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="arcgis.gis.server.SiteManager.public_key">
 <code class="descname">public_key</code><a class="headerlink" href="#arcgis.gis.server.SiteManager.public_key" title="Permalink to this definition">¶</a></dt>
-<dd><p>gets the public key</p>
+<dd><p>Gets the public key.</p>
 </dd></dl>
 
 <dl class="method">
@@ -3102,29 +3245,40 @@ Server upgrade. Once the new software version has been installed
 and the setup has completed, this operation will be available. A
 successful run of this operation will complete the upgrade of
 ArcGIS Server.</p>
-<p><strong>caution</strong>
-If errors are returned with the upgrade operation, you must address
-the errors before you may continue. For example, if you encounter
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>If errors are returned with the upgrade operation, you must address
+the errors before you can continue. For example, if you encounter
 an error about an invalid license, you will need to re-authorize
 the software using a valid license and you may then retry this
 operation.</p>
-<p><strong>note</strong>
-This operation is available only when a server machine is currently
+<p class="last">This operation is available only when a server machine is currently
 being upgraded. It will not be available after a successful upgrade
 of a server machine.</p>
-<dl class="docutils">
-<dt>Paramters:</dt>
-<dd><table class="first last docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="21%" />
+<col width="79%" />
+</colgroup>
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">run_async:</th><td class="field-body">A flag to indicate if the operation needs to be run
-asynchronously. The default value is false.</td>
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>run_async</td>
+<td>Required string. A flag to indicate if the operation needs to be run
+asynchronously. The default value is False.</td>
 </tr>
 </tbody>
 </table>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A status indicating success or failure.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -3263,15 +3417,18 @@ services directory.</td>
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.env.html" class="btn btn-neutral float-right" title="arcgis.env module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="arcgis.gis.admin.html" class="btn btn-neutral" title="arcgis.gis.admin module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -3305,7 +3462,8 @@ services directory.</td>
             VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>

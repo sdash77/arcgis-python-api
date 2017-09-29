@@ -13,6 +13,8 @@
 
   
   
+  
+  
 
   
 
@@ -46,6 +48,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -86,7 +89,10 @@
           
             
             
-                <p class="caption"><span class="caption-text">arcgis</span></p>
+              
+            
+            
+              <p class="caption"><span class="caption-text">arcgis</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">arcgis.gis module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#gis">GIS</a></li>
@@ -263,6 +269,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerastermanager">ImageRasterManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagetilemanager">ImageTileManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastercatalogitem">RasterCatalogItem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -548,8 +557,10 @@
 
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">arcgis</a>
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">arcgis</a>
+        
       </nav>
 
 
@@ -558,23 +569,40 @@
         <div class="rst-content">
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>arcgis.gis module</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>arcgis.gis module</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
+            
             <a href="_sources/arcgis.gis.toc.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -3360,16 +3388,16 @@ If creating an account in an ArcGIS Online org, it can be set as None to let
 the user set their password by clicking on a link that is emailed to him/her.</td>
 </tr>
 <tr class="row-even"><td>firstname</td>
-<td>required string, the first name for the user</td>
+<td>Required string. The first name for the user</td>
 </tr>
 <tr class="row-odd"><td>lastname</td>
-<td>required string, the last name for the user</td>
+<td>Required string. The last name for the user</td>
 </tr>
 <tr class="row-even"><td>email</td>
 <td>Required string. The email address for the user. This is important to have correct.</td>
 </tr>
 <tr class="row-odd"><td>description</td>
-<td>Optional string.  The description of the user account.</td>
+<td>Optional string. The description of the user account.</td>
 </tr>
 <tr class="row-even"><td>thumbnail</td>
 <td>Optional string. The URL to user’s image.</td>
@@ -3561,6 +3589,62 @@ Users call methods on this ‘groups’ object to manipulate (create, get, searc
 <code class="descname">create</code><span class="sig-paren">(</span><em>title</em>, <em>tags</em>, <em>description=None</em>, <em>snippet=None</em>, <em>access='public'</em>, <em>thumbnail=None</em>, <em>is_invitation_only=False</em>, <em>sort_field='avgRating'</em>, <em>sort_order='desc'</em>, <em>is_view_only=False</em>, <em>auto_join=False</em>, <em>provider_group_name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.gis.GroupManager.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a group with the values for any particular arguments that are specified.
 Only title and tags are required.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="74%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>title</td>
+<td>Required string. The name of the group.</td>
+</tr>
+<tr class="row-odd"><td>tags</td>
+<td>Required string. A comma-delimited list of tags, or
+list of tags as strings.</td>
+</tr>
+<tr class="row-even"><td>description</td>
+<td>Optional string. A detailed description of the group.</td>
+</tr>
+<tr class="row-odd"><td>snippet</td>
+<td>Optional string.  A short snippet (&lt;250 characters)
+that summarizes the group.</td>
+</tr>
+<tr class="row-even"><td>access</td>
+<td>Optional string. Choices are private, public, or org.</td>
+</tr>
+<tr class="row-odd"><td>thumbnail</td>
+<td>Optional string. URL or file location to a group image.</td>
+</tr>
+<tr class="row-even"><td>is_invitation_only</td>
+<td>Optional boolean. Defines whether users can join by
+request. Default is False meaning users can ask to join
+by request or join by invitation.</td>
+</tr>
+<tr class="row-odd"><td>sort_field</td>
+<td>Optional string. Specifies how shared items with
+the group are sorted.</td>
+</tr>
+<tr class="row-even"><td>sort_order</td>
+<td>Optional string.  Choices are asc or desc for ascending
+or descending, respectively.</td>
+</tr>
+<tr class="row-odd"><td>is_view_only</td>
+<td>Optional boolean. Defines whether the group is searchable.
+Default is False meaning the group is searchable.</td>
+</tr>
+<tr class="row-even"><td>auto_join</td>
+<td>Optional boolean. Only applies to org accounts. If True,
+this group will allow joining without requesting
+membership approval. Default is False.</td>
+</tr>
+<tr class="row-odd"><td>provider_group_name</td>
+<td>Optional string. The name of the domain group.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3636,31 +3720,56 @@ group.  See help of the create() method for parameters.</td>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>A few things that will be helpful to know.</p>
-<ol class="last arabic">
+<ol class="last arabic simple">
 <li><dl class="first docutils">
 <dt>The query syntax has many features that can’t</dt>
-<dd><p class="first last">be adequately described here.  The query syntax is</p>
-</dd>
+<dd>be adequately described here.  The query syntax is</dd>
 <dt>available in ArcGIS Help.  A short version of that URL</dt>
-<dd><p class="first last">is <a class="reference external" href="http://bitly.com/1fJ8q31">http://bitly.com/1fJ8q31</a>.</p>
-</dd>
+<dd>is <a class="reference external" href="http://bitly.com/1fJ8q31">http://bitly.com/1fJ8q31</a>.</dd>
 </dl>
 </li>
-<li><p class="first">Searching without specifying a query parameter returns
-a list of all groups in your organization.</p>
-</li>
+<li>Searching without specifying a query parameter returns
+a list of all groups in your organization.</li>
 <li><dl class="first docutils">
 <dt>Most of the time when searching for groups, you’ll want to</dt>
-<dd><p class="first last">search within your organization in ArcGIS Online
+<dd>search within your organization in ArcGIS Online
 or within your Portal.  As a convenience, the method
 automatically appends your organization id to the query by
 default.  If you don’t want the API to append to your query
-set outside_org to True.</p>
-</dd>
+set outside_org to True.</dd>
 </dl>
 </li>
 </ol>
 </div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>query</td>
+<td>Optional string on Portal, or required string for ArcGIS Online.
+If not specified, all groups will be searched. See notes above.</td>
+</tr>
+<tr class="row-odd"><td>sort_field</td>
+<td>Optional string. Valid values can be title, owner,
+created.</td>
+</tr>
+<tr class="row-even"><td>sort_order</td>
+<td>Optional string. Valid values are asc or desc.</td>
+</tr>
+<tr class="row-odd"><td>max_groups</td>
+<td>Optional integer. Maximum number of groups returned, default is 1,000.</td>
+</tr>
+<tr class="row-even"><td>outside_org</td>
+<td>Optional boolean. Controls whether to search outside
+your org. Default is False, do not search ourside your org.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -4257,6 +4366,38 @@ File resources use storage space from your quota and are scanned for viruses. Th
 is updated to include the size of updated resource files.</p>
 <p>Supported file formats are: JSON, XML, TXT, PNG, JPEG, GIF, BMP, PDF, and ZIP.
 This operation is only available to the item owner and the organization administrator.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>file</td>
+<td>Required string. The path to the file on disk to be used for
+overwriting an existing file resource.</td>
+</tr>
+<tr class="row-odd"><td>folder_name</td>
+<td>Optional string. Provide a folder name if the file resource
+being updated resides in a folder.</td>
+</tr>
+<tr class="row-even"><td>file_name</td>
+<td><p class="first">Optional string. The destination name for the file used to update
+an existing resource, or to be used together with the text parameter
+as file name for it.</p>
+<p class="last">For example, you can use fileName=banner.png to update an existing
+resource banner.png with a file called billboard.png without
+renaming the file locally.</p>
+</td>
+</tr>
+<tr class="row-odd"><td>text</td>
+<td>Optional string. Text input to be added as a file resource,
+used together with file_name.</td>
+</tr>
+</tbody>
+</table>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -4342,15 +4483,18 @@ This operation is only available to the item owner and the organization administ
 
 
            </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.gis.admin.html" class="btn btn-neutral float-right" title="arcgis.gis.admin module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.gis.admin.html" class="btn btn-neutral float-right" title="arcgis.gis.admin module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="API Reference for the ArcGIS API for Python" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="API Reference for the ArcGIS API for Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -4384,7 +4528,8 @@ This operation is only available to the item owner and the organization administ
             VERSION:'1.2.4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
         };
     </script>
       <script type="text/javascript" src="_static/jquery.js"></script>
