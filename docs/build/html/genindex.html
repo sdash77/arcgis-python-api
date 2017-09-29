@@ -262,6 +262,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastercatalogitem">RasterCatalogItem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastermanager">RasterManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerytilemanager">ImageryTileManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -644,6 +647,8 @@
 </li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.DirectoryManager.add">(arcgis.gis.server.DirectoryManager method)</a>
 </li>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterManager.add">(arcgis.raster.RasterManager method)</a>
+</li>
       </ul></li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.DatastoreManager.add_bigdata">add_bigdata() (arcgis.gis.DatastoreManager method)</a>
 
@@ -670,8 +675,6 @@
       <li><a href="arcgis.widgets.html#arcgis.widgets.MapView.add_layer">add_layer() (arcgis.widgets.MapView method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.add_prefix">add_prefix() (arcgis.features.SpatialDataFrame method)</a>
-</li>
-      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.add_rasters">add_rasters() (arcgis.raster.ImageryLayer method)</a>
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.add_relationship">add_relationship() (arcgis.gis.Item method)</a>
 </li>
@@ -867,6 +870,8 @@
 </li>
       <li><a href="arcgis.features.managers.html#arcgis.features.managers.AttachmentManager">AttachmentManager (class in arcgis.features.managers)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.attribute_table">attribute_table() (arcgis.raster.ImageryLayer method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.Feature.attributes">attributes (arcgis.features.Feature attribute)</a>, <a href="arcgis.features.toc.html#arcgis.features.Feature.attributes">[1]</a>
 </li>
       <li><a href="arcgis.geometry.html#arcgis.geometry.auto_complete">auto_complete() (arcgis.geometry method)</a>
@@ -963,6 +968,8 @@
 </li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayerManager.cancel_job">cancel_job() (arcgis.mapping.MapImageLayerManager method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.catalog_item">catalog_item() (arcgis.raster.ImageryLayer method)</a>
+</li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.cellstats_range">cellstats_range() (arcgis.raster.functions method)</a>
 </li>
       <li><a href="arcgis.widgets.html#arcgis.widgets.MapView.center">center (arcgis.widgets.MapView attribute)</a>
@@ -1037,7 +1044,13 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.compound">compound() (arcgis.features.SpatialDataFrame method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.compute_class_stats">compute_class_stats() (arcgis.raster.ImageryLayer method)</a>
+</li>
       <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.compute_histograms">compute_histograms() (arcgis.raster.ImageryLayer method)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.compute_stats_and_histograms">compute_stats_and_histograms() (arcgis.raster.ImageryLayer method)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.compute_tie_points">compute_tie_points() (arcgis.raster.ImageryLayer method)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.con">con() (arcgis.raster.functions method)</a>
 </li>
@@ -1093,12 +1106,12 @@
 </li>
       <li><a href="arcgis.raster.analytics.html#arcgis.raster.analytics.convert_feature_to_raster">convert_feature_to_raster() (arcgis.raster.analytics method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.convert_objects">convert_objects() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.raster.analytics.html#arcgis.raster.analytics.convert_raster_to_feature">convert_raster_to_feature() (arcgis.raster.analytics method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.convex_hull">convex_hull() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -1318,6 +1331,8 @@
 </li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.User.delete">(arcgis.gis.server.User method)</a>
 </li>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterManager.delete">(arcgis.raster.RasterManager method)</a>
+</li>
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.FeatureLayer.delete_features">delete_features() (arcgis.features.FeatureLayer method)</a>, <a href="arcgis.features.toc.html#arcgis.features.FeatureLayer.delete_features">[1]</a>
 
@@ -1535,9 +1550,11 @@
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.erase">erase() (arcgis.features.SpatialDataFrame method)</a>, <a href="arcgis.features.toc.html#arcgis.features.SpatialDataFrame.erase">[1]</a>
 </li>
+      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.estimate_export_tiles_size">estimate_export_tiles_size() (arcgis.mapping.MapImageLayer method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.estimate_export_tiles_size">estimate_export_tiles_size() (arcgis.mapping.MapImageLayer method)</a>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryTileManager.estimate_size">estimate_size() (arcgis.raster.ImageryTileManager method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.eval">eval() (arcgis.features.SpatialDataFrame method)</a>
 </li>
@@ -1563,6 +1580,8 @@
         <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.export">(arcgis.gis.Item method)</a>
 </li>
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.SiteManager.export">(arcgis.gis.server.SiteManager method)</a>
+</li>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryTileManager.export">(arcgis.raster.ImageryTileManager method)</a>
 </li>
       </ul></li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.Machine.export_certificate">export_certificate() (arcgis.gis.server.Machine method)</a>
@@ -1925,6 +1944,8 @@
         <li><a href="arcgis.raster.analytics.html#arcgis.raster.analytics.get_datastores">(arcgis.raster.analytics method)</a>
 </li>
       </ul></li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.get_download_info">get_download_info() (arcgis.raster.ImageryLayer method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.get_dtype_counts">get_dtype_counts() (arcgis.features.SpatialDataFrame method)</a>
@@ -1968,6 +1989,8 @@
 </li>
       </ul></li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.get_participant">get_participant() (arcgis.gis.admin.Collaboration method)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.get_raster_file">get_raster_file() (arcgis.raster.ImageryLayer method)</a>
 </li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.DataStoreManager.get_relational_datastore_type">get_relational_datastore_type() (arcgis.gis.server.DataStoreManager method)</a>
 </li>
@@ -2089,10 +2112,16 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.icol">icol() (arcgis.features.SpatialDataFrame method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.ics">ics (arcgis.raster.RasterCatalogItem attribute)</a>
+</li>
       <li><a href="arcgis.widgets.html#arcgis.widgets.MapView.id">id (arcgis.widgets.MapView attribute)</a>
 </li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.identify">identify() (arcgis.mapping.MapImageLayer method)</a>
+
+      <ul>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.identify">(arcgis.raster.ImageryLayer method)</a>
 </li>
+      </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.idxmax">idxmax() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.idxmin">idxmin() (arcgis.features.SpatialDataFrame method)</a>
@@ -2101,7 +2130,13 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.iloc">iloc (arcgis.features.SpatialDataFrame attribute)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.image">image() (arcgis.raster.RasterCatalogItem method)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryTileManager.image_tile">image_tile() (arcgis.raster.ImageryTileManager method)</a>
+</li>
       <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer">ImageryLayer (class in arcgis.raster)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryTileManager">ImageryTileManager (class in arcgis.raster)</a>
 </li>
       <li><a href="arcgis.gis.server.html#arcgis.gis.server.Machine.import_CA_signed_certificate">import_CA_signed_certificate() (arcgis.gis.server.Machine method)</a>
 </li>
@@ -2134,13 +2169,19 @@
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.System.index_status">index_status (arcgis.gis.admin.System attribute)</a>
 </li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.VectorTileLayer.info">info (arcgis.mapping.VectorTileLayer attribute)</a>
+
+      <ul>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.info">(arcgis.raster.RasterCatalogItem attribute)</a>
 </li>
+      </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.info">info() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.insert">insert() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.INT">INT() (arcgis.raster.functions method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.interpolate">interpolate() (arcgis.features.SpatialDataFrame method)</a>
 </li>
       <li><a href="arcgis.features.analysis.html#arcgis.features.analysis.interpolate_points">interpolate_points() (arcgis.features.analysis method)</a>
@@ -2153,8 +2194,6 @@
         <li><a href="arcgis.html#arcgis.interpolate_points">(in module arcgis)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.intersect">intersect() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -2261,6 +2300,8 @@
 <h2 id="K">K</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.key_properties">key_properties (arcgis.raster.RasterCatalogItem attribute)</a>
+</li>
       <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.key_properties">key_properties() (arcgis.raster.ImageryLayer method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.keys">keys() (arcgis.features.SpatialDataFrame method)</a>
@@ -2311,6 +2352,8 @@
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Group.leave">leave() (arcgis.gis.Group method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.legend">legend() (arcgis.raster.ImageryLayer method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.length">length (arcgis.features.SpatialDataFrame attribute)</a>
 
       <ul>
@@ -2341,10 +2384,10 @@
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.SystemManager.licenses">(arcgis.gis.server.SystemManager attribute)</a>
 </li>
       </ul></li>
-      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Licenses">Licenses (class in arcgis.gis.admin)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Licenses">Licenses (class in arcgis.gis.admin)</a>
+</li>
       <li><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.LinearUnit">LinearUnit (class in arcgis.geoprocessing)</a>
 </li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.CollaborationManager.list">list() (arcgis.gis.admin.CollaborationManager method)</a>
@@ -2481,14 +2524,16 @@
         <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.mean">(arcgis.raster.functions method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.measure">measure() (arcgis.raster.ImageryLayer method)</a>
+</li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.measure_on_line">measure_on_line() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
         <li><a href="arcgis.geometry.html#arcgis.geometry.Geometry.measure_on_line">(arcgis.geometry.Geometry method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.med">med() (arcgis.raster.functions method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.median">median() (arcgis.features.SpatialDataFrame method)</a>
@@ -2515,6 +2560,8 @@
         <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.PortalAdminManager.metadata">(arcgis.gis.admin.PortalAdminManager attribute)</a>
 </li>
         <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.metadata">(arcgis.mapping.MapImageLayer attribute)</a>
+</li>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.metadata">(arcgis.raster.RasterCatalogItem attribute)</a>
 </li>
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.min">min() (arcgis.features.SpatialDataFrame method)</a>
@@ -2550,6 +2597,8 @@
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.msavi">msavi() (arcgis.raster.functions method)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.mul">mul() (arcgis.features.SpatialDataFrame method)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.multidimensional_info">multidimensional_info (arcgis.raster.ImageryLayer attribute)</a>
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.multiply">multiply() (arcgis.features.SpatialDataFrame method)</a>
 </li>
@@ -2711,10 +2760,10 @@
       </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.pow">pow() (arcgis.features.SpatialDataFrame method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.power">power() (arcgis.raster.functions method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Role.privileges">privileges (arcgis.gis.Role attribute)</a>
 </li>
       <li><a href="arcgis.env.html#arcgis.env.process_spatial_reference">process_spatial_reference (in module arcgis.env)</a>
@@ -2726,7 +2775,11 @@
       <li><a href="arcgis.features.elevation.html#arcgis.features.elevation.profile">profile() (arcgis.features.elevation method)</a>
 </li>
       <li><a href="arcgis.geometry.html#arcgis.geometry.project">project() (arcgis.geometry method)</a>
+
+      <ul>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.project">(arcgis.raster.ImageryLayer method)</a>
 </li>
+      </ul></li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.project_as">project_as() (arcgis.features.SpatialDataFrame method)</a>
 
       <ul>
@@ -2759,6 +2812,8 @@
         <li><a href="arcgis.gis.server.html#arcgis.gis.server.SiteManager.properties">(arcgis.gis.server.SiteManager attribute)</a>
 </li>
         <li><a href="arcgis.raster.toc.html#arcgis.raster.ImageryLayer.properties">(arcgis.raster.ImageryLayer attribute)</a>
+</li>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.properties">(arcgis.raster.RasterCatalogItem attribute)</a>
 </li>
       </ul></li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.protect">protect() (arcgis.gis.Item method)</a>
@@ -2833,7 +2888,11 @@
 </li>
       <li><a href="arcgis.features.html#arcgis.features.SpatialDataFrame.rank">rank() (arcgis.features.SpatialDataFrame method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem">RasterCatalogItem (class in arcgis.raster)</a>
+</li>
       <li><a href="arcgis.geoprocessing.html#arcgis.geoprocessing.RasterData">RasterData (class in arcgis.geoprocessing)</a>
+</li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterManager">RasterManager (class in arcgis.raster)</a>
 </li>
       <li><a href="arcgis.gis.toc.html#arcgis.gis.Item.rating">rating (arcgis.gis.Item attribute)</a>
 </li>
@@ -3361,6 +3420,8 @@
 </li>
       <li><a href="arcgis.raster.functions.html#arcgis.raster.functions.threshold">threshold() (arcgis.raster.functions method)</a>
 </li>
+      <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterCatalogItem.thumbnail">thumbnail (arcgis.raster.RasterCatalogItem attribute)</a>
+</li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.MapImageLayer.thumbnail">thumbnail() (arcgis.mapping.MapImageLayer method)</a>
 </li>
       <li><a href="arcgis.mapping.html#arcgis.mapping.VectorTileLayer.tile_fonts">tile_fonts() (arcgis.mapping.VectorTileLayer method)</a>
@@ -3566,11 +3627,13 @@
 </li>
         <li><a href="arcgis.mapping.html#arcgis.mapping.WebScene.update">(arcgis.mapping.WebScene method)</a>
 </li>
-      </ul></li>
-      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.update_access_modes">update_access_modes() (arcgis.gis.admin.Collaboration method)</a>
+        <li><a href="arcgis.raster.toc.html#arcgis.raster.RasterManager.update">(arcgis.raster.RasterManager method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.update_access_modes">update_access_modes() (arcgis.gis.admin.Collaboration method)</a>
+</li>
       <li><a href="arcgis.gis.admin.html#arcgis.gis.admin.Collaboration.update_collaboration">update_collaboration() (arcgis.gis.admin.Collaboration method)</a>
 </li>
       <li><a href="arcgis.features.managers.html#arcgis.features.managers.FeatureLayerCollectionManager.update_definition">update_definition() (arcgis.features.managers.FeatureLayerCollectionManager method)</a>
