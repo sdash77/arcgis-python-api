@@ -87,14 +87,34 @@ class FeatureLayer(Layer):
         self._storage = value
 
     #----------------------------------------------------------------------
-    def generate_renderer(self, class_def, where=None):
-        """"""
+    def generate_renderer(self, definition, where=None):
+        """
+        This operation groups data using the supplied definition
+        (classification definition) and an optional where clause. The
+        result is a renderer object. Use baseSymbol and colorRamp to define
+        the symbols assigned to each class. If the operation is performed
+        on a table, the result is a renderer object containing the data
+        classes and no symbols.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        definition            required dict. The definition using the renderer that is generated.
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. A where clause for which the data needs to be
+                              classified. Any legal SQL where clause operating on the fields in
+                              the dynamic layer/table is allowed.
+        =================     ====================================================================
+
+        :returns: dictionary
+
+        """
         if self._dynamic_layer:
             url = "%s/generateRenderer" % self._url.split('?')[0]
         else:
             url = "%s/generateRenderer" % self._url
         params = {'f' : 'json',
-                  'classificationDef' : class_def
+                  'classificationDef' : definition
                   }
         if where:
             params['where'] = where
