@@ -438,6 +438,58 @@ class MapImageLayer(Layer):
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
+    #----------------------------------------------------------------------
+    def create_dynamic_layer(self, layer):
+        """
+        A dynamic layer / table method represents a single layer / table
+        of a map service published by ArcGIS Server or of a registered
+        workspace. This resource is supported only when the map image layer
+        supports dynamic layers, as indicated by supportsDynamicLayers on
+        the map image layer properties.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        layer                 required dict.  Dynamic layer/table source definition.
+                              Syntax:
+                              {
+                                "id": <layerOrTableId>,
+                                "source": <layer source>, //required
+                                "definitionExpression": "<definitionExpression>",
+                                "drawingInfo":
+                                {
+                                  "renderer": <renderer>,
+                                  "transparency": <transparency>,
+                                  "scaleSymbols": <true,false>,
+                                  "showLabels": <true,false>,
+                                  "labelingInfo": <labeling info>
+                                },
+                                "layerTimeOptions": //supported only for time enabled map layers
+                                {
+                                  "useTime" : <true,false>,
+                                  "timeDataCumulative" : <true,false>,
+                                  "timeOffset" : <timeOffset>,
+                                  "timeOffsetUnits" : "<esriTimeUnitsCenturies,esriTimeUnitsDays,
+                                                    esriTimeUnitsDecades,esriTimeUnitsHours,
+                                                    esriTimeUnitsMilliseconds,esriTimeUnitsMinutes,
+                                                    esriTimeUnitsMonths,esriTimeUnitsSeconds,
+                                                    esriTimeUnitsWeeks,esriTimeUnitsYears |
+                                                    esriTimeUnitsUnknown>"
+                                }
+                              }
+        =================     ====================================================================
+
+        :returns: arcgis.features.FeatureLayer or None (if not enabled)
+
+        """
+        if "supportsDynamicLayers" in self.properties and \
+           self.properties["supportsDynamicLayers"]:
+            from urllib.parse import urlencode
+            url = "%s/dynamicLayer" % self._url
+            d = urlencode(layer)
+            url += "?layer=%s" % d
+            return arcgis.features.FeatureLayer(url=url, gis=self._gis, dynamic_layer=layer)
+        return None
     # ----------------------------------------------------------------------
     @property
     def kml(self):
@@ -453,6 +505,23 @@ class MapImageLayer(Layer):
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(url, params, token=self._token)
+
+    #----------------------------------------------------------------------
+    @property
+    def legend(self):
+        """
+        The legend resource represents a map service's legend. It returns
+        the legend information for all layers in the service. Each layer's
+        legend information includes the symbol images and labels for each
+        symbol. Each symbol is an image of size 20 x 20 pixels at 96 DPI.
+        Additional information for each layer such as the layer ID, name,
+        and min and max scales are also included.
+
+        The legend symbols include the base64 encoded imageData as well as
+        a url that could be used to retrieve the image from the server.
+        """
+        url = "%s/legend" % self._url
+        return self._con.get(path=url, params={'f': 'json'})
 
     # ----------------------------------------------------------------------
     @property
