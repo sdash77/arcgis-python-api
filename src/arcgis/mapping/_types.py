@@ -852,6 +852,8 @@ class MapImageLayer(Layer):
          Output:
            Image of the map.
         """
+        if self.properties['exportTilesAllowed'] == False:
+            return
         params = {
             "f": "json"
         }
@@ -942,6 +944,8 @@ class MapImageLayer(Layer):
          is set to False, the function will wait until the task completes.
            Values: True | False
         """
+        if self.properties['exportTilesAllowed'] == False:
+            return
         import time
         url = self._url + "/estimateExportTilesSize"
         params = {
@@ -1138,3 +1142,4 @@ class MapImageLayer(Layer):
                         return gpRes['folders']
                 else:
                     return None
+
