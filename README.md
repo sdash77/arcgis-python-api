@@ -37,7 +37,6 @@ Install steps for developers:
 * `pip install -e ./src` (for using latest source code)
 * `jupyter nbextension install --py --sys-prefix arcgis` (for enabling the map widget for Jupyter notebook)
 * `jupyter nbextension enable --py --sys-prefix arcgis` (to initialize the map widget in the browser every time the notebook loads)
-* Check in with Jenkins 2
 
 ### Build the Documentation
 
