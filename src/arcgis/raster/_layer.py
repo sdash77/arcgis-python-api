@@ -21,7 +21,7 @@ class ImageryLayer(Layer):
         self._mosaic_rule = None
         self._extent = None
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
         if 'tileInfo' in self.properties:

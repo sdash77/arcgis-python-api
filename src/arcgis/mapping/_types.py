@@ -386,7 +386,7 @@ class MapImageLayer(Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
 
@@ -493,6 +493,7 @@ class MapImageLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def kml(self):
+        """returns the KML file for the layer"""
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
         return self._con.get(url, {"f": 'json'},
                              file_name="mapImage.kmz",
@@ -533,7 +534,7 @@ class MapImageLayer(Layer):
 
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
-        """"""
+        """if present, this operation will download the image to local disk"""
         if out_path is None:
             out_path = tempfile.gettempdir()
         url = "{url}/info/thumbnail".format(url=self._url)
@@ -546,134 +547,154 @@ class MapImageLayer(Layer):
                              file_name="thumbnail.png", token=self._token)
 
     # ----------------------------------------------------------------------
-    def identify(self,
-                 geometry,
-                 mapExtent,
-                 imageDisplay,
-                 tolerance,
-                 geometryType="esriGeometryPoint",
-                 sr=None,
-                 layerDefs=None,
-                 time_value=None,
-                 layerTimeOptions=None,
-                 layers="top",
-                 returnGeometry=True,
-                 maxAllowableOffset=None,
-                 geometryPrecision=None,
-                 dynamicLayers=None,
-                 returnZ=False,
-                 returnM=False,
-                 gdbVersion=None):
+    def identify(self, **kwargs):
 
         """
-            The identify operation is performed on a map service resource
-            to discover features at a geographic location. The result of this
-            operation is an identify results resource. Each identified result
-            includes its name, layer ID, layer name, geometry and geometry type,
-            and other attributes of that result as name-value pairs.
+        The identify operation is performed on a map service resource
+        to discover features at a geographic location. The result of this
+        operation is an identify results resource. Each identified result
+        includes its name, layer ID, layer name, geometry and geometry type,
+        and other attributes of that result as name-value pairs.
 
-            Inputs:
-            geometry - The geometry to identify on. The type of the geometry is
-                       specified by the geometryType parameter. The structure of
-                       the geometries is same as the structure of the JSON geometry
-                       objects returned by the ArcGIS REST API. In addition to the
-                       JSON structures, for points and envelopes, you can specify
-                       the geometries with a simpler comma-separated syntax.
-                       Syntax:
-                       JSON structures:
-                       <geometryType>&geometry={ geometry}
-                       Point simple syntax:
-                       esriGeometryPoint&geometry=<x>,<y>
-                       Envelope simple syntax:
-                       esriGeometryEnvelope&geometry=<xmin>,<ymin>,<xmax>,<ymax>
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              required Geometry or list. The geometry to identify on. The type of
+                              the geometry is specified by the geometryType parameter. The
+                              structure of the geometries is same as the structure of the JSON
+                              geometry objects returned by the API. In addition to the JSON
+                              structures, for points and envelopes, you can specify the geometries
+                              with a simpler comma-separated syntax.
+        -----------------     --------------------------------------------------------------------
+        geometry_type         required string.The type of geometry specified by the geometry
+                              parameter. The geometry type could be a point, line, polygon, or an
+                              envelope.
+                              Values: Point,Multipoint,Polyline,Polygon,Envelope
+        -----------------     --------------------------------------------------------------------
+        sr                    optional dict, string, or SpatialReference. The well-known ID of the
+                              spatial reference of the input and output geometries as well as the
+                              map_extent. If sr is not specified, the geometry and the map_extent
+                              are assumed to be in the spatial reference of the map, and the
+                              output geometries are also in the spatial reference of the map.
+        -----------------     --------------------------------------------------------------------
+        layer_defs            optional dict. Allows you to filter the features of individual
+                              layers in the exported map by specifying definition expressions for
+                              those layers. Definition expression for a layer that is
+                              published with the service will be always honored.
+        -----------------     --------------------------------------------------------------------
+        time_value            optional list. The time instant or the time extent of the features
+                              to be identified.
+        -----------------     --------------------------------------------------------------------
+        time_options          optional dict. The time options per layer. Users can indicate
+                              whether or not the layer should use the time extent specified by the
+                              time parameter or not, whether to draw the layer features
+                              cumulatively or not and the time offsets for the layer.
+        -----------------     --------------------------------------------------------------------
+        layers                optional string. The layers to perform the identify operation on.
+                              There are three ways to specify which layers to identify on:
+                               - top: Only the top-most layer at the specified location.
+                               - visible: All visible layers at the specified location.
+                               - all: All layers at the specified location.
+        -----------------     --------------------------------------------------------------------
+        tolerance             optional integer. The distance in screen pixels from the specified
+                              geometry within which the identify should be performed. The value for
+                              the tolerance is an integer.
+        -----------------     --------------------------------------------------------------------
+        map_extent            required string. The extent or bounding box of the map currently
+                              being viewed.
+        -----------------     --------------------------------------------------------------------
+        image_display         optional string. The screen image display parameters (width, height,
+                              and DPI) of the map being currently viewed. The mapExtent and the
+                              image_display parameters are used by the server to determine the
+                              layers visible in the current extent. They are also used to
+                              calculate the distance on the map to search based on the tolerance
+                              in screen pixels.
+                              Syntax: <width>, <height>, <dpi>
+        -----------------     --------------------------------------------------------------------
+        return_geometry       optional boolean. If true, the resultset will include the geometries
+                              associated with each result. The default is true.
+        -----------------     --------------------------------------------------------------------
+        max_offset            optional integer. This option can be used to specify the maximum
+                              allowable offset to be used for generalizing geometries returned by
+                              the identify operation.
+        -----------------     --------------------------------------------------------------------
+        precision             optional integer. This option can be used to specify the number of
+                              decimal places in the response geometries returned by the identify
+                              operation. This applies to X and Y values only (not m or z-values).
+        -----------------     --------------------------------------------------------------------
+        dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
+                              change the layer data source. dynamicLayers can also be used to add
+                              new layer that was not defined in the map used to create the map
+                              service. The new layer should have its source pointing to one of the
+                              registered workspaces that was defined at the time the map service
+                              was created.
+                              The order of dynamicLayers array defines the layer drawing order.
+                              The first element of the dynamicLayers is stacked on top of all
+                              other layers. When defining a dynamic layer, source is required.
+        -----------------     --------------------------------------------------------------------
+        return_Z              optional boolean. If true, Z values will be included in the results
+                              if the features have Z values. Otherwise, Z values are not returned.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        return_M              optional boolean.If true, M values will be included in the results
+                              if the features have M values. Otherwise, M values are not returned.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        gdb_version           optional string. Switch map layers to point to an alternate
+                              geodatabase version.
+        =================     ====================================================================
 
-            geometryType - The type of geometry specified by the geometry parameter.
-                           The geometry type could be a point, line, polygon, or
-                           an envelope.
-                           Values:
-                           esriGeometryPoint | esriGeometryMultipoint |
-                           esriGeometryPolyline | esriGeometryPolygon |
-                           esriGeometryEnvelope
-
-            sr - The well-known ID of the spatial reference of the input and
-                 output geometries as well as the mapExtent. If sr is not specified,
-                 the geometry and the mapExtent are assumed to be in the spatial
-                 reference of the map, and the output geometries are also in the
-                 spatial reference of the map.
-
-            layerDefs - Allows you to filter the features of individual layers in
-                        the exported map by specifying definition expressions for
-                        those layers. Definition expression for a layer that is
-                        published with the service will be always honored.
-
-            time_value - The time instant or the time extent of the features to be
-            identified.
-
-            layerTimeOptions - The time options per layer. Users can indicate
-                               whether or not the layer should use the time extent
-                               specified by the time parameter or not, whether to
-                               draw the layer features cumulatively or not and the
-                               time offsets for the layer.
-
-            layers - The layers to perform the identify operation on. There are
-                     three ways to specify which layers to identify on:
-                     top: Only the top-most layer at the specified location.
-                     visible: All visible layers at the specified location.
-                     all: All layers at the specified location.
-
-            tolerance - The distance in screen pixels from the specified geometry
-                        within which the identify should be performed. The value for
-                        the tolerance is an integer.
-
-            mapExtent - The extent or bounding box of the map currently being viewed.
-                        Unless the sr parameter has been specified, the mapExtent is
-                        assumed to be in the spatial reference of the map.
-                        Syntax: <xmin>, <ymin>, <xmax>, <ymax>
-                        The mapExtent and the imageDisplay parameters are used by the
-                        server to determine the layers visible in the current extent.
-                        They are also used to calculate the distance on the map to
-                        search based on the tolerance in screen pixels.
-
-            imageDisplay - The screen image display parameters (width, height, and DPI)
-                           of the map being currently viewed. The mapExtent and the
-                           imageDisplay parameters are used by the server to determine
-                           the layers visible in the current extent. They are also used
-                           to calculate the distance on the map to search based on the
-                           tolerance in screen pixels.
-                           Syntax: <width>, <height>, <dpi>
-
-            returnGeometry - If true, the resultset will include the geometries
-                             associated with each result. The default is true.
-
-            maxAllowableOffset - This option can be used to specify the maximum allowable
-                                 offset to be used for generalizing geometries returned by
-                                 the identify operation. The maxAllowableOffset is in the units
-                                 of the sr. If sr is not specified, maxAllowableOffset is
-                                 assumed to be in the unit of the spatial reference of the map.
-
-            geometryPrecision - This option can be used to specify the number of decimal places
-                                in the response geometries returned by the identify operation.
-                                This applies to X and Y values only (not m or z-values).
-
-            dynamicLayers - Use dynamicLayers property to reorder layers and change the layer
-                            data source. dynamicLayers can also be used to add new layer that
-                            was not defined in the map used to create the map service. The new
-                            layer should have its source pointing to one of the registered
-                            workspaces that was defined at the time the map service was created.
-                            The order of dynamicLayers array defines the layer drawing order.
-                            The first element of the dynamicLayers is stacked on top of all
-                            other layers. When defining a dynamic layer, source is required.
-
-            returnZ - If true, Z values will be included in the results if the features have
-                      Z values. Otherwise, Z values are not returned. The default is false.
-                      This parameter only applies if returnGeometry=true.
-
-            returnM - If true, M values will be included in the results if the features have
-                      M values. Otherwise, M values are not returned. The default is false.
-                      This parameter only applies if returnGeometry=true.
-
-            gdbVersion - Switch map layers to point to an alternate geodatabase version.
+        :returns: dictionary
         """
+        geometry = kwargs.pop('geometry', None)
+        mapExtent = kwargs.pop('map_extent', None)
+        imageDisplay = kwargs.pop('image_display', None)
+        tolerance = kwargs.pop('tolerance', None)
+        sr = kwargs.pop('sr', None)
+        layerDefs = kwargs.pop('layer_defs', None)
+        time_value = kwargs.pop('time_value', None)
+        layerTimeOptions = kwargs.pop('time_options', None)
+        layers = kwargs.pop("layers", None)
+        returnGeometry = kwargs.pop('return_geometry', True)
+        returnZ = kwargs.pop('return_Z', False)
+        returnM = kwargs.pop('return_M', False)
+        maxAllowableOffset = kwargs.pop('max_offset', None)
+        geometryPrecision = kwargs.pop('precision', None)
+        dynamicLayers = kwargs.pop('dynamic_layers')
+        gdbVersion = kwargs.pop('gdb_version' , None)
+
+        if 'mapExtent' in kwargs:
+            mapExtent = kwargs.pop('mapExtent')
+        if 'imageDisplay' in kwargs:
+            imageDisplay = kwargs.pop('imageDisplay')
+
+        if 'geometryType' in kwargs:
+            geometryType = kwargs.pop('geometryType')
+            if geometryType.find("esriGeometry") == -1:
+                geometryType = "esriGeometryPoint" + geometryType
+        elif 'geometry_type' in kwargs:
+            geometryType = kwargs.pop('geometry_type')
+            if geometryType.find("esriGeometry") == -1:
+                geometryType = "esriGeometryPoint" + geometryType
+        if 'layerDefs' in kwargs:
+            layerDefs = kwargs.pop('layerDefs')
+        if 'layerTimeOptions' in kwargs:
+            layerTimeOptions = kwargs.pop('layerTimeOptions', None)
+        if 'returnGeometry' in kwargs:
+            returnGeometry = kwargs.pop('returnGeometry', True)
+        if 'returnZ' in kwargs:
+            returnZ = kwargs.pop('returnZ', True)
+        if 'returnM' in kwargs:
+            returnM = kwargs.pop('returnM', True)
+        if "maxAllowableOffset" in kwargs:
+            maxAllowableOffset = kwargs.pop("maxAllowableOffset")
+        if 'geometryPrecision' in kwargs:
+            geometryPrecision = kwargs.pop('geometryPrecision')
+        if 'dynamicLayers' in kwargs:
+            dynamicLayers = kwargs.pop('dynamicLayers')
+        if 'gdbVersion' in kwargs:
+            gdbVersion = kwargs.pop('gdbVersion', None)
+
 
         params = {'f': 'json',
                   'geometry': geometry,
@@ -712,30 +733,116 @@ class MapImageLayer(Layer):
         return self._con.get(identifyURL, params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def find(self, searchText, layers,
-             contains=True, searchFields="",
-             sr="", layerDefs="",
-             returnGeometry=True, maxAllowableOffset="",
-             geometryPrecision="", dynamicLayers="",
-             returnZ=False, returnM=False, gdbVersion=""):
-        """ performs the map service find operation """
+    def find(self,
+             search_text,
+             layers,
+             contains=True,
+             search_fields=None,
+             sr=None,
+             layer_defs=None,
+             return_geometry=True,
+             max_offset=None,
+             precision=None,
+             dynamic_layers=None,
+             return_Z=False,
+             return_M=False,
+             gdb_version=None):
+        """
+        performs the map service find operation
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        search_text           required string.The search string. This is the text that is searched
+                              across the layers and fields the user specifies.
+        -----------------     --------------------------------------------------------------------
+        layers                optional string. The layers to perform the identify operation on.
+                              There are three ways to specify which layers to identify on:
+                               - top: Only the top-most layer at the specified location.
+                               - visible: All visible layers at the specified location.
+                               - all: All layers at the specified location.
+        -----------------     --------------------------------------------------------------------
+        contains              optional boolean. If false, the operation searches for an exact
+                              match of the search_text string. An exact match is case sensitive.
+                              Otherwise, it searches for a value that contains the search_text
+                              provided. This search is not case sensitive. The default is true.
+        -----------------     --------------------------------------------------------------------
+        search_fields         optional string. List of field names to look in.
+        -----------------     --------------------------------------------------------------------
+        sr                    optional dict, string, or SpatialReference. The well-known ID of the
+                              spatial reference of the input and output geometries as well as the
+                              map_extent. If sr is not specified, the geometry and the map_extent
+                              are assumed to be in the spatial reference of the map, and the
+                              output geometries are also in the spatial reference of the map.
+        -----------------     --------------------------------------------------------------------
+        layer_defs            optional dict. Allows you to filter the features of individual
+                              layers in the exported map by specifying definition expressions for
+                              those layers. Definition expression for a layer that is
+                              published with the service will be always honored.
+        -----------------     --------------------------------------------------------------------
+        return_geometry       optional boolean. If true, the resultset will include the geometries
+                              associated with each result. The default is true.
+        -----------------     --------------------------------------------------------------------
+        max_offset            optional integer. This option can be used to specify the maximum
+                              allowable offset to be used for generalizing geometries returned by
+                              the identify operation.
+        -----------------     --------------------------------------------------------------------
+        precision             optional integer. This option can be used to specify the number of
+                              decimal places in the response geometries returned by the identify
+                              operation. This applies to X and Y values only (not m or z-values).
+        -----------------     --------------------------------------------------------------------
+        dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
+                              change the layer data source. dynamicLayers can also be used to add
+                              new layer that was not defined in the map used to create the map
+                              service. The new layer should have its source pointing to one of the
+                              registered workspaces that was defined at the time the map service
+                              was created.
+                              The order of dynamicLayers array defines the layer drawing order.
+                              The first element of the dynamicLayers is stacked on top of all
+                              other layers. When defining a dynamic layer, source is required.
+        -----------------     --------------------------------------------------------------------
+        return_Z              optional boolean. If true, Z values will be included in the results
+                              if the features have Z values. Otherwise, Z values are not returned.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        return_M              optional boolean.If true, M values will be included in the results
+                              if the features have M values. Otherwise, M values are not returned.
+                              The default is false.
+        -----------------     --------------------------------------------------------------------
+        gdb_version           optional string. Switch map layers to point to an alternate
+                              geodatabase version.
+        =================     ====================================================================
+
+        :returns: dictionary
+        """
         url = "{url}/find".format(url=self._url)
         params = {
             "f": "json",
-            "searchText": searchText,
+            "searchText": search_text,
             "contains": contains,
-            "searchFields": searchFields,
-            "sr": sr,
-            "layerDefs": layerDefs,
-            "returnGeometry": returnGeometry,
-            "maxAllowableOffset": maxAllowableOffset,
-            "geometryPrecision": geometryPrecision,
-            "dynamicLayers": dynamicLayers,
-            "returnZ": returnZ,
-            "returnM": returnM,
-            "gdbVersion": gdbVersion,
-            "layers": layers
         }
+        if search_fields:
+            params['searchFields'] = search_fields
+        if sr:
+            params['sr'] = sr
+        if layer_defs:
+            params['layerDefs'] = layer_defs
+        if return_geometry is not None:
+            params['returnGeometry'] = return_geometry
+        if max_offset:
+            params['maxAllowableOffset'] = max_offset
+        if precision:
+            params['geometryPrecision'] = precision
+        if dynamic_layers:
+            params['dynamicLayers'] = dynamic_layers
+        if return_Z is not None:
+            params['returnZ'] = return_Z
+        if return_M is not None:
+            params['returnM'] = return_M
+        if gdb_version:
+            params['gdbVersion'] = gdb_version
+        if layers:
+            params['layers'] = layers
         res = self._con.get(url, params, token=self._token)
         return res
 

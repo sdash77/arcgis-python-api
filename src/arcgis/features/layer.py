@@ -937,7 +937,7 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
 
