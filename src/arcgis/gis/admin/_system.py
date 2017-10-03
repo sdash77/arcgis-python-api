@@ -232,6 +232,8 @@ class System(BasePortalAdmin):
           items or user accounts.
         """
         url = "%s/indexer/reindex" % self._url
+        if mode.lower() == 'full':
+            mode = "FULL_MODE"
         params = {
             "f" : "json",
             "mode" : mode
