@@ -580,53 +580,53 @@ class MapImageLayer(Layer):
         includes its name, layer ID, layer name, geometry and geometry type,
         and other attributes of that result as name-value pairs.
 
-        =================     ====================================================================
+        ==================    ====================================================================
         **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         geometry              required Geometry or list. The geometry to identify on. The type of
                               the geometry is specified by the geometryType parameter. The
                               structure of the geometries is same as the structure of the JSON
                               geometry objects returned by the API. In addition to the JSON
                               structures, for points and envelopes, you can specify the geometries
                               with a simpler comma-separated syntax.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         geometry_type         required string.The type of geometry specified by the geometry
                               parameter. The geometry type could be a point, line, polygon, or an
                               envelope.
                               Values: Point,Multipoint,Polyline,Polygon,Envelope
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         sr                    optional dict, string, or SpatialReference. The well-known ID of the
                               spatial reference of the input and output geometries as well as the
                               map_extent. If sr is not specified, the geometry and the map_extent
                               are assumed to be in the spatial reference of the map, and the
                               output geometries are also in the spatial reference of the map.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         layer_defs            optional dict. Allows you to filter the features of individual
                               layers in the exported map by specifying definition expressions for
                               those layers. Definition expression for a layer that is
                               published with the service will be always honored.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         time_value            optional list. The time instant or the time extent of the features
                               to be identified.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         time_options          optional dict. The time options per layer. Users can indicate
                               whether or not the layer should use the time extent specified by the
                               time parameter or not, whether to draw the layer features
                               cumulatively or not and the time offsets for the layer.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         layers                optional string. The layers to perform the identify operation on.
                               There are three ways to specify which layers to identify on:
                                - top: Only the top-most layer at the specified location.
                                - visible: All visible layers at the specified location.
                                - all: All layers at the specified location.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         tolerance             optional integer. The distance in screen pixels from the specified
                               geometry within which the identify should be performed. The value for
                               the tolerance is an integer.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         map_extent            required string. The extent or bounding box of the map currently
                               being viewed.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         image_display         optional string. The screen image display parameters (width, height,
                               and DPI) of the map being currently viewed. The mapExtent and the
                               image_display parameters are used by the server to determine the
@@ -634,18 +634,18 @@ class MapImageLayer(Layer):
                               calculate the distance on the map to search based on the tolerance
                               in screen pixels.
                               Syntax: <width>, <height>, <dpi>
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         return_geometry       optional boolean. If true, the resultset will include the geometries
                               associated with each result. The default is true.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         max_offset            optional integer. This option can be used to specify the maximum
                               allowable offset to be used for generalizing geometries returned by
                               the identify operation.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         precision             optional integer. This option can be used to specify the number of
                               decimal places in the response geometries returned by the identify
                               operation. This applies to X and Y values only (not m or z-values).
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
                               change the layer data source. dynamicLayers can also be used to add
                               new layer that was not defined in the map used to create the map
@@ -655,45 +655,45 @@ class MapImageLayer(Layer):
                               The order of dynamicLayers array defines the layer drawing order.
                               The first element of the dynamicLayers is stacked on top of all
                               other layers. When defining a dynamic layer, source is required.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         return_z              optional boolean. If true, Z values will be included in the results
                               if the features have Z values. Otherwise, Z values are not returned.
                               The default is false.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         return_m              optional boolean.If true, M values will be included in the results
                               if the features have M values. Otherwise, M values are not returned.
                               The default is false.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         gdb_version           optional string. Switch map layers to point to an alternate
                               geodatabase version.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         return_unformatted    optional boolean. If true, the values in the result will not be
                               formatted i.e. numbers will returned as is and dates will be
                               returned as epoch values. The default is False.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         return_field_name     optional boolean. Default is False. If true, field names will be
                               returned instead of field aliases.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         transformations       optional list. Use this parameter to apply one or more datum
                               transformations to the map when sr is different than the map
                               service's spatial reference. It is an array of transformation
                               elements.
                               Transformations specified here are used to project features from
                               layers within a map service to sr.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         map_range_values      optional list. Allows for the filtering features in the exported map
                               from all layer that are within the specified range instant or extent.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         layer_range_values    optional list. Allows for the filtering of features for each
                               individual layer that are within the specified range instant or
                               extent.
-        -----------------     --------------------------------------------------------------------
+        ------------------    --------------------------------------------------------------------
         layer_parameters      optional list. Allows for the filtering of the features of
                               individual layers in the exported map by specifying value(s) to an
                               array of pre-authored parameterized filters for those layers. When
                               value is not specified for any parameter in a request, the default
                               value, that is assigned during authoring time, gets used instead.
-        =================     ====================================================================
+        ==================    ====================================================================
 
         :returns: dictionary
         """
