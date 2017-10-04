@@ -547,7 +547,31 @@ class MapImageLayer(Layer):
                              file_name="thumbnail.png", token=self._token)
 
     # ----------------------------------------------------------------------
-    def identify(self, **kwargs):
+    def identify(self,
+                 geometry,
+                 map_extent,
+                 image_display,
+                 geometry_type="Point",
+                 sr=None,
+                 layer_defs=None,
+                 time_value=None,
+                 time_options=None,
+                 layers="all",
+                 tolerance=None,
+                 return_geometry=True,
+                 max_offset=None,
+                 precision=4,
+                 dynamic_layers=None,
+                 return_z=False,
+                 return_m=False,
+                 gdb_version=None,
+                 return_unformatted=False,
+                 return_field_name=False,
+                 transformations=None,
+                 map_range_values=None,
+                 layer_range_values=None,
+                 layer_parameters=None,
+                 **kwargs):
 
         """
         The identify operation is performed on a map service resource
@@ -632,105 +656,118 @@ class MapImageLayer(Layer):
                               The first element of the dynamicLayers is stacked on top of all
                               other layers. When defining a dynamic layer, source is required.
         -----------------     --------------------------------------------------------------------
-        return_Z              optional boolean. If true, Z values will be included in the results
+        return_z              optional boolean. If true, Z values will be included in the results
                               if the features have Z values. Otherwise, Z values are not returned.
                               The default is false.
         -----------------     --------------------------------------------------------------------
-        return_M              optional boolean.If true, M values will be included in the results
+        return_m              optional boolean.If true, M values will be included in the results
                               if the features have M values. Otherwise, M values are not returned.
                               The default is false.
         -----------------     --------------------------------------------------------------------
         gdb_version           optional string. Switch map layers to point to an alternate
                               geodatabase version.
+        -----------------     --------------------------------------------------------------------
+        return_unformatted    optional boolean. If true, the values in the result will not be
+                              formatted i.e. numbers will returned as is and dates will be
+                              returned as epoch values. The default is False.
+        -----------------     --------------------------------------------------------------------
+        return_field_name     optional boolean. Default is False. If true, field names will be
+                              returned instead of field aliases.
+        -----------------     --------------------------------------------------------------------
+        transformations       optional list. Use this parameter to apply one or more datum
+                              transformations to the map when sr is different than the map
+                              service's spatial reference. It is an array of transformation
+                              elements.
+                              Transformations specified here are used to project features from
+                              layers within a map service to sr.
+        -----------------     --------------------------------------------------------------------
+        map_range_values      optional list. Allows for the filtering features in the exported map
+                              from all layer that are within the specified range instant or extent.
+        -----------------     --------------------------------------------------------------------
+        layer_range_values    optional list. Allows for the filtering of features for each
+                              individual layer that are within the specified range instant or
+                              extent.
+        -----------------     --------------------------------------------------------------------
+        layer_parameters      optional list. Allows for the filtering of the features of
+                              individual layers in the exported map by specifying value(s) to an
+                              array of pre-authored parameterized filters for those layers. When
+                              value is not specified for any parameter in a request, the default
+                              value, that is assigned during authoring time, gets used instead.
         =================     ====================================================================
 
         :returns: dictionary
         """
-        geometry = kwargs.pop('geometry', None)
-        mapExtent = kwargs.pop('map_extent', None)
-        imageDisplay = kwargs.pop('image_display', None)
-        tolerance = kwargs.pop('tolerance', None)
-        sr = kwargs.pop('sr', None)
-        layerDefs = kwargs.pop('layer_defs', None)
-        time_value = kwargs.pop('time_value', None)
-        layerTimeOptions = kwargs.pop('time_options', None)
-        layers = kwargs.pop("layers", None)
-        returnGeometry = kwargs.pop('return_geometry', True)
-        returnZ = kwargs.pop('return_Z', False)
-        returnM = kwargs.pop('return_M', False)
-        maxAllowableOffset = kwargs.pop('max_offset', None)
-        geometryPrecision = kwargs.pop('precision', None)
-        dynamicLayers = kwargs.pop('dynamic_layers')
-        gdbVersion = kwargs.pop('gdb_version' , None)
 
-        if 'mapExtent' in kwargs:
-            mapExtent = kwargs.pop('mapExtent')
-        if 'imageDisplay' in kwargs:
-            imageDisplay = kwargs.pop('imageDisplay')
-
-        if 'geometryType' in kwargs:
-            geometryType = kwargs.pop('geometryType')
-            if geometryType.find("esriGeometry") == -1:
-                geometryType = "esriGeometryPoint" + geometryType
-        elif 'geometry_type' in kwargs:
-            geometryType = kwargs.pop('geometry_type')
-            if geometryType.find("esriGeometry") == -1:
-                geometryType = "esriGeometryPoint" + geometryType
-        if 'layerDefs' in kwargs:
-            layerDefs = kwargs.pop('layerDefs')
-        if 'layerTimeOptions' in kwargs:
-            layerTimeOptions = kwargs.pop('layerTimeOptions', None)
-        if 'returnGeometry' in kwargs:
-            returnGeometry = kwargs.pop('returnGeometry', True)
-        if 'returnZ' in kwargs:
-            returnZ = kwargs.pop('returnZ', True)
-        if 'returnM' in kwargs:
-            returnM = kwargs.pop('returnM', True)
-        if "maxAllowableOffset" in kwargs:
-            maxAllowableOffset = kwargs.pop("maxAllowableOffset")
-        if 'geometryPrecision' in kwargs:
-            geometryPrecision = kwargs.pop('geometryPrecision')
-        if 'dynamicLayers' in kwargs:
-            dynamicLayers = kwargs.pop('dynamicLayers')
-        if 'gdbVersion' in kwargs:
-            gdbVersion = kwargs.pop('gdbVersion', None)
-
+        if geometry_type.find("esriGeometry") == -1:
+            geometry_type = "esriGeometry" + geometry_type
+        if sr is None:
+            sr = kwargs.pop('sr', None)
+        if layer_defs is None:
+            layer_defs = kwargs.pop('layerDefs', None)
+        if time_value is None:
+            time_value = kwargs.pop('layerTimeOptions', None)
+        if return_geometry is None:
+            return_geometry = kwargs.pop('returnGeometry', True)
+        if return_m is None:
+            return_m = kwargs.pop('returnM', False)
+        if return_z is None:
+            return_z = kwargs.pop('returnZ', False)
+        if max_offset is None:
+            max_offset = kwargs.pop('maxAllowableOffset', None)
+        if precision is None:
+            precision = kwargs.pop('geometryPrecision', None)
+        if dynamic_layers is None:
+            dynamic_layers = kwargs.pop('dynamicLayers', None)
+        if gdb_version is None:
+            gdb_version = kwargs.pop('gdbVersion', None)
 
         params = {'f': 'json',
                   'geometry': geometry,
-                  'geometryType': geometryType,
+                  'geometryType': geometry_type,
                   'tolerance': tolerance,
-                  'mapExtent': mapExtent,
-                  'imageDisplay': imageDisplay
+                  'mapExtent': map_extent,
+                  'imageDisplay': image_display
                   }
-        if not returnGeometry is None:
-            params['returnGeometry'] = returnGeometry
-        if returnZ:
-            params['returnZ'] = returnZ
-
-        if returnM:
-            params['returnM'] = returnM
-        if layerDefs is not None:
-            params['layerDefs'] = layerDefs
-        if layers is not None:
-            params['layers'] = layers
-        if sr is not None:
+        if sr:
             params['sr'] = sr
-        if time_value is not None:
+        if layer_defs:
+            params['layerDefs'] = layer_defs
+        if time_value:
             params['time'] = time_value
-        if layerTimeOptions is not None:
-            params['layerTimeOptions'] = layerTimeOptions
-        if maxAllowableOffset is not None:
-            params['maxAllowableOffset'] = maxAllowableOffset
-        if geometryPrecision is not None:
-            params['geometryPrecision'] = geometryPrecision
-        if dynamicLayers is not None:
-            params['dynamicLayers'] = dynamicLayers
-        if gdbVersion is not None:
-            params['gdbVersion'] = gdbVersion
-
+        if time_options:
+            params['layerTimeOptions'] = time_options
+        if layers:
+            params['layers'] = layers
+        if tolerance:
+            params['tolerance'] = tolerance
+        if return_geometry is not None:
+            params['returnGeometry'] = return_geometry
+        if max_offset:
+            params['maxAllowableOffset'] = max_offset
+        if precision:
+            params['geometryPrecision'] = precision
+        if dynamic_layers:
+            params['dynamicLayers'] = dynamic_layers
+        if return_m is not None:
+            params['returnM'] = return_m
+        if return_z is not None:
+            params['returnZ'] = return_z
+        if gdb_version:
+            params['gdbVersion'] = gdb_version
+        if return_unformatted is not None:
+            params['returnUnformattedValues'] = return_unformatted
+        if return_field_name is not None:
+            params['returnFieldName'] = return_field_name
+        if transformations:
+            params['datumTransformations'] = transformations
+        if map_range_values:
+            params['mapRangeValues'] = map_range_values
+        if layer_range_values:
+            params['layerRangeValues'] = layer_range_values
+        if layer_parameters:
+            params['layerParameterValues'] = layer_parameters
         identifyURL = "{url}/identify".format(url=self._url)
-        return self._con.get(identifyURL, params, token=self._token)
+        return self._con.post(identifyURL, params, token=self._token)
 
     # ----------------------------------------------------------------------
     def find(self,
@@ -744,8 +781,8 @@ class MapImageLayer(Layer):
              max_offset=None,
              precision=None,
              dynamic_layers=None,
-             return_Z=False,
-             return_M=False,
+             return_z=False,
+             return_m=False,
              gdb_version=None):
         """
         performs the map service find operation
@@ -801,11 +838,11 @@ class MapImageLayer(Layer):
                               The first element of the dynamicLayers is stacked on top of all
                               other layers. When defining a dynamic layer, source is required.
         -----------------     --------------------------------------------------------------------
-        return_Z              optional boolean. If true, Z values will be included in the results
+        return_z              optional boolean. If true, Z values will be included in the results
                               if the features have Z values. Otherwise, Z values are not returned.
                               The default is false.
         -----------------     --------------------------------------------------------------------
-        return_M              optional boolean.If true, M values will be included in the results
+        return_m              optional boolean.If true, M values will be included in the results
                               if the features have M values. Otherwise, M values are not returned.
                               The default is false.
         -----------------     --------------------------------------------------------------------
@@ -835,10 +872,10 @@ class MapImageLayer(Layer):
             params['geometryPrecision'] = precision
         if dynamic_layers:
             params['dynamicLayers'] = dynamic_layers
-        if return_Z is not None:
-            params['returnZ'] = return_Z
-        if return_M is not None:
-            params['returnM'] = return_M
+        if return_z is not None:
+            params['returnZ'] = return_z
+        if return_m is not None:
+            params['returnM'] = return_m
         if gdb_version:
             params['gdbVersion'] = gdb_version
         if layers:
