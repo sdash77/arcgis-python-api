@@ -27,7 +27,8 @@ class Site(BasePortalAdmin):
         if initialize:
             self._init()
     #----------------------------------------------------------------------
-    def create(self,
+    @staticmethod
+    def create(url,
                username,
                password,
                full_name,
@@ -53,6 +54,8 @@ class Site(BasePortalAdmin):
         restarted.
 
         Parameters:
+         :url: the portal administration url
+               Ex: https://mysite.com/<web adaptor>/portaladmin
          :username: initial admin account name
          :password: password for initial admin account
          :full_name: full name of the admin account
@@ -64,7 +67,7 @@ class Site(BasePortalAdmin):
           forgotten password
          :question_ans: answer to the secret question
         """
-        url = "%s/createNewSite" % self._url
+        url = "%s/createNewSite" % url
         params = {"f": "json",
                   "username" : username,
                   "password" : password,

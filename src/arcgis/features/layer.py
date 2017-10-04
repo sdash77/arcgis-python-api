@@ -86,6 +86,44 @@ class FeatureLayer(Layer):
         """
         self._storage = value
 
+    #----------------------------------------------------------------------
+    def generate_renderer(self, definition, where=None):
+        """
+        This operation groups data using the supplied definition
+        (classification definition) and an optional where clause. The
+        result is a renderer object. Use baseSymbol and colorRamp to define
+        the symbols assigned to each class. If the operation is performed
+        on a table, the result is a renderer object containing the data
+        classes and no symbols.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        definition            required dict. The definition using the renderer that is generated.
+                              Use either class breaks or unique value classificatoin definitions.
+                              See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. A where clause for which the data needs to be
+                              classified. Any legal SQL where clause operating on the fields in
+                              the dynamic layer/table is allowed.
+        =================     ====================================================================
+
+        :returns: dictionary
+
+        """
+        if self._dynamic_layer:
+            url = "%s/generateRenderer" % self._url.split('?')[0]
+        else:
+            url = "%s/generateRenderer" % self._url
+        params = {'f' : 'json',
+                  'classificationDef' : definition
+                  }
+        if where:
+            params['where'] = where
+        if self._dynamic_layer is not None:
+            params['layer'] = self._dynamic_layer
+        return self._con.post(path=url, postdata=params)
+
     def _add_attachment(self, oid, file_path):
         """ Adds an attachment to a feature service
             Input:
@@ -94,9 +132,12 @@ class FeatureLayer(Layer):
             Output:
               JSON Repsonse
         """
-        attach_url = self._url + "/%s/addAttachment" % oid
         params = {'f': 'json'}
-
+        if self._dynamic_layer:
+            attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
+            params['layer'] = self._dynamic_layer
+        else:
+            attach_url = self._url + "/%s/addAttachment" % oid
         files = {'attachment': file_path}
         res = self._con.post(path=attach_url,
                              postdata=params,
@@ -112,11 +153,15 @@ class FeatureLayer(Layer):
             Output:
                JSON response
         """
-        url = self._url + "/%s/deleteAttachments" % oid
         params = {
             "f": "json",
             "attachmentIds": "%s" % attachment_id
         }
+        if self._dynamic_layer:
+            url = self._url.split('?')[0] + "/%s/deleteAttachments" % oid
+            params['layer'] = self._dynamic_layer
+        else:
+            url = self._url + "/%s/deleteAttachments" % oid
         return self._con.post(url, params, token=self._token)
 
     # ----------------------------------------------------------------------
@@ -129,12 +174,16 @@ class FeatureLayer(Layer):
             Output:
                JSON response
         """
-        url = self._url + "/%s/updateAttachment" % oid
         params = {
             "f": "json",
             "attachmentId": "%s" % attachment_id
         }
         files = {'attachment': file_path}
+        if self._dynamic_layer is not None:
+            url = self.url.split('?')[0] + "/%s/attachments" % oid
+            params['layer'] = self._dynamic_layer
+        else:
+            url = self._url + "/%s/attachments" % oid
         res = self._con.post(path=url,
                              postdata=params,
                              files=files, token=self._token)
@@ -143,10 +192,15 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
         """ list attachements for a given OBJECT ID """
-        url = self._url + "/%s/attachments" % oid
+
         params = {
             "f": "json"
         }
+        if self._dynamic_layer is not None:
+            url = self.url.split('?')[0] + "/%s/attachments" % oid
+            params['layer'] = self._dynamic_layer
+        else:
+            url = self._url + "/%s/attachments" % oid
         return self._con.get(path=url, params=params, token=self._token)
 
     # ----------------------------------------------------------------------
@@ -885,7 +939,7 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
 
