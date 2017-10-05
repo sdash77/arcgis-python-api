@@ -1051,13 +1051,13 @@ class UserManager(object):
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
-        firstname         required string, the first name for the user
+        firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
-        lastname          required string, the last name for the user
+        lastname          Required string. The last name for the user
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important to have correct.
         ----------------  -------------------------------------------------------------------------------
-        description       Optional string.  The description of the user account.
+        description       Optional string. The description of the user account.
         ----------------  -------------------------------------------------------------------------------
         thumbnail         Optional string. The URL to user's image.
         ----------------  -------------------------------------------------------------------------------
@@ -1573,7 +1573,7 @@ class GroupManager(object):
 
 
         ====================  =========================================================
-        **Argument**      **Description**
+        **Argument**          **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -1594,7 +1594,7 @@ class GroupManager(object):
                               by request or join by invitation.
         --------------------  ---------------------------------------------------------
         sort_field            Optional string. Specifies how shared items with
-                          the group are sorted.
+                              the group are sorted.
         --------------------  ---------------------------------------------------------
         sort_order            Optional string.  Choices are asc or desc for ascending
                               or descending, respectively.

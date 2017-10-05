@@ -735,7 +735,7 @@ class Toolbox(_AsyncResource):
         """
         super(Toolbox, self).__init__(url, gis)
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
 

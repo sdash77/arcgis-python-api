@@ -693,9 +693,14 @@ class SiteManager(object):
     join your site and increase its computing power. Once a site is no
     longer required, you can delete the site, which will cause all of
     the resources to be cleaned up.
+    
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    server                 Required string. The arcgis.gis.server object.
+    ==================     ====================================================================
 
-    Parameters:
-     :server: arcgis.gis.server object
+
     """
     _sm = None
     #----------------------------------------------------------------------
@@ -715,7 +720,7 @@ class SiteManager(object):
     #----------------------------------------------------------------------
     @property
     def properties(self):
-        """returns the site """
+        """Gets the site properties. """
         return self._sm.properties
     #----------------------------------------------------------------------
     def create(self,
@@ -730,35 +735,48 @@ class SiteManager(object):
         This is the first operation that you must invoke when you install
         ArcGIS Server for the first time. Creating a new site involves:
 
-          -Allocating a store to save the site configuration
-          -Configuring the server machine and registering it with the site
-          -Creating a new cluster configuration that includes the server
-           machine
-          -Configuring server directories
-          -Deploying the services that are marked to auto-deploy
+          - Allocating a store to save the site configuration
+          - Configuring the server machine and registering it with the site
+          - Creating a new cluster configuration that includes the server machine
+          - Configuring server directories
+          - Deploying the services that are marked to auto-deploy
 
         Because of the sheer number of tasks, it usually takes a little
         while for this operation to complete. Once a site has been created,
         you can publish GIS services and deploy them to your server
         machines.
 
-        Parameters:
-           username - The name of the administrative account to be used by
-             the site. This can be changed at a later stage.
-           password - The credentials of the administrative account.
-           configStoreConnection - A JSON object representing the
-             connection to the configuration store. By default, the
-             configuration store will be maintained in the ArcGIS Server
-             installation directory.
-           directories - A JSON object representing a collection of server
-             directories to create. By default, the server directories will
-             be created locally.
-           cluster - An optional cluster configuration. By default, the
-             site will create a cluster called 'default' with the first
-             available port numbers starting from 4004.
-           logsSettings - Optional log settings.
-           runAsync - A flag to indicate if the operation needs to be run
-             asynchronously. Values: true | false
+
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        username                         Required string. The name of the administrative account to be used 
+                                         by the site. This can be changed at a later stage.
+        ----------------------------     --------------------------------------------------------------------
+        password                         Required string. The credentials of the administrative account.
+        ----------------------------     --------------------------------------------------------------------
+        config_store_connection          Required string. A JSON object representing the connection to the 
+                                         configuration store. By default, the configuration store will be 
+                                         maintained in the ArcGIS Server installation directory.
+        ----------------------------     --------------------------------------------------------------------
+        directories                      Required string. A JSON object representing a collection of server 
+                                         directories to create. By default, the server directories will be
+                                         created locally.
+        ----------------------------     --------------------------------------------------------------------
+        cluster                          Optional string. An optional cluster configuration. By default, the
+                                         site will create a cluster called 'default' with the first
+                                         available port numbers starting from 4004.
+        ----------------------------     --------------------------------------------------------------------
+        logs_settings                    Optional string. Optional log settings.
+        ----------------------------     --------------------------------------------------------------------
+        run_async                        Optional string. A flag to indicate if the operation needs to be 
+                                         run asynchronously. The default value is False.
+        ============================     ====================================================================
+        
+
+        :return:
+           The site if successfully created, None if unsuccessful.
+
         """
         return self._sm._create(username,
                                password,
@@ -782,31 +800,49 @@ class SiteManager(object):
         the configuration store.
         If this is the first server machine in your site, use the Create
         Site operation instead.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        admin_url              Required string. The site URL of the currently live site. This is 
+                               typically the Administrator Directory URL of one of the server 
+                               machines of a site.
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The name of an administrative account for the site.
+        ------------------     --------------------------------------------------------------------
+        password               Required string. The password of the administrative account.
+        ==================     ====================================================================
+        
 
-        Parameters:
-           admin_url - The site URL of the currently live site. This is
-            typically the Administrator Directory URL of one of the server
-            machines of a site.
-           username - The name of an administrative account for the site.
-           password - The password of the administrative account.
+        :return:
+           A status indicating success or failure.
+
         """
         return self._sm._join(admin_url, username, password)
     #----------------------------------------------------------------------
     def delete(self):
         """
-        Deletes the site configuration and releases all server resources.
-        This is an unrecoverable operation. This operation is well suited
+        Deletes the site configuration and releases all server resources. 
+        This operation is well suited
         for development or test servers that need to be cleaned up
         regularly. It can also be performed prior to uninstall. Use caution
         with this option because it deletes all services, settings, and
         other configurations.
+        
         This operation performs the following tasks:
+        
           - Stops all server machines participating in the site. This in
             turn stops all GIS services hosted on the server machines.
           - All services and cluster configurations are deleted.
           - All server machines are unregistered from the site.
           - All server machines are unregistered from the site.
           - The configuration store is deleted.
+          
+        .. note::
+            This is an unrecoverable operation!
+          
+        :return:
+           A status indicating success or failure.
         """
         return self._sm._delete()
     #----------------------------------------------------------------------
@@ -814,14 +850,20 @@ class SiteManager(object):
         """
         Exports the site configuration to a location you specify as input
         to this operation.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        location               Optional string. A path to a folder accessible to the server 
+                               where the exported site configuration will be written. If a location 
+                               is not specified, the server writes the exported site configuration 
+                               file to directory owned by the server and returns a virtual path 
+                               (an HTTP URL) to that location from where it can be downloaded.
+        ==================     ====================================================================
 
-        Parameters:
-           location - A path to a folder accessible to the server where the
-            exported site configuration will be written. If a location is
-            not specified, the server writes the exported site
-            configuration file to directory owned by the server and returns
-            a virtual path (an HTTP URL) to that location from where it can
-            be downloaded.
+        :return:
+           A status indicating success (along with the folder location) or failure.
+           
 
         """
         return self._sm._export(location)
@@ -835,16 +877,24 @@ class SiteManager(object):
         the site configuration file you supply as input. The input site
         configuration file can be obtained through the exportSite
         operation.
+        
         This operation will restore all information included in the backup,
         as noted in exportSite. When it is complete, this operation returns
         a report as the response. You should review this report and fix any
         problems it lists to ensure your site is fully functioning again.
         The importSite operation lets you restore your site from a backup
         that you created using the exportSite operation.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        location               Required string. A file path to an exported configuration or an ID 
+                               referencing the stored configuration on the server.
+        ==================     ====================================================================
+        
 
-        Parameters:
-           location - A file path to an exported configuration or an ID
-            referencing the stored configuration on the server.
+        :return:
+           A status indicating success (along with site details) or failure.
         """
         return self._sm._import_site(location=location)
     #----------------------------------------------------------------------
@@ -856,25 +906,33 @@ class SiteManager(object):
         successful run of this operation will complete the upgrade of
         ArcGIS Server.
 
-        **caution**
-        If errors are returned with the upgrade operation, you must address
-        the errors before you may continue. For example, if you encounter
-        an error about an invalid license, you will need to re-authorize
-        the software using a valid license and you may then retry this
-        operation.
 
-        **note**
-        This operation is available only when a server machine is currently
-        being upgraded. It will not be available after a successful upgrade
-        of a server machine.
+        .. note::
+            If errors are returned with the upgrade operation, you must address
+            the errors before you can continue. For example, if you encounter
+            an error about an invalid license, you will need to re-authorize
+            the software using a valid license and you may then retry this
+            operation.
+            
+            This operation is available only when a server machine is currently
+            being upgraded. It will not be available after a successful upgrade
+            of a server machine.
 
-        Paramters:
-         :run_async: A flag to indicate if the operation needs to be run
-          asynchronously. The default value is false.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        run_async              Required string. A flag to indicate if the operation needs to be run 
+                               asynchronously. The default value is False.
+        ==================     ====================================================================
+        
+
+        :return:
+           A status indicating success or failure.
+           
         """
         return self._sm._upgrade(run_async)
     #----------------------------------------------------------------------
     @property
     def public_key(self):
-        """gets the public key"""
+        """Gets the public key."""
         return self._sm._public_key

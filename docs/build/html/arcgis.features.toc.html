@@ -263,6 +263,9 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.raster.toc.html">arcgis.raster module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerylayer">ImageryLayer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastercatalogitem">RasterCatalogItem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#rastermanager">RasterManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#imagerytilemanager">ImageryTileManager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.raster.toc.html#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.raster.analytics.html">arcgis.raster.analytics module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.analytics.html#get-datastores">get_datastores</a></li>
@@ -674,7 +677,7 @@ returns a list of fields and the row object</div></blockquote>
 <h2>FeatureLayer<a class="headerlink" href="#featurelayer" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.features.FeatureLayer">
-<em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">FeatureLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">FeatureLayer</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em>, <em>dynamic_layer=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>The feature layer is the primary concept for working with features in a GIS.</p>
 <p>Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.</p>
 <p>Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
@@ -1105,7 +1108,7 @@ Values: where | expression | statement</li>
 <h2>Table<a class="headerlink" href="#table" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="arcgis.features.Table">
-<em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">Table</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">arcgis.features.</code><code class="descname">Table</code><span class="sig-paren">(</span><em>url</em>, <em>gis=None</em>, <em>container=None</em>, <em>dynamic_layer=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tables represent entity classes with uniform properties. In addition to working with “entities with location” as
 features, the GIS can also work with non-spatial entities as rows in tables.</p>
 <p>Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not

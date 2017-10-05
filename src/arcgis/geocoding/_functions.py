@@ -34,7 +34,7 @@ class Geocoder(_GISResource):
         """
         super(Geocoder, self).__init__(location, gis)
         try:
-            from .._impl._server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
         try:
@@ -454,7 +454,10 @@ def get_geocoders(gis):
     """
     A GIS includes one or more geocoders. The list of geocoders registered with the GIS
     can be queried using get_geocoders.
+
     :param gis: the GIS whose registered geocoders are to be queried
+
+
     :return: list of geocoders registered with the GIS
     """
     geocoders = []
@@ -593,28 +596,28 @@ def reverse_geocode(location, distance=None, out_sr=None, lang_code=None,
     geocoding service, and the service returns the address that is
     closest to the location.
 
-    ===============     ====================================================
+    =================== ====================================================
     **Argument**        **Description**
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     location            required list/Point Geometry
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     distance            optional float, radial distance in meteres to
                         search for an address.  The default is 100 meters.
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     out_sr              optional integer, spatial reference of the x/y
                         coordinate returned.
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     return_intersection optional Boolean, which specifies whether the
                         service should return the nearest street
                         intersection or the nearest address to the input
                         location
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     for_storage         optional boolean, specifies whether the results of
                         the operation will be persisted
-    ---------------     ----------------------------------------------------
+    ------------------- ----------------------------------------------------
     geocoder            optional geocoder, the geocoder to be used. If not
                         specified, the active GIS's first geocoder is used.
-    ===============     ====================================================
+    =================== ====================================================
 
     :returns:
        dictionary
@@ -637,9 +640,9 @@ def batch_geocode(addresses,
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
 
-    ===============     ====================================================
+    ===============     ================================================================
     **Argument**        **Description**
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     addresses           required list of strings or dictionaries.
                         A list of addresses to be geocoded.
                         For passing in the location name as a single line of text -
@@ -671,28 +674,28 @@ def batch_geocode(addresses,
                              "Region": "CA",
                              "Postal": "90045"
                          }]
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     source_country      optional string, The source_country parameter is
                         only supported by geocoders published using StreetMap
                         Premium locators.
                         Added at 10.3 and only supported by geocoders published
                         with ArcGIS 10.3 for Server and later versions.
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     category            The category parameter is only supported by geocode
                         services published using StreetMap Premium locators.
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     out_sr              optional dictionary, The spatial reference of the
                         x/y coordinates returned by a geocode request. This
                         is useful for applications using a map with a spatial
                         reference different than that of the geocode service.
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     as_featureset       optional boolean, if True, the result set is
                         returned as a FeatureSet object, else it is a
                         dictionary.
-    ---------------     ----------------------------------------------------
+    ---------------     ----------------------------------------------------------------
     geocoder            Optional, the geocoder to be used. If not specified,
                         the active GIS's first geocoder is used.
-    ===============     ====================================================
+    ===============     ================================================================
 
     :returns:
        dictionary or FeatureSet
@@ -735,13 +738,13 @@ def suggest(text,
     list of suggestions that is updated with each character typed by a
     user until the address they are looking for appears in the list.
 
-    ===============     =====================================================
+    ===============     =================================================================
     **Argument**        **Description**
-    ---------------     -----------------------------------------------------
+    ---------------     -----------------------------------------------------------------
     text                The input text provided by a user that is used by the
                         suggest operation to generate a list of possible
                         matches. This is a required parameter.
-    ---------------     -----------------------------------------------------
+    ---------------     -----------------------------------------------------------------
     location            Defines an origin point location that is used with
                         the distance parameter to sort suggested candidates
                         based on their proximity to the location. The
@@ -757,7 +760,7 @@ def suggest(text,
                         The location parameter can be specified without
                         specifying a distance. If distance is not specified,
                         it defaults to 2000 meters.
-    ---------------     -----------------------------------------------------
+    ---------------     -----------------------------------------------------------------
     distance            Specifies the radius around the point defined in the
                         location parameter to create an area, which is used to boost
                         the rank of suggested candidates so that candidates closest to
@@ -769,13 +772,13 @@ def suggest(text,
                         parameters allow searches to extend beyond the specified search
                         radius. They are not used to filter results, but rather to rank
                         resulting candidates based on their distance from a location.
-    ---------------     -----------------------------------------------------
+    ---------------     -----------------------------------------------------------------
     category            The category parameter is only supported by geocode
                         services published using StreetMap Premium locators.
-    ---------------     ------------------------------------------------------
+    ---------------     -----------------------------------------------------------------
     geocoder            Optional, the geocoder to be used. If not specified,
                         the active GIS's first geocoder is used.
-    ===============     =====================================================
+    ===============     =================================================================
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
