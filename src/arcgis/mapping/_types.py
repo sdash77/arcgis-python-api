@@ -976,122 +976,180 @@ class MapImageLayer(Layer):
     # ----------------------------------------------------------------------
     def export_map(self,
                    bbox,
-                   bboxSR=None,
+                   bbox_sr=None,
                    size="600,550",
                    dpi=200,
-                   imageSR=None,
+                   image_sr=None,
                    image_format="png",
-                   layerDefFilter=None,
+                   layer_defs=None,
                    layers=None,
                    transparent=False,
-                   timeFilter=None,
-                   layerTimeOptions=None,
-                   dynamicLayers=None,
-                   mapScale=None
-                   ):
+                   time_value=None,
+                   time_options=None,
+                   dynamic_layers=None,
+                   gdb_version=None,
+                   scale=None,
+                   rotation=None,
+                   transformation=None,
+                   map_range_values=None,
+                   layer_range_values=None,
+                   layer_parameter=None):
         """
-           The export operation is performed on a map service resource.
-           The result of this operation is a map image resource. This
-           resource provides information about the exported map image such
-           as its URL, its width and height, extent and scale.
-           Inputs:
-            bbox - (Required) The extent (bounding box) of the exported
-             image. Unless the bboxSR parameter has been specified, the bbox
-             is assumed to be in the spatial reference of the map.
-             Example: bbox="-104,35.6,-94.32,41"
-            size - size of image in pixels
-            dpi - dots per inch
-            imageSR - spatial reference of the output image
-            image_format - Description: The format of the exported image.
-                             The default format is .png.
-                             Values: png | png8 | png24 | jpg | pdf | bmp | gif
-                                     | svg | svgz | emf | ps | png32
-            layerDefFilter - Description: Allows you to filter the
-                             features of individual layers in the exported
-                             map by specifying definition expressions for
-                             those layers. Definition expression for a
-                             layer that is published with the service will
-                             be always honored.
-            layers - Determines which layers appear on the exported map.
-                     There are four ways to specify which layers are shown:
-                        show: Only the layers specified in this list will
-                              be exported.
-                        hide: All layers except those specified in this
-                              list will be exported.
-                        include: In addition to the layers exported by
-                                 default, the layers specified in this list
-                                 will be exported.
-                        exclude: The layers exported by default excluding
-                                 those specified in this list will be
-                                 exported.
-            transparent - If true, the image will be exported with the
-                          background color of the map set as its
-                          transparent color. The default is false. Only
-                          the .png and .gif formats support transparency.
-                          Internet Explorer 6 does not display transparency
-                          correctly for png24 image formats.
-            timeFilter - The time instant or time extent of the exported
-                         map image.
-            layerTimeOptions - The time options per layer. Users can
-                               indicate whether or not the layer should use
-                               the time extent specified by the time
-                               parameter or not, whether to draw the layer
-                               features cumulatively or not and the time
-                               offsets for the layer.
-                               see: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Map/02r3000000v7000000/
-            dynamicLayers - Use dynamicLayers parameter to modify the layer
-                            drawing order, change layer drawing info, and
-                            change layer data source version for this request.
-                            New layers (dataLayer) can also be added to the
-                            dynamicLayers based on the map service registered
-                            workspaces.
-            mapScale - Use this parameter to export a map image at a specific
-                       scale, with the map centered around the center of the
-                       specified bounding box (bbox).
-         Output:
-           Image of the map.
+        The export operation is performed on a map service resource.
+        The result of this operation is a map image resource. This
+        resource provides information about the exported map image such
+        as its URL, its width and height, extent and scale.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        bbox                  required string. The extent (bounding box) of the exported image.
+                              Unless the bbox_sr parameter has been specified, the bbox is assumed
+                              to be in the spatial reference of the map.
+                              Example: bbox="-104,35.6,-94.32,41"
+        -----------------     --------------------------------------------------------------------
+        bbox_sr               optional integer, SpatialReference. spatial reference of the bbox.
+        -----------------     --------------------------------------------------------------------
+        size                  optional string. size - size of image in pixels
+        -----------------     --------------------------------------------------------------------
+        dpi                   optional integer. dots per inch
+        -----------------     --------------------------------------------------------------------
+        image_sr              optional integer, SpatialReference. spatial reference of the output
+                              image
+        -----------------     --------------------------------------------------------------------
+        image_format          optional string. The format of the exported image.
+                              The default format is .png.
+                              Values: png | png8 | png24 | jpg | pdf | bmp | gif
+                                      | svg | svgz | emf | ps | png32
+        -----------------     --------------------------------------------------------------------
+        layer_defs            optional dict. Allows you to filter the features of individual
+                              layers in the exported map by specifying definition expressions for
+                              those layers. Definition expression for a layer that is
+                              published with the service will be always honored.
+        -----------------     --------------------------------------------------------------------
+        layers                optional string. Determines which layers appear on the exported map.
+                              There are four ways to specify which layers are shown:
+                                show: Only the layers specified in this list will
+                                      be exported.
+                                hide: All layers except those specified in this
+                                      list will be exported.
+                                include: In addition to the layers exported by
+                                         default, the layers specified in this list
+                                         will be exported.
+                                exclude: The layers exported by default excluding
+                                         those specified in this list will be
+                                         exported.
+        -----------------     --------------------------------------------------------------------
+        transparent           optional boolean. If true, the image will be exported with the
+                              background color of the map set as its transparent color. The
+                              default is false. Only the .png and .gif formats support
+                              transparency.
+        -----------------     --------------------------------------------------------------------
+        time_value            optional list. The time instant or the time extent of the features
+                              to be identified.
+        -----------------     --------------------------------------------------------------------
+        time_options          optional dict. The time options per layer. Users can indicate
+                              whether or not the layer should use the time extent specified by the
+                              time parameter or not, whether to draw the layer features
+                              cumulatively or not and the time offsets for the layer.
+        -----------------     --------------------------------------------------------------------
+        dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
+                              change the layer data source. dynamicLayers can also be used to add
+                              new layer that was not defined in the map used to create the map
+                              service. The new layer should have its source pointing to one of the
+                              registered workspaces that was defined at the time the map service
+                              was created.
+                              The order of dynamicLayers array defines the layer drawing order.
+                              The first element of the dynamicLayers is stacked on top of all
+                              other layers. When defining a dynamic layer, source is required.
+        -----------------     --------------------------------------------------------------------
+        gdb_version           optional string. Switch map layers to point to an alternate
+                              geodatabase version.
+        -----------------     --------------------------------------------------------------------
+        scale                 optional float. Use this parameter to export a map image at a
+                              specific map scale, with the map centered around the center of the
+                              specified bounding box (bbox)
+        -----------------     --------------------------------------------------------------------
+        rotation              optional float. Use this parameter to export a map image rotated at
+                              a specific angle, with the map centered around the center of the
+                              specified bounding box (bbox). It could be positive or negative
+                              number.
+        -----------------     --------------------------------------------------------------------
+        transformations       optional list. Use this parameter to apply one or more datum
+                              transformations to the map when sr is different than the map
+                              service's spatial reference. It is an array of transformation
+                              elements.
+        -----------------     --------------------------------------------------------------------
+        map_range_values      optional list. Allows you to filter features in the exported map
+                              from all layer that are within the specified range instant or
+                              extent.
+        -----------------     --------------------------------------------------------------------
+        layer_range_values    optional dictionary. Allows you to filter features for each
+                              individual layer that are within the specified range instant or
+                              extent. Note: Check range infos at the layer resources for the
+                              available ranges.
+        -----------------     --------------------------------------------------------------------
+        layer_parameter       optional list. Allows you to filter the features of individual
+                              layers in the exported map by specifying value(s) to an array of
+                              pre-authored parameterized filters for those layers. When value is
+                              not specified for any parameter in a request, the default value,
+                              that is assigned during authoring time, gets used instead.
+        =================     ====================================================================
+
+        :return: string, image of the map.
         """
-        if self.properties['exportTilesAllowed'] == False:
-            return
+
         params = {
             "f": "json"
         }
         params['bbox'] = bbox
         if bboxSR:
-            params['bboxSR'] = bboxSR
+            params['bboxSR'] = bbox_sr
         if dpi is not None:
             params['dpi'] = dpi
         if size is not None:
             params['size'] = size
-        if imageSR is not None and \
-                isinstance(imageSR, SpatialReference):
-            params['imageSR'] = {'wkid': imageSR.wkid}
+        if image_sr is not None and \
+           isinstance(image_sr, int):
+            params['imageSR'] = {'wkid': image_sr}
         if image_format is not None:
             params['format'] = image_format
-        if layerDefFilter is not None:
-            params['layerDefs'] = layerDefFilter
+        if layer_defs is not None:
+            params['layerDefs'] = layer_defs
         if layers is not None:
             params['layers'] = layers
         if transparent is not None:
             params['transparent'] = transparent
-        if timeFilter is not None:
-            params['time'] = timeFilter
-        if layerTimeOptions is not None:
-            params['layerTimeOptions'] = layerTimeOptions
-        if dynamicLayers is not None:
-            params['dynamicLayers'] = dynamicLayers
-        if mapScale is not None:
-            params['mapScale'] = mapScale
+        if time is not None:
+            params['time'] = time
+        if time_options is not None:
+            params['layerTimeOptions'] = time_options
+        if dynamic_layers is not None:
+            params['dynamicLayers'] = dynamic_layers
+        if scale is not None:
+            params['mapScale'] = scale
+        if rotation is not None:
+            params['rotation'] = rotation
+        if gdb_version is not None:
+            params['gdbVersion'] = gdb_version
+        if transformation is not None:
+            params['datumTransformations'] = transformation
+        if map_range_values is not None:
+            params['mapRangeValues'] = map_range_values
+        if layer_range_values is not None:
+            params['layerRangeValues'] = layer_range_values
+        if layer_parameter:
+            params['layerParameterValues'] = layer_parameter
         exportURL = self._url + "/export"
         return self._con.get(exportURL, params, token=self._token)
 
     # ----------------------------------------------------------------------
     def estimate_export_tiles_size(self,
-                                   exportBy,
+                                   export_by,
                                    levels,
-                                   tilePackage=False,
-                                   exportExtent="DEFAULTEXTENT",
-                                   areaOfInterest=None,
+                                   tile_package=False,
+                                   export_extent="DEFAULTEXTENT",
+                                   area_of_interest=None,
                                    asynchronous=True):
         """
         The estimateExportTilesSize operation is an asynchronous task that
@@ -1150,13 +1208,13 @@ class MapImageLayer(Layer):
         params = {
             "f": "json",
             "levels": levels,
-            "exportBy": exportBy,
-            "tilePackage": tilePackage,
-            "exportExtent": exportExtent
+            "exportBy": export_by,
+            "tilePackage": tile_package,
+            "exportExtent": export_extent
         }
         params["levels"] = levels
-        if not areaOfInterest is None:
-            params['areaOfInterest'] = areaOfInterest
+        if not area_of_interest is None:
+            params['areaOfInterest'] = area_of_interest
         if asynchronous == True:
             return self._con.get(url, params, token=self._token)
         else:
