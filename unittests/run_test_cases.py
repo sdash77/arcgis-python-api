@@ -38,7 +38,7 @@ import os
 import unittest
 import sys
 import xmlrunner
-
+import atexit
 
 def module(pathName):
     """
@@ -98,7 +98,16 @@ def remove_tests_to_skip(tests, test_suite_names_to_skip):
 
     tests[:] = [test for test in tests if test not in tests_to_skip]
 
+suites = []
+def run_on_exit():
+    """This function is run on exit of this script, regardless if it finished 
+    without error or with an unhandled exception. See the 'atexit' package"""
+    xmlrunner.XMLTestRunner(output='test-results').run(unittest.TestSuite(suites))
+    print("XML files successfully written.")
+    print("{} is now exiting...".format(sys.argv[0]))
+
 if __name__ == "__main__":
+    atexit.register(run_on_exit)
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbosity", dest="verbosity", default="1", type=int,
                         help= "Verbosity level for the test runner")
@@ -136,7 +145,6 @@ if __name__ == "__main__":
     unittest_path = current_file_path.parent
     sys.path.append(unittest_path.__str__())
 
-    suites = []
     for name in names:
         if os.path.isdir(name):
             suites = suites + load_test_suite_from_directory(name)
@@ -154,7 +162,6 @@ if __name__ == "__main__":
         cov = coverage.coverage()
         cov.start()
 
-    xmlrunner.XMLTestRunner(output='test-results').run(unittest.TestSuite(suites))
     # unittest.TextTestRunner(verbosity=arguments.verbosity).run(
     #     unittest.TestSuite(suites))
 
