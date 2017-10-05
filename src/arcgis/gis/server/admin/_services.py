@@ -121,11 +121,11 @@ class ServiceManager(BaseServer):
            self._services is None or refresh:
             self._currentFolder = folder
             self._folder = folder
-            return self._services_list
+            return self._services_list()
 
-        return self._services_list
+        return self._services_list()
     #----------------------------------------------------------------------
-    @property
+    #@property
     def _services_list(self):
         """ returns the services in the current folder """
         self._services = []
@@ -753,6 +753,7 @@ class Service(BaseServer):
     _portalProperties = None
     _jsonProperties = None
     _url = None
+    _extensions = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
@@ -777,6 +778,7 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """ populates server admin information """
+        from .parameters import Extension
         params = {
             "f" : "json"
         }
@@ -822,7 +824,7 @@ class Service(BaseServer):
         return self._jsonProperties
     #----------------------------------------------------------------------
     @property
-    def _extensions(self):
+    def extensions(self):
         """lists the extensions on a service"""
         if self._extensions is None:
             self._init()
