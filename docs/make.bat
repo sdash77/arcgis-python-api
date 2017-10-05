@@ -5,7 +5,11 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
-set BUILDDIR=build
+IF "%BUILDDIRGLOBALOVERRIDE%"=="" (
+        set BUILDDIR=build
+) ELSE (
+        set BUILDDIR=%BUILDDIRGLOBALOVERRIDE%
+)
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% source
 set I18NSPHINXOPTS=%SPHINXOPTS% source
 if NOT "%PAPER%" == "" (
