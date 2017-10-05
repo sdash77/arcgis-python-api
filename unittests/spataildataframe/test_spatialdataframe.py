@@ -15,7 +15,7 @@ except:
 
 from arcgis.geometry import _types
 from arcgis import SpatialDataFrame
-from arcgis._impl._server import Service
+from arcgis.gis.server._service import Service
 from arcgis.features._data.geodataset.io import from_layer, to_featureclass, to_sqlite, from_featureclass
 if HAS_ARCPY:
     #############################################################################

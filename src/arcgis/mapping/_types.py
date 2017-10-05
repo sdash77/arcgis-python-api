@@ -783,7 +783,14 @@ class MapImageLayer(Layer):
              dynamic_layers=None,
              return_z=False,
              return_m=False,
-             gdb_version=None):
+             gdb_version=None,
+             return_unformatted_values=False,
+             return_field_name=False,
+             transformations=None,
+             map_range_values=None,
+             layer_range_values=None,
+             layer_parameter=None
+             ):
         """
         performs the map service find operation
 
@@ -848,6 +855,33 @@ class MapImageLayer(Layer):
         -----------------     --------------------------------------------------------------------
         gdb_version           optional string. Switch map layers to point to an alternate
                               geodatabase version.
+        -----------------     --------------------------------------------------------------------
+        return_unformatted_values   optional boolean. If true, the values in the result will not
+                                    be formatted i.e. numbers will returned as is and dates will
+                                    be returned as epoch values.
+        -----------------     --------------------------------------------------------------------
+        return_field_name     optional boolean. If true, field names will be returned instead of
+                              field aliases.
+        -----------------     --------------------------------------------------------------------
+        transformations       optional list. Use this parameter to apply one or more datum
+                              transformations to the map when sr is different than the map
+                              service's spatial reference. It is an array of transformation
+                              elements.
+        -----------------     --------------------------------------------------------------------
+        map_range_values      optional list. Allows you to filter features in the exported map
+                              from all layer that are within the specified range instant or
+                              extent.
+        -----------------     --------------------------------------------------------------------
+        layer_range_values    optional dictionary. Allows you to filter features for each
+                              individual layer that are within the specified range instant or
+                              extent. Note: Check range infos at the layer resources for the
+                              available ranges.
+        -----------------     --------------------------------------------------------------------
+        layer_parameter       optional list. Allows you to filter the features of individual
+                              layers in the exported map by specifying value(s) to an array of
+                              pre-authored parameterized filters for those layers. When value is
+                              not specified for any parameter in a request, the default value,
+                              that is assigned during authoring time, gets used instead.
         =================     ====================================================================
 
         :returns: dictionary
@@ -880,44 +914,65 @@ class MapImageLayer(Layer):
             params['gdbVersion'] = gdb_version
         if layers:
             params['layers'] = layers
-        res = self._con.get(url, params, token=self._token)
+        if return_unformatted is not None:
+            params['returnUnformattedValues'] = return_unformatted
+        if return_field_name is not None:
+            params['returnFieldName'] = return_field_name
+        if transformations:
+            params['datumTransformations'] = transformations
+        if map_range_values:
+            params['mapRangeValues'] = map_range_values
+        if layer_range_values:
+            params['layerRangeValues'] = layer_range_values
+        if layer_parameters:
+            params['layerParameterValues'] = layer_parameters
+        res = self._con.post(path=url,
+                             postdata=params,
+                             token=self._token)
         return res
 
     # ----------------------------------------------------------------------
-    def generate_kml(self, save_location, docName, layers, layerOptions="composite"):
+    def generate_kml(self, save_location, name, layers, options="composite"):
         """
-           The generateKml operation is performed on a map service resource.
-           The result of this operation is a KML document wrapped in a KMZ
-           file. The document contains a network link to the KML Service
-           endpoint with properties and parameters you specify.
-           Inputs:
-              docName - The name of the resulting KML document. This is the
-                        name that appears in the Places panel of Google
-                        Earth.
-              layers - the layers to perform the generateKML operation on.
-                       The layers are specified as a comma-separated list
-                       of layer ids.
-              layerOptions - The layer drawing options. Based on the option
-                             chosen, the layers are drawn as one composite
-                             image, as separate images, or as vectors. When
-                             the KML capability is enabled, the ArcGIS
-                             Server administrator has the option of setting
-                             the layer operations allowed. If vectors are
-                             not allowed, then the caller will not be able
-                             to get vectors. Instead, the caller receives a
-                             single composite image.
-                             values: composite | separateImage |
-                                     nonComposite
+        The generateKml operation is performed on a map service resource.
+        The result of this operation is a KML document wrapped in a KMZ
+        file. The document contains a network link to the KML Service
+        endpoint with properties and parameters you specify.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        save_location         required string. Save folder.
+        -----------------     --------------------------------------------------------------------
+        name                  The name of the resulting KML document. This is the name that
+                              appears in the Places panel of Google Earth.
+        -----------------     --------------------------------------------------------------------
+        layers                required string. the layers to perform the generateKML operation on.
+                              The layers are specified as a comma-separated list of layer ids.
+        -----------------     --------------------------------------------------------------------
+        options               required string. The layer drawing options. Based on the option
+                              chosen, the layers are drawn as one composite image, as separate
+                              images, or as vectors. When the KML capability is enabled, the
+                              ArcGIS Server administrator has the option of setting the layer
+                              operations allowed. If vectors are not allowed, then the caller will
+                              not be able to get vectors. Instead, the caller receives a single
+                              composite image.
+                              values: composite, separateImage, nonComposite
+        =================     ====================================================================
+
+        :returns: string to file path
+
         """
         kmlURL = self._url + "/generateKml"
         params = {
             "f": "json",
-            'docName': docName,
+            'docName': name,
             'layers': layers,
-            'layerOptions': layerOptions}
+            'layerOptions': options
+        }
         return self._con.get(kmlURL, params,
-                             out_folder=save_location, token=self._token)
-
+                             out_folder=save_location,
+                             token=self._token)
     # ----------------------------------------------------------------------
     def export_map(self,
                    bbox,
