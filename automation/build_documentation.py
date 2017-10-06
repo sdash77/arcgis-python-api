@@ -1,4 +1,5 @@
 import os 
+import subprocess
 
 from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 
@@ -47,4 +48,4 @@ def _build_doc_for_windows():
 
 def _run_sys_command(cmd):
     print("About to run the following command: '{}'".format(cmd))
-    os.system(cmd)
+    subprocess.check_call(cmd, shell=True)
