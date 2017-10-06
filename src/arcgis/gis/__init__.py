@@ -2218,6 +2218,8 @@ class ContentManager(object):
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
         ================  ==========================================================================
 
+        When publishing a Spatial Dataframe, additional options can be given:
+
         =====================  ==========================================================================
         **Optional Argument**  **Description**
         ---------------------  --------------------------------------------------------------------------
@@ -2268,7 +2270,7 @@ class ContentManager(object):
             temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop('tags', 'FGDB')
-            targetSR = kwargs.pop('target_sr', 102100)
+            target_sr = kwargs.pop('target_sr', 102100)
             capabilities = kwargs.pop('capabilities', "Query")
             os.makedirs(temp_dir)
             temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
