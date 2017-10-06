@@ -31,16 +31,20 @@ def _build_doc_for_unix():
             DOCS_DIR,
             make_command,
             flag_to_force_output_to_staging_dir)
-    os.system(final_bash_command)
+
+    _run_sys_command(final_bash_command)
 
 def _build_doc_for_windows():
     print("Building for Windows system...")
-    bat_command_to_force_output_to_staging_dir = \
-        "set BUILDDIRGLOBALOVERRIDE={}".format(DOCS_DIR)
-    bat_make_command = os.path.join(DOCS_DIR, "make.bat")
-    bat_command_to_negate_forcing_output_to_staging_dir = \
-        "set BUILDDIRGLOBALOVERRIDE={}".format('""')
+    bat_make_command = ".\make.bat singlehtml"
+    flag_to_force_output_to_staging_dir = STAGING_DIR
+    final_make_command = 'cd "{}" && {} {}'.format(
+            DOCS_DIR,
+            bat_make_command,
+            flag_to_force_output_to_staging_dir)
 
-    os.system(bat_command_to_force_output_to_staging_dir)
-    os.system(bat_make_command)
-    os.system(bat_command_to_negate_forcing_output_to_staging_dir)
+    _run_sys_command(final_make_command)
+
+def _run_sys_command(cmd):
+    print("About to run the following command: '{}'".format(cmd))
+    os.system(cmd)
