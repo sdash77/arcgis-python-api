@@ -96,17 +96,17 @@ class FeatureLayer(Layer):
         on a table, the result is a renderer object containing the data
         classes and no symbols.
 
-        =================     ============================================================================
+        =================     ====================================================================
         **Argument**          **Description**
-        -----------------     ----------------------------------------------------------------------------
-        definition            required dict. The definition using which the renderer is generated.
-                              Use either class breaks or unique value classification definitions.
+        -----------------     --------------------------------------------------------------------
+        definition            required dict. The definition using the renderer that is generated.
+                              Use either class breaks or unique value classificatoin definitions.
                               See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
-        -----------------     ----------------------------------------------------------------------------
+        -----------------     --------------------------------------------------------------------
         where                 optional string. A where clause for which the data needs to be
                               classified. Any legal SQL where clause operating on the fields in
                               the dynamic layer/table is allowed.
-        =================     ============================================================================
+        =================     ====================================================================
 
         :returns: dictionary
 

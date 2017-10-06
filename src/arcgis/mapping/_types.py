@@ -580,120 +580,120 @@ class MapImageLayer(Layer):
         includes its name, layer ID, layer name, geometry and geometry type,
         and other attributes of that result as name-value pairs.
 
-        ==================    ====================================================================
-        **Argument**          **Description**
-        ------------------    --------------------------------------------------------------------
-        geometry              required Geometry or list. The geometry to identify on. The type of
-                              the geometry is specified by the geometryType parameter. The
-                              structure of the geometries is same as the structure of the JSON
-                              geometry objects returned by the API. In addition to the JSON
-                              structures, for points and envelopes, you can specify the geometries
-                              with a simpler comma-separated syntax.
-        ------------------    --------------------------------------------------------------------
-        geometry_type         required string.The type of geometry specified by the geometry
-                              parameter. The geometry type could be a point, line, polygon, or an
-                              envelope.
-                              Values: Point,Multipoint,Polyline,Polygon,Envelope
-        ------------------    --------------------------------------------------------------------
-        sr                    optional dict, string, or SpatialReference. The well-known ID of the
-                              spatial reference of the input and output geometries as well as the
-                              map_extent. If sr is not specified, the geometry and the map_extent
-                              are assumed to be in the spatial reference of the map, and the
-                              output geometries are also in the spatial reference of the map.
-        ------------------    --------------------------------------------------------------------
-        layer_defs            optional dict. Allows you to filter the features of individual
-                              layers in the exported map by specifying definition expressions for
-                              those layers. Definition expression for a layer that is
-                              published with the service will be always honored.
-        ------------------    --------------------------------------------------------------------
-        time_value            optional list. The time instant or the time extent of the features
-                              to be identified.
-        ------------------    --------------------------------------------------------------------
-        time_options          optional dict. The time options per layer. Users can indicate
-                              whether or not the layer should use the time extent specified by the
-                              time parameter or not, whether to draw the layer features
-                              cumulatively or not and the time offsets for the layer.
-        ------------------    --------------------------------------------------------------------
-        layers                optional string. The layers to perform the identify operation on.
-                              There are three ways to specify which layers to identify on:
-                               - top: Only the top-most layer at the specified location.
-                               - visible: All visible layers at the specified location.
-                               - all: All layers at the specified location.
-        ------------------    --------------------------------------------------------------------
-        tolerance             optional integer. The distance in screen pixels from the specified
-                              geometry within which the identify should be performed. The value for
-                              the tolerance is an integer.
-        ------------------    --------------------------------------------------------------------
-        map_extent            required string. The extent or bounding box of the map currently
-                              being viewed.
-        ------------------    --------------------------------------------------------------------
-        image_display         optional string. The screen image display parameters (width, height,
-                              and DPI) of the map being currently viewed. The mapExtent and the
-                              image_display parameters are used by the server to determine the
-                              layers visible in the current extent. They are also used to
-                              calculate the distance on the map to search based on the tolerance
-                              in screen pixels.
-                              Syntax: <width>, <height>, <dpi>
-        ------------------    --------------------------------------------------------------------
-        return_geometry       optional boolean. If true, the resultset will include the geometries
-                              associated with each result. The default is true.
-        ------------------    --------------------------------------------------------------------
-        max_offset            optional integer. This option can be used to specify the maximum
-                              allowable offset to be used for generalizing geometries returned by
-                              the identify operation.
-        ------------------    --------------------------------------------------------------------
-        precision             optional integer. This option can be used to specify the number of
-                              decimal places in the response geometries returned by the identify
-                              operation. This applies to X and Y values only (not m or z-values).
-        ------------------    --------------------------------------------------------------------
-        dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
-                              change the layer data source. dynamicLayers can also be used to add
-                              new layer that was not defined in the map used to create the map
-                              service. The new layer should have its source pointing to one of the
-                              registered workspaces that was defined at the time the map service
-                              was created.
-                              The order of dynamicLayers array defines the layer drawing order.
-                              The first element of the dynamicLayers is stacked on top of all
-                              other layers. When defining a dynamic layer, source is required.
-        ------------------    --------------------------------------------------------------------
-        return_z              optional boolean. If true, Z values will be included in the results
-                              if the features have Z values. Otherwise, Z values are not returned.
-                              The default is false.
-        ------------------    --------------------------------------------------------------------
-        return_m              optional boolean.If true, M values will be included in the results
-                              if the features have M values. Otherwise, M values are not returned.
-                              The default is false.
-        ------------------    --------------------------------------------------------------------
-        gdb_version           optional string. Switch map layers to point to an alternate
-                              geodatabase version.
-        ------------------    --------------------------------------------------------------------
-        return_unformatted    optional boolean. If true, the values in the result will not be
-                              formatted i.e. numbers will returned as is and dates will be
-                              returned as epoch values. The default is False.
-        ------------------    --------------------------------------------------------------------
-        return_field_name     optional boolean. Default is False. If true, field names will be
-                              returned instead of field aliases.
-        ------------------    --------------------------------------------------------------------
-        transformations       optional list. Use this parameter to apply one or more datum
-                              transformations to the map when sr is different than the map
-                              service's spatial reference. It is an array of transformation
-                              elements.
-                              Transformations specified here are used to project features from
-                              layers within a map service to sr.
-        ------------------    --------------------------------------------------------------------
-        map_range_values      optional list. Allows for the filtering features in the exported map
-                              from all layer that are within the specified range instant or extent.
-        ------------------    --------------------------------------------------------------------
-        layer_range_values    optional list. Allows for the filtering of features for each
-                              individual layer that are within the specified range instant or
-                              extent.
-        ------------------    --------------------------------------------------------------------
-        layer_parameters      optional list. Allows for the filtering of the features of
-                              individual layers in the exported map by specifying value(s) to an
-                              array of pre-authored parameterized filters for those layers. When
-                              value is not specified for any parameter in a request, the default
-                              value, that is assigned during authoring time, gets used instead.
-        ==================    ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        geometry               required Geometry or list. The geometry to identify on. The type of
+                               the geometry is specified by the geometryType parameter. The
+                               structure of the geometries is same as the structure of the JSON
+                               geometry objects returned by the API. In addition to the JSON
+                               structures, for points and envelopes, you can specify the geometries
+                               with a simpler comma-separated syntax.
+        ------------------     --------------------------------------------------------------------
+        geometry_type          required string.The type of geometry specified by the geometry
+                               parameter. The geometry type could be a point, line, polygon, or an
+                               envelope.
+                               Values: Point,Multipoint,Polyline,Polygon,Envelope
+        ------------------     --------------------------------------------------------------------
+        sr                     optional dict, string, or SpatialReference. The well-known ID of the
+                               spatial reference of the input and output geometries as well as the
+                               map_extent. If sr is not specified, the geometry and the map_extent
+                               are assumed to be in the spatial reference of the map, and the
+                               output geometries are also in the spatial reference of the map.
+        ------------------     --------------------------------------------------------------------
+        layer_defs             optional dict. Allows you to filter the features of individual
+                               layers in the exported map by specifying definition expressions for
+                               those layers. Definition expression for a layer that is
+                               published with the service will be always honored.
+        ------------------     --------------------------------------------------------------------
+        time_value             optional list. The time instant or the time extent of the features
+                               to be identified.
+        ------------------     --------------------------------------------------------------------
+        time_options           optional dict. The time options per layer. Users can indicate
+                               whether or not the layer should use the time extent specified by the
+                               time parameter or not, whether to draw the layer features
+                               cumulatively or not and the time offsets for the layer.
+        ------------------     --------------------------------------------------------------------
+        layers                 optional string. The layers to perform the identify operation on.
+                               There are three ways to specify which layers to identify on:
+                                - top: Only the top-most layer at the specified location.
+                                - visible: All visible layers at the specified location.
+                                - all: All layers at the specified location.
+        ------------------     --------------------------------------------------------------------
+        tolerance              optional integer. The distance in screen pixels from the specified
+                               geometry within which the identify should be performed. The value for
+                               the tolerance is an integer.
+        ------------------     --------------------------------------------------------------------
+        map_extent             required string. The extent or bounding box of the map currently
+                               being viewed.
+        ------------------     --------------------------------------------------------------------
+        image_display          optional string. The screen image display parameters (width, height,
+                               and DPI) of the map being currently viewed. The mapExtent and the
+                               image_display parameters are used by the server to determine the
+                               layers visible in the current extent. They are also used to
+                               calculate the distance on the map to search based on the tolerance
+                               in screen pixels.
+                               Syntax: <width>, <height>, <dpi>
+        ------------------     --------------------------------------------------------------------
+        return_geometry        optional boolean. If true, the resultset will include the geometries
+                               associated with each result. The default is true.
+        ------------------     --------------------------------------------------------------------
+        max_offset             optional integer. This option can be used to specify the maximum
+                               allowable offset to be used for generalizing geometries returned by
+                               the identify operation.
+        ------------------     --------------------------------------------------------------------
+        precision              optional integer. This option can be used to specify the number of
+                               decimal places in the response geometries returned by the identify
+                               operation. This applies to X and Y values only (not m or z-values).
+        ------------------     --------------------------------------------------------------------
+        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+                               change the layer data source. dynamicLayers can also be used to add
+                               new layer that was not defined in the map used to create the map
+                               service. The new layer should have its source pointing to one of the
+                               registered workspaces that was defined at the time the map service
+                               was created.
+                               The order of dynamicLayers array defines the layer drawing order.
+                               The first element of the dynamicLayers is stacked on top of all
+                               other layers. When defining a dynamic layer, source is required.
+        ------------------     --------------------------------------------------------------------
+        return_z               optional boolean. If true, Z values will be included in the results
+                               if the features have Z values. Otherwise, Z values are not returned.
+                               The default is false.
+        ------------------     --------------------------------------------------------------------
+        return_m               optional boolean.If true, M values will be included in the results
+                               if the features have M values. Otherwise, M values are not returned.
+                               The default is false.
+        ------------------     --------------------------------------------------------------------
+        gdb_version            optional string. Switch map layers to point to an alternate
+                               geodatabase version.
+        ------------------     --------------------------------------------------------------------
+        return_unformatted     optional boolean. If true, the values in the result will not be
+                               formatted i.e. numbers will returned as is and dates will be
+                               returned as epoch values. The default is False.
+        ------------------     --------------------------------------------------------------------
+        return_field_name      optional boolean. Default is False. If true, field names will be
+                               returned instead of field aliases.
+        ------------------     --------------------------------------------------------------------
+        transformations        optional list. Use this parameter to apply one or more datum
+                               transformations to the map when sr is different than the map
+                               service's spatial reference. It is an array of transformation
+                               elements.
+                               Transformations specified here are used to project features from
+                               layers within a map service to sr.
+        ------------------     --------------------------------------------------------------------
+        map_range_values       optional list. Allows for the filtering features in the exported map
+                               from all layer that are within the specified range instant or extent.
+        ------------------     --------------------------------------------------------------------
+        layer_range_values     optional list. Allows for the filtering of features for each
+                               individual layer that are within the specified range instant or
+                               extent.
+        ------------------     --------------------------------------------------------------------
+        layer_parameters       optional list. Allows for the filtering of the features of
+                               individual layers in the exported map by specifying value(s) to an
+                               array of pre-authored parameterized filters for those layers. When
+                               value is not specified for any parameter in a request, the default
+                               value, that is assigned during authoring time, gets used instead.
+        =================     ====================================================================
 
         :returns: dictionary
         """
@@ -783,72 +783,107 @@ class MapImageLayer(Layer):
              dynamic_layers=None,
              return_z=False,
              return_m=False,
-             gdb_version=None):
+             gdb_version=None,
+             return_unformatted=False,
+             return_field_name=False,
+             transformations=None,
+             map_range_values=None,
+             layer_range_values=None,
+             layer_parameters=None,
+             **kwargs
+             ):
         """
         performs the map service find operation
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        search_text           required string.The search string. This is the text that is searched
-                              across the layers and fields the user specifies.
-        -----------------     --------------------------------------------------------------------
-        layers                optional string. The layers to perform the identify operation on.
-                              There are three ways to specify which layers to identify on:
-                               - top: Only the top-most layer at the specified location.
-                               - visible: All visible layers at the specified location.
-                               - all: All layers at the specified location.
-        -----------------     --------------------------------------------------------------------
-        contains              optional boolean. If false, the operation searches for an exact
-                              match of the search_text string. An exact match is case sensitive.
-                              Otherwise, it searches for a value that contains the search_text
-                              provided. This search is not case sensitive. The default is true.
-        -----------------     --------------------------------------------------------------------
-        search_fields         optional string. List of field names to look in.
-        -----------------     --------------------------------------------------------------------
-        sr                    optional dict, string, or SpatialReference. The well-known ID of the
-                              spatial reference of the input and output geometries as well as the
-                              map_extent. If sr is not specified, the geometry and the map_extent
-                              are assumed to be in the spatial reference of the map, and the
-                              output geometries are also in the spatial reference of the map.
-        -----------------     --------------------------------------------------------------------
-        layer_defs            optional dict. Allows you to filter the features of individual
-                              layers in the exported map by specifying definition expressions for
-                              those layers. Definition expression for a layer that is
-                              published with the service will be always honored.
-        -----------------     --------------------------------------------------------------------
-        return_geometry       optional boolean. If true, the resultset will include the geometries
-                              associated with each result. The default is true.
-        -----------------     --------------------------------------------------------------------
-        max_offset            optional integer. This option can be used to specify the maximum
-                              allowable offset to be used for generalizing geometries returned by
-                              the identify operation.
-        -----------------     --------------------------------------------------------------------
-        precision             optional integer. This option can be used to specify the number of
-                              decimal places in the response geometries returned by the identify
-                              operation. This applies to X and Y values only (not m or z-values).
-        -----------------     --------------------------------------------------------------------
-        dynamic_layers        optional dict. Use dynamicLayers property to reorder layers and
-                              change the layer data source. dynamicLayers can also be used to add
-                              new layer that was not defined in the map used to create the map
-                              service. The new layer should have its source pointing to one of the
-                              registered workspaces that was defined at the time the map service
-                              was created.
-                              The order of dynamicLayers array defines the layer drawing order.
-                              The first element of the dynamicLayers is stacked on top of all
-                              other layers. When defining a dynamic layer, source is required.
-        -----------------     --------------------------------------------------------------------
-        return_z              optional boolean. If true, Z values will be included in the results
-                              if the features have Z values. Otherwise, Z values are not returned.
-                              The default is false.
-        -----------------     --------------------------------------------------------------------
-        return_m              optional boolean.If true, M values will be included in the results
-                              if the features have M values. Otherwise, M values are not returned.
-                              The default is false.
-        -----------------     --------------------------------------------------------------------
-        gdb_version           optional string. Switch map layers to point to an alternate
-                              geodatabase version.
-        =================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        search_text            required string.The search string. This is the text that is searched
+                               across the layers and fields the user specifies.
+        ------------------     --------------------------------------------------------------------
+        layers                 optional string. The layers to perform the identify operation on.
+                               There are three ways to specify which layers to identify on:
+                                - top: Only the top-most layer at the specified location.
+                                - visible: All visible layers at the specified location.
+                                - all: All layers at the specified location.
+        ------------------     --------------------------------------------------------------------
+        contains               optional boolean. If false, the operation searches for an exact
+                               match of the search_text string. An exact match is case sensitive.
+                               Otherwise, it searches for a value that contains the search_text
+                               provided. This search is not case sensitive. The default is true.
+        ------------------     --------------------------------------------------------------------
+        search_fields          optional string. List of field names to look in.
+        ------------------     --------------------------------------------------------------------
+        sr                     optional dict, string, or SpatialReference. The well-known ID of the
+                               spatial reference of the input and output geometries as well as the
+                               map_extent. If sr is not specified, the geometry and the map_extent
+                               are assumed to be in the spatial reference of the map, and the
+                               output geometries are also in the spatial reference of the map.
+        ------------------     --------------------------------------------------------------------
+        layer_defs             optional dict. Allows you to filter the features of individual
+                               layers in the exported map by specifying definition expressions for
+                               those layers. Definition expression for a layer that is
+                               published with the service will be always honored.
+        ------------------     --------------------------------------------------------------------
+        return_geometry        optional boolean. If true, the resultset will include the geometries
+                               associated with each result. The default is true.
+        ------------------     --------------------------------------------------------------------
+        max_offset             optional integer. This option can be used to specify the maximum
+                               allowable offset to be used for generalizing geometries returned by
+                               the identify operation.
+        ------------------     --------------------------------------------------------------------
+        precision              optional integer. This option can be used to specify the number of
+                               decimal places in the response geometries returned by the identify
+                               operation. This applies to X and Y values only (not m or z-values).
+        ------------------     --------------------------------------------------------------------
+        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+                               change the layer data source. dynamicLayers can also be used to add
+                               new layer that was not defined in the map used to create the map
+                               service. The new layer should have its source pointing to one of the
+                               registered workspaces that was defined at the time the map service
+                               was created.
+                               The order of dynamicLayers array defines the layer drawing order.
+                               The first element of the dynamicLayers is stacked on top of all
+                               other layers. When defining a dynamic layer, source is required.
+        ------------------     --------------------------------------------------------------------
+        return_z               optional boolean. If true, Z values will be included in the results
+                               if the features have Z values. Otherwise, Z values are not returned.
+                               The default is false.
+        ------------------     --------------------------------------------------------------------
+        return_m               optional boolean.If true, M values will be included in the results
+                               if the features have M values. Otherwise, M values are not returned.
+                               The default is false.
+        ------------------     --------------------------------------------------------------------
+        gdb_version            optional string. Switch map layers to point to an alternate
+                               geodatabase version.
+        ------------------     --------------------------------------------------------------------
+        return_unformatted     optional boolean. If true, the values in the result will not be
+                               formatted i.e. numbers will returned as is and dates will be
+                               returned as epoch values.
+        ------------------     --------------------------------------------------------------------
+        return_field_name      optional boolean. If true, field names will be returned instead of
+                               field aliases.
+        ------------------     --------------------------------------------------------------------
+        transformations        optional list. Use this parameter to apply one or more datum
+                               transformations to the map when sr is different than the map
+                               service's spatial reference. It is an array of transformation
+                               elements.
+        ------------------     --------------------------------------------------------------------
+        map_range_values       optional list. Allows you to filter features in the exported map
+                               from all layer that are within the specified range instant or
+                               extent.
+        ------------------     --------------------------------------------------------------------
+        layer_range_values     optional dictionary. Allows you to filter features for each
+                               individual layer that are within the specified range instant or
+                               extent. Note: Check range infos at the layer resources for the
+                               available ranges.
+        ------------------     --------------------------------------------------------------------
+        layer_parameters       optional list. Allows you to filter the features of individual
+                               layers in the exported map by specifying value(s) to an array of
+                               pre-authored parameterized filters for those layers. When value is
+                               not specified for any parameter in a request, the default value,
+                               that is assigned during authoring time, gets used instead.
+        ==================     ====================================================================
 
         :returns: dictionary
         """
@@ -880,166 +915,253 @@ class MapImageLayer(Layer):
             params['gdbVersion'] = gdb_version
         if layers:
             params['layers'] = layers
-        res = self._con.get(url, params, token=self._token)
+        if return_unformatted is not None:
+            params['returnUnformattedValues'] = return_unformatted
+        if return_field_name is not None:
+            params['returnFieldName'] = return_field_name
+        if transformations:
+            params['datumTransformations'] = transformations
+        if map_range_values:
+            params['mapRangeValues'] = map_range_values
+        if layer_range_values:
+            params['layerRangeValues'] = layer_range_values
+        if layer_parameters:
+            params['layerParameterValues'] = layer_parameters
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+        res = self._con.post(path=url,
+                             postdata=params,
+                             token=self._token)
         return res
 
     # ----------------------------------------------------------------------
-    def generate_kml(self, save_location, docName, layers, layerOptions="composite"):
+    def generate_kml(self, save_location, name, layers, options="composite"):
         """
-           The generateKml operation is performed on a map service resource.
-           The result of this operation is a KML document wrapped in a KMZ
-           file. The document contains a network link to the KML Service
-           endpoint with properties and parameters you specify.
-           Inputs:
-              docName - The name of the resulting KML document. This is the
-                        name that appears in the Places panel of Google
-                        Earth.
-              layers - the layers to perform the generateKML operation on.
-                       The layers are specified as a comma-separated list
-                       of layer ids.
-              layerOptions - The layer drawing options. Based on the option
-                             chosen, the layers are drawn as one composite
-                             image, as separate images, or as vectors. When
-                             the KML capability is enabled, the ArcGIS
-                             Server administrator has the option of setting
-                             the layer operations allowed. If vectors are
-                             not allowed, then the caller will not be able
-                             to get vectors. Instead, the caller receives a
-                             single composite image.
-                             values: composite | separateImage |
-                                     nonComposite
+        The generateKml operation is performed on a map service resource.
+        The result of this operation is a KML document wrapped in a KMZ
+        file. The document contains a network link to the KML Service
+        endpoint with properties and parameters you specify.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        save_location         required string. Save folder.
+        -----------------     --------------------------------------------------------------------
+        name                  The name of the resulting KML document. This is the name that
+                              appears in the Places panel of Google Earth.
+        -----------------     --------------------------------------------------------------------
+        layers                required string. the layers to perform the generateKML operation on.
+                              The layers are specified as a comma-separated list of layer ids.
+        -----------------     --------------------------------------------------------------------
+        options               required string. The layer drawing options. Based on the option
+                              chosen, the layers are drawn as one composite image, as separate
+                              images, or as vectors. When the KML capability is enabled, the
+                              ArcGIS Server administrator has the option of setting the layer
+                              operations allowed. If vectors are not allowed, then the caller will
+                              not be able to get vectors. Instead, the caller receives a single
+                              composite image.
+                              values: composite, separateImage, nonComposite
+        =================     ====================================================================
+
+        :returns: string to file path
+
         """
         kmlURL = self._url + "/generateKml"
         params = {
             "f": "json",
-            'docName': docName,
+            'docName': name,
             'layers': layers,
-            'layerOptions': layerOptions}
+            'layerOptions': options
+        }
         return self._con.get(kmlURL, params,
-                             out_folder=save_location, token=self._token)
-
+                             out_folder=save_location,
+                             token=self._token)
     # ----------------------------------------------------------------------
     def export_map(self,
                    bbox,
-                   bboxSR=None,
+                   bbox_sr=None,
                    size="600,550",
                    dpi=200,
-                   imageSR=None,
+                   image_sr=None,
                    image_format="png",
-                   layerDefFilter=None,
+                   layer_defs=None,
                    layers=None,
                    transparent=False,
-                   timeFilter=None,
-                   layerTimeOptions=None,
-                   dynamicLayers=None,
-                   mapScale=None
-                   ):
+                   time_value=None,
+                   time_options=None,
+                   dynamic_layers=None,
+                   gdb_version=None,
+                   scale=None,
+                   rotation=None,
+                   transformation=None,
+                   map_range_values=None,
+                   layer_range_values=None,
+                   layer_parameter=None,
+                   **kwargs):
         """
-           The export operation is performed on a map service resource.
-           The result of this operation is a map image resource. This
-           resource provides information about the exported map image such
-           as its URL, its width and height, extent and scale.
-           Inputs:
-            bbox - (Required) The extent (bounding box) of the exported
-             image. Unless the bboxSR parameter has been specified, the bbox
-             is assumed to be in the spatial reference of the map.
-             Example: bbox="-104,35.6,-94.32,41"
-            size - size of image in pixels
-            dpi - dots per inch
-            imageSR - spatial reference of the output image
-            image_format - Description: The format of the exported image.
-                             The default format is .png.
-                             Values: png | png8 | png24 | jpg | pdf | bmp | gif
-                                     | svg | svgz | emf | ps | png32
-            layerDefFilter - Description: Allows you to filter the
-                             features of individual layers in the exported
-                             map by specifying definition expressions for
-                             those layers. Definition expression for a
-                             layer that is published with the service will
-                             be always honored.
-            layers - Determines which layers appear on the exported map.
-                     There are four ways to specify which layers are shown:
-                        show: Only the layers specified in this list will
-                              be exported.
-                        hide: All layers except those specified in this
-                              list will be exported.
-                        include: In addition to the layers exported by
-                                 default, the layers specified in this list
-                                 will be exported.
-                        exclude: The layers exported by default excluding
-                                 those specified in this list will be
-                                 exported.
-            transparent - If true, the image will be exported with the
-                          background color of the map set as its
-                          transparent color. The default is false. Only
-                          the .png and .gif formats support transparency.
-                          Internet Explorer 6 does not display transparency
-                          correctly for png24 image formats.
-            timeFilter - The time instant or time extent of the exported
-                         map image.
-            layerTimeOptions - The time options per layer. Users can
-                               indicate whether or not the layer should use
-                               the time extent specified by the time
-                               parameter or not, whether to draw the layer
-                               features cumulatively or not and the time
-                               offsets for the layer.
-                               see: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Map/02r3000000v7000000/
-            dynamicLayers - Use dynamicLayers parameter to modify the layer
-                            drawing order, change layer drawing info, and
-                            change layer data source version for this request.
-                            New layers (dataLayer) can also be added to the
-                            dynamicLayers based on the map service registered
-                            workspaces.
-            mapScale - Use this parameter to export a map image at a specific
-                       scale, with the map centered around the center of the
-                       specified bounding box (bbox).
-         Output:
-           Image of the map.
+        The export operation is performed on a map service resource.
+        The result of this operation is a map image resource. This
+        resource provides information about the exported map image such
+        as its URL, its width and height, extent and scale.
+
+        ==================     ====================================================================
+        **Argument**          **Description**
+        ------------------     --------------------------------------------------------------------
+        bbox                   required string. The extent (bounding box) of the exported image.
+                               Unless the bbox_sr parameter has been specified, the bbox is assumed
+                               to be in the spatial reference of the map.
+                               Example: bbox="-104,35.6,-94.32,41"
+        ------------------     --------------------------------------------------------------------
+        bbox_sr                optional integer, SpatialReference. spatial reference of the bbox.
+        ------------------     --------------------------------------------------------------------
+        size                   optional string. size - size of image in pixels
+        ------------------     --------------------------------------------------------------------
+        dpi                    optional integer. dots per inch
+        ------------------     --------------------------------------------------------------------
+        image_sr               optional integer, SpatialReference. spatial reference of the output
+                               image
+        ------------------     --------------------------------------------------------------------
+        image_format           optional string. The format of the exported image.
+                               The default format is .png.
+                               Values: png | png8 | png24 | jpg | pdf | bmp | gif
+                                       | svg | svgz | emf | ps | png32
+        ------------------     --------------------------------------------------------------------
+        layer_defs             optional dict. Allows you to filter the features of individual
+                               layers in the exported map by specifying definition expressions for
+                               those layers. Definition expression for a layer that is
+                               published with the service will be always honored.
+        ------------------     --------------------------------------------------------------------
+        layers                 optional string. Determines which layers appear on the exported map.
+                               There are four ways to specify which layers are shown:
+                                 show: Only the layers specified in this list will
+                                       be exported.
+                                 hide: All layers except those specified in this
+                                       list will be exported.
+                                 include: In addition to the layers exported by
+                                          default, the layers specified in this list
+                                          will be exported.
+                                 exclude: The layers exported by default excluding
+                                          those specified in this list will be
+                                          exported.
+        ------------------     --------------------------------------------------------------------
+        transparent            optional boolean. If true, the image will be exported with the
+                               background color of the map set as its transparent color. The
+                               default is false. Only the .png and .gif formats support
+                               transparency.
+        ------------------     --------------------------------------------------------------------
+        time_value             optional list. The time instant or the time extent of the features
+                               to be identified.
+        ------------------     --------------------------------------------------------------------
+        time_options           optional dict. The time options per layer. Users can indicate
+                               whether or not the layer should use the time extent specified by the
+                               time parameter or not, whether to draw the layer features
+                               cumulatively or not and the time offsets for the layer.
+        ------------------     --------------------------------------------------------------------
+        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+                               change the layer data source. dynamicLayers can also be used to add
+                               new layer that was not defined in the map used to create the map
+                               service. The new layer should have its source pointing to one of the
+                               registered workspaces that was defined at the time the map service
+                               was created.
+                               The order of dynamicLayers array defines the layer drawing order.
+                               The first element of the dynamicLayers is stacked on top of all
+                               other layers. When defining a dynamic layer, source is required.
+        ------------------     --------------------------------------------------------------------
+        gdb_version            optional string. Switch map layers to point to an alternate
+                               geodatabase version.
+        ------------------     --------------------------------------------------------------------
+        scale                  optional float. Use this parameter to export a map image at a
+                               specific map scale, with the map centered around the center of the
+                               specified bounding box (bbox)
+        ------------------     --------------------------------------------------------------------
+        rotation               optional float. Use this parameter to export a map image rotated at
+                               a specific angle, with the map centered around the center of the
+                               specified bounding box (bbox). It could be positive or negative
+                               number.
+        ------------------     --------------------------------------------------------------------
+        transformations        optional list. Use this parameter to apply one or more datum
+                               transformations to the map when sr is different than the map
+                               service's spatial reference. It is an array of transformation
+                               elements.
+        ------------------     --------------------------------------------------------------------
+        map_range_values       optional list. Allows you to filter features in the exported map
+                               from all layer that are within the specified range instant or
+                               extent.
+        ------------------     --------------------------------------------------------------------
+        layer_range_values     optional dictionary. Allows you to filter features for each
+                               individual layer that are within the specified range instant or
+                               extent. Note: Check range infos at the layer resources for the
+                               available ranges.
+        ------------------     --------------------------------------------------------------------
+        layer_parameter        optional list. Allows you to filter the features of individual
+                               layers in the exported map by specifying value(s) to an array of
+                               pre-authored parameterized filters for those layers. When value is
+                               not specified for any parameter in a request, the default value,
+                               that is assigned during authoring time, gets used instead.
+        ==================     ====================================================================
+
+        :return: string, image of the map.
         """
-        if self.properties['exportTilesAllowed'] == False:
-            return
+
         params = {
             "f": "json"
         }
         params['bbox'] = bbox
-        if bboxSR:
-            params['bboxSR'] = bboxSR
+        if bbox_sr:
+            params['bboxSR'] = bbox_sr
         if dpi is not None:
             params['dpi'] = dpi
         if size is not None:
             params['size'] = size
-        if imageSR is not None and \
-                isinstance(imageSR, SpatialReference):
-            params['imageSR'] = {'wkid': imageSR.wkid}
+        if image_sr is not None and \
+           isinstance(image_sr, int):
+            params['imageSR'] = {'wkid': image_sr}
         if image_format is not None:
             params['format'] = image_format
-        if layerDefFilter is not None:
-            params['layerDefs'] = layerDefFilter
+        if layer_defs is not None:
+            params['layerDefs'] = layer_defs
         if layers is not None:
             params['layers'] = layers
         if transparent is not None:
             params['transparent'] = transparent
-        if timeFilter is not None:
-            params['time'] = timeFilter
-        if layerTimeOptions is not None:
-            params['layerTimeOptions'] = layerTimeOptions
-        if dynamicLayers is not None:
-            params['dynamicLayers'] = dynamicLayers
-        if mapScale is not None:
-            params['mapScale'] = mapScale
+        if time_value is not None:
+            params['time'] = time_value
+        if time_options is not None:
+            params['layerTimeOptions'] = time_options
+        if dynamic_layers is not None:
+            params['dynamicLayers'] = dynamic_layers
+        if scale is not None:
+            params['mapScale'] = scale
+        if rotation is not None:
+            params['rotation'] = rotation
+        if gdb_version is not None:
+            params['gdbVersion'] = gdb_version
+        if transformation is not None:
+            params['datumTransformations'] = transformation
+        if map_range_values is not None:
+            params['mapRangeValues'] = map_range_values
+        if layer_range_values is not None:
+            params['layerRangeValues'] = layer_range_values
+        if layer_parameter:
+            params['layerParameterValues'] = layer_parameter
         exportURL = self._url + "/export"
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
         return self._con.get(exportURL, params, token=self._token)
 
     # ----------------------------------------------------------------------
     def estimate_export_tiles_size(self,
-                                   exportBy,
+                                   export_by,
                                    levels,
-                                   tilePackage=False,
-                                   exportExtent="DEFAULTEXTENT",
-                                   areaOfInterest=None,
-                                   asynchronous=True):
+                                   tile_package=False,
+                                   export_extent="DEFAULTEXTENT",
+                                   area_of_interest=None,
+                                   asynchronous=True,
+                                   **kwargs):
         """
-        The estimateExportTilesSize operation is an asynchronous task that
+        The estimate_export_tiles_size method is an asynchronous task that
         allows estimation of the size of the tile package or the cache data
         set that you download using the Export Tiles operation. This
         operation can also be used to estimate the tile count in a tile
@@ -1050,43 +1172,50 @@ class MapImageLayer(Layer):
         cache to be exported (in bytes) and the number of tiles that will
         be exported.
 
-        Inputs:
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        tile_package           optional boolean. Allows estimating the size for either a tile
+                               package or a cache raster data set. Specify the value true for tile
+                               packages format and false for Cache Raster data set. The default
+                               value is False
+        ------------------     --------------------------------------------------------------------
+        levels                 required string. Specify the tiled service levels for which you want
+                               to get the estimates. The values should correspond to Level IDs,
+                               cache scales or the Resolution as specified in export_by parameter.
+                               The values can be comma separated values or a range.
+                               Example 1: 1,2,3,4,5,6,7,8,9
+                               Example 2: 1-4,7-9
+        ------------------     --------------------------------------------------------------------
+        export_by              required string. The criteria that will be used to select the tile
+                               service levels to export. The values can be Level IDs, cache scales
+                               or the Resolution (in the case of image services).
+                               Values: LevelID, Resolution, Scale
+        ------------------     --------------------------------------------------------------------
+        export_extent          The extent (bounding box) of the tile package or the cache dataset
+                               to be exported. If extent does not include a spatial reference, the
+                               extent values are assumed to be in the spatial reference of the map.
+                               The default value is full extent of the tiled map service.
+                               Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                               Example: -104,35.6,-94.32,41
+        ------------------     --------------------------------------------------------------------
+        area_of_interest       optiona dictionary or Polygon. This allows exporting tiles within
+                               the specified polygon areas. This parameter supersedes extent
+                               parameter.
+                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
+                                          [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                          "spatialReference":{"wkid":4326}}}]}
+        ------------------     --------------------------------------------------------------------
+        asynchronous           optional boolean. The estimate function is run asynchronously
+                               requiring the tool status to be checked manually to force it to
+                               run synchronously the tool will check the status until the
+                               estimation completes.  The default is True, which means the status
+                               of the job and results need to be checked manually.  If the value
+                               is set to False, the function will wait until the task completes.
+        ==================     ====================================================================
 
-        tilePackage - Allows estimating the size for either a tile package
-         or a cache raster data set. Specify the value true for tile
-         packages format and false for Cache Raster data set. The default
-         value is False
-           Values: True | False
-        exportExtent - The extent (bounding box) of the tile package or the
-         cache dataset to be exported. If extent does not include a spatial
-         reference, the extent values are assumed to be in the spatial
-         reference of the map. The default value is full extent of the
-         tiled map service.
-        Syntax: <xmin>, <ymin>, <xmax>, <ymax>
-           Example 1: -104,35.6,-94.32,41
-        exportBy - The criteria that will be used to select the tile
-         service levels to export. The values can be Level IDs, cache scales
-         or the Resolution (in the case of image services).
-        Values: LevelID | Resolution | Scale
-        levels - Specify the tiled service levels for which you want to get
-         the estimates. The values should correspond to Level IDs, cache
-         scales or the Resolution as specified in exportBy parameter. The
-         values can be comma separated values or a range.
-        Example 1: 1,2,3,4,5,6,7,8,9
-        Example 2: 1-4,7-9
-        areaOfInterest - (Optional) The areaOfInterest polygon allows
-         exporting tiles within the specified polygon areas. This parameter
-         supersedes exportExtent parameter. Also excepts geometry.Polygon.
-        Example: { "features": [{"geometry":{"rings":[[[-100,35],
-             [-100,45],[-90,45],[-90,35],[-100,35]]],
-             "spatialReference":{"wkid":4326}}}]}
-        asynchronous - (optional) the estimate function is run asynchronously
-         requiring the tool status to be checked manually to force it to
-         run synchronously the tool will check the status until the
-         estimation completes.  The default is True, which means the status
-         of the job and results need to be checked manually.  If the value
-         is set to False, the function will wait until the task completes.
-           Values: True | False
+        :returns: dictionary
+
         """
         if self.properties['exportTilesAllowed'] == False:
             return
@@ -1095,13 +1224,16 @@ class MapImageLayer(Layer):
         params = {
             "f": "json",
             "levels": levels,
-            "exportBy": exportBy,
-            "tilePackage": tilePackage,
-            "exportExtent": exportExtent
+            "exportBy": export_by,
+            "tilePackage": tile_package,
+            "exportExtent": export_extent
         }
         params["levels"] = levels
-        if not areaOfInterest is None:
-            params['areaOfInterest'] = areaOfInterest
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+        if not area_of_interest is None:
+            params['areaOfInterest'] = area_of_interest
         if asynchronous == True:
             return self._con.get(url, params, token=self._token)
         else:
@@ -1134,13 +1266,14 @@ class MapImageLayer(Layer):
     # ----------------------------------------------------------------------
     def export_tiles(self,
                      levels,
-                     exportBy="LevelID",
-                     tilePackage=False,
-                     exportExtent="DEFAULT",
-                     optimizeTilesForSize=True,
-                     compressionQuality=0,
-                     areaOfInterest=None,
-                     asynchronous=False
+                     export_by="LevelID",
+                     tile_package=False,
+                     export_extent="DEFAULT",
+                     optimize_for_size=True,
+                     compression=75,
+                     area_of_interest=None,
+                     asynchronous=False,
+                     **kwargs
                      ):
         """
         The exportTiles operation is performed as an asynchronous task and
@@ -1166,76 +1299,86 @@ class MapImageLayer(Layer):
         You can provide arguments to the exportTiles operation as defined
         in the following parameters table:
 
-        Inputs:
-         exportBy - The criteria that will be used to select the tile
-           service levels to export. The values can be Level IDs, cache
-           scales. or the resolution (in the case of image services).
-        Values: LevelID | Resolution | Scale
-        levels - Specifies the tiled service levels to export. The values
-          should correspond to Level IDs, cache scales. or the resolution
-          as specified in exportBy parameter. The values can be comma
-          separated values or a range. Make sure tiles are present at the
-          levels where you attempt to export tiles.
-        Example 1: 1,2,3,4,5,6,7,8,9
-        Example 2: 1-4,7-9
-        tilePackage - Allows exporting either a tile package or a cache
-          raster data set. If the value is true, output will be in tile
-          package format, and if the value is false, a cache raster data
-          set is returned. The default value is false
-        Values: true | false
-        exportExtent - The extent (bounding box) of the tile package or the
-          cache dataset to be exported. If extent does not include a
-          spatial reference, the extent values are assumed to be in the
-          spatial reference of the map. The default value is full extent of
-          the tiled map service.
-                       Syntax: <xmin>, <ymin>, <xmax>, <ymax>
-                       Example 1: -104,35.6,-94.32,41
-                       Example 2: {"xmin" : -109.55, "ymin" : 25.76,
-                        "xmax" : -86.39, "ymax" : 49.94,
-                        "spatialReference" : {"wkid" : 4326}}
-        optimizeTilesForSize - (Optional) Use this parameter to enable
-          compression of JPEG tiles and reduce the size of the downloaded
-          tile package or the cache raster data set. Compressing tiles
-          slightly compromises the quality of tiles but helps reduce the
-          size of the download. Try sample compressions to determine the
-          optimal compression before using this feature.
-        Values: true | false
-        compressionQuality - (Optional) When optimizeTilesForSize=true, you
-         can specify a compression factor. The value must be between 0 and
-         100. The value cannot be greater than the default compression
-         already set on the original tile. For example, if the default
-         value is 75, the value of compressionQuality must be between 0 and
-         75. A value greater than 75 in this example will attempt to up
-         sample an already compressed tile and will further degrade the
-         quality of tiles.
-        areaOfInterest - (Optional) The areaOfInterest polygon allows
-         exporting tiles within the specified polygon areas. This parameter
-         supersedes the exportExtent parameter. Must be geometry.Polygon
-         object.
-        Example: { "features": [{"geometry":{"rings":[[[-100,35],
-         [-100,45],[-90,45],[-90,35],[-100,35]]],
-         "spatialReference":{"wkid":4326}}}]}
-        asynchronous - default True, this value ensures the returns are returned
-         to the user instead of the user having the check the job status
-         manually.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        levels                 required string. Specifies the tiled service levels to export. The
+                               values should correspond to Level IDs, cache scales. or the
+                               resolution as specified in export_by parameter. The values can be
+                               comma separated values or a range. Make sure tiles are present at
+                               the levels where you attempt to export tiles.
+                               Example 1: 1,2,3,4,5,6,7,8,9
+                               Example 2: 1-4,7-9
+        ------------------     --------------------------------------------------------------------
+        export_by              required string. The criteria that will be used to select the tile
+                               service levels to export. The values can be Level IDs, cache scales.
+                               or the resolution.  The defaut is 'LevelID'.
+                               Values: LevelID | Resolution | Scale
+        ------------------     --------------------------------------------------------------------
+        tile_package           optiona boolean. Allows exporting either a tile package or a cache
+                               raster data set. If the value is true, output will be in tile
+                               package format, and if the value is false, a cache raster data
+                               set is returned. The default value is false.
+        ------------------     --------------------------------------------------------------------
+        export_extent          optional dictionary or string. The extent (bounding box) of the tile
+                               package or the cache dataset to be exported. If extent does not
+                               include a spatial reference, the extent values are assumed to be in
+                               the spatial reference of the map. The default value is full extent
+                               of the tiled map service.
+                               Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                               Example 1: -104,35.6,-94.32,41
+                               Example 2: {"xmin" : -109.55, "ymin" : 25.76,
+                                            "xmax" : -86.39, "ymax" : 49.94,
+                                            "spatialReference" : {"wkid" : 4326}}
+        ------------------     --------------------------------------------------------------------
+        optimize_for_size      optional boolean. Use this parameter to enable compression of JPEG
+                               tiles and reduce the size of the downloaded tile package or the
+                               cache raster data set. Compressing tiles slightly compromises the
+                               quality of tiles but helps reduce the size of the download. Try
+                               sample compressions to determine the optimal compression before
+                               using this feature.
+                               The default value is True.
+        ------------------     --------------------------------------------------------------------
+        compression=75,        optional integer. When optimize_for_size=true, you can specify a
+                               compression factor. The value must be between 0 and 100. The value
+                               cannot be greater than the default compression already set on the
+                               original tile. For example, if the default value is 75, the value
+                               of compressionQuality must be between 0 and 75. A value greater
+                               than 75 in this example will attempt to up sample an already
+                               compressed tile and will further degrade the quality of tiles.
+        ------------------     --------------------------------------------------------------------
+        area_of_interest       optional dictionary, Polygon. The area_of_interest polygon allows
+                               exporting tiles within the specified polygon areas. This parameter
+                               supersedes the exportExtent parameter.
+                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
+                                                      [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                                      "spatialReference":{"wkid":4326}}}]}
+        ------------------     --------------------------------------------------------------------
+        asynchronous           optional boolean. Default False, this value ensures the returns are
+                               returned to the user instead of the user having the check the job
+                               status manually.
+        ==================     ====================================================================
+
+        :returns: path to download file is asynchronous is False. If True, a dictionary is returned.
         """
         import time
         params = {
             "f": "json",
-            "tilePackage": tilePackage,
-            "exportExtent": exportExtent,
-            "optimizeTilesForSize": optimizeTilesForSize,
-            "compressionQuality": compressionQuality,
-            "exportBy": exportBy,
+            "tilePackage": tile_package,
+            "exportExtent": export_extent,
+            "optimizeTilesForSize": optimize_for_size,
+            "compressionQuality": compression ,
+            "exportBy": export_by,
             "levels": levels
         }
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
         url = self._url + "/exportTiles"
-        if isinstance(areaOfInterest, Polygon):
-            geom = areaOfInterest.asDictionary()
-            template = {"features": [geom]}
-            params["areaOfInterest"] = template
-        elif isinstance(areaOfInterest, dict):
-            params["areaOfInterest"] = {"features": [areaOfInterest]}
+        if area_of_interest is not None:
+            params["areaOfInterest"] = area_of_interest
+
         if asynchronous == True:
             return self._con.get(path=url, params=params, token=self._token)
         else:
@@ -1272,7 +1415,7 @@ class MapImageLayer(Layer):
                         "f": "json"
                     }
                     gpRes = self._con.get(path=value, params=params, token=self._token)
-                    if tilePackage == True:
+                    if tile_package == True:
                         files = []
                         for f in gpRes['files']:
                             name = f['name']
