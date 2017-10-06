@@ -18,10 +18,15 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
-
+CategorySchemaManager
+---------------------
+.. autoclass:: arcgis.gis.admin.CategorySchemaManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 CollaborationManager
----------------
+--------------------
 .. autoclass:: arcgis.gis.admin.CollaborationManager
     :members:
     :undoc-members:

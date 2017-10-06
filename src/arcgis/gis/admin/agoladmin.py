@@ -27,6 +27,7 @@ class AGOLAdminManager(object):
     _ur = None
     _license = None
     _usage = None
+    _category_schema = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -64,6 +65,17 @@ class AGOLAdminManager(object):
             from ._collaboration import CollaborationManager
             self._collaborations = CollaborationManager(gis=self._gis)
         return self._collaborations
+    #----------------------------------------------------------------------
+    @property
+    def category_schema(self):
+        """
+        This resource allows for the setting and manipulating of catagory
+        schemas.
+        """
+        if self._category_schema is None:
+            from ._catagoryschema import CategorySchemaManager
+            self._category_schema = CategorySchemaManager(gis=self._gis)
+        return self._category_schema
     #----------------------------------------------------------------------
     @property
     def credits(self):
