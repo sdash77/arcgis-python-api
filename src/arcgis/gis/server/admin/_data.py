@@ -19,29 +19,30 @@ from .._common.util import contextmanager, _tempinput
 class DataStoreManager(BaseServer):
     """
     This resource provides information about the data holdings of the
-    server. Data items are used by ArcGIS for Desktop and other clients to
-    validate data paths referenced by GIS services.
+    server, as well as the ability to manage (add new items, update primary 
+    data store, remove a data store item, etc) the data store. Data items 
+    are used by ArcGIS for Desktop and other clients to validate data paths 
+    referenced by GIS services.
 
-    You can register new data items with the server by using the Register
-    Data Item operation. Use the Find Data Items operation to search
-    through the hierarchy of data items.
+    .. note::
+        A relational data store type represents a database platform that has been 
+        registered for use on a portal's hosting server by the ArcGIS Server 
+        administrator. Each relational data store type describes the
+        properties ArcGIS Server requires in order to connect to an instance of
+        a database for a particular platform. At least one registered
+        relational data store type is required before client applications such
+        as Insights for ArcGIS can create Relational Database Connection portal
+        items.
 
-    A relational data store type represents a database platform that has
-    been registered for use on a portal's hosting server by the ArcGIS
-    Server administrator. Each relational data store type describes the
-    properties ArcGIS Server requires in order to connect to an instance of
-    a database for a particular platform. At least one registered
-    relational data store type is required before client applications such
-    as Insights for ArcGIS can create Relational Database Connection portal
-    items.
-
-    The Compute Ref Count operation counts and lists all references to a
-    specific data item. This operation helps you determine if a particular
-    data item can be safely deleted or refreshed.
-
-    Parameters:
-       :param url: URL to the Data Store URL
-       :param gis: GIS, Server, or ServicesDirectory object
+       
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string. The URL to the Data Store URL.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional string. The GIS, Server, or ServicesDirectory object.
+    ==================     ====================================================================
+        
     """
     _con = None
     _json_dict = None
@@ -82,7 +83,11 @@ class DataStoreManager(BaseServer):
         return '<%s for %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     def list(self):
-        """returns a list of datastore objects"""
+        """Retrieves a list of datastore objects.
+        
+        :return:
+           The list of datastore items.
+        """
         self._datastores = None
         if self._datastores is None:
             self._datastores = []
@@ -96,16 +101,18 @@ class DataStoreManager(BaseServer):
     @property
     def config(self):
         """
-           The data store configuration properties affect the behavior of
-           the data holdings of the server. The properties include:
-           blockDataCopy - When this property is false, or not set at all,
-           copying data to the site when publishing services from a client
-           application is allowed. This is the default behavior. When this
-           property is true, the client application is not allowed to copy
-           data to the site when publishing. Rather, the publisher is
+           Gets the data store configuration properties. These properties 
+           affect the behavior of the data holdings of the server. For
+           example, the blockDataCopy property - when this property is false, 
+           or not set at all, copying data to the site when publishing services 
+           from a client application is allowed. This is the default behavior. 
+           When this property is true, the client application is not allowed to 
+           copy data to the site when publishing. Rather, the publisher is
            required to register data items through which the service being
            published can reference data. Values: true | false
         """
+        
+        """ jenn note -- need link or list of the possible data store configuration properties."""
         params = {
             "f" : "json"
         }
@@ -115,14 +122,19 @@ class DataStoreManager(BaseServer):
     @config.setter
     def config(self, config):
         """
-           This operation allows you to update the data store configuration
-           You can use this to allow or block the automatic copying of data
-           to the server at publish time
-           Input:
-              config - the JSON object containing the data
-                       configuration
-           Output:
-              JSON message as dictionary
+        This operation allows you to update the data store configuration
+        You can use this to allow or block the automatic copying of data
+        to the server at publish time
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        config                 Required string. A JSON string containing the data store configuration.
+        ==================     ====================================================================
+
+        :return:
+           JSON dictionary of the set configuration properties.
+
         """
         if config is None:
             config = {}
@@ -134,13 +146,18 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def get(self, path):
-        """ Returns the data item object at the given path
+        """
+        Retrieves the data item object at the given path.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required string. The path to the data item.
+        ==================     ====================================================================
 
-        Arguments
-            :path: required string, the data item path
+
         :return:
-            None if the data item is not found at that path and the data
-            item object if its found
+            The data item object, None if not found.
         """
         if path[0] != "/":
             path = "/%s" % path
@@ -159,13 +176,22 @@ class DataStoreManager(BaseServer):
                    client_path=None):
         """
         Registers a folder with the data store.
-        Input
-            name - unique fileshare name on the server
-            server_path - the path to the folder from the server (and client, if shared path)
-            client_path - if folder is replicated, the path to the folder from the client
-            if folder is shared, don't set this parameter
-        Output:
-              the data item is registered successfully, None otherwise
+
+            
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The unique fileshare name on the server.
+        ------------------     --------------------------------------------------------------------
+        server_path            Required string. The path to the folder from the server (and client, if shared path).
+        ------------------     --------------------------------------------------------------------
+        client_path            Optional string. If folder is replicated, the path to the folder from 
+                               the client; if folder is shared, don't set this parameter.
+        ==================     ====================================================================
+        
+        :return:
+            The data item if successfully registered, None otherwise.
+
         """
         conn_type = "shared"
         if client_path is not None:
@@ -193,11 +219,19 @@ class DataStoreManager(BaseServer):
             item):
         """
         Registers a new data item with the data store.
-        Input
-            item - The disct representing the data item.
-            See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
-        Output:
-              True if the data item is registered successfully, False otherwise
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The name of the new data item.
+        ------------------     --------------------------------------------------------------------
+        item                   Required string. The dictionary representing the data item. 
+                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        ==================     ====================================================================
+        
+
+        :return:
+            The data item if registered successfully, None otherwise.
         """
         res = self._register_data_item(item=item)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -211,11 +245,17 @@ class DataStoreManager(BaseServer):
                     server_path=None):
         """
         Registers a bigdata fileshare with the data store.
-        Input
-            name - unique bigdata fileshare name on the server
-            server_path - the path to the folder from the server
-        Output:
-              the data item if registered successfully, None otherwise
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The unique bigdata fileshare name on the server.
+        ------------------     --------------------------------------------------------------------
+        server_path            Optional string. The path to the folder from the server.
+        ==================     ====================================================================
+        
+        :return:
+            The data item if successfully registered, None otherwise.
         """
         output = None
         pattern = r'\\\\[a-zA-Z]+'
@@ -248,13 +288,24 @@ class DataStoreManager(BaseServer):
                      conn_type="shared"):
         """
         Registers a database with the data store.
-        Input
-            name - unique database name on the server
-            conn_str - the path to the folder from the server (and client, if shared or serverOnly database)
-            client_conn_str: connection string for client to connect to replicated enterprise database>
-            conn_type - "<shared|replicated|serverOnly>"
-        Output:
-            the data item is registered successfully, None otherwise
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The unique database name on the server.
+        ------------------     --------------------------------------------------------------------
+        conn_str               Required string. The path to the folder from the server (and client, 
+                               if shared or serverOnly database)
+        ------------------     --------------------------------------------------------------------
+        client_conn_str        Optional string. The connection string for client to connect to replicated enterprise database>
+        ------------------     --------------------------------------------------------------------
+        conn_type              Optional string. The connection type.  Default value is shared, 
+                               other choices are replicated or serverOnly
+        ==================     ====================================================================
+        
+
+        :return:
+            The data item if successfully registered, None otherwise.
         """
 
         item = {
@@ -283,14 +334,21 @@ class DataStoreManager(BaseServer):
     #----------------------------------------------------------------------
     def get_total_refcount(self, path):
         """
-           Computes the total number of references to a given data item
-           that exist on the server. You can use this operation to
-           determine if a data resource can be safely deleted (or taken
-           down for maintenance).
-           Input:
-              path - The complete hierarchical path to the item
-           Output:
-              JSON message as dictionary
+        The total number of references to a given data item
+        that exists on the server. You can use this operation to
+        determine if a data resource can be safely deleted, or taken
+        down for maintenance.
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required string. The complete hierarchical path to the item.
+        ==================     ====================================================================
+           
+
+        :return:
+            A JSON dictionary containing a number representing the total count.
+    
         """
         url = self._url + "/computeTotalRefCount"
         params = {
@@ -306,10 +364,19 @@ class DataStoreManager(BaseServer):
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_name              Required string. The primary machine item name in the data store. 
+        ------------------     --------------------------------------------------------------------
+        machine_name           Required string. The machine name of the machine to promote to primary.
+        ==================     ====================================================================
+        
 
-        Parameters:
-         :item_name: name of the data store item
-         :machine_name: name of the machine to promote to primary
+        :return:
+            A boolean indicating success (True) or failure (False).
+
         """
         url = self._url + "/items/enterpriseDatabases" + \
             "/{datastoreitem}/machines/{machine_name}/makePrimary".format(
@@ -323,13 +390,24 @@ class DataStoreManager(BaseServer):
     def get_relational_datastore_type(self, type_id):
         """
         This resource lists the properties of a registered relational data
-        store type. The properties returned are those that client
+        store of the given type. The properties returned are those that client
         applications must provide when creating a Relational Database
         Connection portal item.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        type_id                Required string. The datastore type ID of interest. 
+                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Relational_Data_Store_Types/02r300000303000000/ 
+        ==================     ====================================================================
 
-        Parameters:
-         :type_id: datastore type id
+
+        :return:
+           A JSON string listing the properties 
+           
         """
+        """ jenn note: useful would be a list of possible datastore type IDs -- ??? esri.teradata, esri.sqlserver, esri.hana """ 
+        
         params = {"f" : "json"}
         url = self._url + "/relationalDatastoreTypes/{i}".format(
             i=type_id)
@@ -339,7 +417,7 @@ class DataStoreManager(BaseServer):
     @property
     def relational_datastore_types(self):
         """
-        This resource lists the relational data store types that have been
+        Gets a list of the relational data store types that have been
         registered with the server. Each registered relational data store
         type has both an id and a name property, as well as an array of
         userDefinedProperties, which indicates the properties client
@@ -360,17 +438,26 @@ class DataStoreManager(BaseServer):
                types=None,
                id=None):
         """
-           You can use this operation to search through the various data
-           items registered in the server's data store.
-           Inputs:
-              parent_path - The path of the parent under which to find items
-              ancestor_path - The path of the ancestor under which to find
-                             items.
-              types - A filter for the type of the items
-              id - A filter to search by the ID of the item
-           Output:
-              dictionary
+        Use this operation to search through the various data items that are registered in the server's data store.
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        parent_path            Optional string. The path of the parent under which to find items.
+        ------------------     --------------------------------------------------------------------
+        ancestor_path          Optional string. The path of the ancestor under which to find items.
+        ------------------     --------------------------------------------------------------------
+        types                  Optional string. A filter for the type of the items (for example, fgdb or folder or egdb).
+        ------------------     --------------------------------------------------------------------
+        id                     Optional string. A filter to search by the ID of the item.
+        ==================     ====================================================================
+        
+        
+        :return:
+            A JSON list of the items found matching the search criteria.
         """
+        
+        """ jenn note: list of possible types """
         params = {
             "f" : "json",
         }
@@ -388,12 +475,17 @@ class DataStoreManager(BaseServer):
     #----------------------------------------------------------------------
     def _register_data_item(self, item):
         """
-           Registers a new data item with the server's data store.
-           Input
-              item - The JSON representing the data item.
-              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
-           Output:
-              dictionary
+        Registers a new data item with the server's data store.
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required string. The JSON representing the data item. 
+                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        ==================     ====================================================================
+        
+        :return:
+            A response
         """
         params = {
             "item" : item,
@@ -405,8 +497,8 @@ class DataStoreManager(BaseServer):
     #----------------------------------------------------------------------
     @property
     def data_items(self):
-        """ This resource lists data items that are the root of all other
-            data items in the data store.
+        """
+        Gets the list of data items that are the root of all other data items in the data store.
         """
         url = self._url + "/items"
         params = {
@@ -416,7 +508,12 @@ class DataStoreManager(BaseServer):
                              params=params)
     #----------------------------------------------------------------------
     def validate(self):
-        """ validates all the items in the datastore """
+        """
+        Validates all the items in the data store.
+        
+        :return:
+            True if all items are valid.
+        """
         params = {
             "f" : "json"
         }
@@ -427,6 +524,18 @@ class DataStoreManager(BaseServer):
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        datastore_name         Required string. The primary machine name in the data store.
+        ------------------     --------------------------------------------------------------------
+        machine_name           Required string. The machine name of the machine to promote to primary.
+        ==================     ====================================================================
+        
+
+        :return:
+            A boolean indicating success (True) or failure (False).
 
         """
         url = self._url + "/items/enterpriseDatabases/%s/machines/%s/makePrimary" % (datastore_name, machine_name)
@@ -439,10 +548,18 @@ class DataStoreManager(BaseServer):
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_name              Required string. The standby machine item name in the data store. 
+        ------------------     --------------------------------------------------------------------
+        machine_name           Required string. The machine name of the machine to remove.
+        ==================     ====================================================================
 
-        Inputs:
-           item_name - name of the data store item
-           machine_name - name of the machine to remove
+        :return:
+            A boolean indicating success (True) or failure (False).
+
         """
         url = self._url + "/items/enterpriseDatabases/%s/machines/%s/remove" % (item_name, machine_name)
         params = {
@@ -453,10 +570,19 @@ class DataStoreManager(BaseServer):
     def start(self, item_name, machine_name):
         """
         Starts the database instance running on the Data Store machine.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_name              Required string. The database item name in the data store to start. 
+        ------------------     --------------------------------------------------------------------
+        machine_name           Required string. The machine name of the machine with the database 
+                               instance to start.
+        ==================     ====================================================================
 
-        Inputs:
-           item_name - name of the item to start
-           machine_name - name of the machine to start on
+        :return:
+           A boolean indicating success (True) or failure (False).
+        
         """
         url = self._url + "/items/enterpriseDatabases/%s/machines/%s/start" % (item_name, machine_name)
         params = {
@@ -468,9 +594,19 @@ class DataStoreManager(BaseServer):
         """
         Stop the database instance running on the Data Store machine.
 
-        Inputs:
-           item_name - name of the item to stop
-           machine_name - name of the machine to stop on
+       
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_name              Required string. The database item name in the data store to stop. 
+        ------------------     --------------------------------------------------------------------
+        machine_name           Required string. The machine name of the machine with the database 
+                               instance to stop.
+        ==================     ====================================================================
+
+        :return:
+           A boolean indicating success (True) or failure (False).
+        
         """
         url = self._url + "/items/enterpriseDatabases/%s/machines/%s/stop" % (item_name,
                                                                               machine_name)
@@ -484,12 +620,23 @@ class DataStoreManager(BaseServer):
         Unregisters a data item that has been previously registered with
         the server's data store.
 
-        Inputs:
-           path - path to share folder
 
-        Example:
-           path = r"/fileShares/folder_share"
-           print data.unregisterDataItem(path)
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required string. The path to the share folder.
+        ==================     ====================================================================
+
+        :return:
+            T
+            
+            .. code-block:: python
+        
+            EXAMPLE:
+            
+            path = r"/fileShares/folder_share"
+            print data.unregisterDataItem(path)
+            
         """
         url = self._url + "/unregisterItem"
         params = {
@@ -500,12 +647,19 @@ class DataStoreManager(BaseServer):
     #----------------------------------------------------------------------
     def validate_egdb(self, data_store_name, name):
         """
-        Checks the status of ArcGIS Data Store and provides a health check
-        response.
+        Checks the status of the given ArcGIS Data Store and provides a health check response.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        data_store_name        Required string. The item name of the data store. 
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The machine name of where the data store is.
+        ==================     ====================================================================
 
-        Inputs:
-           data_store_namee - name of the datastore
-           name - name of the machine
+        :return:
+            A JSON response containing general status information and an overall health report.
+            
         """
         url = self._url + "/items/enterpriseDatabases/%s/machines/%s/validate" % (data_store_name,
                                                                                   name)
@@ -516,7 +670,7 @@ class DataStoreManager(BaseServer):
 ###########################################################################
 class Datastore(BaseServer):
     """
-    Represents a Single Datastore in DataStoreManager
+    Represents a single Datastore in the Data Store Manager.
 
 
     """
@@ -552,7 +706,7 @@ class Datastore(BaseServer):
     @property
     def manifest(self):
         """
-        The manifest resource for bigdata fileshares,
+        Gets the manifest resource for a big data file share.
         """
         data_item_manifest_url = self._url + "/manifest"
         if data_item_manifest_url.find('/bigDataFileShares') != -1:
@@ -569,7 +723,7 @@ class Datastore(BaseServer):
     @manifest.setter
     def manifest(self, value):
         """
-        Updates the manifest resource for bigdata fileshares
+        Sets the manifest resource for a big data file share.
         """
         manifest_upload_url =  self._url + '/manifest/update'
         if manifest_upload_url.find('/bigDataFileShares') != -1:
@@ -593,8 +747,8 @@ class Datastore(BaseServer):
     @property
     def hints(self):
         """
-        This returns the hints resource for a big data file share. Hints
-        are advanced parameters to control the generation of Manifest.
+        Gets the hints resource for a big data file share. Hints
+        are advanced parameters to control the generation of a manifest.
         """
         params = {
             'download' : True,
@@ -608,6 +762,9 @@ class Datastore(BaseServer):
     def hints(self,
               hints):
         """
+        Sets the hints resource for a big data file share. Hints
+        are advanced parameters to control the generation of a manifest.
+        
         Upload a hints file for a big data file share item. This will
         replace the existing hints file. To apply the control parameters in
         the hints file and regenerate the manifest, use the editDataItem to
@@ -616,10 +773,15 @@ class Datastore(BaseServer):
         regenerated, it will be updated only for datasets that have hints
         and for new datasets that are added to the existing big data file
         share location.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The name of the big data item to update.
+        ------------------     --------------------------------------------------------------------
+        hints                  Required string. The hints file to be uploaded.
+        ==================     ====================================================================
 
-        Parameters:
-         :name: name of the big data item to update
-         :hints: The hints file to be uploaded.
         """
         params = {
             "f" : "json"
@@ -638,13 +800,19 @@ class Datastore(BaseServer):
         """
         The total number of references to this data item that exist on the
         server. You can use this property to determine if this data item
-        can be safely deleted (or taken down for maintenance).
+        can be safely deleted or taken down for maintenance.
+        
+        :return:
+           A number indictaing the number of references to this data item.
         """
         return self.totalRefCount
     #----------------------------------------------------------------------
     def delete(self):
         """
-        Unregisters this data item from the data store
+        Unregisters this data item from the data store.
+        
+        :return:
+           A boolean indicating success (True) or failure (False).
         """
         params = {
             "f" : "json" ,
@@ -662,11 +830,16 @@ class Datastore(BaseServer):
     def update(self, item):
         """
         Edits this data item to update its connection information.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required string. The dict representation of the updated item.
+        ==================     ====================================================================
 
-        Input
-            item - the dict representation of the updated item
-        Output:
-              True if successful
+        :return:
+            True if the data item was successfully updated, False if the update failed.
+            
         """
         params = {
             "f" : "json" ,
@@ -683,10 +856,11 @@ class Datastore(BaseServer):
     def validate(self):
         """
         Validates that this data item's path (for file shares) or connection string (for databases)
-        is accessible to every server node in the site
+        is accessible to every server node in the site. This is necessary for the data item to be 
+        registered and used successfully with the server's data store.
 
-        Output:
-              True if successful
+        :return:
+            True if the data item was successfully validated.
         """
         params = {
             "f" : "json",
@@ -700,7 +874,7 @@ class Datastore(BaseServer):
     @property
     def datasets(self):
         """
-        Returns the datasets in the data store (currently implemented for big data file shares.)
+        Gets the datasets in the data store (currently implemented for big data file shares).
         """
         data_item_manifest_url = self._url + "/manifest"
 
