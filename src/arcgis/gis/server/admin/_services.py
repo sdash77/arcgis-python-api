@@ -39,7 +39,7 @@ class ServiceManager(BaseServer):
                url - admin url
                gis - GIS or Server object
         """
-        if sm is None:
+        if sm is not None:
             self._sm = sm
         super(ServiceManager, self).__init__(gis=gis,
                                              url=url, sm=sm)
@@ -165,7 +165,7 @@ class ServiceManager(BaseServer):
         """
         publishes a service definition file to arcgis server
         """
-        return self._sm._publish_sd(sd_file, folder)
+        return self._sm.publish_sd(sd_file, folder)
     #----------------------------------------------------------------------
     def _find_services(self, service_type="*"):
         """
