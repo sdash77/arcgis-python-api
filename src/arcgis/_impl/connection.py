@@ -562,7 +562,7 @@ class _ArcGISConnection(object):
                     elif authhdr.lower().startswith('negotiate'):
                         self._auth = "IWA"
                     else:
-                        _log.warn('Unsupported authentication scheme: ' + authhdr)
+                        _log.warning('Unsupported authentication scheme: ' + authhdr)
 
                     return newtoken
 

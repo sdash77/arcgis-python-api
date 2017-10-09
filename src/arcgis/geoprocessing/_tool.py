@@ -484,12 +484,12 @@ class _AsyncResource(_GISResource):
                             if msg['type'] == 'esriJobMessageTypeInformative':
                                 _log.info(msg['description'])
                             elif msg['type'] == 'esriJobMessageTypeWarning':
-                                _log.warn(msg['description'])
+                                _log.warning(msg['description'])
                             elif msg['type'] == 'esriJobMessageTypeError':
                                 _log.error(msg['description'])
                                 # print(msg['description'], file=sys.stderr)
                             else:
-                                _log.warn(msg['description'])  # ,file = sys.stderr)
+                                _log.warning(msg['description'])  # ,file = sys.stderr)
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
