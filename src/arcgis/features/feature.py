@@ -501,6 +501,32 @@ class FeatureSet(object):
     @staticmethod
     def from_dataframe(df):
         """returns a featureset from a Pandas' Data or Spatial DataFrame"""
+        def _infer_type(df, col):
+            """
+            internal function used to get the datatypes for the feature class if
+            the dataframe's _field_reference is NULL or there is a column that does
+            not have a dtype assigned to it.
+
+            Input:
+             dataframe - spatialdataframe object
+            Ouput:
+              field type name
+            """
+            import six
+            import numpy as np
+            nn = df[col].notnull()
+            nn = list(df[nn].index)
+            if len(nn) > 0:
+                val = df[col][nn[0]]
+                if isinstance(val, six.string_types):
+                    return "esriFieldTypeString"
+                elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+                    return "esriFieldTypeInteger"
+                elif isinstance(val, (float, np.int64)):
+                    return "esriFieldTypeDouble"
+                elif isinstance(val, datetime):
+                    return "esriFieldTypeDate"
+            return "esriFieldTypeString"
         from ._data.geodataset import SpatialDataFrame
         import pandas as pd
         try:
@@ -537,7 +563,16 @@ class FeatureSet(object):
                     })
             index += 1
         fs =  FeatureSet.from_dict(featureset_dict={'features': features})
-
+        fields = []
+        for col in df_rows.columns:
+            #if col not in df_rows.geometry.name:
+            fields.append(
+                {
+                    "name" : col,
+                    "type" : _infer_type(df=df_rows, col=col)
+                }
+            )
+        fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
 

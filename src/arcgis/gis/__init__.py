@@ -2056,7 +2056,11 @@ class ContentManager(object):
             return Item(self._gis, itemid, item)
         return None
 
-    def search(self, query, item_type=None, sort_field='avgRating', sort_order='desc', max_items=10, outside_org=False):
+    def search(self,
+               query, item_type=None,
+               sort_field='avgRating', sort_order='desc',
+               max_items=10, outside_org=False,
+               categories=None):
         """ Searches for portal items.
 
         .. note::
@@ -2089,6 +2093,8 @@ class ContentManager(object):
         max_items         Optional integer. Maximum number of items returned, default is 10.
         ----------------  --------------------------------------------------------------------------
         outside_org       Optional boolean. Controls whether to search outside your org (default is False, do not search ourside your org).
+        ----------------  --------------------------------------------------------------------------
+        categories        Optional string or list. A string of category values.
         ================  ==========================================================================
 
         :return:
@@ -2128,8 +2134,9 @@ class ContentManager(object):
                 query += ' (type:"desktop application" NOT type:"desktop application template")'
             else:
                 query += ' (type:"' + item_type +'")'
-
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
+        if isinstance(categories, list):
+            categories = ",".join(categories)
+        items = self._portal.search(query, categories, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist

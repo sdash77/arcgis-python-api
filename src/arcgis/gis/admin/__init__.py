@@ -21,4 +21,5 @@ from ._ux import UX
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
 from ._resources import PortalResourceManager
+from ._catagoryschema import CategoryManager
 __all__ = ['PortalAdminManager', 'AGOLAdminManager']

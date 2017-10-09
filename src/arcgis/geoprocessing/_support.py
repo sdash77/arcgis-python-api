@@ -50,9 +50,9 @@ def _layer_input(input_layer):
     return input_param
 
 def _feature_input(input_layer):
-    
+
     input_param = input_layer
-    
+
     input_layer_url = ""
     if isinstance(input_layer, arcgis.gis.Item):
         if input_layer.type.lower() == 'feature service':
@@ -142,7 +142,7 @@ def _analysis_job_status(gptool, task_url, job_info):
                             _log.error(msg['description'])
                             # print(msg['description'], file=sys.stderr)
                         else:
-                            _log.warn(msg['description'])
+                            _log.warning(msg['description'])
                     num_messages = num
 
                 if job_response.get("jobStatus") == "esriJobFailed":
@@ -208,7 +208,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             if py_type == FeatureSet:
                 if webtool:
                     gp_params[gp_param_name] = _layer_input(param_value)
-                    
+
                 else:
                     if type(param_value) == FeatureSet:
                         gp_params[gp_param_name] = param_value.to_dict()
@@ -222,7 +222,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                         except:
                             pass
 
-            
+
             elif py_type in [LinearUnit, DataFile, RasterData]:
                 if type(param_value) in [LinearUnit, DataFile, RasterData]:
                     gp_params[gp_param_name] = param_value.to_dict()
