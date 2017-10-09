@@ -83,8 +83,8 @@ class PortalAdminManager(BasePortalAdmin):
         schemas.
         """
         if self._category_schema is None:
-            from ._catagoryschema import CategorySchemaManager
-            self._category_schema = CategorySchemaManager(gis=self._gis)
+            from ._catagoryschema import CategoryManager
+            self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
     #----------------------------------------------------------------------
     @property

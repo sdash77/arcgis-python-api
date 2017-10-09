@@ -2056,9 +2056,11 @@ class ContentManager(object):
             return Item(self._gis, itemid, item)
         return None
 
-    def search(self, query, categories=None, item_type=None,
-               sort_field='avgRating', sort_order='desc', max_items=10,
-               outside_org=False):
+    def search(self,
+               query, item_type=None,
+               sort_field='avgRating', sort_order='desc',
+               max_items=10, outside_org=False,
+               categories=None):
         """ Searches for portal items.
 
         .. note::
@@ -2080,8 +2082,6 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
-        categories        Optional string or list.
-        ----------------  --------------------------------------------------------------------------
         item_type         Optional string. Set type of item to search.
                           http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
         ----------------  --------------------------------------------------------------------------
@@ -2093,6 +2093,8 @@ class ContentManager(object):
         max_items         Optional integer. Maximum number of items returned, default is 10.
         ----------------  --------------------------------------------------------------------------
         outside_org       Optional boolean. Controls whether to search outside your org (default is False, do not search ourside your org).
+        ----------------  --------------------------------------------------------------------------
+        categories        Optional string or list. A string of category values.
         ================  ==========================================================================
 
         :return:

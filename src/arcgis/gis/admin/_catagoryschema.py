@@ -1,6 +1,6 @@
 
 ########################################################################
-class CategorySchemaManager(object):
+class CategoryManager(object):
     """
     This class allows for the addition, removal and viewing of category
     schema.

@@ -18,9 +18,9 @@ PortalAdminManager
     :undoc-members:
     :show-inheritance:
 
-CategorySchemaManager
----------------------
-.. autoclass:: arcgis.gis.admin.CategorySchemaManager
+CategoryManager
+---------------
+.. autoclass:: arcgis.gis.admin.CategoryManager
     :members:
     :undoc-members:
     :show-inheritance:
