@@ -77,7 +77,7 @@ class PortalAdminManager(BasePortalAdmin):
         return self._collaborations
     #----------------------------------------------------------------------
     @property
-    def category_schema(self):
+    def _category_schema(self):
         """
         This resource allows for the setting and manipulating of catagory
         schemas.
