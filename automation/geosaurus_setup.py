@@ -7,6 +7,7 @@ def geosaurus_setup():
     """Installs correct packages, builds geosaurus source"""
     
     print("Setting up the geosaurus repository...")
+    _run_sys_command("pip install xmlrunner")
     _run_sys_command("conda install -c conda-forge ipywidgets -y")
     _run_sys_command("conda install pandas -y")
     _run_sys_command("pip install -e {}".format(
