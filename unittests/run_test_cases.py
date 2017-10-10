@@ -106,7 +106,7 @@ def run_on_exit():
     print("XML files successfully written.")
     print("{} is now exiting...".format(sys.argv[0]))
 
-def main():
+def run_test_cases(args):
     global suites
     
     atexit.register(run_on_exit)
@@ -123,7 +123,7 @@ def main():
                         help="Output a coverage report to the specified path.")
     parser.add_argument("--run_on_src", dest="run_on_src", default=True, type=bool, required=False,
                         help="Run tests on source code found in src instead of on conda pkg")
-    arguments = parser.parse_args()
+    arguments = parser.parse_args(args)
     test_names_to_skip = arguments.skip
     names = arguments.names
     coverage_path = arguments.coverage
@@ -172,4 +172,4 @@ def main():
         cov.html_report(directory=coverage_path)
 
 if __name__ == "__main__":
-    main()
+    run_test_cases(sys.argv)
