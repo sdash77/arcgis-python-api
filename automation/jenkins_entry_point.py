@@ -37,7 +37,6 @@ def get_build_tag():
         return "geosaurus{}_{}_UNSPECIFIED_j{}".format(_py_api_version,
                                                        automation_type,
                                                        _build_num)
-
 def main():
     _check_and_parse_arguments()
     funcs = _get_functions_to_call_for_cmd_arg()

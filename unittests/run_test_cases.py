@@ -106,7 +106,9 @@ def run_on_exit():
     print("XML files successfully written.")
     print("{} is now exiting...".format(sys.argv[0]))
 
-if __name__ == "__main__":
+def main():
+    global suites
+    
     atexit.register(run_on_exit)
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbosity", dest="verbosity", default="1", type=int,
@@ -168,3 +170,6 @@ if __name__ == "__main__":
     if coverage_path:
         cov.stop()
         cov.html_report(directory=coverage_path)
+
+if __name__ == "__main__":
+    main()
