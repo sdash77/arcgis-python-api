@@ -5,10 +5,12 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
-IF "%BUILDDIRGLOBALOVERRIDE%"=="" (
+
+REM If second command line arg enetered, use that as build dir
+IF "%2"=="" (
         set BUILDDIR=build
 ) ELSE (
-        set BUILDDIR=%BUILDDIRGLOBALOVERRIDE%
+        set BUILDDIR=%2
 )
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% source
 set I18NSPHINXOPTS=%SPHINXOPTS% source
@@ -21,7 +23,7 @@ if "%1" == "" goto help
 
 if "%1" == "help" (
 	:help
-	echo.Please use `make ^<target^>` where ^<target^> is one of
+	echo.Please use `make ^<target^> ^<OptionalBuildDir^>` where ^<target^> is one of
 	echo.  html       to make standalone HTML files
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
@@ -42,6 +44,9 @@ if "%1" == "help" (
 	echo.  linkcheck  to check all external links for integrity
 	echo.  doctest    to run all doctests embedded in the documentation if enabled
 	echo.  coverage   to run coverage check of the documentation if enabled
+        echo.-----
+        echo. and ^<OptionalBuildDir^> is the optional argument for where you want
+        echo. the final documentation placed. Default is .\build
 	goto end
 )
 
