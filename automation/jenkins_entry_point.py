@@ -26,7 +26,7 @@ def get_build_tag():
     if _build_tag:
         return _build_tag
     else:
-        return "{}_UNSPECIFIED_{}".format(automation_type, _build_num)
+        return "{}_NOT_SPECIFIED_{}".format(automation_type, _build_num)
 
 def main():
     _check_and_parse_arguments()
