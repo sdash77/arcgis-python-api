@@ -1,10 +1,11 @@
 import sys
 import re
+import os
 
 #import geosaurus_root/src seperate module
 from __init__ import GEOSAURUS_ROOT_DIR
-sys.path.append(GEOSAURUS_ROOT_DIR)
-from src.arcgis import __version__ as _py_api_version
+sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "src"))
+from arcgis import __version__ as _py_api_version
 
 from geosaurus_setup import geosaurus_setup
 from build_conda_package import build_conda_package
