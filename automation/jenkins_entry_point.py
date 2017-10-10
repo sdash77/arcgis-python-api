@@ -66,8 +66,6 @@ def _get_functions_to_call_for_cmd_arg():
     raise RuntimeError(msg)
 
 def _automation_type_matches_regex(regex_):
-    print("automation_type => {}".format(_automation_type))
-    print("func returns => {}".format(get_build_tag()))
     return re.match(regex_, _automation_type)
 
 if __name__ == "__main__":
