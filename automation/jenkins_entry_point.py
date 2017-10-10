@@ -44,6 +44,7 @@ def _check_and_parse_arguments():
         raise RuntimeError(msg)
     else:
         print("Arguments passed in: {}".format(sys.argv[1:]))
+        global _automation_type, _build_num, _build_tag
         _automation_type = sys.argv[1]
         _build_num = sys.argv[2]
         if _automation_type_matches_regex(_master_regex):
@@ -66,7 +67,7 @@ def _get_functions_to_call_for_cmd_arg():
 
 def _automation_type_matches_regex(regex_):
     print("automation_type => {}".format(_automation_type))
-    print("func returns => {}".format(self.get_build_tag()))
+    print("func returns => {}".format(get_build_tag()))
     return re.match(regex_, _automation_type)
 
 if __name__ == "__main__":
