@@ -1,21 +1,29 @@
 import sys
 import re
+import os
 
+#import geosaurus_root/src seperate module
+from __init__ import GEOSAURUS_ROOT_DIR
+sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "src"))
+from arcgis import __version__ as _py_api_version
+
+from geosaurus_setup import geosaurus_setup
 from build_conda_package import build_conda_package
 from build_docker_image import build_docker_image
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
 from publish_results import publish_results
 
-
 _master_regex = ".*master.*"
 _pull_request_regex = ".*pull.*request.*"
-_funcs_to_run_for_arg = [(_master_regex, [run_unit_tests,
+_funcs_to_run_for_arg = [(_master_regex, [geosaurus_setup,
+                                          run_unit_tests,
                                           build_documentation,
                                           build_conda_package,
                                           build_docker_image,
                                           publish_results]),
-                         (_pull_request_regex, [run_unit_tests,
+                         (_pull_request_regex, [geosaurus_setup,
+                                                run_unit_tests,
                                                 build_documentation,
                                                 publish_results])]
 _automation_type = ""
@@ -26,7 +34,9 @@ def get_build_tag():
     if _build_tag:
         return _build_tag
     else:
-        return "{}_NOT_SPECIFIED_{}".format(_automation_type, _build_num)
+        return "geosaurus{}_{}_UNSPECIFIED_j{}".format(_py_api_version,
+                                                       automation_type,
+                                                       _build_num)
 
 def main():
     _check_and_parse_arguments()
@@ -48,9 +58,11 @@ def _check_and_parse_arguments():
         _automation_type = sys.argv[1]
         _build_num = sys.argv[2]
         if _automation_type_matches_regex(_master_regex):
-            _build_tag = "{}_master_{}".format(_automation_type, _build_num)
+            _build_tag = "geosaurus{}_master_j{}".format(_py_api_version,
+                                                         _build_num)
         elif _automation_type_matches_regex(_pull_request_regex):
-            _build_tag = "{}_dev_{}".format(_automation_type, _build_num)
+            _build_tag = "geosaurus{}_dev_j{}".format(_py_api_version,
+                                                      _build_num)
 
 def _get_functions_to_call_for_cmd_arg():
     """Depending on what command line argument is passed in, there will be

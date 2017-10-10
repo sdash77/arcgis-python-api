@@ -427,6 +427,62 @@ class FeatureSet(object):
         """converts the object to JSON"""
         return json.dumps(self.value, default=_date_handler)
 
+    # ----------------------------------------------------------------------
+    @property
+    def to_geojson(self):
+        """converts the object to GeoJSON"""
+        def esri_to_geo(esrijson):
+            """converts Esri Format JSON to GeoJSON"""
+            def extract(feature, esri_geom_type):
+                """creates a single feature"""
+                item = {}
+                item["type"] = "Feature"
+                geom = feature["geometry"]
+                geometry = {}
+                geometry["type"] = get_geom_type(esri_geom_type)
+                geometry["coordinates"] = get_coordinates(geom, geometry["type"])
+                item["geometry"] = geometry
+                item["properties"] = feature["attributes"]
+
+                return item
+
+            def get_geom_type(esri_type):
+                """converts esri geometry types to
+                GeoJSON geometry types"""
+                if esri_type == "esriGeometryPoint":
+                    return "Point"
+                elif esri_type == "esriGeometryMultiPoint":
+                    return "MultiPoint"
+                elif esri_type == "esriGeometryPolyline":
+                    return "LineString"
+                elif esri_type == "esriGeometryPolygon":
+                    return "Polygon"
+                else:
+                    return "Point"
+            def get_coordinates(geom, geom_type):
+                """
+                converts the Esri Geometry Structure to
+                GeoJSON structure"""
+                if geom_type == "Polygon":
+                    return geom["rings"]
+                elif geom_type == "LineString":
+                    return geom["paths"]
+                elif geom_type == "Point":
+                    return [ geom["x"], geom["y"] ]
+                else:
+                    return []
+            geojson = {}
+            features = esrijson["features"]
+            esri_geom_type = esrijson["geometryType"]
+            count = len(features)
+            geojson["type"] = "FeatureCollection"
+            feats = []
+            for feat in features:
+                feats.append(extract(feat, esri_geom_type))
+            geojson["features"] = feats
+            return geojson
+        return json.dumps(esri_to_geo(self.value), default=_date_handler)
+
     def to_dict(self):
         """converts the object to Python dictionary"""
         return self.value
@@ -501,6 +557,32 @@ class FeatureSet(object):
     @staticmethod
     def from_dataframe(df):
         """returns a featureset from a Pandas' Data or Spatial DataFrame"""
+        def _infer_type(df, col):
+            """
+            internal function used to get the datatypes for the feature class if
+            the dataframe's _field_reference is NULL or there is a column that does
+            not have a dtype assigned to it.
+
+            Input:
+             dataframe - spatialdataframe object
+            Ouput:
+              field type name
+            """
+            import six
+            import numpy as np
+            nn = df[col].notnull()
+            nn = list(df[nn].index)
+            if len(nn) > 0:
+                val = df[col][nn[0]]
+                if isinstance(val, six.string_types):
+                    return "esriFieldTypeString"
+                elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+                    return "esriFieldTypeInteger"
+                elif isinstance(val, (float, np.int64)):
+                    return "esriFieldTypeDouble"
+                elif isinstance(val, datetime):
+                    return "esriFieldTypeDate"
+            return "esriFieldTypeString"
         from ._data.geodataset import SpatialDataFrame
         import pandas as pd
         try:
@@ -537,12 +619,116 @@ class FeatureSet(object):
                     })
             index += 1
         fs =  FeatureSet.from_dict(featureset_dict={'features': features})
-
+        fields = []
+        for col in df_rows.columns:
+            #if col not in df_rows.geometry.name:
+            fields.append(
+                {
+                    "name" : col,
+                    "type" : _infer_type(df=df_rows, col=col)
+                }
+            )
+        fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
 
         return fs
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_geojson(geojson):
+        """
+        Converts a GeoJSON Feature Collection into a FeatureSet
 
+        """
+        from warnings import warn
+        def geo_to_esri(geojson):
+            esri = {}
+
+            # we already know the spatial reference we want
+            # for geojson, at least in this simple case
+            if 'crs' in geojson:
+                warn("crs has been deprecated and will be ignored. Please"+ \
+                     " see: https://tools.ietf.org/html/rfc7946#section-4 for" +\
+                     " more information.")
+            sr = {"wkid": 4326}
+
+            # This will hold the geojson geometry type
+            geo_type = ""
+            # check for collection of features
+            # and iterate as necessary
+            attribute_fields = []
+            if geojson["type"] == "FeatureCollection":
+                features = geojson["features"]
+                geo_type = features[0]["geometry"]["type"]
+                attribute_fields = features[0]["properties"]
+
+                esri_features = map(extract, features)
+            else:
+                attribute_fields = geojson["properties"]
+                geo_type = geojson["geometry"]["type"]
+                esri_features = extract(geojson)
+
+            fields = map(extract_field, attribute_fields)
+            # everything should be ready to define for the
+            # esri json
+            esri["geometryType"] = get_geom_type(geo_type)
+            esri["spatialReference"] = sr
+            esri["fields"] = list(fields)
+            esri["features"] = list(esri_features)
+
+            return esri
+
+        def extract(feature):
+            # parse out the geometry data
+            geometry = get_geometry(feature)
+            out_feature = {}
+            out_feature["geometry"] = geometry
+            out_feature["attributes"] = feature["properties"]
+
+            return out_feature
+
+        def extract_field(attribute):
+            # now we need the fields in the properties
+            a = {}
+            a["alias"] = attribute
+            a["name"] = attribute
+            if isinstance(attribute, int):
+                a["type"] = "esriFieldTypeSmallInteger"
+            elif isinstance(attribute, float):
+                a["type"] = "esriFieldTypeDouble"
+            else:
+                a["type"] = "esriFieldTypeString"
+                a["length"] = 70
+            return a
+
+        def get_geom_type(geo_type):
+            if geo_type == "Point":
+                return "esriGeometryPoint"
+            elif geo_type == "MultiPoint":
+                return "esriGeometryMultiPoint"
+            elif geo_type == "LineString":
+                return "esriGeometryPolyline"
+            elif geo_type == "Polygon" or geo_type == "MultiPolygon":
+                return "esriGeometryPolygon"
+            else:
+                return "unknown"
+
+        def get_geometry(feature):
+            # match how geometry is represented
+            # based on the geojson geometry type
+            geometry = {}
+            geom = feature["geometry"]
+            geo_type = geom["type"]
+            if geo_type == "Point":
+                geometry["x"] = geom["coordinates"][0]
+                geometry["y"] = geom["coordinates"][1]
+            elif geo_type == "Polygon":
+                geometry["rings"] = geom["coordinates"][0]
+            elif geo_type =="LineString":
+                geometry["paths"] = geom
+
+            return geometry
+        return FeatureSet.from_dict(geo_to_esri(geojson))
     # ----------------------------------------------------------------------
     @staticmethod
     def from_dict(featureset_dict):

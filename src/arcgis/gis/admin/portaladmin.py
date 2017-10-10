@@ -37,6 +37,7 @@ class PortalAdminManager(BasePortalAdmin):
     _pp = None
     _license = None
     _livingatlas = None
+    _category_schema = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -74,6 +75,17 @@ class PortalAdminManager(BasePortalAdmin):
             from ._collaboration import CollaborationManager
             self._collaborations = CollaborationManager(gis=self._gis)
         return self._collaborations
+    #----------------------------------------------------------------------
+    @property
+    def _category_schema(self):
+        """
+        This resource allows for the setting and manipulating of catagory
+        schemas.
+        """
+        if self._category_schema is None:
+            from ._catagoryschema import CategoryManager
+            self._category_schema = CategoryManager(gis=self._gis)
+        return self._category_schema
     #----------------------------------------------------------------------
     @property
     def metadata(self):

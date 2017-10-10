@@ -7,8 +7,25 @@ from .. import SpatialDataFrame
 from arcgis.features.layer import FeatureLayer, Table
 from ..utils import chunks
 import pandas as pd
+import numpy as np
 import json
 import warnings
+
+_look_up_types = {
+    "esriFieldTypeBlob" : "object",
+    "esriFieldTypeDate" : "datetime64",
+    "esriFieldTypeInteger" : "int64",
+    "esriFieldTypeSmallInteger" : "int32",
+    "esriFieldTypeDouble" : "float64",
+    "esriFieldTypeSingle" :  "float32",
+    "esriFieldTypeString" : "str",
+    "esriFieldTypeGeometry" : "object",
+    "esriFieldTypeOID" : "int64",
+    "esriFieldTypeGlobalID" : "str",
+    "esriFieldTypeRaster" : "object",
+    "esriFieldTypeGUID" : "str",
+    "esriFieldTypeXML" : "object"
+}
 #--------------------------------------------------------------------------
 def from_layer(layer, **kwargs):
     """
@@ -27,6 +44,7 @@ def from_layer(layer, **kwargs):
     >>> sdf = from_layer(mylayer)
     >>> print(sdf)
     """
+    fields = []
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     if 'maxRecordCount' in layer.properties:
@@ -47,6 +65,10 @@ def from_layer(layer, **kwargs):
     else:
         res = layer.query().df
         res.reset_index(drop=True, inplace=True)
+    dtypes = {}
+    for field in layer.properties.fields:
+        dtypes[field['name']] = _look_up_types[field['type']]
+        del field
     return res
 #----------------------------------------------------------------------
 def to_layer(df,
