@@ -24,7 +24,7 @@ _build_tag = ""
 
 def get_build_tag():
     if _build_tag:
-        return _build_tag:
+        return _build_tag
     else:
         return "{}_UNSPECIFIED_{}".format(automation_type, _build_num)
 
