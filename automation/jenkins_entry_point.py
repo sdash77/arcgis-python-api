@@ -26,7 +26,7 @@ def get_build_tag():
     if _build_tag:
         return _build_tag
     else:
-        return "{}_NOT_SPECIFIED_{}".format(automation_type, _build_num)
+        return "{}_NOT_SPECIFIED_{}".format(_automation_type, _build_num)
 
 def main():
     _check_and_parse_arguments()
@@ -48,9 +48,9 @@ def _check_and_parse_arguments():
         _automation_type = sys.argv[1]
         _build_num = sys.argv[2]
         if _automation_type_matches_regex(_master_regex):
-            _build_tag = "{}_master_{}".format(automation_type, build_num)
+            _build_tag = "{}_master_{}".format(_automation_type, _build_num)
         elif _automation_type_matches_regex(_pull_request_regex):
-            _build_tag = "{}_dev_{}".format(automation_type, build_num)
+            _build_tag = "{}_dev_{}".format(_automation_type, _build_num)
 
 def _get_functions_to_call_for_cmd_arg():
     """Depending on what command line argument is passed in, there will be
