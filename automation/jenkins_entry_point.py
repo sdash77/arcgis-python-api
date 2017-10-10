@@ -6,6 +6,7 @@ from __init__ import GEOSAURUS_ROOT_DIR
 sys.path.append(GEOSAURUS_ROOT_DIR)
 from src.arcgis import __version__ as _py_api_version
 
+from geosaurus_setup import geosaurus_setup
 from build_conda_package import build_conda_package
 from build_docker_image import build_docker_image
 from build_documentation import build_documentation
@@ -14,12 +15,14 @@ from publish_results import publish_results
 
 _master_regex = ".*master.*"
 _pull_request_regex = ".*pull.*request.*"
-_funcs_to_run_for_arg = [(_master_regex, [run_unit_tests,
+_funcs_to_run_for_arg = [(_master_regex, [geosaurus_setup,
+                                          run_unit_tests,
                                           build_documentation,
                                           build_conda_package,
                                           build_docker_image,
                                           publish_results]),
-                         (_pull_request_regex, [run_unit_tests,
+                         (_pull_request_regex, [geosaurus_setup,
+                                                run_unit_tests,
                                                 build_documentation,
                                                 publish_results])]
 _automation_type = ""
