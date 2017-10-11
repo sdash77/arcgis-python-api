@@ -187,6 +187,23 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """constructor for class as per Pandas' github page"""
         return SpatialDataFrame
     #----------------------------------------------------------------------
+    def _sr(self, sr):
+        """sets the spatial reference"""
+        if isinstance(sr, _types.SpatialReference):
+            return sr
+        elif isinstance(sr, integer_types):
+            return _types.SpatialReference({'wkid' : sr})
+        elif isinstance(sr, string_types):
+            return _types.SpatialReference({'wkt' : sr})
+        elif hasattr(sr, 'factoryCode'):
+            return _types.SpatialReference({'wkid' : sr.factoryCode})
+        elif hasattr(sr, 'exportToString'):
+            return _types.SpatialReference({'wkt' : sr.exportToString()})
+        elif not sr is None:
+            raise ValueError("sr (spatial reference) must be a _types.SpatialReference object")
+        else:
+            return None
+    #----------------------------------------------------------------------
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
         if HASARCPY:
@@ -559,7 +576,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
          Delete column to be used as the new geometry
         inplace: boolean, default False
          Modify the SpatialDataFrame in place (do not create a new object)
-        sr : str/result of fion.get_sr (optional)
+        sr : str/integer the wkid value
          Coordinate system to use. If passed, overrides both DataFrame and
          col's sr. Otherwise, tries to get sr from passed col values or
          DataFrame.
@@ -570,10 +587,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             frame = self
         else:
             frame = self.copy()
-
+        if sr:
+            sr = self._sr(sr=sr)
         if not sr:
             sr = getattr(col, 'sr', self.sr)
-
+            if sr is None:
+                col.sr = self.sr
         to_remove = None
         geo_column_name = self._geometry_column_name
         if isinstance(col, (GeoSeries, Series, list, numpy.ndarray)):
@@ -608,8 +627,19 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         frame._geometry_column_name = geo_column_name
         frame.sr = sr
         frame._delete_index()
+        if (frame.sr != self.sr and HASARCPY) or (HASARCPY and sr):
+            if isinstance(sr, dict):
+                if hasattr(sr, 'as_arcpy'):
+                    sr = sr.as_arcpy
+                elif 'wkid' in sr:
+                    sr = sr['wkid']
+                elif 'wkt' in sr:
+                    sr = sr['wkt']
+            frame.geometry = frame.geometry.project_as(sr)
+            frame.sr = self._sr(sr)
         if not inplace:
             return frame
+
         self = frame
     #----------------------------------------------------------------------
     def __getitem__(self, key):
