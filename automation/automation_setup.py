@@ -1,6 +1,7 @@
 import os 
 import shutil
 import subprocess
+import glob
 
 from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 
@@ -17,6 +18,12 @@ def _clear_staging_folder():
     for folder_name in folders_to_delete:
         shutil.rmtree(os.path.join(STAGING_DIR, folder_name),
                       ignore_errors=True)
+    _delete_files_from_staging_following_pattern("*.xml")
+
+def _delete_files_from_staging_following_pattern(pattern):
+    full_files_to_delete = glob.glob(os.path.join(STAGING_DIR, pattern))
+    for full_file_path in full_files_to_delete:
+        os.remove(full_file_path)
 
 def _install_correct_packages():
     _run_sys_command("pip install xmlrunner")
@@ -30,3 +37,6 @@ def _install_geosaurus_src():
 def _run_sys_command(cmd):
     print("About to run the following command: '{}'".format(cmd))
     subprocess.check_call(cmd, shell=True)
+
+if __name__ == "__main__":
+    automation_setup()
