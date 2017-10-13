@@ -1,6 +1,6 @@
 import os
 
-from __init__ import BUILD_DIR
+from __init__ import BUILD_DIR, STAGING_DIR
 
 def build_conda_package():
     if os.name == 'posix':
