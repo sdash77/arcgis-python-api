@@ -4192,6 +4192,7 @@ class Item(dict):
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
+
     @property
     def metadata(self):
         """ Gets and sets the item metadata for the specified item.
@@ -4336,8 +4337,14 @@ class Item(dict):
         if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
         else:
-            b64 = base64.b64encode(self.get_thumbnail())
-            thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
+            try:
+                b64 = base64.b64encode(self.get_thumbnail())
+                thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
+            except:
+                if self._gis.properties.portalName == 'ArcGIS Online':
+                    thumbnail = 'http://static.arcgis.com/images/desktopapp.png'
+                else:
+                    thumbnail = self._portal.url + '/portalimages/desktopapp.png'
 
         snippet = self.snippet
         if snippet is None:
