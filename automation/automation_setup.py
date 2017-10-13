@@ -5,7 +5,7 @@ import glob
 
 from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 
-def automation_setup():
+def automation_setup(*args, **kwargs):
     """Clears results Installs correct packages, builds geosaurus source"""
     print("Starting setup...")
     _clear_staging_folder()

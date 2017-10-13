@@ -30,18 +30,11 @@ _automation_type = ""
 _build_num = ""
 _build_tag = ""
 
-def get_build_tag():
-    if _build_tag:
-        return _build_tag
-    else:
-        return "geosaurus{}_{}_UNSPECIFIED_j{}".format(_py_api_version,
-                                                       automation_type,
-                                                       _build_num)
 def main():
     _check_and_parse_arguments()
     funcs = _get_functions_to_call_for_cmd_arg()
     for func in funcs:
-        func()
+        func(_get_build_tag())
 
 def _check_and_parse_arguments():
     """Exactly 2 command line argument should be passed to this function"""
@@ -78,6 +71,14 @@ def _get_functions_to_call_for_cmd_arg():
 
 def _automation_type_matches_regex(regex_):
     return re.match(regex_, _automation_type)
+
+def _get_build_tag():
+    if _build_tag:
+        return _build_tag
+    else:
+        return "geosaurus{}_{}_UNSPECIFIED_j{}".format(_py_api_version,
+                                                       automation_type,
+                                                       _build_num)
 
 if __name__ == "__main__":
     main()

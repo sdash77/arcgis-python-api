@@ -5,7 +5,7 @@ from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 
 DOCS_DIR = os.path.abspath(os.path.join(GEOSAURUS_ROOT_DIR, "docs"))
 
-def build_documentation():
+def build_documentation(*args, **kwargs):
     """Detects what OS is being used, runs the appropriate 'make' mechanism
     in the ../docs/ folder. The resulting compiled html is then located in
     ./staging folder. (NOTE: Running this script multiple times will

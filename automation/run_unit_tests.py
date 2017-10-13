@@ -6,7 +6,7 @@ from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "unittests"))
 from run_test_cases import run_test_cases
 
-def run_unit_tests():
+def run_unit_tests(*args, **kwargs):
 #    subprocess.check_call(['python',os.path.join(GEOSAURUS_ROOT_DIR, 'unittests', 'run_test_cases.py'), os.path.join(GEOSAURUS_ROOT_DIR, 'unittests')],
 #            timeout=600)
     args = ['run_unit_tests',

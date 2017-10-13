@@ -1,2 +1,2 @@
-def publish_results():    
+def publish_results(*args, **kwargs):    
     print("Publishing results not supported yet")
