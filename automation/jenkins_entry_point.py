@@ -24,8 +24,7 @@ _funcs_to_run_for_arg = [(_master_regex, [automation_setup,
                                           publish_results]),
                          (_pull_request_regex, [automation_setup,
                                                 run_unit_tests,
-                                                build_documentation,
-                                                publish_results])]
+                                                build_documentation])]
 _automation_type = ""
 _build_num = ""
 _build_tag = ""
