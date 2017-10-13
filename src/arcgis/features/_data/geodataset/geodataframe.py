@@ -571,7 +571,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         The original geometry column is replaced with the input.
 
         Parameters:
-        keys: column label or array
+        col: column label or array
         drop: boolean, default True
          Delete column to be used as the new geometry
         inplace: boolean, default False
@@ -591,7 +591,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             sr = self._sr(sr=sr)
         if not sr:
             sr = getattr(col, 'sr', self.sr)
-            if sr is None:
+            if sr is None and \
+               isinstance(col, GeoSeries):
                 col.sr = self.sr
         to_remove = None
         geo_column_name = self._geometry_column_name
