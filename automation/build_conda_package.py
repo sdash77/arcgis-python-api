@@ -27,15 +27,15 @@ def _build_conda_for_windows(build_tag):
             flag_to_change_build_tag)
 
     _run_sys_command(final_make_command)
-    _move_output_to_staging()
+    _move_output_to_staging(build_tag)
 
 def _run_sys_command(cmd):
     print("About to run the following command: '{}'".format(cmd))
     subprocess.check_call(cmd, shell=True)
 
-def _move_output_to_staging():
+def _move_output_to_staging(build_tag):
     output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
-    shutil.copytree(output_dir_of_conda_packages, STAGING_DIR)
+    shutil.copytree(output_dir_of_conda_packages, os.path.join(STAGING_DIR, build_tag))
     print("moved {} contents to {}...".format(output_dir_of_conda_packages,
                                               STAGING_DIR))
 
