@@ -27,8 +27,8 @@ def _delete_files_from_staging_following_pattern(pattern):
 
 def _install_correct_packages():
     _run_sys_command("pip install xmlrunner")
-    _run_sys_command("conda install -c conda-forge ipywidgets -y")
-    _run_sys_command("conda install pandas -y")
+    #_run_sys_command("conda install -c conda-forge ipywidgets -y")
+    #_run_sys_command("conda install pandas -y")
  
 def _install_geosaurus_src():
    _run_sys_command("pip install -e {}".format(
