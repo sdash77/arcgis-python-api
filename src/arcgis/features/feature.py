@@ -502,12 +502,12 @@ class FeatureSet(object):
                 import pandas as pd
                 return pd.DataFrame()
             elif self.geometry_type is not None:
-                if self.spatial_reference and \
-                   'wkt' in self.spatial_reference.keys():
-                    sr = SpatialReference(self.spatial_reference)
-                elif self.spatial_reference and \
-                     'wkid' in self.spatial_reference:
-                    sr = SpatialReference(self.spatial_reference)
+                if self._spatialReference and \
+                   'wkt' in self._spatialReference.keys():
+                    sr = SpatialReference(self._spatialReference)
+                elif self._spatialReference and \
+                     'wkid' in self._spatialReference:
+                    sr = SpatialReference(self._spatialReference)
                 else:
                     sr = None
                 geoms = []
@@ -756,21 +756,21 @@ class FeatureSet(object):
     @property
     def spatial_reference(self):
         """gets the featureset's spatial reference"""
-        return self._spatial_reference
+        return self._spatialReference
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
     def spatial_reference(self, value):
         """sets the featureset's spatial reference"""
         if isinstance(value, SpatialReference):
-            self._spatial_reference = value
+            self._spatialReference = value
         elif isinstance(value, int):
-            self._spatial_reference = SpatialReference(wkid=value)
+            self._spatialReference = SpatialReference(wkid=value)
         elif isinstance(value, str) and \
                 str(value).isdigit():
-            self._spatial_reference = SpatialReference(wkid=int(value))
+            self._spatialReference = SpatialReference(wkid=int(value))
         else:
-            self._spatial_reference = SpatialReference(value)
+            self._spatialReference = SpatialReference(value)
 
 
     # ----------------------------------------------------------------------
