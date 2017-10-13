@@ -3,7 +3,7 @@ import subprocess
 from glob import glob
 import shutil
 
-from __init__ import BUILD_DIR, STAGING_DIR
+from __init__ import BUILD_DIR, STAGING_DIR, GEOSAURUS_ROOT_DIR
 
 def build_conda_package(*args, **kwargs):
     build_tag = args[0]

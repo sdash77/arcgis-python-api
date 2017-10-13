@@ -14,16 +14,12 @@ def automation_setup(*args, **kwargs):
     print("Setup complete!")
 
 def _clear_staging_folder():
-    folders_to_delete = ["singlehtml", "doctrees", "test-results"]
-    for folder_name in folders_to_delete:
-        shutil.rmtree(os.path.join(STAGING_DIR, folder_name),
-                      ignore_errors=True)
-    _delete_files_from_staging_following_pattern("*.xml")
-
-def _delete_files_from_staging_following_pattern(pattern):
-    full_files_to_delete = glob.glob(os.path.join(STAGING_DIR, pattern))
-    for full_file_path in full_files_to_delete:
-        os.remove(full_file_path)
+    shutil.move(os.path.join(STAGING_DIR, ".gitignore"),
+                os.path.join(STAGING_DIR, "..", ".gitignore"))
+    shutil.rmtree(STAGING_DIR)
+    os.makedirs(STAGING_DIR)
+    shutil.move(os.path.join(STAGING_DIR, "..", ".gitignore"),
+                os.path.join(STAGING_DIR, ".gitignore"))
 
 def _install_correct_packages():
     _run_sys_command("pip install xmlrunner")
