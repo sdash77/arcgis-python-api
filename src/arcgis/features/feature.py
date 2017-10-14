@@ -210,6 +210,7 @@ class FeatureSet(object):
     _has_m = None
     _geometry_type = None
     _spatial_reference = None
+    _spatialReference = None
     _object_id_field_name = None
     _global_id_field_name = None
     _display_field_name = None
