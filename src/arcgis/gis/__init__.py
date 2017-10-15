@@ -256,12 +256,12 @@ class GIS(object):
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
         except Exception as e:
-            if str(type(e.args[0])) == "<class 'ssl.SSLError'>":
+            if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
                                    "If you trust this server and want to proceed, add 'verify_cert=False' as an "
                                    "argument when connecting to the GIS.")
             else:
-                raise RuntimeError(e.args)
+                raise
 
         if url.lower().find("www.arcgis.com") > -1 and \
            self._portal.is_logged_in:
