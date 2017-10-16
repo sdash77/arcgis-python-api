@@ -141,7 +141,7 @@ class Test_geometry_functions_portal(unittest.TestCase):
 
                 #validate values
                 correct_geometries = [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
-                self.assertEqual("nonequal", correct_geometries, "Project values mismatch")
+                self.assertEqual(project_return, correct_geometries, "Project values mismatch")
 
         except AssertionError as assertErrorException:
             test_skip = True
