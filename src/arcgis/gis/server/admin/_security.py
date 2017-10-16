@@ -12,13 +12,15 @@ from __future__ import print_function
 from .._common import BaseServer
 ########################################################################
 class Security(BaseServer):
-    """ The security resource is a container for all resources and
-        operations that deal with security for your site. Under this
-        resource, you will find resources that represent the users and
-        roles in your current security configuration.
-        Since the content sent to and from this resource (and operations
-        within it) could contain confidential data like passwords, it is
-        recommended that this resource be accessed over HTTPS protocol.
+    """ 
+    This security resource is a container for all resources and
+    operations that deal with the security of your site. Under this
+    resource, you will find resources that represent the users and
+    roles in your current security configuration.
+    
+    Since the content sent to and from this resource (and operations
+    within it) could contain confidential data like passwords, it is
+    recommended that this resource be accessed over HTTPS protocol.
     """
     _url = None
     _con = None
@@ -31,8 +33,18 @@ class Security(BaseServer):
     def __init__(self, url, gis,
                  initialize=False):
         """Constructor
-            Parameters:
-               url - admin url
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The machine URL.
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional string. The GIS or Server object.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the machine properties at  
+                               creation (True). Default is False.
+        ==================     ====================================================================
+        
 
         """
         self._url = url
@@ -43,7 +55,7 @@ class Security(BaseServer):
     @property
     def users(self):
         """
-        returns an object to control/manage users
+        Gets an object to control/manage users.
         """
         if self._um is None:
             self._um = UserManager(url=self._url,
@@ -54,7 +66,7 @@ class Security(BaseServer):
     @property
     def roles(self):
         """
-        returns an object to manage a site's roles
+        Gets an object to manage a site's roles.
         """
         if self._rm is None:
             self._rm = RoleManager(url=self._url, gis=self._con)
@@ -62,10 +74,25 @@ class Security(BaseServer):
     #----------------------------------------------------------------------
     def disable_primary_site_administrator(self):
         """
-           You can use this operation to disable log in privileges for the
-           primary site administrator account. This operation can only be
-           invoked by an administrator in the system. To re-enable this
-           account, use the Enable Primary Site Administrator operation.
+        Use this operation to disable login privileges for the
+        primary site administrator account. This operation can only be
+        invoked by an administrator in the system. To re-enable this
+        account, use the Enable Primary Site Administrator operation.
+        
+
+        .. note::
+            - Once disabled, you cannot use the primary site administrator 
+            account to log into Manager. Therefore, you should disable 
+            this account only if you have other administrators in the system.
+            
+            - If you are currently logged into the Administrator Directory 
+            using the primary site administrator account, you will need to 
+            log back in with another administrative account.
+
+        
+        :return:
+            A boolean indicating success (True) or failure (False).
+           
         """
         dURL = self._url + "/psa/disable"
         params = {
@@ -78,7 +105,9 @@ class Security(BaseServer):
     #----------------------------------------------------------------------
     @property
     def primary_site_administrator_status(self):
-        """ returns if the primary site admin has been disabled """
+        """
+        Gets the disabled status of the primary site administrator account.
+        """
         params = {
             "f" : "json"
         }
@@ -87,14 +116,21 @@ class Security(BaseServer):
     #----------------------------------------------------------------------
     def update_primary_site_administrator(self, username, password):
         """
-           Updates account properties of the primary site administrator
-           Parameters:
-              username - You can optionally provide a new name for the
-              primary site administrator account.
-              password - The password for the new primary site
-              administrator account.
-           Output:
-              JSON message as dictionary
+        Updates account properties of the primary site administrator
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. You can optionally provide a new name for the 
+                               primary site administrator account.
+        ------------------     --------------------------------------------------------------------
+        password               Required string. The password for the new primary site 
+                               administrator account.
+        ==================     ====================================================================
+        
+
+        :return:
+              A JSON message as dictionary
         """
         params = {
             "f" : "json",
