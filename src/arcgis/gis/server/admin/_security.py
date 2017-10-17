@@ -707,9 +707,7 @@ class RoleManager(BaseServer):
     access one or more resources. Users are assigned to these roles. The
     server then authorizes each requesting user based on all the roles
     assigned to the user.
-    As the role space could be potentially large, you can use the paged Get
-    Roles operation to iterate through the list of roles, or you can use
-    the Search Roles operation to search for a specific role.
+
     ArcGIS Server is capable of connecting to your enterprise identity
     stores such as Active Directory or other directory services exposed via
     the LDAP protocol. Such identity stores are treated as read-only stores
@@ -789,7 +787,23 @@ class RoleManager(BaseServer):
         return res
     #----------------------------------------------------------------------
     def _add_users_to_role(self, rolename, users):
-        """ Assigns a role to multiple users """
+        """
+        Assigns a role to multiple users. 
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role. 
+        ------------------     --------------------------------------------------------------------
+        users                  Required string. A comma-separated list of user names. Each user 
+                               name must exist in the user store.
+        ==================     ====================================================================
+    
+    
+        :retrun:
+            A JSON message indicating success (True).
+    
+        """
         params = {
             "f" : "json",
             "rolename" : rolename,
@@ -803,29 +817,37 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _assign_privilege(self, rolename, privilege="ACCESS"):
         """
-           Administrative access to ArcGIS Server is modeled as three broad
-           tiers of privileges:
-               ADMINISTER - A role that possesses this privilege has
-                           unrestricted administrative access to ArcGIS
-                          Server.
-               PUBLISH - A role with PUBLISH privilege can only publish GIS
-                       services to ArcGIS Server.
-               ACCESS-No administrative access. A role with this privilege
-                      can only be granted permission to access one or more
-                      GIS services.
-           By assigning these privileges to one or more roles in the role
-           store, ArcGIS Server's security model supports role-based access
-           control to its administrative functionality.
-           These privilege assignments are stored independent of ArcGIS
-           Server's role store. As a result, you don't need to update your
-           enterprise identity stores (like Active Directory).
-           Parameters:
-              rolename - The name of the role.
-              privilege - The capability to assign to the role. The default
-                          capability is ACCESS.
-                          Values: ADMINISTER | PUBLISH | ACCESS
-           Output:
-              JSON Message
+        Assigns a privilege to the desired role.
+    
+        Administrative access to ArcGIS Server is modeled as three broad
+        tiers of privileges:
+    
+          - ADMINISTER - A role that possesses this privilege has unrestricted administrative access to ArcGIS Server.
+          - PUBLISH - A role with PUBLISH privilege can only publish GIS services to ArcGIS Server.
+          - ACCESS - No administrative access. A role with this privilege can only be granted permission to access one or more GIS services.
+    
+        By assigning these privileges to one or more roles in the role
+        store, ArcGIS Server's security model supports role-based access
+        control to its administrative functionality.
+    
+        These privilege assignments are stored independent of ArcGIS
+        Server's role store. As a result, you don't need to update your
+        enterprise identity stores (like Active Directory).
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role. 
+        ------------------     --------------------------------------------------------------------
+        privilege              Optional string. The capability to assign to the role. Default 
+                               value is ACCESS.  Choices are ADMINISTER, PUBLISH, ACCESS.
+        ==================     ====================================================================
+    
+        :returns:
+            A JSON message indicating success (True).
+    
+    
         """
         a_url = self._url + "/roles/assignPrivilege"
         params = {
@@ -841,17 +863,26 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _assign_roles(self, username, roles):
         """
-           You must use this operation to assign roles to a user account
-           when working with an user and role store that supports reads and
-           writes.
-           By assigning a role to a user, the user account automatically
-           inherits all the permissions that have been assigned to the role
-           Parameters:
-              username - The name of the user.
-              roles - A comma-separated list of role names. Each of role
-                      names must exist in the role store.
-           Output:
-              returns JSON messages
+        Assigns one or more roles to a user account. The role store must aloow read 
+        and write edits.
+    
+        By assigning a role to a user, the user account automatically inherits all the 
+        permissions that have been granted to the role.
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The name of the user. 
+        ------------------     --------------------------------------------------------------------
+        roles                  Required string. A comma-separated list of role names. Each role 
+                               name must exist in the role store.
+        ==================     ====================================================================
+    
+    
+        :retrun:
+            A JSON message indicating success (True).
+    
         """
         params = {
             "f" : "json",
@@ -866,11 +897,18 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _get_privilege_for_role(self, rolename):
         """
-           Returns the privilege associated with a role.
-           Parameters:
-              rolename - name of the role
-           Output:
-              JSON Messages
+        Returns the privilege associated with a role. 
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role. 
+        ==================     ====================================================================
+    
+    
+        :retrun:
+            A JSON message stating the privilege (one of ADMINISTER, PUBLISH, ACCESS).
+    
         """
         params = {
             "f" : "json",
@@ -882,11 +920,19 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _get_user_privileges(self, username):
         """
-           Returns the privilege associated with a user
-           Parameters:
-              username - name of the user
-           Output:
-              JSON message as dictionary
+        Returns the privilege associated with a user. This operation tests all the roles to which the 
+        user belongs and returns the highest privilege.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The name of the user. 
+        ==================     ====================================================================
+    
+    
+        :retrun:
+            A JSON dictionary stating the privilege (one of ADMINISTER, PUBLISH, ACCESS).
+    
         """
         params = {
             "f" : "json",
@@ -896,18 +942,26 @@ class RoleManager(BaseServer):
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def all(self, start_index=0, page_size=10):
-        """ This operation gives you a pageable view of roles in the role
-            store. It is intended for iterating through all available role
-            accounts. To search for specific role accounts instead, use the
-            Search Roles operation.
-            Parameters:
-               start_index - The starting index (zero-based) from the roles
-                            list that must be returned in the result page.
-                            The default is 0.
-               page_size - The maximum number of roles to return in the
-                          result page. The default size is 10.
-            Output:
-               returns JSON messages as dictionary
+        """ 
+        This operation gives you a pageable view of roles in the role
+        store. It is intended for iterating through all available role
+        accounts. To search for specific role accounts instead, use the
+        Search Roles operation.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        start_index            Optional integer. The starting index (zero-based) from the roles 
+                               list to be returned in the result page. The default is 0.
+        ------------------     --------------------------------------------------------------------
+        page_size              Optional integer. The maximum number of roles to return in the 
+                               result page. The default size is 10.
+        ==================     ====================================================================
+    
+    
+        :return:
+            A JSON dictionary containing the list of roles found and a boolean on if there are more roles.
+    
         """
         u_url = self._url + "/roles/getRoles"
         params = {
@@ -924,11 +978,18 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _get_roles_by_privilege(self, privilege):
         """
-           Returns the roles associated with a pribilege.
-           Parameters:
-              privilege - name of the privilege
-           Output:
-              JSON response as dictionary
+        Returns all roles that are at the declared privilege level.
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        privilege              Required string. The name of the privilege. Choices are ADMINISTER, PUBLISH, ACCESS.
+        ==================     ====================================================================
+    
+        :return:
+            A JSON dictionary with a list of roles that match the declared privilege level.
+    
         """
         u_url = self._url + "/roles/getRolesByPrivilege"
         params = {
@@ -939,12 +1000,24 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _get_user_roles(self, username, user_filter=None, max_count=None):
         """
-           This operation returns a list of role names that have been
-           assigned to a particular user account.
-           Parameters:
-              username - name of the user for whom the returned roles
-              user_filter - filter to be applied to the resultant role set.
-              max_count - maximum number of results to return for this query
+        Supplies a list of roles that have been assigned to a particular user account.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The name of the user to get roles for. 
+        ------------------     --------------------------------------------------------------------
+        user_filter            Optional string. The filter to be applied to the resultant role 
+                               set. The default is None, nothing will be filtered.
+        ------------------     --------------------------------------------------------------------
+        max_count              Optional integer. The maximum number of results to return for this 
+                               query. The default is None, all results will be returned.
+        ==================     ====================================================================
+    
+    
+        :return:
+            A JSON dictionary with a list of roles found associated with the declared user.
+    
         """
         u_url = self._url + "/roles/getRolesForUser"
         params = {
@@ -960,14 +1033,25 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _get_users_within_role(self, rolename, user_filter=None, max_count=20):
         """
-           You can use this operation to conveniently see all the user
-           accounts to whom this role has been assigned.
-           Parameters:
-              rolename - name of the role
-              user_filter - filter to be applied to the resultant user set
-              max_count - maximum number of results to return
-           Output:
-              JSON Message as dictionary
+        You can use this operation to conveniently see all the user
+        accounts to whom this role has been assigned.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role. 
+        ------------------     --------------------------------------------------------------------
+        user_filter            Optional string. The filter to be applied to the resultant user 
+                               set. The default is None, nothing will be filtered.
+        ------------------     --------------------------------------------------------------------
+        max_count              Optional integer. The maximum number of results to return for this 
+                               query. The default is None, all results will be returned.
+        ==================     ====================================================================
+    
+    
+        :return:
+            A JSON dictionary with a list of users found associated with the declared role.
+    
         """
         u_url = self._url + "/roles/getUsersWithinRole"
         params = {
@@ -982,13 +1066,20 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _delete_role(self, rolename):
         """
-           Removes an existing role from the role store. This operation is
-           available only when the role store is a read-write store such as
-           the default ArcGIS Server store.
-           Parameters:
-              rolename - name of role to remove
-           Output:
-              JSON message if any
+        Removes an existing role from the role store. This operation is
+        available only when the role store is a read-write store such as
+        the default ArcGIS Server store.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role to remove. 
+        ==================     ====================================================================
+    
+    
+        :return:
+            A JSON message.
+    
         """
         params = {
             "f" : "json",
@@ -1003,14 +1094,22 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _remove_roles_from_user(self, username, roles):
         """
-           This operation removes roles that have been previously assigned
-           to a user account. This operation is supported only when the
-           user and role store supports reads and writes.
-           Parameters:
-              username - name of the user
-              roles - comma seperated list of the role names
-           Ouput:
-              JSON Messages as dictionary
+        This operation removes roles that have been previously assigned
+        to a user account. This operation is supported only when the
+        user and role store supports reads and writes.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        username               Required string. The name of the user to remove roles from. 
+        ------------------     --------------------------------------------------------------------
+        roles                  Required string. A comma-seperated list of the role names to remove 
+                               from the given user.
+        ==================     ====================================================================
+    
+        :return:
+            A JSON message as a dictionary.
+    
         """
         u_url = self._url + "/users/removeRoles"
         params = {
@@ -1025,12 +1124,20 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def _remove_users_from_role(self, rolename, users):
         """
-           Removes a role assignment from multiple users.
-           Parameters:
-              rolename - name of the rolename
-              users - comma seperated list of usernames.  They must exist
-           Output:
-              JSON message as dictionary
+        Removes a role assignment from multiple users.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role to remove from the given users. 
+        ------------------     --------------------------------------------------------------------
+        users                  Required string. A comma-seperated list of the user names to remove 
+                               from the given role.  These users must exist.
+        ==================     ====================================================================
+    
+        :return:
+            A JSON message as a dictionary.
+    
         """
         params = {
             "f" : 'json',
@@ -1046,7 +1153,7 @@ class RoleManager(BaseServer):
     @property
     def count(self):
         """
-           returns the number of roles for AGS
+        Gets the number of roles for ArcGIS Server.
         """
         params = {
             "f" : "json"
@@ -1056,14 +1163,22 @@ class RoleManager(BaseServer):
     #----------------------------------------------------------------------
     def get_role(self, role_id=None, max_count=10):
         """
-           You can use this operation to search a specific role or a group
-           of roles from the role store. The size of the search results can
-           be controlled with the max_count parameter.
-           Parameters:
-              role_filter - a filter string to search for the roles
-              max_count - maximum size of the result
-           Ouput:
-              JSON message as dictionary
+        Use this operation to search a specific role or a group
+        of roles from the role store.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        role_id                Optional string. A filter string to search for the roles
+        ------------------     --------------------------------------------------------------------
+        max_count              Optional integer. The maximum number of the result items that can 
+                               be retuned.  The default is 10.
+        ==================     ====================================================================
+    
+    
+        :return:
+            A JSON message as dictionary.
+    
         """
         params = {
             "f" : "json",
@@ -1080,12 +1195,20 @@ class RoleManager(BaseServer):
         return roles
     #----------------------------------------------------------------------
     def _update_role(self, rolename, description):
-        """ Updates a role description in the role store
-           Parameters:
-              rolename - the name of the role. The name must be unique in
-                         the role store.
-              description - an optional field to add comments or description
-                            for the role.
+        """
+        Updates a role description in the role store
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rolename               Required string. The name of the role. The name must be unique in 
+                               the role store. to remove from the given users. 
+        ------------------     --------------------------------------------------------------------
+        description            Optional string. Provide comments or description for the role.
+        ==================     ====================================================================
+    
+        :return:
+            A JSON message indicating success (True).
         """
         params = {
             "f" : "json",
@@ -1101,9 +1224,8 @@ class RoleManager(BaseServer):
 ########################################################################
 class Role(dict):
     """
-    represents a single role on server
+    Represents a single role on server.
 
-    **(This is should not be created by a user)**
     """
     _roledict = None
     _security = None
@@ -1140,15 +1262,19 @@ class Role(dict):
     #----------------------------------------------------------------------
     def update(self, description=None):
         """
-        Updates a role in the role store with new information. This
+        Updates this role in the role store with new information. This
         operation is available only when the role store is a read-write
         store such as the default ArcGIS Server store.
 
-        Parameters:
-         :description: An optional field to add comments or a description
-          for the role
-        Output:
-         status dictionary
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        description            Optional string. An optional field to add comments or a description for the role.
+        ==================     ====================================================================
+        
+
+        :return:
+            A status dictionary.
         """
         res =  self._security._update_role(rolename=self.rolename,
                                           description=description)
@@ -1159,7 +1285,11 @@ class Role(dict):
     #----------------------------------------------------------------------
     def delete(self):
         """
-        deletes the current role
+        Deletes this current role.
+        
+        :return:
+            A boolean indicating success (True) or failure (False).
+            
         """
         res = self._security._delete_role(rolename=self.rolename)
         self = None
@@ -1167,20 +1297,34 @@ class Role(dict):
     #----------------------------------------------------------------------
     def set_privileges(self, privilage):
         """
+        Assigns a privilege to this role.
+    
         Administrative access to ArcGIS Server is modeled as three broad
         tiers of privileges:
-          ADMINISTER-A role that possesses this privilege has unrestricted
-           administrative access to ArcGIS Server.
-          PUBLISH-A role with PUBLISH privilege can only publish GIS
-           services to ArcGIS Server.
-          ACCESS-No administrative access. A role with this privilege can
-           only be granted permission to access one or more GIS services.
+    
+          - ADMINISTER - A role that possesses this privilege has unrestricted administrative access to ArcGIS Server.
+          - PUBLISH - A role with PUBLISH privilege can only publish GIS services to ArcGIS Server.
+          - ACCESS - No administrative access. A role with this privilege can only be granted permission to access one or more GIS services.
+    
         By assigning these privileges to one or more roles in the role
         store, ArcGIS Server's security model supports role-based access
         control to its administrative functionality.
+    
         These privilege assignments are stored independent of ArcGIS
         Server's role store. As a result, you don't need to update your
         enterprise identity stores (like Active Directory).
+    
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        privilage              Required string. The capability to assign to the role. Choices are 
+                               ADMINISTER, PUBLISH, ACCESS
+        ==================     ====================================================================
+    
+        :return:
+            A boolean indicating success (True) or failure (False).
+    
         """
         allowed = ['administer', 'publish', 'access']
         if privilage.lower() in allowed:
@@ -1192,17 +1336,17 @@ class Role(dict):
     #----------------------------------------------------------------------
     def grant(self, username):
         """
-        Adds a user to the current role
+        Adds a user to this role.
 
         =========  =================================================
         Parmeters  **Description**
         ---------  -------------------------------------------------
-        username   required string, account name to add to the role
+        username   Required string. The account name to add to the role.
         =========  =================================================
 
         :returns:
-           boolean, True means added, False means could not add to
-           Role
+            A boolean indicating success (True) or failure (False).
+            
         """
         return self._security._add_users_to_role(rolename=self.rolename,
                                                  users=username)
