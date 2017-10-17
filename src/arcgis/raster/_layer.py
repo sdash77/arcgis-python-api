@@ -8,7 +8,6 @@ from arcgis.gis import Layer
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureSet
 
-
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
         super(ImageryLayer, self).__init__(url, gis)
@@ -20,16 +19,38 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
+        # self._extent = self.properties.initialExtent
+
+    @property
+    def rasters(self):
+        """
+        Raster manager for this layer
+        """
+        if str(self.properties['capabilities']).lower().find('edit') > -1:
+            return RasterManager(self)
+        else:
+            return None
+
+    @property
+    def tiles(self):
+        """
+        Imagery tile manager for this layer
+        """
+        if 'tileInfo' in self.properties:
+            return ImageryTileManager(self)
+        else:
+            return None
+
+    @property
+    def service(self):
+        """
+        The service backing this imagery layer (if user can administer the service)
+        """
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
-            self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
-        if 'tileInfo' in self.properties:
-            self.tiles = ImageryTileManager(self)
-
-        if str(self.properties['capabilities']).lower().find('edit') > -1:
-            self.rasters = RasterManager(self)
-        # self._extent = self.properties.initialExtent
+            return AdminServiceGen(service=self, gis=self._gis)
+        except:
+            return None
 
     #----------------------------------------------------------------------
     def catalog_item(self, id):
