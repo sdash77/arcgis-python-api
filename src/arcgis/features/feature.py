@@ -210,7 +210,6 @@ class FeatureSet(object):
     _has_m = None
     _geometry_type = None
     _spatial_reference = None
-    _spatialReference = None
     _object_id_field_name = None
     _global_id_field_name = None
     _display_field_name = None
@@ -284,7 +283,7 @@ class FeatureSet(object):
             if feat_geom is not None:
                 if spatial_reference is None:
                     if 'spatialReference' in feat_geom:
-                        self._spatialReference = feat_geom['spatialReference']
+                        self._spatial_reference = feat_geom['spatialReference']
 
                 if isinstance(feat_geom, Geometry):
                     geometry = feat_geom
@@ -503,12 +502,12 @@ class FeatureSet(object):
                 import pandas as pd
                 return pd.DataFrame()
             elif self.geometry_type is not None:
-                if self._spatialReference and \
-                   'wkt' in self._spatialReference.keys():
-                    sr = SpatialReference(self._spatialReference)
-                elif self._spatialReference and \
-                     'wkid' in self._spatialReference:
-                    sr = SpatialReference(self._spatialReference)
+                if self._spatial_reference and \
+                   'wkt' in self._spatial_reference.keys():
+                    sr = SpatialReference(self._spatial_reference)
+                elif self._spatial_reference and \
+                     'wkid' in self._spatial_reference:
+                    sr = SpatialReference(self._spatial_reference)
                 else:
                     sr = None
                 geoms = []
@@ -757,21 +756,21 @@ class FeatureSet(object):
     @property
     def spatial_reference(self):
         """gets the featureset's spatial reference"""
-        return self._spatialReference
+        return self._spatial_reference
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
     def spatial_reference(self, value):
         """sets the featureset's spatial reference"""
         if isinstance(value, SpatialReference):
-            self._spatialReference = value
+            self._spatial_reference = value
         elif isinstance(value, int):
-            self._spatialReference = SpatialReference(wkid=value)
+            self._spatial_reference = SpatialReference(wkid=value)
         elif isinstance(value, str) and \
                 str(value).isdigit():
-            self._spatialReference = SpatialReference(wkid=int(value))
+            self._spatial_reference = SpatialReference(wkid=int(value))
         else:
-            self._spatialReference = SpatialReference(value)
+            self._spatial_reference = SpatialReference(value)
 
 
     # ----------------------------------------------------------------------
