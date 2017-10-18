@@ -89,7 +89,9 @@ var nbextensionPath = "/nbextensions/arcgis";
 if (location.href.search("user") > 0) {
     nbextensionPath = location.pathname.split("/").slice(0, 3).join("/") + "/nbextensions/arcgis";
 }
-
+if (location.href.search("arcgis/admin/notebooks") > 0) {
+    nbextensionPath = location.pathname.split("/").slice(0, 5).join("/") + "/nbextensions/arcgis";
+}
 
 require.config({
     // Define path mappings for modules
@@ -170,6 +172,7 @@ require.undef('mapview');
 
 define('mapview', [
      "jupyter-js-widgets",
+     "esri/basemaps",
      "esri/map",
      "esri/config",
      "esri/Color",
@@ -206,6 +209,7 @@ define('mapview', [
      "dojo/domReady!"
 ], function (
      widgets,
+     esriBasemaps,
      Map,
      esriConfig,
      Color,
@@ -295,6 +299,22 @@ define('mapview', [
             function load_map(that) {
                 IPython.keyboard_manager.disable(); // loading map can cause modal dialog for secure resources which is
                 // incompatible with keyboard manager (eats shortcut keys)
+
+                // This was introduced to handle situations where basemap is changed to a custom
+                //   basemap before the map is actually loaded/drawn.  It seemed that in this situation,
+                //   the model event isn't being trigged properly here in the JS code.
+                //   If _gallerybasemaps has already been initialized, push items onto esriBasemaps object.
+                var bms = that.model.get('_gallerybasemaps');
+                if (bms.length > 0) {
+                    var bmdefs = that.model.get('_gbasemaps_def');
+                    for (var i=0;i < bms.length;i++) {
+                        esriBasemaps[bms[i]] = {
+                            baseMapLayers: bmdefs[i],
+                            title: bms[i]
+                        };
+                    }
+                }
+
                 var id = that.model.get('id');
                 if ((id) && (id.trim() != '')) {
                     var arcgis_url = that.model.get('_arcgis_url');
@@ -333,7 +353,7 @@ define('mapview', [
                         newExtent.spatialReference = new SpatialReference({ wkid: 4326 });
 
                         that.map = new Map(that.el, {
-                            basemap: that.model.get('basemap'),
+                            basemap: that.model.get('_basemap'),
                             extent: newExtent
                         });
 
@@ -341,7 +361,7 @@ define('mapview', [
                     } else {
 
                         that.map = new Map(that.el, {
-                            basemap: that.model.get('basemap'),
+                            basemap: that.model.get('_basemap'),
                             center: that.model.get('center').reverse(),
                             zoom: that.model.get('zoom')
                         });
@@ -417,7 +437,8 @@ define('mapview', [
             this.model.on('change:mode', this.mode_changed, this);
             this.model.on('change:_extent', this.extent_changed, this);
             this.model.on('change:center', this.center_changed, this);
-            this.model.on('change:basemap', this.basemap_changed, this);
+            this.model.on('change:_basemap', this.basemap_changed, this);
+            this.model.on('change:_gallerybasemaps', this.gallerybasemaps_changed, this);
             this.model.on('change:_addlayer', this.layer_changed, this);
             this.model.on('change:start_time', this.start_time_changed, this);
             this.model.on('change:end_time', this.end_time_changed, this);
@@ -534,6 +555,13 @@ define('mapview', [
 
         layer_changed: function () {
             var that = this;
+            var curbasemap = that.map.getBasemap();
+            var bmgallery = this.model.get('_gallerybasemaps');
+            // If using a custom basemap, smart mapping doesn't
+            // support that so default to JSAPI topo instead.
+            if (bmgallery.indexOf(curbasemap) >= 0) {
+                curbasemap = 'topo';
+            }
             if (this.model.get('_addlayer').indexOf("{") > -1) {
 
                 console.log("***###***addlayer");
@@ -558,11 +586,6 @@ define('mapview', [
                     var layer = new FeatureLayer(newlayer.url, {
                         "outFields": ["*"]
                     });
-
-
-
-
-
 
                     if (newlayer.options != null) {
                         var lyr_options = JSON.parse(newlayer.options);
@@ -627,7 +650,7 @@ define('mapview', [
                             var default_properties = {
                                 layer: layer,
                                 field: lyr_options.field_name,
-                                basemap: that.map.getBasemap(),
+                                basemap: curbasemap,
                                 classificationMethod: "quantile"
                             };
 
@@ -649,7 +672,7 @@ define('mapview', [
                             var default_properties = {
                                 layer: layer,
                                 field: lyr_options.field_name,
-                                basemap: that.map.getBasemap(),
+                                basemap: curbasemap,
                                 classificationMethod: "quantile"
                             };
 
@@ -712,7 +735,7 @@ define('mapview', [
                         smartMapping.createClassedColorRenderer({
                             layer: layer,
                             field: field,
-                            basemap: that.map.getBasemap(),
+                            basemap: curbasemap,
                             classificationMethod: "quantile"
                         }).then(function (response) {
                             layer.setRenderer(response.renderer);
@@ -727,7 +750,7 @@ define('mapview', [
                         smartMapping.createClassedSizeRenderer({
                             layer: layer,
                             field: field,
-                            basemap: that.map.getBasemap(),
+                            basemap: curbasemap,
                             classificationMethod: "quantile"
                         }).then(function (response) {
                             layer.setRenderer(response.renderer);
@@ -852,7 +875,7 @@ define('mapview', [
                             smartMapping.createClassedColorRenderer({
                                 layer: layer,
                                 field: field,
-                                basemap: that.map.getBasemap(),
+                                basemap: curbasemap,
                                 classificationMethod: "quantile"
                             }).then(function (response) {
                                 layer.setRenderer(response.renderer);
@@ -868,7 +891,7 @@ define('mapview', [
                             smartMapping.createClassedSizeRenderer({
                                 layer: layer,
                                 field: field,
-                                basemap: that.map.getBasemap(),
+                                basemap: curbasemap,
                                 classificationMethod: "quantile"
                             }).then(function (response) {
                                 layer.setRenderer(response.renderer);
@@ -930,7 +953,22 @@ define('mapview', [
         },
 
         basemap_changed: function () {
-            this.map.setBasemap(this.model.get('basemap'));
+            this.map.setBasemap(this.model.get('_basemap'));
+        },
+
+	    gallerybasemaps_changed: function () {
+            console.log("**Using Basemaps Gallery....");
+            var bms = this.model.get('_gallerybasemaps');
+            // If the gallery_basemaps is not empty, then we must be using a group
+            if (bms.length > 0) {
+                var bmdefs = this.model.get('_gbasemaps_def');
+                for (var i=0;i < bms.length;i++) {
+                    esriBasemaps[bms[i]] = {
+                        baseMapLayers: bmdefs[i],
+                        title: bms[i]
+                    };
+                }
+            }
         },
 
         // Outgoing events to the model
@@ -945,7 +983,7 @@ define('mapview', [
             this.send({ event: 'draw-end', message: geometry });
         },
 
-        extent_change(extent, zoomed) {
+        extent_change: function(extent, zoomed) {
             //console.log(JSON.stringify(extent));
             //console.log(zoomed);
             this.model.set('_jsextent', JSON.stringify(extent));

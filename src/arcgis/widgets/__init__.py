@@ -9,6 +9,7 @@ import string
 from arcgis.features import FeatureSet
 from arcgis.raster import ImageryLayer
 from arcgis.gis import Layer
+from arcgis.gis import Item
 from arcgis.mapping import WebMap
 
 try:
@@ -29,7 +30,10 @@ class MapView(widgets.DOMWidget):
 
     # value = Unicode('Hello World!').tag(sync=True)
 
-    basemap = Unicode('topo').tag(sync=True)
+    _basemap = Unicode('topo').tag(sync=True)
+    basemaps = List([]).tag(sync=True)
+    _gallerybasemaps = List([]).tag(sync=True)
+    _gbasemaps_def = List([]).tag(sync=True)
     width = Unicode('100%').tag(sync=True)
     zoom = Int(2).tag(sync=True)
     id = Unicode('').tag(sync=True)
@@ -45,6 +49,8 @@ class MapView(widgets.DOMWidget):
     _arcgis_url = Unicode('').tag(sync=True)
 
     _swipe_div = Unicode('').tag(sync=True)
+
+    _gallery_initialized = False # Used to keep track if GalleryBasemaps has been called
 
     def __init__(self, **kwargs):
         """Constructor of Map widget.
@@ -191,6 +197,74 @@ class MapView(widgets.DOMWidget):
 
     def remove_layers(self):
         self.mode = "###remove_layers"
+
+
+    @property
+    def gallery_basemaps(self):
+        """
+        Retrieves the portal's custom basemap group and populates properties
+        """
+        if not self._gallery_initialized:
+        #if len(self._gallerybasemaps) == 0:
+            bmlyrs = []
+            bms = []
+            bmquery = self._gis.properties['basemapGalleryGroupQuery']
+            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+            if len(basemapsgrp) == 1:
+                for bm in basemapsgrp[0].content():
+                    if bm.type.lower() == 'web map': # Only use WebMaps
+                        bms.append(bm.title.lower().replace(" ", "_"))  # item title will be name
+                        item_data = bm.get_data()  # we have to get JSON definition to pass through
+                        if item_data is not None:
+                            bmlyrs.append(item_data['baseMap']['baseMapLayers'])
+                #self._gbasemaps_def = bmlyrs
+                self._gbasemaps_def = self._gbasemaps_def + bmlyrs
+                #nm = self._gis.properties['defaultBasemap']['title']
+                print("Loading Gallery Basemaps....")
+                #self._gallerybasemaps = bms
+                self._gallerybasemaps = self._gallerybasemaps + bms
+                self._gallery_initialized = True
+                return self._gallerybasemaps
+            else:
+                print("Basemap Group '" + str(bmquery) + "' could not be found...")
+                #return [] # If unable to find the group, return empty list
+                return self._gallerybasemaps # Return whatever state List is in, even if empty
+        else:
+            return self._gallerybasemaps
+
+    @property
+    def basemap(self):
+        return self._basemap
+
+    @basemap.setter
+    def basemap(self, value):
+        if isinstance(value, str):
+            if (value in self.basemaps):
+                self._basemap = value
+            elif (value in self.gallery_basemaps): # this should initialize
+                self._basemap = value
+            else:
+                print("Basemap '" + str(value) + "' is not a valid basemap name.")
+
+        # Allow for a WebMap item to be passed in and set.  This is useful if someone
+        #  finds some other WebMap in AGOL/Portal that they would like to use in this
+        #  notebook.  In this case, you need to add it to the current set.
+        #  This will utilize the gallery_basemaps objects for adding the new basemap.
+        #elif (isinstance(value, Item)):
+        #    if value.type.lower() == "web map":
+        #        webmapitem = value
+        #        bmlyrs = []
+        #        bms = []
+        #        bms.append(webmapitem.title.lower().replace(" ", "_")) # item title will be name
+        #        item_data = webmapitem.get_data()  # we have to get JSON definition to pass through
+        #        if item_data is not None:
+        #            bmlyrs.append(item_data['baseMap']['baseMapLayers'])
+        #            self._gbasemaps_def = self._gbasemaps_def + bmlyrs
+        #            self._gallerybasemaps = self._gallerybasemaps + bms
+        #            self._basemap = bms[0]
+        #            print('Set Map Widget Basemap to WebMap Item basemap layers.')
+        #        else:
+        #            print("WebMap item appears to have no item_data.")
 
     @property
     def extent(self):
