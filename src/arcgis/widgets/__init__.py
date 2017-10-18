@@ -64,8 +64,23 @@ class MapView(widgets.DOMWidget):
 
         self.on_msg(self._handle_map_msg)
 
-        self.basemaps = ["streets", "satellite", "hybrid", "topo", "gray", "dark-gray", "oceans", "national-geographic",
-                         "terrain", "osm"]
+        self.basemaps = ['dark-gray',
+                        'dark-gray-vector',
+                        'gray',
+                        'gray-vector',
+                        'hybrid',
+                        'national-geographic',
+                        'oceans',
+                        'osm',
+                        'satellite',
+                        'streets',
+                        'streets-navigation-vector',
+                        'streets-night-vector',
+                        'streets-relief-vector',
+                        'streets-vector',
+                        'terrain',
+                        'topo',
+                        'topo-vector']
         self._swipe_div = 'swipeDiv' + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 
         self._gis = kwargs.pop('gis', None)
@@ -220,13 +235,13 @@ class MapView(widgets.DOMWidget):
                 #self._gbasemaps_def = bmlyrs
                 self._gbasemaps_def = self._gbasemaps_def + bmlyrs
                 #nm = self._gis.properties['defaultBasemap']['title']
-                print("Loading Gallery Basemaps....")
+                #print("Loading Gallery Basemaps....")
                 #self._gallerybasemaps = bms
                 self._gallerybasemaps = self._gallerybasemaps + bms
                 self._gallery_initialized = True
                 return self._gallerybasemaps
             else:
-                print("Basemap Group '" + str(bmquery) + "' could not be found...")
+                #print("Basemap Group '" + str(bmquery) + "' could not be found...")
                 #return [] # If unable to find the group, return empty list
                 return self._gallerybasemaps # Return whatever state List is in, even if empty
         else:
