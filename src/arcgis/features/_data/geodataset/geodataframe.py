@@ -192,6 +192,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                            isinstance(g, dict):
                             geometry[idx] = _types.Geometry(g)
                     self.set_geometry(geometry, inplace=True)
+        if self.sr is None:
+            self.sr = self._sr(sr)
         self._delete_index()
     #----------------------------------------------------------------------
     @property
@@ -641,11 +643,14 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             raise TypeError("Input geometry column must contain valid geometry objects.")
         #if isinstance(frame[geo_column_name], pd.Series):
         #    frame[geo_column_name] = GeoSeries(frame[geo_column_name])
+        if isinstance(level, (list, tuple, numpy.ndarray)):
+            level = GeoSeries(level)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.sr = sr
         frame._delete_index()
-        if (frame.sr != self.sr and HASARCPY) or (HASARCPY and sr):
+
+        if (frame.sr != self.sr and HASARCPY):
             if isinstance(sr, dict):
                 if hasattr(sr, 'as_arcpy') and HASARCPY:
                     sr = sr.as_arcpy
@@ -653,52 +658,59 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                     sr = sr['wkid']
                 elif 'wkt' in sr:
                     sr = sr['wkt']
-            import json
-            if HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
-                for idx, g in frame.geometry.iteritems():
-                    if isinstance(g, arcpy.Point):
-                        g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))
-                    elif hasattr(g, "JSON"):
-                        g = arcgis.geometry.Geometry(json.loads(g.JSON))
-                    elif isinstance(g, string_types):
-                        g = arcgis.geometry.Geometry(json.loads(g))
-                    elif isinstance(g, dict):
-                        g = arcgis.geometry.Geometry(g)
+        import json
+        if HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
+            for idx, g in frame.geometry.iteritems():
+                if isinstance(g, arcpy.Point):
+                    g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))
+                elif hasattr(g, "JSON"):
+                    g = arcgis.geometry.Geometry(json.loads(g.JSON))
+                elif isinstance(g, string_types):
+                    g = arcgis.geometry.Geometry(json.loads(g))
+                elif isinstance(g, dict):
+                    g = arcgis.geometry.Geometry(g)
 
-                    if inplace:
+                if inplace:
+                    try:
                         frame.loc[idx, self._geometry_column_name] = g
-                    else:
-                        try:
-                            frame.iloc[idx, self._geometry_column_name] = g
-                        except:
-                            frame.loc[idx, self._geometry_column_name] = g
-                    del idx, g
+                    except:
+                        frame.set_value(index=idx,
+                                        col=self._geometry_column_name,
+                                        value=g)
+                else:
+                    try:
+                        frame.iloc[idx, self._geometry_column_name] = g
+                    except:
+                        frame.loc[idx, self._geometry_column_name] = g
+                del idx, g
+            if sr:
+                frame.sr = self._sr(sr)
                 frame.geometry = frame.geometry.project_as(sr)
-            else:
-                sr = self.sr
+        else:
+            sr = self.sr
+            if sr is None:
+                sr = {'wkid' : 4326}
+            for idx, g in frame.geometry.iteritems():
+                if hasattr(g, "JSON"):
+                    g = arcgis.geometry.Geometry(json.loads(g.JSON))
+                elif str(type(g)) == "<class 'arcpy.arcobjects.arcobjects.Point'>":
+                    g = arcgis.geometry.Geometry({'x':g.X,
+                                                  'y':g.Y,
+                                                  'spatialReference':sr})
+                elif isinstance(g, string_types):
+                    g = arcgis.geometry.Geometry(json.loads(g))
+                elif isinstance(g, dict):
+                    g = arcgis.geometry.Geometry(g)
+                else:
+                    raise ValueError("Invalid Geometry")
                 if sr is None:
                     sr = {'wkid' : 4326}
-                for idx, g in frame.geometry.iteritems():
-                    if hasattr(g, "JSON"):
-                        g = arcgis.geometry.Geometry(json.loads(g.JSON))
-                    elif str(type(g)) == "<class 'arcpy.arcobjects.arcobjects.Point'>":
-                        g = arcgis.geometry.Geometry({'x':g.X,
-                                                      'y':g.Y,
-                                                      'spatialReference':sr})
-                    elif isinstance(g, string_types):
-                        g = arcgis.geometry.Geometry(json.loads(g))
-                    elif isinstance(g, dict):
-                        g = arcgis.geometry.Geometry(g)
-                    else:
-                        raise ValueError("Invalid Geometry")
-                    if sr is None:
-                        sr = {'wkid' : 4326}
-                    if 'spatialReference' not in g:
-                        g['spatialReference'] = dict(sr)
-                    if inplace:
-                        frame.loc[idx, self._geometry_column_name] = g
-                    else:
-                        frame.iloc[idx, self._geometry_column_name] = g
+                if 'spatialReference' not in g:
+                    g['spatialReference'] = dict(sr)
+                if inplace:
+                    frame.loc[idx, self._geometry_column_name] = g
+                else:
+                    frame.iloc[idx, self._geometry_column_name] = g
             frame.sr = self._sr(sr)
         if not inplace:
             return frame
