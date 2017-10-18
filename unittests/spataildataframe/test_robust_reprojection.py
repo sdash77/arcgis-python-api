@@ -12,6 +12,7 @@ except:
 if HAS_ARCPY:
     class RobustReProjectionTest(unittest.TestCase):
         def setUp(self):
+            import random
             self._sr=arcpy.SpatialReference(4326)
             geojson_polygon = {
                 "type": "Polygon",
@@ -21,8 +22,25 @@ if HAS_ARCPY:
                          [10.0, 5.0],
                          [5.0, 5.0],
                          [0.0, 0.0]]]}
+            geojson_polygon2 = {
+                "type": "Polygon",
+                    "coordinates": [
+                        [[0.0, random.randint(0,10)],
+                         [random.randint(1,10), 0.0],
+                         [10, random.randint(0,5)],
+                         [5.0, 5.0],
+                         [0.0, random.randint(0,10)]]]}
+            geojson_polygon3 = {
+                "type": "Polygon",
+                    "coordinates": [
+                        [[0.0, random.randint(0,10)],
+                         [random.randint(1,10), 0.0],
+                         [10, random.randint(0,5)],
+                         [5.0, 5.0],
+                         [0.0, random.randint(0,10)]]]}
             self._wkt = "GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]];-400 -400 1000000000;-100000 10000;-100000 10000;8.98315284119522E-09;0.001;0.001;IsHighPrecision"
-            self._geoms =[ arcpy.AsShape(geojson_polygon).projectAs(self._sr)   ] * 3
+            self._geoms =[ arcpy.AsShape(geojson_polygon).projectAs(self._sr), arcpy.AsShape(geojson_polygon2).projectAs(self._sr)  ,
+                           arcpy.AsShape(geojson_polygon3).projectAs(self._sr) ]# * 3
             self._attributes = [['A', 1, 2],
                                 ['B', 13, -2.99],
                                 ['C', 1-(4**3), 2**9]]
