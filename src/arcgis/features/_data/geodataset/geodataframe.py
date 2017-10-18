@@ -609,6 +609,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         to_remove = None
         if isinstance(col, string_types):
             geo_column_name = col
+            self._geometry_column_name = col
         else:
             geo_column_name = self._geometry_column_name
         if isinstance(col, (GeoSeries, Series, list, numpy.ndarray)):
@@ -670,8 +671,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                         try:
                             frame.iloc[idx, self._geometry_column_name] = g
                         except:
-                            frame.set_value(index=idx, col=self._geometry_column_name, value=g)
-                            #frame.iloc[idx][self._geometry_column_name] = g
+                            frame.loc[idx, self._geometry_column_name] = g
                     del idx, g
                 frame.geometry = frame.geometry.project_as(sr)
             else:
@@ -702,7 +702,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             frame.sr = self._sr(sr)
         if not inplace:
             return frame
-
         self = frame
     #----------------------------------------------------------------------
     def __getitem__(self, key):
