@@ -46,7 +46,7 @@ def _check_and_parse_arguments():
         msg += "(Ex. python jenkins_entry_point {AUTOTYPE} {BUILDNUM})"
         raise RuntimeError(msg)
     else:
-        print("Arguments passed in: {}".format(sys.argv[1:]))
+        log.info("Arguments passed in: {}".format(sys.argv[1:]))
         global _automation_type, _build_num, _build_tag
         _automation_type = sys.argv[1]
         _build_num = sys.argv[2]

@@ -27,7 +27,7 @@ def build_documentation(*args, **kwargs):
         STAGING_DIR))
 
 def _build_doc_for_unix():
-    print("Building for *nix system...")
+    log.info("Building for *nix system...")
     make_command = "make singlehtml"
     flag_to_force_output_to_staging_dir = "BUILDDIR={}".format(STAGING_DIR)
     final_bash_command = "cd {} && {} {}".format(
@@ -38,7 +38,7 @@ def _build_doc_for_unix():
     run_shell_command(final_bash_command)
 
 def _build_doc_for_windows():
-    print("Building for Windows system...")
+    log.info("Building for Windows system...")
     bat_make_command = ".\make.bat singlehtml"
     flag_to_force_output_to_staging_dir = STAGING_DIR
     final_make_command = 'cd "{}" && {} {}'.format(
