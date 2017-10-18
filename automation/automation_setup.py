@@ -2,16 +2,18 @@ import os
 import shutil
 import subprocess
 import glob
+import logging
+log = logging.getLogger()
 
-from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
+from __init__ import * 
 
 def automation_setup(*args, **kwargs):
     """Clears results Installs correct packages, builds geosaurus source"""
-    print("Starting setup...")
+    log.info("Starting setup...")
     _clear_staging_folder()
     _install_correct_packages()
     _install_geosaurus_src()
-    print("Setup complete!")
+    log.info("Setup complete!")
 
 def _clear_staging_folder():
     shutil.move(os.path.join(STAGING_DIR, ".gitignore"),
@@ -22,17 +24,14 @@ def _clear_staging_folder():
                 os.path.join(STAGING_DIR, ".gitignore"))
 
 def _install_correct_packages():
-    _run_sys_command("pip install xmlrunner")
-    #_run_sys_command("conda install -c conda-forge ipywidgets -y")
-    #_run_sys_command("conda install pandas -y")
- 
+    run_shell_command("pip install xmlrunner")
+
 def _install_geosaurus_src():
-   _run_sys_command("pip install -e {}".format(
+   run_shell_command("pip install -e {}".format(
         os.path.join(GEOSAURUS_ROOT_DIR,"src")))
  
-def _run_sys_command(cmd):
-    print("About to run the following command: '{}'".format(cmd))
-    subprocess.check_call(cmd, shell=True)
-
 if __name__ == "__main__":
-    automation_setup()
+    try:
+        automation_setup()
+    except Exception as e:
+        log.exception(e)

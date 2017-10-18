@@ -1,9 +1,12 @@
 import os
 import shutil
+import logging
+log = logging.getLogger()
 
 from __init__ import STAGING_DIR
 
 def publish_results(*args, **kwargs):    
+    log.info("About to publish results...")
     build_tag = args[0]
     if os.name == 'posix':
         raise RuntimeError("Conda building not supported on *nix systems")

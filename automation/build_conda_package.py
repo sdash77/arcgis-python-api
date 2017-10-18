@@ -2,8 +2,10 @@ import os
 import subprocess
 from glob import glob
 import shutil
+import logging
+log = logging.getLogger()
 
-from __init__ import BUILD_DIR, STAGING_DIR, GEOSAURUS_ROOT_DIR
+from __init__ import *
 
 def build_conda_package(*args, **kwargs):
     build_tag = args[0]
@@ -14,11 +16,11 @@ def build_conda_package(*args, **kwargs):
     else:
         raise RuntimeError("Conda building not supported on this platform")
 
-    print("Conda building finished! Any results in {}".format(
+    log.info("Conda building finished! Any results in {}".format(
         os.path.join(GEOSAURUS_ROOT_DIR, 'automation', 'staging')))
 
 def _build_conda_for_windows(build_tag):
-    print("Building for Windows system...")
+    log.info("Building for Windows system...")
     bat_build_command = "buildarcgis"
     flag_to_change_build_tag = build_tag
     final_make_command = 'cd "{}" && {} {}'.format(
@@ -26,17 +28,13 @@ def _build_conda_for_windows(build_tag):
             bat_build_command,
             flag_to_change_build_tag)
 
-    _run_sys_command(final_make_command)
+    run_shell_command(final_make_command)
     _move_output_to_staging(build_tag)
-
-def _run_sys_command(cmd):
-    print("About to run the following command: '{}'".format(cmd))
-    subprocess.check_call(cmd, shell=True)
 
 def _move_output_to_staging(build_tag):
     output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
     shutil.copytree(output_dir_of_conda_packages, os.path.join(STAGING_DIR, build_tag))
-    print("moved {} contents to {}...".format(output_dir_of_conda_packages,
+    log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
                                               STAGING_DIR))
 
 if __name__ == "__main__":

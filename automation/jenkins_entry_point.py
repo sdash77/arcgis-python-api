@@ -1,9 +1,11 @@
 import sys
 import re
 import os
+import logging
+log = logging.getLogger()
 
 #import geosaurus_root/src seperate module
-from __init__ import GEOSAURUS_ROOT_DIR
+from __init__ import *
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "src"))
 from arcgis import __version__ as _py_api_version
 
@@ -80,4 +82,7 @@ def _get_build_tag():
                                                        _build_num)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        log.exception(e)

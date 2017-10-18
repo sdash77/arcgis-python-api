@@ -1,6 +1,8 @@
 import sys
 import os
 from distutils.dir_util import copy_tree
+import logging
+log = logging.getLogger()
 
 from __init__ import GEOSAURUS_ROOT_DIR, STAGING_DIR
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "unittests"))
@@ -17,7 +19,7 @@ def run_unit_tests(*args, **kwargs):
                 #Send all test_results .xml files to the staging dir
             ]
     run_test_cases(args)
-    print("run_test_cases has returned... Moving results to staging")
+    log.info("run_test_cases has returned... Moving results to staging")
 
 if __name__ == '__main__':
     run_unit_tests()
