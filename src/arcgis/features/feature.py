@@ -8,7 +8,7 @@ import os
 import re
 import tempfile
 import uuid
-
+from datetime import datetime
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
