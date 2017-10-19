@@ -21,7 +21,7 @@ def build_conda_package(*args, **kwargs):
 
 def _build_conda_for_windows(build_tag):
     log.info("Building for Windows system...")
-    bat_build_command = "buildarcgis"
+    bat_build_command = "buildanduploadarcgis"
     flag_to_change_build_tag = build_tag
     final_make_command = 'cd "{}" && {} {}'.format(
             BUILD_DIR,

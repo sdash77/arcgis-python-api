@@ -8,18 +8,9 @@ if "%~1"=="" SET ver=1.2.6
 conda build --py 3.6 arcgis --output-folder ___output
 conda build --py 3.5 arcgis --output-folder ___output
 
-REM for each file generated from the above commands (i.e. files that end in .tar.bz2)
-for /r %%i in (___output\win-64\arcgis-%ver%-*.tar.bz2) do (
+REM for each file generated from the above commands
+for /r %%i in (___output\win-64\arcgis*) do (
     REM run the convert command on each of those files
     conda convert -f -p win-32 %%i -o ___output
-)
-
-REM for each file converted for win-64, upload it to conda
-for /r %%i in (___output\win-64\arcgis-%ver%-*.tar.bz2) do (
-    anaconda upload %%i
-)
-
-REM for each file converted for win-32, upload it to conda
-for /r %%i in (___output\win-32\arcgis-%ver%-*.tar.bz2) do (
-    anaconda upload %%i
+    conda convert -f -p linux-64 %%i -o ___output
 )
