@@ -64,18 +64,17 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
         'median': 2,
         'duration': 3
     }
-
-    in_stat_type = stat_types[stat_type.lower()]
-
+        
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {
-            "ArgStatisticsType": in_stat_type,
-            "Rasters": raster
+        "rasterFunctionArguments": {            
+            "Rasters": raster,
         },
         "variableName": "Rasters"
     }
 
+    if stat_type is not None:       
+        template_dict["rasterFunctionArguments"]['ArgStatisticsType'] = stat_types[stat_type.lower()]
     if min_value is not None:
         template_dict["rasterFunctionArguments"]['MinValue'] = min_value
     if max_value is not None:
@@ -2928,7 +2927,7 @@ def _get_raster_ra(raster):
     return raster_ra
 
 
-def vector_field(raster1, raster2, input_data_type='Vector-UV', angle_reference_system='Geographic',
+def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_reference_system='Geographic',
                  output_data_type='Vector-UV', astype=None):
     """
     The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
@@ -2937,16 +2936,16 @@ def vector_field(raster1, raster2, input_data_type='Vector-UV', angle_reference_
     For more information, see Vector Field function
     (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm)
 
-    :param raster1: raster item representing 'U' or 'Magnitude' - imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: raster item representing 'V' or 'Direction' - imagery layers filtered by where clause, spatial and temporal filters
-    :param input_data_type: string, 'Vector-UV' or 'Vector-MagDir' per input used in 'raster1' and 'raster2'
+    :param raster_u_mag: raster item representing 'U' or 'Magnitude' - imagery layers filtered by where clause, spatial and temporal filters
+    :param raster_v_dir: raster item representing 'V' or 'Direction' - imagery layers filtered by where clause, spatial and temporal filters
+    :param input_data_type: string, 'Vector-UV' or 'Vector-MagDir' per input used in 'raster_u_mag' and 'raster_v_dir'
     :param angle_reference_system: string, optional when 'input_data_type' is 'Vector-UV', one of "Geographic", "Arithmetic"
     :param output_data_type: string, 'Vector-UV' or 'Vector-MagDir'
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster1, raster_ra1 = _raster_input(raster1)
-    layer2, raster2, raster_ra2 = _raster_input(raster2)
+    layer1, raster_u_mag, raster_ra1 = _raster_input(raster_u_mag)
+    layer2, raster_v_dir, raster_ra2 = _raster_input(raster_v_dir)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -2960,16 +2959,372 @@ def vector_field(raster1, raster2, input_data_type='Vector-UV', angle_reference_
     template_dict = {
         "rasterFunction": "VectorField",
         "rasterFunctionArguments": {
-            "Raster1": raster1,
-            "Raster2": raster2,
-            "InputDataType": input_data_type,
-            "OutputDataType": output_data_type,
+            "Raster1": raster_u_mag,
+            "Raster2": raster_v_dir,            
         }
     }
 
     if in_angle_reference_system is not None:
         template_dict["rasterFunctionArguments"]["AngleReferenceSystem"] = in_angle_reference_system
+    if input_data_type is not None and input_data_type in ["Vector-UV", "Vector-MagDir"]:
+        template_dict["rasterFunctionArguments"]['InputDataType'] = input_data_type
+    if output_data_type is not None and output_data_type in ["Vector-UV", "Vector-MagDir"]:
+        template_dict["rasterFunctionArguments"]['OutputDataType'] = output_data_type
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+
+
+def complex(raster):
+    """
+    Complex function computes magnitude from complex values. It is used when
+    input raster has complex pixel type. It computes magnitude from complex
+    value to convert the pixel type to floating point for each pixel. It takes
+    no argument but an optional input raster. For more information, see 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/complex-function.htm
+
+    :param raster: the input raster / imagery layer
+    :return: Output raster obtained after applying the function
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Complex",
+        "rasterFunctionArguments" : {
+            "Raster" : raster,
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def colormap_to_rgb(raster):
+    """"
+    The function is designed to work with single band image service that has
+    internal colormap. It will convert the image into a three-band 8-bit RGB
+    raster. This function takes no arguments except an input raster. For 
+    qualified image service, there are two situations when “ColormapToRGB” 
+    function is automatically applied: The "colormapToRGB" property of the 
+    image service is set to “true”; or, client asks to export image into jpg 
+    or png format. For more information, see 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm)
+
+    :param raster: the input raster / imagery layer
+    :return: Three band raster
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "ColormapToRGB",
+        "rasterFunctionArguments" : {
+            "Raster" : raster,
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def statistics_histogram(raster, statistics=None, histograms=None):
+    """"
+    The function is used to define the statistics and histogram of a raster.
+    It is normally used for control the default display of exported image. 
+    For more information, see Statistics and Histogram function, 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm
+
+    :param raster: the input raster / imagery layer
+    :param statistics: array of statistics objects. (Predefined statistics for each band)
+    :param histograms: array of histogram objects. (Predefined histograms for each band)
+    :return: Statistics and Histogram defined raster
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "StatisticsHistogram",
+        "rasterFunctionArguments" : {            
+            "Raster" : raster,
+        }
+    }
+
+    if statistics is not None:
+        template_dict["rasterFunctionArguments"]['Statistics'] = statistics
+    if histograms is not None:
+        template_dict["rasterFunctionArguments"]['Histograms'] = histograms
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def tasseled_cap(raster):
+    """"
+    The function is designed to analyze and map vegetation and urban development
+    changes detected by various satellite sensor systems. It is known as the 
+    Tasseled Cap transformation due to the shape of the graphical distribution
+    of data. This function takes no arguments except a raster. The input for 
+    this function is the source raster of image service. There are no other 
+    parameters for this function because all the information is derived from 
+    the input's properties and key metadata (bands, data type, and sensor name). 
+    Only imagery from the Landsat MSS, Landsat TM, Landsat ETM+, IKONOS, 
+    QuickBird, WorldView-2 and RapidEye sensors are supported. Prior to applying
+    this function, there should not be any functions that would alter the pixel
+    values in the function chain, such as the Stretch, Apparent Reflectance or
+    Pansharpening function. The only exception is for Landsat ETM+; when using 
+    Landsat ETM+, the Apparent Reflectance function must precede the Tasseled 
+    Cap function. For more information, see 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm
+
+    :param raster: the input raster / imagery layer
+    :return: the output raster with TasseledCap function applied to it
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "TasseledCap",
+        "rasterFunctionArguments" : {
+            "Raster" : raster,
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def identity(raster):
+    """"
+    The function is used to define the source raster as part of the default
+    mosaicking behavior of the mosaic dataset. This function is a no-op function
+    and takes no arguments except a raster. For more information, see
+    (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
+
+    :param raster: the input raster / imagery layer
+    :return: the innput raster
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Identity",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
+    """
+    The ColorspaceConversion function converts the color model of a three-band
+    unsigned 8-bit image from either the hue, saturation, and value (HSV)
+    to red, green, and blue (RGB) or vice versa. An ExtractBand function and/or
+    a Stretch function are sometimes used for converting the imagery into valid
+    input of ColorspaceConversion function. For more information, see
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/color-model-conversion-function.htm
+
+    :param raster: the input raster
+    :param conversion_type: sting type, one of "rgb_to_hsv" or "hsv_to_rgb". Default is "rgb_to_hsv"
+    :return: the output raster with this function applied to it
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+
+    conversion_types = {
+        "rgb_to_hsv" : 0,
+        "hsv_to_rgb" : 1
+        }
+            
+    template_dict = {
+        "rasterFunction" : "ColorspaceConversion",
+        "rasterFunctionArguments" : {
+            "Raster" : raster,            
+        }
+    }
+    
+    template_dict["rasterFunctionArguments"]['ConversionType'] = conversion_types[conversion_type]
+         
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def grayscale(raster, conversion_parameters=None):
+    """
+    The Grayscale function converts a multi-band image into a single-band grayscale
+    image. Specified weights are applied to each of the input bands, and a 
+    normalization is applied for output. For more information, see
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/grayscale-function.htm
+
+    :param raster: the input raster
+    :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
+    :return: the output raster with this function applied to it
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+       
+    template_dict = {
+        "rasterFunction" : "Grayscale",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    if conversion_parameters is not None and isinstance(conversion_parameters, list):
+        template_dict["rasterFunctionArguments"]['ConversionParameters'] = conversion_parameters
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def spectral_conversion(raster, conversion_matrix):
+    """
+    The SpectralConversion function applies a matrix to a multi-band image to
+    affect the spectral values of the output. In the matrix, different weights
+    can be assigned to all the input bands to calculate each of the output 
+    bands. The column/row size of the matrix equals to the band count of input 
+    raster. For more information, see Spectral Conversion function
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm
+
+    :param raster: the input raster
+    :param conversion_parameters: array of double (A NxN length one-dimension matrix, where N=band count.)
+    :return: the output raster with this function applied to it
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+       
+    template_dict = {
+        "rasterFunction" : "SpectralConversion",
+        "rasterFunctionArguments": {
+            "Raster" : raster,  
+            "ConversionMatrix" : conversion_matrix
+        }
+    }    
+    
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def raster_calculator(rasters, input_names, expression, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+    """
+    The RasterCalculator function provides access to all existing math functions
+    so you can make calls to them when building your expressions. The calculator
+    function requires single-band inputs. If you need to perform expressions on
+    bands in a multispectral image as part of a function chain, you can use 
+    the Extract Bands Function before the RasterCalculator function. 
+    For more info including operators supported, see Calculator function 
+    http://pro.arcgis.com/en/pro-app/help/data/imagery/calculator-function.htm
+
+    :param raster: array of rasters
+    :param input_names: array of strings for arbitrary raster names.
+    :param expression: string, expression to calculate output raster from input rasters
+    :param extent_type: string, one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf". Default is "FirstOf".
+    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf". Default is "FirstOf".
+    :param astype: output pixel type
+    :return: output raster with function applied
+    """
+    
+    layer, raster, raster_ra = _raster_input(rasters)
+    
+    extent_types = {
+        "FirstOf" : 0,
+        "IntersectionOf" : 1,
+        "UnionOf" : 2,
+        "LastOf" : 3
+    }
+
+    cellsize_types = {
+        "FirstOf" : 0,
+        "MinOf" : 1,
+        "MaxOf" : 2,
+        "MeanOf" : 3,
+        "LastOf" : 4
+    }      
+
+    template_dict = {
+        "rasterFunction" : "RasterCalculator",
+        "rasterFunctionArguments": {
+            "InputNames" : input_names,
+            "Expression" : expression,
+            "Rasters" : raster            
+        },
+        "variableName" : "Rasters"
+    }
+    
+    template_dict["rasterFunctionArguments"]['ExtentType'] = extent_types[extent_type]    
+    template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type]
+
+    if astype is not None:
+        template_dict["outputPixelType"] = astype.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+
+
+def speckle(raster, 
+            filter_type="Lee", 
+            filter_size="3x3", 
+            noise_model="Multiplicative", 
+            noise_var=None,
+            additive_noise_mean=None, 
+            multiplicative_noise_mean=1,
+            nlooks=1, 
+            damp_factor=None):
+    """
+    The Speckle function filters the speckled radar dataset to smooth out the 
+    noise while retaining the edges or sharp features in the image. Four speckle
+    reduction filtering algorithms are provided through this function. For more
+    information including required and optional parameters for each filter and 
+    the default parameter values, see Speckle function 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm
+
+    :param raster: input raster type
+    :param filter_type: string, one of "Lee", "EnhancedLee" "Frost", "Kaun". Default is "Lee".
+    :param filter_size: string, kernel size. One of "3x3", "5x5", "7x7", "9x9", "11x11". Default is "3x3".
+    :param noise_model: string, For Lee filter only. One of "Multiplicative", "Additive", "AdditiveAndMultiplicative"
+    :param noise_var: double, for Lee filter with noise_model "Additive" or "AdditiveAndMultiplicative"
+    :param additive_noise_mean: string, for Lee filter witth noise_model "AdditiveAndMultiplicative" only
+    :param multiplicative_noise_mean: double, For Lee filter with noise_model "Additive" or "AdditiveAndMultiplicative"
+    :param nlooks: int, for Lee, EnhancedLee and Kuan Filters
+    :param damp_factor: double, for EnhancedLee and Frost filters
+    :return: output raster with function applied
+    """
+   
+    layer, raster, raster_ra = _raster_input(raster)
+   
+    filter_types = {
+        "Lee" : 0,
+        "EnhancedLee" : 1,
+        "Frost" : 2,
+        "Kuan" : 3
+    }
+
+    filter_sizes = {
+        "3x3" : 0,
+        "5x5" : 1,
+        "7x7" : 2,
+        "9x9" : 3,
+        "11x11" : 4
+    }
+
+    noise_models = {
+        "Multiplicative" : 0,
+        "Additive" : 1,
+        "AdditiveAndMultiplicative" : 2
+    }    
+    
+    template_dict = {
+        "rasterFunction" : "Speckle",
+        "rasterFunctionArguments" : {            
+            "Raster": raster,            
+        }
+    }
+        
+    template_dict["rasterFunctionArguments"]['FilterType'] = filter_types[filter_type]    
+    template_dict["rasterFunctionArguments"]['FilterSize'] = filter_sizes[filter_size]    
+    template_dict["rasterFunctionArguments"]['NoiseModel'] = noise_models[noise_model]
+
+    if noise_var is not None:
+        template_dict["rasterFunctionArguments"]['NoiseVar'] = noise_var
+    if additive_noise_mean is not None:
+        template_dict["rasterFunctionArguments"]['AdditiveNoiseMean'] = additive_noise_mean
+    if multiplicative_noise_mean is not None:
+        template_dict["rasterFunctionArguments"]['MultiplicativeNoiseMean'] = multiplicative_noise_mean
+    if nlooks is not None:
+        template_dict["rasterFunctionArguments"]['NLooks'] = nlooks
+    if damp_factor is not None:
+        template_dict["rasterFunctionArguments"]['DampFactor'] = damp_factor
+    
+    return _clone_layer(layer, template_dict, raster_ra)
