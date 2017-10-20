@@ -2,6 +2,7 @@ import os
 import subprocess
 from glob import glob
 import shutil
+import re
 import logging
 log = logging.getLogger()
 

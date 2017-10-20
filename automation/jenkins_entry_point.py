@@ -83,6 +83,7 @@ def _get_build_tag():
 
 if __name__ == "__main__":
     try:
+        raise RuntimeError("unhandled")
         main()
     except Exception as e:
         log.exception(e)
