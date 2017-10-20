@@ -47,7 +47,7 @@ def _add_to_linux_build_name(str_):
         name, ext = os.path.splitext(original_filename)
         renamed_filename = "{}{}{}".format(name, str_, ext)
         os.rename(os.path.join(linux_conda_dir, original_filename),
-                  os.path.join(renamed_filename))
+                  os.path.join(linux_conda_dir, renamed_filename))
 
 if __name__ == "__main__":
     build_conda_package("UNSPECIFIED_VERSION")
