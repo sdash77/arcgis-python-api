@@ -2136,7 +2136,7 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, categories, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org, categories=categories)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist

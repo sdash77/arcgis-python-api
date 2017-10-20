@@ -1544,8 +1544,8 @@ class Portal(object):
             nextstart = int(resp['nextStart'])
         return results
 
-    def search(self, q, categories=None, bbox=None, sort_field='title', sort_order='asc',
-               max_results=1000, outside_org=False):
+    def search(self, q, bbox=None, sort_field='title', sort_order='asc',
+               max_results=1000, outside_org=False, categories=None):
 
 
         if not outside_org:
@@ -1556,13 +1556,13 @@ class Portal(object):
                 q = 'accountid:' + accountid
 
         count = 0
-        resp = self._search_page(q, bbox, categories, 1, min(max_results, 100), sort_field, sort_order)
+        resp = self._search_page(q, bbox,  1, min(max_results, 100), sort_field, sort_order, categories)
         results = resp.get('results')
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_results and nextstart > 0:
             resp = self._search_page(q, bbox, nextstart, min(max_results - count, 100),
-                                     sort_field, sort_order)
+                                     sort_field, sort_order, categories)
             results.extend(resp['results'])
             count += int(resp['num'])
             nextstart = int(resp['nextStart'])
@@ -1570,9 +1570,9 @@ class Portal(object):
         return results
 
 
-    def search_groups(self, q, categories=None,
+    def search_groups(self, q,
                       sort_field='title',sort_order='asc',
-                      max_groups=1000, outside_org=False):
+                      max_groups=1000, outside_org=False, categories=None):
         """ Searches for portal groups.
 
         .. note::
@@ -1651,14 +1651,14 @@ class Portal(object):
 
         # Execute the search and get back the results
         count = 0
-        resp = self._groups_page(q, categories, 1,
-                                 min(max_groups,100), sort_field, sort_order)
+        resp = self._groups_page(q, 1,
+                                 min(max_groups,100), sort_field, sort_order, categories)
         results = resp.get('results')
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_groups and nextstart > 0:
             resp = self._groups_page(q, nextstart, min(max_groups - count,100),
-                                     sort_field, sort_order)
+                                     sort_field, sort_order, categories)
             resp_users = resp.get('results')
             results.extend(resp_users)
             count += int(resp['num'])
@@ -2298,24 +2298,28 @@ class Portal(object):
             path = "{}/{}".format(path, folderid)
         return self.con.post(path, postdata)
 
-    def _search_page(self, q=None, bbox=None, categories=None, start=1, num=10, sortfield='', sortorder='asc'):
+    def _search_page(self, q=None, bbox=None, start=1, num=10, sortfield='', sortorder='asc', categories=None):
         _log.info('Searching items (q=' + str(q) + ', bbox=' + str(bbox) \
                   + ', start=' + str(start) + ', num=' + str(num) + ')')
         postdata = self._postdata()
         postdata.update({ 'q': q or '', 'bbox': bbox or '', 'start': start, 'num': num,
-                          'sortField': sortfield, 'sortOrder': sortorder,
-                          'categoryFilters' : categories})
+                          'sortField': sortfield, 'sortOrder': sortorder
+                          })
+        if categories is not None:
+            postdata['categoryFilters'] = categories
         return self.con.post('search', postdata)
 
 
-    def _groups_page(self, q=None, categories=None, start=1, num=10, sortfield='',
-                     sortorder='asc'):
+    def _groups_page(self, q=None, start=1, num=10, sortfield='',
+                     sortorder='asc', categories=None):
         _log.info('Searching groups (q=' + str(q) + ', start=' + str(start) \
                   + ', num=' + str(num) + ')')
         postdata = self._postdata()
         postdata.update({ 'q': q, 'start': start, 'num': num,
-                          'sortField': sortfield, 'sortOrder': sortorder,
-                          'categoryFilters' : categories})
+                          'sortField': sortfield, 'sortOrder': sortorder
+                          })
+        if categories is not None:
+            postdata['categoryFilters'] = categories
         return self.con.post('community/groups', postdata)
 
 
