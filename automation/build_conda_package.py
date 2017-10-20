@@ -44,10 +44,18 @@ def _add_to_linux_build_name(str_):
     so as to differentiate between packages hosted on server"""
     linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
     for original_filename in os.listdir(linux_conda_dir):
-        name, ext = os.path.splitext(original_filename)
+        name, ext = _split_extension(original_filename)
         renamed_filename = "{}{}{}".format(name, str_, ext)
         os.rename(os.path.join(linux_conda_dir, original_filename),
                   os.path.join(linux_conda_dir, renamed_filename))
+
+def _split_extension(filename):
+    DOUBLE_EXTENSIONS = ['tar.gz','tar.bz2']
+    root, ext = os.path.splitext(filename)
+    if any([filename.endswith(x) for x in DOUBLE_EXTENSIONS]):
+        root, first_ext = os.path.splitext(root)
+        ext = first_ext + ext
+    return root, ext
 
 if __name__ == "__main__":
     build_conda_package("UNSPECIFIED_VERSION")
