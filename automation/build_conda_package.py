@@ -30,7 +30,7 @@ def _build_conda_for_windows(build_tag):
 
     run_shell_command(final_make_command)
     _move_output_to_staging(build_tag)
-    _add_to_linux_build_name(build_tag)
+    _rename_linux_build_using(build_tag)
 
 def _move_output_to_staging(build_tag):
     output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
@@ -39,23 +39,33 @@ def _move_output_to_staging(build_tag):
     log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
                                                  STAGING_DIR))
 
-def _add_to_linux_build_name(str_):
-    """Supports adding an arbitrary string to the conda package name
+def _rename_linux_build_using(build_tag):
+    """Supports adding the build tag to the conda package name
     so as to differentiate between packages hosted on server"""
     linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
+
     for original_filename in os.listdir(linux_conda_dir):
-        name, ext = _split_extension(original_filename)
-        renamed_filename = "{}{}{}".format(name, str_, ext)
+        root, ext = _split_extension(original_filename)
+        py_version = _get_py_version_section_of_filename(root)
+        renamed_filename = "{}_{}{}".format(build_tag, py_version, ext)
+        
         os.rename(os.path.join(linux_conda_dir, original_filename),
                   os.path.join(linux_conda_dir, renamed_filename))
 
 def _split_extension(filename):
+    """os.path.splitext doesn't support .tar.bz2, other double extensions"""
     DOUBLE_EXTENSIONS = ['tar.gz','tar.bz2']
     root, ext = os.path.splitext(filename)
     if any([filename.endswith(x) for x in DOUBLE_EXTENSIONS]):
         root, first_ext = os.path.splitext(root)
         ext = first_ext + ext
     return root, ext
+
+def _get_py_version_section_of_filename(filename):
+    output = ""
+    for filename_section in re.split("-|_", filename):
+        output += filename_section if "py" in filename_section else ""
+    return output
 
 if __name__ == "__main__":
     build_conda_package("UNSPECIFIED_VERSION")
