@@ -49,7 +49,7 @@ def _rename_linux_build_using(build_tag):
     for original_filename in os.listdir(linux_conda_dir):
         root, ext = _split_extension(original_filename)
         py_version = _get_py_version_section_of_filename(root)
-        renamed_filename = "{}_{}{}".format(build_tag, py_version, ext)
+        renamed_filename = "arcgis_{}_{}{}".format(py_version, build_tag, ext)
         
         if py_version_to_target in renamed_filename:
             os.rename(os.path.join(linux_conda_dir, original_filename),
