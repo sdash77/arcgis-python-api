@@ -44,14 +44,16 @@ def _rename_linux_build_using(build_tag):
     """Supports adding the build tag to the conda package name
     so as to differentiate between packages hosted on server"""
     linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
+    py_version_to_target = "py36"
 
     for original_filename in os.listdir(linux_conda_dir):
         root, ext = _split_extension(original_filename)
         py_version = _get_py_version_section_of_filename(root)
         renamed_filename = "{}_{}{}".format(build_tag, py_version, ext)
         
-        os.rename(os.path.join(linux_conda_dir, original_filename),
-                  os.path.join(linux_conda_dir, renamed_filename))
+        if py_version_to_target in renamed_filename:
+            os.rename(os.path.join(linux_conda_dir, original_filename),
+                      os.path.join(linux_conda_dir, renamed_filename))
 
 def _split_extension(filename):
     """os.path.splitext doesn't support .tar.bz2, other double extensions"""

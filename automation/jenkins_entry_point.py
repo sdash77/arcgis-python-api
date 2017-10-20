@@ -51,10 +51,10 @@ def _check_and_parse_arguments():
         _automation_type = sys.argv[1]
         _build_num = sys.argv[2]
         if _automation_type_matches_regex(_master_regex):
-            _build_tag = "geosaurus{}_master_j{}".format(_py_api_version,
+            _build_tag = "geosaurus_{}_master_j{}".format(_py_api_version,
                                                          _build_num)
         elif _automation_type_matches_regex(_pull_request_regex):
-            _build_tag = "geosaurus{}_dev_j{}".format(_py_api_version,
+            _build_tag = "geosaurus_{}_dev_j{}".format(_py_api_version,
                                                       _build_num)
 
 def _get_functions_to_call_for_cmd_arg():
