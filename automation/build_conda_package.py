@@ -46,14 +46,19 @@ def _rename_linux_build_using(build_tag):
     linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
     py_version_to_target = "py36"
 
-    for original_filename in os.listdir(linux_conda_dir):
+    for original_filename in linux_files_to_rename(linux_conda_dir):
         root, ext = _split_extension(original_filename)
         py_version = _get_py_version_section_of_filename(root)
         renamed_filename = "arcgis_{}_{}{}".format(py_version, build_tag, ext)
         
-        if py_version_to_target in renamed_filename:
-            os.rename(os.path.join(linux_conda_dir, original_filename),
-                      os.path.join(linux_conda_dir, renamed_filename))
+        os.rename(os.path.join(linux_conda_dir, original_filename),
+                  os.path.join(linux_conda_dir, renamed_filename))
+
+def _linux_files_to_rename(linux_conda_dir):
+    regex_to_match = ".*py36.*" 
+    return [ filename for filename
+             in os.listdir(linux_conda_dir)
+             if re.match(regex_to_match, filename) ]
 
 def _split_extension(filename):
     """os.path.splitext doesn't support .tar.bz2, other double extensions"""
