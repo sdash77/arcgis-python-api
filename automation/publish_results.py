@@ -12,4 +12,4 @@ def publish_results(*args, **kwargs):
         raise RuntimeError("Conda building not supported on *nix systems")
     elif os.name == 'nt':
         publish_dir_win = r"C:\Users\Public\conda_packages\{}".format(build_tag)
-        shutil.copytree(os.path.join(STAGING_DIR, build_tag), publish_dir_win)      
+        shutil.copytree(os.path.join(STAGING_DIR, "conda_builds"), publish_dir_win)      
