@@ -30,12 +30,24 @@ def _build_conda_for_windows(build_tag):
 
     run_shell_command(final_make_command)
     _move_output_to_staging(build_tag)
+    _add_to_linux_build_name(build_tag)
 
 def _move_output_to_staging(build_tag):
     output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
-    shutil.copytree(output_dir_of_conda_packages, os.path.join(STAGING_DIR, build_tag))
+    shutil.copytree(output_dir_of_conda_packages,
+                    os.path.join(STAGING_DIR, "conda_builds"))
     log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
-                                              STAGING_DIR))
+                                                 STAGING_DIR))
+
+def _add_to_linux_build_name(str_):
+    """Supports adding an arbitrary string to the conda package name
+    so as to differentiate between packages hosted on server"""
+    linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
+    for original_filename in os.listdir(linux_conda_dir):
+        name, ext = os.path.splitext(original_filename)
+        renamed_filename = "{}{}{}".format(name, str_, ext)
+        os.rename(os.path.join(linux_conda_dir, original_filename),
+                  os.path.join(renamed_filename))
 
 if __name__ == "__main__":
     build_conda_package("UNSPECIFIED_VERSION")
