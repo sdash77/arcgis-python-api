@@ -46,7 +46,7 @@ def _rename_linux_build_using(build_tag):
     linux_conda_dir = os.path.join(STAGING_DIR,"conda_builds","linux-64")
     py_version_to_target = "py36"
 
-    for original_filename in linux_files_to_rename(linux_conda_dir):
+    for original_filename in _linux_files_to_rename(linux_conda_dir):
         root, ext = _split_extension(original_filename)
         py_version = _get_py_version_section_of_filename(root)
         renamed_filename = "arcgis_{}_{}{}".format(py_version, build_tag, ext)
