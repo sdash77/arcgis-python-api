@@ -264,7 +264,8 @@ class GIS(object):
                 raise
 
         if url.lower().find("www.arcgis.com") > -1 and \
-           self._portal.is_logged_in:
+           self._portal.is_logged_in and \
+           self._portal.get_properties(True)['user']['access'] == 'private':
             from six.moves.urllib_parse import urlparse
             props = self._portal.get_properties(force=True)
             url = "%s://%s.%s" % (urlparse(self._url).scheme,
