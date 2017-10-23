@@ -29,6 +29,7 @@ def _paths_in_dir_to_delete(dir_, files_to_ignore):
 
 def _install_correct_packages():
     run_shell_command("pip install xmlrunner")
+    run_shell_command("conda install -c conda-forge ipywidgets")
 
 def _install_geosaurus_src():
    run_shell_command("pip install -e {}".format(
