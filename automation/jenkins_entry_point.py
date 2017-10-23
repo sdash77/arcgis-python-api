@@ -28,7 +28,7 @@ _funcs_for_auto = [(_master_regex, [(automation_setup, _no_args),
                                     (build_documentation, _no_args),
                                     (build_conda_package, _build_tag_args),
                                     (build_docker_image, _no_args),
-                                    (publish_results, _no_args)]),
+                                    (publish_results, _build_tag_args)]),
 
              (_pull_request_regex, [(automation_setup, _no_args),
                                     (run_unit_tests, _no_args),
