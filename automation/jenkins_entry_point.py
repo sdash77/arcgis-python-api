@@ -37,7 +37,7 @@ def main():
     automation_type = _check_parse_args_get_automation_type()
     funcs_and_args = _get_functions_to_call_for_auto_type(automation_type)
     for func, args in funcs_and_args:
-        func(args)
+        func(*args)
 
 def _check_parse_args_get_automation_type():
     _check_args()
