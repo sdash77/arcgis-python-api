@@ -85,12 +85,15 @@
 var esriCDN = location.protocol + "//js.arcgis.com/3.17amd/"
 var proxyUrl = "/proxy/proxy.jsp";
 
-var nbextensionPath = "/nbextensions/arcgis";
-if (location.href.search("user") > 0) {
-    nbextensionPath = location.pathname.split("/").slice(0, 3).join("/") + "/nbextensions/arcgis";
+// Jupyter specific, but should work for local, tmpnb, NSF, and other scenarios
+//    the way Jupyter Notebooks work; get last occurrence of notebooks in URL.
+var strnb = location.href.lastIndexOf("/notebooks");
+var nbextensionPath = "";
+if (strnb < 0) {
+    nbextensionPath = "/nbextensions/arcgis";
 }
-if (location.href.search("arcgis/admin/notebooks") > 0) {
-    nbextensionPath = location.pathname.split("/").slice(0, 5).join("/") + "/nbextensions/arcgis";
+else {
+    nbextensionPath = location.href.substring(0, strnb) + "/nbextensions/arcgis";
 }
 
 require.config({
