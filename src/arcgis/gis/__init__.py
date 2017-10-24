@@ -1096,7 +1096,6 @@ class UserManager(object):
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
-
             params = {
                 'f': 'json',
                 'invitationList' : {'invitations' : [ {
@@ -1111,7 +1110,11 @@ class UserManager(object):
                 'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
                 'html' : email_text
             }
-
+            if idp_username is not None:
+                if provider is None:
+                    provider = 'enterprise'
+                params['invitationList']['invitations'][0]['targetUserProvider'] = provider
+                params['invitationList']['invitations'][0]['idpUsername'] = idp_username
             if password is not None:
                 params['invitationList']['invitations'][0]['password'] = password
 
