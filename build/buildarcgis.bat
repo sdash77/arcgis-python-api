@@ -1,3 +1,4 @@
+rmdir /s /q ___output.old
 ren ___output ___output.old
 mkdir ___output
 
