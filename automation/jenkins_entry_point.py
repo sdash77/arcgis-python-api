@@ -15,6 +15,7 @@ from build_docker_image import build_docker_image
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
 from publish_results import publish_results
+from automation_cleanup import automation_cleanup
 
 _master_regex = ".*master.*"
 _pull_request_regex = ".*pull.*request.*"
@@ -28,11 +29,13 @@ _funcs_for_auto = [(_master_regex, [(automation_setup, _no_args),
                                     (build_documentation, _no_args),
                                     (build_conda_package, _build_tag_args),
                                     (build_docker_image, _no_args),
-                                    (publish_results, _build_tag_args)]),
+                                    (publish_results, _build_tag_args),
+                                    (automation_cleanup, _no_args)]),
 
              (_pull_request_regex, [(automation_setup, _no_args),
                                     (run_unit_tests, _no_args),
-                                    (build_documentation, _no_args)])]
+                                    (build_documentation, _no_args),
+                                    (automation_cleanup, _no_args)])]
 def main():
     automation_type = _check_parse_args_get_automation_type()
     funcs_and_args = _get_functions_to_call_for_auto_type(automation_type)
