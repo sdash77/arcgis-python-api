@@ -262,26 +262,27 @@ class GIS(object):
                                    "argument when connecting to the GIS.")
             else:
                 raise
-
-        if url.lower().find("www.arcgis.com") > -1 and \
-           self._portal.is_logged_in and \
-           self._portal.get_properties(True)['user']['access'] == 'private':
-            from six.moves.urllib_parse import urlparse
-            props = self._portal.get_properties(force=True)
-            url = "%s://%s.%s" % (urlparse(self._url).scheme,
-                                  props['urlKey'],
-                                  props['customBaseUrl'])
-            self._url = url
-            self._portal = portalpy.Portal(url,
-                                           self._username,
-                                           self._password,
-                                           self._key_file,
-                                           self._cert_file,
-                                           verify_cert=self._verify_cert,
-                                           client_id=self._client_id,
-                                           proxy_port=self._proxy_port,
-                                           proxy_host=self._proxy_host)
-        self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
+        try:
+            if url.lower().find("www.arcgis.com") > -1 and \
+               self._portal.is_logged_in:
+                from six.moves.urllib_parse import urlparse
+                props = self._portal.get_properties(force=False)
+                url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                      props['urlKey'],
+                                      props['customBaseUrl'])
+                self._url = url
+                pp =  portalpy.Portal(url,
+                                      self._username,
+                                      self._password,
+                                      self._key_file,
+                                      self._cert_file,
+                                      verify_cert=self._verify_cert,
+                                      client_id=self._client_id,
+                                      proxy_port=self._proxy_port,
+                                      proxy_host=self._proxy_host)
+                self._portal = pp
+        except: pass
+        self._lazy_properties = PropertyMap(self._portal.get_properties(force=True))
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
