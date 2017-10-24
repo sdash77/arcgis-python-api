@@ -34,7 +34,6 @@ def _build_conda_for_windows(build_tag):
 
 def _move_output_to_staging(build_tag):
     output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
-    shutil.
     shutil.copytree(output_dir_of_conda_packages,
                     os.path.join(STAGING_DIR, 'conda_builds', build_tag))
     log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
