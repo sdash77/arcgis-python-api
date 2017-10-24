@@ -129,7 +129,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
-        sr = kwargs.pop('sr', None)
+        sr = self._sr(kwargs.pop('sr', 4326))
         geometry = kwargs.pop('geometry', None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
 
@@ -156,10 +156,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 gtrans = []
 
                 if HASARCPY:
+                    if sr is None:
+                        sr = _types.SpatialReference({'wkid':4326 })
                     if isinstance(g, arcpy.Point):
                         for g in geometry:
                             if isinstance(g, arcpy.Point):
-                                g = arcpy.PointGeometry(g)
+                                g = arcpy.PointGeometry(g, sr.as_arcpy)
                             gtrans.append(_types.Geometry(g))
                         geometry = gtrans
                     elif isinstance(g, arcpy.Geometry):
@@ -167,7 +169,17 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                             gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
-
+                    elif isinstance(g, dict):
+                        for g in geometry:
+                            gtrans.append(_types.Geometry(g))
+                            del g
+                        geometry = gtrans
+                else:
+                    if isinstance(g, dict):
+                        for g in geometry:
+                            gtrans.append(_types.Geometry(g))
+                            del g
+                        geometry = gtrans
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
             if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
@@ -180,12 +192,31 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                            isinstance(g, dict):
                             geometry[idx] = _types.Geometry(g)
                     self.set_geometry(geometry, inplace=True)
+        if self.sr is None:
+            self.sr = self._sr(sr)
         self._delete_index()
     #----------------------------------------------------------------------
     @property
     def _constructor(self):
         """constructor for class as per Pandas' github page"""
         return SpatialDataFrame
+    #----------------------------------------------------------------------
+    def _sr(self, sr):
+        """sets the spatial reference"""
+        if isinstance(sr, _types.SpatialReference):
+            return sr
+        elif isinstance(sr, integer_types):
+            return _types.SpatialReference({'wkid' : sr})
+        elif isinstance(sr, string_types):
+            return _types.SpatialReference({'wkt' : sr})
+        elif hasattr(sr, 'factoryCode'):
+            return _types.SpatialReference({'wkid' : sr.factoryCode})
+        elif hasattr(sr, 'exportToString'):
+            return _types.SpatialReference({'wkt' : sr.exportToString()})
+        elif not sr is None:
+            raise ValueError("sr (spatial reference) must be a _types.SpatialReference object")
+        else:
+            return None
     #----------------------------------------------------------------------
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
@@ -554,12 +585,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         The original geometry column is replaced with the input.
 
         Parameters:
-        keys: column label or array
+        col: column label or array
         drop: boolean, default True
          Delete column to be used as the new geometry
         inplace: boolean, default False
          Modify the SpatialDataFrame in place (do not create a new object)
-        sr : str/result of fion.get_sr (optional)
+        sr : str/integer the wkid value
          Coordinate system to use. If passed, overrides both DataFrame and
          col's sr. Otherwise, tries to get sr from passed col values or
          DataFrame.
@@ -570,12 +601,19 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             frame = self
         else:
             frame = self.copy()
-
+        if sr:
+            sr = self._sr(sr=sr)
         if not sr:
             sr = getattr(col, 'sr', self.sr)
-
+            if sr is None and \
+               isinstance(col, GeoSeries):
+                col.sr = self.sr
         to_remove = None
-        geo_column_name = self._geometry_column_name
+        if isinstance(col, string_types):
+            geo_column_name = col
+            self._geometry_column_name = col
+        else:
+            geo_column_name = self._geometry_column_name
         if isinstance(col, (GeoSeries, Series, list, numpy.ndarray)):
             level = col
         elif hasattr(col, 'ndim') and col.ndim != 1:
@@ -600,14 +638,80 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             # Avoids caching issues/sr sharing issues
             level = level.copy()
             level.sr = sr
-
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, GEOM_TYPES) or not item for item in level):
             raise TypeError("Input geometry column must contain valid geometry objects.")
+        #if isinstance(frame[geo_column_name], pd.Series):
+        #    frame[geo_column_name] = GeoSeries(frame[geo_column_name])
+        if isinstance(level, (list, tuple, numpy.ndarray)):
+            level = GeoSeries(level)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.sr = sr
         frame._delete_index()
+
+        if (frame.sr != self.sr and HASARCPY):
+            if isinstance(sr, dict):
+                if hasattr(sr, 'as_arcpy') and HASARCPY:
+                    sr = sr.as_arcpy
+                elif 'wkid' in sr:
+                    sr = sr['wkid']
+                elif 'wkt' in sr:
+                    sr = sr['wkt']
+        import json
+        if HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
+            for idx, g in frame.geometry.iteritems():
+                if isinstance(g, arcpy.Point):
+                    g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))
+                elif hasattr(g, "JSON"):
+                    g = arcgis.geometry.Geometry(json.loads(g.JSON))
+                elif isinstance(g, string_types):
+                    g = arcgis.geometry.Geometry(json.loads(g))
+                elif isinstance(g, dict):
+                    g = arcgis.geometry.Geometry(g)
+
+                if inplace:
+                    try:
+                        frame.loc[idx, self._geometry_column_name] = g
+                    except:
+                        frame.set_value(index=idx,
+                                        col=self._geometry_column_name,
+                                        value=g)
+                else:
+                    try:
+                        frame.iloc[idx, self._geometry_column_name] = g
+                    except:
+                        frame.loc[idx, self._geometry_column_name] = g
+                del idx, g
+            if sr:
+                frame.sr = self._sr(sr)
+                frame.geometry = frame.geometry.project_as(sr)
+        else:
+            sr = self.sr
+            if sr is None:
+                sr = {'wkid' : 4326}
+            for idx, g in frame.geometry.iteritems():
+                if hasattr(g, "JSON"):
+                    g = arcgis.geometry.Geometry(json.loads(g.JSON))
+                elif str(type(g)) == "<class 'arcpy.arcobjects.arcobjects.Point'>":
+                    g = arcgis.geometry.Geometry({'x':g.X,
+                                                  'y':g.Y,
+                                                  'spatialReference':sr})
+                elif isinstance(g, string_types):
+                    g = arcgis.geometry.Geometry(json.loads(g))
+                elif isinstance(g, dict):
+                    g = arcgis.geometry.Geometry(g)
+                else:
+                    raise ValueError("Invalid Geometry")
+                if sr is None:
+                    sr = {'wkid' : 4326}
+                if 'spatialReference' not in g:
+                    g['spatialReference'] = dict(sr)
+                if inplace:
+                    frame.loc[idx, self._geometry_column_name] = g
+                else:
+                    frame.iloc[idx, self._geometry_column_name] = g
+            frame.sr = self._sr(sr)
         if not inplace:
             return frame
         self = frame

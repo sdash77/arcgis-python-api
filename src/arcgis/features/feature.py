@@ -8,7 +8,7 @@ import os
 import re
 import tempfile
 import uuid
-
+from datetime import datetime
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._spatial import json_to_featureclass
 from arcgis._impl.common._utils import _date_handler
@@ -283,7 +283,7 @@ class FeatureSet(object):
             if feat_geom is not None:
                 if spatial_reference is None:
                     if 'spatialReference' in feat_geom:
-                        self._spatialReference = feat_geom['spatialReference']
+                        self._spatial_reference = feat_geom['spatialReference']
 
                 if isinstance(feat_geom, Geometry):
                     geometry = feat_geom
@@ -502,12 +502,12 @@ class FeatureSet(object):
                 import pandas as pd
                 return pd.DataFrame()
             elif self.geometry_type is not None:
-                if self.spatial_reference and \
-                   'wkt' in self.spatial_reference.keys():
-                    sr = SpatialReference(self.spatial_reference)
-                elif self.spatial_reference and \
-                     'wkid' in self.spatial_reference:
-                    sr = SpatialReference(self.spatial_reference)
+                if self._spatial_reference and \
+                   'wkt' in self._spatial_reference.keys():
+                    sr = SpatialReference(self._spatial_reference)
+                elif self._spatial_reference and \
+                     'wkid' in self._spatial_reference:
+                    sr = SpatialReference(self._spatial_reference)
                 else:
                     sr = None
                 geoms = []

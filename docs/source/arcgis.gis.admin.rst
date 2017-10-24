@@ -44,7 +44,7 @@ Collaboration
 CreditManager
 ---------------
 .. autoclass:: arcgis.gis.admin.CreditManager
-:members:
+    :members:
     :undoc-members:
     :show-inheritance:
 

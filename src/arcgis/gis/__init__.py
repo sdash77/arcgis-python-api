@@ -256,12 +256,12 @@ class GIS(object):
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
         except Exception as e:
-            if str(type(e.args[0])) == "<class 'ssl.SSLError'>":
+            if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
                                    "If you trust this server and want to proceed, add 'verify_cert=False' as an "
                                    "argument when connecting to the GIS.")
             else:
-                raise RuntimeError(e.args)
+                raise
 
         if url.lower().find("www.arcgis.com") > -1 and \
            self._portal.is_logged_in:
@@ -2136,7 +2136,7 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, categories, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org, categories=categories)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
@@ -4192,6 +4192,7 @@ class Item(dict):
         else:
             thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
+
     @property
     def metadata(self):
         """ Gets and sets the item metadata for the specified item.
@@ -4336,8 +4337,14 @@ class Item(dict):
         if self.thumbnail is None or not self._portal.is_logged_in:
             thumbnail = self.get_thumbnail_link()
         else:
-            b64 = base64.b64encode(self.get_thumbnail())
-            thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
+            try:
+                b64 = base64.b64encode(self.get_thumbnail())
+                thumbnail = "data:image/png;base64," + str(b64,"utf-8") + "' width='200' height='133"
+            except:
+                if self._gis.properties.portalName == 'ArcGIS Online':
+                    thumbnail = 'http://static.arcgis.com/images/desktopapp.png'
+                else:
+                    thumbnail = self._portal.url + '/portalimages/desktopapp.png'
 
         snippet = self.snippet
         if snippet is None:
