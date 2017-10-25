@@ -849,7 +849,7 @@ class FeatureSet(object):
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location, out_name):
+    def save(self, save_location, out_name, encoding=None):
         """
         Saves a featureset object to a feature class
         Input:
@@ -860,7 +860,9 @@ class FeatureSet(object):
                     *.json - text file with json
                     * If no extension, a shapefile if the path is a
                         folder, a featureclass if the path is a GDB
-
+            encoding - character encoding is used to represent a repertoire
+                       of characters by some kind of encoding system. The
+                       default is None.
         """
         _, file_extension = os.path.splitext(out_name)
         if file_extension.lower() not in ['.csv', '.json'] and \
@@ -870,9 +872,13 @@ class FeatureSet(object):
         if sys.version_info[0] == 2:
             access = 'wb+'
             kwargs = {}
+            if encoding is not None:
+                kwargs['encoding'] = encoding
         else:
             access = 'wt+'
             kwargs = {'newline': ''}
+            if encoding is not None:
+                kwargs['encoding'] = encoding
 
         if file_extension == ".csv":
             res = os.path.join(save_location, out_name)
@@ -896,17 +902,15 @@ class FeatureSet(object):
             del csv_file
         elif file_extension == ".json":
             res = os.path.join(save_location, out_name)
-            with open(res, access) as writer:
-
+            with open(res, access, **kwargs) as writer:
                 json.dump(self.value, writer, sort_keys=True, indent=4, ensure_ascii=False)
                 writer.flush()
                 writer.close()
             del writer
-
         else:
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, "%s.json" % uuid.uuid4().hex)
-            with open(temp_file, 'wt') as writer:
+            with open(temp_file, 'wt', **kwargs) as writer:
                 writer.write(self.to_json)
                 writer.flush()
                 writer.close()
