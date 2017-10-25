@@ -282,7 +282,7 @@ class GIS(object):
                                       proxy_host=self._proxy_host)
                 self._portal = pp
         except: pass
-        self._lazy_properties = PropertyMap(self._portal.get_properties(force=True))
+        self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
