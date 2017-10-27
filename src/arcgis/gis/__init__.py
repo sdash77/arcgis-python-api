@@ -283,7 +283,16 @@ class GIS(object):
                 self._portal = pp
         except: pass
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
-
+        try:
+            from .ge import GeoEnrichment
+            hs = self.properties['helperServices']
+            if 'geoenrichment' in hs:
+                try:
+                    url = hs['geoenrichment']['url']
+                except:
+                    url = None
+                self.enrichment = GeoEnrichment(gis=self, url=url)
+        except: pass
         if self._url.lower() == "pro":
             self._url = self._portal.url
 

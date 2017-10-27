@@ -10,6 +10,7 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
+import numpy as np
 
 list_types = (list, tuple)
 if sys.version_info.major == 3:
@@ -1145,6 +1146,19 @@ class Envelope(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
+    def coordinates(self):
+        """returns the coordinates as a np.array"""
+        if 'xmin' in self and \
+           'xmax' in self and \
+           'ymin' in self and \
+           'ymax' in self:
+            if 'zmin' in self and 'zmax' in self:
+                return np.array([self['xmin'], self['ymin'], self['zmin'],
+                                 self['xmax'], self['ymax'], self['zmax']])
+            return np.array([self['xmin'], self['ymin'], self['xmax'], self['ymax']])
+        else:
+            return np.array([])
+    #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
         self.__dict__.update(d)
@@ -1184,6 +1198,15 @@ class Point(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    #----------------------------------------------------------------------
+    def coordinates(self):
+        """returns the coordinates as a np.array"""
+        if 'x' in self and 'y' in self and 'z' in self:
+            return np.array([self['x'], self['y'], self['z']])
+        elif 'x' in self and 'y' in self:
+            return np.array([self['x'], self['y']])
+        else:
+            return np.array([])
 ###########################################################################
 class MultiPoint(Geometry):
     """
@@ -1219,6 +1242,13 @@ class MultiPoint(Geometry):
     @property
     def __geo_interface__(self):
         return {"coordinates": self['points'], "type": "MultiPoint"}
+    #----------------------------------------------------------------------
+    def coordinates(self):
+        """returns the coordinates as a np.array"""
+        if 'points' in self:
+            return np.array(self['points'])
+        else:
+            return np.array([])
     #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
@@ -1258,6 +1288,13 @@ class Polyline(Geometry):
     @property
     def __geo_interface__(self):
         return {"coordinates": self['paths'], "type": "MultiLineString"}
+    #----------------------------------------------------------------------
+    def coordinates(self):
+        """returns the coordinates as a np.array"""
+        if 'paths' in self:
+            return np.array(self['paths'])
+        else:
+            return np.array([])
     #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
@@ -1303,6 +1340,13 @@ class Polygon(Geometry):
     @property
     def __geo_interface__(self):
         return {"coordinates": self['rings'], "type": "MultiPolygon"}
+    #----------------------------------------------------------------------
+    def coordinates(self):
+        """returns the coordinates as a np.array"""
+        if 'rings' in self:
+            return np.array(self['rings'])
+        else:
+            return np.array([])
     #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
