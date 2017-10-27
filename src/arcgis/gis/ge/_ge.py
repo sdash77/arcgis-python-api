@@ -181,7 +181,18 @@ class GeoEnrichment(object):
                                       country, dataset)
         else:
             url = "%s%s" % (self._base_url, self._url_data_collection)
-        return self._gis._con.get(path=url, params=params)
+        res = self._gis._con.get(path=url, params=params)
+        dfs = []
+        for dc in res['DataCollections']:
+            dfs.append(pd.DataFrame(dc['data']))
+            del dc
+        if len(dfs) > 1:
+            df = pd.concat(dfs)
+            df.reset_index(inplace=True, drop=True)
+            return df
+        else:
+            return dfs[0]
+        return res
     #----------------------------------------------------------------------
     def find_report(self, country):
         """
