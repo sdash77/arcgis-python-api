@@ -825,29 +825,3 @@ class GeoEnrichment(object):
             return dfs[0]
         return res
 
-if __name__ == '__main__':
-    pass
-    #gis = GIS(username='AndrewSolutions', password='fujiFUJI1', verify_cert=False)
-    #ge = GeoEnrichment(gis=gis)
-    #ge.find_report(country="CA")
-    #res = ge.create_report(study_areas=[{'geometry':{'x':-117.1956,'y':34.0572}}])
-    #ge.get_variables(country="US")
-    #print(ge.data_collections(country="US", dataset="EducationalAttainment", variables=["percent"]))
-    #res = ge.select_businesses(search_string="Fireproofing",
-    #                           return_geometry=True,
-    #                     spatial_filter={"Locations":["NY,TONAWANDA,14150","KY,LOUISVILLE,40204","WA,SEATTLE,98108"]})
-    #print(res)
-    #ge.standard_geography_query(source_country='US',
-    #                            #country_dataset="US.Census2010",
-    #                            layers=['US.States'],
-    #                            ids=['06'],
-    #                            return_geometry=True)
-    #res = ge.enrich(study_areas=[{"geometry":{"x":-122.435,"y":37.785},"attributes":{"id":"1"}},{"geometry":{"x":-122.433,"y":37.734},"attributes":{"id":"2"}},
-                                #{"sourceCountry":"US","layer":"US.ZIP5","ids":["92373","92129"]},
-                                #{"geometry":{"x": -122.435, "y": 37.785},"areaType": "NetworkServiceArea","bufferUnits": "Hours","bufferRadii": [1],"travel_mode":"Driving"},
-                                #{"address":{"text":"12 Concorde Place Toronto ON M3C 3R8","sourceCountry":"Canada"}},{"address":{"text":"380 New York St Redlands CA 92373","sourceCountry":"US"}},
-                                #{"geometry":{"rings":[[[-117.185412,34.063170],[-122.81,37.81],[-117.200570,34.057196],[-117.185412,34.063170]]],"spatialReference":{"wkid":4326}},"attributes":{"id":"3","name":"optional polygon area name"}}])
-
-    #print()
-    #"helperServices"
-    #"geoenrichment"
