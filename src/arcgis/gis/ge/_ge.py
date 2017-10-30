@@ -79,10 +79,10 @@ class GeoEnrichment(object):
     """
     _appID = None
     _langCode = 'en-us'
-
+    _countries = None
     _gis = None
     _portal = None
-    _base_url = None#'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+    _base_url = None
     _url_standard_geography_query = '/StandardGeographyLevels'
     _url_standard_geography_query_execute = '/StandardGeographyQuery/execute'
     _url_getVariables = '/GetVariables/execute'
@@ -121,6 +121,70 @@ class GeoEnrichment(object):
                                                                'communityanalyst'])
         if language_code is None:
             self._langCode = language_code
+    #----------------------------------------------------------------------
+    @property
+    def countries(self):
+        """
+        returns a Pandas' DataFrame of available countries that have GeoEnrichment data.
+        """
+        if self._countries is None:
+            params = {'f' : 'json'}
+            url = self._base_url + "/Geoenrichment/Countries"
+            res = self._gis._con.post(url, params)
+            countries = [(c["id"], c["name"]) for c in res["countries"]]
+            self._countries =  pd.DataFrame(countries,
+                                            columns=['Country_Code',
+                                                     'Full_Name'])
+        return self._countries
+
+    #----------------------------------------------------------------------
+    def report_metadata(self, country):
+        """
+        This method returns information about a given country's available reports and provides
+        detailed metadata about each report.
+
+        :Usage:
+        >>> ge = gis.enrichment
+        >>> df = ge.report_metadata("al")
+        # returns basic report metadata for Albania
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        country                Required string. lets the user supply and optional name of a country
+                               in order to get information about the data collections in that given
+                               country. This can be the two letter country code or the coutries
+                               full name.
+        ==================     ====================================================================
+
+        :return: Pandas' DataFrame
+        """
+        countries = self._countries
+        if len(country) > 2:
+            q = self._countries['Full_Name'].str.upper() == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Name: %s" % country)
+            country = countries[q]['Country_Code'][0]
+        else:
+            q = self._countries['Country_Code'] == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Code: %s" % country)
+            country = countries[q]['Country_Code'][0]
+        params = {'f' : 'json'}
+        url = self._base_url + "/Geoenrichment/Reports/%s" % country
+        res = self._gis._con.post(url, params)
+        meta = []
+        cols = []
+        for r in res['reports']:
+            if len(cols) == 0:
+                cols = ['reportID']
+                for k in r['metadata'].keys():
+                    cols.append(k)
+            row = {"reportID" : r['reportID']}
+            for k,v in r['metadata'].items():
+                row[k] = v
+            meta.append(row)
+        return pd.DataFrame(meta)
     #----------------------------------------------------------------------
     def data_collections(self,
                          country=None,
@@ -406,7 +470,7 @@ class GeoEnrichment(object):
                                    are contained in a data collection.
         ======================     ====================================================================
 
-        returns: dictionary
+        returns: Pandas' DataFrame
         """
         url = "%s%s" % (self._base_url,
                         self._url_getVariables)
