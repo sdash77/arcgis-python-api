@@ -120,7 +120,7 @@ class GeometryFactory(type):
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
-        if hasattr(iterable, 'JSON'):
+        if hasattr(iterable, 'JSON') and HASARCPY:
             iterable = json.loads(iterable.JSON)
         if cls is Geometry:
             if len(iterable) > 0:
