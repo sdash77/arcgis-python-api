@@ -108,4 +108,5 @@ Submodules
 
    arcgis.gis.admin
    arcgis.gis.server
+   arcgis.gis.ge
    
