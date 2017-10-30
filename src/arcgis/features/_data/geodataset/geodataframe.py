@@ -169,13 +169,21 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                             gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
+                    elif isinstance(g, (arcgis.geometry.Point,
+                                        arcgis.geometry.Polygon,
+                                        arcgis.geometry.Polyline,
+                                        arcgis.geometry.MultiPoint,
+                                        arcgis.geometry.Geometry)):
+                        for g in geometry:
+                            gtrans.append(g)
+                        geometry = gtrans
                     elif isinstance(g, dict):
                         for g in geometry:
                             gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
                 else:
-                    countasdf =0
+                    countasdf = 0
                     if isinstance(g, dict):
                         for g in geometry:
                             try:
