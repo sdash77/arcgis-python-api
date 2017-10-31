@@ -4725,7 +4725,7 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        rel_item            Required string.  The related item ID.
+        rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
@@ -4760,7 +4760,7 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        rel_item            Required string.  The related item ID.
+        rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
