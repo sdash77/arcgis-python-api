@@ -20,8 +20,100 @@ def create_report(study_areas,
                   use_data=None,
                   in_sr=4326,
                   f='bin',
+                  out_name=None,
+                  out_folder=None,
                   gis=None):
     """
+    The Create Report method allows you to create many types of high quality reports for a
+    variety of use cases describing the input area. If a point is used as a study area, the
+    service will create a 1-mile ring buffer around the point to collect and append enrichment
+    data. Optionally, you can create a buffer ring or drive-time service area around points of
+    interest to generate PDF or Excel reports containing relevant information for the area on
+    demographics, consumer spending, tapestry market, business or market potential.
+
+    Report options are available and can be used to describe and gain a better understanding
+    about the market, customers / clients and competition associated with an area of interest.
+
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    study_areas            required list. Required parameter: Study areas may be defined by
+                           input points, polygons, administrative boundaries or addresses.
+    ------------------     --------------------------------------------------------------------
+    report                 optional string. identify the id of the report. This may be one of
+                           the many default reports available along with our demographic data
+                           collections or a customized report. Custom report templates are
+                           stored in an ArcGIS Online organization as a Report Template item.
+                           The organization URL and a valid ArcGIS Online authentication token
+                           is required for security purposes to access these templates. If no
+                           report is specified, the default report is census profile for United
+                           States and a general demographic summary report for most countries.
+    ------------------     --------------------------------------------------------------------
+    export_format          Optional parameter to specify the format of the generated report.
+                           Supported formats include PDF and XLSX.
+    ------------------     --------------------------------------------------------------------
+    report_fields          Optional parameter specifies additional choices to customize
+                           reports. Below is an example of the position on the report header
+                           for each field.
+    ------------------     --------------------------------------------------------------------
+    options                Optional parameter to specify the properties for the study area
+                           buffer. For a full list of valid buffer properties values and
+                           further examples review the Input XY Locations' options parameter.
+
+                           By default a 1 mile radius buffer will be applied to point(s) and
+                           address locations to define a study area.
+    ------------------     --------------------------------------------------------------------
+    return_type            Optional parameter used for storing an output report item to Portal
+                           for ArcGIS instead of returning a report to a customer via binary
+                           stream. The attributes are used by Portal to determine where and how
+                           an item is stored. Parameter attributes include: user, folder,
+                           title, item_properties, URL, token, and referrer.
+                           Example
+
+                           Creating a new output in a Portal for ArcGIS Instance:
+
+                           return_type = {'user' : 'testUser',
+                                          'folder' : 'FolderName',
+                                          'title' : 'Report Title',
+                                          'item_properties' : '<properties>',
+                                          'url' : 'https://hostname.domain.com/webadaptor',
+                                          'token' : 'token', 'referrer' : 'referrer'}
+    ------------------     --------------------------------------------------------------------
+    use_data               Optional dictionary. This parameter explicitly specify the country
+                           or dataset to query. When all input features specified in the
+                           study_areas parameter describe locations or areas that lie in the
+                           same country or dataset, this parameter can be specified to provide
+                           an additional 'performance hint' to the service.
+
+                           By default, the service will automatically determine the country or
+                           dataset that is associated with each location or area submitted in
+                           the study_areas parameter. Specifying a specific dataset or country
+                           through this parameter will potentially improve response time.
+
+                           By default, the data apportionment method is determined by the size
+                           of the study area. Small study areas use block apportionment for
+                           higher accuracy whereas large study areas (100 miles or more) will
+                           use a cascading centroid apportionment method to maintain
+                           performance. This default behavior can be overridden by using the
+                           detailed_aggregation parameter.
+    ------------------     --------------------------------------------------------------------
+    in_sr                  Optional parameter to define the input geometries in the study_areas
+                           parameter in a specified spatial reference system.
+                           When input points are defined in the study_areas parameter, this
+                           optional parameter can be specified to explicitly indicate the
+                           spatial reference system of the point features. The parameter value
+                           can be specified as the well-known ID describing the projected
+                           coordinate system or geographic coordinate system.
+                           The default is 4326
+    ------------------     --------------------------------------------------------------------
+    f                      Optional parameter to specify the output response format.
+                           Values: f, bin
+    ------------------     --------------------------------------------------------------------
+    out_name               Optional string.  Name of the output file
+    ------------------     --------------------------------------------------------------------
+    out_folder             Optional string. Name of the save folder
+    ==================     ====================================================================
     """
     if gis is None:
         gis = env.active_gis
@@ -35,6 +127,8 @@ def create_report(study_areas,
                             return_type=return_type,
                             use_data=use_data,
                             in_sr=in_sr,
+                            out_folder=out_folder,
+                            out_name=out_name,
                             f=f)
 #----------------------------------------------------------------------
 def data_collections(country=None,
@@ -193,10 +287,10 @@ def enrich(study_areas,
                                   of use for the GeoEnrichment class require that you specify the
                                   for_storage parameter to true.
     -------------------------     --------------------------------------------------------------------
-    as_featureset                 Optional boolean.  The default is False. If True, the result will be
+    as_featureset                 Optional boolean.  The default is True. If True, the result will be
                                   a arcgis.features.FeatureSet object instead of a SpatailDataFrame or
                                   Pandas' DataFrame.
-    ------------------            --------------------------------------------------------------------
+    -------------------------     --------------------------------------------------------------------
     gis                           Optional GIS.  If None, the GIS object will be used from the
                                   arcgis.env.active_gis.  This GIS object must be authenticated and
                                   have the ability to consume credits
