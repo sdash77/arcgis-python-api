@@ -9,7 +9,7 @@ import unittest
 import pandas as pd
 import os, shutil
 from arcgis.gis import GIS
-from arcgis.gis.ge import GeoEnrichment
+from arcgis import geoenrichment
 from arcgis.features import SpatialDataFrame
 ########################################################################
 ## SETUP VALUES                                                       ##
@@ -28,73 +28,51 @@ if USERNAME is not None and PASSWORD is not None:
         AGOL GeoEnrichment Tests
         """
         ##----------------------------------------------------------------------
-        def test_ge_exists(self):
-            """tests if enrichment is present on the class"""
-            gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            self.assertTrue(hasattr(gis, 'enrichment'))
-        ##----------------------------------------------------------------------
-        def test_ge_does_not_exist(self):
-            """tests if enrichment is not present on the class"""
-            gis = GIS(url=URL, verify_cert=VERIFY)
-            self.assertTrue(hasattr(gis, 'enrichment')==False)
-        ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_ge_coutry_df(self):
             """tests if countries returned as a Pandas' DataFrame"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            self.assertIsInstance(ge.countries, pd.DataFrame)
+            res = geoenrichment.list_countries(gis=gis)
+            self.assertIsInstance(res, pd.DataFrame)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_ge_report_metadata(self):
             """tests report metadata"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            df_countries = ge.countries
+
+            df_countries = geoenrichment.list_countries(gis=gis)
             cc = df_countries.iloc[0]['Country_Code']
             fn = df_countries.iloc[0]['Full_Name']
-            self.assertIsInstance(ge.report_metadata(cc), pd.DataFrame)
-            self.assertIsInstance(ge.report_metadata(fn), pd.DataFrame)
-        ##----------------------------------------------------------------------
-        #@unittest.SkipTest
-        def test_ge_report_metadata(self):
-            """tests report metadata"""
-            gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            df_countries = ge.countries
-            cc = df_countries.iloc[0]['Country_Code']
-            fn = df_countries.iloc[0]['Full_Name']
-            self.assertIsInstance(ge.report_metadata(cc), pd.DataFrame)
-            self.assertIsInstance(ge.report_metadata(fn), pd.DataFrame)
+            self.assertIsInstance(geoenrichment.report_metadata(cc), pd.DataFrame)
+            self.assertIsInstance(geoenrichment.report_metadata(fn), pd.DataFrame)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_find_report(self):
             """test the find report"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            self.assertIsInstance(ge.find_report(country="CA"), pd.DataFrame)
+            self.assertIsInstance(geoenrichment.find_report(country="CA"), pd.DataFrame)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_get_variables(self):
             """tests get variables"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            self.assertIsInstance(ge.get_variables(country="US"), pd.DataFrame)
+
+            self.assertIsInstance(geoenrichment.get_variables(country="US"), pd.DataFrame)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_data_collections(self):
             """tests data collections"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            r = ge.data_collections(country="US", dataset="EducationalAttainment", variables=["percent"])
+
+            r = geoenrichment.data_collections(country="US", dataset="EducationalAttainment", variables=["percent"])
             self.assertIsInstance(r, pd.DataFrame)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_select_businesses(self):
             """tests select businesses"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            r = ge.select_businesses(search_string="Fireproofing",
+
+            r = geoenrichment.select_businesses(search_string="Fireproofing",
                               return_geometry=True,
                         spatial_filter={"Locations":["NY,TONAWANDA,14150","KY,LOUISVILLE,40204","WA,SEATTLE,98108"]})
             self.assertIsInstance(r, (SpatialDataFrame, pd.DataFrame))
@@ -103,8 +81,8 @@ if USERNAME is not None and PASSWORD is not None:
         def test_standard_geography_query(self):
             """tests standard_geography_query"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            r = ge.standard_geography_query(source_country='US',
+
+            r = geoenrichment.standard_geography_query(source_country='US',
                                       layers=['US.States'],
                                       ids=['06'],
                                       return_geometry=True)
@@ -114,8 +92,8 @@ if USERNAME is not None and PASSWORD is not None:
         def test_enrich(self):
             """tests enrich dataset"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            r = ge.enrich(study_areas=[{"geometry":{"x":-122.435,"y":37.785},"attributes":{"id":"1"}},{"geometry":{"x":-122.433,"y":37.734},"attributes":{"id":"2"}},
+
+            r = geoenrichment.enrich(study_areas=[{"geometry":{"x":-122.435,"y":37.785},"attributes":{"id":"1"}},{"geometry":{"x":-122.433,"y":37.734},"attributes":{"id":"2"}},
                            {"sourceCountry":"US","layer":"US.ZIP5","ids":["92373","92129"]},
                            {"geometry":{"x": -122.435, "y": 37.785},"areaType": "NetworkServiceArea","bufferUnits": "Hours","bufferRadii": [1],"travel_mode":"Driving"},
                            {"address":{"text":"12 Concorde Place Toronto ON M3C 3R8","sourceCountry":"Canada"}},{"address":{"text":"380 New York St Redlands CA 92373","sourceCountry":"US"}},
@@ -127,8 +105,8 @@ if USERNAME is not None and PASSWORD is not None:
         def test_create_report(self):
             """tests enrich dataset"""
             gis = GIS(url=URL, username=USERNAME, password=PASSWORD, verify_cert=VERIFY)
-            ge = gis.enrichment
-            r = ge.create_report(study_areas=[{"geometry":{"x":-117.1956,"y":34.0572}}])
+
+            r = geoenrichment.create_report(study_areas=[{"geometry":{"x":-117.1956,"y":34.0572}}])
             import os
             self.assertTrue(os.path.isfile(r))
 

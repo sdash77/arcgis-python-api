@@ -13,6 +13,9 @@ arcgis.env module
 arcgis.features module
 -----------------
 
+arcgis.geoenrichment module
+-----------------
+
 arcgis.raster module
 ------------------
 
@@ -36,11 +39,11 @@ arcgis.geoprocessing module
 
 arcgis.mapping module
 -----------------
-   
+
 arcgis.widgets module
 -----------------
-   
-   
+
+
 Module contents
 ---------------
 
