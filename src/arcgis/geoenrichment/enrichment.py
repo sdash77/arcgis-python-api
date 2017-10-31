@@ -9,7 +9,7 @@ def list_countries(gis=None):
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
-    return ge.countries
+    return ge.countries()
 #----------------------------------------------------------------------
 def create_report(study_areas,
                   report=None,
