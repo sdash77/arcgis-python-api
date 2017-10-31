@@ -163,14 +163,14 @@ class _GeoEnrichment(object):
 
         :return: Pandas' DataFrame
         """
-        countries = self.countries
+        countries = self.countries()
         if len(country) > 2:
-            q = self.countries['Full_Name'].str.upper() == str(country).upper()
+            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
             if len(countries[q]) == 0:
                 raise ValueError("Invalid Country Name: %s" % country)
             country = countries[q]['Country_Code'].tolist()[0]
         else:
-            q = self.countries['Country_Code'] == str(country).upper()
+            q = self.countries()['Country_Code'] == str(country).upper()
             if len(countries[q]) == 0:
                 raise ValueError("Invalid Country Code: %s" % country)
             country = countries[q]['Country_Code'].tolist()[0]
