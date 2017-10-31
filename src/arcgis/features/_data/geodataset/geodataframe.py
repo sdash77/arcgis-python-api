@@ -169,15 +169,36 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                             gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
+                    elif isinstance(g, (arcgis.geometry.Point,
+                                        arcgis.geometry.Polygon,
+                                        arcgis.geometry.Polyline,
+                                        arcgis.geometry.MultiPoint,
+                                        arcgis.geometry.Geometry)):
+                        for g in geometry:
+                            gtrans.append(g)
+                        geometry = gtrans
                     elif isinstance(g, dict):
                         for g in geometry:
                             gtrans.append(_types.Geometry(g))
                             del g
                         geometry = gtrans
                 else:
+                    countasdf = 0
                     if isinstance(g, dict):
                         for g in geometry:
-                            gtrans.append(_types.Geometry(g))
+                            try:
+                                if isinstance(g, (arcgis.geometry.Point,
+                                                  arcgis.geometry.Polygon,
+                                                  arcgis.geometry.Polyline,
+                                                  arcgis.geometry.MultiPoint,
+                                                  arcgis.geometry.Geometry)):
+                                    gtrans.append(g)
+                                elif isinstance(g, dict):
+                                    gtrans.append(_types.Geometry(g))
+                            except:
+                                print('issue with: %s' % countasdf)
+                                gtrans.append(None)
+                                countasdf+=1
                             del g
                         geometry = gtrans
             self.set_geometry(geometry, inplace=True)
@@ -691,7 +712,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             if sr is None:
                 sr = {'wkid' : 4326}
             for idx, g in frame.geometry.iteritems():
-                if hasattr(g, "JSON"):
+                if hasattr(g, "JSON") and HASARCPY:
                     g = arcgis.geometry.Geometry(json.loads(g.JSON))
                 elif str(type(g)) == "<class 'arcpy.arcobjects.arcobjects.Point'>":
                     g = arcgis.geometry.Geometry({'x':g.X,
@@ -708,9 +729,15 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 if 'spatialReference' not in g:
                     g['spatialReference'] = dict(sr)
                 if inplace:
-                    frame.loc[idx, self._geometry_column_name] = g
+                    try:
+                        frame.loc[idx, self._geometry_column_name] = g
+                    except:
+                        frame.set_value(index=idx, col=self._geometry_column_name, value=g)
                 else:
-                    frame.iloc[idx, self._geometry_column_name] = g
+                    try:
+                        frame.iloc[idx, self._geometry_column_name] = g
+                    except:
+                        frame.set_value(index=idx, col=self._geometry_column_name, value=g)
             frame.sr = self._sr(sr)
         if not inplace:
             return frame

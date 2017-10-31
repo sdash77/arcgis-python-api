@@ -15,6 +15,7 @@ Contents:
    arcgis.gis.toc
    arcgis.env
    arcgis.features.toc
+   arcgis.geoenrichment
    arcgis.raster.toc
    arcgis.network.toc
    arcgis.geoanalytics.toc
@@ -25,7 +26,7 @@ Contents:
    arcgis.realtime
    arcgis.schematics
    arcgis.widgets
-   
+
 
 Indices and tables
 ==================
