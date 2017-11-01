@@ -154,10 +154,11 @@ def from_featureclass(filename, **kwargs):
         sdf = SpatialDataFrame(data=df, geometry=geoms)
         sdf.reset_index(drop=True, inplace=True)
         del df
-        if sr is None:
-            sdf.sr = sr
-        else:
-            sdf.sr = sdf.geometry[0].spatialReference
+        if sdf.sr is None:
+            if sr is not None:
+                sdf.sr = sr
+            else:
+                sdf.sr = sdf.geometry[sdf.geometry.first_valid_index()].spatialReference
         return sdf
     elif HASARCPY == False and \
          HASPYSHP == True and\
