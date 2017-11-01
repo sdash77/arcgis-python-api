@@ -239,6 +239,136 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         else:
             return None
     #----------------------------------------------------------------------
+    def __feature_set__(self):
+        """returns a dictionary representation of an Esri FeatureSet"""
+        import numpy as np
+        import datetime
+        import time
+        cols_norm = [col for col in self.columns]
+        cols_lower = [col.lower() for col in self.columns]
+        fields = []
+        features = []
+        date_fields = []
+        _geom_types = {
+            arcgis.geometry._types.Point :  "esriGeometryPoint",
+            arcgis.geometry._types.Polyline : "esriGeometryPolyline",
+            arcgis.geometry._types.MultiPoint : "esriGeometryMultipoint",
+            arcgis.geometry._types.Polygon : "esriGeometryPolygon"
+        }
+        if self.sr is None:
+            sr = {'wkid' : 4326}
+        else:
+            sr = self.sr
+        fs = {
+            "objectIdFieldName" : "",
+            "globalIdFieldName" : "",
+            "displayFieldName" : "",
+            "geometryType" : _geom_types[type(self.geometry[self.geometry.first_valid_index()])],
+            "spatialReference" : sr,
+            "fields" : [],
+            "features" : []
+        }
+        if 'objectid' in cols_lower:
+            fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
+            fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
+        elif 'fid' in cols_lower:
+            fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
+            fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
+        else:
+            del fs['objectIdFieldName']
+        if 'objectIdFieldName' in fs:
+            fields.append({
+                "name" : fs['objectIdFieldName'],
+                "type" : "esriFieldTypeOID",
+                "alias" : fs['objectIdFieldName']
+            })
+            cols_norm.pop(cols_norm.index(fs['objectIdFieldName']))
+        if 'globalIdFieldName' in fs and len(fs['globalIdFieldName']) > 0:
+            fields.append({
+                "name" : fs['globalIdFieldName'],
+                "type" : "esriFieldTypeGlobalID",
+                "alias" : fs['globalIdFieldName']
+            })
+            cols_norm.pop(cols_norm.index(fs['globalIdFieldName']))
+        elif 'globalIdFieldName' in fs and \
+             len(fs['globalIdFieldName']) == 0:
+            del fs['globalIdFieldName']
+        if self._geometry_column_name in cols_norm:
+            cols_norm.pop(cols_norm.index(self._geometry_column_name))
+        for col in cols_norm:
+            try:
+                idx = self[col].first_valid_index()
+                col_val = self[col].loc[idx]
+            except:
+                col_val = ""
+            if isinstance(col_val, (str, np.str)):
+                l = self[col].str.len().max()
+                if str(l) == 'nan':
+                    l = 255
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeString",
+                    "length" : int(l),
+                    "alias" : col
+                })
+                if fs['displayFieldName'] == "":
+                    fs['displayFieldName'] = col
+            elif isinstance(col_val, (datetime.datetime,
+                                      pd.Timestamp,
+                                      np.datetime64,
+                                      pd.datetime)):
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeDate",
+                    "alias" : col
+                })
+                date_fields.append(col)
+            elif isinstance(col_val, (np.int32, np.int16, np.int8)):
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeSmallInteger",
+                    "alias" : col
+                })
+            elif isinstance(col_val, (int, np.int, np.int64)):
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeInteger",
+                    "alias" : col
+                })
+            elif isinstance(col_val, (float, np.float64)):
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeDouble",
+                    "alias" : col
+                })
+            elif isinstance(col_val, (np.float32)):
+                fields.append({
+                    "name" : col,
+                    "type" : "esriFieldTypeSingle",
+                    "alias" : col
+                })
+        fs['fields'] = fields
+        for row in self.to_dict('records'):
+            geom = {}
+            if self._geometry_column_name in row:
+                geom = row[self._geometry_column_name]
+                del row[self._geometry_column_name]
+            for f in date_fields:
+                try:
+                    row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
+                except:
+                    row[f] = None
+            features.append(
+                {
+                    "geometry" : dict(geom),
+                    "attribute" : row
+                }
+            )
+            del row
+            del geom
+        fs['features'] = features
+        return fs
+    #----------------------------------------------------------------------
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
         if HASARCPY:
