@@ -230,7 +230,7 @@ class GIS(object):
                     config.write(configfile)
 
         if url is None:
-            url = "http://www.arcgis.com"
+            url = "https://www.arcgis.com"
 
         if username is not None and password is None:
             from getpass import getpass
@@ -2397,6 +2397,57 @@ class ContentManager(object):
 
         res = self._portal.con.post(path, postdata)
         return res['available']
+
+    def _bulk_update(self, itemids, properties):
+        """
+        Updates a collection of items' properties.
+
+        Example:
+
+        >>> itemsids = gis.content.search("owner: TestUser12399")
+        >>> properties = {'categories' : ["clothes","formal_wear/socks"]}
+        >>> gis.content._bulk_update(itemids, properties)
+        [{'results' : [{'itemid' : 'id', 'success' : "True/False" }]}]
+
+        .. :Note: bulk_update only works with content categories at this time.
+
+        ================  ======================================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------------------
+        itemids           Required list of string or Item. The collection of Items to update.
+        ----------------  ----------------------------------------------------------------------
+        properties        Required dictionary. The Item's properties to update.
+        ================  ======================================================================
+
+        :returns: list of results
+
+        """
+        path = "content/updateItems"
+        params = {'f' : 'json',
+                  'items' : []}
+        updates = []
+        results = []
+        for item in itemids:
+            if isinstance(item, Item):
+                updates.append({
+                    item.itemid : properties
+                })
+            elif isinstance(item, str):
+                updates.append({
+                    item : properties
+                })
+            else:
+                raise ValueError("Invalid Item or ItemID, must be string or Item")
+        def _chunks(l, n):
+            for i in range(0, len(l), n):
+                yield l[i:i+n]
+        for i in _chunks(l=updates, n=100):
+            params['items'] = i
+
+            res = self._gis._con.post(path=path, postdata=params)
+            results.append(res)
+            del i
+        return results
 
 class ResourceManager(object):
     """
