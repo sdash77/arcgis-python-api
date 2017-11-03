@@ -20,6 +20,7 @@ class AGOLAdminManager(object):
     """
     _gis = None
     _ux = None
+    _idp = None
     _pp = None
     _credits = None
     _metadata = None
@@ -76,6 +77,17 @@ class AGOLAdminManager(object):
             from ._catagoryschema import CategoryManager
             self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
+    #----------------------------------------------------------------------
+    @property
+    def idp(self):
+        """
+        This resource allows for the setting and configuration of IDP
+        """
+        if self._idp is None:
+            from ._idp import IDPManager
+            self._idp = IDPManager(gis=self._gis)
+        return self._idp
+
     #----------------------------------------------------------------------
     @property
     def credits(self):
