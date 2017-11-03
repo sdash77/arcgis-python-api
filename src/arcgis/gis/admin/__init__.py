@@ -22,5 +22,5 @@ from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
 from ._resources import PortalResourceManager
 from ._catagoryschema import CategoryManager
-from ._idp import IDPManager
+from ._idp import IdentityProviderManager
 __all__ = ['PortalAdminManager', 'AGOLAdminManager']

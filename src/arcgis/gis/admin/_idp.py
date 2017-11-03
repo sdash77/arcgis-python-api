@@ -2,7 +2,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 from arcgis import env
 ########################################################################
-class IDPManager(object):
+class IdentityProviderManager(object):
     """
     Manages and Updates the SAML identity provider configuration for a given GIS.
     """

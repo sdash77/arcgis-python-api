@@ -94,8 +94,8 @@ class PortalAdminManager(BasePortalAdmin):
         This resource allows for the setting and configuration of the identity provider
         """
         if self._idp is None:
-            from ._idp import IDPManager
-            self._idp = IDPManager(gis=self._gis)
+            from ._idp import IdentityProviderManager
+            self._idp = IdentityProviderManager(gis=self._gis)
         return self._idp
     #----------------------------------------------------------------------
     @property

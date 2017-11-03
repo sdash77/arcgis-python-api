@@ -48,9 +48,9 @@ CreditManager
     :undoc-members:
     :show-inheritance:
 
-IDPManager
+IdentityProviderManager
 ---------------
-.. autoclass:: arcgis.gis.admin.IDPManager
+.. autoclass:: arcgis.gis.admin.IdentityProviderManager
     :members:
     :undoc-members:
     :show-inheritance:
