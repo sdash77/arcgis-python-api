@@ -48,6 +48,12 @@ CreditManager
     :undoc-members:
     :show-inheritance:
 
+IDPManager
+---------------
+.. autoclass:: arcgis.gis.admin.IDPManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 PasswordPolicy
 ---------------
