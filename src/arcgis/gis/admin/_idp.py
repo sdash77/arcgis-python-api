@@ -4,7 +4,7 @@ from arcgis import env
 ########################################################################
 class IDPManager(object):
     """
-    Manages and Updates the SAML configuration for a given GIS.
+    Manages and Updates the SAML identity provider configuration for a given GIS.
     """
     _gis = None
     _portal = None

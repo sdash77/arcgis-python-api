@@ -91,7 +91,7 @@ class PortalAdminManager(BasePortalAdmin):
     @property
     def idp(self):
         """
-        This resource allows for the setting and configuration of IDP
+        This resource allows for the setting and configuration of the identity provider
         """
         if self._idp is None:
             from ._idp import IDPManager
