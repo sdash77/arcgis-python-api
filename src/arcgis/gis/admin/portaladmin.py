@@ -30,6 +30,7 @@ class PortalAdminManager(BasePortalAdmin):
     _site = None
     _url = None
     _gis = None
+    _idp = None
     _ux = None
     _metadata = None
     _collaborations = None
@@ -86,6 +87,16 @@ class PortalAdminManager(BasePortalAdmin):
             from ._catagoryschema import CategoryManager
             self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
+    #----------------------------------------------------------------------
+    @property
+    def idp(self):
+        """
+        This resource allows for the setting and configuration of the identity provider
+        """
+        if self._idp is None:
+            from ._idp import IdentityProviderManager
+            self._idp = IdentityProviderManager(gis=self._gis)
+        return self._idp
     #----------------------------------------------------------------------
     @property
     def metadata(self):
