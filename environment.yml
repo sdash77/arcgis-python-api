@@ -1,0 +1,12 @@
+name: geosaurus_dev_env
+channels:
+- defaults
+dependencies:
+- ipywidgets >=5.2.2,<7
+- pandas
+- pip
+- python=3.6
+- setuptools
+- widgetsnbextension >=1.2.6,<3
+- pip:
+  - xmlrunner
