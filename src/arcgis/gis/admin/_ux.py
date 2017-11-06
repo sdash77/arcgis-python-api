@@ -1,3 +1,4 @@
+import os
 from ._resources import PortalResourceManager
 
 ###########################################################################
@@ -133,9 +134,10 @@ class UX(object):
 
         # Add resource file
         portal_resources = PortalResourceManager(self._gis)
-        key_val=""
+        key_val = ""
         # find image extension
-        if logo_file:
+        if logo_file is not None and \
+           os.path.isfile(logo_file):
             from pathlib import Path
             fpath = Path(logo_file)
             f_splits = fpath.name.split('.')
@@ -147,6 +149,12 @@ class UX(object):
                 key_val = 'thumbnail.gif'
 
             add_result = portal_resources.add(key_val, logo_file)
+        elif logo_file is None:
+            if 'thumbnail' in dict(self._gis.properties):
+                resource = self._gis.properties['thumbnail']
+                if resource and len(resource) > 0:
+                    portal_resources.delete(resource)
+                key_val = ''
         else:
             for ext in ['.png', '.jpg', '.gif']:
                 try:
@@ -156,7 +164,24 @@ class UX(object):
             key_val = None
 
         # Update the portal self with these banner values
-        update_result = self._gis.update_properties({"thumbnail": key_val})
+        if logo_file is not None:
+            update_result = self._gis.update_properties({"thumbnail": key_val})
+        else:
+            rp = self._gis.properties['rotatorPanels']
+            for idx, r in enumerate(rp):
+                if r['id'].lower() == 'banner-2':
+                    r['innerHTML'] = "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;" + \
+                        " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;" +\
+                        " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"+\
+                        " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; margin-bottom:0; line-height:normal; "+\
+                        "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; color:#369;'>ArcGIS Enterprise</span></div>"
+            update_result = self._gis.update_properties({"clearEmptyFields" : True,
+                                                         "thumbnail": " ",
+                                                         "rotatorPanels" : rp})
+            update_result = self._gis.update_properties({"clearEmptyFields" : True,
+                                                         "thumbnail": "",
+                                                         "rotatorPanels" : rp})
+
         return update_result
     #----------------------------------------------------------------------
     def get_logo(self, download_path):

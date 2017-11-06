@@ -230,7 +230,7 @@ class GIS(object):
                     config.write(configfile)
 
         if url is None:
-            url = "http://www.arcgis.com"
+            url = "https://www.arcgis.com"
 
         if username is not None and password is None:
             from getpass import getpass
@@ -262,24 +262,26 @@ class GIS(object):
                                    "argument when connecting to the GIS.")
             else:
                 raise
-
-        if url.lower().find("www.arcgis.com") > -1 and \
-           self._portal.is_logged_in:
-            from six.moves.urllib_parse import urlparse
-            props = self._portal.get_properties(force=True)
-            url = "%s://%s.%s" % (urlparse(self._url).scheme,
-                                  props['urlKey'],
-                                  props['customBaseUrl'])
-            self._url = url
-            self._portal = portalpy.Portal(url,
-                                           self._username,
-                                           self._password,
-                                           self._key_file,
-                                           self._cert_file,
-                                           verify_cert=self._verify_cert,
-                                           client_id=self._client_id,
-                                           proxy_port=self._proxy_port,
-                                           proxy_host=self._proxy_host)
+        try:
+            if url.lower().find("www.arcgis.com") > -1 and \
+               self._portal.is_logged_in:
+                from six.moves.urllib_parse import urlparse
+                props = self._portal.get_properties(force=False)
+                url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                      props['urlKey'],
+                                      props['customBaseUrl'])
+                self._url = url
+                pp =  portalpy.Portal(url,
+                                      self._username,
+                                      self._password,
+                                      self._key_file,
+                                      self._cert_file,
+                                      verify_cert=self._verify_cert,
+                                      client_id=self._client_id,
+                                      proxy_port=self._proxy_port,
+                                      proxy_host=self._proxy_host)
+                self._portal = pp
+        except: pass
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
 
         if self._url.lower() == "pro":
@@ -1094,7 +1096,6 @@ class UserManager(object):
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
-
             params = {
                 'f': 'json',
                 'invitationList' : {'invitations' : [ {
@@ -1109,7 +1110,11 @@ class UserManager(object):
                 'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
                 'html' : email_text
             }
-
+            if idp_username is not None:
+                if provider is None:
+                    provider = 'enterprise'
+                params['invitationList']['invitations'][0]['targetUserProvider'] = provider
+                params['invitationList']['invitations'][0]['idpUsername'] = idp_username
             if password is not None:
                 params['invitationList']['invitations'][0]['password'] = password
 
@@ -2392,6 +2397,57 @@ class ContentManager(object):
 
         res = self._portal.con.post(path, postdata)
         return res['available']
+
+    def _bulk_update(self, itemids, properties):
+        """
+        Updates a collection of items' properties.
+
+        Example:
+
+        >>> itemsids = gis.content.search("owner: TestUser12399")
+        >>> properties = {'categories' : ["clothes","formal_wear/socks"]}
+        >>> gis.content._bulk_update(itemids, properties)
+        [{'results' : [{'itemid' : 'id', 'success' : "True/False" }]}]
+
+        .. :Note: bulk_update only works with content categories at this time.
+
+        ================  ======================================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------------------
+        itemids           Required list of string or Item. The collection of Items to update.
+        ----------------  ----------------------------------------------------------------------
+        properties        Required dictionary. The Item's properties to update.
+        ================  ======================================================================
+
+        :returns: list of results
+
+        """
+        path = "content/updateItems"
+        params = {'f' : 'json',
+                  'items' : []}
+        updates = []
+        results = []
+        for item in itemids:
+            if isinstance(item, Item):
+                updates.append({
+                    item.itemid : properties
+                })
+            elif isinstance(item, str):
+                updates.append({
+                    item : properties
+                })
+            else:
+                raise ValueError("Invalid Item or ItemID, must be string or Item")
+        def _chunks(l, n):
+            for i in range(0, len(l), n):
+                yield l[i:i+n]
+        for i in _chunks(l=updates, n=100):
+            params['items'] = i
+
+            res = self._gis._con.post(path=path, postdata=params)
+            results.append(res)
+            del i
+        return results
 
 class ResourceManager(object):
     """
@@ -4720,7 +4776,7 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        rel_item            Required string.  The related item ID.
+        rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
@@ -4755,7 +4811,7 @@ class Item(dict):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        rel_item            Required string.  The related item ID.
+        rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',

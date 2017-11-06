@@ -1029,7 +1029,7 @@ class _ArcGISConnection(object):
             _log.debug(msg)
 
         # If there are files present, send a multipart request
-        if files:
+        if files is not None:
             #parsed_url = urlparse(url)
             mpf = MultiPartForm(param_dict=postdata, files=files)
             req = request.Request(url)

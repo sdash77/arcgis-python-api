@@ -130,19 +130,146 @@ class CategoryManager(object):
             url = "%s/deleteCategorySchema" % self._url
             self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
-    def categorize(self, items, categories):
+    def categorize_item(self, item, categories):
         """
-        Assigns a category to a given set of items.
+        Assigns or removes a category to a single item.
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        item                       Required Item or Item ID (string). The content within a GIS
+                                   that will be updated with a list of categories.
+        -----------------------    -------------------------------------------------------------
+        categories                 Required list. Assigns a list of string values to the item's
+                                   categories
+        =======================    =============================================================
+
+        :returns: boolean
+
         """
         from arcgis.gis import Item
         res = []
-        #if isinstance(categories)
+        if isinstance(item, Item):
+            if categories is None:
+                res.append(item.update(item_properties={'categories' : ""}))
+            else:
+                if isinstance(categories, str):
+                    categories = [categories]
+                res.append(item.update(item_properties={'categories' : categories}))
+        return all(res)
+    #----------------------------------------------------------------------
+    def add(self, items, category):
+        """adds a category to an existing item"""
+        from arcgis.gis import Item
+        path = self._gis._portal.resturl + "content/updateItems"
+        params = {'f' : 'json'}
+        updates = []
+        results = []
+        content = self._gis.content
         if isinstance(items, list):
             for item in items:
-                res.append(item.update(item_properties={'categories' : ",".join(categories)}))
+                if isinstance(item, Item):
+                    categories = item.categories
+                    categories.append(category)
+                    updates.append({
+                        item.itemid : {'categories' : categories}
+                    })
+                elif isinstance(item, str):
+                    item = content.get(item)
+                    categories = item.categories
+                    categories.append(category)
+                    updates.append({
+                        item.itemid : {'categories' : categories}
+                    })
                 del item
+        elif isinstance(items, str):
+            item = content.get(items)
+            categories = item.categories
+            categories.append(category)
+            updates.append({
+                item.itemid : {'categories' : categories}
+            })
         elif isinstance(items, Item):
-            res.append(item.update(item_properties={'categories' : ",".join(categories)}))
-        #elif isinstance()
-        return all(res)
+            categories = items.categories
+            categories.append(category)
+            updates.append({
+                items.itemid : {'categories' : categories}
+            })
+        else:
+            raise ValueError("Invalid items, must be list of Item, Item, or item id")
+        def _chunks(l, n):
+            for i in range(0, len(l), n):
+                yield l[i:i+n]
+        for i in _chunks(l=updates, n=100):
+            params['items'] = i
+
+            res = self._gis._con.post(path=path, postdata=params)
+            results.append(res)
+            del i
+        return results
+    #----------------------------------------------------------------------
+    def remove(self, items, category):
+        """remove a category to an item or items"""
+        from arcgis.gis import Item
+        path = self._gis._portal.resturl + "content/updateItems"
+        params = {'f' : 'json'}
+        updates = []
+        results = []
+        content = self._gis.content
+        if isinstance(items, list):
+            for item in items:
+                if isinstance(item, Item):
+                    categories = item.categories
+                    if category in categories:
+                        del categories[categories.index(category)]
+                        updates.append({
+                            item.itemid : {'categories' : categories}
+                        })
+                elif isinstance(item, str):
+                    item = content.get(item)
+                    categories = item.categories
+                    if category in categories:
+                        del categories[categories.index(category)]
+                        updates.append({
+                            item.itemid : {'categories' : categories}
+                        })
+                del item
+        elif isinstance(items, str):
+            item = content.get(items)
+            categories = item.categories
+            if category in categories:
+                del categories[categories.index(category)]
+                updates.append({
+                    item.itemid : {'categories' : categories}
+                })
+        elif isinstance(items, Item):
+            categories = items.categories
+            if category in categories:
+                del categories[categories.index(category)]
+                updates.append({
+                    items.itemid : {'categories' : categories}
+                })
+        else:
+            raise ValueError("Invalid items, must be list of Item, Item, or item id")
+        def _chunks(l, n):
+            for i in range(0, len(l), n):
+                yield l[i:i+n]
+        for i in _chunks(l=updates, n=100):
+            params['items'] = i
+
+            res = self._gis._con.post(path=path, postdata=params)
+            results.append(res)
+            del i
+        return results
+    #----------------------------------------------------------------------
+    def replace(self, items, old_category, new_catgory):
+        """finds and replaces a category value with a new value one"""
+        res = self.add(items, new_catgory)
+        res = self.remove(items, old_category)
+        return res
+
+    #----------------------------------------------------------------------
+    def reset(self, items):
+        """deletes all the categories for a given set of items"""
+        return content._bulk_update(items, {'categories': ''})
 

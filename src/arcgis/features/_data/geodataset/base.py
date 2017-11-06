@@ -725,6 +725,13 @@ class BaseSpatialPandas(object):
                               method=method,
                               isGeoseries=True)
     #----------------------------------------------------------------------
+    def coordinates(self):
+        """
+        returns the point coordinates of the geometry as a
+        np.array object
+        """
+        return _call_function(this=self, op='coordinates')
+    #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
         Returns a point on a line at a specified distance from the beginning

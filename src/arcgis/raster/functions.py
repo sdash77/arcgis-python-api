@@ -3328,3 +3328,70 @@ def speckle(raster,
         template_dict["rasterFunctionArguments"]['DampFactor'] = damp_factor
     
     return _clone_layer(layer, template_dict, raster_ra)
+
+
+def pansharpen(pan_raster,
+               ms_raster,
+               ir_raster=None,
+               fourth_band_of_ms_is_ir = True,
+               weights = [0.166, 0.167, 0.167, 0.5],               
+               type="ESRI",                                
+               sensor=None):
+    """
+    The Pansharpening function uses a higher-resolution panchromatic raster to
+    fuse with a lower-resolution, multiband raster. It can generate colorized 
+    multispectral image with higher resolution. For more information, see 
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm
+
+    :param pan_raster: raster, which is panchromatic
+    :param ms_raster: raster, which is multispectral
+    :param ir_raster: Optional, if fourth_band_of_ms_is_ir is true or selected pansharpening method doesn't require near-infrared image
+    :param fourth_band_of_ms_is_ir: Boolean, "true" if "ms_raster" has near-infrared image on fourth band
+    :param weights: Weights applied for Red, Green, Blue, Near-Infrared bands. 4-elements array, Sum of values is 1
+    :param type: string, describes the Pansharpening method one of "IHS", "Brovey" "ESRI", "SimpleMean", "Gram-Schmidt". Default is "ESRI"
+    :param sensor: string, it is an optional parameter to specify the sensor name
+    :return: output raster with function applied
+    """
+
+    layer1, pan_raster, raster_ra1 = _raster_input(pan_raster)
+    layer2, ms_raster, raster_ra2 = _raster_input(ms_raster)
+    if ir_raster is not None:
+        layer3, ir_raster, raster_ra3 = _raster_input(ir_raster)
+
+    if layer1 is not None:
+        layer = layer1
+    elif layer2 is not None:
+       layer = layer2
+    else:
+        layer = layer3
+
+    pansharpening_types = {
+        "IHS" : 0,
+        "Brovey" : 1,
+        "ESRI" : 2,
+        "SimpleMean" : 3,
+        "Gram-Schmidt" : 4
+    }
+
+    template_dict = {
+        "rasterFunction" : "Pansharpening",
+        "rasterFunctionArguments" : {      
+            "Weights" : weights,            
+            "PanImage": pan_raster,
+            "MSImage" : ms_raster
+        }
+    }
+
+    if type is not None:
+        template_dict["rasterFunctionArguments"]['PansharpeningType'] = pansharpening_types[type]
+
+    if ir_raster is not None:
+        template_dict["rasterFunctionArguments"]['InfraredImage'] = ir_raster
+
+    if isinstance(fourth_band_of_ms_is_ir, bool):
+        template_dict["rasterFunctionArguments"]['UseFourthBandOfMSAsIR'] = fourth_band_of_ms_is_ir
+
+    if sensor is not None:
+        template_dict["rasterFunctionArguments"]['Sensor'] = sensor
+     
+    return _clone_layer(layer, template_dict, raster_ra1)

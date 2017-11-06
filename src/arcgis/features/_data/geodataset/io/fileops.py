@@ -154,10 +154,11 @@ def from_featureclass(filename, **kwargs):
         sdf = SpatialDataFrame(data=df, geometry=geoms)
         sdf.reset_index(drop=True, inplace=True)
         del df
-        if sr is None:
-            sdf.sr = sr
-        else:
-            sdf.sr = sdf.geometry[0].spatialReference
+        if sdf.sr is None:
+            if sr is not None:
+                sdf.sr = sr
+            else:
+                sdf.sr = sdf.geometry[sdf.geometry.first_valid_index()].spatialReference
         return sdf
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -200,6 +201,7 @@ def to_featureclass(df, out_name, out_location=None,
     Returns:
      path to the feature class
     """
+    fc = None
     if HASARCPY:
         cols = []
         dt_idx = []
@@ -354,6 +356,9 @@ def to_featureclass(df, out_name, out_location=None,
         return _pyshp_to_shapefile(df=df,
                                    out_path=out_location,
                                    out_name=out_name)
+    else:
+        raise Exception("Cannot Export the data without ArcPy or PyShp modules. "+ \
+                        "Please install them and try again.")
     return fc
 #--------------------------------------------------------------------------
 def _infer_type(df, col):

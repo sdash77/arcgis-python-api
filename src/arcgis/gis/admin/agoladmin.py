@@ -20,6 +20,7 @@ class AGOLAdminManager(object):
     """
     _gis = None
     _ux = None
+    _idp = None
     _pp = None
     _credits = None
     _metadata = None
@@ -67,7 +68,7 @@ class AGOLAdminManager(object):
         return self._collaborations
     #----------------------------------------------------------------------
     @property
-    def _category_schema(self):
+    def category_schema(self):
         """
         This resource allows for the setting and manipulating of catagory
         schemas.
@@ -76,6 +77,17 @@ class AGOLAdminManager(object):
             from ._catagoryschema import CategoryManager
             self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
+    #----------------------------------------------------------------------
+    @property
+    def idp(self):
+        """
+        This resource allows for the setting and configuration of the identity provider
+        """
+        if self._idp is None:
+            from ._idp import IdentityProviderManager
+            self._idp = IdentityProviderManager(gis=self._gis)
+        return self._idp
+
     #----------------------------------------------------------------------
     @property
     def credits(self):

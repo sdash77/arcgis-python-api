@@ -28,16 +28,17 @@ if HAS_ARCPY:
         """
         #----------------------------------------------------------------------
         def setUp(self):
-            self._fs_urls = ["https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0",# Point
-                             "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Hurricanes/MapServer/1", # Polyline
-                             "https://sampleserver6.arcgisonline.com/arcgis/rest/services/MontgomeryQuarters/MapServer/0"] #polygon
+            self._fs_urls = ["https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",# Point
+                             "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0", # Polyline
+                             "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0"] #polygon
             self._table_url =  "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ServiceRequest/MapServer/1" # table
         #----------------------------------------------------------------------
         def test_with_geometry(self):
             """test with geometries"""
             for url in self._fs_urls:
                 fl = Service(url=url)
-                res = fl.query().df
+                res = fl.query(where="%s < 10" % fl.properties.objectIdField)
+                res = res.df
                 self.assertIsInstance(res, SpatialDataFrame, msg=\
                                       "Got type: %s instead of SpatialDataFrame" % type(res))
         #----------------------------------------------------------------------
@@ -71,30 +72,39 @@ if HAS_ARCPY:
         #----------------------------------------------------------------------
         def test_from_layer(self):
             """test io.from_layer"""
-            url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/0"
+            url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0"
             sdf = from_layer(layer=Service(url=url))
             geoms = sdf.geometry
             self.assertIsInstance(sdf, SpatialDataFrame)
         #----------------------------------------------------------------------
         def test_to_featureclass_shp(self):
-            url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
-            sdf = from_layer(layer=Service(url=url))
+            url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0"
+            from arcgis.features import FeatureLayer
+            fl = FeatureLayer(url=url)
+            fs = fl.query(where="OBJECTID < 10")
+            sdf = fs.df
             fc = to_featureclass(df=sdf,
                                  out_location=self._dir,
                                  out_name=self._shp)
             self.assertTrue(arcpy.Exists(fc))
         #----------------------------------------------------------------------
         def test_to_featureclass_fgdb(self):
-            url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
-            sdf = from_layer(layer=Service(url=url))
+            url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Populated_Places/FeatureServer/0"
+            from arcgis.features import FeatureLayer
+            fl = FeatureLayer(url=url)
+            fs = fl.query(where="OBJECTID < 10")
+            sdf = fs.df
             fc = to_featureclass(df=sdf,
                                  out_location=self._gdb,
                                  out_name="fgdb_test")
             self.assertTrue(arcpy.Exists(fc))
         #----------------------------------------------------------------------
         def test_to_sqlite(self):
-            url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Energy/HSEC/FeatureServer/0"
-            sdf = from_layer(layer=Service(url=url))
+            url = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0"
+            from arcgis.features import FeatureLayer
+            fl = FeatureLayer(url=url)
+            fs = fl.query(where="OBJECTID < 10")
+            sdf = fs.df
             fc = to_sqlite(df=sdf,
                            out_folder=self._dir,
                            db_name="mydata.sqlite",
