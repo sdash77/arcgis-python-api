@@ -1,0 +1,10 @@
+name: geosaurus_devel_osx_py35
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    - python >=3.5,<3.6.0
+    - pandas
+    - ipywidgets >=7
+    - pip:
+        - xmlrunner
