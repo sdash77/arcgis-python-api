@@ -3,8 +3,8 @@
 FROM jupyter/base-notebook:03398900b724
 
 # Pass in URL to where to get samples ZIP
-ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.2.1.zip"
-ARG githubfolder="arcgis-python-api-1.2.1"
+ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.2.4.zip"
+ARG githubfolder="arcgis-python-api-1.2.4"
 
 MAINTAINER Bill Major <bmajor@esri.com>
 LABEL vendor="Esri"
@@ -20,21 +20,20 @@ RUN conda install -y unzip \
                      numpy \
                      seaborn \
                      scikit-image \
-                     scikit-learn
+                     scikit-learn \
+    && conda clean -y -a
 RUN conda install jupyter_dashboards -c conda-forge -y
 
 # Install latest Python API from Conda
-RUN conda install -c esri arcgis -y
+RUN conda install -c esri arcgis -y \
+    && conda clean -y -a
 
 # Pull latest SDK from GitHub
-WORKDIR /home/jovyan
-RUN wget -O samples.zip $sampleslink
-RUN unzip -q samples.zip 
-RUN rm samples.zip
-WORKDIR /home/jovyan/$githubfolder/
-RUN mv * ../
-WORKDIR /home/jovyan
-RUN rm -rf $githubfolder/ \
+RUN wget -O samples.zip $sampleslink \
+    && unzip -q samples.zip \
+    && rm samples.zip \
+    && mv /home/jovyan/$githubfolder/* ./ \
+    && rm -rf $githubfolder/ \
            apidoc/ \
            work/ \
            talks/
@@ -42,4 +41,4 @@ RUN mkdir -p /home/jovyan/.jupyter/custom
 RUN wget -O ~/.jupyter/custom/custom.css https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/custom.css
 RUN mv /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo_old.png
 RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/logo.png
-
+RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/templates/tree.html https://s3-us-west-1.amazonaws.com/notebooks-esri-com-alb-logs/notebookfiles/tree.html
