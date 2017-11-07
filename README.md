@@ -31,12 +31,14 @@ See the developer documentation and resources at https://developers.arcgis.com/p
 Install steps for developers:
 
 * Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
-* Download or clone this repo. `git clone https://github.com/ArcGIS/geosaurus.git`
-* conda install -c conda-forge ipywidgets
-* conda install pandas
-* `pip install -e ./src` (for using latest source code)
-* `jupyter nbextension install --py --sys-prefix arcgis` (for enabling the map widget for Jupyter notebook)
-* `jupyter nbextension enable --py --sys-prefix arcgis` (to initialize the map widget in the browser every time the notebook loads)
+* Download or clone this repo. ```git clone https://github.com/ArcGIS/geosaurus.git```
+* ```conda env create --file environment.yml```
+* Windows: ```activate geosaurus_dev_env```
+* Linux/OSX: ```source activate geosaurus_dev_env```
+* ```pip install -e ./src``` (for using latest source code)
+* ```jupyter nbextension install --py --sys-prefix arcgis``` (for enabling the map widget for Jupyter notebook)
+* ```jupyter nbextension enable --py --sys-prefix arcgis``` (to initialize the map widget in the browser every time the notebook loads)
+* ```jupyter notebook``` (to start a jupyter notebook server)
 
 ### Build the Documentation
 
