@@ -244,27 +244,8 @@ class Geometry(BaseGeometry):
             else:
                 return self.as_arcpy.__geo_interface__
         else:
-            if isinstance(self, Point):
-                if 'z' in self:
-                    return {'coordinates': (self['x'], self['y'],
-                                            self['z']), 'type': 'Point'}
-                return {'coordinates': (self['x'], self['y']), 'type': 'Point'}
-            if isinstance(self, MultiPoint):
-                return {'coordinates': [tuple(i) for i in self['points']],
-                        'type': 'MultiPoint'}
-            elif isinstance(self, (Polygon, Polyline)):
-                gtype = "MultiPolygon"
-                ctype = 'rings'
-                coords = []
-                if isinstance(self, Polyline):
-                    gtype = "MultiLineString"
-                    ctype = 'paths'
-                for outer in self[ctype]:
-                    inner = []
-                    for i in outer:
-                        inner.append(tuple(i))
-                    coords.append(inner)
-                return {'coorindates' : coords, 'type' : gtype}
+            from arcgis._impl.common._arcgis2geojson import arcgis2geojson
+            return arcgis2geojson(arcgis=self)
         return {}
 
     #----------------------------------------------------------------------
@@ -1287,10 +1268,6 @@ class Point(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": [self['x'], self['y']], "type": "Point"}
-    #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
         self.__dict__.update(d)
@@ -1340,10 +1317,6 @@ class MultiPoint(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['points'], "type": "MultiPoint"}
-    #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
         if 'points' in self:
@@ -1385,10 +1358,6 @@ class Polyline(Geometry):
     @property
     def type(self):
         return self._type
-    #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['paths'], "type": "MultiLineString"}
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -1437,10 +1406,6 @@ class Polygon(Geometry):
     @property
     def type(self):
         return self._type
-    #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['rings'], "type": "MultiPolygon"}
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
