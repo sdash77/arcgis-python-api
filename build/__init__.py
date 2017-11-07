@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 import logging
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
@@ -17,7 +17,6 @@ OUTPUT_DIR = os.path.abspath(os.path.join(
     "output"))
 
 log.setLevel(logging.DEBUG)
-log_file_path = os.path.join(OUTPUT_DIR, "log.log")
 formatter = logging.Formatter(
     '-----    %(levelname)s    |    '\
     '%(asctime)s    |    '\
@@ -25,13 +24,8 @@ formatter = logging.Formatter(
     '     -----\n'\
     '"%(message)s"')
 
-file_handler = logging.FileHandler(log_file_path, "w")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-log.addHandler(file_handler)
-
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
-stdout_handler.setLevel(logging.INFO)
+stdout_handler.setLevel(logging.DEBUG)
 stdout_handler.setFormatter(formatter)
 log.addHandler(stdout_handler)
 
