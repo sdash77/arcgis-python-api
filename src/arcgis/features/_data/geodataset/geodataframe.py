@@ -148,59 +148,6 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         else:
             self.sr = None
         if geometry is not None:
-            ## Handles case when a user passes arcpy.Point objects instead of
-            ## arcpy.PointGeometry.
-            #if isinstance(geometry, (list, tuple)) and \
-               #len(geometry) > 0:
-                #g = geometry[0]
-                #gtrans = []
-
-                #if HASARCPY:
-                    #if sr is None:
-                        #sr = _types.SpatialReference({'wkid':4326 })
-                    #if isinstance(g, arcpy.Point):
-                        #for g in geometry:
-                            #if isinstance(g, arcpy.Point):
-                                #g = arcpy.PointGeometry(g, sr.as_arcpy)
-                            #gtrans.append(_types.Geometry(g))
-                        #geometry = gtrans
-                    #elif isinstance(g, arcpy.Geometry):
-                        #for g in geometry:
-                            #gtrans.append(_types.Geometry(g))
-                            #del g
-                        #geometry = gtrans
-                    #elif isinstance(g, (arcgis.geometry.Point,
-                                        #arcgis.geometry.Polygon,
-                                        #arcgis.geometry.Polyline,
-                                        #arcgis.geometry.MultiPoint,
-                                        #arcgis.geometry.Geometry)):
-                        #for g in geometry:
-                            #gtrans.append(g)
-                        #geometry = gtrans
-                    #elif isinstance(g, dict):
-                        #for g in geometry:
-                            #gtrans.append(_types.Geometry(g))
-                            #del g
-                        #geometry = gtrans
-                #else:
-                    #countasdf = 0
-                    #if isinstance(g, dict):
-                        #for g in geometry:
-                            #try:
-                                #if isinstance(g, (arcgis.geometry.Point,
-                                                  #arcgis.geometry.Polygon,
-                                                  #arcgis.geometry.Polyline,
-                                                  #arcgis.geometry.MultiPoint,
-                                                  #arcgis.geometry.Geometry)):
-                                    #gtrans.append(g)
-                                #elif isinstance(g, dict):
-                                    #gtrans.append(_types.Geometry(g))
-                            #except:
-                                #print('issue with: %s' % countasdf)
-                                #gtrans.append(None)
-                                #countasdf+=1
-                            #del g
-                        #geometry = gtrans
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
             if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
@@ -208,10 +155,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                        for x in self[self._geometry_column_name]) == False:
                     geometry = [_types.Geometry(g) for g in self['SHAPE'].tolist()]
                     del self['SHAPE']
-                    #for idx, g in enumerate(geometry):
-                        #if isinstance(g, _types.Geometry) == False and \
-                           #isinstance(g, dict):
-                            #geometry[idx] = _types.Geometry(g)
+
                     self.set_geometry(geometry, inplace=True)
         if self.sr is None:
             self.sr = self._sr(sr)
