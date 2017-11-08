@@ -66,6 +66,7 @@ def build_conda_pkg_with_default_meta_yaml():
     the "conda build" process will use"""
     _clear_output_folder()
     _restore_default_meta_yml()
+    log.info("Using {} as meta.yaml file...".format(DEFAULT_META_YML_FILE))
     _run_conda_build_command(python_version = DEFAULT_PY)
 
 def _all_is_specified_anywhere(args):
@@ -129,6 +130,7 @@ def _setup_meta_yaml_file_for(os_build_target):
                                  _assemble_folder_name_for_os(os_build_target),
                                  "meta.yaml")
     shutil.copyfile(os_specific_meta_file, ACTIVE_META_YML_FILE)
+    log.info("using {} for build process.".format(os_specific_meta_file))
 
 def _assemble_folder_name_for_os(os_build_target):
     if re.match(UNIX_REGEX, os_build_target):
@@ -156,15 +158,15 @@ def _run_conda_build_command(python_version):
     _run_shell_cmd(build_cmd)
 
 def _run_shell_cmd(cmd):
-    log.info("Currently running command '{}'.\n Output of cmd will be logged, "\
-             "all at once, to DEBUG on success, WARN on failure.".format(cmd))
+    log.info("Currently running cmd '{}'. Output of cmd will be logged after "\
+             "it completes. (DEBUG if success, WARN if failure)".format(cmd))
     try:
         byte_output = subprocess.check_output(cmd,
                                               stderr=subprocess.STDOUT,
                                               shell=True)
         log.debug("cmd output => {}".format(byte_output.decode("utf-8")))
     except subprocess.CalledProcessError as e:
-        log.warn("conda build cmd appears to have failed. Output so far =>\n"\
+        log.warn("cmd failed, returned non-zero code. Output:\n"\
                  "{}".format(e.output.decode("utf-8")))
         raise e
 
@@ -175,9 +177,9 @@ def _restore_default_meta_yml():
 if __name__ == "__main__":
     try:
         _main()
-        log.info("Program complete: exiting cleanly...")
+        log.info("Program successfully completed! Exiting....")
     except Exception as e:
         log.exception(e)
         _restore_default_meta_yml()
-        log.info("Unhandled exception: exiting uncleanly...")
+        log.info("Program did not succesfully complete (unhandled exception)")
         sys.exit(1)
