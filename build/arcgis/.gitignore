@@ -1,0 +1,4 @@
+# the default meta.yaml file should not be version controlled: it should
+# be controlled by the build.py script
+meta.yaml
+meta.yml
