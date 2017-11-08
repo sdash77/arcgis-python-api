@@ -138,3 +138,16 @@ DirectoryManager
     :undoc-members:
     :show-inheritance:
 
+ConfigurationStore
+----------------
+.. autoclass:: arcgis.gis.server.ConfigurationStore
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Jobs
+----------------
+.. autoclass:: arcgis.gis.server.Jobs
+    :members:
+    :undoc-members:
+    :show-inheritance:
