@@ -15,12 +15,12 @@ OUTPUT_DIR = os.path.abspath(os.path.join(
 DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
     "arcgis",
-    "default_meta.yml"))
+    "default_meta.yaml"))
 
 ACTIVE_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
     "arcgis",
-    "meta.yml"))
+    "meta.yaml"))
 
 SUPPORTED_OSES = ['win', 'unix']
 SUPPORTED_PYS = ['3.5', '3.6']
@@ -37,4 +37,4 @@ UNIX_REGEX = "".join([
              "|.*posix.*"])  #OR if 'posix' (case insensitive) in string
 WINDOWS_REGEX = "".join([
                 "(?i).*win.*", #if 'win' (case insensitive) in string
-                ".*nt.*"])     #OR if 'nt' (case insensitive) in string
+                "|.*nt.*"])    #OR if 'nt' (case insensitive) in string

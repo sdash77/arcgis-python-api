@@ -159,11 +159,19 @@ def _run_conda_build_command(python_version):
     else:
         raise RuntimeError("{} is not a valid python version for 'conda "\
                            "build' commands".format(python_version))
-    log.info("Building conda pkg with command '{}'".format(build_cmd))
-    byte_output = subprocess.check_output(build_cmd,
-                                          stderr=subprocess.STDOUT,
-                                          shell=True)
-    log.debug(byte_output.decode("utf-8"))
+    _run_shell_cmd(build_cmd)
+
+def _run_shell_cmd(cmd):
+    log.info("Building conda pkg with command '{}'".format(cmd))
+    try:
+        byte_output = subprocess.check_output(cmd,
+                                              stderr=subprocess.STDOUT,
+                                              shell=True)
+        log.debug(byte_output.decode("utf-8"))
+    except subprocess.CalledProcessError as e:
+        log.warn("conda build cmd appears to have failed. Output so far =>\n"\
+                 "{}".format(e.output.decode("utf-8")))
+        raise e
 
 def _restore_default_meta_yml():
     shutil.copyfile(DEFAULT_META_YML_FILE,
@@ -173,9 +181,7 @@ if __name__ == "__main__":
     try:
         _main()
     except Exception as e:
-        log.info("Unhandled exception caught: Adding to log...")
         log.exception(e)
-        log.debug("Restoring default meta.yaml...")
         _restore_default_meta_yml()
-        log.info("Succesfully logged exception: Raising it again...")
-        raise e
+        log.info("Unhandled exception: exiting uncleanly...")
+        sys.exit(1)
