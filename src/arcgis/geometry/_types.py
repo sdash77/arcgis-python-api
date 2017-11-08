@@ -234,6 +234,77 @@ class Geometry(BaseGeometry):
         super(Geometry, self).__init__(iterable)
         self.update(kwargs)
     #----------------------------------------------------------------------
+    def __iter__(self):
+        """"""
+        #if HASARCPY and \
+           #isinstance(self, (Point, Polygon,
+                             #MultiPoint, Polyline)):
+            #cnt = self.centroid
+            #keys = ['x', 'y', 'z']
+            #for k in keys:
+                #if k in cnt:
+                    #yield cnt[k]
+                #del k
+        if isinstance(self, Polygon):
+            avgs = []
+            shape = 2
+            for ring in self['rings']:
+                a = np.array(ring)
+                if a.shape[1] != shape:
+                    shape = a.shape[1]
+                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+            avgs = np.array(avgs)
+            if shape == 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean()]
+            elif shape > 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean(),
+                       avgs[:,2].mean()]
+            for a in res:
+                yield a
+                del a
+        elif isinstance(self, Polyline):
+            avgs = []
+            shape = 2
+            for ring in self['paths']:
+                a = np.array(ring)
+                if a.shape[1] != shape:
+                    shape = a.shape[1]
+                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+            avgs = np.array(avgs)
+            if shape == 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean()]
+            elif shape > 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean(),
+                       avgs[:,2].mean()]
+            for a in res:
+                yield a
+                del a
+        elif isinstance(self, MultiPoint):
+            a = np.array(self['points'])
+            if a.shape[1] == 2:
+                for i in [a[:,0].mean(),
+                          a[:,1].mean()]:
+                    yield i
+            elif a.shape[1] >= 3: #has z
+                for i in [a[:,0].mean(),
+                          a[:,1].mean(),
+                          a[:,2].mean()]:
+                    yield i
+        elif isinstance(self, Point):
+            keys = ['x', 'y', 'z']
+            for k in keys:
+                if k in self:
+                    yield self[k]
+                del k
+        elif isinstance(self, Envelope):
+            for i in [(self['xmin'] + self['xmax'])/2,
+                      (self['ymin'] + self['ymax'])/2]:
+                yield i
+    #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         """converts an ESRI JSON to GeoJSON"""
@@ -446,13 +517,13 @@ class Geometry(BaseGeometry):
         """
         if HASARCPY:
             if isinstance(self, Point):
-                return self
+                return tuple(self)
             else:
-                return Geometry(
+                return tuple(Geometry(
                     arcpy.PointGeometry(
                     getattr(self.as_arcpy, "centroid", None),
                     self.spatial_reference)
-                                )
+                                ))
         return
     #----------------------------------------------------------------------
     @property
