@@ -385,7 +385,7 @@ class SystemManager(BaseServer):
 ########################################################################
 class ConfigurationStore(BaseServer):
     """
-    Configuration store helper
+    A utility class for managing the Configuration Store of this server.
     """
     _con = None
     _url = None
@@ -396,7 +396,21 @@ class ConfigurationStore(BaseServer):
                  url,
                  connection,
                  initialize=False):
-        """Constructor"""
+        """
+        Constructor
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The machine URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required string. The connection string.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the machine properties at  
+                               creation (True). Default is False.
+        ==================     ====================================================================
+        
+        """
         super(ConfigurationStore, self).__init__(connection=connection,
                                                  url=url)
         self._url = url
@@ -406,6 +420,8 @@ class ConfigurationStore(BaseServer):
     #----------------------------------------------------------------------
     def recover(self):
         """
+        Recovers the Configuration Store of the site.
+        
         If the shared configuration store for a site is unavailable, a site
         in read-only mode will operate in a degraded capacity that allows
         access to the ArcGIS Server Administrator Directory. You can recover
@@ -416,6 +432,10 @@ class ConfigurationStore(BaseServer):
         the local repository into the shared configuration store location.
         The copied local repository will be from the machine in the site
         where the recover operation is performed.
+        
+        :return:
+            A boolean indicating success (True).
+        
         """
         url = self._url + "/recover"
         params = {"f" : "json"}
@@ -430,7 +450,8 @@ class ConfigurationStore(BaseServer):
         """
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
-        store.
+        configuration store.
+        
         When ArcGIS Server is installed, the default configuration store
         uses local paths. As the site grows (more server machines are
         added), the location of the store must be updated to use a shared
@@ -438,14 +459,26 @@ class ConfigurationStore(BaseServer):
         your site will have two or more server machines, you can start from
         a shared path while creating a site and skip this step altogether.
 
-        Inputs:
-           type_value - Type of the configuration store. Values: FILESYSTEM
-           gis - A file path or connection URL to the physical
-            location of the store.
-           move - default True - A boolean to indicate if you want to move
-            the content of the current store to the new store.
-           run_async - default False - Decides if this operation must run
-            asynchronously.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        type_value             Required string. The type of the configuration store. Values: FILESYSTEM
+        ------------------     --------------------------------------------------------------------
+        gis                    Required string. A file path or connection URL to the physical 
+                               location of the store.
+        ------------------     --------------------------------------------------------------------
+        move                   Optional string. A boolean to indicate if you want 
+                               to move the content of the current store to the new store. The 
+                               default True (move the content). 
+        ------------------     --------------------------------------------------------------------
+        run_async              Optional string. Determines if this operation must run asynchronously. 
+                               The default is False (doesn not have to run asynchronously).
+        ==================     ====================================================================
+        
+
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/edit"
         params = {
@@ -477,7 +510,21 @@ class Jobs(BaseServer):
     def __init__(self, url,
                  connection,
                  initialize=False):
-        """Constructor"""
+        """
+        Constructor
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The machine URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required string. The connection string.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the machine properties at  
+                               creation (True). Default is False.
+        ==================     ====================================================================
+        
+        """
         super(Jobs, self).__init__(connection=connection,
                                    url=url)
         self._url = url
@@ -487,7 +534,9 @@ class Jobs(BaseServer):
     #----------------------------------------------------------------------
     @property
     def jobs(self):
-        """gets the job ids"""
+        """
+        Gets the job IDs.
+        """
         if self._jobs is None:
             self._init()
         return self._jobs
@@ -497,8 +546,16 @@ class Jobs(BaseServer):
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.
 
-        Inputs:
-           job_id - id of the job
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        job_id                 Required string. The ID of the job.
+        ==================     ====================================================================
+        
+        :return:
+            A JSON dictionary containing progress information for the job ID.
+        
         """
         url = self._url + "/%s" % job_id
         params = {
