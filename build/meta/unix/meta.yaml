@@ -1,24 +1,30 @@
-# This file originally created by conda-build 2.0.1, template from
+# This file created by conda-build 2.0.1
+# meta.yaml template originally from:
 # e:\share\conda-project\conda-packages\arcgis-api, last modified Mon Sep 19 14:51:09 2016
 # ------------------------------------------------
-# This file is also not a strict meta.yaml file: it contains {tag} items
-# That are programatically altered by ../build.py and written to 
-# geosaurus/build/arcgis to be used by any 'conda build' commands
-# See the ../build.py script for more details
 
 package:
     name: arcgis
-    version: {geosaurus_version}
+    version: '1.2.5'
 source:
-    {noarch_option}
     path: ../../src
 build:
+    noarch: python
     number: '1'
 requirements:
     build:
-        {requirements_build} 
+        - python
+        - setuptools
+        - six
+        - pandas
+        - ipywidgets >=5.2.2,<7
+        - widgetsnbextension >=1.2.6,<3
     run:
-        {requirements_run}
+        - python
+        - six
+        - pandas
+        - ipywidgets >=5.2.2,<7
+        - widgetsnbextension >=1.2.6,<3
 test:
     imports:
         - arcgis.gis

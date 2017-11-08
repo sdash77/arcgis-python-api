@@ -14,7 +14,7 @@ OUTPUT_DIR = os.path.abspath(os.path.join(
 
 DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
-    "arcgis",
+    "meta",
     "default_meta.yaml"))
 
 ACTIVE_META_YML_FILE = os.path.abspath(os.path.join(
