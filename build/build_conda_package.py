@@ -72,11 +72,12 @@ def _all_is_specified_anywhere(args):
     return args.all
 
 def build_conda_pkg_for_all_supported_os_and_py_versions():
+    _clear_output_folder()
     for os in SUPPORTED_OSES:
         for py in SUPPORTED_PYS:
-            build_conda_package_for(os_build_target = os,
-                                    python_version = py,
-                                    clear_output_folder = False)
+            build_conda_pkg(os_build_target = os,
+                            python_version = py,
+                            clear_output_folder = False)
 
 def _only_python_is_specified(args):
     return args.python and not args.os
