@@ -1,4 +1,5 @@
 import os
+from tempfile import gettempdir
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
@@ -8,9 +9,11 @@ BUILD_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "build"))
 
-OUTPUT_DIR = os.path.abspath(os.path.join(
+BUILD_OUTPUT_DIR = os.path.abspath(os.path.join(
     BUILD_DIR,
     "output"))
+
+TEMP_DIR = gettempdir()
 
 DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,

@@ -9,6 +9,9 @@ log = logging.getLogger(__name__)
 
 from __init__ import *
 
+BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version}"\
+                 "--output-folder {output_dir}"
+
 def _main():
     args = _parse_cmd_line_args()
     _setup_logging(args)
@@ -31,11 +34,16 @@ def _main():
 def _parse_cmd_line_args():
     parser = argparse.ArgumentParser(description = "Builds arcgis conda "\
         "packages for specific O.S. and python versions. Will default to "\
-        "using ./meta/default_meta.yaml if you don't specify -o, -p, or --all")
-    parser.add_argument("--python", "-p", type=str,
-        help="What python version to target for the build (3.5, 3.6, etc.)")
-    parser.add_argument("--os", "-o", type=str,
-        help="What O.S. to target for the build (linux, windows, etc.)")
+        "using ./meta/default_meta.yaml if you don't specify -o, -p, or --all"\
+        "\n-----\n'python build_conda_package.py' for default build behavior"\
+        "\npython build_conda_package.py -p 3.5 3.6 -o win-32 linux-64' "\
+        "for building both py3.5 and py3.6 for both win-32 and linux-64"\
+        "\n 'python build_conda_package.py --all' for building for all "\
+        "platforms and all python versions")
+    parser.add_argument("--python", "-p", type=str, nargs="*",
+        help="What python versions to target (3.5, 3.6, etc.)")
+    parser.add_argument("--os", "-o", type=str, nargs="*",
+        help="What OSes and architectures to target (linux-64, win-32, etc.)")
     parser.add_argument("--all", action="store_true",
         help="builds for all supported O.S. and python versions")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -63,12 +71,15 @@ def _no_target_specified(args):
 
 def build_conda_pkg_with_default_meta_yaml():
     """Use build/arcgis/default_meta.yaml file as the meta.yaml file that
-    the "conda build" process will use"""
+    the "conda build" process will use. Build for all supported python"""
     _clear_output_folder()
     _restore_default_meta_yml()
     log.info("Using {} as meta.yaml file...".format(DEFAULT_META_YML_FILE))
-    _run_conda_build_command(python_version = DEFAULT_PY)
-
+    for python_version in SUPPORTED_PYS:
+        _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = BUILD_DIR,
+                                             python_version = python_version,
+                                             output_dir = BUILD_OUTPUT_DIR))
+        
 def _all_is_specified_anywhere(args):
     return args.all
 
@@ -96,7 +107,8 @@ def build_conda_pkg(os_build_target = DEFAULT_OS,
         _clear_output_folder()
     _check_edge_cases(os_build_target)
     _setup_meta_yaml_file_for(os_build_target)
-    _run_conda_build_command(python_version)
+    _run_conda_build_command(os_build_target,
+                             python_version)
     _restore_default_meta_yml()
 
 def _clear_output_folder():
@@ -140,22 +152,26 @@ def _assemble_folder_name_for_os(os_build_target):
     else:
         raise RuntimeError("{} is not a valid os".format(os_build_target))
 
-def _run_conda_build_command(python_version):
-    build_cmd = "cd {build_dir} && "\
-                "conda build --py {py_ver} arcgis "\
-                "--output-folder {output_dir}"
+def _run_conda_build_command(os_build_target,
+                             python_version):
+    build_cmd =  "cd {build_dir} ".format(build_dir = BUILD_DIR)
+    build_cmd += "&& build arcgis "
+    build_cmd += _add_py_version_flag(python_version)
+    if re.match(WINDOWS_REGEX, os_build_target):
+        build_cmd += "--output-folder {}".format(OUTPUT_DIR)
+    elif re.match(UNIX_REGEX, os_build_target):
+        #When building for unix, there is another step after this
+        build_cmd += "--output-folder {}".format(TEMP_DIR)
+    _run_shell_cmd(build_cmd)
+def _add_py_version_flag(python_version):
+    py_version_flag_base = "--py {py_version}"
     if re.match(PY36_REGEX, python_version):
-        build_cmd = build_cmd.format(build_dir=BUILD_DIR,
-                                     py_ver="3.6",
-                                     output_dir=OUTPUT_DIR)
+        return py_version_flag_base.format("3.6")
     elif re.match(PY35_REGEX, python_version):
-        build_cmd = build_cmd.format(build_dir=BUILD_DIR,
-                                     py_ver="3.5",
-                                     output_dir=OUTPUT_DIR)
+        return py_version_flag_base.format("3.5")
     else:
         raise RuntimeError("{} is not a valid python version for 'conda "\
                            "build' commands".format(python_version))
-    _run_shell_cmd(build_cmd)
 
 def _run_shell_cmd(cmd):
     log.info("Currently running cmd '{}'. Output of cmd will be logged after "\
