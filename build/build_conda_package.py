@@ -9,8 +9,11 @@ log = logging.getLogger(__name__)
 
 from __init__ import *
 
-BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version}"\
+BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
                  "--output-folder {output_dir}"
+
+BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
+                   "-o {output_dir}" 
 
 def _main():
     args = _parse_cmd_line_args()
@@ -19,33 +22,41 @@ def _main():
     if _no_target_specified(args):
         build_conda_pkg_with_default_meta_yaml()
     elif _all_is_specified_anywhere(args):
-        build_conda_pkg_for_all_supported_os_and_py_versions()
+        build_conda_packages_for_all_os_and_py()
     elif _only_python_is_specified(args):
-        build_conda_pkg(python_version = args.python)
+        build_conda_packages(python_versions = args.python)
     elif _only_os_is_specified(args):
-        build_conda_pkg(os_build_target = args.os)
+        build_conda_packages(os_build_targets = args.os)
     elif _both_os_and_python_are_specified(args):
-        build_conda_pkg(os_build_target = args.os,
-                        python_version = args.python)
+        build_conda_packages(os_build_targets = args.os,
+                             python_versions = args.python)
     else:
         args.print_help()
         raise Exception("Incorrect usage: See the --help text and try again")
 
 def _parse_cmd_line_args():
     parser = argparse.ArgumentParser(description = "Builds arcgis conda "\
-        "packages for specific O.S. and python versions. Will default to "\
-        "using ./meta/default_meta.yaml if you don't specify -o, -p, or --all"\
-        "\n-----\n'python build_conda_package.py' for default build behavior"\
-        "\npython build_conda_package.py -p 3.5 3.6 -o win-32 linux-64' "\
+        "packages for specified O.S. and python versions. Will use ./meta/"\
+        "default_meta.yaml if -o, -p, or -a aren't specified. Must have "\
+        "conda-build and anaconda-client installed on root conda enviroment. "\
+        "See ./README.md in this directory for more information. \n "\
+        "\n - 'python build_conda_package.py' for default build behavior"\
+        "\n - 'python build_conda_package.py -p 3.5 3.6 -o win-32 linux-64' "\
         "for building both py3.5 and py3.6 for both win-32 and linux-64"\
-        "\n 'python build_conda_package.py --all' for building for all "\
-        "platforms and all python versions")
+        "\n - 'python build_conda_package.py --all' for building for all "\
+        "platforms and all python versions"\
+        "\n - 'python build_conda_package.py --upload' for default build "\
+        "behavior, plus upload any results to the anaconda cloud",
+        formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--python", "-p", type=str, nargs="*",
         help="What python versions to target (3.5, 3.6, etc.)")
     parser.add_argument("--os", "-o", type=str, nargs="*",
         help="What OSes and architectures to target (linux-64, win-32, etc.)")
-    parser.add_argument("--all", action="store_true",
-        help="builds for all supported O.S. and python versions")
+    parser.add_argument("--all", "-a", action="store_true",
+        help="Builds for all supported O.S. and python versions")
+    parser.add_argument("--upload", "-u", action="store_true",
+        help="Upload results to anaconda cloud (Note: anaconda-client must "\
+             "be configured on root conda enviroment)")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Print all DEBUG log msgs (i.e. print 'conda build' cmd output)")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
@@ -54,7 +65,8 @@ def _setup_logging(args):
     if args.verbose:
         log.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.INFO)
+         log.setLevel(logging.INFO)
+
     stdout_handler = logging.StreamHandler(stream=sys.stdout)
     stdout_handler.setLevel(logging.DEBUG)
     stdout_handler.setFormatter(logging.Formatter(
@@ -64,6 +76,7 @@ def _setup_logging(args):
         '     -----\n'\
         '"%(message)s"'))
     log.addHandler(stdout_handler)
+    log.debug("Logging set up: args passed in => {}".format(args))
 
 def _no_target_specified(args):
     """returns False if at least one of --all, --python, or --os passed in"""
@@ -75,21 +88,12 @@ def build_conda_pkg_with_default_meta_yaml():
     _clear_output_folder()
     _restore_default_meta_yml()
     log.info("Using {} as meta.yaml file...".format(DEFAULT_META_YML_FILE))
-    for python_version in SUPPORTED_PYS:
-        _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = BUILD_DIR,
-                                             python_version = python_version,
-                                             output_dir = BUILD_OUTPUT_DIR))
-        
+    for python_version in DEFAULT_PYS:
+        _run_conda_build_command(python_version = python_version,
+                                 output_dir = BUILD_OUTPUT_DIR)
+
 def _all_is_specified_anywhere(args):
     return args.all
-
-def build_conda_pkg_for_all_supported_os_and_py_versions():
-    _clear_output_folder()
-    for os in SUPPORTED_OSES:
-        for py in SUPPORTED_PYS:
-            build_conda_pkg(os_build_target = os,
-                            python_version = py,
-                            clear_output_folder = False)
 
 def _only_python_is_specified(args):
     return args.python and not args.os
@@ -98,80 +102,126 @@ def _only_os_is_specified(args):
     return args.os and not args.python
 
 def _both_os_and_python_are_specified(args):
-    return args.os and args.python
+    return args.python and args.os
 
-def build_conda_pkg(os_build_target = DEFAULT_OS,
-                    python_version = DEFAULT_PY,
-                    clear_output_folder = True):
+def build_conda_packages_for_all_os_and_py():
+    build_conda_packages(os_build_targets = SUPPORTED_OSES,
+                         python_versions = SUPPORTED_PYS)
+
+def build_conda_packages(os_build_targets = DEFAULT_OSES,
+                         python_versions = DEFAULT_PYS,
+                         clear_output_folder = True):
+    print("entered main func: {} \n {}".format(os_build_targets, python_versions))
     if clear_output_folder:
         _clear_output_folder()
-    _check_edge_cases(os_build_target)
-    _setup_meta_yaml_file_for(os_build_target)
-    _run_conda_build_command(os_build_target,
-                             python_version)
+    _check_edge_cases(os_build_targets,
+                      python_versions)
+    unix_oses, win_oses = _split_oses_to_unix_and_win(os_build_targets)
+
+    if unix_oses:
+        _setup_meta_yaml_file_for("unix")
+        _run_and_convert(os_build_targets = unix_oses,
+                         python_versions = python_versions)
+    if win_oses:
+        _setup_meta_yaml_file_for("windows")
+        _run_and_convert(os_build_targets = win_oses,
+                         python_versions = python_versions)
+    
     _restore_default_meta_yml()
 
+def _run_and_convert(os_build_targets, python_versions):
+    for python_version in python_versions:
+        with empty_temp_folder() as tmp_dir:
+            _run_conda_build_command(python_version = python_version,
+                                     output_dir = tmp_dir)
+            _convert_conda_package(conda_package = _find_conda_package(tmp_dir),
+                                   os_build_targets = os_build_targets,
+                                   output_dir = BUILD_OUTPUT_DIR)
+
+def _split_oses_to_unix_and_win(os_build_targets):
+    unix = []
+    win = []
+    for os in os_build_targets:
+        log.debug("osbuild => {}".format(os_build_targets))
+        if is_unix(os):
+            unix.append(os)
+        elif is_windows(os):
+            win.append(os)
+    log.debug("build targets split into {} and {}".format(unix, win))
+    return unix, win
+
 def _clear_output_folder():
-    for full_path in _items_in_dir_to_delete(OUTPUT_DIR,
-                                             items_to_ignore = [".gitignore"]):
-        if os.path.isdir(full_path):
-            shutil.rmtree(full_path)
+    items_to_ignore = [ ".gitignore" ]
+    for filtered_item in [ os.path.join(BUILD_OUTPUT_DIR, dir_item)
+                           for dir_item in os.listdir(BUILD_OUTPUT_DIR)
+                           if dir_item not in items_to_ignore ]:
+        if os.path.isdir(filtered_item):
+            shutil.rmtree(filtered_item)
         else:
-            os.remove(full_path)
+            os.remove(filtered_item)
 
-def _items_in_dir_to_delete(dir_, items_to_ignore=[]):
-    return [
-        os.path.join(dir_, item)
-        for item in os.listdir(dir_)
-        if item not in items_to_ignore]
-
-def _check_edge_cases(os_build_target):
+def _check_edge_cases(os_build_targets,
+                      python_versions):
     """At the moment, you can only build for windows on a win machine"""
-    if (re.match(WINDOWS_REGEX, os_build_target) and 
-        re.match(UNIX_REGEX, os.name)):
-        #if you are building for windows but your current os is unix
-        raise RuntimeError("Building for win on a unix system not supported")
+    for os_build_target in os_build_targets:
+        if is_windows(os_build_target) and os.name == "posix":
+            #if you are building for windows but your current os is unix
+            raise RuntimeError("Building for win on a unix sys not supported")
+        if os_build_target not in SUPPORTED_OSES: 
+            raise RuntimeError("{} not supported OS. Supported OSes = "\
+                               "{}".format(os_build_target, SUPPORTED_OSES))
+    for python_version in python_versions:
+        if python_version not in SUPPORTED_PYS:
+            raise RuntimeError("{} not supported py. Supported pys = "\
+                               "{}".format(python_version, SUPPORTED_PYS))
 
-def _setup_meta_yaml_file_for(os_build_target):
+
+def _setup_meta_yaml_file_for(os_folder_name):
     """Copies a meta.yaml file to build/arcgis/ that is needed for the 
     conda-build process. The meta.yaml file is assembled for the target OS
     based off the base_meta.yaml files located in build/env"""
     os_specific_meta_file = os.path.join(
                                  BUILD_DIR,
                                  "meta",
-                                 _assemble_folder_name_for_os(os_build_target),
+                                 os_folder_name,
                                  "meta.yaml")
     shutil.copyfile(os_specific_meta_file, ACTIVE_META_YML_FILE)
     log.info("using {} for build process.".format(os_specific_meta_file))
 
-def _assemble_folder_name_for_os(os_build_target):
-    if re.match(UNIX_REGEX, os_build_target):
-        return "unix"
-    if re.match(WINDOWS_REGEX, os_build_target):
-        return "windows"
-    else:
-        raise RuntimeError("{} is not a valid os".format(os_build_target))
+def _run_conda_build_command(python_version,
+                             output_dir,
+                             build_dir=BUILD_DIR):
+    _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = build_dir,
+                                         python_version = python_version,
+                                         output_dir = output_dir))
 
-def _run_conda_build_command(os_build_target,
-                             python_version):
-    build_cmd =  "cd {build_dir} ".format(build_dir = BUILD_DIR)
-    build_cmd += "&& build arcgis "
-    build_cmd += _add_py_version_flag(python_version)
-    if re.match(WINDOWS_REGEX, os_build_target):
-        build_cmd += "--output-folder {}".format(OUTPUT_DIR)
-    elif re.match(UNIX_REGEX, os_build_target):
-        #When building for unix, there is another step after this
-        build_cmd += "--output-folder {}".format(TEMP_DIR)
-    _run_shell_cmd(build_cmd)
-def _add_py_version_flag(python_version):
-    py_version_flag_base = "--py {py_version}"
-    if re.match(PY36_REGEX, python_version):
-        return py_version_flag_base.format("3.6")
-    elif re.match(PY35_REGEX, python_version):
-        return py_version_flag_base.format("3.5")
-    else:
-        raise RuntimeError("{} is not a valid python version for 'conda "\
-                           "build' commands".format(python_version))
+def _find_conda_package(path):
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if ".tar.bz2" in name:
+                return os.path.join(root, name)
+
+def _convert_conda_package(conda_package, os_build_targets, output_dir):
+    log.info("{}\n{}\n{}".format(conda_package, os_build_targets, output_dir))
+    for os_build_target in os_build_targets:
+        _run_conda_convert_command(conda_package = conda_package,
+                                   os_build_target = os_build_target,
+                                   output_dir = output_dir)
+        dir_containing_conda_package = os.path.dirname(conda_package)
+        _copy_repodata_files(src = dir_containing_conda_package,
+                             dst = os.path.join(output_dir, os_build_target))
+
+def _run_conda_convert_command(conda_package, os_build_target, output_dir):
+    _run_shell_cmd(BASE_CONVERT_CMD.format(conda_package = conda_package,
+                                           os_build_target = os_build_target,
+                                           output_dir = output_dir))
+
+def _copy_repodata_files(src, dst):
+    for root, dirs, files in os.walk(src):
+        for name in files:
+            if "repodata" in name:
+                shutil.copy(os.path.join(root, name),
+                            dst)
 
 def _run_shell_cmd(cmd):
     log.info("Currently running cmd '{}'. Output of cmd will be logged after "\

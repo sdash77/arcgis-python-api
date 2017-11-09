@@ -1,4 +1,5 @@
 import os
+import shutil
 from tempfile import gettempdir
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
@@ -13,7 +14,17 @@ BUILD_OUTPUT_DIR = os.path.abspath(os.path.join(
     BUILD_DIR,
     "output"))
 
-TEMP_DIR = gettempdir()
+class empty_temp_folder:
+    """Use with "with" syntax like "with empty_temp_folder() as tmp:"
+    Creates a temporary folder and deletes it after finished being used"""
+    def __enter__(self):
+        self.temp_folder = os.path.join(gettempdir(),
+                                   ".{}".format(hash(os.times())))
+        os.makedirs(self.temp_folder)
+        return self.temp_folder
+
+    def __exit__(self, type, value, traceback):
+        shutil.rmtree(self.temp_folder)
 
 DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
@@ -25,19 +36,27 @@ ACTIVE_META_YML_FILE = os.path.abspath(os.path.join(
     "arcgis",
     "meta.yaml"))
 
-SUPPORTED_OSES = ['win', 'unix']
-SUPPORTED_PYS = ['3.5', '3.6']
-DEFAULT_PY = '3.6'
-DEFAULT_OS = os.name
+SUPPORTED_WIN = ['win-32', 'win-64']
+SUPPORTED_LINUX = ['linux-32', 'linux-64']
+SUPPORTED_OSX = ['osx-64']
 
-PY36_REGEX = ".*3\.?6.*" #if '36' or '3.6' in string
-PY35_REGEX = ".*3\.?5.*" #if '35' or '3.5' in string
-UNIX_REGEX = "".join([
-             "(?i).*unix.*", #if 'unix' (case insensitive) in string
-             "|.*linux.*",   #OR if 'linux' (case insensitive) in string
-             "|.*osx.*",     #OR if 'osx' (case insensitive) in string
-             "|.*macos.*",   #OR if 'macos' (case insensitive) in string
-             "|.*posix.*"])  #OR if 'posix' (case insensitive) in string
-WINDOWS_REGEX = "".join([
-                "(?i).*win.*", #if 'win' (case insensitive) in string
-                "|.*nt.*"])    #OR if 'nt' (case insensitive) in string
+SUPPORTED_OSES = SUPPORTED_WIN +\
+                 SUPPORTED_LINUX +\
+                 SUPPORTED_OSX
+DEFAULT_OSES = SUPPORTED_OSES
+
+SUPPORTED_PYS = ['3.5', '3.6']
+DEFAULT_PYS = SUPPORTED_PYS
+
+def is_windows(os_build_target):
+    return os_build_target in SUPPORTED_WIN
+
+def is_unix(os_build_target):
+    return (os_build_target in SUPPORTED_LINUX) or\
+           (os_build_target in SUPPORTED_OSX)
+
+def is_py_35(python_version):
+    return python_version == SUPPORTED_PYS[0]
+
+def is_py_36(python_version):
+    return python_version == SUPPORTED_PYS[1]
