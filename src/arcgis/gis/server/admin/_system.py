@@ -566,92 +566,97 @@ class Jobs(BaseServer):
 ########################################################################
 class ServerProperties(BaseServer):
     """
-    The Server has configuration parameters that can be govern some of its
-    intricate behavior. The Server Properties resource is a container for
+    The Server has configuration parameters that can govern some of its
+    intricate behavior. This Server Properties resource is a container for
     such properties. These properties are available to all server objects
     and extensions through the server environment interface.
+    
     The properties include:
-     CacheSizeForSecureTileRequests - An integer that specifies the
-      number of users whose token information will be cached. This
-      increases the speed of tile retrieval for cached services. If not
-      specified, the default cache size is 200,000. Both REST and SOAP
-      services honor this property. You'll need to manually restart
-      ArcGIS Server in order for this change to take effect.
-     DisableAdminDirectoryCache - Disables browser caching of the
-      Administrator Directory pages. The default is false. To disable
-      browser caching, set this property to true.
-     disableIPLogging - When a possible cross-site request forgery
-      (CSRF) attack is detected, the server logs a message containing
-      the possible IP address of the attacker. If you do not want IP
-      addresses listed in the logs, set this property to true. Also,
-      HTTP request referrers are logged at FINE level by the REST and
-      SOAP handlers unless this property is set to true.
-     javaExtsBeginPort - Specifies a start port of the port range used
-      for debugging Java server object extensions.
-      Example: 8000
-     javaExtsEndPort - Specifies an end port of the port range used for
-      debugging Java server object extensions.
-      Example: 8010
-     localTempFolder - Defines the local folder on a machine that can
-      be used by GIS services and objects. If this property is not
-      explicitly set, the services and objects will revert to using the
-      system's default temporary directory.
+    
+      - CacheSizeForSecureTileRequests -- An integer that specifies the
+        number of users whose token information will be cached. This
+        increases the speed of tile retrieval for cached services. If not
+        specified, the default cache size is 200,000. Both REST and SOAP
+        services honor this property. You'll need to manually restart
+        ArcGIS Server in order for this change to take effect.
+      - DisableAdminDirectoryCache -- Disables browser caching of the
+        Administrator Directory pages. The default is False. To disable
+        browser caching, set this property to True.
+      - disableIPLogging -- When a possible cross-site request forgery
+        (CSRF) attack is detected, the server logs a message containing
+        the possible IP address of the attacker. If you do not want IP
+        addresses listed in the logs, set this property to True. Also,
+        HTTP request referrers are logged at FINE level by the REST and
+        SOAP handlers unless this property is set to True.
+      - javaExtsBeginPort -- Specifies a start port of the port range used
+        for debugging Java server object extensions.
+        Example: 8000
+      - javaExtsEndPort -- Specifies an end port of the port range used for
+        debugging Java server object extensions.
+        Example: 8010
+      - localTempFolder -- Defines the local folder on a machine that can
+        be used by GIS services and objects. If this property is not
+        explicitly set, the services and objects will revert to using the
+        system's default temporary directory.
 
-      Note:
-      If this property is used, you must create the temporary directory
-      on every server machine in the site. Example: /tmp/arcgis.
+        .. note::
+            If this property is used, you must create the temporary directory
+            on every server machine in the site. Example: /tmp/arcgis.
 
-      messageFormat - Defines the transmission protocol supported by
-       the services catalog in the server.
-       Values: esriServiceCatalogMessageFormatBin,
-               esriServiceCatalogMessageFormatSoap,
-               esriServiceCatalogMessageFormatSoapOrBin
-      messageVersion - Defines the version supported by the services
-       catalog in the server. Example: esriArcGISVersion101
-      PushIdentityToDatabase - Propogates the credentials of the logged
-       -in user to make connections to an Oracle database. This
-       property is only supported for use with Oracle databases.
-       Values: true | false
-      suspendDuration - Specifies the duration for which the ArcGIS
-       service hosting processes should suspend at startup. This
-       duration is specified in milliseconds. This is an optional
-       property that takes effect when suspendServiceAtStartup is set
-       to true. If unspecified and suspension of service at startup is
-       requested, then the default suspend duration is 30 seconds.
-       Example: 10000 (meaning 10 seconds)
-      suspendServiceAtStartup - Suspends the ArcGIS service hosting
-       processes at startup. This will enable attaching to those
-       processes and debugging code that runs early in the lifecycle of
-       server extensions soon after they are instantiated.
-       Values: true | false
-      uploadFileExtensionWhitelist - This specifies what files are
-       allowed to be uploaded through the file upload API by
-       identifying the allowable extensions. It is a list of comma
-       separated extensions without dots. If this property is not
-       specified a default list is used. This is the default list: soe,
-       sd, sde, odc, csv, txt, zshp, kmz, and geodatabase.
+      - messageFormat -- Defines the transmission protocol supported by
+        the services catalog in the server.
+        Values: 
+               - esriServiceCatalogMessageFormatBin,
+               - esriServiceCatalogMessageFormatSoap,
+               - esriServiceCatalogMessageFormatSoapOrBin
+               
+      - messageVersion -- Defines the version supported by the services
+        catalog in the server. Example: esriArcGISVersion101
+      - PushIdentityToDatabase -- Propogates the credentials of the logged-in 
+        user to make connections to an Oracle database. This
+        property is only supported for use with Oracle databases.
+        Values: True | False
+      - suspendDuration -- Specifies the duration for which the ArcGIS
+        service hosting processes should suspend at startup. This
+        duration is specified in milliseconds. This is an optional
+        property that takes effect when suspendServiceAtStartup is set
+        to True. If unspecified and suspension of service at startup is
+        requested, then the default suspend duration is 30 seconds.
+        Example: 10000 (meaning 10 seconds)
+      - suspendServiceAtStartup -- Suspends the ArcGIS service hosting
+        processes at startup. This will enable attaching to those
+        processes and debugging code that runs early in the lifecycle of
+        server extensions soon after they are instantiated.
+        Values: True | False
+      - uploadFileExtensionWhitelist -- This specifies what files are
+        allowed to be uploaded through the file upload API by
+        identifying the allowable extensions. It is a list of comma-separated 
+        extensions without dots. If this property is not
+        specified, a default list is used. This is the default list: soe,
+        sd, sde, odc, csv, txt, zshp, kmz, and geodatabase.
 
-     Note:
-     Updating this list overrides the default list completely. This
-     means if you set this property to a subset of the default list
-     then only those items in the subset will be accepted for upload.
-     Example: sd, so, sde, odc.
+        .. note::
+            Updating this list overrides the default list completely. This
+            means if you set this property to a subset of the default list
+            then only those items in the subset will be accepted for upload.
+            Example: sd, so, sde, odc.
 
-     uploadItemInfoFileExtensionWhitelist - This specifies what files
-      are allowed to be uploaded through the service iteminfo upload
-      API by identifying the allowable extensions. It should be a list
-      of comma separated extensions without dots. If this property is
-      not specified a default list is used. This is the default list:
-      xml, img, png, gif, jpg, jpeg, bmp.
+      - uploadItemInfoFileExtensionWhitelist -- This specifies what files
+        are allowed to be uploaded through the service iteminfo upload
+        API by identifying the allowable extensions. It should be a list
+        of comma-separated extensions without dots. If this property is
+        not specified, a default list is used. This is the default list:
+        xml, img, png, gif, jpg, jpeg, bmp.
 
-    Note:
-    This list overrides the default list completely. This means if you
-    set this property to a subset of the default list then only those
-    items in the subset will be accepted for upload. Example: png, svg,
-    gif, jpg, tiff, bmp.
+        .. note::
+            This list overrides the default list completely. This means if you
+            set this property to a subset of the default list then only those
+            items in the subset will be accepted for upload. Example: png, svg,
+            gif, jpg, tiff, bmp.
 
-    WebContextURL - Defines the web front end as seen by your users.
-     Example: http://mycompany.com/gis
+      - WebContextURL -- Defines the web front end as seen by your users.
+        Example: http://mycompany.com/gis
+    
     """
     _con = None
     _url = None
@@ -662,7 +667,21 @@ class ServerProperties(BaseServer):
                  url,
                  connection,
                  initialize=False):
-        """Constructor"""
+        """
+        Constructor
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The machine URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required string. The connection string.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the machine properties at  
+                               creation (True). Default is False.
+        ==================     ====================================================================
+        
+        """
         super(ServerProperties, self).__init__(connection=connection,
                                                url=url)
         if url.lower().endswith('/properties'):
@@ -680,7 +699,18 @@ class ServerProperties(BaseServer):
     #----------------------------------------------------------------------
     def update(self, properties):
         """
-        This operation allows you to update the server property
+        This operation allows you to update the server properties. See the ServerProperties 
+        class description for all possible properties.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        properties             Required string. A Python dictionary of server properties to be updated.
+        ==================     ====================================================================
+        
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/update"
         params = {
@@ -807,18 +837,21 @@ class ServerDirectory(BaseServer):
     available on network shares, accessible to every machine in the site.
 
     The following directory types can be registered with the server:
-     Output - Stores various information generated by services, such as map
-      images. Instances: One or more
-     Cache - Stores tile caches used by map, globe, and image services for
-      rapid performance. Instances: One or more
-     Jobs - Stores results and other information from geoprocessing
-      services. Instances: One or more
-     System - Stores files that are used internally by the GIS server.
-      Instances: One Server directories that contain output of various GIS
-      services can be periodically cleaned to remove old unused files. By
-      using the cleanup mode and maximum file age parameters, you control
-      when when you would like the files in these directories to be
-      cleaned.
+    
+     - Output -- Stores various information generated by services, such as map
+       images. Instances: One or more
+     - Cache -- Stores tile caches used by map, globe, and image services for 
+       rapid performance. Instances: One or more
+     - Jobs -- Stores results and other information from geoprocessing
+       services. Instances: One or more
+     - System -- Stores files that are used internally by the GIS server.
+       Instances: One 
+      
+    Server directories that contain output of various GIS
+    services can be periodically cleaned to remove old unused files. By
+    using the cleanup mode and maximum file age parameters, you control
+    when when you would like the files in these directories to be
+    cleaned.
 
     All the output server directories are automatically virtualized (they
     can be accessed over a URL) for you through the ArcGIS Server REST API.
@@ -840,7 +873,21 @@ class ServerDirectory(BaseServer):
                  url,
                  connection,
                  initialize=False):
-        """Constructor"""
+        """
+        Constructor
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The machine URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required string. The connection string.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the machine properties at  
+                               creation (True). Default is False.
+        ==================     ====================================================================
+        
+        """
         super(ServerDirectory, self).__init__(connection=connection,
                                               url=url)
         self._url = url
@@ -860,19 +907,31 @@ class ServerDirectory(BaseServer):
         that are using this directory, causing them to restart. It is
         therefore recommended that any edit to the server directories be
         performed when the server is not under load.
+        
         This operation is mostly used when growing a single machine site to
         a multiple machine site configuration, which requires that the
         server directories and configuration store be put on a
         network-accessible file share.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        physical_path          Required string. The absolute physical path of the server directory.
+        ------------------     --------------------------------------------------------------------
+        cleanup_mode           Optional string. Defines if files in the server directory needs to 
+                               be cleaned up. The default is None.
+        ------------------     --------------------------------------------------------------------
+        max_age                Required integer. The length of time a file in the directory needs 
+                               to be kept before it is deleted.
+        ------------------     --------------------------------------------------------------------
+        description            Optional string. An optional description for the server directory. 
+                               The default is None.
+        ==================     ====================================================================
 
-        Inputs:
-           physica_path - The absolute physical path of the server
-            directory.
-           cleanup_mode - Defines if files in the server directory needs to
-            be cleaned up. The default is NONE.
-           max_age - Defines how long a file in the directory needs to
-            be kept before it is deleted.
-           description - An optional description for the server directory
+
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/edit"
         params = {
@@ -897,6 +956,10 @@ class ServerDirectory(BaseServer):
         cleaner automatically cleans up the content within server
         directories at regular intervals. However, you can explicitly clean
         the directory by invoking this operation.
+        
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/clean"
         params = {
@@ -910,6 +973,8 @@ class ServerDirectory(BaseServer):
     #----------------------------------------------------------------------
     def recover(self):
         """
+        Recovers the shared server directories of the site.
+
         If the shared server directories for a site are unavailable, a site
         in read-only mode will operate in a degraded capacity that allows
         access to the ArcGIS Server Administrator Directory. You can recover
@@ -920,6 +985,10 @@ class ServerDirectory(BaseServer):
         the local repository into the shared server directories location.
         The copied local repository will be from the machine in the site
         where the recover operation is performed.
+        
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/recover"
         params = {'f': 'json'}
@@ -931,6 +1000,10 @@ class ServerDirectory(BaseServer):
         Unregisters a server directory. Once a directory has been
         unregistered, it can no longer be referenced (used) from within a
         GIS service.
+        
+        :return:
+            A boolean indicating success (True).
+            
         """
         url = self._url + "/unregister"
         params = {
