@@ -232,7 +232,7 @@ def _run_shell_cmd(cmd):
                                               stderr=subprocess.STDOUT,
                                               shell=True)
         str_output = byte_output.decode("utf-8")
-        log.debug("cmd output => {}".format(str_output)
+        log.debug("cmd output => {}".format(str_output))
         return str_output
     except subprocess.CalledProcessError as e:
         log.warn("cmd failed, returned non-zero code. Output:\n"\
