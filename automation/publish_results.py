@@ -4,7 +4,7 @@ import shutil
 import logging
 log = logging.getLogger()
 
-from __init__ import STAGING_DIR
+from __init__ import STAGING_DIR, GEOSAURUS_ROOT_DIR
 #import python package from the BUILD_DIR dir
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build
