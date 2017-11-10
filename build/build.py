@@ -254,7 +254,7 @@ def _run_conda_convert_command(conda_package, os_build_target, output_dir):
     if "Skipping conversion" in output:
         #If converting to current platform, cmd will silent fail and skip
         target_folder = os.path.join(output_dir, os_build_target)
-        os.makedirs(target_folder)
+        os.makedirs(target_folder, exist_ok=True)
         shutil.copy(conda_package, target_folder)
         log.debug("conda convert didn't complete: manually copied {} to "
                   "{}".format(conda_package, target_folder))
