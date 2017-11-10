@@ -3,17 +3,50 @@ import sys
 import re
 import argparse
 import shutil
+import platform
 import subprocess
+import tempfile
 import logging
 log = logging.getLogger(__name__)
-
-from __init__ import *
 
 BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
                  "--output-folder {output_dir}"
 
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
+
+SUPPORTED_WIN = ['win-32', 'win-64']
+SUPPORTED_LINUX = ['linux-32', 'linux-64']
+SUPPORTED_OSX = ['osx-64']
+
+SUPPORTED_OSES = SUPPORTED_WIN +\
+                 SUPPORTED_LINUX +\
+                 SUPPORTED_OSX
+
+SUPPORTED_PYS = ['3.5', '3.6']
+DEFAULT_PYS = SUPPORTED_PYS
+
+GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname( __file__ ),
+    '..'))
+
+BUILD_DIR = os.path.abspath(os.path.join(
+    GEOSAURUS_ROOT_DIR,
+    "build"))
+
+BUILD_OUTPUT_DIR = os.path.abspath(os.path.join(
+    BUILD_DIR,
+    "output"))
+
+DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
+    BUILD_DIR,
+    "meta",
+    "default_meta.yaml"))
+
+ACTIVE_META_YML_FILE = os.path.abspath(os.path.join(
+    BUILD_DIR,
+    "arcgis",
+    "meta.yaml"))
 
 def _main():
     args = _parse_cmd_line_args()
@@ -24,9 +57,11 @@ def _main():
     elif _all_is_specified_anywhere(args):
         build_conda_packages_for_all_os_and_py()
     elif _only_python_is_specified(args):
-        build_conda_packages(python_versions = args.python)
+        build_conda_packages(python_versions = args.python,
+                             os_build_targets = [ _determine_current_os() ])
     elif _only_os_is_specified(args):
-        build_conda_packages(os_build_targets = args.os)
+        build_conda_packages(python_versions = DEFAULT_PYS,
+                             os_build_targets = args.os)
     elif _both_os_and_python_are_specified(args):
         build_conda_packages(os_build_targets = args.os,
                              python_versions = args.python)
@@ -108,8 +143,8 @@ def build_conda_packages_for_all_os_and_py():
     build_conda_packages(os_build_targets = SUPPORTED_OSES,
                          python_versions = SUPPORTED_PYS)
 
-def build_conda_packages(os_build_targets = DEFAULT_OSES,
-                         python_versions = DEFAULT_PYS,
+def build_conda_packages(os_build_targets,
+                         python_versions,
                          clear_output_folder = True):
     if clear_output_folder:
         _clear_output_folder()
@@ -141,11 +176,18 @@ def _split_oses_to_unix_and_win(os_build_targets):
     unix = []
     win = []
     for os in os_build_targets:
-        if is_unix(os):
+        if _is_unix(os):
             unix.append(os)
-        elif is_windows(os):
+        elif _is_windows(os):
             win.append(os)
     return unix, win
+
+def _is_windows(os_build_target):
+    return os_build_target in SUPPORTED_WIN
+
+def _is_unix(os_build_target):
+    return (os_build_target in SUPPORTED_LINUX) or\
+           (os_build_target in SUPPORTED_OSX)
 
 def _clear_output_folder():
     items_to_ignore = [ ".gitignore" ]
@@ -161,9 +203,10 @@ def _check_edge_cases(os_build_targets,
                       python_versions):
     """At the moment, you can only build for windows on a win machine"""
     for os_build_target in os_build_targets:
-        if is_windows(os_build_target) and os.name == "posix":
+        if _is_windows(os_build_target) and os.name == "posix":
             #if you are building for windows but your current os is unix
-            raise RuntimeError("Building for win on a unix sys not supported")
+            raise RuntimeError("You're building for {}: Windows pkgs cannot "\
+                               "be built on unix sys".format(os_build_targets))
         if os_build_target not in SUPPORTED_OSES: 
             raise RuntimeError("{} not supported OS. Supported OSes = "\
                                "{}".format(os_build_target, SUPPORTED_OSES))
@@ -180,12 +223,11 @@ def _setup_meta_yaml_file_for(os_folder_name):
                                  os_folder_name,
                                  "meta.yaml")
     shutil.copyfile(os_specific_meta_file, ACTIVE_META_YML_FILE)
-    log.info("using {} meta.yaml file for build.".format(os_folder_name))
+    log.info("using {} file for build.".format(os_specific_meta_file))
 
 def _run_conda_build_command(python_version,
-                             output_dir,
-                             build_dir=BUILD_DIR):
-    _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = build_dir,
+                             output_dir):
+    _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = BUILD_DIR,
                                          python_version = python_version,
                                          output_dir = output_dir))
 
@@ -210,12 +252,13 @@ def _run_conda_convert_command(conda_package, os_build_target, output_dir):
                                 os_build_target = os_build_target,
                                 output_dir = output_dir))
     if "Skipping conversion" in output:
+        #If converting to current platform, cmd will silent fail and skip
         target_folder = os.path.join(output_dir, os_build_target)
         os.makedirs(target_folder)
         shutil.copy(conda_package, target_folder)
         log.debug("conda convert didn't complete: manually copied {} to "
                   "{}".format(conda_package, target_folder))
-
+        
 def _copy_repodata_files(src, dst):
     for root, dirs, files in os.walk(src):
         for name in files:
@@ -243,6 +286,31 @@ def _restore_default_meta_yml():
     shutil.copyfile(DEFAULT_META_YML_FILE,
                     ACTIVE_META_YML_FILE)
 
+class empty_temp_folder:
+    """Use with "with" syntax like "with empty_temp_folder() as tmp:"
+    Creates a temporary folder and deletes it after finished being used"""
+    def __enter__(self):
+        self.temp_folder = os.path.join(tempfile.gettempdir(),
+                                   ".{}".format(hash(os.times())))
+        os.makedirs(self.temp_folder)
+        return self.temp_folder
+
+    def __exit__(self, type, value, traceback):
+        shutil.rmtree(self.temp_folder)
+
+def _determine_current_os():
+    target_os = ""
+    system = platform.system().lower()
+    if "darwin" in system:
+        target_os = "osx"
+    elif "window" in system:
+        target_os = "win"
+    elif "linux" in system:
+        target_os = "linux"
+    is_64_bit = platform.machine().endswith('64')
+    architecture = "64" if is_64_bit else "32"
+    return "{target_os}-{architecture}".format(target_os = target_os,
+                                               architecture = architecture)
 if __name__ == "__main__":
     try:
         _main()

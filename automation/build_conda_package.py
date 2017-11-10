@@ -7,33 +7,16 @@ import logging
 log = logging.getLogger()
 
 from __init__ import *
+#import python package from the BUILD_DIR dir
+sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
+from build import build
 
 def build_conda_package(*args, **kwargs):
-    build_tag = args[0]
-    if os.name == 'posix':
-        raise RuntimeError("Conda building not supported on *nix systems")
-    elif os.name == 'nt':
-        _build_conda_for_windows(build_tag)
-    else:
-        raise RuntimeError("Conda building not supported on this platform")
-
-    log.info("Conda building finished! Any results in {}".format(
-        os.path.join(GEOSAURUS_ROOT_DIR, 'automation', 'staging')))
-
-def _build_conda_for_windows(build_tag):
-    log.info("Building for Windows system...")
-    bat_build_command = "buildanduploadarcgis"
-    flag_to_change_build_tag = build_tag
-    final_make_command = 'cd "{}" && {} {}'.format(
-            BUILD_DIR,
-            bat_build_command,
-            flag_to_change_build_tag)
-
-    run_shell_command(final_make_command)
+    build.build_conda_packages_for_all_os_and_py()
     _move_output_to_staging(build_tag)
 
 def _move_output_to_staging(build_tag):
-    output_dir_of_conda_packages = os.path.join(BUILD_DIR, "___output")
+    output_dir_of_conda_packages = os.path.join(BUILD_DIR, "output")
     shutil.copytree(output_dir_of_conda_packages,
                     os.path.join(STAGING_DIR, 'conda_builds', build_tag))
     log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
