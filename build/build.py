@@ -15,31 +15,25 @@ log = logging.getLogger(__name__)
 
 BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
                  "--output-folder {output_dir}"
-
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
-
-BASE_UPLOAD_CMD = "anaconda upload {conda_package}"
+BASE_UPLOAD_CMD = "anaconda upload -f {conda_package}"
 
 SUPPORTED_WIN = ['win-32', 'win-64']
 SUPPORTED_LINUX = ['linux-32', 'linux-64']
 SUPPORTED_OSX = ['osx-64']
-
 SUPPORTED_OSES = SUPPORTED_WIN +\
                  SUPPORTED_LINUX +\
                  SUPPORTED_OSX
-
 SUPPORTED_PYS = ['3.5', '3.6']
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
     '..'))
-
 BUILD_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "build"))
-
 BUILD_OUTPUT_DIR = os.path.abspath(os.path.join(
     BUILD_DIR,
     "output"))
@@ -48,7 +42,6 @@ DEFAULT_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
     "meta",
     "default_meta.yaml"))
-
 ACTIVE_META_YML_FILE = os.path.abspath(os.path.join(
     BUILD_DIR,
     "arcgis",
@@ -84,8 +77,7 @@ def _parse_cmd_line_args():
         "default_meta.yaml if -o, -p, or -a aren't specified. Must have "\
         "conda-build and anaconda-client installed on root conda enviroment. "\
         "Can only build windows conda packages from a windows machine. "\
-        "Generated conda packages are placed in ./output/. See ./README.md "\
-        "in this directory for more information. \n "\
+        "Generated conda pkgs in ./output/. See ./README.md for more info."\
         "\n - 'python build_conda_package.py' for default build behavior"\
         "\n - 'python build_conda_package.py -p 3.5 3.6 -o win-32 linux-64' "\
         "for building both py3.5 and py3.6 for both win-32 and linux-64"\
@@ -129,7 +121,7 @@ def _no_target_specified(args):
     return (not args.all) and (not args.os) and (not args.python)
 
 def build_conda_pkg_with_default_meta_yaml():
-    """Use build/arcgis/default_meta.yaml file as the meta.yaml file that
+    """Use geosaurus/build/env/default_meta.yaml file as the meta.yaml file
     the "conda build" process will use. Build for all supported python"""
     _clear_output_folder()
     _restore_default_meta_yml()
@@ -138,6 +130,7 @@ def build_conda_pkg_with_default_meta_yaml():
         _run_conda_build_command(python_version = python_version,
                                  output_dir = BUILD_OUTPUT_DIR)
 
+# Human readable functions for cmd arg parsing
 def _all_is_specified_anywhere(args):
     return args.all
 
@@ -154,12 +147,23 @@ def _both_os_and_python_are_specified(args):
     return args.python and args.os
 
 def build_conda_packages_for_all_os_and_py():
+    """Will generate conda packages for all supported os and pys"""
     build_conda_packages(os_build_targets = SUPPORTED_OSES,
                          python_versions = SUPPORTED_PYS)
 
 def build_conda_packages(os_build_targets,
                          python_versions,
                          clear_output_folder = True):
+    """Will build conda packages for specified oses, and pys. Places pkgs
+    in output folder, will clear output folder if specified. Can only build
+    windows conda packages on windows machine.
+
+    os_build_targets: a list of strings of target oses to build for. See
+        SUPPORTED_OSES for all supported. Ex: ['win-64', 'linux-32']
+    python_versions: a list of strings of python versions to build for. See
+        SUPPORTED_PYS for all supported. Ex: ['3.6', '3.5']
+    clear_output_folder: bool to toggle if BUILD_OUTPUT_DIR is cleared
+    """
     if clear_output_folder:
         _clear_output_folder()
     _check_edge_cases(os_build_targets,
@@ -231,6 +235,10 @@ def _check_edge_cases(os_build_targets,
 
 
 def _setup_meta_yaml_file_for(os_folder_name):
+    """the unix meta.yaml file differs from the windows meta.yaml file,
+    mainly due to shortcomings on the conda-convert command in regards
+    to O.S. specific depedencies
+    """
     os_specific_meta_file = os.path.join(
                                  BUILD_DIR,
                                  "meta",
@@ -282,8 +290,10 @@ def _copy_repodata_files(src, dst):
                 shutil.copy(found_repodata_file, dst)
 
 def upload_any_conda_packages_in_output_folder():
-    log.info("Uploading any conda packages... if you see no INFO messages, "\
-             "No conda packages were generated.")
+    """runs the anaconda upload command on any generated .tar.bz2 files
+    in the BUILD_OUTPUT_DIR folder.
+    """
+    log.info("Uploading any conda packages in {}".format(BUILD_OUTPUT_DIR))
     for root, dirs, files in os.walk(BUILD_OUTPUT_DIR):
         for name in files:
             if ".tar.bz2" in name:
@@ -294,6 +304,7 @@ def _run_conda_upload_command(conda_package):
     _run_shell_cmd(BASE_UPLOAD_CMD.format(conda_package = conda_package))
 
 def _run_shell_cmd(cmd):
+    """Runs a shell cmd on linux, osx, or windows. Outputs results to log"""
     log.info("Currently running cmd '{}'. Output of cmd will be logged after "\
              "it completes. (DEBUG if success, WARN if failure)".format(cmd))
     try:
@@ -325,6 +336,7 @@ class empty_temp_folder:
         shutil.rmtree(self.temp_folder)
 
 def _determine_current_os():
+    """Returns string representing current os in conda format (ex. 'win-64')"""
     target_os = ""
     system = platform.system().lower()
     if "darwin" in system:
