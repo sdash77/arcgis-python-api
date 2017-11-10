@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+"""Build the arcgis python api for any specified os/py, placing the generated
+conda packages in ./output/. Run with --help or see README.md for more info"""
+
 import os
 import sys
 import re
@@ -14,6 +18,8 @@ BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
 
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
+
+BASE_UPLOAD_CMD = "anaconda upload {conda_package}"
 
 SUPPORTED_WIN = ['win-32', 'win-64']
 SUPPORTED_LINUX = ['linux-32', 'linux-64']
@@ -69,12 +75,17 @@ def _main():
         args.print_help()
         raise Exception("Incorrect usage: See the --help text and try again")
 
+    if _upload_is_specified_anywhere(args):
+        upload_any_conda_packages_in_output_folder()
+
 def _parse_cmd_line_args():
     parser = argparse.ArgumentParser(description = "Builds arcgis conda "\
         "packages for specified O.S. and python versions. Will use ./meta/"\
         "default_meta.yaml if -o, -p, or -a aren't specified. Must have "\
         "conda-build and anaconda-client installed on root conda enviroment. "\
-        "See ./README.md in this directory for more information. \n "\
+        "Can only build windows conda packages from a windows machine. "\
+        "Generated conda packages are placed in ./output/. See ./README.md "\
+        "in this directory for more information. \n "\
         "\n - 'python build_conda_package.py' for default build behavior"\
         "\n - 'python build_conda_package.py -p 3.5 3.6 -o win-32 linux-64' "\
         "for building both py3.5 and py3.6 for both win-32 and linux-64"\
@@ -101,7 +112,6 @@ def _setup_logging(args):
         log.setLevel(logging.DEBUG)
     else:
          log.setLevel(logging.INFO)
-
     stdout_handler = logging.StreamHandler(stream=sys.stdout)
     stdout_handler.setLevel(logging.DEBUG)
     stdout_handler.setFormatter(logging.Formatter(
@@ -111,7 +121,8 @@ def _setup_logging(args):
         '     -----\n'\
         '"%(message)s"'))
     log.addHandler(stdout_handler)
-    log.debug("Logging set up: args passed in => {}".format(args))
+    log.info("Logging at level {}.".format(logging.getLevelName(log.level)))
+    log.debug("args passed in => {}".format(args))
 
 def _no_target_specified(args):
     """returns False if at least one of --all, --python, or --os passed in"""
@@ -129,6 +140,9 @@ def build_conda_pkg_with_default_meta_yaml():
 
 def _all_is_specified_anywhere(args):
     return args.all
+
+def _upload_is_specified_anywhere(args):
+    return args.upload
 
 def _only_python_is_specified(args):
     return args.python and not args.os
@@ -267,6 +281,18 @@ def _copy_repodata_files(src, dst):
                 log.debug("moving repodata {}".format(found_repodata_file))
                 shutil.copy(found_repodata_file, dst)
 
+def upload_any_conda_packages_in_output_folder():
+    log.info("Uploading any conda packages... if you see no INFO messages, "\
+             "No conda packages were generated.")
+    for root, dirs, files in os.walk(BUILD_OUTPUT_DIR):
+        for name in files:
+            if ".tar.bz2" in name:
+                conda_package_path = os.path.join(root, name)
+                _run_conda_upload_command(conda_package = conda_package_path)
+
+def _run_conda_upload_command(conda_package):
+    _run_shell_cmd(BASE_UPLOAD_CMD.format(conda_package = conda_package))
+
 def _run_shell_cmd(cmd):
     log.info("Currently running cmd '{}'. Output of cmd will be logged after "\
              "it completes. (DEBUG if success, WARN if failure)".format(cmd))
@@ -314,7 +340,8 @@ def _determine_current_os():
 if __name__ == "__main__":
     try:
         _main()
-        log.info("Program successfully completed! Exiting....")
+        log.info("Program successfully completed! Any generated conda "\
+                 "packages in {}. Exiting....".format(BUILD_OUTPUT_DIR))
     except Exception as e:
         log.exception(e)
         _restore_default_meta_yml()

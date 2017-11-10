@@ -61,6 +61,7 @@ def _check_args():
        log.info("Arguments passed in: {}".format(sys.argv[1:]))
  
 def assemble_build_tag_add_to_args_global_var(build_num, automation_type):
+    """Actually updates the _build_tag_args global var list"""
     if re.match(_master_regex, automation_type):
         build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
                                                      build_num)
