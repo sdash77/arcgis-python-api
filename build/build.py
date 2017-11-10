@@ -267,6 +267,10 @@ def _convert_conda_package(conda_package, os_build_targets, output_dir):
         dir_containing_conda_package = os.path.dirname(conda_package)
         _copy_repodata_files(src = dir_containing_conda_package,
                              dst = os.path.join(output_dir, os_build_target))
+        noarch_dir = os.path.join(dir_containing_conda_package,
+                                  "..",
+                                  "noarch")
+        shutil.copy(noarch_dir, output_dir)
 
 def _run_conda_convert_command(conda_package, os_build_target, output_dir):
     output = _run_shell_cmd(BASE_CONVERT_CMD.format(
@@ -293,7 +297,9 @@ def upload_any_conda_packages_in_output_folder():
     """runs the anaconda upload command on any generated .tar.bz2 files
     in the BUILD_OUTPUT_DIR folder.
     """
-    log.info("Uploading any conda packages in {}".format(BUILD_OUTPUT_DIR))
+    log.info("Uploading any conda packages in {}. Make sure anaconda login "\
+             "has been run to authenticate your anaconda cloud credentials "\
+             "(cryptic errors are thrown otherwise".format(BUILD_OUTPUT_DIR))
     for root, dirs, files in os.walk(BUILD_OUTPUT_DIR):
         for name in files:
             if ".tar.bz2" in name:
