@@ -20,3 +20,6 @@ def publish_results(*args, **kwargs):
                                      publish_dir_win)
     log.info("About to publish results to anaconda cloud...")
     build.upload_any_conda_packages_in_output_folder()
+
+if __name__ == "__main__":
+    publish_results("NOT_SPECIFIED")
