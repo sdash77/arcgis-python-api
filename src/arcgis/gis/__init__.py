@@ -182,6 +182,11 @@ class GIS(object):
         The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
         or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
         saved in the configuration file by that profile name.
+        
+        If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
+        in a testing environment and wish to disable certificate verification, you may specify verify_cert=False to disable
+        certificate verification in the Python process. However, this should not be done in production environments and is
+        strongly discouraged.
         """
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
