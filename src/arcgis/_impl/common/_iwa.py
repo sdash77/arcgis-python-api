@@ -4,7 +4,10 @@ from six.moves.urllib.response import addinfourl
 from six.moves.http_client import HTTPConnection, HTTPSConnection
 import base64
 import sys
-import kerberos_sspi as kerberos
+
+# import kerberos_sspi as kerberos
+import winkerberos as kerberos
+
 import win32api,sspi
 import pywintypes
 

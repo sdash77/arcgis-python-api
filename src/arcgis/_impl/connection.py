@@ -954,10 +954,13 @@ class _ArcGISConnection(object):
                 try:
                     from .common._iwa import NtlmSspiAuthHandler, KerberosSspiAuthHandler
 
-                    auth_NTLM = NtlmSspiAuthHandler()
-                    auth_krb = KerberosSspiAuthHandler()
+                    try:
+                        auth_NTLM = NtlmSspiAuthHandler()
+                        handlers.append(auth_NTLM)
+                    except:
+                        pass
 
-                    handlers.append(auth_NTLM)
+                    auth_krb = KerberosSspiAuthHandler()
                     handlers.append(auth_krb)
 
                 except Error as err:
