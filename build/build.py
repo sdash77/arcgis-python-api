@@ -272,7 +272,7 @@ def _convert_conda_package(conda_package, os_build_targets, output_dir):
                                   "noarch")
         noarch_dir_dst = os.path.join(output_dir, "noarch")
         if not os.path.isdir(noarch_dir_dst):
-            shutil.copytree(noarch_dir, noarch_dir_dst)
+            shutil.copytree(noarch_dir_src, noarch_dir_dst)
 
 def _run_conda_convert_command(conda_package, os_build_target, output_dir):
     output = _run_shell_cmd(BASE_CONVERT_CMD.format(
