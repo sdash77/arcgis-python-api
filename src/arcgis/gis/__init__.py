@@ -5534,7 +5534,10 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.post(self.url, params, token=self._lazy_token)
+        try:
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+        except: # VectorTileLayer is GET only
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)
         self._lazy_properties = PropertyMap(dictdata)
 
     @property
