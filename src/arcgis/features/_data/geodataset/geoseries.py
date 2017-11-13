@@ -125,10 +125,9 @@ class GeoSeries(BaseSpatialPandas, Series):
     #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
-        """Returns a GeoSeries as a python feature collection
+        """Returns a GeoSeries of GeoJSON Dictionary
         """
-        #raise NotImplementedError()
-        return DataFrame({'geometry': self}).__geo_interface__()
+        return self.apply(lambda x: x.__geo_interface__)
     @property
     def _constructor(self):
         return GeoSeries

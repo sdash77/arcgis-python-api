@@ -71,51 +71,7 @@ TOC
                 print user
 
         """
-def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
-    """
-    This is the method description.  Provide a simple and clear statement about what the method
-    does/accmomplishes.  If more sentences are needed/justified, certainly add the info.  Try
-    not to use the word 'Returns' here, and instead use Retrieves or Obtains, gets for Python
-    properties.
 
-    .. note::
-        Optional. Any additional info that should be provided can go here. What denotes a note  
-        versus a method description? Hard to say, but maybe go with this guidance: if the 
-        information/text are suggestions or helpful things to know, put it in a note; otherwise 
-        it should be part of the main description of the method; or perhaps it belongs with a
-        particular argument description.  URLs should go here or with the particular argument
-        description.
-
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    arg1                   Required dictionary. Description text here.  See #2 below!!!!!!
-    ------------------     --------------------------------------------------------------------
-    argument2              Optional integer. Description text here.
-    ------------------     --------------------------------------------------------------------
-    argument_three         Optional string. Description text here.
-    ------------------     --------------------------------------------------------------------
-    arg4demoPruposes       Optional integer. Description text here.
-    ==================     ====================================================================
-
-
-    :return:
-       Provide a statement on the expected return from the method.  Generally, it is a good
-       idea to include the data type.  For standard returns, please use a standard return
-       sentence or format below (#3).
-       
-
-    .. code-block:: python  (optional)
-
-       USAGE EXAMPLE: Give a description of what the example does.
-    
-       write_code_here = example for printing users in a group
-       response = group.get_members()
-       for user in response['users']:
-            print user
-
-    """
     
 
 ## 2 ## Standards for filling in the argument-description table
@@ -138,7 +94,7 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
         ------------------     --------------------------------------------------------------------
         fifthArgument          Optional float. This dangle past the column borders is fine, just keep the length
                                readable for developers in the code (100-ish characters).  Dangles past
-                               the argument column will cause table failure.  See #5 ? below.
+                               the argument column will cause table failure.  See #5 below.
         ------------------     --------------------------------------------------------------------
         6thArgument            Optional geometry object. If there are valid values that are only 
                                allowed, provide them here with the description.
@@ -152,6 +108,7 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
 ## 3 ## Standard return statements or formats
 #        No rigidity intended here at all.  Go with what is useful for the user and jives with you.  But if 
 #        it is a standard response, like a simple True or False return, please try to use the standards below.
+#        In general, do not use "JSON" in return statements.
 
 For operations done to items with IDs returned or None:
    The <item ID, group ID, etc> if successfully <added, updated, deleted, etc>, None otherwise.
@@ -163,7 +120,7 @@ For a boolean when an action is expected to be done, use:
    True if the <relationship was deleted, item was added, etc>, False if the <deletion failed, item was not successfully, etc>.
 
 For json responses:
-   A json object like the following: <{json ex}>
+   A <type/item> object.
 
 
 **Also on returns, do not start the return statement with 'Returns' -- that word is already there.
@@ -499,6 +456,11 @@ For json responses:
 - Item 2.
 - Item 3.
 
+
+This results in "<bullet> Rest <dash> Exposes..."  :
+    
+- Rest -- Exposes the REST-ful API
+- Soap -- Exposes the SOAP API
 
 
 ## 12 ## How to do code blocks

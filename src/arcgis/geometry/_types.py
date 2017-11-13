@@ -234,6 +234,92 @@ class Geometry(BaseGeometry):
         super(Geometry, self).__init__(iterable)
         self.update(kwargs)
     #----------------------------------------------------------------------
+    def __iter__(self):
+        """"""
+        #if HASARCPY and \
+           #isinstance(self, (Point, Polygon,
+                             #MultiPoint, Polyline)):
+            #cnt = self.centroid
+            #keys = ['x', 'y', 'z']
+            #for k in keys:
+                #if k in cnt:
+                    #yield cnt[k]
+                #del k
+        if isinstance(self, Polygon):
+            avgs = []
+            shape = 2
+            for ring in self['rings']:
+                a = np.array(ring)
+                if a.shape[1] != shape:
+                    shape = a.shape[1]
+                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+            avgs = np.array(avgs)
+            if shape == 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean()]
+            elif shape > 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean(),
+                       avgs[:,2].mean()]
+            for a in res:
+                yield a
+                del a
+        elif isinstance(self, Polyline):
+            avgs = []
+            shape = 2
+            for ring in self['paths']:
+                a = np.array(ring)
+                if a.shape[1] != shape:
+                    shape = a.shape[1]
+                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+            avgs = np.array(avgs)
+            if shape == 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean()]
+            elif shape > 2:
+                res = [avgs[:,0].mean(),
+                       avgs[:,1].mean(),
+                       avgs[:,2].mean()]
+            for a in res:
+                yield a
+                del a
+        elif isinstance(self, MultiPoint):
+            a = np.array(self['points'])
+            if a.shape[1] == 2:
+                for i in [a[:,0].mean(),
+                          a[:,1].mean()]:
+                    yield i
+            elif a.shape[1] >= 3: #has z
+                for i in [a[:,0].mean(),
+                          a[:,1].mean(),
+                          a[:,2].mean()]:
+                    yield i
+        elif isinstance(self, Point):
+            keys = ['x', 'y', 'z']
+            for k in keys:
+                if k in self:
+                    yield self[k]
+                del k
+        elif isinstance(self, Envelope):
+            for i in [(self['xmin'] + self['xmax'])/2,
+                      (self['ymin'] + self['ymax'])/2]:
+                yield i
+    #----------------------------------------------------------------------
+    @property
+    def __geo_interface__(self):
+        """converts an ESRI JSON to GeoJSON"""
+
+        if HASARCPY:
+            if isinstance(self.as_arcpy, arcpy.Point):
+                return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
+            else:
+                return self.as_arcpy.__geo_interface__
+        else:
+            from arcgis._impl.common._arcgis2geojson import arcgis2geojson
+            return arcgis2geojson(arcgis=self)
+        return {}
+
+    #----------------------------------------------------------------------
     def _wkt(obj, fmt='%.16f'):
         """converts an arcgis.Geometry to WKT"""
         if isinstance(obj, Point):
@@ -351,6 +437,7 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
+        """returns the arcpy.Geometry object"""
         if HASARCPY:
             esri_json = True
             if 'coordinates' in self:
@@ -363,11 +450,17 @@ class Geometry(BaseGeometry):
         """"""
         if HASARCPY:
             return getattr(self.as_arcpy, "JSON", None)
+        else:
+            return json.dumps(self)
         return
     #----------------------------------------------------------------------
     @property
     def WKT(self):
-        """"""
+        """
+        Returns the well-known text (WKT) representation for OGC geometry.
+        It provides a portable representation of a geometry value as a text
+        string.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "WKT", None)
         else:
@@ -376,7 +469,11 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def WKB(self):
-        """"""
+        """
+        Returns the well-known binary (WKB) representation for OGC geometry.
+        It provides a portable representation of a geometry value as a
+        contiguous stream of bytes.
+        """
         if HASARCPY:
             try:
                 return getattr(self.as_arcpy, "WKB", None)
@@ -386,12 +483,14 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def area(self):
-        """"""
+        """
+        The area of a polygon feature. Empty for all other feature types.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "area", None)
         elif isinstance(self, Polygon):
             return self._shoelace_area(parts=self['rings'])
-        return
+        return None
     #----------------------------------------------------------------------
     def _shoelace_area(self, parts):
         """calculates the shoelace area"""
@@ -411,14 +510,27 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def centroid(self):
-        """"""
+        """
+        Returns the center of the geometry
+
+        :returns: a arcgis.geometry.Point
+        """
         if HASARCPY:
-            return getattr(self.as_arcpy, "centroid", None)
+            if isinstance(self, Point):
+                return tuple(self)
+            else:
+                return tuple(Geometry(
+                    arcpy.PointGeometry(
+                    getattr(self.as_arcpy, "centroid", None),
+                    self.spatial_reference)
+                                ))
         return
     #----------------------------------------------------------------------
     @property
     def extent(self):
-        """"""
+        """
+        The extent of the geometry.
+        """
         ptX = []
         ptY = []
         if HASARCPY:
@@ -446,42 +558,65 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def first_point(self):
-        """"""
+        """
+        The first coordinate point of the geometry.
+        """
         if HASARCPY:
-            return getattr(self.as_arcpy, "firstPoint", None)
+            return Geometry(json.loads(arcpy.PointGeometry(getattr(
+                self.as_arcpy,
+                "firstPoint",
+                None), self.spatial_reference).JSON))
         return
     #----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
-        """"""
+        """
+        A space-delimited string of the coordinate pairs of the convex hull
+        rectangle.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "hullRectangle", None)
         return
     #----------------------------------------------------------------------
     @property
     def is_multipart(self):
-        """"""
+        """
+        True, if the number of parts for this geometry is more than one.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
         return
     #----------------------------------------------------------------------
     @property
     def label_point(self):
-        """"""
+        """
+        The point at which the label is located. The label_point is always
+        located within or on a feature.
+
+        :returns: arcgis.geometry.Point
+        """
         if HASARCPY:
-            return getattr(self.as_arcpy, "labelPoint", None)
+            return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "labelPoint", None),
+                                       self.spatial_reference))
         return
     #----------------------------------------------------------------------
     @property
     def last_point(self):
-        """"""
+        """
+        The last coordinate of the feature.
+
+        :returns: arcgis.geometry.Point
+        """
         if HASARCPY:
-            return getattr(self.as_arcpy, "lastPoint", None)
+            return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "lastPoint", None),
+                                       self.spatial_reference))
         return
     #----------------------------------------------------------------------
     @property
     def length(self):
-        """"""
+        """
+        The length of the linear feature. Zero for point and multipoint feature types.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "length", None)
         else:
@@ -489,7 +624,10 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def length3D(self):
-        """"""
+        """
+        The 3D length of the linear feature. Zero for point and multipoint
+        feature types.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "length3D", None)
         else:
@@ -498,7 +636,9 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def part_count(self):
-        """"""
+        """
+        The number of geometry parts for the feature.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "partCount", None)
         elif isinstance(self, Polygon):
@@ -513,7 +653,9 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def point_count(self):
-        """"""
+        """
+        The total number of points for the feature.
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "pointCount", None)
         elif isinstance(self, Polygon):
@@ -526,31 +668,42 @@ class Geometry(BaseGeometry):
             return 1
         return
     #----------------------------------------------------------------------
-    # @property
-    # def spatial_reference(self):
-    #     """"""
-    #     if HASARCPY:
-    #         return getattr(self.as_arcpy, "spatialReference", None)
-    #     return
-
     @property
     def spatial_reference(self):
+        """
+        The spatial reference of the geometry.
+        """
+        if HASARCPY:
+            return SpatialReference(self['spatialReference']).as_arcpy
         if 'spatialReference' in self:
-            return self['spatialReference']
+            return SpatialReference(self['spatialReference'])
         return None
     #----------------------------------------------------------------------
     @property
     def true_centroid(self):
-        """"""
+        """
+        The center of gravity for a feature.
+
+        :returns: arcgis.geometry.Point
+        """
         if HASARCPY:
-            return getattr(self.as_arcpy, "trueCentroid", None)
+            return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "trueCentroid", None),
+                                                self.spatial_reference))
+        elif isinstance(self, Point):
+            return self
         return
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """"""
+        """
+        The geometry type: polygon, polyline, point, multipoint
+
+        :returns: string
+        """
         if HASARCPY:
             return getattr(self.as_arcpy, "type", None)
+        elif isinstance(self, Geometry):
+            return self.type
         return
     #Functions#############################################################
     #----------------------------------------------------------------------
@@ -1186,10 +1339,6 @@ class Point(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": [self['x'], self['y']], "type": "Point"}
-    #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
         self.__dict__.update(d)
@@ -1239,10 +1388,6 @@ class MultiPoint(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['points'], "type": "MultiPoint"}
-    #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
         if 'points' in self:
@@ -1284,10 +1429,6 @@ class Polyline(Geometry):
     @property
     def type(self):
         return self._type
-    #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['paths'], "type": "MultiLineString"}
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -1336,10 +1477,6 @@ class Polygon(Geometry):
     @property
     def type(self):
         return self._type
-    #----------------------------------------------------------------------
-    @property
-    def __geo_interface__(self):
-        return {"coordinates": self['rings'], "type": "MultiPolygon"}
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""

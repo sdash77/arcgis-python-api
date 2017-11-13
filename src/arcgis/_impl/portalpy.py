@@ -1032,7 +1032,14 @@ class Portal(object):
             path = 'accounts/self' if self._is_pre_162 else 'portals/self'
             try:
                 resp = self.con.post(path, self._postdata(), ssl=True)
-            except:
+            except Exception as e:
+                if not self.con._verify_cert and \
+                  (len(e.args)==2) and \
+                  (e.args[1] == '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:720)'):
+                    import ssl
+                    ssl._create_default_https_context = ssl._create_unverified_context
+
+                    resp = self.con.post(path, self._postdata(), ssl=True)
                 if self.con._auth == "PKI":
                     resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
 
