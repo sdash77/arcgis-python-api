@@ -19,7 +19,7 @@ requirements:
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
         - pywin32          [win]
-        - kerberos-sspi    [win]
+         - winkerberos      [win]
     run:
         - python
         - six
@@ -27,7 +27,7 @@ requirements:
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
         - pywin32          [win]
-        - kerberos-sspi    [win]
+        - winkerberos      [win]
 test:
     imports:
         - arcgis.gis
