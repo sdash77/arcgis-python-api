@@ -31,7 +31,7 @@ from six.moves.urllib import request
 from six.moves import http_cookiejar as cookiejar
 from six.moves import http_client
 from .common._utils import Error
-__version__ = '1.0'
+__version__ = '1.5.4'
 _log = logging.getLogger(__name__)
 
 DEFAULT_TOKEN = uuid.uuid4()
