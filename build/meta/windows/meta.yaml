@@ -18,14 +18,16 @@ requirements:
         - pandas
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
+        - notebook <5.1
         - pywin32          [win]
-         - winkerberos      [win]
+        - winkerberos      [win]
     run:
         - python
         - six
         - pandas
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
+        - notebook <5.1
         - pywin32          [win]
         - winkerberos      [win]
 test:

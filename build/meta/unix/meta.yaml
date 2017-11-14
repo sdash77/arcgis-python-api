@@ -16,12 +16,14 @@ requirements:
         - setuptools
         - six
         - pandas
+        - notebook <5.1
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
     run:
         - python
         - six
         - pandas
+        - notebook <5.1
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
 test:
