@@ -32,6 +32,7 @@ class PortalAdminManager(BasePortalAdmin):
     _gis = None
     _idp = None
     _ux = None
+    _sp = None
     _metadata = None
     _collaborations = None
     _servers = None
@@ -97,6 +98,17 @@ class PortalAdminManager(BasePortalAdmin):
             from ._idp import IdentityProviderManager
             self._idp = IdentityProviderManager(gis=self._gis)
         return self._idp
+    #----------------------------------------------------------------------
+    @property
+    def socialproviders(self):
+        """
+        This resource allows for the setting and configuration of the social providers
+        for a GIS.
+        """
+        if self._sp is None:
+            from ._socialproviders import SocialProviders
+            self._sp = SocialProviders(gis=self._gis)
+        return self._sp
     #----------------------------------------------------------------------
     @property
     def metadata(self):

@@ -9,6 +9,14 @@ class SocialProviders(object):
     Enables/Disables the Social Providers Settings for a GIS
 
 
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    value               Required GIS.  This is an administrator connection to a GIS site.
+    ===============     ====================================================================
+
+    :returns: SocialProviders class
+
     """
     _gis = None
     _portal = None
@@ -17,11 +25,10 @@ class SocialProviders(object):
     def __init__(self, gis):
         """Constructor"""
         self._gis = gis
-        isinstance(gis, GIS)
-
         self._portal = self._gis._portal
         self._url = "%s%s" % (self._portal.resturl,
                             "portals/self/socialProviders")
+        self.properties
     #----------------------------------------------------------------------
     def __str__(self):
         return '<%s at %s>' % (type(self).__name__, self._url)
@@ -122,9 +129,11 @@ class SocialProviders(object):
         """
         if value is None:
             url = "%s%s" % (self._url, "/remove")
-            params = {'f' : 'json'}
+            params = {'f' : 'json',
+                      "clearEmptyFields" : True}
             res = self._gis._con.post(path=url,
-                                     postdata=params)
+                                      files={},
+                                      postdata=params)
             if 'success' in res and \
                res['success'] == False:
                 raise Exception("Could not update the Social Provider configuration")
@@ -134,28 +143,15 @@ class SocialProviders(object):
                     value[k] = ",".join(v)
                 elif v is None:
                     value[k] = ""
-            url = "%s%s" % (self._url, "/remove")
-            params = {'f' : 'json'}
+            url = "%s%s" % (self._url, "/configure")
+            params = {'f' : 'json',
+                      "clearEmptyFields" : True}
             params.update(value)
             res = self._gis._con.post(path=url,
-                                 postdata=params)
+                                      files={},
+                                      postdata=params)
             if 'success' in res and \
                res['success'] == False:
                 raise Exception("Could not update the Social Provider configuration")
         self._properties = None
-
-if __name__ == "__main__":
-    gis = GIS(url="http://devext.arcgis.com", username="andrew", password="fujifuji1", verify_cert=False)
-    sp = SocialProviders(gis=gis)
-    d = {'groups': [], 'level': None, 'signUpMode': 'Invitation', 'providers': ['facebook', 'google'], 'role': None, 'userCreditAssignment': -1}
-    print(sp.properties)
-    print(sp.configuration)
-    #old = sp.configuration
-    sp.configuration = None
-    sp.configuration = d
-    sp.configuration = None
-
-
-
-
 
