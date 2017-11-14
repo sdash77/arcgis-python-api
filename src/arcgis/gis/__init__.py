@@ -182,7 +182,7 @@ class GIS(object):
         The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
         or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
         saved in the configuration file by that profile name.
-        
+
         If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
         in a testing environment and wish to disable certificate verification, you may specify verify_cert=False to disable
         certificate verification in the Python process. However, this should not be done in production environments and is
@@ -3492,11 +3492,13 @@ class User(dict):
            A boolean indicating success (True) or failure (False).
 
         """
+        user_type = None
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
 
-        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region)
+        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region,
+                                       user_type)
         if ret:
             self._hydrate()
         return ret
@@ -3536,6 +3538,58 @@ class User(dict):
             self._hydrate()
             return res['success']
         return False
+    #----------------------------------------------------------------------
+    @property
+    def esri_access(self):
+        """
+        Enable or disable 'Esri access'. Administrator privileges required.
+        A member whose account has Esri access enabled can use My Esri and
+        Community and Forums (GeoNet), access e-Learning on the Training
+        website, and manage email communications from Esri. The member
+        cannot enable or disable their own access to these Esri resources.
+
+        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
+        for more information.
+
+
+        """
+        if self._portal.is_arcgisonline:
+            self._hydrate()
+            return self['userType']
+        else:
+            return False
+    #----------------------------------------------------------------------
+    @esri_access.setter
+    def esri_access(self, value):
+        """
+
+        Enable or disable 'Esri access'. Administrator privileges required.
+        A member whose account has Esri access enabled can use My Esri and
+        Community and Forums (GeoNet), access e-Learning on the Training
+        website, and manage email communications from Esri. The member
+        cannot enable or disable their own access to these Esri resources.
+
+        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
+        for more information.
+
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required boolean. The current user will be allowed to use
+                          the username for other Esri/ArcGIS logins when the value
+                          is set to True. If false, the account can only be used to
+                          access a given individual's organization.
+        ================  ==========================================================
+        """
+        if self._portal.is_arcgisonline:
+            if value == True:
+                ret = self._portal.update_user(self.username,
+                                               user_type="both")
+            else:
+                ret = self._portal.update_user(self.username,
+                                               user_type="arcgisonly")
+            self._hydrate()
     #----------------------------------------------------------------------
     def update_role(self, role):
         """

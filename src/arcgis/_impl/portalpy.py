@@ -1818,7 +1818,7 @@ class Portal(object):
     def update_user(self, username, access=None, preferred_view=None,
                     description=None, tags=None, thumbnail=None,
                     fullname=None, email=None, culture=None,
-                    region=None):
+                    region=None, user_type=None):
         """ Updates a user's properties.
 
         .. note::
@@ -1874,7 +1874,8 @@ class Portal(object):
             properties['culture'] = culture
         if region:
             properties['region'] = region
-
+        if user_type is not None:
+            properties['userType'] = user_type
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
