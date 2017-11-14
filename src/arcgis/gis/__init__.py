@@ -3453,8 +3453,7 @@ class User(dict):
                                        new_security_question, new_security_answer)
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
-               thumbnail=None, fullname=None, email=None, culture=None, region=None,
-               user_type=None):
+               thumbnail=None, fullname=None, email=None, culture=None, region=None):
         """ Updates this user's properties.
 
         .. note::
@@ -3485,12 +3484,6 @@ class User(dict):
         culture           Optional string. The two-letter language code, fr for example.
         ----------------  ----------------------------------------------------------
         region            Optional string. The two-letter country code, FR for example.
-        ----------------  ----------------------------------------------------------
-        user_type         Optional string.  The user type states is an ArcGIS Online
-                          user can access either just the GIS they are associated with
-                          or the Forumns and ArcGIS Online.
-                          The values are: arcgisonly or both.
-                          This setting is only valid for ArcGIS Online.
         ================  ==========================================================
 
 
@@ -3499,6 +3492,7 @@ class User(dict):
            A boolean indicating success (True) or failure (False).
 
         """
+        user_type = None
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
@@ -3548,7 +3542,15 @@ class User(dict):
     @property
     def esri_access(self):
         """
-        gets/sets the current user's esri access settings.
+        Enable or disable 'Esri access'. Administrator privileges required.
+        A member whose account has Esri access enabled can use My Esri and
+        Community and Forums (GeoNet), access e-Learning on the Training
+        website, and manage email communications from Esri. The member
+        cannot enable or disable their own access to these Esri resources.
+
+        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
+        for more information.
+
 
         """
         if self._portal.is_arcgisonline:
@@ -3560,15 +3562,34 @@ class User(dict):
     @esri_access.setter
     def esri_access(self, value):
         """
+
+        Enable or disable 'Esri access'. Administrator privileges required.
+        A member whose account has Esri access enabled can use My Esri and
+        Community and Forums (GeoNet), access e-Learning on the Training
+        website, and manage email communications from Esri. The member
+        cannot enable or disable their own access to these Esri resources.
+
+        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
+        for more information.
+
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        value             Required boolean. The current user will be allowed to use
+                          the username for other Esri/ArcGIS logins when the value
+                          is set to True. If false, the account can only be used to
+                          access a given individual's organization.
+        ================  ==========================================================
         """
         if self._portal.is_arcgisonline:
             if value == True:
-                self.update(user_type="both")
+                ret = self._portal.update_user(self.username,
+                                               user_type="both")
             else:
-                self.update(user_type="arcgisonly")
+                ret = self._portal.update_user(self.username,
+                                               user_type="arcgisonly")
             self._hydrate()
-
-
     #----------------------------------------------------------------------
     def update_role(self, role):
         """

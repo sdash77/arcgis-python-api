@@ -100,7 +100,7 @@ class PortalAdminManager(BasePortalAdmin):
         return self._idp
     #----------------------------------------------------------------------
     @property
-    def socialproviders(self):
+    def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers
         for a GIS.
