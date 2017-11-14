@@ -151,3 +151,17 @@ Jobs
     :members:
     :undoc-members:
     :show-inheritance:
+
+ServerDirectory
+----------------
+.. autoclass:: arcgis.gis.server.ServerDirectory
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ServerProperties
+----------------
+.. autoclass:: arcgis.gis.server.ServerProperties
+    :members:
+    :undoc-members:
+    :show-inheritance:

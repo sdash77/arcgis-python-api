@@ -1675,7 +1675,8 @@ class ImageryLayer(Layer):
     #----------------------------------------------------------------------
     def legend(self,
                band_ids=None,
-               rendering_rule=None):
+               rendering_rule=None,
+               as_html=False):
         """
         The legend information includes the symbol images and labels for
         each symbol. Each symbol is generally an image of size 20 x 20
@@ -1698,9 +1699,11 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         rendering_rule        optional dictionary. Specifies the rendering rule for how the
                               requested image should be rendered.
+        -----------------     --------------------------------------------------------------------
+        as_html               optional bool. Returns an HTML table if True
         =================     ====================================================================
 
-        :returns: dictionary
+        :returns: legend as a dictionary by default, or as an HTML table if as_html is True
         """
         url = "%s/legend" % self._url
         params = {'f' : 'json'}
@@ -1710,7 +1713,20 @@ class ImageryLayer(Layer):
             params['renderingRule'] = rendering_rule
         elif self._fn is not None:
             params['renderingRule'] = self._fn
-        return self._con.post(path=url, postdata=params)
+        legend = self._con.post(path=url, postdata=params)
+        if as_html is True:
+            legend_table = "<table>"
+            for legend_element in legend['layers'][0]['legend']:
+                thumbnail = "data:{0};base64,{1}".format(legend_element['contentType'],
+                                                         legend_element['imageData'])
+                width = legend_element['width']
+                height = legend_element['height']
+                imgtag = '<img src="{0}" width="{1}"  height="{2}" />'.format(thumbnail, width, height)
+                legend_table += "<tr><td>" + imgtag + '</td><td>' + legend_element['label'] + '</td></tr>'
+            legend_table += "</table>"
+            return legend_table
+        else:
+            return legend
 
     # ----------------------------------------------------------------------
     def colormap(self):
