@@ -101,17 +101,21 @@ def remove_tests_to_skip(tests, test_suite_names_to_skip):
 suites = []
 test_results_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                     'test-results')
-def run_on_exit():
-    """This function is run on exit of this script, regardless if it finished 
-    without error or with an unhandled exception. See the 'atexit' package"""
+def _trigger_xml_runner():
     xmlrunner.XMLTestRunner(output=test_results_dir).run(unittest.TestSuite(suites))
     print("XML files successfully written.")
     print("{} is now exiting...".format(sys.argv[0]))
 
 def run_test_cases(args):
+    try:
+        _setup_testing(args)
+    except Exception as e:
+        print("Unhandled exception on setup: still attempting to run {}".format(e))
+    _trigger_xml_runner()
+
+def _setup_testing(args):
     global suites, test_results_dir
     
-    atexit.register(run_on_exit)
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbosity", dest="verbosity", default="1", type=int,
                         help= "Verbosity level for the test runner")
