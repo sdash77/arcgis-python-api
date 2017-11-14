@@ -182,7 +182,7 @@ class GIS(object):
         The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
         or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
         saved in the configuration file by that profile name.
-        
+
         If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
         in a testing environment and wish to disable certificate verification, you may specify verify_cert=False to disable
         certificate verification in the Python process. However, this should not be done in production environments and is
@@ -3453,7 +3453,8 @@ class User(dict):
                                        new_security_question, new_security_answer)
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
-               thumbnail=None, fullname=None, email=None, culture=None, region=None):
+               thumbnail=None, fullname=None, email=None, culture=None, region=None,
+               user_type=None):
         """ Updates this user's properties.
 
         .. note::
@@ -3484,6 +3485,12 @@ class User(dict):
         culture           Optional string. The two-letter language code, fr for example.
         ----------------  ----------------------------------------------------------
         region            Optional string. The two-letter country code, FR for example.
+        ----------------  ----------------------------------------------------------
+        user_type         Optional string.  The user type states is an ArcGIS Online
+                          user can access either just the GIS they are associated with
+                          or the Forumns and ArcGIS Online.
+                          The values are: arcgisonly or both.
+                          This setting is only valid for ArcGIS Online.
         ================  ==========================================================
 
 
@@ -3496,7 +3503,8 @@ class User(dict):
             if type(tags) is list:
                 tags = ",".join(tags)
 
-        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region)
+        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region,
+                                       user_type)
         if ret:
             self._hydrate()
         return ret
@@ -3536,6 +3544,31 @@ class User(dict):
             self._hydrate()
             return res['success']
         return False
+    #----------------------------------------------------------------------
+    @property
+    def esri_access(self):
+        """
+        gets/sets the current user's esri access settings.
+
+        """
+        if self._portal.is_arcgisonline:
+            self._hydrate()
+            return self['userType']
+        else:
+            return False
+    #----------------------------------------------------------------------
+    @esri_access.setter
+    def esri_access(self, value):
+        """
+        """
+        if self._portal.is_arcgisonline:
+            if value == True:
+                self.update(user_type="both")
+            else:
+                self.update(user_type="arcgisonly")
+            self._hydrate()
+
+
     #----------------------------------------------------------------------
     def update_role(self, role):
         """
