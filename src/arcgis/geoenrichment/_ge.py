@@ -140,6 +140,44 @@ class _GeoEnrichment(object):
         if as_dict:
             return self._countries_dict
         return self._countries
+    #----------------------------------------------------------------------
+    def country_info(self, country, as_dict=False):
+        """
+        Returns report information for a desired country using the country code.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        country                Required string. lets the user supply and optional name of a country
+                               in order to get information about the data collections in that given
+                               country. This can be the two letter country code or the coutries
+                               full name.
+        ==================     ====================================================================
+
+        :returns: Pandas' DataFrame or Dictionary (as_dict == True)
+        """
+        params = {"f" : "json"}
+        countries = self.countries()
+        if len(country) > 2:
+            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Name: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        else:
+            q = self.countries()['Country_Code'] == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Code: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        url = "%s/Geoenrichment/Countries/%s" % (self._base_url, country)
+        res = self._gis._con.post(url, params)
+        if as_dict == True:
+            return res
+        else:
+            try:
+                return pd.DataFrame.from_dict(res['countries'])
+            except:
+                return None
+        return
 
     #----------------------------------------------------------------------
     def report_metadata(self, country):
@@ -190,12 +228,38 @@ class _GeoEnrichment(object):
             meta.append(row)
         return pd.DataFrame(meta)
     #----------------------------------------------------------------------
+    def report_info(self, country, report_id, as_dict=False):
+        """
+        Returns a detailed description of a given report for a given country
+        """
+        countries = self.countries()
+        if len(country) > 2:
+            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Name: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        else:
+            q = self.countries()['Country_Code'] == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Code: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        params = {'f' : 'json'}
+        url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (country,
+                                                                 report_id)
+        res = self._gis._con.post(url, params)
+        if as_dict == True:
+            return res
+        elif 'reports' in res:
+            return pd.DataFrame.from_dict(res['reports'])
+        return res
+    #----------------------------------------------------------------------
     def data_collections(self,
                          country=None,
                          dataset=None,
                          variables=None,
                          out_fields="*",
-                         hide_nulls=True):
+                         hide_nulls=True,
+                         as_dict=False):
         """
         The GeoEnrichment class uses the concept of a data collection to define the data
         attributes returned by the enrichment service. Each data collection has a unique name
@@ -250,6 +314,8 @@ class _GeoEnrichment(object):
         else:
             url = "%s%s" % (self._base_url, self._url_data_collection)
         res = self._gis._con.get(path=url, params=params)
+        if as_dict == True:
+            return res
         dfs = []
         for dc in res['DataCollections']:
             dfs.append(pd.DataFrame(dc['data']))
@@ -765,6 +831,37 @@ class _GeoEnrichment(object):
                                   file_name=out_name,
                                   params=params)
     #----------------------------------------------------------------------
+    def standard_geography_levels(self, country, as_dict=False):
+        """
+        For a given country, the standard geography level returns information
+        relating to the area in question.
+
+
+
+        :returns: Pandas' DataFrame or a dictionary
+
+        """
+        countries = self.countries()
+        if len(country) > 2:
+            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Name: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        else:
+            q = self.countries()['Country_Code'] == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Code: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        params = {'f' : 'json'}
+        url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (country)
+        res = self._gis._con.post(url, params)
+        if as_dict == True:
+            return res
+        elif 'reports' in res:
+            return pd.DataFrame.from_dict(res['reports'])
+        return res
+
+    #----------------------------------------------------------------------
     def standard_geography_query(self,
                                   source_country=None,
                                   country_dataset=None,
@@ -962,3 +1059,13 @@ class _GeoEnrichment(object):
                 return dfs[0]
             return res
 
+if __name__ == "__main__":
+    gis = GIS(url="http://devext.arcgis.com", username="andrew", password="fujifuji1", verify_cert=False)
+    ge = _GeoEnrichment(gis=gis)
+    print(ge.standard_geography_levels(country="US", as_dict=True))
+    print(ge.standard_geography_levels(country="US"))
+    #print(ge.report_info(country="US", report_id="dandi", as_dict=True))
+    #print(ge.report_info(country="US", report_id="dandi", as_dict=False))
+    print()
+    #print(ge.country_info(country="US", as_dict=True))
+    #print(ge.country_info(country="US", as_dict=False))
