@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """Build the arcgis python api for any specified os/py, placing the generated
-conda packages in ./output/. Run with --help or see README.md for more info"""
+conda packages in ./output/. 
+Can be run as a standalone script ('python build.py --all') 
+or imported as a library ('from build import build_conda_packages')
+Run with --help or see README.md for more info."""
 
 import os
 import sys
@@ -45,7 +48,7 @@ def _main():
     _setup_logging(args)
 
     if _no_target_specified(args):
-        build_conda_pkg_default()
+        build_conda_packages_default()
     elif _all_is_specified_anywhere(args):
         build_conda_packages_for_all_os_and_py()
     elif _only_python_is_specified(args):
@@ -110,11 +113,7 @@ def _setup_logging(args):
     log.info("Logging at level {}.".format(logging.getLevelName(log.level)))
     log.debug("args passed in => {}".format(args))
 
-def _no_target_specified(args):
-    """returns False if at least one of --all, --python, or --os passed in"""
-    return (not args.all) and (not args.os) and (not args.python)
-
-def build_conda_pkg_default(clear_output_folder = True):
+def build_conda_packages_default(clear_output_folder = True):
     """Build for all supported python, don't conda convert"""
     if clear_output_folder:
         _clear_output_folder()
@@ -123,6 +122,10 @@ def build_conda_pkg_default(clear_output_folder = True):
                                  output_dir = BUILD_OUTPUT_DIR)
 
 # Human readable functions for cmd arg parsing
+def _no_target_specified(args):
+    """returns False if at least one of --all, --python, or --os passed in"""
+    return (not args.all) and (not args.os) and (not args.python)
+
 def _all_is_specified_anywhere(args):
     return args.all
 
@@ -175,6 +178,7 @@ def build_conda_packages(os_build_targets,
             _convert_conda_package(conda_package = _find_conda_package(tmp_dir),
                                    os_build_targets = os_build_targets,
                                    output_dir = BUILD_OUTPUT_DIR)
+            _copy_noarch_dir(src = tmp_dir, dst = BUILD_OUTPUT_DIR)
 
 def _is_windows(os_build_target):
     return os_build_target in SUPPORTED_WIN
@@ -221,8 +225,7 @@ def _check_edge_cases(os_build_targets,
             raise RuntimeError("{} not supported py. Supported pys = "\
                                "{}".format(python_version, SUPPORTED_PYS))
 
-def _run_conda_build_command(python_version,
-                             output_dir):
+def _run_conda_build_command(python_version, output_dir):
     _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = BUILD_DIR,
                                          python_version = python_version,
                                          output_dir = output_dir))
@@ -263,14 +266,10 @@ def _run_conda_index_command(output_dir, os_build_target):
     _run_shell_cmd(BASE_INDEX_CMD.format(output_dir = output_dir,
                                          os_build_target = os_build_target))
 
-def _copy_noarch_dir(conda_package, output_dir):
-    dir_containing_conda_package = os.path.dirname(conda_package)
-    noarch_dir_src = os.path.join(dir_containing_conda_package,
-                                  "..",
-                                  "noarch")
-    noarch_dir_dst = os.path.join(output_dir, "noarch")
-    if not os.path.isdir(noarch_dir_dst):
-        shutil.copytree(noarch_dir_src, noarch_dir_dst)
+def _copy_noarch_dir(src, dst):
+    noarch_dir = os.path.join(output_dir, "noarch")
+    if not os.path.isdir(noarch_dir):
+        shutil.copytree(noarch_dir, dst)
 
 def upload_any_conda_packages_in_output_folder():
     """runs the anaconda upload command on any generated .tar.bz2 files
