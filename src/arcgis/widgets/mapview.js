@@ -113,7 +113,7 @@ require.config({
         // "location" is specified as path relative to web server root.
         // "requirejs":  "/research/js/requirejs", - already loaded
         //"text":       "/static/custom/requirejs/text"
-        "text": nbextensionPath + "/requirejs/text"
+        "mytext": nbextensionPath + "/requirejs/text"
     },
 
     urlArgs: "client=gsrs",
@@ -124,11 +124,11 @@ require.config({
     // http://requirejs.org/docs/api.html#config
     map: {
         "*": {
-            "dojo/text": "text"
+            "dojo/text": "mytext"
         }
     },
     config: {
-        text: {
+        mytext: {
 
             useXhr: function (url) {
                 // Allow cross domain XHR requests:
