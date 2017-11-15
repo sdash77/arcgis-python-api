@@ -12,7 +12,7 @@ from types import MethodType
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
-from arcgis.features import FeatureCollection, FeatureLayerCollection, FeatureSet
+from arcgis.features import FeatureCollection, FeatureLayerCollection, FeatureSet, SpatialDataFrame
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
@@ -907,10 +907,11 @@ class Toolbox(_AsyncResource):
             # print(k + " = " + str(v))
             if key in name_type:
                 py_type = name_type[key]
-
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
+                    elif type(value) in [SpatialDataFrame]:
+                        params[key] = value.__feature_set__
                     elif type(value) == str:
                         try:
                             klass = py_type # type[value]
