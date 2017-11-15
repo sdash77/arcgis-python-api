@@ -140,7 +140,7 @@ def _both_os_and_python_are_specified(args):
 
 def build_conda_packages_for_all_os_and_py():
     """Will generate conda packages for all supported os and pys"""
-    if _is_current_os_win():
+    if _is_current_os_windows():
         os_build_targets = SUPPORTED_WIN
     elif _is_current_os_unix():
         os_build_targets = SUPPORTED_UNIX
