@@ -338,10 +338,10 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 del row['SHAPE']
                 template['features'].append(
                     {"type" : geom_type,
-                     "geometry" : pd.json.loads(geom),
+                     "geometry" : pd.io.json.loads(geom),
                      "attributes":row}
                 )
-            return pd.json.dumps(template)
+            return pd.io.json.dumps(template)
     @property
     def geoextent(self):
         """returns the extent of the spatial dataframe"""
@@ -411,6 +411,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if ('kind' in kwargs and \
            kwargs['kind'] == 'map') or \
            (len(args) > 3 and args[3] == 'map'):
+            from arcgis.features import FeatureCollection, FeatureSet
             from arcgis import geometry
             if self._gis is None:
                 gis = GIS(set_active=False)
@@ -425,32 +426,53 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 if sr:
                     wkid = None
                     if hasattr(sr, 'factoryCode'):
-                        wkid = sr.factoryCode
+                        wkid = {'wkid' : sr.factoryCode}
                     elif isinstance(sr, geometry.SpatialReference):
-                        wkid = sr['wkid']
+                        wkid = self.sr
                     ext = self.geoextent
-                    extent = pd.json.dumps({
+                    extent = {
                         "xmin" : ext[0],
                         "ymin" : ext[1],
                         "xmax" : ext[2],
                         "ymax" : ext[3],
                         "spatialReference" : wkid
-                    })
+                    }
                 else:
                     ext = self.geoextent
-                    extent = pd.json.dumps({
+                    extent = {
                         "xmin" : ext[0],
                         "ymin" : ext[1],
                         "xmax" : ext[2],
-                        "ymax" : ext[3]
-                    })
-            m = gis.map()
-            m.draw(FeatureSet.from_dict(self.__feature_set__))
-            if extent:
-                m.extent = extent
-            return m
+                        "ymax" : ext[3],
+                        "spatialReference" : {'wkid' : 4326}
+                    }
+            else:
+                sr = self.sr
+                if self.sr is None:
+                    sr = {'wkid' : 4326}
+
+                ext = self.geoextent
+                extent = {
+                    "xmin" : ext[0],
+                    "ymin" : ext[1],
+                    "xmax" : ext[2],
+                    "ymax" : ext[3],
+                    "spatialReference" : sr
+                }
+            if 'map_widget' not in kwargs:
+                raise Exception("map_widget is required to plot the SpatialDataFrame")
+            else:
+                m = kwargs['map_widget']
+            try:
+                fs = FeatureSet.from_dict(self.__feature_set__)
+                m.draw(fs)
+                if extent and \
+                   isinstance(extent, dict):
+                    m.extent = extent
+            except:
+                raise Exception('Could not plot the Spatial DataFrame.')
         else:
-            return super(self, DataFrame).plot(*args, **kwargs)#print('general issues')
+            return super(SpatialDataFrame, self).plot(*args, **kwargs)
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None):
