@@ -1,6 +1,7 @@
 import sys
 import re
 import os
+import argparse
 import logging
 log = logging.getLogger()
 
@@ -11,7 +12,6 @@ from arcgis import __version__ as _geosaurus_version
 
 from automation_setup import automation_setup
 from build_conda_package import build_conda_package
-from build_docker_image import build_docker_image
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
 from publish_results import publish_results
@@ -20,83 +20,62 @@ from automation_cleanup import automation_cleanup
 _master_regex = ".*master.*"
 _pull_request_regex = ".*pull.*request.*"
 
-# Build tag args determined at run time: this is updated in
-# check_parse_args_get_automation_type()
-_build_tag_args = []
-_no_args = []
-_funcs_for_auto = [(_master_regex, [(automation_setup, _no_args),
-                                    (run_unit_tests, _no_args),
-                                    (build_documentation, _no_args),
-                                    (build_conda_package, _build_tag_args),
-                                    (build_docker_image, _no_args),
-                                    (publish_results, _build_tag_args),
-                                    (automation_cleanup, _no_args)]),
+_regex_and_funcs = [(_master_regex, [automation_setup,
+                                     run_unit_tests, 
+                                     build_documentation,
+                                     build_conda_package,
+                                     publish_results,
+                                     automation_cleanup]),
+             (_pull_request_regex,  [automation_setup,
+                                     run_unit_tests,
+                                     build_documentation,
+                                     automation_cleanup])]
 
-             (_pull_request_regex, [(automation_setup, _no_args),
-                                    (run_unit_tests, _no_args),
-                                    (build_documentation, _no_args),
-                                    (automation_cleanup, _no_args)])]
-def main():
-    automation_type = _check_parse_args_get_automation_type()
-    funcs_and_args = _get_functions_to_call_for_auto_type(automation_type)
-    for func, args in funcs_and_args:
-        func(*args)
+def _main():
+    args = _parse_args()
+    args = _append_build_tag_to_args(args)
+    kwargs = vars(args) #Converts to dict of keyword arguments
+    funcs = _get_funcs_for_auto_type(args.automation_type)
+    for func in funcs:
+        func(**kwargs)
 
-def _check_parse_args_get_automation_type():
-    _check_args()
-    automation_type = sys.argv[1]
-    build_num = sys.argv[2]
-    assemble_build_tag_add_to_args_global_var(build_num, automation_type)
-    return automation_type
+def _parse_args():
+    parser = argparse.ArgumentParser(description = "Call the correct funcs "\
+        "for the type of jenkins job calling this.")
+    parser.add_argument("--automation-type", "-a", type=str,
+        help="The name of the job (geosaurus_master, pull_request, etc.)")
+    parser.add_argument("--build-num", "-b", type=int,
+        help="The build number currently running")
+    parser.add_argument("--username", "-u", type=str,
+        help="The username for any ftp uploading")
+    parser.add_argument("--password", "-p", type=str,
+        help="The password for the previously entered username")
+    return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
-def _check_args():
-   """Exactly 2 command line argument should be passed to this function"""
-   if len(sys.argv) != 3:
-        msg = "{} should be called with exactly 2 arg. ".format(sys.argv[0])
-        msg += "You called it with args '{}'\n".format(sys.argv[1:])
-        msg += "Please provide both args to specify automation to run.\n"
-        msg += "(Ex. python jenkins_entry_point {AUTOTYPE} {BUILDNUM})"
-        raise RuntimeError(msg)
-   else:
-       log.info("Arguments passed in: {}".format(sys.argv[1:]))
- 
-def assemble_build_tag_add_to_args_global_var(build_num, automation_type):
-    """Actually updates the _build_tag_args global var list"""
-    if re.match(_master_regex, automation_type):
-        build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
-                                                     build_num)
+def _append_build_tag_to_args(args):
+    """Assembles build tag, adds to it args, returns args"""
+    if re.match(_master_regex, args.automation_type):
+        args.build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
+                                                          args.build_num)
     elif re.match(_pull_request_regex, automation_type):
-        build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
-                                                  build_num)
+        args.build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
+                                                       args.build_num)
     else:
-        build_tag = "unspecified_{}_j{}".format(_automation_type, _build_num)
+        args.build_tag = "unspecified_{}_j{}".format(args.automation_type, 
+                                                     args.build_num)
+    return args
 
-    _build_tag_args.append(build_tag)
-
-def _get_functions_to_call_for_auto_type(automation_type):
-    """Depending on what command line argument is passed in, there will be
-    different actions that need to be done (master merge requests require
-    a docker image being built, whereas pull requests don't. Both require
-    a documentation build, etc.). Return what functions need to be called
-    depending on what command line argument is passed in"""
-    for regex_, funcs_and_args in _funcs_for_auto:
+def _get_funcs_for_auto_type(automation_type):
+    for regex_, funcs in _regex_and_funcs:
         if re.match(regex_, automation_type):
-            return funcs_and_args
-    msg = "'{}' input argument matches no regex on file: ".format(sys.argv[1])
+            return funcs
+    msg = "'{}' auto type matches no regex on file: ".format(automation_type)
     msg += "Check the {} file in geosaurus for the regexes".format(sys.argv[0])
     raise RuntimeError(msg)
 
-def _get_build_tag():
-    if _build_tag:
-        return _build_tag
-    else:
-        return "geosaurus{}_{}_UNSPECIFIED_j{}".format(_py_api_version,
-                                                       automation_type,
-                                                       _build_num)
-
 if __name__ == "__main__":
     try:
-        main()
+        _main()
     except Exception as e:
         log.info("Unhandled exception caught: Adding to log...")
         log.exception(e)

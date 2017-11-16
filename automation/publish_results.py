@@ -10,7 +10,7 @@ sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build
 
 def publish_results(*args, **kwargs):
-    build_tag = args[0]
+    build_tag = kwargs["build_tag"]
     _publish_to_fileshare(build_tag)
     _publish_to_conda_cloud()
 

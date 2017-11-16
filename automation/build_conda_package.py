@@ -12,7 +12,7 @@ sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build
 
 def build_conda_package(*args, **kwargs):
-    build_tag = args[0]
+    build_tag = kwargs["build_tag"]
     build.build_conda_packages_for_all_os_and_py()
     _move_output_to_staging(build_tag)    
 

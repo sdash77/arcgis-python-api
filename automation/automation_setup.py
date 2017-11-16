@@ -10,8 +10,6 @@ def automation_setup(*args, **kwargs):
     """Clears results Installs correct packages, builds geosaurus source"""
     log.info("Starting setup...")
     _clear_staging_folder([".gitignore", "log.log"])
-    _install_correct_packages()
-    _install_geosaurus_src()
     log.info("Setup complete!")
 
 def _clear_staging_folder(files_to_ignore):
@@ -27,14 +25,6 @@ def _paths_in_dir_to_delete(dir_, files_to_ignore):
         for item in os.listdir(dir_)
         if item not in files_to_ignore]
 
-def _install_correct_packages():
-    run_shell_command("pip install xmlrunner")
-    #run_shell_command("conda install -c conda-forge ipywidgets")
-
-def _install_geosaurus_src():
-   run_shell_command("pip install -e {}".format(
-        os.path.join(GEOSAURUS_ROOT_DIR,"src")))
- 
 if __name__ == "__main__":
     try:
         automation_setup()
