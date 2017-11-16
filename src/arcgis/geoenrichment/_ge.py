@@ -857,27 +857,27 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(url, params)
         if as_dict == True:
             return res
-        elif 'reports' in res:
-            return pd.DataFrame.from_dict(res['reports'])
+        elif 'geographyLevels' in res:
+            return pd.DataFrame.from_dict(res['geographyLevels'])
         return res
 
     #----------------------------------------------------------------------
     def standard_geography_query(self,
-                                  source_country=None,
-                                  country_dataset=None,
-                                  layers=None,
-                                  ids=None,
-                                  geoquery=None,
-                                  return_sub_geography=False,
-                                  sub_geography_layer=None,
-                                  sub_geography_query=None,
-                                  out_sr=4326,
-                                  return_geometry=False,
-                                  return_centroids=False,
-                                  generalization_level=0,
-                                  use_fuzzy_search=False,
-                                  feature_limit=1000,
-                                  as_featureset=False):
+                                 source_country=None,
+                                 country_dataset=None,
+                                 layers=None,
+                                 ids=None,
+                                 geoquery=None,
+                                 return_sub_geography=False,
+                                 sub_geography_layer=None,
+                                 sub_geography_query=None,
+                                 out_sr=4326,
+                                 return_geometry=False,
+                                 return_centroids=False,
+                                 generalization_level=0,
+                                 use_fuzzy_search=False,
+                                 feature_limit=1000,
+                                 as_featureset=False):
         """
         The GeoEnrichment class provides a helper method that returns standard geography IDs and
         features for the supported geographic levels in the United States and Canada.
@@ -1059,13 +1059,3 @@ class _GeoEnrichment(object):
                 return dfs[0]
             return res
 
-if __name__ == "__main__":
-    gis = GIS(url="http://devext.arcgis.com", username="andrew", password="fujifuji1", verify_cert=False)
-    ge = _GeoEnrichment(gis=gis)
-    print(ge.standard_geography_levels(country="US", as_dict=True))
-    print(ge.standard_geography_levels(country="US"))
-    #print(ge.report_info(country="US", report_id="dandi", as_dict=True))
-    #print(ge.report_info(country="US", report_id="dandi", as_dict=False))
-    print()
-    #print(ge.country_info(country="US", as_dict=True))
-    #print(ge.country_info(country="US", as_dict=False))
