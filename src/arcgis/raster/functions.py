@@ -507,7 +507,7 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def colormap(raster, colormap_name=None, colormap=None, astype=None):
+def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=None):
     """
     Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
@@ -516,11 +516,16 @@ def colormap(raster, colormap_name=None, colormap=None, astype=None):
     :param raster: input raster
     :param colormap_name: colormap name, if one of Random | NDVI | Elevation | Gray
     :param colormap: [
-      [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-      [<value2>, <red2>, <green2>, <blue2>]
-    ],
+                     [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                     [<value2>, <red2>, <green2>, <blue2>]
+                     ],
+    :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                      or a color ramp object. (See, entire list of color ramp names under colormap raster function 
+                      at https://mufasa:6443/arcgis/sdk/rest/index.html#/Raster_function_objects/02ss0000003p000000/.
+                      For more information about colorramp object, see color ramp object at
+                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
     :param astype: output pixel type
-    :return: the clipped raster
+    :return: the colorized raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -536,6 +541,10 @@ def colormap(raster, colormap_name=None, colormap=None, astype=None):
         template_dict["rasterFunctionArguments"]['ColormapName'] = colormap_name
     if colormap is not None:
         template_dict["rasterFunctionArguments"]['Colormap'] = colormap
+    if colorramp is not None and isinstance(colorramp,str):
+        template_dict["rasterFunctionArguments"]['ColorrampName'] = colorramp
+    if colorramp is not None and isinstance(colorramp, dict):
+        template_dict["rasterFunctionArguments"]['Colorramp'] = colorramp
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
@@ -3004,9 +3013,9 @@ def colormap_to_rgb(raster):
     The function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
     raster. This function takes no arguments except an input raster. For 
-    qualified image service, there are two situations when “ColormapToRGB” 
+    qualified image service, there are two situations when ColormapToRGB 
     function is automatically applied: The "colormapToRGB" property of the 
-    image service is set to “true”; or, client asks to export image into jpg 
+    image service is set to true; or, client asks to export image into jpg 
     or png format. For more information, see 
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm)
 
