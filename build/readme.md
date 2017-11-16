@@ -12,7 +12,15 @@ To upload the package to [anaconda.org](https://anaconda.org) you need `anaconda
 	anaconda login
 
 ## Build process
-Here is the [api doc for conda build](https://conda.io/docs/commands/build/conda-build.html) with all its optional parameters and here is the [tutorial to build pacakges](https://conda.io/docs/building/build.html). My [detailed wiki here](https://devtopia.esri.com/atma6951/kiwi/wiki/Building-Conda-Packages)
+Run build.py to generate conda packages in the output/ folder. At the moment, you can only build windows packages from a windows machine, and you can only build osx/linux packages from a unix machine.
+
+Examples:
+* 'python build.py --help' to print out the help text
+* 'python build.py' for default build behavior
+* 'python build.py -p 3.5 3.6 -o osx-64 linux-32' for building both py3.5 and py3.6 for both osx-64 and linux-32
+* 'python build.py --all' for building for all platforms and all python versions supported by this system
+* 'python build.py --upload' for default build behavior, plus upload any results to the anaconda cloud
+
 
 ### Updating version number and dependencies
 The version number needs to be updated in the following files
@@ -24,14 +32,5 @@ The version number needs to be updated in the following files
 
 Similarly, update the build scripts `geosaurus/build/buildarcgis.sh` such that version number of the package is updated in the file name for the `conda convert` command.
 
-### Building
-From the `geosaurus/build/` folder run the `buildarcgis` script - either the .sh or .bat depending on your OS. The `.bat` file accepts the version number as command line parameter.
-	
-	buildarcgis.bat 1.2.5
-
-This runs the build, post-link, validation steps and creates the files in a local dir. Then the script calls `conda convert` which will convert and copy to `___output` folder.
-
-### Upload to anaconda org
-To run this either, run the `geosaurus/build/upload.bat` or `geosaurus/build/upload.sh`. You can also uncomment the upload part from the `geosaurus/build/buildarcgis.sh` or `buildarcgis.bat` script to enable uploading after building.
-
-**Note**, upload will use the currently logged in user (`anaconda login` command)
+### Misc
+Here is the [api doc for conda build](https://conda.io/docs/commands/build/conda-build.html) with all its optional parameters and here is the [tutorial to build pacakges](https://conda.io/docs/building/build.html). My [detailed wiki here](https://devtopia.esri.com/atma6951/kiwi/wiki/Building-Conda-Packages)
