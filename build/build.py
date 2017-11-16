@@ -67,6 +67,7 @@ def _main():
     if _upload_is_specified_anywhere(args):
         upload_any_conda_packages_in_output_folder()
 
+# Running from cmd line setup funcs
 def _parse_cmd_line_args():
     parser = argparse.ArgumentParser(description = "Builds arcgis conda "\
         "packages for specified O.S. and python versions. Must have "\
@@ -113,15 +114,7 @@ def _setup_logging(args):
     log.info("Logging at level {}.".format(logging.getLevelName(log.level)))
     log.debug("args passed in => {}".format(args))
 
-def build_conda_packages_default(clear_output_folder = True):
-    """Build for all supported python, don't conda convert"""
-    if clear_output_folder:
-        _clear_output_folder()
-    for python_version in DEFAULT_PYS:
-        _run_conda_build_command(python_version = python_version,
-                                 output_dir = BUILD_OUTPUT_DIR)
-
-# Human readable functions for cmd arg parsing
+# Human readable cmd arg parsing funcs
 def _no_target_specified(args):
     """returns False if at least one of --all, --python, or --os passed in"""
     return (not args.all) and (not args.os) and (not args.python)
@@ -140,6 +133,15 @@ def _only_os_is_specified(args):
 
 def _both_os_and_python_are_specified(args):
     return args.python and args.os
+
+# build conda package funcs (Public facing)
+def build_conda_packages_default(clear_output_folder = True):
+    """Build for all supported python, don't conda convert"""
+    if clear_output_folder:
+        _clear_output_folder()
+    for python_version in DEFAULT_PYS:
+        _run_conda_build_command(python_version = python_version,
+                                 output_dir = BUILD_OUTPUT_DIR)
 
 def build_conda_packages_for_all_os_and_py():
     """Will generate conda packages for all supported os and pys"""
@@ -172,7 +174,7 @@ def build_conda_packages(os_build_targets,
                       python_versions)
 
     for python_version in python_versions:
-        with empty_temp_folder() as tmp_dir:
+        with _empty_temp_folder() as tmp_dir:
             _run_conda_build_command(python_version = python_version,
                                      output_dir = tmp_dir)
             _convert_conda_package(conda_package = _find_conda_package(tmp_dir),
@@ -180,6 +182,21 @@ def build_conda_packages(os_build_targets,
                                    output_dir = BUILD_OUTPUT_DIR)
             _copy_noarch_dir(src = tmp_dir, dst = BUILD_OUTPUT_DIR)
 
+# Public facing conda uploading func
+def upload_any_conda_packages_in_output_folder():
+    """runs the anaconda upload command on any generated .tar.bz2 files
+    in the BUILD_OUTPUT_DIR folder.
+    """
+    log.info("Uploading any conda packages in {}. Make sure anaconda login "\
+             "has been run to authenticate your anaconda cloud credentials "\
+             "(cryptic errors are thrown otherwise)".format(BUILD_OUTPUT_DIR))
+    for root, dirs, files in os.walk(BUILD_OUTPUT_DIR):
+        for name in files:
+            if ".tar.bz2" in name:
+                conda_package_path = os.path.join(root, name)
+                _run_conda_upload_command(conda_package = conda_package_path)
+
+# Helper funcs
 def _is_windows(os_build_target):
     return os_build_target in SUPPORTED_WIN
 
@@ -271,26 +288,13 @@ def _copy_noarch_dir(src, dst):
     if not os.path.isdir(noarch_dir):
         shutil.copytree(noarch_dir, dst)
 
-def upload_any_conda_packages_in_output_folder():
-    """runs the anaconda upload command on any generated .tar.bz2 files
-    in the BUILD_OUTPUT_DIR folder.
-    """
-    log.info("Uploading any conda packages in {}. Make sure anaconda login "\
-             "has been run to authenticate your anaconda cloud credentials "\
-             "(cryptic errors are thrown otherwise)".format(BUILD_OUTPUT_DIR))
-    for root, dirs, files in os.walk(BUILD_OUTPUT_DIR):
-        for name in files:
-            if ".tar.bz2" in name:
-                conda_package_path = os.path.join(root, name)
-                _run_conda_upload_command(conda_package = conda_package_path)
-
 def _run_conda_upload_command(conda_package):
     _run_shell_cmd(BASE_UPLOAD_CMD.format(conda_package = conda_package))
 
 def _run_shell_cmd(cmd):
     """Runs a shell cmd on linux, osx, or windows. Outputs results to log"""
-    log.info("Currently running cmd '{}'. Output of cmd will be logged after "\
-             "it completes. (DEBUG if success, WARN if failure)".format(cmd))
+    log.info("Currently running cmd '{}'. After it completes, output will "\
+             "be logged to DEBUG if success, WARN if failure".format(cmd))
     try:
         byte_output = subprocess.check_output(cmd,
                                               stderr=subprocess.STDOUT,
@@ -303,17 +307,13 @@ def _run_shell_cmd(cmd):
                  "{}".format(e.output.decode("utf-8")))
         raise e
 
-def _restore_default_meta_yml():
-    shutil.copyfile(DEFAULT_META_YML_FILE,
-                    ACTIVE_META_YML_FILE)
-
-class empty_temp_folder:
+class _empty_temp_folder:
     """Use with "with" syntax like "with empty_temp_folder() as tmp:"
     Creates a temporary folder and deletes it after finished being used
     """
     def __enter__(self):
         self.temp_folder = os.path.join(tempfile.gettempdir(),
-                                   ".{}".format(hash(os.times())))
+                                        ".{}".format(hash(os.times())))
         os.makedirs(self.temp_folder)
         return self.temp_folder
 
