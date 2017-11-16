@@ -831,16 +831,15 @@ class _GeoEnrichment(object):
                                   file_name=out_name,
                                   params=params)
     #----------------------------------------------------------------------
-    def standard_geography_levels(self, country, as_dict=False):
+    def standard_geography_levels(self, country):
         """
         For a given country, the standard geography level returns information
         relating to the area in question.
 
-
-
-        :returns: Pandas' DataFrame or a dictionary
+        :returns: dictionary
 
         """
+        as_dict = True
         countries = self.countries()
         if len(country) > 2:
             q = self.countries()['Full_Name'].str.upper() == str(country).upper()
@@ -857,10 +856,32 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(url, params)
         if as_dict == True:
             return res
-        elif 'geographyLevels' in res:
-            return pd.DataFrame.from_dict(res['geographyLevels'])
         return res
-
+    #----------------------------------------------------------------------
+    def standard_geography_level_info(self, country, hierarchy):
+        """
+        """
+        as_dict = True
+        countries = self.countries()
+        if len(country) > 2:
+            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Name: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        else:
+            q = self.countries()['Country_Code'] == str(country).upper()
+            if len(countries[q]) == 0:
+                raise ValueError("Invalid Country Code: %s" % country)
+            country = countries[q]['Country_Code'].tolist()[0]
+        params = {'f' : 'json'}
+        url = self._base_url + "/Geoenrichment/standardgeographylevels/%s/%s" % (country,
+                                                                                 hierarchy)
+        res = self._gis._con.post(url, params)
+        if as_dict == True:
+            return res
+        else:
+            return pd.DataFrame.from_dict(res)
+        return res
     #----------------------------------------------------------------------
     def standard_geography_query(self,
                                  source_country=None,
