@@ -5,8 +5,8 @@ import argparse
 import logging
 log = logging.getLogger()
 
-#import geosaurus_root/src seperate module
 from __init__ import *
+#import geosaurus_root/src seperate module
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "src"))
 from arcgis import __version__ as _geosaurus_version
 
@@ -17,19 +17,16 @@ from run_unit_tests import run_unit_tests
 from publish_results import publish_results
 from automation_cleanup import automation_cleanup
 
-_master_regex = ".*master.*"
-_pull_request_regex = ".*pull.*request.*"
-
-_regex_and_funcs = [(_master_regex, [automation_setup,
-                                     run_unit_tests, 
-                                     build_documentation,
-                                     build_conda_package,
-                                     publish_results,
-                                     automation_cleanup]),
-             (_pull_request_regex,  [automation_setup,
-                                     run_unit_tests,
-                                     build_documentation,
-                                     automation_cleanup])]
+_regex_and_funcs = [(MASTER_REGEX, [automation_setup,
+                                    run_unit_tests, 
+                                    build_documentation,
+                                    build_conda_package,
+                                    publish_results,
+                                    automation_cleanup]),
+             (PULL_REQUEST_REGEX,  [automation_setup,
+                                    run_unit_tests,
+                                    build_documentation,
+                                    automation_cleanup])]
 
 def _main():
     args = _parse_args()
@@ -54,10 +51,10 @@ def _parse_args():
 
 def _append_build_tag_to_args(args):
     """Assembles build tag, adds to it args, returns args"""
-    if re.match(_master_regex, args.automation_type):
+    if re.match(MASTER_REGEX, args.automation_type):
         args.build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
                                                           args.build_number)
-    elif re.match(_pull_request_regex, automation_type):
+    elif re.match(PULL_REQUEST_REGEX, automation_type):
         args.build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
                                                        args.build_number)
     else:
@@ -70,7 +67,7 @@ def _get_funcs_for_auto_type(automation_type):
         if re.match(regex_, automation_type):
             return funcs
     msg = "'{}' auto type matches no regex on file: ".format(automation_type)
-    msg += "Check the {} file in geosaurus for the regexes".format(sys.argv[0])
+    msg += "Check the geosaurus/automation/__init__.py for the regexes"
     raise RuntimeError(msg)
 
 if __name__ == "__main__":

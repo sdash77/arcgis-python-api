@@ -17,6 +17,9 @@ BUILD_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "build"))
 
+MASTER_REGEX = ".*master.*"
+PULL_REQUEST_REGEX = ".*pull.*request.*"
+
 log.setLevel(logging.DEBUG)
 log_file_path = os.path.join(STAGING_DIR, "log.log")
 formatter = logging.Formatter(

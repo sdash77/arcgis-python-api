@@ -1,4 +1,5 @@
 from ftplib import FTP
+import re
 import logging
 log = logging.getLogger()
 
@@ -9,25 +10,20 @@ NUM_BUILDS_TO_KEEP = 100
 
 def publish_results(*args, **kwargs):
     try:
-        ftp_username = kwargs["username"]
-        ftp_password = kwargs["password"]
+        ftp = FTP(host = FTP_SITE,
+                  user = kwargs["username"],
+                  passwd = kwargs["password"])
     except KeyError as e:
-        log.warn("FTP username/password not specified. Skipping publishing")
+        log.exception("FTP username/password not specified. Skipping "\
+                      "publishing (Exception thrown => {}".format(e))
         return
-    automation_type = kwargs["automation_type"]
-    build_number = kwargs["build_number"]
-    _publish_to_zion_ftp_site(username,
-                              password,
-                              automation_type,
-                              build_number)
 
-def _publish_to_zion_ftp_site(username,
-                              password,
-                              automation_type,
-                              build_number):
-    ftp = FTP(host = FTP_SITE,
-              user = username,
-              passwd = password)
+    if re.match(MASTER_REGEX, kwargs["automation_type"]):
+        _publish_to_ftp_site_master(ftp = ftp,
+                                    build_number = kwargs["build_number"])
+
+def _publish_to_ftp_site_master(ftp,
+                                build_number):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
     dst_dir_path = 'master/{}'.format(build_number)
     ftp.mkd(dst_dir_path)
