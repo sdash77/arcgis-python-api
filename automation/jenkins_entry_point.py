@@ -44,7 +44,7 @@ def _parse_args():
         "for the type of jenkins job calling this.")
     parser.add_argument("--automation-type", "-a", type=str,
         help="The name of the job (geosaurus_master, pull_request, etc.)")
-    parser.add_argument("--build-num", "-b", type=int,
+    parser.add_argument("--build-number", "-b", type=int,
         help="The build number currently running")
     parser.add_argument("--username", "-u", type=str,
         help="The username for any ftp uploading")
