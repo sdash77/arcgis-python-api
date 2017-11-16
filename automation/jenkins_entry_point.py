@@ -56,13 +56,13 @@ def _append_build_tag_to_args(args):
     """Assembles build tag, adds to it args, returns args"""
     if re.match(_master_regex, args.automation_type):
         args.build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
-                                                          args.build_num)
+                                                          args.build_number)
     elif re.match(_pull_request_regex, automation_type):
         args.build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
-                                                       args.build_num)
+                                                       args.build_number)
     else:
         args.build_tag = "unspecified_{}_j{}".format(args.automation_type, 
-                                                     args.build_num)
+                                                     args.build_number)
     return args
 
 def _get_funcs_for_auto_type(automation_type):
