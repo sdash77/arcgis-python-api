@@ -284,8 +284,9 @@ def _run_conda_index_command(output_dir, os_build_target):
                                          os_build_target = os_build_target))
 
 def _copy_noarch_dir(src, dst):
-    noarch_dir = os.path.join(src, "noarch")
-    if not os.path.isdir(noarch_dir):
+    noarch_dir_src = os.path.join(src, "noarch")
+    noarch_dir_dst = os.path.join(dst, "noarch")
+    if not os.path.isdir(noarch_dir_dst):
         shutil.copytree(noarch_dir, dst)
 
 def _run_conda_upload_command(conda_package):
