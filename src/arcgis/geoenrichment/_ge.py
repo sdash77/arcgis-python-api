@@ -1,7 +1,7 @@
 import json
 from arcgis.gis import GIS
 from arcgis.features import FeatureSet
-import pandas as pd
+
 ###########################################################################
 class _GeoEnrichment(object):
     """
@@ -127,6 +127,7 @@ class _GeoEnrichment(object):
         """
         returns a Pandas' DataFrame of available countries that have GeoEnrichment data.
         """
+        import pandas as pd
         if self._countries is None and \
            self._countries_dict is None:
             params = {'f' : 'json'}
@@ -163,6 +164,7 @@ class _GeoEnrichment(object):
 
         :return: Pandas' DataFrame
         """
+        import pandas as pd
         countries = self.countries()
         if len(country) > 2:
             q = self.countries()['Full_Name'].str.upper() == str(country).upper()
@@ -232,6 +234,7 @@ class _GeoEnrichment(object):
 
         :returns: dictionary, describing the requested return data.
         """
+        import pandas as pd
         params = {
             'f' : 'json',
             'langCode' : self._langCode
@@ -277,6 +280,7 @@ class _GeoEnrichment(object):
 
         :returns: Panda's DataFrame
         """
+        import pandas as pd
         url = self._base_url + self._url_list_reports + "/%s" % country
         params = {
             "f" : "json",
@@ -420,6 +424,7 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(path=url,
                                   postdata=params)
         if as_featureset == False:
+            import pandas as pd
             dfs = []
             if 'results' in res:
                 for result in res['results']:
@@ -494,6 +499,7 @@ class _GeoEnrichment(object):
 
         returns: Pandas' DataFrame
         """
+        import pandas as pd
         url = "%s%s" % (self._base_url,
                         self._url_getVariables)
         params = {
@@ -608,6 +614,7 @@ class _GeoEnrichment(object):
                                    postdata=params)
         dfs = []
         if as_featureset == False:
+            import pandas as pd
             if 'results' in res:
                 for result in res['results']:
                     if 'value' in result:
@@ -938,6 +945,7 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(path=url, postdata=params)
         dfs = []
         if as_featureset == False:
+            import pandas as pd
             if 'results' in res:
                 for result in res['results']:
                     if 'value' in result and \

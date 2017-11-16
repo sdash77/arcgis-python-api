@@ -167,7 +167,7 @@ class ServicesDirectory(BaseServer):
     #----------------------------------------------------------------------
     def report(self, as_html=True, folder=None):
         """
-        Generates a table list of Services in the given folder
+        Generates a table of Services in the given folder, as a Pandas dataframe.
 
 
         """

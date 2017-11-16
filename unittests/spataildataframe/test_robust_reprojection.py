@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import os, shutil
 from arcgis.geometry import _types
-from arcgis import SpatialDataFrame
+from arcgis.features import SpatialDataFrame
 from arcgis.features._data.geodataset import GeoSeries
 try:
     import arcpy

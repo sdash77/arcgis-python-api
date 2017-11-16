@@ -10,7 +10,6 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
-import numpy as np
 
 list_types = (list, tuple)
 if sys.version_info.major == 3:
@@ -1301,6 +1300,7 @@ class Envelope(Geometry):
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
+        import numpy as np
         if 'xmin' in self and \
            'xmax' in self and \
            'ymin' in self and \
@@ -1350,6 +1350,7 @@ class Point(Geometry):
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
+        import numpy as np
         if 'x' in self and 'y' in self and 'z' in self:
             return np.array([self['x'], self['y'], self['z']])
         elif 'x' in self and 'y' in self:
@@ -1390,6 +1391,7 @@ class MultiPoint(Geometry):
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
+        import numpy as np
         if 'points' in self:
             return np.array(self['points'])
         else:
@@ -1432,6 +1434,7 @@ class Polyline(Geometry):
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
+        import numpy as np
         if 'paths' in self:
             return np.array(self['paths'])
         else:
@@ -1480,6 +1483,7 @@ class Polygon(Geometry):
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
+        import numpy as np
         if 'rings' in self:
             return np.array(self['rings'])
         else:

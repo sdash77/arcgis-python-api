@@ -14,7 +14,7 @@ except:
     HAS_ARCPY = False
 
 from arcgis.geometry import _types
-from arcgis import SpatialDataFrame
+from arcgis.features import SpatialDataFrame
 from arcgis.gis.server._service import Service
 from arcgis.features._data.geodataset.io import from_layer, to_featureclass, to_sqlite, from_featureclass
 if HAS_ARCPY:
