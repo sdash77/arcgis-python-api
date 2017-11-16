@@ -5,7 +5,7 @@ from . import features, geoanalytics, geocoding, geometry, geoprocessing, networ
 from .gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
-from .features._data.geodataset import SpatialDataFrame
+#from .features._data.geodataset import SpatialDataFrame
 __all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster',
            'realtime', 'schematics', 'mapping',
              'aggregate_points',

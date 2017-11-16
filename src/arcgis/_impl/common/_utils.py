@@ -11,7 +11,6 @@ from contextlib import contextmanager
 import six
 import logging
 import decimal
-import numpy
 import functools
 #----------------------------------------------------------------------
 def create_uid():
@@ -21,6 +20,7 @@ def create_uid():
         return uuid.uuid4().hex
 #----------------------------------------------------------------------
 def _date_handler(obj):
+    import numpy
     if isinstance(obj, datetime.datetime) or isinstance(obj, date):
         return local_time_to_online(obj)
     elif isinstance(obj, (numpy.int32, numpy.int64)):

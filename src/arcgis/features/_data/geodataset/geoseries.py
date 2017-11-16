@@ -6,7 +6,6 @@ from __future__ import division
 import json
 from warnings import warn
 from .index.rtree import Rect
-from .base import BaseSpatialPandas
 
 try:
     import arcpy
@@ -15,13 +14,31 @@ try:
 except:
     HASARCPY = False
 
-import numpy as np
-import pandas as pd
-from pandas import Series, DataFrame
-from pandas.core.indexing import _NDFrameIndexer
-from pandas.util.decorators import cache_readonly
+try:
+    from .base import BaseSpatialPandas
+    import numpy as np
+    import pandas as pd
+    from pandas import Series, DataFrame
+    from pandas.core.indexing import _NDFrameIndexer
+    from pandas.util.decorators import cache_readonly
+
+    OLD_PANDAS = issubclass(Series, np.ndarray)
+except:
+    HAS_PANDAS = False
+
+    class DataFrame:
+        pass
+
+    class BaseSpatialPandas:
+        pass
+
+    class Series:
+        pass
+
+    class _NDFrameIndexer:
+        pass
+
 from ....geometry import _types
-OLD_PANDAS = issubclass(Series, np.ndarray)
 
 def _convert_array_args(args):
     if HASARCPY:
@@ -227,4 +244,8 @@ class GeoSeries(BaseSpatialPandas, Series):
         *kwargs* that will be passed to json.dumps().
         """
         return json.dumps(self.__geo_interface__, **kwargs)
-GeoSeries._create_indexer('cx', _CoordinateIndexer)
+
+try:
+    GeoSeries._create_indexer('cx', _CoordinateIndexer)
+except:
+    pass

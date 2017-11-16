@@ -2,7 +2,6 @@
 Affine transformation functions
 """
 from __future__ import division
-import numpy as np
 import math
 from . import Point, Polygon, Polyline
 from . import MultiPoint, Geometry
@@ -20,6 +19,7 @@ def scale(geom, *scale_factor):
     :Output:
      dictionary or arcgis.Geomerty
     """
+    import numpy as np
     if len(scale_factor) == 1:
         sy = sx = scale_factor[0]
     elif len(scale_factor) > 1:
@@ -77,6 +77,7 @@ def rotate(geom, theta):
     Ouput:
      dict or arcgis.Geometry
     """
+    import numpy as np
     A = np.matrix([[math.cos(theta), -1 * math.sin(theta)],
                    [math.sin(theta), math.cos(theta)]])
     if isinstance(geom, dict) or \
@@ -129,6 +130,7 @@ def skew(geom, x_angle=0, y_angle=0):
     Output:
      dictionary or arcgis.Geometry
     """
+    import numpy as np
     A = np.matrix([[1,math.tan(x_angle)],
                    [math.tan(y_angle), 1]])
     if isinstance(geom, dict) or \
@@ -182,6 +184,7 @@ def translate(geom, x_offset, y_offset):
     Output:
      dictionary or arcgis.Geometry
     """
+    import numpy as np
     A = np.matrix([[1, 0, x_offset],
                    [0, 1, y_offset],
                    [0, 0, 1]])
