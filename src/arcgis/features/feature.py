@@ -504,10 +504,10 @@ class FeatureSet(object):
             elif self.geometry_type is not None:
                 if self._spatial_reference and \
                    'wkt' in self._spatial_reference.keys():
-                    sr = SpatialReference(self._spatial_reference)
+                    sr = SpatialReference(self.spatial_reference)
                 elif self._spatial_reference and \
                      'wkid' in self._spatial_reference:
-                    sr = SpatialReference(self._spatial_reference)
+                    sr = SpatialReference(self.spatial_reference)
                 else:
                     sr = None
                 geoms = []

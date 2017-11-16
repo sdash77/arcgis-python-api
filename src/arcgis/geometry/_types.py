@@ -448,7 +448,8 @@ class Geometry(BaseGeometry):
     @property
     def JSON(self):
         """"""
-        if HASARCPY:
+        if HASARCPY and \
+           isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
         else:
             return json.dumps(self)

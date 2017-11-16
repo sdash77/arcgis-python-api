@@ -485,12 +485,13 @@ class ServerConnection(object):
         contentDisposition = resp.headers.get('content-disposition')
         contentType = resp.headers.get('content-type')
         contentLength = resp.headers.get('content-length')
-        if maintype.lower() in ('image',
+        if contentType.find('application/json;') == -1 and \
+           (maintype.lower() in ('image',
                                 'application',
                                 'application/x-zip-compressed') or \
            contentType == 'application/x-zip-compressed' or \
            (contentDisposition is not None and \
-            contentDisposition.lower().find('attachment;') > -1):
+            contentDisposition.lower().find('attachment;') > -1)):
             fname = self._get_file_name(
                 contentDisposition=contentDisposition,
                 url=resp.geturl()).split('?')[0]

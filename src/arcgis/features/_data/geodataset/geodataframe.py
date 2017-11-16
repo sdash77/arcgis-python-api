@@ -306,7 +306,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             features.append(
                 {
                     "geometry" : dict(geom),
-                    "attribute" : row
+                    "attributes" : row
                 }
             )
             del row
@@ -408,46 +408,49 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
         """ writes the spatial dataframe to a map """
-        from arcgis import geometry
-        if self._gis is None:
-            gis = GIS(set_active=False)
-        else:
-            gis = self._gis
-        if self.sr:
-            sr = self.sr
-        else:
-            sr = self.sr
-        extent = None
-        if HASARCPY:
-            if sr:
-                wkid = None
-                if hasattr(sr, 'factoryCode'):
-                    wkid = sr.factoryCode
-                elif isinstance(sr, geometry.SpatialReference):
-                    wkid = sr['wkid']
-                ext = self.geoextent
-                extent = pd.json.dumps({
-                    "xmin" : ext[0],
-                    "ymin" : ext[1],
-                    "xmax" : ext[2],
-                    "ymax" : ext[3],
-                    "spatialReference" : wkid
-                })
+        if ('kind' in kwargs and \
+           kwargs['kind'] == 'map') or \
+           (len(args) > 3 and args[3] == 'map'):
+            from arcgis import geometry
+            if self._gis is None:
+                gis = GIS(set_active=False)
             else:
-                ext = self.geoextent
-                extent = pd.json.dumps({
-                    "xmin" : ext[0],
-                    "ymin" : ext[1],
-                    "xmax" : ext[2],
-                    "ymax" : ext[3]
-                })
-        m = gis.map()
-
-        m.draw(self.to_featureset())
-        if extent:
-            m.extent = extent
-        return m
-
+                gis = self._gis
+            if self.sr:
+                sr = self.sr
+            else:
+                sr = self.sr
+            extent = None
+            if HASARCPY:
+                if sr:
+                    wkid = None
+                    if hasattr(sr, 'factoryCode'):
+                        wkid = sr.factoryCode
+                    elif isinstance(sr, geometry.SpatialReference):
+                        wkid = sr['wkid']
+                    ext = self.geoextent
+                    extent = pd.json.dumps({
+                        "xmin" : ext[0],
+                        "ymin" : ext[1],
+                        "xmax" : ext[2],
+                        "ymax" : ext[3],
+                        "spatialReference" : wkid
+                    })
+                else:
+                    ext = self.geoextent
+                    extent = pd.json.dumps({
+                        "xmin" : ext[0],
+                        "ymin" : ext[1],
+                        "xmax" : ext[2],
+                        "ymax" : ext[3]
+                    })
+            m = gis.map()
+            m.draw(FeatureSet.from_dict(self.__feature_set__))
+            if extent:
+                m.extent = extent
+            return m
+        else:
+            return super(self, DataFrame).plot(*args, **kwargs)#print('general issues')
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None):
