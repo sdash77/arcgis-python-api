@@ -3,7 +3,6 @@ Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
 import os
 import datetime
-import pandas as pd
 from ..._impl.connection import _ArcGISConnection
 from ..._impl.common._mixins import PropertyMap
 from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
@@ -104,6 +103,7 @@ class AGOLUsageReports(BasePortalAdmin):
         if export:
             return res
         elif isinstance(res, (dict, PropertyMap)):
+            import pandas as pd
             data = res['data'][0]['credits']
             for row in data:
                 if isinstance(row[0], str):

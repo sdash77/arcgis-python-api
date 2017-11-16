@@ -8,12 +8,24 @@ import warnings
 
 import arcgis
 from six import string_types, integer_types
-import pandas as pd
-from pandas import DataFrame, Series, Index
-import numpy
+
+HAS_PANDAS = True
+try:
+    import pandas as pd
+    from pandas import DataFrame, Series, Index
+    import numpy
+    from .base import BaseSpatialPandas
+    from .geoseries import GeoSeries
+except:
+    HAS_PANDAS = False
+
+    class DataFrame:
+        pass
+
+    class BaseSpatialPandas:
+        pass
+
 from arcgis.gis import GIS
-from .base import BaseSpatialPandas
-from .geoseries import GeoSeries
 from six import PY3
 from six import string_types
 from arcgis.geometry import _types
@@ -127,6 +139,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sdf = SpatialDataFrame.from_layer(feature_layer)
 
         """
+        if not HAS_PANDAS:
+            warnings.warn("pandas and numpy are required for SpatialDataFrame.")
+            warnings.warn("Please install them.")
         gis = kwargs.pop('gis', arcgis.env.active_gis)
         self._gis = gis
         sr = self._sr(kwargs.pop('sr', 4326))
