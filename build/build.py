@@ -287,7 +287,7 @@ def _copy_noarch_dir(src, dst):
     noarch_dir_src = os.path.join(src, "noarch")
     noarch_dir_dst = os.path.join(dst, "noarch")
     if not os.path.isdir(noarch_dir_dst):
-        shutil.copytree(noarch_dir, dst)
+        shutil.copytree(noarch_dir_src, noarch_dir_dst)
 
 def _run_conda_upload_command(conda_package):
     _run_shell_cmd(BASE_UPLOAD_CMD.format(conda_package = conda_package))
