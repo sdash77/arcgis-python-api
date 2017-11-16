@@ -1,12 +1,12 @@
 # Create an image from Base Jupyter Notebook Stack from https://github.com/jupyter/docker-stacks
 # Currently, use a specific tag due to issues with latest Notebook 5.1 version
-FROM jupyter/base-notebook:03398900b724
+FROM jupyter/base-notebook
 
 # Pass in URL to where to get samples ZIP
 ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.2.4.zip"
 ARG githubfolder="arcgis-python-api-1.2.4"
 
-MAINTAINER Bill Major <bmajor@esri.com>
+MAINTAINER Esri Docker <docker_sdk@esri.com>
 LABEL vendor="Esri"
 # Install dependencies for Python API
 RUN conda install -y unzip \
