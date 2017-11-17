@@ -2,14 +2,14 @@ from ._ge import _GeoEnrichment
 from arcgis import env
 
 #----------------------------------------------------------------------
-def list_countries(gis=None):
+def list_countries(gis=None, as_dict=True):
     """"
     returns a Pandas' DataFrame of available countries that have GeoEnrichment data.
     """
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
-    return ge.countries()
+    return ge.countries(as_dict=as_dict)
 #----------------------------------------------------------------------
 def create_report(study_areas,
                   report=None,
@@ -136,7 +136,8 @@ def data_collections(country=None,
                      variables=None,
                      out_fields="*",
                      hide_nulls=True,
-                     gis=None):
+                     gis=None,
+                     as_dict=True):
     """
     The GeoEnrichment class uses the concept of a data collection to define the data
     attributes returned by the enrichment service. Each data collection has a unique name
@@ -173,6 +174,9 @@ def data_collections(country=None,
     gis                    Optional GIS.  If None, the GIS object will be used from the
                            arcgis.env.active_gis.  This GIS object must be authenticated and
                            have the ability to consume credits
+    ------------------     --------------------------------------------------------------------
+    as_dict                Opional boolean. If True, the result comes back as a python
+                           dictionary, else the value will returns as a Python DataFrame.
     ==================     ====================================================================
 
     :returns: dictionary, describing the requested return data.
@@ -185,7 +189,8 @@ def data_collections(country=None,
                                 dataset=dataset,
                                 variables=variables,
                                 out_fields=out_fields,
-                                hide_nulls=hide_nulls)
+                                hide_nulls=hide_nulls,
+                                as_dict=as_dict)
 #----------------------------------------------------------------------
 def enrich(study_areas,
            data_collections=None,
@@ -199,7 +204,7 @@ def enrich(study_areas,
            out_sr=4326,
            suppress_nulls=False,
            for_storage=True,
-           as_featureset=False,
+           as_featureset=True,
            gis=None):
     """
     The GeoEnrichment class uses the concept of a study area to
