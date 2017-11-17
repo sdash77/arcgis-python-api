@@ -94,7 +94,7 @@ def _make_dir_ignore_if_exists(ftp, dir_):
         if not e.args[0].startswith('550'):
             raise e
 
-def _make_dir_delete_if_exists(ftp, dir_):
+def _make_dir_overwrite_if_exists(ftp, dir_):
     try:
         ftp.mkd(dir_)
     except error_perm as e:
