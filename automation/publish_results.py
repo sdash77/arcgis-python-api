@@ -67,6 +67,20 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
             _make_dir_overwrite_if_exists(ftp, curr_dst_path)
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
+def _delete_directory_recursive(ftp, dst_dir_path):
+    _del_dir_recurs_helper(ftp, dst_dir_path)
+    ftp.rmd(dst_dir_path)
+    log.info("ftp://{}/{}/ deleted recursively".format(FTP_SITE, dst_dir_path))
+
+def _del_dir_recurs_helper(ftp, dst_dir_path):
+    for curr_path in ftp.nlst(dst_dir_path):
+        try: #will not throw exception if durr_path is a file
+            ftp.delete(curr_path)
+        except error_perm as e: #will throw exception if curr_path is a dir
+            if e.args[0].startswith('550'):
+                _del_dir_recurs_helper(ftp, curr_path)
+                ftp.rmd(curr_path)
+
 def _remove_old_builds_from_ftp_master(ftp, build_number):
     upper_range_builds = build_number - NUM_BUILDS_TO_KEEP
     for build_number_to_delete in range(0, upper_range_builds):
@@ -99,7 +113,8 @@ def _make_dir_overwrite_if_exists(ftp, dir_):
         ftp.mkd(dir_)
     except error_perm as e:
         if e.args[0].startswith('550'):
-            ftp.rmd(dir_)
+            _delete_directory_recursive(ftp, dir_)
+            ftp.mkd(dir_)
         else:
             raise e
 
