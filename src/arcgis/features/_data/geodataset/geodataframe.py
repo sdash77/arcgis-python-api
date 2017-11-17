@@ -692,6 +692,156 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
                                             key=key, **kwargs))
     #----------------------------------------------------------------------
+    def to_feature_collection(self, name=None, drawing_info=None, symbol=None):
+        """converts a Spatial DataFrame to a Feature Collection"""
+        from arcgis.features import FeatureCollection
+        import uuid
+        import string
+        import random
+
+        if name is None:
+            name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
+        template = {
+            'showLegend' : True,
+            'layers' : []
+        }
+        ext = self.geoextent
+        extent = {
+            "xmin" : ext[0],
+            "ymin" : ext[1],
+            "xmax" : ext[2],
+            "ymax" : ext[3],
+            "spatialReference" : self.sr
+        }
+        fs = self.__feature_set__
+        fields = []
+        for fld in fs['fields']:
+            if fld['name'].lower() == fs['objectIdFieldName'].lower():
+                fld['editable'] = False
+                fld['sqlType'] = "sqlTypeOther"
+                fld['domain'] = None
+                fld['defaultValue'] = None
+                fld['nullable'] = False
+            else:
+                fld['editable'] = True
+                fld['sqlType'] = "sqlTypeOther"
+                fld['domain'] = None
+                fld['defaultValue'] = None
+                fld['nullable'] = True
+        if drawing_info is None:
+            di = {
+                'renderer' : {
+                    'labelingInfo' : None,
+                    'label' : "",
+                    'description' : "",
+                    'type' : 'simple',
+                    'symbol' : None
+
+                }
+            }
+
+            if symbol is None:
+                if fs['geometryType'] in ["esriGeometryPoint", "esriGeometryMultipoint"]:
+                    di['renderer']['symbol'] = {"color":[0,128,0,128],"size":18,"angle":0,
+                                                "xoffset":0,"yoffset":0,
+                                                "type":"esriSMS",
+                                                "style":"esriSMSCircle",
+                                                "outline":{"color":[0,128,0,255],"width":1,
+                                                           "type":"esriSLS","style":"esriSLSSolid"}}
+                elif fs['geometryType'] == 'esriGeometryPolyline':
+                    di['renderer']['symbol'] = {
+                        "type": "esriSLS",
+                        "style": "esriSLSDot",
+                        "color": [0,128,0,128],
+                        "width": 1
+                    }
+                elif fs['geometryType'] == 'esriGeometryPolygon':
+                    di['renderer']['symbol'] = {
+                        "type": "esriSFS",
+                        "style": "esriSFSSolid",
+                        "color": [0,128,0,128],
+                        "outline": {
+                            "type": "esriSLS",
+                            "style": "esriSLSSolid",
+                            "color": [110,110,110,255],
+                            "width": 1
+                        }
+                    }
+            else:
+                di['renderer']['symbol'] = symbol
+        else:
+            di = drawing_info
+        layer = {
+            'featureSet' : {'features' : fs['features'],
+                            'geometryType' : fs['geometryType']
+                            },
+            'layerDefinition' : {
+                'htmlPopupType' : 'esriServerHTMLPopupTypeNone',
+                'objectIdField' : fs['objectIdFieldName'] or "OBJECTID",
+                #'types' : [],
+                'defaultVisibility' : True,
+                'supportsValidateSql' : True,
+                'supportsAttachmentsByUploadId' : True,
+                'useStandardizedQueries' : False,
+                'supportsApplyEditsWithGlobalIds' : True,
+                'standardMaxRecordCount' : 32000,
+                'supportsTruncate' : False,
+                'extent' : extent,
+                'maxScale' : 0,
+                'supportsAppend' : True,
+                'supportsCalculate' : True,
+                'copyrightText' : "",
+                #'templates' : [],
+                'description' : "",
+                #'relationships' : [],
+                'supportsRollbackOnFailureParameter' : True,
+                'hasM' : False,
+                'displayField' : "",
+                'drawingInfo' : di,
+                'type' : 'Feature Layer',
+                'supportedQueryFormats' : 'JSON, geoJSON',
+                'isDataVersioned' : False,
+                'maxRecordCount' : 2000,
+                'minScale' : 0,
+                'supportsStatistics' : True,
+                'hasAttachments' : False,
+                #'indexes' : [],
+                'tileMaxRecordCount' : 8000,
+                'supportsAdvancedQueries' : True,
+                #'globalIdField' : "",
+                'hasZ' : False,
+                'name' : name,
+                'id' : 0,
+                'allowGeometryUpdates' : True,
+                #'typeIdField' : "",
+                'geometryType' : fs['geometryType'],
+                'currentVersion' : 10.51,
+                #'maxRecordCountFactor' : 1,
+                'supportsCoordinatesQuantization' : True,
+                'fields' : fs['fields'],
+                'hasStaticData' : True,# False
+                'capabilities' : 'Create,Delete,Query,Update,Editing,Extract,Sync',
+                'advancedQueryCapabilities' :  {'supportsReturningGeometryCentroid': False,
+                                                'supportsQueryRelatedPagination': True,
+                                                'supportsHavingClause': True,
+                                                'supportsOrderBy': True,
+                                                'supportsPaginationOnAggregatedQueries': True,
+                                                'supportsQueryWithDatumTransformation': True,
+                                                'supportsAdvancedQueryRelated': True,
+                                                'supportsOutFieldSQLExpression': True,
+                                                'supportsPagination': True,
+                                                'supportsStatistics': True,
+                                                'supportsSqlExpression': True,
+                                                'supportsQueryWithDistance': True,
+                                                'supportsReturningQueryExtent': True,
+                                                'supportsDistinct': True,
+                                                'supportsQueryWithResultType': True},
+
+            }
+        }
+
+        return FeatureCollection(layer)
+    #----------------------------------------------------------------------
     def to_featureset(self):
         """
         Converts a spatial dataframe to a feature set object

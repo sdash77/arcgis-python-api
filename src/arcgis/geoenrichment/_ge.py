@@ -523,7 +523,8 @@ class _GeoEnrichment(object):
     def get_variables(self,
                       country,
                       dataset=None,
-                      text=None):
+                      text=None,
+                      as_dict=False):
         """
         The GeoEnrichment get_variables method allows you to search the data
         collections for variables that contain specific keywords.
@@ -561,6 +562,9 @@ class _GeoEnrichment(object):
                                    search the data collections for the country and datasets specified.
                                    You can use this parameter to query and find specific keywords that
                                    are contained in a data collection.
+        ----------------------     --------------------------------------------------------------------
+        as_dict                    Optional boolean. If true, the result is returned as a python
+                                   dictionary, else it's returned as a Panda's DataFrame
         ======================     ====================================================================
 
         returns: Pandas' DataFrame
@@ -579,6 +583,8 @@ class _GeoEnrichment(object):
             params['optionalCountryDataset'] = dataset
         res = self._gis._con.post(path=url,
                                   postdata=params)
+        if as_dict == True:
+            return res
         dfs = []
         if 'results' in res:
             for result in res['results']:

@@ -307,15 +307,15 @@ class FeatureSet(object):
                 # check to see if features a dict or feature object
                 if isinstance(feature, Feature):
                     # Look for OBJECTID first, if it does not exist, look for FID
-                    if self._fields is None:
+                    if self._fields is None or len(self._fields) == 0:
                         self._fields = feature.fields  # get fields from first feature if not set
                     for field in feature.fields:
                         if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
-                            self._objectIdFieldName = field
+                            self._object_id_field_name = field
                             break
                     for field in feature.fields:
                         if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
-                            self._objectIdFieldName = field
+                            self._object_id_field_name = field
                             break
                 else:
                     for field, _ in feature.items():
@@ -326,6 +326,32 @@ class FeatureSet(object):
                         if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
+
+            # if still none, then build the objectid field
+            if not self._object_id_field_name:
+                obj_field = {'name': 'OBJECTID',
+                             'type': 'esriFieldTypeOID',
+                             'alias': 'OBJECTID',
+                             'sqlType': 'sqlTypeOther'
+                             }
+
+                if len(self._fields) > 0:
+                    field0 = self._fields[0]
+                    if isinstance(field0, str):
+                        self._fields.append('OBJECTID')
+                    else:
+                        self._fields.append(obj_field)
+                else:
+                    self._fields.append(obj_field)
+
+                self._object_id_field_name = obj_field['name']
+
+                counter = 0
+                for feat in self._features:
+                    counter += 1
+                    feat.fields.append('OBJECTID')
+                    feat.attributes['OBJECTID'] = counter
+
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -976,7 +1002,83 @@ class FeatureCollection(Layer):
         Filtering by where clause is not supported for feature collections
         """
         if 'layers' in self.properties:
-            return FeatureSet.from_dict(self.properties['layers'][0]['featureSet'])
+            if 'fields' in self.properties['layers'][0]['layerDefinition']:
+                self.properties['layers'][0]['featureSet']['fields'] = \
+                    self.properties['layers'][0]['layerDefinition']['fields']
+
+            return FeatureSet.from_dict(self.properties['layers'][0]['featureSet'], )
         else:
+            if 'fields' in self.properties['layerDefinition']:
+                self.properties['featureSet']['fields'] = self.properties['layerDefinition']['fields']
+
             return FeatureSet.from_dict(self.properties['featureSet'])
 
+    @staticmethod
+    def from_featureset(fset, symbol=None):
+        """
+        Create a FeatureCollection object from a FeatureSet object.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        fset                   Required arcgis.features.FeatureSet object.
+        ------------------     --------------------------------------------------------------------
+        symbol                 Optional dict. Specify your symbol as a dictionary. Symbols for points
+                               can be picked from http://esri.github.io/arcgis-python-api/tools/symbol.html
+
+                               If not specified, a default symbol will be created.
+        ==================     ====================================================================
+        :return:
+            A FeatureCollection object.
+        """
+        if not isinstance(fset, FeatureSet):
+            raise ValueError
+
+        fset_dict = fset.to_dict()
+
+        #compose layer definition
+        fc_layer_definition = {'geometryType': fset_dict['geometryType'],
+                               'fields':fset_dict['fields'],
+                               'objectIdField':fset.object_id_field_name,
+                               'type':'Feature Layer'}
+
+        if not symbol:
+            if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
+                symbol = {"color": [226, 119, 40, 255],
+                               "width": 1.5,
+                               "type": "esriSLS",
+                               "style": "esriSLSSolid"}
+
+            elif fc_layer_definition['geometryType'] in ['esriGeometryPolygon', 'esriGeometryEnvelope']:
+                symbol = {"color": [190, 232, 255, 128],
+                               "outline": {
+                                   "color": [128, 128, 128, 255],
+                                   "width": 1.5,
+                                   "type": "esriSLS",
+                                   "style": "esriSLSSolid"},
+                               "type": "esriSFS",
+                               "style": "esriSFSSolid"}
+
+            elif fc_layer_definition['geometryType'] in ['esriGeometryPoint', 'esriGeometryMultipoint']:
+                symbol = {"angle": 0,
+                               "xoffset": 0,
+                               "yoffset": 12,
+                               "type": "esriPMS",
+                               "url": "http://static.arcgis.com/images/Symbols/Basic/SpringGreenStickpin.png",
+                               "contentType": "image/png",
+                               "width": 24,
+                               "height": 24}
+
+        fc_layer_definition['drawingInfo'] = {'renderer':{'type':'simple',
+                                                          'symbol':symbol}
+                                              }
+
+        #compose the feature collection dict
+        layers_dict = {'featureSet':{'geometryType':fset_dict['geometryType'],
+                                   'features':fset_dict['features']},
+                    'layerDefinition':fc_layer_definition}
+
+        fc_dict = {'layers':[layers_dict]}
+
+        #create a FC and return
+        return FeatureCollection(fc_dict)
