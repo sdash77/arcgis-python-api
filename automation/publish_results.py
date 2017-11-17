@@ -18,7 +18,8 @@ def publish_results(*args, **kwargs):
                       "publishing (Exception thrown => {}".format(e))
         return
 
-    if re.match(MASTER_REGEX, kwargs["automation_type"]):
+    if re.match(MASTER_REGEX, kwargs["automation_type"]) or \
+       re.match(LINUX_SLAVE_REGEX, kwargs["automation_type"]):
         _publish_to_ftp_server_master(ftp = ftp,
                                       build_number = kwargs["build_number"])
         _remove_old_builds_from_ftp_master(ftp = ftp,

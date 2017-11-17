@@ -20,6 +20,7 @@ BUILD_DIR = os.path.abspath(os.path.join(
 MASTER_REGEX = ".*master.*"
 PULL_REQUEST_REGEX = ".*pull.*request.*"
 PUBLISH_REGEX = ".*publish.*"
+LINUX_SLAVE_REGEX = ".*linux.*slave.*"
 
 log.setLevel(logging.DEBUG)
 log_file_path = os.path.join(STAGING_DIR, "log.log")
