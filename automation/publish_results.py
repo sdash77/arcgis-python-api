@@ -49,7 +49,7 @@ def _publish_to_ftp_server_master(ftp, build_number):
 
 def _publish_to_ftp_server(ftp, ftp_folder_name):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
-    _make_dir_overwrite_if_exists(ftp, buildnum_dst_dir_path) 
+    _make_dir_overwrite_if_exists(ftp, ftp_folder_name) 
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = ftp_folder_name)
