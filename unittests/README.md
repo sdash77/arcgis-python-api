@@ -191,6 +191,10 @@ dino_utils:
         - populate portal with users, groups, folders, content
 
 # Jenkins settings
+Two Jenkins servers exist at the moment. The end goal is to phase out ```teton``` in favor of use of ```zion```, which will have continous doc building, continous release, testing on pull requests, etc.
+
+## http://teton.esri.com:8080/jenkins
+
 A Jenkins server running on a VM performs the continuous integration testing. Details below:
 
     - Server: teton.esri.com:8080 [need to be on VPN to access this machine]
@@ -206,6 +210,23 @@ A Jenkins server running on a VM performs the continuous integration testing. De
     spinning up a docker container, installing the package and testing it.
     
 In case teton.esri.com had to be restarted, you can resume Jenkins by running `C:\work\tomcat9\bin\startup.bat`
+
+## http://zion/
+
+A Jenkins server running on a VM
+
+    - Server: [http://zion/](http://zion/) [need to be on VPN to access this machine]
+    - credentials: contact David Vitale
+    - Jenkins jobs: 
+        - [geosaurus_master](http://zion/job/mock_geosaurus_freestyle/)
+            - Triggered every time there is a change in master
+        - [geosaurus_pull_request](http://zion/job/geosaurus_pull_requests/)
+            - Triggered every time there is a pull request
+    - When each job is triggered, it will call the entry point script to do all testing in ```geosaurus/unittests/automation/jenkins_entry_level.py```. See the below section
+
+## automation/
+
+This folder contains the scripts that run as an entry point for all Jenkins jobs running on http://zion/. The philosophy behind this is that Jenkins should be configured largely as the system that sets up triggers, not the system that actually runs the automation logic. All of that should be done through python, and it should be in a contained, seperate location. 
 
 # Testing pattern
 The `PortalUtils` creates two set of users. Use set1 content in test asset location
