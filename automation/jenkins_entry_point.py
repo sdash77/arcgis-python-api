@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import re
 import os
@@ -23,10 +24,13 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
                                     build_conda_package,
                                     publish_results,
                                     automation_cleanup]),
-             (PULL_REQUEST_REGEX,  [automation_setup,
+              (PULL_REQUEST_REGEX, [automation_setup,
                                     run_unit_tests,
                                     build_documentation,
-                                    automation_cleanup])]
+                                    automation_cleanup]),
+                   (PUBLISH_REGEX, [automation_setup,
+                                    build_conda_package,
+                                    publish_results])]
 
 def _main():
     args = _parse_args()
@@ -39,14 +43,17 @@ def _main():
 def _parse_args():
     parser = argparse.ArgumentParser(description = "Call the correct funcs "\
         "for the type of jenkins job calling this.")
-    parser.add_argument("--automation-type", "-a", type=str,
+    parser.add_argument("--automation-type", "-a", type=str, required=True,
         help="The name of the job (geosaurus_master, pull_request, etc.)")
-    parser.add_argument("--build-number", "-b", type=int,
+    parser.add_argument("--build-number", "-b", type=int, required=False,
         help="The build number currently running")
-    parser.add_argument("--username", "-u", type=str,
+    parser.add_argument("--username", "-u", type=str, required=False,
         help="The username for any ftp uploading")
-    parser.add_argument("--password", "-p", type=str,
+    parser.add_argument("--password", "-p", type=str, required=False,
         help="The password for the previously entered username")
+    parser.add_argument("--ftp-folder-name", "-f", type=str, required=False,
+        help="If 'publish' auto-type,the name of the folder to write "\
+             "conda packages to on the FTP server.")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
 def _append_build_tag_to_args(args):
@@ -54,7 +61,7 @@ def _append_build_tag_to_args(args):
     if re.match(MASTER_REGEX, args.automation_type):
         args.build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
                                                           args.build_number)
-    elif re.match(PULL_REQUEST_REGEX, automation_type):
+    elif re.match(PULL_REQUEST_REGEX, args.automation_type):
         args.build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
                                                        args.build_number)
     else:

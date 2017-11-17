@@ -19,18 +19,22 @@ def publish_results(*args, **kwargs):
         return
 
     if re.match(MASTER_REGEX, kwargs["automation_type"]):
-        _publish_to_ftp_master(ftp = ftp,
-                               build_number = kwargs["build_number"])
+        _publish_to_ftp_server_master(ftp = ftp,
+                                      build_number = kwargs["build_number"])
         _remove_old_builds_from_ftp_master(ftp = ftp,
                                build_number = kwargs["build_number"])
 
-def _publish_to_ftp_master(ftp, build_number):
+    if re.match(PUBLISH_REGEX, kwargs["automation_type"]):
+        _publish_to_ftp_server(ftp = ftp,
+                               ftp_folder_name = kwargs["ftp_folder_name"])
+
+def _publish_to_ftp_server_master(ftp, build_number):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
     buildnum_dst_dir_path = 'master/{}'.format(build_number)
     root_dst_dir_path = ''  
 
     #make the master/{build_number} folder on ftp site
-    _make_dir_ignore_if_exists(ftp, buildnum_dst_dir_path)
+    _make_dir_overwrite_if_exists(ftp, buildnum_dst_dir_path)
     #upload conda packages to that folder. Can then install via:
     #conda install -c ftp://zion/master/43 arcgis
     _upload_directory_recursive(ftp = ftp,
@@ -43,6 +47,13 @@ def _publish_to_ftp_master(ftp, build_number):
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = root_dst_dir_path)
 
+def _publish_to_ftp_server(ftp, ftp_folder_name):
+    src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
+    _make_dir_overwrite_if_exists(ftp, buildnum_dst_dir_path) 
+    _upload_directory_recursive(ftp = ftp,
+                                src_dir_path = src_dir_path,
+                                dst_dir_path = ftp_folder_name)
+
 def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
     for name in os.listdir(src_dir_path):
         curr_src_path = os.path.join(src_dir_path, name)
@@ -53,7 +64,7 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
                                                            curr_dst_path))
             _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path)
         elif os.path.isdir(curr_src_path):
-            _make_dir_delete_if_exists(ftp, curr_dst_path)
+            _make_dir_overwrite_if_exists(ftp, curr_dst_path)
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
 def _remove_old_builds_from_ftp_master(ftp, build_number):
