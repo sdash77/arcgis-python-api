@@ -60,11 +60,14 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
         curr_src_path = os.path.join(src_dir_path, name)
         curr_dst_path = "{}/{}".format(dst_dir_path, name) #ftp servers use '/'
         if os.path.isfile(curr_src_path):
-            log.info("Uploading {} -> ftp://{}/{}".format(curr_src_path,
+            log.debug("Uploading {} -> ftp://{}/{}".format(curr_src_path,
                                                            FTP_SITE,
                                                            curr_dst_path))
             _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path)
         elif os.path.isdir(curr_src_path):
+            log.info("Uploading {} -> ftp://{}/{}".format(curr_src_path,
+                                                          FTP_SITE,
+                                                          curr_dst_path))
             _make_dir_overwrite_if_exists(ftp, curr_dst_path)
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
