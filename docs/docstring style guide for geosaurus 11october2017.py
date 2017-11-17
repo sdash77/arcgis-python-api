@@ -1,8 +1,8 @@
 # -*- coding: cp1252 -*-
-Purpose >> REFERENCE MODEL FOR DOCUMENTING YOUR CODE (12OCT2017)
+# Purpose >> REFERENCE MODEL FOR DOCUMENTING YOUR CODE (12OCT2017)
 
 
-TOC
+# TOC
 ## 1 ## The main model
 ## 2 ## Standards for filling in the argument-description table
 ## 3 ## Standard return statements or formats
@@ -26,57 +26,57 @@ TOC
 #        arguments in order.  Everything is required except the note and example code block.
 #        Simply copy-n-paste the full doc string, and then edit the text to match your code.
 
-    def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
-        """
-        This is the method description, which is required.  Provide a simple and clear statement 
-        about what the method does/accmomplishes.  If more sentences are needed/justified, 
-        certainly add the info.  Try not to use the word 'Returns' here, and instead use 
-        Retrieves or Obtains, gets for Python properties.
+def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
+    """
+    This is the method description, which is required.  Provide a simple and clear statement
+    about what the method does/accmomplishes.  If more sentences are needed/justified,
+    certainly add the info.  Try not to use the word 'Returns' here, and instead use
+    Retrieves or Obtains, gets for Python properties.
 
-        .. note::
-            Optional. Any additional info that should be provided can go here. What denotes a note  
-            versus a method description? Hard to say, but maybe go with this guidance: if the 
-            information/text are suggestions or helpful things to know, put it in a note; otherwise 
-            it should be part of the main description of the method; or perhaps it belongs with a
-            particular argument description.  URLs should go here or with the particular argument
-            description.
-
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        arg1                   Required string. Description text here.  See #2 below!!!!!!
-        ------------------     --------------------------------------------------------------------
-        argument2              Optional integer. Description text here.
-        ------------------     --------------------------------------------------------------------
-        argument_three         Optional string. Description text here.
-        ------------------     --------------------------------------------------------------------
-        arg4demoPurposes       Optional <> object. Description text here.
-        ==================     ====================================================================
+    .. note::
+        Optional. Any additional info that should be provided can go here. What denotes a note
+        versus a method description? Hard to say, but maybe go with this guidance: if the
+        information/text are suggestions or helpful things to know, put it in a note; otherwise
+        it should be part of the main description of the method; or perhaps it belongs with a
+        particular argument description.  URLs should go here or with the particular argument
+        description.
 
 
-        :return:
-           Required. Provide a statement on the expected return from the method.  Generally, it is 
-           a good idea to include the data type.  For standard returns, please use a standard return
-           sentence or format below (#3).
-           
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    arg1                   Required string. Description text here.  See #2 below!!!!!!
+    ------------------     --------------------------------------------------------------------
+    argument2              Optional integer. Description text here.
+    ------------------     --------------------------------------------------------------------
+    argument_three         Optional string. Description text here.
+    ------------------     --------------------------------------------------------------------
+    arg4demoPurposes       Optional <> object. Description text here.
+    ==================     ====================================================================
 
-        .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Give a description of what the example does.
-        
-           write_code_here = example for printing users in a group
-           response = group.get_members()
-           for user in response['users']:
-                print user
+    :return:
+       Required. Provide a statement on the expected return from the method.  Generally, it is
+       a good idea to include the data type.  For standard returns, please use a standard return
+       sentence or format below (#3).
 
-        """
+
+    .. code-block:: python  (optional)
+
+       USAGE EXAMPLE: Give a description of what the example does.
+
+       write_code_here = example for printing users in a group
+       response = group.get_members()
+       for user in response['users']:
+            print user
+
+    """
 
     
 
 ## 2 ## Standards for filling in the argument-description table
 
-
+"""
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -103,13 +103,13 @@ TOC
                                case of booleans, be explicit about what the meaning of the default
                                value is.
         ==================     ====================================================================
-
+"""
 
 ## 3 ## Standard return statements or formats
 #        No rigidity intended here at all.  Go with what is useful for the user and jives with you.  But if 
 #        it is a standard response, like a simple True or False return, please try to use the standards below.
 #        In general, do not use "JSON" in return statements.
-
+"""
 For operations done to items with IDs returned or None:
    The <item ID, group ID, etc> if successfully <added, updated, deleted, etc>, None otherwise.
 
@@ -131,10 +131,10 @@ For json responses:
   -or, not this 'None if the data item is not found at that path and the data item object if its found',
   but this instead 'The data item object, None if not found.' 
 
-
+"""
        
 ## 4 ## Table for one or two or 12 arguments
-
+"""
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -178,8 +178,7 @@ For json responses:
         ------------------     --------------------------------------------------------------------
         arg12                  Optional integer. Description text here.
         ==================     ====================================================================
-                                                                       
-
+"""
 
         
 ## 5 ## Table for longggg arguments
@@ -188,7 +187,7 @@ For json responses:
 #        boundary, but do try to keep it reasonable if only for readability for developers in the
 #        code.  See #6 below.
 
-
+"""
 
         =======================     ====================================================================
         **Argument**                **Description**
@@ -228,7 +227,7 @@ For json responses:
         arg4demoPurposes                         Optional integer. Description text here.
         ====================================     ====================================================================
 
-
+"""
 ## 6 ## Maximum line length
 #        Let's go with keeping lines at less than 100.  There was a lot of back and forth on this.  In the end,
 #        it sort-of doesn't matter as shpinx inforces it's own bounds regardless of where we put line breaks.
@@ -239,40 +238,40 @@ For json responses:
 
 ## 7 ## Full gis.Item.create_tile_service example
 
-    def create_tile_service(self,
-                             title,
-                             min_scale,
-                             max_scale,
-                             cache_info=None,
-                             build_cache=False):
-        """
-        Allows publishers and administrators to publish hosted feature
-        layers and hosted feature layer views as a tile service.
+def create_tile_service(self,
+                         title,
+                         min_scale,
+                         max_scale,
+                         cache_info=None,
+                         build_cache=False):
+    """
+    Allows publishers and administrators to publish hosted feature
+    layers and hosted feature layer views as a tile service.
 
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        title             Required string. The name of the new service
-                          |br|Example: "SeasideHeightsNJTiles"
-        ----------------  ---------------------------------------------------------------
-        min_scale         Required float. The smallest scale at which to view data.
-                          Example: 577790.0
-        ----------------  ---------------------------------------------------------------
-        max_scale         Required float. The largest scale at which to view data.
-                          Example: 80000.0
-        ----------------  ---------------------------------------------------------------
-        cache_info        Optional dictionary. If not none, administrator provides the
-                          tile cache info for the service. The default is the AGOL scheme.
-        ----------------  ---------------------------------------------------------------
-        build_cache       Optional boolean. Default is False; if True, the cache will be
-                          built at publishing time.  This will increase the time it takes
-                          to publish the service.
-        ================  ===============================================================
-        
-        :return:
-           The item ID if successfully added, None if unsuccessful.
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    title             Required string. The name of the new service
+                      |br|Example: "SeasideHeightsNJTiles"
+    ----------------  ---------------------------------------------------------------
+    min_scale         Required float. The smallest scale at which to view data.
+                      Example: 577790.0
+    ----------------  ---------------------------------------------------------------
+    max_scale         Required float. The largest scale at which to view data.
+                      Example: 80000.0
+    ----------------  ---------------------------------------------------------------
+    cache_info        Optional dictionary. If not none, administrator provides the
+                      tile cache info for the service. The default is the AGOL scheme.
+    ----------------  ---------------------------------------------------------------
+    build_cache       Optional boolean. Default is False; if True, the cache will be
+                      built at publishing time.  This will increase the time it takes
+                      to publish the service.
+    ================  ===============================================================
 
-        """
+    :return:
+       The item ID if successfully added, None if unsuccessful.
+
+    """
 
 
 ## 8 ## Full gis.Item.add example, shows use of additional reference table and note
@@ -406,7 +405,7 @@ For json responses:
 
 ## 10 ## Dictionary options table for Argument item_properties, standard table
 #         Have seen this one used a lot and I have updated it with corrections.
-
+"""
         *Key:Value Dictionary Options for Argument item_properties*
 
 
@@ -446,12 +445,12 @@ For json responses:
                            or not allowed (false).
         =================  =====================================================================
 
-
+"""
         
 ## 11 ## How to do bulleted lists
 
 #         Bulleted lists need to be in this format:
-
+"""
 - Item 1.
 - Item 2.
 - Item 3.
@@ -461,11 +460,11 @@ This results in "<bullet> Rest <dash> Exposes..."  :
     
 - Rest -- Exposes the REST-ful API
 - Soap -- Exposes the SOAP API
-
+"""
 
 ## 12 ## How to do code blocks
 #         Put these code blocks (usage examples) below the return statement.
-
+"""
         
   Two or more example
 
@@ -490,13 +489,14 @@ This results in "<bullet> Rest <dash> Exposes..."  :
             gis = GIS(url="http://pythonplayground.esri.com/portal", 
                       username="user1", password="password1")
         
-
+"""
         
 
 
 ## 13 ## Format of docstrings for Python properties
-Always provide the doc string for both the getter and setter on the getter only.
-Format - Still TBD
+#
+# Always provide the doc string for both the getter and setter on the getter only.
+# Format - Still TBD
 
 
 
@@ -506,6 +506,7 @@ Format - Still TBD
  #
  # Data Types:
  #
+"""
 Always include the modifier first -- Optional or Required
 Then the type followed by a period, and then followed by the argument description.
 
@@ -517,10 +518,11 @@ dictionary
 <type> object -- type being: geometry, layer, map, 
 list??? string list or
 ?? add more
-
+"""
  #
  # Esri product names, or related terms
  #
+"""
 big data, Big Data ??
 Data Store, datastore, data store ??
 ?? add more
@@ -533,7 +535,7 @@ culture -- Locale, country and language information.
 tags -- Optional string. Tags listed as comma-separated values, or a list of strings. Used for searches on items.
 access -- Optional string. Valid values are private, shared, org, or public.
 ?? add more
-
+"""
 
 
 
@@ -594,7 +596,7 @@ link. -- future maybe?
 # not this >>  
 
 def start(self):
-
+    """
     A server machine represents a machine on which ArcGIS Server software has been installed
     and licensed. A site is made up one or more of such machines that work together to host GIS
     services and data and provide administrative capabilities for the site. Each server machine
@@ -609,13 +611,14 @@ def start(self):
     HTTP(S). For a server machine to participate in a site, it must be registered with the site.
     A machine can participate in only one site at a time. To remove a machine permanently from
     the site, you can use the unregister operation.
-
+    """
 # this instead (with most of above moved to the class description) >>  
                                                                        
     def start(self):
-
+        """
         Starts this server machine. Starting the machine enables its 
         ability to host GIS services.
+        """
 
 # Summary of above -- The two paragraphs are more suited to being in the class descriptions,
 # especially since the same-ish info was repeated in several other methods.  Move those paragraphs
@@ -625,11 +628,11 @@ def start(self):
 ## *2
 # help them out
 
-instead of:
-Can be one of SEVERE, WARNING, INFO, FINE, VERBOSE, DEBUG.  The default is WARNING.
-
-do this:
-Can be one of (in severity order): DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The default is WARNING.
+# instead of:
+# Can be one of SEVERE, WARNING, INFO, FINE, VERBOSE, DEBUG.  The default is WARNING.
+#
+# do this:
+# Can be one of (in severity order): DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The default is WARNING.
 
 
 """ Notes/tasks from the documentation writers on things to tackle
