@@ -99,15 +99,23 @@ def remove_tests_to_skip(tests, test_suite_names_to_skip):
     tests[:] = [test for test in tests if test not in tests_to_skip]
 
 suites = []
-def run_on_exit():
-    """This function is run on exit of this script, regardless if it finished 
-    without error or with an unhandled exception. See the 'atexit' package"""
-    xmlrunner.XMLTestRunner(output='test-results').run(unittest.TestSuite(suites))
+test_results_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                    'test-results')
+def _trigger_xml_runner():
+    xmlrunner.XMLTestRunner(output=test_results_dir).run(unittest.TestSuite(suites))
     print("XML files successfully written.")
     print("{} is now exiting...".format(sys.argv[0]))
 
-if __name__ == "__main__":
-    atexit.register(run_on_exit)
+def run_test_cases(args):
+    try:
+        _setup_testing(args)
+    except Exception as e:
+        print("Unhandled exception on setup: still attempting to run {}".format(e))
+    _trigger_xml_runner()
+
+def _setup_testing(args):
+    global suites, test_results_dir
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbosity", dest="verbosity", default="1", type=int,
                         help= "Verbosity level for the test runner")
@@ -121,11 +129,16 @@ if __name__ == "__main__":
                         help="Output a coverage report to the specified path.")
     parser.add_argument("--run_on_src", dest="run_on_src", default=True, type=bool, required=False,
                         help="Run tests on source code found in src instead of on conda pkg")
-    arguments = parser.parse_args()
+    parser.add_argument("--test_results_dir", dest="test_results_dir",
+                        default=os.path.join(os.path.dirname(os.path.realpath(__file__)),'test-results'),
+                        type=str, required=False,
+                        help="What directory you want the test-results xml files to get written to")
+    arguments = parser.parse_args(args)
     test_names_to_skip = arguments.skip
     names = arguments.names
     coverage_path = arguments.coverage
     run_on_src = arguments.run_on_src
+    test_results_dir = arguments.test_results_dir
 
     # Update module path, because otherwise loadTestsFromname cannot find the
     # modules to import.
@@ -168,3 +181,6 @@ if __name__ == "__main__":
     if coverage_path:
         cov.stop()
         cov.html_report(directory=coverage_path)
+
+if __name__ == "__main__":
+    run_test_cases(sys.argv)
