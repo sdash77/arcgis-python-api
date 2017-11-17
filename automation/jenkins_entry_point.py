@@ -19,8 +19,8 @@ from publish_results import publish_results
 from automation_cleanup import automation_cleanup
 
 _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
-                                    run_unit_tests, 
-                                    build_documentation,
+                                    #run_unit_tests, 
+                                    #build_documentation,
                                     build_conda_package,
                                     publish_results,
                                     automation_cleanup]),

@@ -30,22 +30,22 @@ def publish_results(*args, **kwargs):
 
 def _publish_to_ftp_server_master(ftp, build_number):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
-    buildnum_dst_dir_path = 'master/{}'.format(build_number)
-    root_dst_dir_path = ''  
+    buildnum_dst_dir_path = "master/{}".format(build_number)
+    rootmaster_dst_dir_path = "master"  
 
     #make the master/{build_number} folder on ftp site
-    _make_dir_overwrite_if_exists(ftp, buildnum_dst_dir_path)
+    _make_dir_ignore_if_exists(ftp, buildnum_dst_dir_path)
     #upload conda packages to that folder. Can then install via:
     #conda install -c ftp://zion/master/43 arcgis
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = buildnum_dst_dir_path)
     #upload conda packages to root on ftp site, replace old ones. This makes
-    #conda install -c ftp://zion arcgis
+    #conda install -c ftp://zion/master arcgis
     #install the most recently uploaded conda package
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
-                                dst_dir_path = root_dst_dir_path)
+                                dst_dir_path = rootmaster_dst_dir_path)
 
 def _publish_to_ftp_server(ftp, ftp_folder_name):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
