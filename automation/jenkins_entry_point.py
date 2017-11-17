@@ -24,17 +24,21 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
                                     build_conda_package,
                                     publish_results,
                                     automation_cleanup]),
+
               (LINUX_SLAVE_REGEX,  [automation_setup,
                                     build_conda_package,
                                     publish_results,
                                     automation_cleanup]),
+              
               (PULL_REQUEST_REGEX, [automation_setup,
                                     run_unit_tests,
                                     build_documentation,
                                     automation_cleanup]),
+              
                    (PUBLISH_REGEX, [automation_setup,
                                     build_conda_package,
-                                    publish_results])]
+                                    publish_results,
+                                    automation_cleanup])]
 
 def _main():
     args = _parse_args()
