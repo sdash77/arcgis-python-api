@@ -24,8 +24,7 @@ def publish_results(*args, **kwargs):
         _remove_old_builds_from_ftp_master(ftp = ftp,
                                build_number = kwargs["build_number"])
 
-def _publish_to_ftp_site_master(ftp,
-                                build_number):
+def _publish_to_ftp_master(ftp, build_number):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
     buildnum_dst_dir_path = 'master/{}'.format(build_number)
     root_dst_dir_path = ''  
