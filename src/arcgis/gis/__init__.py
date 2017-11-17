@@ -56,7 +56,7 @@ class GIS(object):
     """
     .. _gis:
 
-    A GIS are representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
+    A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
     (search, create, retrieve) GIS resources such as content, users, and groups.
 
     Additionally, the GIS object has properties to query it's state, which is accessible using the properties attribute.
