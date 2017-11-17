@@ -72,8 +72,9 @@ def _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path):
         else:
             raise e
 
-    def _storbinary(ftp, curr_dst_path, curr_src_path):
-        ftp.storbinary("STOR " + curr_dst_path, open(curr_src_path, 'rb'))
+def _storbinary(ftp, curr_dst_path, curr_src_path):
+    ftp.storbinary("STOR {}".format(curr_dst_path),
+                   open(curr_src_path, 'rb'))
 
 def _make_dir_ignore_if_exists(ftp, dir_):
     try:
