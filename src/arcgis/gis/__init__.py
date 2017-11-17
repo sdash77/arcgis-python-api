@@ -188,7 +188,6 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
-        print("Hello world from test_publish2!!")
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
 
