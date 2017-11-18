@@ -26,7 +26,7 @@ def publish_results(*args, **kwargs):
                                build_number = kwargs["build_number"])
 
     if re.match(PUBLISH_REGEX, kwargs["automation_type"]):
-        _publish_to_ftp_server(ftp = ftp,
+        _publish_to_ftp_branch(ftp = ftp,
                                ftp_folder_name = kwargs["ftp_folder_name"])
 
 def _publish_to_ftp_server_master(ftp, build_number):
@@ -48,9 +48,9 @@ def _publish_to_ftp_server_master(ftp, build_number):
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = rootmaster_dst_dir_path)
 
-def _publish_to_ftp_server(ftp, ftp_folder_name):
+def _publish_to_ftp_branch(ftp, ftp_folder_name):
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
-    _make_dir_overwrite_if_exists(ftp, ftp_folder_name) 
+    _make_dir_ignore_if_exists(ftp, ftp_folder_name) 
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = ftp_folder_name)
