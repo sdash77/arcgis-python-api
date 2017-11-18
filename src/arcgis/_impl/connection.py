@@ -970,8 +970,8 @@ class _ArcGISConnection(object):
                     handlers.append(auth_krb)
 
                 except Error as err:
-                    _log.error("pywin32 and winkerberos packages are required for IWA authentication.")
-                    _log.error("Please install them:\n\tconda install pywin32\n\tconda install winkerberos")
+                    _log.error("winkerberos packages is required for IWA authentication (NTLM and Kerberos).")
+                    _log.error("Please install it:\n\tconda install winkerberos")
                     _log.error(str(err))
             else:
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
