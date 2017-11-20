@@ -649,9 +649,16 @@ class ServerConnection(object):
                                       + 'fetching a new token and retrying')
                             newtoken = self.relogin()
                             newpath = self._url_add_token(path, newtoken)
-                            return self.get(newpath, ssl, compress, try_json, is_retry=True)
+                            return self.get(path=newpath, params=params, ssl=ssl, compress=compress,
+                                            try_json=try_json, is_retry=True)
                         elif errorcode == 498:
                             raise RuntimeError('Invalid token')
+                        elif errorcode == 403:
+                            message = resp_json['error']['message'] if 'message' in resp_json['error'] else ''
+                            if message == "SSL Required":
+                                return self.get(path=path, params=params, ssl=True, compress=compress,
+                                                try_json=try_json, is_retry=True)
+
                         self._handle_json_error(resp_json['error'])
                         return None
                 except AttributeError:
@@ -865,6 +872,12 @@ class ServerConnection(object):
                                      is_retry=True)
                 elif errorcode == 498:
                     raise RuntimeError('Invalid token')
+                elif errorcode == 403:
+                    message = resp_json['error']['message'] if 'message' in resp_json['error'] else ''
+                    if message == "SSL Required":
+                        return self.post(path, postdata, files, ssl=True, compress=compress, token=token,
+                                         verify_cert=verify_cert, is_retry=True)
+
                 if 'status' in resp_json:
                     self._handle_json_error(resp_json, errorcode)
                 else:

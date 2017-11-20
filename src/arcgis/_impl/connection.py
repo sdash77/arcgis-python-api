@@ -858,6 +858,12 @@ class _ArcGISConnection(object):
                                 return self.get(path=newpath, params=params, ssl=ssl, compress=compress, try_json=try_json, is_retry=True)
                             elif errorcode == 498:
                                 raise RuntimeError('Invalid token')
+
+                            elif errorcode == 403:
+                                message = resp_json['error']['message'] if 'message' in resp_json['error'] else ''
+                                if message == "SSL Required":
+                                    return self.get(path=path, params=params, ssl=True, compress=compress, try_json=try_json, is_retry=True)
+
                             self._handle_json_error(resp_json['error'], errorcode)
                             return None
                 except AttributeError:
@@ -964,8 +970,8 @@ class _ArcGISConnection(object):
                     handlers.append(auth_krb)
 
                 except Error as err:
-                    _log.error("pywin32 and winkerberos packages are required for IWA authentication.")
-                    _log.error("Please install them:\n\tconda install pywin32\n\tconda install winkerberos")
+                    _log.error("winkerberos packages is required for IWA authentication (NTLM and Kerberos).")
+                    _log.error("Please install it:\n\tconda install winkerberos")
                     _log.error(str(err))
             else:
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
@@ -1129,6 +1135,13 @@ class _ArcGISConnection(object):
                                      is_retry=True)
                 elif errorcode == 498:
                     raise RuntimeError('Invalid token')
+
+                elif errorcode == 403:
+                    message = resp_json['error']['message'] if 'message' in resp_json['error'] else ''
+                    if message == "SSL Required":
+                        return self.post(path, postdata, files, ssl=True, compress=compress, token=token,
+                                         verify_cert=verify_cert, is_retry=True)
+
                 self._handle_json_error(resp_json['error'], errorcode)
                 return None
         except AttributeError:
