@@ -195,6 +195,12 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             cert_file=self.cert,
                                             timeout=timeout)
 ########################################################################
+def jsonize_dict(val):
+    if isinstance(val, dict):
+        return json.dumps(val)
+    else:
+        return val
+
 class _ArcGISConnection(object):
     """ A class users to manage connection to ArcGIS services (Portal and Server). """
     baseurl = None
@@ -796,6 +802,7 @@ class _ArcGISConnection(object):
                 params['token'] = self.token
 
         if len(params.keys()) > 0:
+            params = {k: jsonize_dict(v) for k, v in params.items()}
             url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
         _log.debug('REQUEST (get): ' + url)
@@ -1075,6 +1082,7 @@ class _ArcGISConnection(object):
         else:
             encoded_postdata = None
             if postdata:
+                postdata = {k: jsonize_dict(v) for k, v in postdata.items()}
                 encoded_postdata = urlencode(postdata)
             if self._referer:
                 headers = [('Referer', self._referer),

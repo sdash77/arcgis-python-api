@@ -192,6 +192,13 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             key_file=self.key,
                                             cert_file=self.cert,
                                             timeout=timeout)
+
+def jsonize_dict(val):
+    if isinstance(val, dict):
+        return json.dumps(val)
+    else:
+        return val
+
 class ServerConnection(object):
     """
 
@@ -565,7 +572,7 @@ class ServerConnection(object):
                 chunk = response.read(size)
                 if not chunk: break
                 yield chunk
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def get(self, path, params=None, ssl=False,
             compress=True, try_json=True, is_retry=False,
             use_ordered_dict=False, out_folder=None,
@@ -596,6 +603,7 @@ class ServerConnection(object):
         if self.is_logged_in:
             params['token'] = self.token
         if len(params.keys()) > 0:
+            params = {k: jsonize_dict(v) for k, v in params.items()}
             url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
             #url = self._url_add_token(url, self.token)
@@ -824,6 +832,7 @@ class ServerConnection(object):
         else:
             encoded_postdata = None
             if postdata:
+                postdata = {k: jsonize_dict(v) for k, v in postdata.items()}
                 encoded_postdata = urlencode(postdata)
             headers = [('User-Agent', self._useragent)]
             if self._referer and \

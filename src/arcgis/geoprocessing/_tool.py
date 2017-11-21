@@ -384,17 +384,17 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     """
     tbx = None
     url = url_or_item
+    gis = arcgis.env.active_gis if gis is None else gis
     if isinstance(url_or_item, Item):
-        tbx = Toolbox.fromitem(url_or_item)
+        #tbx = Toolbox.fromitem(url_or_item)
         url = url_or_item.url
     else:
         url = url_or_item
-        if url_or_item.endswith('/GPServer'):
-            url = url_or_item
-        else:
-            idx = url_or_item.index('/GPServer')
-            url = url_or_item[0:idx + len('/GPServer')]
-        tbx = _AsyncResource(url, gis)
+
+    if not url.endswith('/GPServer'):
+        idx = url.index('/GPServer')
+        url = url[0:idx + len('/GPServer')]
+    tbx = _AsyncResource(url, gis)
 
     src_code = """import logging as _logging
 import arcgis
