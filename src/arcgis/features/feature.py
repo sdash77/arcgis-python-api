@@ -750,6 +750,30 @@ class FeatureSet(object):
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
                 geometry["rings"] = geom["coordinates"][0]
+            elif geo_type == "MultiPolygon":
+                rings = []
+                if HASARCPY == 'foo':
+                    geom = arcpy.AsShape(geom)
+                    geometry = Geometry(json.loads(geom))
+                else:
+                    coordkey = ([d for d in geom if d.lower() == 'coordinates']
+                                    or ['coordinates']).pop()
+                    coordinates = geom[coordkey]
+                    typekey = ([d for d in geom if d.lower() == 'type']
+                                   or ['type']).pop()
+                    if geom[typekey].lower() == "polygon":
+                        coordinates = [coordinates]
+                    part_list = []
+                    for part in coordinates:
+                        part_item = []
+                        for idx, ring in enumerate(part):
+                            if idx:
+                                part_item.append(None)
+                            for coord in ring:
+                                part_item.append(coord)
+                        if part_item:
+                            part_list.append([part_item])
+                    geometry["rings"] = part_list[0]
             elif geo_type =="LineString":
                 geometry["paths"] = geom
 
