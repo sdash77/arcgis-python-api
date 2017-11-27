@@ -1,7 +1,8 @@
 import json
+import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features import FeatureSet
-
+from arcgis.geometry import Envelope
 ###########################################################################
 class _GeoEnrichment(object):
     """
@@ -123,6 +124,35 @@ class _GeoEnrichment(object):
         if language_code is None:
             self._langCode = language_code
     #----------------------------------------------------------------------
+    def _explode(self, df, lst_cols, fill_value=''):
+        """internal method to help flatten out data sources"""
+        import numpy as np
+        # make sure `lst_cols` is a list
+        if lst_cols and not isinstance(lst_cols, list):
+            lst_cols = [lst_cols]
+        # all columns except `lst_cols`
+        idx_cols = df.columns.difference(lst_cols)
+
+        # calculate lengths of lists
+        lens = df[lst_cols[0]].str.len()
+
+        if (lens > 0).all():
+            # ALL lists in cells aren't empty
+            return pd.DataFrame({
+                col:np.repeat(df[col].values, df[lst_cols[0]].str.len())
+                for col in idx_cols
+            }).assign(**{col:np.concatenate(df[col].values) for col in lst_cols}) \
+              .loc[:, df.columns]
+        else:
+            # at least one list in cells is empty
+            return pd.DataFrame({
+                col:np.repeat(df[col].values, df[lst_cols[0]].str.len())
+                for col in idx_cols
+            }).assign(**{col:np.concatenate(df[col].values) for col in lst_cols}) \
+              .append(df.loc[lens==0, idx_cols]).fillna(fill_value) \
+              .loc[:, df.columns]
+
+    #----------------------------------------------------------------------
     def countries(self, as_dict=False):
         """
         returns a Pandas' DataFrame of available countries that have GeoEnrichment data.
@@ -175,13 +205,31 @@ class _GeoEnrichment(object):
             return res
         else:
             try:
-                return pd.DataFrame.from_dict(res['countries'])
+                from arcgis.geometry import Envelope
+                df_bad = pd.DataFrame.from_dict(res['countries'])
+                cols = [col for col in df_bad.columns.tolist() if col not in ['datasets']]
+                if 'defaultExtent' in cols:
+                    df_bad['defaultExtent'] = df_bad['defaultExtent'].apply(lambda x: Envelope(x))
+                datasets = self._explode(df=df_bad, lst_cols='datasets')
+                hierarchy_df = df_bad['hierarchies']
+                del datasets['hierarchies']
+                rows = []
+                for row in hierarchy_df:
+                    rows += row
+                    del row
+
+                df2 = self._explode(pd.DataFrame(rows), 'datasets')
+                df2['levelsInfo'] = df2['levelsInfo'].apply(lambda x: x['geographyLevels'])
+                df3 = self._explode(df=df2, lst_cols='levelsInfo')
+                df3['variablesInfo'] = df3['variablesInfo'].apply(lambda x: x['categories'])
+                df_exploded = self._explode(df=df3, lst_cols='variablesInfo')
+                return datasets.merge(df_exploded)
             except:
                 return None
         return
 
     #----------------------------------------------------------------------
-    def report_metadata(self, country):
+    def report_metadata(self, country, as_dict=False):
         """
         This method returns information about a given country's available reports and provides
         detailed metadata about each report.
@@ -198,10 +246,14 @@ class _GeoEnrichment(object):
                                in order to get information about the data collections in that given
                                country. This can be the two letter country code or the coutries
                                full name.
+        ------------------     --------------------------------------------------------------------
+        as_dict                Optional boolean. If True, the results are returned as a dictionary
+                               and if False, the returned result is a Panda's DataFrame
         ==================     ====================================================================
 
-        :return: Pandas' DataFrame
+        :return: Pandas' DataFrame or Dictionary
         """
+        as_dict = False
         import pandas as pd
         countries = self.countries()
         if len(country) > 2:
@@ -217,18 +269,18 @@ class _GeoEnrichment(object):
         params = {'f' : 'json'}
         url = self._base_url + "/Geoenrichment/Reports/%s" % country
         res = self._gis._con.post(url, params)
-        meta = []
-        cols = []
-        for r in res['reports']:
-            if len(cols) == 0:
-                cols = ['reportID']
-                for k in r['metadata'].keys():
-                    cols.append(k)
-            row = {"reportID" : r['reportID']}
-            for k,v in r['metadata'].items():
-                row[k] = v
-            meta.append(row)
-        return pd.DataFrame(meta)
+        if as_dict == True:
+            return res
+        rows = []
+        for rpt in res['reports']:
+            metadata = rpt['metadata']
+            metadata['reportID'] = rpt['reportID']
+            metadata['formats'] = rpt['formats']
+            rows.append(metadata)
+            del metadata
+        return self._explode(self._explode(pd.DataFrame(rows),
+                                           "categories"),
+                             "formats")
     #----------------------------------------------------------------------
     def report_info(self, country, report_id, as_dict=False):
         """
@@ -1093,4 +1145,3 @@ class _GeoEnrichment(object):
             elif len(dfs) == 1:
                 return dfs[0]
             return res
-
