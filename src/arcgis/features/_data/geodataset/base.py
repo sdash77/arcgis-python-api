@@ -913,5 +913,11 @@ class BaseSpatialPandas(object):
                         b['ymax'].max())
             except:
                 return None
-
+        else:
+            array = np.array(self.extent.tolist())
+            xmin = array[:,0].min()
+            ymin = array[:,1].min()
+            xmax = array[:,2].max()
+            ymax = array[:,3].max()
+            return (xmin, ymin, xmax, ymax)
 
