@@ -236,7 +236,8 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
-
+        if self._uri_validator(url) == False and str(url).lower() != 'pro':
+            raise Exception("Malformed url provided: %s" % url)
         if username is not None and password is None:
             from getpass import getpass
             password = getpass('Enter password: ')
@@ -311,6 +312,16 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
+
+    def _uri_validator(self, x):
+        from urllib.parse import urlparse
+        if x is None:
+            return False
+        try:
+            result = urlparse(x)
+            return result.scheme != "" and result.netloc != ""
+        except:
+            return False
 
     @_lazy_property
     def users(self):
@@ -2409,14 +2420,14 @@ class ContentManager(object):
         """ Clone content to the GIS by creating new items.
 
         .. note::
-            Cloning an item will create a copy of the item and for certain item types 
-            a copy of the item dependencies in the GIS. 
-            
-            For example if you clone a hosted web application created using Web AppBuilder 
-            or a Configurable App Template, the web map that is used by that web application 
-            and all the hosted feature layers used in the web map. It will then clone all of 
-            these items to the new organization and swizzle the paths in the web map and 
-            web application to point to the new layers. This creates a completely disconnected 
+            Cloning an item will create a copy of the item and for certain item types
+            a copy of the item dependencies in the GIS.
+
+            For example if you clone a hosted web application created using Web AppBuilder
+            or a Configurable App Template, the web map that is used by that web application
+            and all the hosted feature layers used in the web map. It will then clone all of
+            these items to the new organization and swizzle the paths in the web map and
+            web application to point to the new layers. This creates a completely disconnected
             copy of the application, map and layers in the GIS.
 
 
@@ -2446,7 +2457,7 @@ class ContentManager(object):
         """
 
         import arcgis._impl.common._clone as clone
-        
+
         clone_mapping = {'Item IDs' : {}, 'Group IDs' : {}, 'Feature Services' : {}}
         if item_mapping is not None:
             clone_mapping['Item IDs'] = item_mapping
@@ -2461,7 +2472,7 @@ class ContentManager(object):
                 # Create folder if it doesn't already exist
                 user = self._gis.users.me
                 target_folder = None
-                if folder is not None:       
+                if folder is not None:
                     folders = user.folders
                     target_folder = next((f for f in folders if f['title'].lower() == folder.lower()), None)
                     if target_folder is None:
@@ -2469,7 +2480,7 @@ class ContentManager(object):
 
                 # Get the definitions associated with the item
                 item_definitions = []
-                clone._get_item_definitions(item, item_definitions)      
+                clone._get_item_definitions(item, item_definitions)
                 item_definitions = sorted(item_definitions, key=clone._sort_item_types)
 
                 # Test if the user has the correct privileges to create the items requested
@@ -2492,14 +2503,14 @@ class ContentManager(object):
                 for group in [g for g in item_definitions if isinstance(g, clone._GroupDefinition)]:
                     item_definitions.remove(group)
                     original_group = group.info
-            
+
                     new_group = None
                     if original_group['id'] in clone_mapping['Group IDs']:
                         new_group = self._gis.groups.get(clone_mapping['Group IDs'][original_group['id']])
                     else:
                         if search_existing_items:
                             new_group = clone._search_for_existing_group(user, original_group)
-            
+
                         if not new_group:
                             new_group = group.clone(self._gis)
                             created_items.append(new_group)
@@ -2508,7 +2519,7 @@ class ContentManager(object):
                 wgs84_extent = None
                 if item_extent:
                     wgs84_extent = clone._wgs84_envelope(item_extent)
-                
+
                 # Clone the items
                 for item_definition in item_definitions:
                     original_item = item_definition.info
@@ -2530,15 +2541,15 @@ class ContentManager(object):
                             elif isinstance(item_definition, clone._FeatureServiceDefinition):
                                 result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, item_extent, copy_data)
                             else:
-                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent)     
+                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent)
                             new_item = result[0]
                             new_item_created = True
                             created_items.append(new_item)
-  
+
                     if new_item['owner'] == user['username']:
                         clone._share_item_with_groups(new_item, item_definition.sharing, clone_mapping['Group IDs'])
-                    clone_mapping['Item IDs'][original_item['id']] = new_item['id']   
-            
+                    clone_mapping['Item IDs'][original_item['id']] = new_item['id']
+
                     if isinstance(item_definition, clone._ApplicationDefinition):
                         # With Portal sometimes after sharing the application the url is reset.
                         # Check if the url is incorrect after sharing and set back to correct url.
@@ -2547,13 +2558,13 @@ class ContentManager(object):
                             new_item = self.get(new_item['id'])
                             if new_item['url'] != url:
                                 new_item.update({'url' : url})
-             
+
                     if isinstance(item_definition, clone._FeatureServiceDefinition) and original_item['url'] not in clone_mapping['Feature Services']:
                         # Need to handle Feature Services as their layer ids and fields names can change during creation.
                         if not new_item_created:
-                            result = clone._compare_feature_service(new_item, item_definition)            
+                            result = clone._compare_feature_service(new_item, item_definition)
                         new_item, layer_field_mapping, layer_id_mapping, layer_fields, relationship_field_mapping = result
-                        clone_mapping['Feature Services'][original_item['url']] = {'id' : new_item['id'], 'url' : new_item['url'], 'layer_field_mapping' : layer_field_mapping, 'layer_id_mapping' : layer_id_mapping, 'layer_fields' : layer_fields, 'relationship_field_mapping' : relationship_field_mapping}           
+                        clone_mapping['Feature Services'][original_item['url']] = {'id' : new_item['id'], 'url' : new_item['url'], 'layer_field_mapping' : layer_field_mapping, 'layer_id_mapping' : layer_id_mapping, 'layer_fields' : layer_fields, 'relationship_field_mapping' : relationship_field_mapping}
 
                 # Update Survey123 form data
                 for form in [i for i in item_definitions if isinstance(i, clone._FormDefinition)]:
@@ -2561,21 +2572,21 @@ class ContentManager(object):
                     if original_item['id'] in clone_mapping['Item IDs']:
                         new_item = self.get(clone_mapping['Item IDs'][original_item['id']])
                         form.update_form(self._gis, new_item, clone_mapping)
-            
+
             except Exception as ex:
                 if isinstance(ex, clone._ItemCreateException):
                     message = ex.args[1]
                     if isinstance(ex.args[1], (Item, Group)):
                         created_items.append(ex.args[1])
-                        
+
                 for created_item in reversed(created_items):
                     try:
                         if created_item is not None:
                             created_item.delete()
                     except Exception:
-                        continue                   
+                        continue
                 raise
-            
+
             finally:
                 clone._TEMP_DIR.cleanup()
 
