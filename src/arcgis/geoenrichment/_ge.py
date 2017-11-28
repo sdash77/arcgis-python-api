@@ -1176,4 +1176,3 @@ class _GeoEnrichment(object):
             elif len(dfs) == 1:
                 return dfs[0]
             return res
-

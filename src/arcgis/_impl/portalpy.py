@@ -385,7 +385,7 @@ class Portal(object):
                        wkid=102100,
                        service_type="imageService",
                        create_params=None,
-                       owner=None, folder=None, common_params=None):
+                       owner=None, folder=None, common_params=None, is_view = False):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
@@ -445,6 +445,7 @@ class Portal(object):
             postdata['createParameters'] = json.dumps(createParameters)
 
         postdata['outputType'] = service_type
+        postdata['isView'] = is_view
 
         # If common_params dictionary provided, add each key/value pair to postdata.
         if common_params is not None:
