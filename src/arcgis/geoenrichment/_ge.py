@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from arcgis.gis import GIS
+from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope
 ###########################################################################
@@ -515,6 +516,35 @@ class _GeoEnrichment(object):
 
         :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
+        def _chunks(l, n):
+            """yield successive n-sized chunks from l."""
+            for i in range(0, len(l), n):
+                yield l[i:i + n]
+        areas = []
+        if isinstance(study_areas, list):
+            #indexes = list(range(len(study_areas)))
+            #values = []
+            for idx, val in enumerate(study_areas):
+                if isinstance(val, FeatureSet):
+                    df = val.df
+                    #if len(df) > 100:
+                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
+                    #else:
+                    study_areas[idx] = [{'FeatureSet' : df.__feature_set__ }]
+                elif isinstance(val, SpatialDataFrame):
+                    #if len(val) > 100:
+                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
+                    #else:
+                    study_areas[idx] = [{'FeatureSet' : val.__feature_set__ }]
+                else:
+                    study_areas[idx] = val
+        elif isinstance(study_areas, SpatialDataFrame):
+            #if len(study_areas) > 100:
+            #    areas[0] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(study_areas, 100))]
+            #else:
+            study_areas = [{'FeatureSet' : study_areas.__feature_set__ }]
+        elif isinstance(study_areas, FeatureSet):
+            study_areas = [{"FeatureSet" : study_areas.df.__feature_set__}]
         params = {
             "langCode" : self._langCode,
             "f" : "json",
@@ -539,6 +569,7 @@ class _GeoEnrichment(object):
             params['analysisVariables'] = analysis_variables
         url = "%s%s" % (self._base_url,
                         self._url_enrich_data)
+
         res = self._gis._con.post(path=url,
                                   postdata=params)
         if as_featureset == False:
@@ -1145,3 +1176,4 @@ class _GeoEnrichment(object):
             elif len(dfs) == 1:
                 return dfs[0]
             return res
+
