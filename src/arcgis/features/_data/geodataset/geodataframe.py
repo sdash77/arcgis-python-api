@@ -477,10 +477,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             if 'map_widget' not in kwargs:
                 raise Exception("map_widget is required to plot the SpatialDataFrame")
             else:
-                m = kwargs['map_widget']
+                m = kwargs.pop('map_widget')
+                symbol = kwargs.pop('symbol', None)
+                popup = kwargs.pop('popup', None)
             try:
                 fs = FeatureSet.from_dict(self.__feature_set__)
-                m.draw(fs)
+                m.draw(fs, symbol=symbol, popup=popup)
                 if extent and \
                    isinstance(extent, dict):
                     m.extent = extent
