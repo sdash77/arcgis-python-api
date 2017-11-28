@@ -1929,7 +1929,7 @@ class ContentManager(object):
                        wkid=102100,
                        create_params=None,
                        service_type="featureService",
-                       owner=None, folder=None, item_properties=None):
+                       owner=None, folder=None, item_properties=None, is_view=False):
         """ Creates a service in the Portal.
 
 
@@ -1971,6 +1971,8 @@ class ContentManager(object):
         folder                     Optional string. The name of folder in which to create the service.
         -----------------------    -------------------------------------------------------------
         item_properties            Optional dictionary. See below for the keys and values
+        -----------------------    -------------------------------------------------------------
+        is_view                    Optional boolean. Indicating if the service is a hosted feature layer view
         =======================    =============================================================
 
 
@@ -2035,7 +2037,7 @@ class ContentManager(object):
                                              wkid,
                                              service_type,
                                              create_params,
-                                             owner, folder, item_properties)
+                                             owner, folder, item_properties, is_view)
         if itemid is not None:
             return Item(self._gis, itemid)
         else:
@@ -2402,6 +2404,182 @@ class ContentManager(object):
 
         res = self._portal.con.post(path, postdata)
         return res['available']
+
+    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None):
+        """ Clone content to the GIS by creating new items.
+
+        .. note::
+            Cloning an item will create a copy of the item and for certain item types 
+            a copy of the item dependencies in the GIS. 
+            
+            For example if you clone a hosted web application created using Web AppBuilder 
+            or a Configurable App Template, the web map that is used by that web application 
+            and all the hosted feature layers used in the web map. It will then clone all of 
+            these items to the new organization and swizzle the paths in the web map and 
+            web application to point to the new layers. This creates a completely disconnected 
+            copy of the application, map and layers in the GIS.
+
+
+        ======================  ==========================================================================
+        **Argument**            **Description**
+        ----------------------  --------------------------------------------------------------------------
+        items                   Required list. Collection of items to clone.
+        ----------------------  --------------------------------------------------------------------------
+        folder                  Optional string. Name of the folder where placing item.
+        ----------------------  --------------------------------------------------------------------------
+        item_extent             Optional Envelope. Extent set for any cloned items. Default is None, extent will remain unchanged. Spatial reference of the envelope will be used for any cloned feature layers.
+        ----------------------  --------------------------------------------------------------------------
+        use_org_basemap         Optional boolean. Indicating whether the basemap in any cloned web maps should be updated to the organizations default basemap. Default is False, basemap will not change.
+        ----------------------  --------------------------------------------------------------------------
+        copy_data               Optional boolean. Indicating whether the data should be copied with any feature layer or feature collections. Default is True, data will be copied.
+        ----------------------  --------------------------------------------------------------------------
+        search_existing_items   Optional boolean. Indicating whether items that have already been cloned should be searched for in the GIS and reused rather than cloned again.
+        ----------------------  --------------------------------------------------------------------------
+        item_mapping            Optional dictionary. Can be used to associate an item in the source GIS to an item in the target GIS. The target item will be used rather than cloning the source item.
+        ======================  ==========================================================================
+        group_mapping           Optional dictionary. Can be used to associate a group in the source GIS to a group in the target GIS. The target group will be used rather than cloning the source group.
+        ======================  ==========================================================================
+
+        :return:
+           A list of items created during the clone.
+
+        """
+
+        import arcgis._impl.common._clone as clone
+        
+        clone_mapping = {'Item IDs' : {}, 'Group IDs' : {}, 'Feature Services' : {}}
+        if item_mapping is not None:
+            clone_mapping['Item IDs'] = item_mapping
+        if group_mapping is not None:
+            clone_mapping['Group IDs'] = group_mapping
+        created_items = []
+
+        for item in items:
+            try:
+                clone._TEMP_DIR = tempfile.TemporaryDirectory()
+
+                # Create folder if it doesn't already exist
+                user = self._gis.users.me
+                target_folder = None
+                if folder is not None:       
+                    folders = user.folders
+                    target_folder = next((f for f in folders if f['title'].lower() == folder.lower()), None)
+                    if target_folder is None:
+                        target_folder = self.create_folder(folder)
+
+                # Get the definitions associated with the item
+                item_definitions = []
+                clone._get_item_definitions(item, item_definitions)      
+                item_definitions = sorted(item_definitions, key=clone._sort_item_types)
+
+                # Test if the user has the correct privileges to create the items requested
+                if 'privileges' in user and user['privileges'] is not None:
+                    privileges = user.privileges
+                    for item_definition in item_definitions:
+                        if isinstance(item_definition, clone._ItemDefinition):
+                            if 'portal:user:createItem' not in privileges:
+                                raise Exception("To clone this item you must have permission to create new content in the target organization.")
+
+                        if isinstance(item_definition, clone._GroupDefinition):
+                            if 'portal:user:createGroup' not in privileges or 'portal:user:shareToGroup' not in privileges:
+                                raise Exception("To clone this item you must have permission to create new groups and share content to groups in the target organization.")
+
+                        if isinstance(item_definition, clone._FeatureServiceDefinition):
+                            if 'portal:publisher:publishFeatures' not in privileges:
+                                raise Exception("To clone this item you must have permission to publish hosted feature layers in the target organization.")
+
+                # Clone the groups
+                for group in [g for g in item_definitions if isinstance(g, clone._GroupDefinition)]:
+                    item_definitions.remove(group)
+                    original_group = group.info
+            
+                    new_group = None
+                    if original_group['id'] in clone_mapping['Group IDs']:
+                        new_group = self._gis.groups.get(clone_mapping['Group IDs'][original_group['id']])
+                    else:
+                        if search_existing_items:
+                            new_group = clone._search_for_existing_group(user, original_group)
+            
+                        if not new_group:
+                            new_group = group.clone(self._gis)
+                            created_items.append(new_group)
+                        clone_mapping['Group IDs'][original_group['id']] = new_group['id']
+
+                wgs84_extent = None
+                if item_extent:
+                    wgs84_extent = clone._wgs84_envelope(item_extent)
+                
+                # Clone the items
+                for item_definition in item_definitions:
+                    original_item = item_definition.info
+                    new_item_created = False
+                    result = []
+
+                    new_item = None
+                    if original_item['id'] in clone_mapping['Item IDs']:
+                        new_item = self.get(clone_mapping['Item IDs'][original_item['id']])
+                    else:
+                        if search_existing_items:
+                            new_item = clone._search_org_for_existing_item(self._gis, original_item)
+                        if not new_item:
+                            result = []
+                            if isinstance(item_definition, clone._WebMapDefinition):
+                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, use_org_basemap)
+                            elif isinstance(item_definition, clone._FeatureCollectionDefinition):
+                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, copy_data)
+                            elif isinstance(item_definition, clone._FeatureServiceDefinition):
+                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, item_extent, copy_data)
+                            else:
+                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent)     
+                            new_item = result[0]
+                            new_item_created = True
+                            created_items.append(new_item)
+  
+                    if new_item['owner'] == user['username']:
+                        clone._share_item_with_groups(new_item, item_definition.sharing, clone_mapping['Group IDs'])
+                    clone_mapping['Item IDs'][original_item['id']] = new_item['id']   
+            
+                    if isinstance(item_definition, clone._ApplicationDefinition):
+                        # With Portal sometimes after sharing the application the url is reset.
+                        # Check if the url is incorrect after sharing and set back to correct url.
+                        if 'url' in new_item and new_item['url'] is not None:
+                            url = new_item['url']
+                            new_item = self.get(new_item['id'])
+                            if new_item['url'] != url:
+                                new_item.update({'url' : url})
+             
+                    if isinstance(item_definition, clone._FeatureServiceDefinition) and original_item['url'] not in clone_mapping['Feature Services']:
+                        # Need to handle Feature Services as their layer ids and fields names can change during creation.
+                        if not new_item_created:
+                            result = clone._compare_feature_service(new_item, item_definition)            
+                        new_item, layer_field_mapping, layer_id_mapping, layer_fields, relationship_field_mapping = result
+                        clone_mapping['Feature Services'][original_item['url']] = {'id' : new_item['id'], 'url' : new_item['url'], 'layer_field_mapping' : layer_field_mapping, 'layer_id_mapping' : layer_id_mapping, 'layer_fields' : layer_fields, 'relationship_field_mapping' : relationship_field_mapping}           
+
+                # Update Survey123 form data
+                for form in [i for i in item_definitions if isinstance(i, clone._FormDefinition)]:
+                    original_item = form.info
+                    if original_item['id'] in clone_mapping['Item IDs']:
+                        new_item = self.get(clone_mapping['Item IDs'][original_item['id']])
+                        form.update_form(self._gis, new_item, clone_mapping)
+            
+            except Exception as ex:
+                if isinstance(ex, clone._ItemCreateException):
+                    message = ex.args[1]
+                    if isinstance(ex.args[1], (Item, Group)):
+                        created_items.append(ex.args[1])
+                        
+                for created_item in reversed(created_items):
+                    try:
+                        if created_item is not None:
+                            created_item.delete()
+                    except Exception:
+                        continue                   
+                raise
+            
+            finally:
+                clone._TEMP_DIR.cleanup()
+
+        return created_items
 
     def _bulk_update(self, itemids, properties):
         """
@@ -4776,7 +4954,7 @@ class Item(dict):
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
                                      'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                     'Service2Service'])
+                                     'Service2Service', 'Survey2Service'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
