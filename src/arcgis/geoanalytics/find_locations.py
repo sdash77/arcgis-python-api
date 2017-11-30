@@ -17,6 +17,31 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def geocode_locations(input_layer,
+                      geocode_service_url,
+                      parameters=None,
+                      source_country=None,
+                      category=None,
+                      include_attribute=True,
+                      locator_parameters=None,
+                      output_name=None,
+                      gis=None):
+    """
+
+    """
+    kwargs = locals()
+    tool_name = "GeocodeLocations"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties['helperServices']['geoanalytics']['url']
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json"
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+
 def detect_incidents(input_layer,
                            track_fields,
                            start_condition_expression,
@@ -113,16 +138,17 @@ def detect_incidents(input_layer,
             params[key] = value
 
     if output_name is None:
-        output_service_name = 'Detect_Incidents_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = 'Geocoding_Results_' + _id_generator()
+        output_service_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents')
+    #output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents')
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    params['output_name'] = output_service_name
+    #_json.dumps({
+    #    "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+    #    "itemProperties": {"itemId" : output_service.itemid}})
 
     _set_context(params)
 
