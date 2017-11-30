@@ -247,7 +247,10 @@ define('mapview', [
      array,
      lang) {
     //var map, toolbar;
+    // var layerList = new Array();
     var MapView = widgets.DOMWidgetView.extend({
+
+        // var layerList = new Array(),
 
         // Render the view.
         render: function () {
@@ -401,6 +404,10 @@ define('mapview', [
                 that.layer_changed();
                 that.start_time_changed();
                 that.end_time_changed();
+
+                // amani - sync the initial extent
+                // that.model.set('_jsextent', JSON.stringify(that.map.extent));
+                // that.model.touch();
             }
 
 
@@ -420,6 +427,20 @@ define('mapview', [
 
                 that.toolbar.deactivate();
                 that.draw_end(geometry);
+
+                //amani- Add all interactive graphics to web map at the end. Save them all to a list of dicts
+                var syncGraphic = {'geometry':geometry, 'symbol':graphic.symbol};
+
+                var _current_js_dg_list = that.model.get('_js_interactive_drawn_graphic');
+                if (_current_js_dg_list == ""){
+                    _current_js_dg_list2 = [];
+                }
+                else{
+                    _current_js_dg_list2 = JSON.parse(_current_js_dg_list);
+                }
+                _current_js_dg_list2.push(syncGraphic);
+                that.model.set('_js_interactive_drawn_graphic', JSON.stringify(_current_js_dg_list2));
+                that.touch();
             }
 
             function onMouseClick(event) {
@@ -445,6 +466,7 @@ define('mapview', [
             this.model.on('change:_addlayer', this.layer_changed, this);
             this.model.on('change:start_time', this.start_time_changed, this);
             this.model.on('change:end_time', this.end_time_changed, this);
+            this.model.on('change:_layerId_to_remove', this.remove_layer, this);
 
         },
         /*
@@ -501,6 +523,7 @@ define('mapview', [
                 this.toolbar.deactivate();
             } else if (this.model.get('mode') == "###clear_graphics") {
                 this.map.graphics.clear();
+                this.model.set('_js_interactive_drawn_graphic', "");
             } else if (this.model.get('mode') == "###remove_layers") {
                 this.map.removeAllLayers();
             } else if (this.model.get('mode').indexOf("{") > -1) {
@@ -584,7 +607,7 @@ define('mapview', [
                     this.map.addLayer(vtl);
                 }
                 else if ((newlayer.type == "FeatureLayer") || (newlayer.type == "Feature Layer")) {
-                    console.log("FeatureLayer " + newlayer.url);
+                    console.log("Adding FeatureLayer " + newlayer.url);
 
                     var layer = new FeatureLayer(newlayer.url, {
                         "outFields": ["*"]
@@ -592,11 +615,8 @@ define('mapview', [
 
                     if (newlayer.options != null) {
                         var lyr_options = JSON.parse(newlayer.options);
-
-
-
                         if (lyr_options.opacity != null) {
-                            console.log('***opacity:' + lyr_options.opacity)
+                            console.log('***opacity:' + lyr_options.opacity);
                             layer.setOpacity(lyr_options.opacity);
                         }
 
@@ -610,7 +630,6 @@ define('mapview', [
                             var heatmapRenderer = new HeatmapRenderer();
                             layer.setRenderer(heatmapRenderer);
                         }
-
 
                         console.log("ClassedSizeRend0:" + lyr_options.renderer);
                         console.log("ClassedSizeRend:" + lyr_options.field_name);
@@ -627,8 +646,17 @@ define('mapview', [
                             var heatmapRenderer = new HeatmapRenderer(hmoptions);
 
                             layer.setRenderer(heatmapRenderer);
-                        }
 
+                            //amani - this code is now redundant
+                            // hm_renderer_string = JSON.stringify({"type":"heatmap",
+                            //                                     "colorStops":heatmapRenderer.colorStops,
+                            //                                     "blurRadius":heatmapRenderer.blurRadius,
+                            //                                     "field":heatmapRenderer.field,
+                            //                                     "maxPixelIntensity":heatmapRenderer.maxPixelIntensity,
+                            //                                     "minPixelIntensity":heatmapRenderer.minPixelIntensity})
+                            // this.model.set('_js_renderer', hm_renderer_string);
+                            // this.touch();
+                        }
 
                         if (lyr_options.renderer == "ClassedSizeRenderer") {
                             console.log("ClassedSizeRenderer...");
@@ -663,7 +691,9 @@ define('mapview', [
 
                             smartMapping.createClassedColorRenderer(renderer_properties).then(function (response) {
                                 layer.setRenderer(response.renderer);
+
                                 layer.redraw();
+                                console.log(response.renderer);
                                 //createLegend(map, layer, field);
                             });
                         }
@@ -724,6 +754,85 @@ define('mapview', [
                         //  createSizeRenderer(newlayer.field_name);
                         //});
                     }
+
+                    //amani - sync the layer info after layer loads - smartMapping is asyc
+                    layer.on("load", lang.hitch(this, function(){
+
+                        //add the current layer to layer list and sync with Python side.
+                        //cannot stringify layers. So create a layer dict
+                        var _layerDict = {'id':layer.id,
+                                            'normalization':layer.normalization,
+                                            'refreshInterval':layer.refreshInterval,
+                                            'url':layer.url};
+                        if (layer.renderer){
+                            _layerDict['renderer'] = layer.renderer.toJson();
+                            _layerDict['rendererType']=layer.renderer.declaredClass;
+                        }
+
+                        // Simply maintain the list of layers as a list in the synced property. Read it and extend this list
+                        var _current_list = this.model.get('_js_layer_list');
+                        if (_current_list == ""){
+                            var _current_list2 = [];
+                        }
+                        else{
+                            var _current_list2 = JSON.parse(_current_list);
+                        }
+
+                        _current_list2.push(_layerDict);
+                        this.model.set('_js_layer_list', JSON.stringify(_current_list2));
+                        this.touch();
+                    }));
+
+                    //amani - sync the layer info when renderer is changed due to smart mapping
+                    layer.on("renderer-change", lang.hitch(this, function(){
+                        if (typeof(lyr_options)!=typeof(undefined)) {
+                            if ('renderer' in lyr_options) {
+                                if ((lyr_options.renderer == 'ClassedColorRenderer') ||
+                                    (lyr_options.renderer == "ClassedSizeRenderer")) {
+
+                                    var _current_list = this.model.get('_js_layer_list');
+                                    if (_current_list != "") {
+                                        console.log("Update renderer of latest layer");
+                                        var _current_list2 = JSON.parse(_current_list);
+                                        _current_list2[_current_list2.length - 1]['renderer'] = layer.renderer.toJson();
+                                        _current_list2[_current_list2.length - 1]['rendererType'] = layer.renderer.declaredClass;
+
+                                        this.model.set('_js_layer_list', JSON.stringify(_current_list2));
+                                        this.touch();
+                                        console.log("CCR, CSR renderer updated");
+                                    }
+                                }
+                            }
+                            else {
+                                console.log("Fired due to some other event");
+                            }
+                        }else{console.log("Not sure which fired renderer-change");}
+
+                        // //add the current layer to layer list and sync with Python side.
+                        // //cannot stringify layers. So create a layer dict
+                        // var _layerDict = {'id':layer.id,
+                        //                     'normalization':layer.normalization,
+                        //                     'refreshInterval':layer.refreshInterval,
+                        //                     'url':layer.url};
+                        // if (layer.renderer){
+                        //     _layerDict['renderer'] = layer.renderer.toJson();
+                        //     _layerDict['rendererType']=layer.renderer.declaredClass;
+                        // }
+                        //
+                        // // Simply maintain the list of layers as a list in the synced property. Read it and extend this list
+                        // var _current_list = this.model.get('_js_layer_list');
+                        // if (_current_list == ""){
+                        //     var _current_list2 = [];
+                        // }
+                        // else{
+                        //     var _current_list2 = JSON.parse(_current_list);
+                        // }
+                        //
+                        // _current_list2.push(_layerDict);
+                        // this.model.set('_js_layer_list', JSON.stringify(_current_list2));
+                        // this.touch();
+                    }));
+
                     layer.on("load", lang.hitch(this, function () {
                         layer.setInfoTemplate(this.createTemplate(layer));
                         if (bRend) {
@@ -814,10 +923,39 @@ define('mapview', [
                         }, this.model.get('_swipe_div'));
                         swipeWidget.startup();
                     }
+
+                    //amani - sync the layer info after layer loads - Imagery Layers
+                    layer.on("load", lang.hitch(this, function(){
+
+                        //add the current layer to layer list and sync with Python side.
+                        //cannot stringify layers. So create a layer dict
+                        var _layerDict = {'id':layer.id,
+                                            'bandIds':layer.bandIds,
+                                            'mosaicRule':layer.mosaicRule,
+                                            'url':layer.url,
+                                            'renderingRule':layer.renderingRule};
+                        if (layer.renderer){
+                            _layerDict['renderer'] = layer.renderer;
+                            _layerDict['rendererType']=layer.renderer.declaredClass;
+                        }
+
+                        // Simply maintain the list of layers as a list in the synced property. Read it and extend this list
+                        var _current_list = this.model.get('_js_layer_list');
+                        if (_current_list == ""){
+                            var _current_list2 = [];
+                        }
+                        else{
+                            var _current_list2 = JSON.parse(_current_list);
+                        }
+
+                        _current_list2.push(_layerDict);
+                        this.model.set('_js_layer_list', JSON.stringify(_current_list2));
+                        this.touch();
+                    }));
                 }
                 else { // Feature Collection
 
-                    console.log(newlayer);
+                    // console.log(newlayer);
 
                     var options = { mode: FeatureLayer.MODE_SNAPSHOT };
                     var newlyr_options = {};
@@ -826,6 +964,10 @@ define('mapview', [
                     }
 
                     console.log("***Feature Collection layer###***");
+                    console.log("inspecting if feature collection contains layers");
+                    if ('layers' in newlayer){
+                        newlayer = newlayer.layers[0];
+                    }
                     var layer = new FeatureLayer(newlayer, newlyr_options);
                     //code added by MM to add pop up to a FC
 
@@ -906,11 +1048,43 @@ define('mapview', [
 
 
                     this.map.addLayer(layer);
+                    console.log("added the fc layer");
+                    //amani - sync the layer info after layer loads - smartMapping is asyc
+                    var _layerDict = {'id':layer.id,
+                                            'normalization':layer.normalization,
+                                            'refreshInterval':layer.refreshInterval,
+                                            'url':layer.url};
+                    if (layer.renderer){
+                        _layerDict['renderer'] = layer.renderer;
+                        _layerDict['rendererType']=layer.renderer.declaredClass;
+                    }
+
+                    // Simply maintain the list of layers as a list in the synced property. Read it and extend this list
+                    var _current_list = this.model.get('_js_layer_list');
+                    if (_current_list == ""){
+                        var _current_list2 = [];
+                    }
+                    else{
+                        var _current_list2 = JSON.parse(_current_list);
+                    }
+
+                    _current_list2.push(_layerDict);
+                    this.model.set('_js_layer_list', JSON.stringify(_current_list2));
+                    this.touch();
                 }
 
             }
         },
 
+        remove_layer: function(){
+            var that = this;
+            var layerIdToRemove = this.model.get('_layerId_to_remove');
+            var layerToRemove = this.map.getLayer(layerIdToRemove);
+            console.log("*** removing individual layer ***");
+            this.map.removeLayer(layerToRemove);
+
+            //must update the _js_layer_list trait - happens in Python side.
+        },
 
         center_changed: function () {
             console.log("changing center");
@@ -957,6 +1131,34 @@ define('mapview', [
 
         basemap_changed: function () {
             this.map.setBasemap(this.model.get('_basemap'));
+            var basemapChangeHandle = this.map.on("basemap-change", lang.hitch(this, function(){
+                basemapChangeHandle.remove();
+                var returnList = [];
+                for (var i=0; i<this.map.basemapLayerIds.length; i++)
+                {
+                    var current_basemap_layer = this.map.getLayer(this.map.basemapLayerIds[i]);
+                    try{
+                        var resource_info = JSON.parse(current_basemap_layer.resourceInfo);
+                        var _title = resource_info.documentInfo.Title;
+                    }
+                    catch(err){
+                        var _title = this.model.get('_basemap');
+                    }
+
+                    var _basemap_dict = {'url':current_basemap_layer.url,
+                                        'title':_title};
+                    returnList.push(_basemap_dict);
+                }
+
+                this.model.set('_js_basemap', JSON.stringify(returnList));
+                this.touch();
+            }))
+            // var current_basemap_layer = this.map.getLayer(this.map.basemapLayerIds[0]);
+            // console.log(current_basemap_layer);
+            // var basemap_dict = {'url':current_basemap_layer.url}
+            // this.model.set('_js_basemap', current_basemap_layer.url);
+            // this.touch();
+
         },
 
 	    gallerybasemaps_changed: function () {
