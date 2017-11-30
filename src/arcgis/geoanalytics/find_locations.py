@@ -36,8 +36,7 @@ def geocode_locations(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  required FeatureSet, Big DataStoreCatalogs URL of address
-                                 locations to geocode.
+    input_layer                  required Layer, URL, Item of address locations to geocode.
     --------------------------   ---------------------------------------------------------------
     geocode_service_url          optional string.  URL endpoint of the Geocoding Service. If
                                  none is provided, the service will use the first geocoder
@@ -96,16 +95,8 @@ def geocode_locations(input_layer,
     :returns: Feature Layer
 
     """
-    # Workflow for when geocode_parameters is None:
-    # 1). Access the BDS Service and Get the Fields
-    #https://gpportal.esri.com/server/rest/services/DataStoreCatalogs/bigDataFileShares_geocode/BigDataCatalogServer/atlanta114?f=json
-    # 2). Access the AnalyzeGeocodeInput and pass the following:
-    #   - geocodeServiceUrl:https://GPPORTAL.ESRI.COM/server/rest/services/AtlantaLocator/GeocodeServer
-    #   - locale:en
-    #   -  inputTable:{"url":"https://GPPORTAL.ESRI.COM/server/rest/services/DataStoreCatalogs/bigDataFileShares_geocode/BigDataCatalogServer/atlanta114"}
-    #
-    #https://gpportal.esri.com/server/rest/services/Utilities/GeocodingTools/GPServer/AnalyzeGeocodeInput/submitJob?f=json&geocodeServiceUrl=https%3A%2F%2FGPPORTAL.ESRI.COM%2Fserver%2Frest%2Fservices%2FAtlantaLocator%2FGeocodeServer&locale=en&inputTable=%7B%22url%22%3A%22https%3A%2F%2FGPPORTAL.ESRI.COM%2Fserver%2Frest%2Fservices%2FDataStoreCatalogs%2FbigDataFileShares_geocode%2FBigDataCatalogServer%2Fatlanta114%22%7D
-    # Gets the Fields
+    from arcgis.features.layer import Layer
+    from arcgis.gis import Item
     kwargs = locals()
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -122,10 +113,19 @@ def geocode_locations(input_layer,
     else:
         output_service_name = output_name.replace(' ', '_')
 
-
-
     if isinstance(input_layer, str):
         input_layer = {'url' : input_layer}
+    elif isinstance(input_layer, Item):
+        input_layer = {'url' : input_layer.layers[0]._url}
+    elif isinstance(input_layer, Layer):
+        input_layer = {'url' : input_layer._url}
+    elif isinstance(input_layer, dict) and \
+         not "url" in input_layer:
+        raise ValueError("Invalid Input: input_layer dictionary" + \
+                         " must have format {'url' : <url>}")
+    else:
+        raise ValueError("Invalid input_layer input. Please pass an Item, " + \
+                         "Big DataStore Layer or Big DataStore URL to geocode.")
 
     if geocode_service_url is None:
         for service in gis.properties.helperServices.geocode:
