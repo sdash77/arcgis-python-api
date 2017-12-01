@@ -128,6 +128,8 @@ def geocode_locations(input_layer,
          not "url" in input_layer:
         raise ValueError("Invalid Input: input_layer dictionary" + \
                          " must have format {'url' : <url>}")
+    elif isinstance(input_layer, dict) and "url" in input_layer:
+        pass
     else:
         raise ValueError("Invalid input_layer input. Please pass an Item, " + \
                          "Big DataStore Layer or Big DataStore URL to geocode.")
@@ -137,10 +139,10 @@ def geocode_locations(input_layer,
             if 'batch' in service and service['batch'] == True:
                 geocode_service_url = service["url"]
                 break
-        if geocode_service is None:
+        if geocode_service_url is None:
             raise ValueError("A geocoder with batch enabled must be configured" + \
                              " with this portal to use this service.")
-        params['geocode_service'] = geocode_service_url
+        params['geocode_service_url'] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
         geocode_service = geocode_service.url
 
