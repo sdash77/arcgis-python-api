@@ -17,8 +17,174 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def geocode_locations(input_layer,
+                      country=None,
+                      category=None,
+                      include_attributes=True,
+                      locator_parameters=None,
+                      output_name=None,
+                      geocode_service=None,
+                      geocode_parameters=None,
+                      gis=None):
+    """
+    The Geocode Locations task geocodes a table from a big data file share. The task uses a geocode
+    utility service configured with your portal.
+
+    For more information on setting up a geocoding service see:
+    http://server.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm
+
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  required Layer, URL, Item of address locations to geocode.
+    --------------------------   ---------------------------------------------------------------
+    country                      optional string.  If all your data is in one country, this helps
+                                 improve performance for locators that accept that variable.
+    --------------------------   ---------------------------------------------------------------
+    category                     optional string. Enter a category for more precise geocoding
+                                 results, if applicable. Some geocoding services do not support
+                                 category, and the available options depend on your geocode service.
+    --------------------------   ---------------------------------------------------------------
+    include_attributes           optional boolean. A boolean value to return the output fields
+                                 from the geocoding service in the results.
+    --------------------------   ---------------------------------------------------------------
+    locator_parameters           optional dictionary. Additional parameters specific to your
+                                 locator.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  optional string, The task will create a feature service of the
+                                 results. You define the name of the service.
+    --------------------------   ---------------------------------------------------------------
+    geocode_service              optional string or Geocoder.  URL endpoint of the Geocoding
+                                 Service of GeoCoder object. If none is provided, the service
+                                 will use the first geocoder registered with portal that has
+                                 batch enabled.
+    --------------------------   ---------------------------------------------------------------
+    geocode_parameters           optional dictionary.  This includes parameters that help parse
+                                 the input data, as well the field lengths and a field mapping.
+                                 This value is the output from the AnalyzeGeocodeInput tool
+                                 available on your server designated to geocode. It is important
+                                 to inspect the field mapping closely and adjust them accordingly
+                                 before submitting your job, otherwise your geocoding results may
+                                 not be accurate. It is recommended to use the output from
+                                 AnalyzeGeocodeInput and modify the field mapping instead of
+                                 constructing this JSON by hand.
+
+                                 **Values**
+
+                                 **field_info** - A list of triples with the field names of your input
+                                 data, the field type (usually TEXT), and the allowed length
+                                 (usually 255).
+                                 Example: [['ObjectID', 'TEXT', 255], ['Address', 'TEXT', 255],
+                                          ['Region', 'TEXT', 255], ['Postal', 'TEXT', 255]]
+
+                                 **header_row_exists** - Enter true or false.
+
+                                 **column_names** - Submit the column names of your data if your data
+                                 does not have a header row.
+
+                                 **field_mapping** - Field mapping between each input field and
+                                 candidate fields on the geocoding service.
+                                 Example: [['ObjectID', 'OBJECTID'], ['Address', 'Address'],
+                                          ['Region', 'Region'], ['Postal', 'Postal']]
+    --------------------------   ---------------------------------------------------------------
+    gis                          optional GIS, the GIS on which this tool runs. If not
+                                 specified, the active GIS is used.
+    ==========================   ===============================================================
+
+
+    :returns: Feature Layer
+
+    """
+    from arcgis.features.layer import Layer
+    from arcgis.gis import Item
+    from arcgis.geocoding._functions import Geocoder
+    kwargs = locals()
+    tool_name = "GeocodeLocations"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json"
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+    if output_name is None:
+        output_service_name = 'Geocoding_Results_' + _id_generator()
+        output_service_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    if isinstance(input_layer, str):
+        input_layer = {'url' : input_layer}
+    elif isinstance(input_layer, Item):
+        input_layer = input_layer.layers[0]._lyr_dict
+        if 'type' in input_layer:
+            input_layer.pop('type')
+    elif isinstance(input_layer, Layer):
+        input_layer = input_layer._lyr_dict
+        if 'type' in input_layer:
+            input_layer.pop('type')
+    elif isinstance(input_layer, dict) and \
+         not "url" in input_layer:
+        raise ValueError("Invalid Input: input_layer dictionary" + \
+                         " must have format {'url' : <url>}")
+    else:
+        raise ValueError("Invalid input_layer input. Please pass an Item, " + \
+                         "Big DataStore Layer or Big DataStore URL to geocode.")
+
+    if geocode_service is None:
+        for service in gis.properties.helperServices.geocode:
+            if 'batch' in service and service['batch'] == True:
+                geocode_service_url = service["url"]
+                break
+        if geocode_service is None:
+            raise ValueError("A geocoder with batch enabled must be configured" + \
+                             " with this portal to use this service.")
+        params['geocode_service'] = geocode_service_url
+    elif isinstance(geocode_service, Geocoder):
+        geocode_service = geocode_service.url
+
+    if geocode_parameters is None:
+        from arcgis.geoprocessing._tool import Toolbox
+        analyze_geocode_url = gis.properties.helperServices.asyncGeocode.url
+        tbx = Toolbox(url=analyze_geocode_url, gis=gis)
+        geocode_parameters = tbx.analyze_geocode_input(input_table=input_layer,
+                                                       geocode_service_url=geocode_service_url)
+        params['geocode_parameters'] = geocode_parameters
+    output_service = _create_output_service(gis, output_name,
+                                            output_service_name, 'Geocoded Locations')
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "geocode_service_url": (str, "geocodeServiceURL"),
+        "geocode_parameters": (str, "geocodeParameters"),
+        "country": (str, "sourceCountry"),
+        "category": (str, "category"),
+        "include_attributes" : (bool, "includeAttributes"),
+        "locator_parameters" : (str, "locatorParameters"),
+        "output_name": (str, "outputName"),
+        "output": (_FeatureSet, "output"),
+        "context": (str, "context")
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+    try:
+        res = _execute_gp_tool(gis, tool_name, params, param_db,
+                               return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+    return
+
 def detect_incidents(input_layer,
-                           track_fields,
+                     track_fields,
                            start_condition_expression,
                            end_condition_expression,
                            output_mode="AllFeatures",
