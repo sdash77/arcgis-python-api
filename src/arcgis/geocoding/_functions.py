@@ -483,7 +483,7 @@ def analyze_geocode_input(input_table_or_item,
                           gis=None):
     """
     The analyze_geocode_input function takes in a geocode input (either a table or file of
-    addresses) and returns an output JSON that includes a suggested field mapping. It supports CSV,
+    addresses) and returns an output dictionary that includes a suggested field mapping. It supports CSV,
     XLS, or table input. The table can be from a big data file share or from a feature service. The
     task generates a suggested field mapping based on the input fields and the geocoding service
     candidate fields and returns it in a geocode_parameters dictionary. This geocode_parameters
@@ -648,7 +648,7 @@ def analyze_geocode_input(input_table_or_item,
 
 #----------------------------------------------------------------------
 def geocode_from_items(input_data,
-                       output_type='Feature Service',
+                       output_type='Feature Layer',
                        geocode_service_url=None,
                        geocode_parameters=None,
                        country=None,
@@ -676,13 +676,13 @@ def geocode_from_items(input_data,
     ---------------------     ----------------------------------------------------------------
     geocode_parameters        optional dictionary.  This includes parameters that help parse
                               the input data, as well the field lengths and a field mapping.
-                              This value is the output from the AnalyzeGeocodeInput tool
+                              This value is the output from the analyze_geocode_input()
                               available on your server designated to geocode. It is important
                               to inspect the field mapping closely and adjust them accordingly
                               before submitting your job, otherwise your geocoding results may
                               not be accurate. It is recommended to use the output from
-                              AnalyzeGeocodeInput and modify the field mapping instead of
-                              constructing this JSON by hand.
+                              analyze_geocode_input() and modify the field mapping instead of
+                              constructing this dictionary by hand.
 
                               **Values**
 
@@ -780,6 +780,8 @@ def geocode_from_items(input_data,
         output_type = "CSV"
     if output_type.lower() == 'xlsx':
         output_type = 'XLS'
+    if output_type.lower() == "feature layer":
+        output_type = "Feature Service"
     if output_type not in ['CSV', 'XLS', "Feature Service"]:
         raise ValueError("Invalid output_type: %s" % output_type)
 
