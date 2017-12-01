@@ -117,9 +117,13 @@ def geocode_locations(input_layer,
     if isinstance(input_layer, str):
         input_layer = {'url' : input_layer}
     elif isinstance(input_layer, Item):
-        input_layer = {'url' : input_layer.layers[0]._url}
+        input_layer = input_layer.layers[0]._lyr_dict
+        if 'type' in input_layer:
+            input_layer.pop('type')
     elif isinstance(input_layer, Layer):
-        input_layer = {'url' : input_layer._url}
+        input_layer = input_layer._lyr_dict
+        if 'type' in input_layer:
+            input_layer.pop('type')
     elif isinstance(input_layer, dict) and \
          not "url" in input_layer:
         raise ValueError("Invalid Input: input_layer dictionary" + \
