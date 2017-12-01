@@ -271,6 +271,8 @@ def to_featureclass(df, out_name, out_location=None,
                 if isinstance(sr, dict) and \
                    'wkid' in sr:
                     sr = arcpy.SpatialReference(sr['wkid'])
+                elif isinstance(sr, arcpy.SpatialReference):
+                    sr = sr
                 else:
                     sr = None
             else:
@@ -331,8 +333,17 @@ def to_featureclass(df, out_name, out_location=None,
                col.lower() != 'shape' and \
                col.lower() not in existing_fields:
                 try:
-                    arcpy.AddField_management(in_table=fc, field_name=col,
-                                              field_type=_infer_type(df, col))
+                    t = _infer_type(df, col)
+                    if t == "TEXT" and out_name.lower().endswith('.shp') == False:
+                        l = int(df[col].str.len().max()) or 0
+                        if l < 255:
+                            l = 255
+                        arcpy.AddField_management(in_table=fc, field_name=col,
+                                                  field_length=l,
+                                                  field_type=_infer_type(df, col))
+                    else:
+                        arcpy.AddField_management(in_table=fc, field_name=col,
+                                              field_type=t)
                 except:
                     print('col %s' % col)
         icur = da.InsertCursor(fc, col_insert)
