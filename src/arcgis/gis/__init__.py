@@ -4830,7 +4830,7 @@ class Item(dict):
             folder = None
         return self._portal.delete_item(self.itemid, self.owner, folder)
 
-    def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
+    def update(self, item_properties=None, data=None, thumbnail=None, metadata=None, large_thumbnail=None):
         """ Updates an item in a Portal.
 
 
@@ -4857,6 +4857,8 @@ class Item(dict):
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
         metadata            Optional string. Either a path or URL to the metadata.
+        ---------------     --------------------------------------------------------------------
+        large_thumbnail     Optional string. Path to a large image file
         ===============     ====================================================================
 
 
@@ -4913,7 +4915,9 @@ class Item(dict):
                 if type(item_properties['tags']) is list:
                     item_properties['tags'] = ",".join(item_properties['tags'])
 
-        ret = self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
+        ret = self._portal.update_item(self.itemid, item_properties, data,
+                                       thumbnail, metadata, self.owner, folder,
+                                       large_thumbnail)
         if ret:
             self._hydrate()
         return ret
