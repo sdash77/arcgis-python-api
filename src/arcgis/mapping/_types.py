@@ -14,7 +14,7 @@ import arcgis.env
 from warnings import warn
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.geometry import SpatialReference, Polygon
-from arcgis.gis import Layer, _GISResource
+from arcgis.gis import Layer, _GISResource, Item
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
 _log = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ def _tempinput(data):
     yield temp.name
     os.unlink(temp.name)
 
+
 class SceneLayer(Layer):
     """
     The SceneSerice is represents a 3D service published on server.
@@ -39,6 +40,7 @@ class SceneLayer(Layer):
         :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
         """
         super(SceneLayer, self).__init__(url, gis)
+
 
 class WebMap(collections.OrderedDict):
     """
@@ -635,6 +637,231 @@ class WebMap(collections.OrderedDict):
         self._webmapdict['operationalLayers'].remove(layer)
         self._layers.remove(PropertyMap(layer))
 
+    @property
+    def offline_areas(self):
+        """
+        Resource manager for offline areas cached for the web map
+        :return:
+        """
+        return OfflineMapAreaManager(self.item, self._gis)
+
+
+class OfflineMapAreaManager(object):
+    """
+    Helper class to manage offline map areas attached to a web map item. Users do not instantiate this class directly,
+    instead, access the methods exposed by accessing the `offline_areas` property on the WebMap object.
+    """
+    def __init__(self, item, gis):
+        self._gis = gis
+        self._portal = gis._portal
+        self._item = item
+
+        # Get GP server url from helper services advertised by the GIS.
+        try:
+            self._url = self._gis.properties.helperServices.packaging.url
+        except Exception:
+            warn("GIS does not support creating packages for offline usage")
+
+    def create(self, area, title=None, snippet=None, tags=None, folder_name=None):
+        """
+        Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
+        different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
+        creates one or more map area packages corresponding to each layer type in the extent.
+
+        .. note::
+            - Offline map area functionality is only available if your GIS is ArcGIS Online.
+            - There can be only 1 map area item for an extent or bookmark.
+            - You need to be the owner of the web map or an administrator of your GIS.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        area                   Required object. You can specify the name of a web map bookmark or a
+                               desired extent.
+
+                               To get the bookmarks from a web map, query the `definition.bookmarks`
+                               property.
+
+                               You can specify the extent as a list or dictionary of 'xmin', 'ymin',
+                               'xmax', 'ymax' and spatial reference. If spatial reference is not
+                               specified, it is assumed to be 'wkid' : 4326.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Specify a title for the output map area item.
+        ------------------     --------------------------------------------------------------------
+        snippet                Optional string. Specify a description for the output map area item.
+        ------------------     --------------------------------------------------------------------
+        tags                   Optional string or list of strings. Specify tags for output map area item.
+        ------------------     --------------------------------------------------------------------
+        folder_name            Optional string. Specify a folder name if you want the offline map area
+                               item and the packages to be created inside a folder.
+        ==================     ====================================================================
+
+        .. note::
+            This method executes silently. To view informative status messages, set the verbosity environment variable
+            as shown below:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: setting verbosity
+
+               from arcgis import env
+               env.verbose = True
+
+        :return:
+            Item object for the offline map area item created.
+        """
+        # region find if bookmarks or extent is specified
+        _bookmark = None
+        _extent = None
+
+        if isinstance(area, str):  # bookmark specified
+            _bookmark = area
+        elif isinstance(area, list):  # extent specified as list
+            _extent = {'xmin': area[0][0],
+                       'ymin': area[0][1],
+                       'xmax': area[1][0],
+                       'ymax': area[1][1],
+                       'spatialReference':{'wkid': 4326}}
+
+        elif isinstance(area, dict) and 'xmin' in area:  # geocoded extent provided
+            _extent = area
+            if 'spatialReference' not in _extent:
+                _extent['spatialReference'] = {'wkid': 4326}
+        # endregion
+
+        # region build input parameters - for CreateMapArea tool
+        if folder_name:
+            user_folders = self._gis.users.me.folders
+            if user_folders:
+                matching_folder_ids = [f['id'] for f in user_folders if f['title'] == folder_name]
+                if matching_folder_ids:
+                    folder_id = matching_folder_ids[0]
+                else:  # said folder not found in user account
+                    folder_id = None
+            else:  # ignore the folder, output will be created in same folder as web map
+                folder_id = None
+        else:
+            folder_id = None
+
+        if tags:
+            if type(tags) is list:
+                tags = ",".join('tags')
+
+        output_name = {'title': title, 'snippet': snippet, 'tags': tags, 'folderId': folder_id}
+        # endregion
+
+        # region call CreateMapArea tool
+        from arcgis.geoprocessing._tool import Toolbox
+        pkg_tb = Toolbox(url=self._url, gis=self._gis)
+        oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
+        # endregion
+
+        # region call the SetupMapArea tool
+        setup_oma_result = pkg_tb.setup_map_area(oma_result)
+        # print(setup_oma_result)
+        _log.info(str(setup_oma_result))
+        # endregion
+        return Item(gis=self._gis, itemid=oma_result)
+
+    def update(self, offline_map_area_items=None):
+        """
+        Refreshes existing map area packages associated with the list of map area items specified.
+        This process updates the packages with changes made on the source data since the last time those packages were
+        created or refreshed.
+
+        .. note::
+            - Offline map area functionality is only available if your GIS is ArcGIS Online.
+            - You need to be the owner of the web map or an administrator of your GIS.
+
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        offline_map_area_items           Optional list. Specify one or more Map Area items for which the packages need
+                                         to be refreshed. If not specified, this method updates all the packages
+                                         associated with all the map area items of the web map.
+
+                                         To get the list of Map Area items related to the WebMap object, call the
+                                         `list()` method.
+        ============================     ====================================================================
+
+        .. note::
+            This method executes silently. To view informative status messages, set the verbosity environment variable
+            as shown below:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: setting verbosity
+
+               from arcgis import env
+               env.verbose = True
+
+        :return:
+            Dictionary containing update status.
+        """
+        # find if 1 or a list of area items is provided
+        if isinstance(offline_map_area_items, Item):
+            offline_map_area_items = [offline_map_area_items]
+        elif isinstance(offline_map_area_items, str):
+            offline_map_area_items = [offline_map_area_items]
+
+        # get packages related to the offline area item
+        _related_packages = []
+        if not offline_map_area_items:  # none specified
+            _related_oma_items = self.list()
+            for related_oma in _related_oma_items:  # get all offline packages for this web map
+                _related_packages.extend(related_oma.related_items('Area2Package', 'forward'))
+
+        else:
+            for offline_map_area_item in offline_map_area_items:
+                if isinstance(offline_map_area_item, Item):
+                    _related_packages.extend(offline_map_area_item.related_items('Area2Package', 'forward'))
+                elif isinstance(offline_map_area_item, str):
+                    offline_map_area_item = Item(gis=self._gis, itemid=offline_map_area_item)
+                    _related_packages.extend(offline_map_area_item.related_items('Area2Package', 'forward'))
+
+        # update each of the packages
+        if _related_packages:
+            _update_list = [{'itemId': i.id} for i in _related_packages]
+
+            # update the packages
+            from arcgis.geoprocessing._tool import Toolbox
+            pkg_tb = Toolbox(self._url, gis=self._gis)
+
+            result = pkg_tb.refresh_map_area_package(json.dumps(_update_list))
+            return result
+        else:
+            return None
+
+    def list(self):
+        """
+        Returns a list of Map Area items related to the current WebMap object.
+
+        .. note::
+            Map Area items and the corresponding offline packages cached for each share a relationship of type
+            'Area2Package'. You can use this relationship to get the list of package items cached for a particular Map
+            Area item. Refer to the Python snippet below for the steps:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: Finding packages cached for a Map Area item
+
+               from arcgis.mapping import WebMap
+               wm = WebMap(a_web_map_item_object)
+               all_map_areas = wm.offline_areas.list()  # get all the offline areas for that web map
+
+               area1 = all_map_areas[0]
+               area1_packages = area1.related_items('Area2Package','forward')
+
+               for pkg in area1_packages:
+                    print(pkg.homepage)  # get the homepage url for each package item.
+
+        :return:
+        """
+
+        _offline_areas = self._item.related_items('Map2Area', 'forward')
+        return _offline_areas
+
+
 class WebScene(collections.OrderedDict):
     """
     Represents a web scene and provides access to its basemaps and operational layers as well
@@ -663,6 +890,7 @@ class WebScene(collections.OrderedDict):
     def update(self):
         # with _tempinput(self.__str__()) as tempfilename:
         self.item.update({'text': self.__str__()})
+
 
 class VectorTileLayer(Layer):
 
@@ -725,6 +953,7 @@ class VectorTileLayer(Layer):
         params = {"f": "json"}
         return self._con.get(path=url,
                              params=params, token=self._token)
+
 
 class MapImageLayerManager(_GISResource):
     """ allows administration (if access permits) of ArcGIS Online hosted map image layers.
@@ -917,6 +1146,7 @@ class MapImageLayerManager(_GISResource):
             params['extent'] = extent
         url = self._url + "/deleteTiles"
         return self._con.post(url, params)
+
 
 class MapImageLayer(Layer):
     """
@@ -1985,4 +2215,3 @@ class MapImageLayer(Layer):
                         return gpRes['folders']
                 else:
                     return None
-
