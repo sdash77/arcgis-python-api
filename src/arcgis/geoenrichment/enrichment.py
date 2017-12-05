@@ -305,9 +305,20 @@ def enrich(study_areas,
               list FeatureSet objects when as_featureset=True,
               or a dictionary on error
     """
+    from arcgis.features import SpatialDataFrame, FeatureSet
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
+    if isinstance(study_areas, list):
+        pass
+    elif isinstance(study_areas, SpatialDataFrame):
+        if len(study_areas) > 100:
+            pass
+        else:
+            pass
+    elif isinstance(study_areas, FeatureSet):
+        sdf = FeatureSet.df
+
     return ge.enrich(study_areas=study_areas,
                       data_collections=data_collections,
                      analysis_variables=analysis_variables,
