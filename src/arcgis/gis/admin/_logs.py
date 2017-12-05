@@ -93,20 +93,33 @@ class Logs(BasePortalAdmin):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         start_time        required datetime/integer. The most recent time to query.
+
+                          Local date corresponding to the POSIX timestamp, such as is
+                          returned by time.time(). This may raise OverflowError, if the
+                          timestamp is out of the range of values supported by the
+                          platform. It's common for this to be restricted to years from
+                          1970 through 2038.
                           Time can be specified as a portal timestamp (format in
                           "%Y-%m-%dT%H:%M:%S") or in milliseconds since UNIX epoch. For
                           :Examples:
                           Datetime Object: datetime.datetime.now()
                           Timestamp: "2015-08-01T15:17:20,123"
-                          Milliseconds: 1312237040123
+                          Milliseconds: 1312237040.123
                           Default: datetime.datetime.now()
         ----------------  ---------------------------------------------------------------
         end_time          optional datetime/integer, The oldest time to include in the
                           result set. You can use this to limit the query to the last
                           number of minutes, hours, days, months, and years as needed.
+
+                          Local date corresponding to the POSIX timestamp, such as is
+                          returned by time.time(). This may raise OverflowError, if the
+                          timestamp is out of the range of values supported by the
+                          platform. It's common for this to be restricted to years from
+                          1970 through 2038.
+
                           Datetime Object: datetime.datetime.now()
                           Timestamp: "2015-08-01T15:17:20,123"
-                          Milliseconds: 1312237040123
+                          Milliseconds: 1312237040.123
                           Default: datetime.datetime.now()
         ----------------  ---------------------------------------------------------------
         level             optional string, Can be one of [OFF, SEVERE, WARNING, INFO,
