@@ -4830,7 +4830,7 @@ class Item(dict):
             folder = None
         return self._portal.delete_item(self.itemid, self.owner, folder)
 
-    def update(self, item_properties=None, data=None, thumbnail=None, metadata=None, large_thumbnail=None):
+    def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
         """ Updates an item in a Portal.
 
 
@@ -4857,8 +4857,6 @@ class Item(dict):
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
         metadata            Optional string. Either a path or URL to the metadata.
-        ---------------     --------------------------------------------------------------------
-        large_thumbnail     Optional string. Path to a large image file
         ===============     ====================================================================
 
 
@@ -4909,6 +4907,9 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
+
+        large_thumbnail = item_properties.pop("largeThumbnail",
+                                              None)
 
         if item_properties is not None:
             if 'tags' in item_properties:
