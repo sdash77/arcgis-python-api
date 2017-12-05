@@ -4965,7 +4965,7 @@ class Item(dict):
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
                                      'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                     'Service2Service', 'Survey2Service'])
+                                     'Service2Service', 'Survey2Service', 'Map2Area', 'Area2Package'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
@@ -4974,24 +4974,23 @@ class Item(dict):
         Retrieves the items related to this item. Relationsships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
 
-	===============     ====================================================================
-	**Argument**        **Description**
-	---------------     --------------------------------------------------------------------
-	rel_type            Required string.  The type of the related item; is one of
-	                    ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-	                    'Service2Data', 'Service2Service']. See Relationship types in
-	                    REST API help for more information on this parameter.
-	---------------     --------------------------------------------------------------------
-	direction           Required string. One of ['forward', 'reverse']
-	===============     ====================================================================
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rel_type            Required string.  The type of the related item; is one of
+                            ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
+                            'Service2Data', 'Service2Service']. See Relationship types in
+                            REST API help for more information on this parameter.
+        ---------------     --------------------------------------------------------------------
+        direction           Required string. One of ['forward', 'reverse']
+        ===============     ====================================================================
 
 
-	:return:
-	   The list of related items.
-	"""
+        :return:
+           The list of related items.
+        """
 
-
-        if not rel_type in self._RELATIONSHIP_TYPES:
+        if rel_type not in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
         if not direction in self._RELATIONSHIP_DIRECTIONS:
             raise Error('Unsupported direction: ' + direction)
