@@ -4908,12 +4908,17 @@ class Item(dict):
         except:
             folder = None
 
+        large_thumbnail = item_properties.pop("largeThumbnail",
+                                              None)
+
         if item_properties is not None:
             if 'tags' in item_properties:
                 if type(item_properties['tags']) is list:
                     item_properties['tags'] = ",".join(item_properties['tags'])
 
-        ret = self._portal.update_item(self.itemid, item_properties, data, thumbnail, metadata, self.owner, folder)
+        ret = self._portal.update_item(self.itemid, item_properties, data,
+                                       thumbnail, metadata, self.owner, folder,
+                                       large_thumbnail)
         if ret:
             self._hydrate()
         return ret

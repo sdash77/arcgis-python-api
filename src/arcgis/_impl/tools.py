@@ -3436,7 +3436,7 @@ class _GeoanalyticsTools(_AsyncService):
                        attribute_relationship=None,
                        join_condition=None,
                        out_sr=None,
-                      process_sr = None,
+                       process_sr = None,
                        out_extent=None,
                        datastore="GDB"):
         """
@@ -3461,7 +3461,8 @@ class _GeoanalyticsTools(_AsyncService):
         spatial_near_distance_unit : Optional string
             One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
         temporal_relationship : Optional string
-            One of the following: ['Equals', 'Intersects', 'During', 'Contains', 'Finishes', 'FinishedBy', 'Meets', 'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near']
+            One of the following: ['Equals', 'Intersects', 'During', 'Contains', 'Finishes', 'FinishedBy', 'Meets',
+            'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near', 'NearBefore', 'NearAfter']
         temporal_near_distance : Optional int
 
         temporal_near_distance_unit : Optional string
@@ -3480,7 +3481,6 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-
 
         Returns
         -------
@@ -3813,7 +3813,9 @@ class _GeoanalyticsTools(_AsyncService):
                            out_sr=None,
                            process_sr=None,
                            out_extent=None,
-                           datastore="GDB"):
+                           datastore="GDB",
+                           distance_split=None,
+                           distance_split_unit=None):
         """
 
 
@@ -3844,6 +3846,14 @@ class _GeoanalyticsTools(_AsyncService):
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
 
+        distance_split : Optional string.
+         A distance used to split tracks. Any features in the inputLayer that are in the same track
+         and are greater than this distance apart will be split into a new track. The units of the
+         distance values are supplied by the distance_split_unit parameter.
+
+        distance_split_unit : Optional string.
+         The distance unit to be used with the distance value specified in distance_split.
+         Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
 
         Returns
         -------
@@ -3866,6 +3876,12 @@ class _GeoanalyticsTools(_AsyncService):
             params["timeSplit"] = time_split
         if time_split_unit is not None:
             params["timeSplitUnit"] = time_split_unit
+
+        if distance_split is not None:
+            params["distanceSplit"] = distance_split
+
+        if distance_split_unit is not None:
+            params['distanceSplitUnit'] = distance_split_unit
 
         output_service = self._create_output_service(output_name, task)
 
