@@ -92,7 +92,7 @@ class Logs(BasePortalAdmin):
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        start_time        required datetime/integer. The most recent time to query.
+        start_time        required datetime/float. The most recent time to query.
 
                           Local date corresponding to the POSIX timestamp, such as is
                           returned by time.time(). This may raise OverflowError, if the
@@ -104,10 +104,10 @@ class Logs(BasePortalAdmin):
                           :Examples:
                           Datetime Object: datetime.datetime.now()
                           Timestamp: "2015-08-01T15:17:20,123"
-                          Milliseconds: 1312237040.123
+                          Milliseconds: 1312237040.123/time.time()
                           Default: datetime.datetime.now()
         ----------------  ---------------------------------------------------------------
-        end_time          optional datetime/integer, The oldest time to include in the
+        end_time          optional datetime/float, The oldest time to include in the
                           result set. You can use this to limit the query to the last
                           number of minutes, hours, days, months, and years as needed.
 
@@ -119,7 +119,7 @@ class Logs(BasePortalAdmin):
 
                           Datetime Object: datetime.datetime.now()
                           Timestamp: "2015-08-01T15:17:20,123"
-                          Milliseconds: 1312237040.123
+                          Milliseconds: 1312237040.123/time.time()
                           Default: datetime.datetime.now()
         ----------------  ---------------------------------------------------------------
         level             optional string, Can be one of [OFF, SEVERE, WARNING, INFO,
