@@ -100,7 +100,7 @@ class Logs(BasePortalAdmin):
                           platform. It's common for this to be restricted to years from
                           1970 through 2038.
                           Time can be specified as a portal timestamp (format in
-                          "%Y-%m-%dT%H:%M:%S") or in milliseconds since UNIX epoch. For
+                          "%Y-%m-%dT%H:%M:%S") or in seconds since UNIX epoch. For
                           :Examples:
                           Datetime Object: datetime.datetime.now()
                           Timestamp: "2015-08-01T15:17:20,123"
