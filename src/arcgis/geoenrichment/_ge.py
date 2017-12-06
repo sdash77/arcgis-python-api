@@ -382,7 +382,7 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(path=url, postdata=params)
         if 'reports' in res:
             if as_df:
-            return pd.DataFrame(res['reports'])
+                return pd.DataFrame(res['reports'])
             else:
                 return res['reports']
         return res
@@ -494,10 +494,7 @@ class _GeoEnrichment(object):
 
         :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
-        def _chunks(l, n):
-            """yield successive n-sized chunks from l."""
-            for i in range(0, len(l), n):
-                yield l[i:i + n]
+
         areas = []
         if isinstance(study_areas, list):
             #indexes = list(range(len(study_areas)))
