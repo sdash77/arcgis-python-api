@@ -4009,11 +4009,12 @@ class Item(dict):
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
-            if self._has_layers():
-                self.layers = None
-                self.tables = None
-                self['layers'] = None
-                self['tables'] = None
+            
+        if self._has_layers():
+            self.layers = None
+            self.tables = None
+            self['layers'] = None
+            self['tables'] = None
 
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
