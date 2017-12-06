@@ -567,7 +567,7 @@ def enrich(study_areas,
            # options=None, # can be specified in study_areas
            # use_data=None, # is only a 'performance hint'
            # in_sr=4326, # will use the sr from the geometry
-
+           # out_sr=4326, # will use arcgis.env.out_sr
            # suppress_nulls=False, # never
            # for_storage=True, # undocumented, not required
            # as_featureset=True, # always return df
@@ -589,22 +589,23 @@ def enrich(study_areas,
     =========================     ====================================================================
     **Argument**                  **Description**
     -------------------------     --------------------------------------------------------------------
-    study_areas                   Required list. This parameter is used to specify a list
-                                  of input features to be enriched.
+    study_areas                   Required list, FeatureSet or SpatialDataFrame containing the input
+                                  areas to be enriched.
 
-                                  Study areas can be street
-                                  addresses, points of interest, place names or other supported
-                                  locations as strings. Multiple field input addresses can be passed
-                                  as lists of dicts such as [{"address":{"Address":"380 New York St.",
+                                  study_areas can be a SpatialDataFrame, FeatureSet or a lists of the
+                                  following types:
+                                  * addresses, points of interest, place names or other
+                                  supported locations as strings.
+                                  * dicts such as [{"address":{"Address":"380 New York St.",
                                   "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                  "CountryCode":"USA"}}]. They can also be arcgis.gis.Geometry
-                                  instances. The method created 1-mile ring buffers around the points
-                                  to collect and append enrichment data. You can use BufferStudyArea
-                                  to change the ring buffer size or create drive-time service areas
-                                  around the points.
-
-                                  Additionally, standard geography areas are supported using NamedArea
-                                  instances, obtained using Country.subgeographies()/search(). When
+                                  "CountryCode":"USA"}}] for multiple field addresses
+                                  * arcgis.gis.Geometry instances
+                                  * BufferStudyArea instances. By default, one-mile ring
+                                  buffers are created around the points to collect and append
+                                  enrichment data. You can use BufferStudyArea to change the ring
+                                  buffer size or create drive-time service areas around the points.
+                                  * NamedArea instances to support standard geography. They are
+                                  obtained using Country.subgeographies()/search(). When
                                   the NamedArea instances should be combined together (union), a list
                                   of such NamedArea instances should constitute a study area in the
                                   list of requested study areas.
@@ -626,6 +627,9 @@ def enrich(study_areas,
                                   values that describe what derivative variables to include in the
                                   output. The list of accepted values includes:
                                   ['percent','index','average','all','*']
+    -------------------------     --------------------------------------------------------------------
+    comparison_levels             Optional list of layer IDs for which the intersecting
+                                  geographies should be geoenriched.
     -------------------------     --------------------------------------------------------------------
     intersecting_geographies      Optional parameter to explicitly define the geographic layers used
                                   to provide geographic context during the enrichment process. For
@@ -649,6 +653,9 @@ def enrich(study_areas,
 
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
+    import pandas as pd
+    from arcgis.features import SpatialDataFrame, FeatureSet
+
     def _chunks(l, n):
         """yield successive n-sized chunks from l."""
         for i in range(0, len(l), n):
@@ -658,17 +665,83 @@ def enrich(study_areas,
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
 
-    from arcgis.features import SpatialDataFrame, FeatureSet
-    from arcgis import env
-
-
+    areas = study_areas
     if isinstance(study_areas, FeatureSet):
-        study_areas = FeatureSet.df
+        areas = FeatureSet.df
+    elif isinstance(study_areas, dict): # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
+        areas = list(study_areas.values())
+        study_areas = areas
 
-    if isinstance(study_areas, (SpatialDataFrame, list)) and \
-       len(study_areas) > 100:
+    # convert to dict
+    # add comparison levels if any
+    # add buffer info - network, ring
+    if isinstance(areas, list):
+        areas = []
+        for area in study_areas:
+            area_dict = area
+            if isinstance(area, str): # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
+                area_dict = {'address': {'text': area}}
+            elif isinstance(area, dict): # pass through - user knows what they're sending
+                pass
+            elif isinstance(area, Geometry): # geometry, polygons, points
+                area_dict = {'geometry': dict(area)}
+            elif isinstance(area, BufferStudyArea):
+
+                # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
+                g = area.area
+                if isinstance(g, str):
+                    area_dict = {'address': {'text': g}}
+                elif isinstance(g, dict):
+                    area_dict = g
+                elif isinstance(g, Geometry):  # geometry, polygons, points
+                    area_dict = {'geometry': dict(g)}
+                else:
+                    raise ValueError('BufferStudyArea is only supported for Point geometry and addresses')
+
+                area_type = "RingBuffer"
+                if area.travel_mode is None:
+                    if not area.overlap:
+                        area_type = "RingBufferBands"
+                else:
+                    area_type = "NetworkServiceArea"
+
+                area_dict['areaType'] = area_type
+                area_dict['bufferUnits'] = area.units
+                area_dict['bufferRadii'] = area.radii
+                if area.travel_mode is not None:
+                    area_dict['travel_mode'] = area.travel_mode
+
+            elif isinstance(area, NamedArea): # named area
+                area_dict = area.__studyarea__
+            elif isinstance(area, list): # list of named areas, (union)
+                first_area = area[0]
+                ids = []
+                if isinstance(first_area, NamedArea):
+                    for namedarea in area:
+                        a = namedarea.__studyarea__
+                        if a['layer'] != first_area['layer'] or a['sourceCountry'] != first_area['sourceCountry']:
+                            raise ValueError('All NamedAreas in the list must have the same source country and level')
+                        ids.append(a['ids'])
+                    area_dict = {"sourceCountry": first_area['sourceCountry'], "layer": first_area['layer'], "ids":[ids.join(",")]}
+                else:
+                    raise ValueError('Lists members must be NamedArea instances')
+            else:
+                raise ValueError("Don't know how to handle study areas of type " + str(type(area)))
+
+            if comparison_levels is not None:
+                # add "comparisonLevels":[{"layer": "Admin2"}, {"layer": "Admin3"}]}]
+                layers = []
+                for level in comparison_levels:
+                    layers.append({'layer': level})
+
+                area_dict['comparisonLevels'] = layers
+
+            areas.append(area_dict)
+
+    # chunking if len > 100
+    if isinstance(areas, (SpatialDataFrame, list)) and len(areas) > 100:
         parts = []
-        for chunk in _chunks(l=study_areas, n=100):
+        for chunk in _chunks(l=areas, n=100):
             parts.append(ge.enrich(study_areas=chunk,
                                    data_collections=data_collections,
                                    analysis_variables=analysis_variables,
@@ -683,20 +756,12 @@ def enrich(study_areas,
                                    #for_storage=for_storage,
                                    as_featureset=False))
             del chunk
-        if isinstance(study_areas, SpatialDataFrame):
-            import pandas as pd
-            df = pd.concat(parts)
-            df.reset_index(inplace=True, drop=True)
-            return df
-        else:
-            ps = []
-            for part in ps:
-                ps += part
-            return ps
-    elif isinstance(study_areas, (list, tuple)) == False:
-        study_areas = [study_areas]
 
-    return ge.enrich(study_areas=study_areas,
+        df = pd.concat(parts)
+        df.reset_index(inplace=True, drop=True)
+        return df
+    # no chunking, len < 100, or FeatureSet
+    return ge.enrich(study_areas=areas,
                       data_collections=data_collections,
                      analysis_variables=analysis_variables,
                      add_derivative_variables=add_derivative_variables,
@@ -708,7 +773,7 @@ def enrich(study_areas,
                      out_sr=env.out_spatial_reference,
                      #suppress_nulls=suppress_nulls,
                      #for_storage=for_storage,
-                     as_featureset=False
+                     #as_featureset=as_featureset
                      )
 #----------------------------------------------------------------------
 def _find_report(country, gis=None):
