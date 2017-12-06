@@ -382,7 +382,7 @@ class _GeoEnrichment(object):
         res = self._gis._con.post(path=url, postdata=params)
         if 'reports' in res:
             if as_df:
-            return pd.DataFrame(res['reports'])
+                return pd.DataFrame(res['reports'])
             else:
                 return res['reports']
         return res

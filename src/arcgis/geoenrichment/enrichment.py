@@ -567,7 +567,7 @@ def enrich(study_areas,
            # options=None, # can be specified in study_areas
            # use_data=None, # is only a 'performance hint'
            # in_sr=4326, # will use the sr from the geometry
-           # out_sr=4326, # will use arcgis.env.out_sr
+
            # suppress_nulls=False, # never
            # for_storage=True, # undocumented, not required
            # as_featureset=True, # always return df
@@ -659,6 +659,8 @@ def enrich(study_areas,
     ge = _GeoEnrichment(gis=gis)
 
     from arcgis.features import SpatialDataFrame, FeatureSet
+    from arcgis import env
+
 
     if isinstance(study_areas, FeatureSet):
         study_areas = FeatureSet.df
@@ -671,15 +673,15 @@ def enrich(study_areas,
                                    data_collections=data_collections,
                                    analysis_variables=analysis_variables,
                                    add_derivative_variables=add_derivative_variables,
-                                   options=options,
-                                   use_data=use_data,
+                                   #options=options,
+                                   #use_data=use_data,
                                    intersecting_geographies=intersecting_geographies,
                                    return_geometry=return_geometry,
-                                   in_sr=in_sr,
-                                   out_sr=out_sr,
-                                   suppress_nulls=suppress_nulls,
-                                   for_storage=for_storage,
-                                   as_featureset=as_featureset))
+                                   #in_sr=in_sr,
+                                   out_sr=env.out_spatial_reference,
+                                   #suppress_nulls=suppress_nulls,
+                                   #for_storage=for_storage,
+                                   as_featureset=False))
             del chunk
         if isinstance(study_areas, SpatialDataFrame):
             import pandas as pd
@@ -706,7 +708,7 @@ def enrich(study_areas,
                      out_sr=env.out_spatial_reference,
                      #suppress_nulls=suppress_nulls,
                      #for_storage=for_storage,
-                     #as_featureset=as_featureset
+                     as_featureset=False
                      )
 #----------------------------------------------------------------------
 def _find_report(country, gis=None):
