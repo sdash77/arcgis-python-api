@@ -305,9 +305,51 @@ def enrich(study_areas,
               list FeatureSet objects when as_featureset=True,
               or a dictionary on error
     """
+    def _chunks(l, n):
+        """yield successive n-sized chunks from l."""
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
+
+    from arcgis.features import SpatialDataFrame, FeatureSet
+
+    if isinstance(study_areas, FeatureSet):
+        study_areas = FeatureSet.df
+
+    if isinstance(study_areas, (SpatialDataFrame, list)) and \
+       len(study_areas) > 100:
+        parts = []
+        for chunk in _chunks(l=study_areas, n=100):
+            parts.append(ge.enrich(study_areas=chunk,
+                                   data_collections=data_collections,
+                                   analysis_variables=analysis_variables,
+                                   add_derivative_variables=add_derivative_variables,
+                                   options=options,
+                                   use_data=use_data,
+                                   intersecting_geographies=intersecting_geographies,
+                                   return_geometry=return_geometry,
+                                   in_sr=in_sr,
+                                   out_sr=out_sr,
+                                   suppress_nulls=suppress_nulls,
+                                   for_storage=for_storage,
+                                   as_featureset=as_featureset))
+            del chunk
+        if isinstance(study_areas, SpatialDataFrame):
+            import pandas as pd
+            df = pd.concat(parts)
+            df.reset_index(inplace=True, drop=True)
+            return df
+        else:
+            ps = []
+            for part in ps:
+                ps += part
+            return ps
+    elif isinstance(study_areas, (list, tuple)) == False:
+        study_areas = [study_areas]
+
     return ge.enrich(study_areas=study_areas,
                       data_collections=data_collections,
                      analysis_variables=analysis_variables,

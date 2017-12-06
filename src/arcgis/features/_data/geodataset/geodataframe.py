@@ -976,7 +976,11 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 elif 'wkt' in sr:
                     sr = sr['wkt']
         import json
-        if HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
+        gtypes = frame.geometry.apply(lambda x: type(x)).unique()
+        if len(gtypes) == 1 and \
+           gtypes[0] in [_types.Point, _types.Polygon, _types.Polyline]:
+            pass
+        elif HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
             for idx, g in frame.geometry.iteritems():
                 if isinstance(g, arcpy.Point):
                     g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))
