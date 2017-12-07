@@ -2,7 +2,7 @@
 
 [ **A powerful Python library for spatial analysis, mapping and GIS** ](https://developers.arcgis.com/python/)
 
-arcGIS API for Python (codenamed Geosaurus) is a Python library for working with maps and geospatial data. It provides simple and efficient tools for sophisticated vector and raster analysis, geocoding, map making, routing and directions, as well as for organizing and managing a GIS with users, groups and information items. In addition to working with your own data, the library enables access to ready to use maps and curated geographic data from Esri and other autorotative sources. It also integrates well with the scientific Python ecosystem and includes rich support for Pandas and Jupyter notebook.
+ArcGIS API for Python (codenamed Geosaurus) is a Python library for working with maps and geospatial data. It provides simple and efficient tools for sophisticated vector and raster analysis, geocoding, map making, routing and directions, as well as for organizing and managing a GIS with users, groups and information items. In addition to working with your own data, the library enables access to ready to use maps and curated geographic data from Esri and other autorotative sources. It also integrates well with the scientific Python ecosystem and includes rich support for Pandas and Jupyter notebook.
 
 Geosaurus is a comprehensive GIS expressed in Python.  A GIS is a container of geographic information with associated:
 * Configurable (schema driven) information model for all sorts of geographic datasets and information items
