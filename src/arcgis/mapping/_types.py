@@ -10,10 +10,13 @@ from re import search
 
 import arcgis.features
 import arcgis.gis
+import arcgis.env
+from warnings import warn
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.geometry import SpatialReference, Polygon
-from arcgis.gis import Layer, _GISResource
-
+from arcgis.gis import Layer, _GISResource, Item
+from uuid import uuid4 #unique ids for layers in web map
+import datetime
 _log = logging.getLogger(__name__)
 
 
@@ -24,6 +27,7 @@ def _tempinput(data):
     temp.close()
     yield temp.name
     os.unlink(temp.name)
+
 
 class SceneLayer(Layer):
     """
@@ -37,25 +41,64 @@ class SceneLayer(Layer):
         """
         super(SceneLayer, self).__init__(url, gis)
 
+
 class WebMap(collections.OrderedDict):
     """
-    Represents a webmap and provides access to it's basemaps and operational layers as well
+    Represents a web map item and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
     http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/
     """
 
-    def __init__(self, webmapitem):
+    def __init__(self, webmapitem=None):
         """
-        Constructs a Webmap object given it's item from ArcGIS Online or Portal.
+        Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on 
+        ArcGIS Online or Enterprise.
         """
-        if webmapitem.type.lower() != 'web map':
-            raise TypeError("item type must be web map")
-        self.item = webmapitem
-        self._gis = webmapitem._gis
-        self._con = self._gis._con
-        webmapdict = self.item.get_data()
-        collections.OrderedDict.__init__(self, webmapdict)
-        # dict.update(webmapdict)
+        if webmapitem:
+            if webmapitem.type.lower() != 'web map':
+                raise TypeError("item type must be web map")
+            self.item = webmapitem
+            self._gis = webmapitem._gis
+            self._con = self._gis._con
+            self._webmapdict = self.item.get_data()
+            pmap = PropertyMap(self._webmapdict)
+            self.definition = pmap
+            self._layers = None
+            self._basemap = None
+            self._extent = self.item.extent
+
+        else:
+            #defualt spatial ref for current web map
+            self._default_spatial_reference = {'wkid':102100,
+                                               'latestWkid':3857}
+
+            #pump in a simple, default webmap dict - no layers yet, just basemap
+            self._basemap = {
+                            'baseMapLayers':[{'id':'defaultBasemap',
+                                              'layerType':'ArcGISTiledMapServiceLayer',
+                                              'url':'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer',
+                                              'visibility':True,
+                                              'opacity':1,
+                                              'title':'World Topographic Map'
+                                              }],
+                            'title':'Topographic'
+                            }
+            self._webmapdict = {'baseMap':self._basemap,
+            'spatialReference':self._default_spatial_reference,
+            'version':'2.10',
+            'authoringApp': 'ArcGISPythonAPI',
+            'authoringAppVersion': str(arcgis.__version__),
+            }
+            pmap = PropertyMap(self._webmapdict)
+            self.definition = pmap
+            self._gis = arcgis.env.active_gis
+            if self._gis: #you can also have a case where there is no GIS obj
+                self._con = self._gis._con
+            else:
+                self._con = None
+            self.item = None
+            self._layers = []
+            self._extent = []
 
     # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
@@ -70,20 +113,764 @@ class WebMap(collections.OrderedDict):
     def __str__(self):
         return json.dumps(self)
 
-    def update(self):
-        # with _tempinput(self.__str__()) as tempfilename:
-        self.item.update({'text': self.__str__()})
+    def add_layer(self, layer, options=None):
+        """
+        Adds the given layer to the WebMap.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer                  Required object. You can add any Layer objects such as FeatureLayer, MapImageLayer,
+                               ImageryLayer etc. You can also add Item objects and FeatureSet and FeatureCollections.
+        ------------------     --------------------------------------------------------------------
+        options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
+                               for the layer that is added. If not specified, appropriate defaults are applied.
+        ==================     ====================================================================
+
+        .. code-block:: python  (optional)
+
+           USAGE EXAMPLE: Add feature layer and map image layer item objects to the WebMap object.
+
+           crime_fl_item = gis.content.search("2012 crime")[0]
+           streets_item = gis.content.search("LA Streets","Map Service")[0]
+
+           wm = WebMap()  # create an empty web map with a default basemap
+           wm.add_layer(streets_item)
+           wm.add_layer(fl_item, {'title':'2012 crime in LA city',
+                                  'opacity':0.5,
+                                  'visibility':False})
+
+        :return:
+            True if layer was successfully added. Else, raises appropriate exception.
+        """
+        #region extact basic info from options
+        title = options['title'] if options and 'title' in options else None
+        opacity = options['opacity'] if options and 'opacity' in options else 1
+        visibility = options['visibility'] if options and 'visibility' in options else True
+        layer_spatial_ref = options['spatialReference'] if options and 'spatialReference' in options else None
+        popup = options['popup'] if options and 'popup' in options else None  # from draw method
+        item_id = None
+        #endregion
+
+        #region extract rendering info from options
+        # info for feature layers
+        definition_expression = options['definition_expression'] if options and 'definition_expression' in options else None
+        renderer = options['renderer'] if options and 'renderer' in options else None
+        renderer_field = options['field_name'] if options and 'field_name' in options else None
+        self._extent = options['extent'] if options and 'extent' in options else self._extent #from map widget
+        fset_symbol = options['symbol'] if options and 'symbol' in options else None  # from draw method
+
+        # info for raster layers
+        image_service_parameters = options['imageServiceParameters'] \
+            if options and 'imageServiceParameters' in options else None
+
+        #endregion
+
+        #region infer layer type
+        layer_type = None
+        if isinstance(layer, Layer) or isinstance(layer, arcgis.features.FeatureSet):
+            if hasattr(layer, 'properties'):
+                if hasattr(layer.properties, 'name'):
+                    title = layer.properties.name if title is None else title
+
+                #find layer type
+                if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(layer, arcgis.features.FeatureCollection) \
+                        or isinstance(layer, arcgis.features.FeatureSet):
+                    layer_type = 'ArcGISFeatureLayer'
+                elif isinstance(layer, arcgis.raster.ImageryLayer):
+                    layer_type='ArcGISImageServiceLayer'
+                    #todo : get renderer info
+
+                elif isinstance(layer, arcgis.mapping.MapImageLayer):
+                    layer_type='ArcGISMapServiceLayer'
+                elif isinstance(layer, arcgis.mapping.VectorTileLayer):
+                    layer_type='VectorTileLayer'
+                elif isinstance(layer, arcgis.realtime.StreamLayer):
+                    layer_type='ArcGISStreamLayer'
+
+                if hasattr(layer.properties, 'serviceItemId'):
+                    item_id = layer.properties.serviceItemId
+            elif isinstance(layer, arcgis.features.FeatureSet):
+                layer_type = 'ArcGISFeatureLayer'
+        elif isinstance(layer, arcgis.gis.Item):
+            #set the item's extent
+            if not self._extent:
+                self._extent = layer.extent
+            if hasattr(layer, 'layers'):
+                if layer.type == 'Feature Collection':
+                    options['serviceItemId'] = layer.itemid
+
+                for lyr in layer.layers:  # recurse - works for all.
+                    self.add_layer(lyr, options)
+                return True  # end add_layer execution after iterating through each layer.
+            else:
+                raise TypeError('Item object without layers is not supported')
+        elif isinstance(layer, arcgis.features.FeatureLayerCollection):
+            if not self._extent:
+                if hasattr(layer.properties, 'fullExtent'):
+                    self._extent = layer.properties.fullExtent
+            if hasattr(layer, 'layers'):
+                for lyr in layer.layers:  # recurse
+                    self.add_layer(lyr, options)
+                return True
+            else:
+                raise TypeError('FeatureLayerCollection object without layers is not supported')
+        else:
+            raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
+                                'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')
+        #endregion
+
+        # region create the new layer dict in memory
+        new_layer = {'title':title,
+                     'opacity':opacity,
+                     'visibility':visibility,
+                     'id':uuid4().__str__()}
+
+        # if renderer info is available, then write layer definition
+        layer_definition = {'definitionExpression':definition_expression}
+
+        if renderer:
+            layer_definition['drawingInfo'] = {'renderer':renderer}
+        new_layer['layerDefinition'] = layer_definition
+
+        if layer_type:
+            new_layer['layerType'] = layer_type
+
+        if item_id:
+            new_layer['itemId'] = item_id
+
+        if hasattr(layer, 'url'):
+            new_layer['url'] = layer.url
+        elif isinstance(layer, arcgis.features.FeatureCollection): #feature collection item on web GIS
+            if 'serviceItemId' in options:
+                # if ItemId is found, then type is fc and insert item id. Else, leave the type as ArcGISFeatureLayer
+                new_layer['type'] = "Feature Collection"
+                new_layer['itemId'] = options['serviceItemId']
+            elif hasattr(layer, 'properties'):
+                if hasattr(layer.properties, 'layerDefinition'):
+                    if hasattr(layer.properties.layerDefinition, 'serviceItemId'):
+                        new_layer['type'] = 'Feature Collection'  # if ItemId is found, then type is fc and insert item id
+                        new_layer['itemId'] = layer.properties.layerDefinition.serviceItemId
+
+        if layer_type == 'ArcGISImageServiceLayer':
+            #find if raster functions are available
+            if 'options' in layer._lyr_json:
+                if isinstance(layer._lyr_json['options'], str): #sometimes the rendering info is a string
+                    #load json
+                    layer_options = json.loads(layer._lyr_json['options'])
+                else:
+                    layer_options = layer._lyr_json['options']
+
+                if 'imageServiceParameters' in layer_options:
+                    #get renderingRule and mosaicRule
+                    new_layer.update(layer_options['imageServiceParameters'])
+
+            #if custom rendering rule is passed, then overwrite this
+            if image_service_parameters:
+                new_layer['renderingRule'] = image_service_parameters['renderingRule']
+
+        # inmem FeatureCollection
+        if isinstance(layer, arcgis.features.FeatureCollection):
+            fc_layer_definition = dict(layer.properties.layerDefinition)
+            if 'title' not in fc_layer_definition:
+                fc_layer_definition['title'] = title
+
+            fc_feature_set = dict(layer.properties.featureSet)
+
+            new_layer['featureCollection'] = {
+                'layers':[
+                    {'featureSet':fc_feature_set,
+                     'layerDefinition':fc_layer_definition
+                }]
+            }
+
+        # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
+        if isinstance(layer, arcgis.features.FeatureSet):
+            if not layer_spatial_ref:
+                if hasattr(layer, 'spatial_reference'):
+                    layer_spatial_ref = layer.spatial_reference
+                else:
+                    layer_spatial_ref = self._default_spatial_reference
+
+            fset_dict = layer.to_dict()
+            fc_layer_definition = {'geometryType':fset_dict['geometryType'],
+                                   'fields':fset_dict['fields'],
+                                   'objectIdField':layer.object_id_field_name,
+                                   'type':'Feature Layer',
+                                   'spatialReference':layer_spatial_ref,
+                                   'name':title}
+
+            #region set up default symbols if one is not available.
+            if not fset_symbol:
+                if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
+                    fset_symbol = {"color":[0,0,0,255],
+                                   "width": 1.33,
+                                   "type": "esriSLS",
+                                   "style": "esriSLSSolid"}
+                elif fc_layer_definition['geometryType'] in ['esriGeometryPolygon','esriGeometryEnvelope']:
+                    fset_symbol={"color": [0,0,0,64],
+                                 "outline": {
+                                     "color": [0,0,0,255],
+                                     "width": 1.33,
+                                     "type": "esriSLS",
+                                     "style": "esriSLSSolid"},
+                                 "type": "esriSFS",
+                                 "style": "esriSFSSolid"}
+                elif fc_layer_definition['geometryType'] in ['esriGeometryPoint', 'esriGeometryMultipoint']:
+                    fset_symbol={"angle": 0,
+                                 "xoffset": 0,
+                                 "yoffset": 12,
+                                 "type": "esriPMS",
+                                 "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                                 "contentType": "image/png",
+                                 "width": 32,
+                                 "height": 32}
+            #endregion
+
+            #insert symbol into the layerDefinition of featureCollection - pro style
+            if renderer:
+                fc_layer_definition['drawingInfo'] = {'renderer':renderer}
+            else: #use simple, default renderer
+                fc_layer_definition['drawingInfo'] = {'renderer': {
+                    'type':'simple',
+                    'symbol':fset_symbol
+                    }
+                }
+
+            new_layer['featureCollection'] = {
+                'layers':[
+                    {'featureSet':{'geometryType':fset_dict['geometryType'],
+                                   'features':fset_dict['features']},
+                     'layerDefinition':fc_layer_definition
+                }]
+            }
+        #endregion
+
+        # region Process popup info
+        if layer_type in ['ArcGISFeatureLayer', 'ArcGISImageServiceLayer', 'Feature Collection']:  # supports popup
+            popup = {'title': title,
+                     'fieldInfos': [],
+                     'description': None,
+                     'showAttachments': True,
+                     'mediaInfos': []}
+
+            fields_list = []
+            if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(layer, arcgis.raster.ImageryLayer):
+                if hasattr(layer.properties, 'fields'):
+                    fields_list = layer.properties.fields
+            elif isinstance(layer, arcgis.features.FeatureSet):
+                if hasattr(layer, 'fields'):
+                    fields_list = layer.fields
+            elif isinstance(layer, arcgis.features.FeatureCollection):
+                if hasattr(layer.properties, 'layerDefinition'):
+                    if hasattr(layer.properties.layerDefinition, 'fields'):
+                        fields_list = layer.properties.layerDefinition.fields
+
+            for f in fields_list:
+                if isinstance(f, dict) or isinstance(f, PropertyMap):
+                    field_dict = {'fieldName': f['name'],
+                                  'label': f['alias'] if 'alias' in f else f['name'],
+                                  'isEditable': f['editable'] if 'editable' in f else True,
+                                  'visible': True}
+                elif isinstance(f, str):  # some layers are saved with fields that are just a list of strings
+                    field_dict = {'fieldName': f,
+                                  'label': f,
+                                  'isEditable': True,
+                                  'visible': True}
+                if field_dict:
+                    popup['fieldInfos'].append(field_dict)
+        else:
+            popup = None
+
+        if popup:
+            if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(layer, arcgis.raster.ImageryLayer):
+                new_layer['popupInfo'] = popup
+            elif isinstance(layer, arcgis.features.FeatureSet) or isinstance(layer, arcgis.features.FeatureCollection):
+                new_layer['featureCollection']['layers'][0]['popupInfo'] = popup
+
+        # endregion
+
+        # region add layers to operationalLayers
+        if 'operationalLayers' not in self._webmapdict.keys():
+            # there no layers yet, create one here
+            self._webmapdict['operationalLayers'] = [new_layer]
+            self.definition = PropertyMap(self._webmapdict)
+        else:
+            # there are operational layers, just append to it
+            self._webmapdict['operationalLayers'].append(new_layer)
+            self.definition = (PropertyMap(self._webmapdict))
+        # endregion
+
+        # update layers
+        self._layers.append(PropertyMap(new_layer))
+        return True
+
+    def _process_extent(self):
+        """
+        internal method to transform extent to a string of xmin, ymin, xmax, ymax
+        If extent is not in wgs84, it projects
+        :return: 
+        """
+        if isinstance(self._extent, list):
+            #passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
+            extent_list = [element for sublist in self._extent for element in sublist]
+
+            #convert to string
+            return ','.join(str(e) for e in extent_list)
+
+        elif isinstance(self._extent, dict):
+            #passed from MapView.extent
+            if 'spatialReference' in self._extent:
+                if 'latestWkid' in self._extent['spatialReference']:
+                    if self._extent['spatialReference']['latestWkid'] != 4326:
+                        #use geometry service to project
+                        input_geom = [{'x':self._extent['xmin'], 'y':self._extent['ymin']},
+                                      {'x':self._extent['xmax'], 'y':self._extent['ymax']}]
+
+                        result = arcgis.geometry.project(input_geom,
+                                                         in_sr=self._extent['spatialReference']['latestWkid'],
+                                                         out_sr=4326)
+
+                        #process and return the result
+                        e = [result[0]['x'],result[0]['y'],result[1]['x'],result[1]['y']]
+                        return ','.join(str(i) for i in e)
+
+            #case when there is no spatialReference. Then simply extract the extent
+            if 'xmin' in self._extent:
+                e = self._extent
+                e= [e['xmin'], e['ymin'],e['xmax'],e['ymax']]
+                return ','.join(str(i) for i in e)
+
+        #if I don't know how to process the extent.
+        return self._extent
+
+    def save(self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None):
+        """
+        Save the WebMap object into a new web map Item in your GIS.
+
+        .. note::
+            If you started out with a fresh WebMap object, use this method to save it as a the web map item in your GIS.
+
+            If you started with a WebMap object from an existing web map item, calling this method will create a new item
+            with your changes. If you want to update the existing web map item with your changes, call the `update()`
+            method instead.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ---------------     --------------------------------------------------------------------
+        owner               Optional string. Defaults to the logged in user.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Name of the folder where placing item.
+        ===============     ====================================================================
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        -----------------  ---------------------------------------------------------------------
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                           or not allowed (false).
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Language and country information.
+        =================  =====================================================================
+
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+
+        :return:
+            Item object corresponding to the new web map Item created.
+        """
+
+        item_properties['type'] = 'Web Map'
+        item_properties['extent'] = self._process_extent()
+        item_properties['text'] = json.dumps(self._webmapdict)
+
+        if 'title' not in item_properties or 'snippet' not in item_properties or 'tags' not in item_properties:
+            raise RuntimeError("title, snippet and tags are required in item_properties dictionary")
+
+        new_item = self._gis.content.add(item_properties, thumbnail=thumbnail, metadata=metadata, owner=owner,
+                                         folder=folder)
+        if not hasattr(self, 'item'):
+            self.item = new_item
+
+        return new_item
+
+    def update(self, item_properties=None, thumbnail=None, metadata=None):
+        """
+        Updates the web map item in your GIS with the changes you made to the WebMap object. In addition, you can update
+        other item properties, thumbnail and metadata.
+
+        .. note::
+            If you started with a WebMap object from an existing web map item, calling this method will update the item
+            with your changes.
+
+            If you started out with a fresh WebMap object (without a web map item), calling this method will raise a
+            RuntimeError exception. If you want to save the WebMap object into a new web map item, call the `save()`
+            method instead.
+
+            For item_properties, pass in arguments for only the properties you want to be updated.
+            All other properties will be untouched.  For example, if you want to update only the
+            item's description, then only provide the description argument in item_properties.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Optional dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ===============     ====================================================================
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        -----------------  ---------------------------------------------------------------------
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                           or not allowed (false).
+        =================  =====================================================================
+
+        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+
+        :return:
+           A boolean indicating success (True) or failure (False).
+        """
+
+        if self.item is not None:
+            item_properties['text'] = json.dumps(self._webmapdict)
+            item_properties['extent'] = self._process_extent()
+            if 'type' in item_properties:
+                item_properties.pop('type')  # type should not be changed.
+            return self.item.update({'text': json.dumps(self._webmapdict), 'extent':self._process_extent()})
+        else:
+            raise RuntimeError('Item object missing, you should use `save()` method if you are creating a '
+                               'new web map item')
+
+    @property
+    def layers(self):
+        """
+        Operational layers in the web map
+        :return: List of Layer objects
+        """
+        if self._layers is not None:
+            return self._layers
+        else:
+            self._layers = []
+            if 'operationalLayers' in self._webmapdict.keys():
+                for l in self._webmapdict['operationalLayers']:
+                    self._layers.append(PropertyMap(l))
+
+            #reverse the layer list - webmap viewer reverses the list always
+            self._layers.reverse()
+            return self._layers
+
+    @property
+    def basemap(self):
+        """
+        Base map layers in the web map
+        :return: List of layer objects
+        """
+        if self._basemap:
+            return PropertyMap(self._basemap)
+        else:
+            if "baseMap" in self._webmapdict.keys():
+                self._basemap = self._webmapdict['baseMap']
+            return PropertyMap(self._basemap)
+
+    def remove_layer(self, layer):
+        """
+        Removes the specified layer from the web map. You can get the list of layers in map using the 'layers' property
+        and pass one of those layers to this method for removal form the map.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer                  Required object. Pass the layer that needs to be removed from the map. You can get the
+                               list of layers in the map by calling the `layers` property.
+        ==================     ====================================================================
+        """
+
+        self._webmapdict['operationalLayers'].remove(layer)
+        self._layers.remove(PropertyMap(layer))
+
+    @property
+    def offline_areas(self):
+        """
+        Resource manager for offline areas cached for the web map
+        :return:
+        """
+        return OfflineMapAreaManager(self.item, self._gis)
+
+
+class OfflineMapAreaManager(object):
+    """
+    Helper class to manage offline map areas attached to a web map item. Users do not instantiate this class directly,
+    instead, access the methods exposed by accessing the `offline_areas` property on the WebMap object.
+    """
+    def __init__(self, item, gis):
+        self._gis = gis
+        self._portal = gis._portal
+        self._item = item
+
+        # Get GP server url from helper services advertised by the GIS.
+        try:
+            self._url = self._gis.properties.helperServices.packaging.url
+        except Exception:
+            warn("GIS does not support creating packages for offline usage")
+
+    def create(self, area, title=None, snippet=None, tags=None, folder_name=None):
+        """
+        Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
+        different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
+        creates one or more map area packages corresponding to each layer type in the extent.
+
+        .. note::
+            - Offline map area functionality is only available if your GIS is ArcGIS Online.
+            - There can be only 1 map area item for an extent or bookmark.
+            - You need to be the owner of the web map or an administrator of your GIS.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        area                   Required object. You can specify the name of a web map bookmark or a
+                               desired extent.
+
+                               To get the bookmarks from a web map, query the `definition.bookmarks`
+                               property.
+
+                               You can specify the extent as a list or dictionary of 'xmin', 'ymin',
+                               'xmax', 'ymax' and spatial reference. If spatial reference is not
+                               specified, it is assumed to be 'wkid' : 4326.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Specify a title for the output map area item.
+        ------------------     --------------------------------------------------------------------
+        snippet                Optional string. Specify a description for the output map area item.
+        ------------------     --------------------------------------------------------------------
+        tags                   Optional string or list of strings. Specify tags for output map area item.
+        ------------------     --------------------------------------------------------------------
+        folder_name            Optional string. Specify a folder name if you want the offline map area
+                               item and the packages to be created inside a folder.
+        ==================     ====================================================================
+
+        .. note::
+            This method executes silently. To view informative status messages, set the verbosity environment variable
+            as shown below:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: setting verbosity
+
+               from arcgis import env
+               env.verbose = True
+
+        :return:
+            Item object for the offline map area item created.
+        """
+        # region find if bookmarks or extent is specified
+        _bookmark = None
+        _extent = None
+
+        if isinstance(area, str):  # bookmark specified
+            _bookmark = area
+        elif isinstance(area, list):  # extent specified as list
+            _extent = {'xmin': area[0][0],
+                       'ymin': area[0][1],
+                       'xmax': area[1][0],
+                       'ymax': area[1][1],
+                       'spatialReference':{'wkid': 4326}}
+
+        elif isinstance(area, dict) and 'xmin' in area:  # geocoded extent provided
+            _extent = area
+            if 'spatialReference' not in _extent:
+                _extent['spatialReference'] = {'wkid': 4326}
+        # endregion
+
+        # region build input parameters - for CreateMapArea tool
+        if folder_name:
+            user_folders = self._gis.users.me.folders
+            if user_folders:
+                matching_folder_ids = [f['id'] for f in user_folders if f['title'] == folder_name]
+                if matching_folder_ids:
+                    folder_id = matching_folder_ids[0]
+                else:  # said folder not found in user account
+                    folder_id = None
+            else:  # ignore the folder, output will be created in same folder as web map
+                folder_id = None
+        else:
+            folder_id = None
+
+        if tags:
+            if type(tags) is list:
+                tags = ",".join('tags')
+
+        output_name = {'title': title, 'snippet': snippet, 'tags': tags, 'folderId': folder_id}
+        # endregion
+
+        # region call CreateMapArea tool
+        from arcgis.geoprocessing._tool import Toolbox
+        pkg_tb = Toolbox(url=self._url, gis=self._gis)
+        oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
+        # endregion
+
+        # region call the SetupMapArea tool
+        setup_oma_result = pkg_tb.setup_map_area(oma_result)
+        # print(setup_oma_result)
+        _log.info(str(setup_oma_result))
+        # endregion
+        return Item(gis=self._gis, itemid=oma_result)
+
+    def update(self, offline_map_area_items=None):
+        """
+        Refreshes existing map area packages associated with the list of map area items specified.
+        This process updates the packages with changes made on the source data since the last time those packages were
+        created or refreshed.
+
+        .. note::
+            - Offline map area functionality is only available if your GIS is ArcGIS Online.
+            - You need to be the owner of the web map or an administrator of your GIS.
+
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        offline_map_area_items           Optional list. Specify one or more Map Area items for which the packages need
+                                         to be refreshed. If not specified, this method updates all the packages
+                                         associated with all the map area items of the web map.
+
+                                         To get the list of Map Area items related to the WebMap object, call the
+                                         `list()` method.
+        ============================     ====================================================================
+
+        .. note::
+            This method executes silently. To view informative status messages, set the verbosity environment variable
+            as shown below:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: setting verbosity
+
+               from arcgis import env
+               env.verbose = True
+
+        :return:
+            Dictionary containing update status.
+        """
+        # find if 1 or a list of area items is provided
+        if isinstance(offline_map_area_items, Item):
+            offline_map_area_items = [offline_map_area_items]
+        elif isinstance(offline_map_area_items, str):
+            offline_map_area_items = [offline_map_area_items]
+
+        # get packages related to the offline area item
+        _related_packages = []
+        if not offline_map_area_items:  # none specified
+            _related_oma_items = self.list()
+            for related_oma in _related_oma_items:  # get all offline packages for this web map
+                _related_packages.extend(related_oma.related_items('Area2Package', 'forward'))
+
+        else:
+            for offline_map_area_item in offline_map_area_items:
+                if isinstance(offline_map_area_item, Item):
+                    _related_packages.extend(offline_map_area_item.related_items('Area2Package', 'forward'))
+                elif isinstance(offline_map_area_item, str):
+                    offline_map_area_item = Item(gis=self._gis, itemid=offline_map_area_item)
+                    _related_packages.extend(offline_map_area_item.related_items('Area2Package', 'forward'))
+
+        # update each of the packages
+        if _related_packages:
+            _update_list = [{'itemId': i.id} for i in _related_packages]
+
+            # update the packages
+            from arcgis.geoprocessing._tool import Toolbox
+            pkg_tb = Toolbox(self._url, gis=self._gis)
+
+            result = pkg_tb.refresh_map_area_package(json.dumps(_update_list))
+            return result
+        else:
+            return None
+
+    def list(self):
+        """
+        Returns a list of Map Area items related to the current WebMap object.
+
+        .. note::
+            Map Area items and the corresponding offline packages cached for each share a relationship of type
+            'Area2Package'. You can use this relationship to get the list of package items cached for a particular Map
+            Area item. Refer to the Python snippet below for the steps:
+
+            .. code-block:: python
+
+               USAGE EXAMPLE: Finding packages cached for a Map Area item
+
+               from arcgis.mapping import WebMap
+               wm = WebMap(a_web_map_item_object)
+               all_map_areas = wm.offline_areas.list()  # get all the offline areas for that web map
+
+               area1 = all_map_areas[0]
+               area1_packages = area1.related_items('Area2Package','forward')
+
+               for pkg in area1_packages:
+                    print(pkg.homepage)  # get the homepage url for each package item.
+
+        :return:
+        """
+
+        _offline_areas = self._item.related_items('Map2Area', 'forward')
+        return _offline_areas
 
 
 class WebScene(collections.OrderedDict):
     """
-    Represents a web scene and provides access to it's basemaps and operational layers as well
+    Represents a web scene and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
     """
 
     def __init__(self, websceneitem):
         """
-        Constructs a WebScene object given it's item from ArcGIS Online or Portal.
+        Constructs a WebScene object given its item from ArcGIS Online or Portal.
         """
         if websceneitem.type.lower() != 'web scene':
             raise TypeError("item type must be web scene")
@@ -359,7 +1146,6 @@ class MapImageLayerManager(_GISResource):
             params['extent'] = extent
         url = self._url + "/deleteTiles"
         return self._con.post(url, params)
-
 
 
 class MapImageLayer(Layer):
@@ -1429,4 +2215,3 @@ class MapImageLayer(Layer):
                         return gpRes['folders']
                 else:
                     return None
-

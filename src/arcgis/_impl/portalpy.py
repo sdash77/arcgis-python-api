@@ -385,7 +385,7 @@ class Portal(object):
                        wkid=102100,
                        service_type="imageService",
                        create_params=None,
-                       owner=None, folder=None, common_params=None):
+                       owner=None, folder=None, common_params=None, is_view = False):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
@@ -445,6 +445,7 @@ class Portal(object):
             postdata['createParameters'] = json.dumps(createParameters)
 
         postdata['outputType'] = service_type
+        postdata['isView'] = is_view
 
         # If common_params dictionary provided, add each key/value pair to postdata.
         if common_params is not None:
@@ -2010,7 +2011,8 @@ class Portal(object):
             return resp.get('success')
 
 
-    def update_item(self, itemid, item_properties=None, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def update_item(self, itemid, item_properties=None, data=None, thumbnail=None,
+                    metadata=None, owner=None, folder=None, large_thumbnail=None):
         """ Updates an item in a Portal.
 
 
@@ -2028,21 +2030,23 @@ class Portal(object):
             the description argument in item_properties.
 
 
-        ============     ====================================================
-        **Argument**     **Description**
-        ------------     ----------------------------------------------------
-        item_properties  optional dictionary, see below for the keys and values
-        ------------     ----------------------------------------------------
-        data             optional string, either a path or URL to the data
-        ------------     ----------------------------------------------------
-        thumbnail        optional string, either a path or URL to an image
-        ------------     ----------------------------------------------------
-        metadata         optional string, either a path or URL to metadata.
-        ------------     ----------------------------------------------------
-        owner            optional string, defaults to logged in user.
-        ------------     ----------------------------------------------------
-        folder           optional string, content folder where placing item
-        ============     ====================================================
+        ==================     ====================================================
+        **Argument**           **Description**
+        ------------------     ----------------------------------------------------
+        item_properties        optional dictionary, see below for the keys and values
+        ------------------     ----------------------------------------------------
+        data                   optional string, either a path or URL to the data
+        ------------------     ----------------------------------------------------
+        thumbnail              optional string, either a path or URL to an image
+        ------------------     ----------------------------------------------------
+        metadata               optional string, either a path or URL to metadata.
+        ------------------     ----------------------------------------------------
+        owner                  optional string, defaults to logged in user.
+        ------------------     ----------------------------------------------------
+        folder                 optional string, content folder where placing item
+        ------------------     ----------------------------------------------------
+        large_thumbnail        optional string, either a path or URL to an image
+        ==================     ====================================================
 
 
         ================  ============================================================================
@@ -2117,7 +2121,17 @@ class Portal(object):
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
             files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
-
+        if large_thumbnail is not None:
+            if _is_http_url(large_thumbnail):
+                large_thumbnail = request.urlretrieve(large_thumbnail)[0]
+                file_ext = os.path.splitext(large_thumbnail)[1]
+                if not file_ext:
+                    file_ext = imghdr.what(large_thumbnail)
+                    if file_ext in ('gif', 'png', 'jpeg'):
+                        new_large_thumbnail = large_thumbnail + '.' + file_ext
+                        os.rename(large_thumbnail, new_thumbnail)
+                        large_thumbnail = new_large_thumbnail
+            files.append(('largeThumbnail', large_thumbnail, os.path.basename(large_thumbnail)))
         # If owner isn't specified, use the logged in user
         if not owner:
             owner = self.logged_in_user()['username']

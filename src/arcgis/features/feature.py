@@ -302,6 +302,29 @@ class FeatureSet(object):
                 # else:
                 #     raise AttributeError("Invalid geometry type") # Dont raise this error as input can be tables without geometries
 
+            # region - build fields into a dict
+            if self._fields is None or len(self._fields) == 0:
+                self._fields = feature.fields  # get fields from first feature if not set
+
+            if self._fields and isinstance(self._fields[0], str):  # as in geocoded results
+                _fields = []
+
+                for key, val in feature.attributes.items():
+                    if isinstance(val, float):
+                        field_type = 'esriFieldTypeDouble'
+                    elif isinstance(val, int):
+                        field_type = 'esriFieldTypeInteger'
+                    else:
+                        field_type = 'esriFieldTypeString'
+
+                    _fields.append({'name': key,
+                                    'alias': key,
+                                    'type': field_type,
+                                    'sqlType': 'sqlTypeOther'})
+
+                self._fields = _fields
+            # endregion
+
             # Try to find the object ID field if not specified
             if self._object_id_field_name is None:
                 # check to see if features a dict or feature object
@@ -350,15 +373,26 @@ class FeatureSet(object):
                 for feat in self._features:
                     counter += 1
                     feat.fields.append('OBJECTID')
-                    feat.attributes['OBJECTID'] = counter
+                    if not feat.attributes: #when features have just geometry and no attributes
+                        feat.attributes = {'OBJECTID':counter}
+                    else:
+                        feat.attributes['OBJECTID'] = counter
 
+            # rectify Object ID field type
+            if self._object_id_field_name:
+                for f in self._fields:
+                    if f['name'] == self._object_id_field_name:
+                        if f['type'] != 'esriFieldTypeOID':
+                            f['type'] = 'esriFieldTypeOID'
+                        break
 
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns object as string"""
         return json.dumps(self.value, default=_date_handler)
 
-    __repr__ = __str__
+    def __repr__(self):
+        return '<{}> {} features'.format(self.__class__.__name__, len(self.features))
 
     # noinspection PyUnresolvedReferences
     @staticmethod
@@ -750,6 +784,30 @@ class FeatureSet(object):
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
                 geometry["rings"] = geom["coordinates"][0]
+            elif geo_type == "MultiPolygon":
+                rings = []
+                if HASARCPY == 'foo':
+                    geom = arcpy.AsShape(geom)
+                    geometry = Geometry(json.loads(geom))
+                else:
+                    coordkey = ([d for d in geom if d.lower() == 'coordinates']
+                                    or ['coordinates']).pop()
+                    coordinates = geom[coordkey]
+                    typekey = ([d for d in geom if d.lower() == 'type']
+                                   or ['type']).pop()
+                    if geom[typekey].lower() == "polygon":
+                        coordinates = [coordinates]
+                    part_list = []
+                    for part in coordinates:
+                        part_item = []
+                        for idx, ring in enumerate(part):
+                            if idx:
+                                part_item.append(None)
+                            for coord in ring:
+                                part_item.append(coord)
+                        if part_item:
+                            part_list.append([part_item])
+                    geometry["rings"] = part_list[0]
             elif geo_type =="LineString":
                 geometry["paths"] = geom
 
@@ -956,6 +1014,31 @@ class FeatureSet(object):
     @property
     def fields(self):
         """gets the fields in the FeatureSet"""
+        # todo - build object id field if not found - webmaps need this
+        if not self._object_id_field_name:
+            obj_field = {'name': 'OBJECTID',
+                         'type': 'esriFieldTypeOID',
+                         'alias': 'OBJECTID',
+                         'sqlType': 'sqlTypeOther'
+                         }
+
+            if len(self._fields) > 0:
+                field0 = self._fields[0]
+                if isinstance(field0, str):
+                    self._fields.append('OBJECTID')
+                else:
+                    self._fields.append(obj_field)
+            else:
+                self._fields.append(obj_field)
+
+            self._object_id_field_name = obj_field['name']
+
+            counter = 0
+            for feat in self.features:
+                counter += 1
+                feat.fields.append('OBJECTID')
+                feat.attributes['OBJECTID'] = counter
+
         return self._fields
 
     # ----------------------------------------------------------------------
@@ -1036,7 +1119,8 @@ class FeatureCollection(Layer):
 
         fset_dict = fset.to_dict()
 
-        #compose layer definition
+        # region compose layer definition
+
         fc_layer_definition = {'geometryType': fset_dict['geometryType'],
                                'fields':fset_dict['fields'],
                                'objectIdField':fset.object_id_field_name,
@@ -1044,16 +1128,16 @@ class FeatureCollection(Layer):
 
         if not symbol:
             if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
-                symbol = {"color": [226, 119, 40, 255],
-                               "width": 1.5,
+                symbol = {"color": [0, 0, 0, 255],
+                               "width": 1.33,
                                "type": "esriSLS",
                                "style": "esriSLSSolid"}
 
             elif fc_layer_definition['geometryType'] in ['esriGeometryPolygon', 'esriGeometryEnvelope']:
-                symbol = {"color": [190, 232, 255, 128],
+                symbol = {"color": [0, 0, 0, 64],
                                "outline": {
-                                   "color": [128, 128, 128, 255],
-                                   "width": 1.5,
+                                   "color": [0, 0, 0, 255],
+                                   "width": 1.33,
                                    "type": "esriSLS",
                                    "style": "esriSLSSolid"},
                                "type": "esriSFS",
@@ -1064,16 +1148,16 @@ class FeatureCollection(Layer):
                                "xoffset": 0,
                                "yoffset": 12,
                                "type": "esriPMS",
-                               "url": "http://static.arcgis.com/images/Symbols/Basic/SpringGreenStickpin.png",
+                               "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                "contentType": "image/png",
-                               "width": 24,
-                               "height": 24}
+                               "width": 32,
+                               "height": 32}
 
         fc_layer_definition['drawingInfo'] = {'renderer':{'type':'simple',
                                                           'symbol':symbol}
                                               }
-
-        #compose the feature collection dict
+        # endregion
+        # compose the feature collection dict
         layers_dict = {'featureSet':{'geometryType':fset_dict['geometryType'],
                                    'features':fset_dict['features']},
                     'layerDefinition':fc_layer_definition}

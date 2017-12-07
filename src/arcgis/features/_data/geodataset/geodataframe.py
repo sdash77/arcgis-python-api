@@ -477,10 +477,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             if 'map_widget' not in kwargs:
                 raise Exception("map_widget is required to plot the SpatialDataFrame")
             else:
-                m = kwargs['map_widget']
+                m = kwargs.pop('map_widget')
+                symbol = kwargs.pop('symbol', None)
+                popup = kwargs.pop('popup', None)
             try:
                 fs = FeatureSet.from_dict(self.__feature_set__)
-                m.draw(fs)
+                m.draw(fs, symbol=symbol, popup=popup)
                 if extent and \
                    isinstance(extent, dict):
                     m.extent = extent
@@ -692,8 +694,34 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
                                             key=key, **kwargs))
     #----------------------------------------------------------------------
-    def to_feature_collection(self, name=None, drawing_info=None, symbol=None):
-        """converts a Spatial DataFrame to a Feature Collection"""
+    def to_feature_collection(self,
+                              name=None,
+                              drawing_info=None,
+                              extent=None,
+                              global_id_field=None):
+        """
+        converts a Spatial DataFrame to a Feature Collection
+
+        =====================  ===============================================================
+        **optional argument**  **Description**
+        ---------------------  ---------------------------------------------------------------
+        name                   optional string. Name of the Feature Collection
+        ---------------------  ---------------------------------------------------------------
+        drawing_info           Optional dictionary. This is the rendering information for a
+                               Feature Collection.  Rendering information is a dictionary with
+                               the symbology, labelling and other properties defined.  See:
+                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/
+        ---------------------  ---------------------------------------------------------------
+        extent                 Optional dictionary.  If desired, a custom extent can be
+                               provided to set where the map starts up when showing the data.
+                               The default is the full extent of the dataset in the Spatial
+                               DataFrame.
+        ---------------------  ---------------------------------------------------------------
+        global_id_field        Optional string. The Global ID field of the dataset.
+        =====================  ===============================================================
+
+        :returns: FeatureCollection object
+        """
         from arcgis.features import FeatureCollection
         import uuid
         import string
@@ -705,14 +733,15 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             'showLegend' : True,
             'layers' : []
         }
-        ext = self.geoextent
-        extent = {
-            "xmin" : ext[0],
-            "ymin" : ext[1],
-            "xmax" : ext[2],
-            "ymax" : ext[3],
-            "spatialReference" : self.sr
-        }
+        if extent is None:
+            ext = self.geoextent
+            extent = {
+                "xmin" : ext[0],
+                "ymin" : ext[1],
+                "xmax" : ext[2],
+                "ymax" : ext[3],
+                "spatialReference" : self.sr
+            }
         fs = self.__feature_set__
         fields = []
         for fld in fs['fields']:
@@ -739,7 +768,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
                 }
             }
-
+            symbol = None
             if symbol is None:
                 if fs['geometryType'] in ["esriGeometryPoint", "esriGeometryMultipoint"]:
                     di['renderer']['symbol'] = {"color":[0,128,0,128],"size":18,"angle":0,
@@ -839,7 +868,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
             }
         }
-
+        if global_id_field is not None:
+            layer['layerDefinition']['globalIdField'] = global_id_field
         return FeatureCollection(layer)
     #----------------------------------------------------------------------
     def to_featureset(self):
@@ -946,7 +976,11 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 elif 'wkt' in sr:
                     sr = sr['wkt']
         import json
-        if HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
+        gtypes = frame.geometry.apply(lambda x: type(x)).unique()
+        if len(gtypes) == 1 and \
+           gtypes[0] in [_types.Point, _types.Polygon, _types.Polyline]:
+            pass
+        elif HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
             for idx, g in frame.geometry.iteritems():
                 if isinstance(g, arcpy.Point):
                     g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))

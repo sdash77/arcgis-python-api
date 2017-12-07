@@ -441,6 +441,17 @@ class Geometry(BaseGeometry):
             esri_json = True
             if 'coordinates' in self:
                 esri_json = False
+            if isinstance(self, Envelope):
+                if 'spatialReference' in self:
+                    sr = arcpy.SpatialReference(self['spatialReference']['wkid'])
+                    return arcpy.Extent(XMax=self['xmax'],
+                                 YMax=self['ymax'],
+                                 YMin=self['ymin'],
+                                 XMin=self['xmin']).projectAs(sr)
+                return arcpy.Extent(XMax=self['xmax'],
+                                    YMax=self['ymax'],
+                                    YMin=self['ymin'],
+                                    XMin=self['xmin'])
             return arcpy.AsShape(self, esri_json)
         return None
     #----------------------------------------------------------------------

@@ -120,10 +120,11 @@ def from_featureclass(filename, **kwargs):
         where_clause = kwargs.pop('where_clause', None)
         sr = kwargs.pop('sr', None)
         fields = kwargs.pop('fields', None)
+        desc = arcpy.Describe(filename)
         if not fields:
             fields = [field.name for field in arcpy.ListFields(filename) \
                       if field.type not in ['Geometry']]
-            desc = arcpy.Describe(filename)
+
             if hasattr(desc, 'areaFieldName'):
                 afn = desc.areaFieldName
                 if afn in fields:
@@ -132,12 +133,16 @@ def from_featureclass(filename, **kwargs):
                 lfn = desc.lengthFieldName
                 if lfn in fields:
                     fields.remove(lfn)
-            del desc
         geom_fields = fields + ['SHAPE@']
         flds = fields + ['SHAPE']
         vals = []
         geoms = []
         geom_idx = flds.index('SHAPE')
+        shape_type = desc.shapeType
+        default_polygon = _types.Geometry(arcpy.Polygon(arcpy.Array([arcpy.Point(0,0)]* 3)))
+        default_polyline = _types.Geometry(arcpy.Polyline(arcpy.Array([arcpy.Point(0,0)]* 2)))
+        default_point = _types.Geometry(arcpy.PointGeometry(arcpy.Point()))
+        default_multipoint = _types.Geometry(arcpy.Multipoint(arcpy.Array([arcpy.Point()])))
         with arcpy.da.SearchCursor(filename,
                                    field_names=geom_fields,
                                    where_clause=where_clause,
@@ -146,7 +151,17 @@ def from_featureclass(filename, **kwargs):
 
             for row in rows:
                 row = list(row)
-                geoms.append(_types.Geometry(row.pop(geom_idx)))
+                g = _types.Geometry(row.pop(geom_idx))
+                if g == {}:
+                    if shape_type.lower() == 'point':
+                        g = default_point
+                    elif shape_type.lower() == 'polygon':
+                        g = default_polygon
+                    elif shape_type.lower() == 'polyline':
+                        g = default_point
+                    elif shape_type.lower() == 'multipoint':
+                        g = default_multipoint
+                geoms.append(g)
                 vals.append(row)
                 del row
             del rows
@@ -256,6 +271,8 @@ def to_featureclass(df, out_name, out_location=None,
                 if isinstance(sr, dict) and \
                    'wkid' in sr:
                     sr = arcpy.SpatialReference(sr['wkid'])
+                elif isinstance(sr, arcpy.SpatialReference):
+                    sr = sr
                 else:
                     sr = None
             else:
@@ -316,8 +333,17 @@ def to_featureclass(df, out_name, out_location=None,
                col.lower() != 'shape' and \
                col.lower() not in existing_fields:
                 try:
-                    arcpy.AddField_management(in_table=fc, field_name=col,
-                                              field_type=_infer_type(df, col))
+                    t = _infer_type(df, col)
+                    if t == "TEXT" and out_name.lower().endswith('.shp') == False:
+                        l = int(df[col].str.len().max()) or 0
+                        if l < 255:
+                            l = 255
+                        arcpy.AddField_management(in_table=fc, field_name=col,
+                                                  field_length=l,
+                                                  field_type=_infer_type(df, col))
+                    else:
+                        arcpy.AddField_management(in_table=fc, field_name=col,
+                                              field_type=t)
                 except:
                     print('col %s' % col)
         icur = da.InsertCursor(fc, col_insert)

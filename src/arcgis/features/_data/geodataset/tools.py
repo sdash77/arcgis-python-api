@@ -1,6 +1,4 @@
-import numpy as np
-import pandas as pd
-from ....geometry.types import Geometry
+from arcgis.geometry._types import Geometry
 
 def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     """
@@ -19,6 +17,8 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     :output:
       Spatial Dataframe
     """
+    import numpy as np
+    import pandas as pd
     from arcgis.features import SpatialDataFrame
     if not isinstance(df1, SpatialDataFrame):
         raise ValueError("df1 must be a spatial dataframe")
@@ -74,4 +74,5 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     join_df = SpatialDataFrame(join_df)
     join_df.geometry = join_df[df1.geometry.name]
     del join_idx
+    join_df.reset_index(drop=True, inplace=True)
     return join_df

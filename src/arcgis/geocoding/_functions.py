@@ -473,6 +473,421 @@ def get_geocoders(gis):
         pass
     return geocoders
 
+#----------------------------------------------------------------------
+def analyze_geocode_input(input_table_or_item,
+                          geocode_service_url=None,
+                          column_names=None,
+                          input_file_parameters=None,
+                          locale="en",
+                          context=None,
+                          gis=None):
+    """
+    The analyze_geocode_input function takes in a geocode input (either a table or file of
+    addresses) and returns an output dictionary that includes a suggested field mapping. It supports CSV,
+    XLS, or table input. The table can be from a big data file share or from a feature service. The
+    task generates a suggested field mapping based on the input fields and the geocoding service
+    candidate fields and returns it in a geocode_parameters dictionary. This geocode_parameters
+    dictionary output is the an input to the Batch Geocode tool. The output geocode_parameters
+    dictionary also includes field info (name, length, and type) as well as additional information
+    that helps the geocode tool parse the input file or table.
+
+    =====================     ================================================================
+    **Argument**              **Description**
+    ---------------------     ----------------------------------------------------------------
+    input_table_or_item       required Item, string or dictionary.  The input to analyze for
+                              geocoding.
+
+                              For tables:
+
+                               The input table specification must include the following:
+
+                               - A URL to an input table
+                               - A service token to access the table
+                               Note that if the table is a hosted table on the same portal,
+                               serviceToken is not required.
+
+                               Example: {"url":"<table url>","serviceToken":"<token>"}
+
+                              For File Items:
+
+                              The input file should be a portal item. Input the itemid of
+                              the item in the portal. The format of the item in the portal
+                              can be in one of the following formats:
+
+                              - CSV
+                              - Microsoft Excel spreadsheet (XLSX)
+                              Example: {"itemid": "<itemid of file>" }
+    ---------------------     ----------------------------------------------------------------
+    geocode_service_url       Optional string or Geocode class.  The geocode service that you
+                              want to geocode your addresses against.
+    ---------------------     ----------------------------------------------------------------
+    column_names              Optional string.  Only used when input table or Item has no
+                              header row.
+                              Example: address,city,state,zip
+    ---------------------     ----------------------------------------------------------------
+    input_file_parameters     Optional dictionary. Enter information about how to parse the
+                              file. If you are using an input table instead of an Item as
+                              input, this parameter can be left blank.
+                              Any of the key values in the dictionary can be left blank using
+                              the "".
+
+                              Values:
+
+                              fileType - Enter CSV or XLS for the file format of file Item.
+                              headerRowExists - Enter true if your file has a header row,
+                                                false if it does not.
+                              columnDelimiter - Enter SPACE, TAB, COMMA, PIPE, or SEMICOLON.
+                              textQualifier - Enter either SINGLE_QUOTE or DOUBLE_QUOTE.
+
+                              Example: {"fileType":"xlsx","headerRowExists":"true",
+                                        "columnDelimiter":"","textQualifier":""}
+    ---------------------     ----------------------------------------------------------------
+    locale                    Optional string. Enter the 2-letter ("en") or 4-letter ("ar-il")
+                              specific locale if geocodeInput is in a language other than
+                              English.
+    ---------------------     ----------------------------------------------------------------
+    context                   Optional dictionary.
+                              Context contains additional settings that affect task execution.
+                              Analyze_geocode_input() has the following two settings:
+                              1. Extent (extent) - A bounding box that defines the analysis
+                                 area. Only those points in inputLayer that intersect the
+                                 bounding box are analyzed.
+                              2. Output Spatial Reference (outSR) - The output features are
+                                 projected into the output spatial reference.
+    ---------------------     ----------------------------------------------------------------
+    gis                       Optional GIS. Connection to the site. If None is given, the
+                              active GIS is used.
+    ---------------------     ----------------------------------------------------------------
+
+    :returns: dictionary
+
+    :Usage Example:
+
+    >>>res = analyze_geocode_input(geocode_service_url=Geocoder,
+                                   input_table_or_item={"itemid" : "abc123545asv"},
+                                   input_file_parameters={"fileType":"csv","headerRowExists":"true",
+                                                         "columnDelimiter":"","textQualifier":""})
+    >>> print(res)
+    {'header_row_exists': True, 'field_info': '[["Address", "TEXT", 255], ["City", "TEXT", 255],
+    ["State", "TEXT", 255], ["ZipCode", "TEXT", 255]]', 'file_type': 'csv', 'field_mapping': '[["Address", ""],
+    ["City", "City"], ["State", "State"], ["ZipCode", ""]]', 'column_names': '',
+    'column_delimiter': '', 'text_qualifier': '', 'singleline_field': 'Single Line Input'}
+
+    :Usage Example 2:
+    >>> table_lyr = Table(url="http://testsite.com/server/rest/services/Hosted/addresses/FeatureServer/0", gis=gis)
+    >>> res = analyze_geocode_input()
+    """
+    import json
+    from arcgis.gis import Item
+    from arcgis.features.layer import Layer
+    from arcgis.geoprocessing._tool import Toolbox
+
+    gis = arcgis.env.active_gis if gis is None else gis
+    analyze_geocode_url = gis.properties.helperServices.asyncGeocode.url
+    tbx = Toolbox(url=analyze_geocode_url, gis=gis)
+
+    if geocode_service_url is None:
+        gcs = gis.properties.helperServices.geocode
+        for gc in gcs:
+            if 'batch' in gc and gc['batch']:
+                geocode_service_url = gc['url']
+                break
+            del gc
+        del gcs
+    elif isinstance(geocode_service_url, Geocoder):
+        geocode_service_url = geocode_service_url.url
+    elif isinstance(geocode_service_url, str) == False:
+        raise ValueError("Invalid geocoder service given.")
+    if geocode_service_url is None:
+        raise ValueError("The registered geocoders are not valid to use with this tool.")
+
+    kwargs = {"geocode_service_url" : geocode_service_url,
+              "input_table" : "",
+              "input_file_item" : None,
+              "column_names" : column_names,
+              "input_file_parameters" : input_file_parameters,
+              "locale" : locale,
+              "context" : context}
+
+
+    if isinstance(input_table_or_item, Item):
+        kwargs['input_file_item'] = {'itemid' : input_table_or_item.itemid}
+        if input_file_parameters is None:
+            kwargs['input_file_parameters'] = json.dumps({"fileType": input_table_or_item.type.lower(),
+                                               "headerRowExists":"true",
+                                               "columnDelimiter":"",
+                                               "textQualifier":""})
+    elif isinstance(input_table_or_item, str):
+        kwargs['input_file_item'] = {'itemid' : input_table_or_item}
+        if input_file_parameters is None:
+            item = gis.content.search('id: %s' % input_table_or_item)[0]
+            kwargs['input_file_parameters'] = json.dumps({"fileType": item.type.lower(),
+                                                          "headerRowExists":"true",
+                                                          "columnDelimiter":"",
+                                                          "textQualifier":""})
+    elif isinstance(input_table_or_item, dict):
+        if "url" in input_table_or_item:
+            kwargs['input_table'] = input_table_or_item
+        elif "itemid" in input_table_or_item:
+            kwargs['input_file_item'] = input_table_or_item
+            if input_file_parameters is None:
+                item = gis.content.search('id: %s' % input_table_or_item['itemid'])[0]
+                kwargs['input_file_parameters'] = json.dumps({"fileType": item.type.lower(),
+                                                              "headerRowExists":"true",
+                                                              "columnDelimiter":"",
+                                                              "textQualifier":""})
+    elif isinstance(input_table_or_item, Layer):
+        lyr_dict = input_table_or_item._lyr_dict
+        if 'type' in lyr_dict:
+            lyr_dict.pop("type")
+        kwargs['input_table'] = lyr_dict
+    for k,v in list(kwargs.items()):
+        if v is None:
+            kwargs.pop(k)
+    return tbx.analyze_geocode_input(**kwargs)
+
+#----------------------------------------------------------------------
+def geocode_from_items(input_data,
+                       output_type='Feature Layer',
+                       geocode_service_url=None,
+                       geocode_parameters=None,
+                       country=None,
+                       output_fields=None,
+                       header_rows_to_skip=1,
+                       output_name=None,
+                       category=None,
+                       context=None,
+                       gis=None
+                       ):
+    """
+    The Batch Geocode geocodes a table or file of addresses and returns the geocoded results. It
+    supports CSV, XLS or table input. The task geocodes the entire file regardless of size.
+
+    =====================     ================================================================
+    **Argument**              **Description**
+    ---------------------     ----------------------------------------------------------------
+    input_data                required Item, string, Layer. Data to geocode.
+    ---------------------     ----------------------------------------------------------------
+    output_type               optional string.  Export item types.  Allowed values are CSV,
+                              XLS, or Feature Layer (default)
+    ---------------------     ----------------------------------------------------------------
+    geocode_service_url       optional string of Geocoder. Optional geocoder to use to
+                              spatially enable the dataset.
+    ---------------------     ----------------------------------------------------------------
+    geocode_parameters        optional dictionary.  This includes parameters that help parse
+                              the input data, as well the field lengths and a field mapping.
+                              This value is the output from the analyze_geocode_input()
+                              available on your server designated to geocode. It is important
+                              to inspect the field mapping closely and adjust them accordingly
+                              before submitting your job, otherwise your geocoding results may
+                              not be accurate. It is recommended to use the output from
+                              analyze_geocode_input() and modify the field mapping instead of
+                              constructing this dictionary by hand.
+
+                              **Values**
+
+                              **field_info** - A list of triples with the field names of your input
+                              data, the field type (usually TEXT), and the allowed length
+                              (usually 255).
+                              Example: [['ObjectID', 'TEXT', 255], ['Address', 'TEXT', 255],
+                                       ['Region', 'TEXT', 255], ['Postal', 'TEXT', 255]]
+
+                              **header_row_exists** - Enter true or false.
+
+                              **column_names** - Submit the column names of your data if your data
+                              does not have a header row.
+
+                              **field_mapping** - Field mapping between each input field and
+                              candidate fields on the geocoding service.
+                              Example: [['ObjectID', 'OBJECTID'], ['Address', 'Address'],
+                                          ['Region', 'Region'], ['Postal', 'Postal']]
+    ---------------------     ----------------------------------------------------------------
+    country                   optional string.  If all your data is in one country, this helps
+                              improve performance for locators that accept that variable.
+    ---------------------     ----------------------------------------------------------------
+    output_fields             optional string. Enter the output fields from the geocoding
+                              service that you want returned in the results, separated by
+                              commas. To output all available outputFields, leave this
+                              parameter blank.
+                              Example: score,match_addr,x,y
+    ---------------------     ----------------------------------------------------------------
+    header_rows_to_skip       optional integer. Describes on which row your data begins in
+                              your file or table. The default is 1 (since the first row
+                              contains the headers). The default is 1.
+    ---------------------     ----------------------------------------------------------------
+    output_name               optional string, The task will create a feature service of the
+                              results. You define the name of the service.
+    ---------------------     ----------------------------------------------------------------
+    category                  optional string. Enter a category for more precise geocoding
+                              results, if applicable. Some geocoding services do not support
+                              category, and the available options depend on your geocode service.
+    ---------------------     ----------------------------------------------------------------
+    context                   optional dictionary. Context contains additional settings that
+                              affect task execution. Batch Geocode has the following two
+                              settings:
+
+                              1. Extent (extent) - A bounding box that defines the analysis
+                                 area. Only those points in inputLayer that intersect the
+                                 bounding box are analyzed.
+                              2. Output Spatial Reference (outSR) - The output features are
+                                 projected into the output spatial reference.
+                              Syntax:
+                              {
+                              "extent" : {extent}
+                              "outSR" : {spatial reference}
+                              }
+    ---------------------     ----------------------------------------------------------------
+    gis                       optional GIS, the GIS on which this tool runs. If not specified,
+                              the active GIS is used.
+    =====================     ================================================================
+
+
+    :returns: arcgis.gis.Item
+    """
+
+    import json
+    import uuid
+    from arcgis.gis import Item
+    from arcgis.geocoding import Geocoder
+    from arcgis.features.layer import Layer
+    from arcgis.geoprocessing._tool import Toolbox
+    from arcgis.geoanalytics._util import _create_output_service
+
+    uid = uuid.uuid4().hex[:5]
+    locator_parameters = None
+
+    kwargs = {
+        "geocode_parameters" : geocode_parameters,
+        "geocode_service_url" : geocode_service_url,
+        "output_type" : output_type,
+        "input_table" : "",
+        "input_file_item" : None,
+        "source_country" : country,
+        "category" : category,
+        "output_fields" : output_fields,
+        "header_rows_to_skip" : header_rows_to_skip,
+        "output_name" : output_name,
+        "context" : context,
+        "locator_parameters" : locator_parameters
+    }
+
+    _item_type = "SERVICE"
+    item = None
+    url = gis.properties.helperServices.asyncGeocode.url
+    tbx = Toolbox(url=url, gis=gis)
+
+    if output_type is None:
+        output_type = "CSV"
+    if output_type.lower() == 'xlsx':
+        output_type = 'XLS'
+    if output_type.lower() == "feature layer":
+        output_type = "Feature Service"
+    if output_type not in ['CSV', 'XLS', "Feature Service"]:
+        raise ValueError("Invalid output_type: %s" % output_type)
+
+    if geocode_service_url is None:
+        gcs = gis.properties.helperServices.geocode
+        for gc in gcs:
+            if 'batch' in gc and gc['batch']:
+                geocode_service_url = gc['url']
+                kwargs['geocode_service_url'] = gc['url']
+                break
+            del gc
+        del gcs
+    elif isinstance(geocode_service_url, Geocoder):
+        geocode_service_url = geocode_service_url.url
+        kwargs['geocode_service_url'] = geocode_service_url.url
+    elif isinstance(geocode_service_url, str) == False:
+        raise ValueError("Invalid geocoder service given.")
+    if geocode_service_url is None:
+        raise ValueError("The registered geocoders are not valid to use with this tool.")
+
+    if isinstance(input_data, Item):
+        _item_type = input_data.type
+        kwargs['input_file_item'] = {'itemid' : input_data.itemid}
+    elif isinstance(input_data, dict):
+        if 'url' in input_data:
+            _item_type = "SERVICE"
+            kwargs['input_table'] = input_data
+        elif 'itemid' in input_data:
+            item = gis.content.search("id: %s" % input_data['itemid'])[0]
+            _item_type = item.type
+            kwargs['input_file_item'] = input_data
+        pass
+    elif isinstance(input_data, str):
+        item = gis.content.search("id: %s" % input_data)[0]
+        _item_type = item.type
+        kwargs['input_file_item'] = {'itemid' : input_data}
+    elif isinstance(input_data, Layer):
+        lyr = input_data._lyr_dict
+        if 'type' in lyr:
+            del lyr['type']
+        kwargs['input_table'] = lyr
+    else:
+        raise ValueError("Invalid input_data")
+
+    # Figure out input_data
+    if geocode_parameters is None and \
+       _item_type in ['CSV', 'csv', 'XLS',
+                      'xls', 'XLSX', 'xlsx']:
+        import json
+        if header_rows_to_skip is None:
+            hre = "false"
+        else:
+            hre = "true"
+        kwargs['geocode_parameters'] = analyze_geocode_input(
+            input_table_or_item=kwargs['input_file_item'],
+            geocode_service_url=geocode_service_url,
+            gis=gis)
+
+    if output_type == "Feature Layer" and \
+       output_name is None:
+        if output_name is None:
+            output_service = _create_output_service(gis=gis,
+                               output_name='Geocoded_Feature_Service_ %' % uid,
+                              output_service_name='Geocoded_Feature_Service_ %' % uid,
+                              task='Geocoding')
+        else:#output_type == 'Feature Layer':
+            output_service = _create_output_service(gis=gis,
+                                     output_name='Geocoded_Feature_Service_%s' % uid,
+                                     output_service_name='Geocoded_Feature_Service_%s' % uid,
+                                     task='Geocoding')
+        kwargs['output_name'] = json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    elif output_type in ['XLS', 'xls', 'XLSX', 'xlsx']:
+        if output_name:
+            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
+                                                   "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
+                                                   "tags":"Analysis Result, Geocode Locations From Table",
+                                                   "snippet":"Excel File generated from Geocode Locations From Table","folderId":""}}
+        else:
+            output_name = 'Geocoded_Result_ %' % uid
+            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
+                                                       "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
+                                                       "tags":"Analysis Result, Geocode Locations From Table",
+                                                       "snippet":"Excel File generated from Geocode Locations From Table","folderId":""}}
+    elif output_type in ['CSV', 'csv']:
+        if output_name:
+            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
+                                                   "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
+                                                   "tags":"Analysis Result, Geocode Locations From Table",
+                                                   "snippet":"CSV File generated from Geocode Locations From Table","folderId":""}}
+        else:
+            output_name = 'Geocoded_Result_%s' % uid
+            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
+                                                       "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
+                                                       "tags":"Analysis Result, Geocode Locations From Table",
+                                                       "snippet":"CSV File generated from Geocode Locations From Table","folderId":""}}
+
+    for k,v in list(kwargs.items()):
+        if v is None:
+            kwargs.pop(k)
+    res = tbx.batch_geocode(**kwargs)
+    if 'itemId' in res:
+        return gis.content.get(res['itemId'])
+    else:
+        return res
 
 def geocode(address,
             search_extent=None,

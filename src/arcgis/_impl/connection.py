@@ -195,6 +195,12 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             cert_file=self.cert,
                                             timeout=timeout)
 ########################################################################
+def jsonize_dict(val):
+    if isinstance(val, dict):
+        return json.dumps(val)
+    else:
+        return val
+
 class _ArcGISConnection(object):
     """ A class users to manage connection to ArcGIS services (Portal and Server). """
     baseurl = None
@@ -796,6 +802,7 @@ class _ArcGISConnection(object):
                 params['token'] = self.token
 
         if len(params.keys()) > 0:
+            params = {k: jsonize_dict(v) for k, v in params.items()}
             url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
         _log.debug('REQUEST (get): ' + url)
@@ -970,8 +977,8 @@ class _ArcGISConnection(object):
                     handlers.append(auth_krb)
 
                 except Error as err:
-                    _log.error("pywin32 and winkerberos packages are required for IWA authentication.")
-                    _log.error("Please install them:\n\tconda install pywin32\n\tconda install winkerberos")
+                    _log.error("winkerberos packages is required for IWA authentication (NTLM and Kerberos).")
+                    _log.error("Please install it:\n\tconda install winkerberos")
                     _log.error(str(err))
             else:
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
@@ -1075,6 +1082,7 @@ class _ArcGISConnection(object):
         else:
             encoded_postdata = None
             if postdata:
+                postdata = {k: jsonize_dict(v) for k, v in postdata.items()}
                 encoded_postdata = urlencode(postdata)
             if self._referer:
                 headers = [('Referer', self._referer),

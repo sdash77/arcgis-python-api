@@ -224,7 +224,7 @@ class License(object):
                         return u
         return {}
     #----------------------------------------------------------------------
-    def assign(self, username, entitlements, supress_email=True):
+    def assign(self, username, entitlements, suppress_email=True):
         """
         grants a user an entitlement.
         ===============     ====================================================
@@ -235,7 +235,7 @@ class License(object):
         ---------------     ----------------------------------------------------
         entitlments         required list, a list of entitlements values
         ---------------     ----------------------------------------------------
-        supress_email       optional boolean, if True, the org will not notify
+        suppress_email       optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
@@ -251,7 +251,7 @@ class License(object):
                                   "entitlements":entitlements},
 
         }
-        if supress_email:
+        if suppress_email:
             params["suppressCustomerEmail"] = True
         url = "%scontent/listings/%s/provisionUserEntitlements" % (self._gis._portal.resturl, item_id)
         res = self._con.post(url, params)

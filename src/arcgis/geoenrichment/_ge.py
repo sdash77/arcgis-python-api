@@ -1,7 +1,9 @@
 import json
+import pandas as pd
 from arcgis.gis import GIS
+from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureSet
-
+from arcgis.geometry import Envelope
 ###########################################################################
 class _GeoEnrichment(object):
     """
@@ -94,9 +96,10 @@ class _GeoEnrichment(object):
     #----------------------------------------------------------------------
     def __init__(self, gis, url=None, product='bao', language_code=None):
         """initializer"""
-        if gis._portal.is_logged_in == False:
-            raise Exception('User must be logged in to use the '+ \
-                            'GeoEnrichment API')
+        # if gis._portal.is_logged_in == False:
+        #     raise Exception('User must be logged in to use the '+ \
+        #                     'GeoEnrichment API')
+        gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
         self._portal = gis._portal
         if url is None:
@@ -123,24 +126,49 @@ class _GeoEnrichment(object):
         if language_code is None:
             self._langCode = language_code
     #----------------------------------------------------------------------
-    def countries(self, as_dict=False):
+    def _explode(self, df, lst_cols, fill_value=''):
+        """internal method to help flatten out data sources"""
+        import numpy as np
+        # make sure `lst_cols` is a list
+        if lst_cols and not isinstance(lst_cols, list):
+            lst_cols = [lst_cols]
+        # all columns except `lst_cols`
+        idx_cols = df.columns.difference(lst_cols)
+
+        # calculate lengths of lists
+        lens = df[lst_cols[0]].str.len()
+
+        if (lens > 0).all():
+            # ALL lists in cells aren't empty
+            return pd.DataFrame({
+                col:np.repeat(df[col].values, df[lst_cols[0]].str.len())
+                for col in idx_cols
+            }).assign(**{col:np.concatenate(df[col].values) for col in lst_cols}) \
+              .loc[:, df.columns]
+        else:
+            # at least one list in cells is empty
+            return pd.DataFrame({
+                col:np.repeat(df[col].values, df[lst_cols[0]].str.len())
+                for col in idx_cols
+            }).assign(**{col:np.concatenate(df[col].values) for col in lst_cols}) \
+              .append(df.loc[lens==0, idx_cols]).fillna(fill_value) \
+              .loc[:, df.columns]
+
+    #----------------------------------------------------------------------
+    def countries(self, as_df=False):
         """
-        returns a Pandas' DataFrame of available countries that have GeoEnrichment data.
+        returns a list or Pandas' DataFrame of available countries that have GeoEnrichment data.
         """
         import pandas as pd
-        if self._countries is None and \
-           self._countries_dict is None:
+        if self._countries_dict is None:
             params = {'f' : 'json'}
             url = self._base_url + "/Geoenrichment/Countries"
             res = self._gis._con.post(url, params)
-            self._countries_dict = res
-            countries = [(c["id"], c["name"]) for c in res["countries"]]
-            self._countries =  pd.DataFrame(countries,
-                                            columns=['Country_Code',
-                                                     'Full_Name'])
-        if as_dict:
+            self._countries_dict = res['countries']
+        if as_df:
+            return pd.DataFrame(self._countries_dict)
+        else:
             return self._countries_dict
-        return self._countries
     #----------------------------------------------------------------------
     def country_info(self, country, as_dict=False):
         """
@@ -203,17 +231,17 @@ class _GeoEnrichment(object):
         :return: Pandas' DataFrame
         """
         import pandas as pd
-        countries = self.countries()
-        if len(country) > 2:
-            q = self.countries()['Full_Name'].str.upper() == str(country).upper()
-            if len(countries[q]) == 0:
-                raise ValueError("Invalid Country Name: %s" % country)
-            country = countries[q]['Country_Code'].tolist()[0]
-        else:
-            q = self.countries()['Country_Code'] == str(country).upper()
-            if len(countries[q]) == 0:
-                raise ValueError("Invalid Country Code: %s" % country)
-            country = countries[q]['Country_Code'].tolist()[0]
+        # countries = self.countries()
+        # if len(country) > 2:
+        #     q = self.countries()['Full_Name'].str.upper() == str(country).upper()
+        #     if len(countries[q]) == 0:
+        #         raise ValueError("Invalid Country Name: %s" % country)
+        #     country = countries[q]['Country_Code'].tolist()[0]
+        # else:
+        #     q = self.countries()['Country_Code'] == str(country).upper()
+        #     if len(countries[q]) == 0:
+        #         raise ValueError("Invalid Country Code: %s" % country)
+        #     country = countries[q]['Country_Code'].tolist()[0]
         params = {'f' : 'json'}
         url = self._base_url + "/Geoenrichment/Reports/%s" % country
         res = self._gis._con.post(url, params)
@@ -257,7 +285,7 @@ class _GeoEnrichment(object):
     #----------------------------------------------------------------------
     def data_collections(self,
                          country=None,
-                         dataset=None,
+                         collection_name=None,
                          variables=None,
                          out_fields="*",
                          hide_nulls=True,
@@ -282,7 +310,7 @@ class _GeoEnrichment(object):
                                in order to get information about the data collections in that given
                                country.
         ------------------     --------------------------------------------------------------------
-        dataset                Optional string. Name of the data collection to examine.
+        collection_name        Optional string. Name of the data collection to examine.
         ------------------     --------------------------------------------------------------------
         variables              Optional string/list. This parameter to specifies a list of field
                                names that include variables for the derivative statistics.
@@ -311,9 +339,9 @@ class _GeoEnrichment(object):
             params['suppressNullValues'] = hide_nulls
         if country is not None:
             url = "%s%s/%s" % (self._base_url, self._url_data_collection, country)
-            if dataset is not None:
+            if collection_name is not None:
                 url = "%s%s/%s/%s" % (self._base_url, self._url_data_collection,
-                                      country, dataset)
+                                      country, collection_name)
         else:
             url = "%s%s" % (self._base_url, self._url_data_collection)
         res = self._gis._con.get(path=url, params=params)
@@ -331,7 +359,7 @@ class _GeoEnrichment(object):
             return dfs[0]
         return res
     #----------------------------------------------------------------------
-    def find_report(self, country):
+    def find_report(self, country, as_df=False):
         """
         Returns a list of reports by a country code
 
@@ -353,20 +381,23 @@ class _GeoEnrichment(object):
         }
         res = self._gis._con.post(path=url, postdata=params)
         if 'reports' in res:
-            return pd.DataFrame(res['reports'])
+            if as_df:
+                return pd.DataFrame(res['reports'])
+            else:
+                return res['reports']
         return res
     #----------------------------------------------------------------------
     def enrich(self,
                study_areas,
                data_collections=None,
                analysis_variables=None,
-               add_derivative_variables="all",
+               add_derivative_variables=None,
                options=None,
                use_data=None,
                intersecting_geographies=None,
                return_geometry=True,
-               in_sr=4326,
-               out_sr=4326,
+               in_sr=None,
+               out_sr=None,
                suppress_nulls=False,
                for_storage=True,
                as_featureset=False):
@@ -463,13 +494,36 @@ class _GeoEnrichment(object):
 
         :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
+
+        areas = []
+        if isinstance(study_areas, list):
+            #indexes = list(range(len(study_areas)))
+            #values = []
+            for idx, val in enumerate(study_areas):
+                if isinstance(val, FeatureSet):
+                    df = val.df
+                    #if len(df) > 100:
+                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
+                    #else:
+                    study_areas[idx] = [{'FeatureSet' : df.__feature_set__ }]
+                elif isinstance(val, SpatialDataFrame):
+                    #if len(val) > 100:
+                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
+                    #else:
+                    study_areas[idx] = [{'FeatureSet' : val.__feature_set__ }]
+                else:
+                    study_areas[idx] = val
+        elif isinstance(study_areas, SpatialDataFrame):
+            #if len(study_areas) > 100:
+            #    areas[0] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(study_areas, 100))]
+            #else:
+            study_areas = [{'FeatureSet' : study_areas.__feature_set__ }]
+        elif isinstance(study_areas, FeatureSet):
+            study_areas = [{"FeatureSet" : study_areas.df.__feature_set__}]
         params = {
             "langCode" : self._langCode,
             "f" : "json",
-            "outSR": out_sr,
-            "inSR" : in_sr,
             "suppressNullValues" : suppress_nulls,
-            "addDerivativeVariables" : add_derivative_variables,
             "studyareas" : study_areas,
             "forStorage" : for_storage
         }
@@ -478,6 +532,12 @@ class _GeoEnrichment(object):
             params['studyAreasOptions'] = options
         if data_collections is not None:
             params['dataCollections'] = data_collections
+        if add_derivative_variables is not None:
+            params['addDerivativeVariables'] = add_derivative_variables
+        if out_sr is not None:
+            params['outSR'] = out_sr
+        if in_sr is not None:
+            params['inSR'] = in_sr
 
         if use_data is not None:
             params['useData'] = use_data
@@ -487,6 +547,7 @@ class _GeoEnrichment(object):
             params['analysisVariables'] = analysis_variables
         url = "%s%s" % (self._base_url,
                         self._url_enrich_data)
+
         res = self._gis._con.post(path=url,
                                   postdata=params)
         if as_featureset == False:
@@ -722,7 +783,6 @@ class _GeoEnrichment(object):
                      return_type=None,
                      use_data=None,
                      in_sr=4326,
-                     f='bin',
                      out_folder=None,
                      out_name=None):
         """
@@ -809,9 +869,6 @@ class _GeoEnrichment(object):
                                coordinate system or geographic coordinate system.
                                The default is 4326
         ------------------     --------------------------------------------------------------------
-        f                      Optional parameter to specify the output response format.
-                               Values: f, bin
-        ------------------     --------------------------------------------------------------------
         out_name               Optional string.  Name of the output file
         ------------------     --------------------------------------------------------------------
         out_folder             Optional string. Name of the save folder
@@ -820,7 +877,7 @@ class _GeoEnrichment(object):
         url = '%s%s' % (self._base_url,
                         self._url_create_report)
         params = {
-            'f' : f,
+            'f' : 'bin',
             'studyAreas' : study_areas,
             'appID' : self._appID,
             'format' : export_format,
@@ -839,10 +896,10 @@ class _GeoEnrichment(object):
             params['inSR'] = in_sr
         if use_data is not None:
             params['useData'] = use_data
-        return self._gis._con.get(path=url,
+        return self._gis._con.post(path=url,
                                   out_folder=out_folder,
                                   file_name=out_name,
-                                  params=params)
+                                  postdata=params)
     #----------------------------------------------------------------------
     def standard_geography_levels(self, country):
         """
@@ -910,7 +967,7 @@ class _GeoEnrichment(object):
                                  return_centroids=False,
                                  generalization_level=0,
                                  use_fuzzy_search=False,
-                                 feature_limit=1000,
+                                 feature_limit=5000,
                                  as_featureset=False):
         """
         The GeoEnrichment class provides a helper method that returns standard geography IDs and
@@ -1042,7 +1099,7 @@ class _GeoEnrichment(object):
            isinstance(return_sub_geography, bool):
             params['returnSubGeographyLayer'] = return_sub_geography
         if not sub_geography_layer is None:
-            params['subGeographyLayer'] = json.dumps(sub_geography_layer)
+            params['subGeographyLayer'] = sub_geography_layer
         if not sub_geography_query is None:
             params['subGeographyQuery'] = sub_geography_query
         if not out_sr is None and \
@@ -1061,11 +1118,11 @@ class _GeoEnrichment(object):
            isinstance(use_fuzzy_search, bool):
             params['useFuzzySearch'] = json.dumps(use_fuzzy_search)
         if feature_limit is None:
-            feature_limit = 1000
+            feature_limit = 5000
         elif isinstance(feature_limit, int):
             params['featureLimit'] = feature_limit
         else:
-            params['featureLimit'] = 1000
+            params['featureLimit'] = 5000
         res = self._gis._con.post(path=url, postdata=params)
         dfs = []
         if as_featureset == False:
@@ -1093,4 +1150,3 @@ class _GeoEnrichment(object):
             elif len(dfs) == 1:
                 return dfs[0]
             return res
-
