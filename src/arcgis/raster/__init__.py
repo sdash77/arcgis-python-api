@@ -12,4 +12,3 @@ Use arcgis.raster.analytics.is_supported(gis) to check if raster analysis is sup
 from ._layer import ImageryLayer, RasterManager, ImageryTileManager, RasterCatalogItem
 from .analytics import *
 from .functions import *
-
