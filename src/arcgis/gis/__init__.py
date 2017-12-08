@@ -4009,7 +4009,7 @@ class Item(dict):
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
-            
+
         if self._has_layers():
             self.layers = None
             self.tables = None
@@ -4153,6 +4153,76 @@ class Item(dict):
             if not self._hydrated and not k.startswith('_'):
                 self._hydrate()
             return dict.__getitem__(self, k)
+    #----------------------------------------------------------------------
+    @property
+    def content_status(self):
+        """
+        The content_status property states if an Item is authoritative or deprecated.  This
+        givens owners and administrators of Item the ability to warn users that they
+        should be either this information or not.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Optional string or None.  Defines if an Item is deprecated or
+                               authoritative.
+                               If a value of None is given, then the value will be reset.
+
+                               Allowsed Values: authoritative, deprecated, or None
+        ==================     ====================================================================
+        """
+        try:
+            return self.contentStatus
+        except:
+            return ""
+
+    #----------------------------------------------------------------------
+    @content_status.setter
+    def content_status(self, value):
+        """
+        The content_status property states if an Item is authoritative or deprecated.  This
+        givens owners and administrators of Item the ability to warn users that they
+        should be either this information or not.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Optional string or None.  Defines if an Item is deprecated or
+                               authoritative.
+                               If a value of None is given, then the value will be reset.
+
+                               Allowsed Values: authoritative, deprecated, or None
+        ==================     ====================================================================
+        """
+        status_values = ['authoritative',
+                         'org_authoritative',
+                         'deprecated']
+
+        if value is None:
+            pass
+        elif str(value).lower() not in status_values:
+            raise ValueError("%s is not valid value of: authoritative or deprecated" % value)
+
+        if str(value).lower() == 'authoritative':
+            value = 'org_authoritative'
+
+        params = {
+            'f' : 'json',
+            'status' : value
+        }
+        url = 'content/items/' + self.itemid + '/setContentStatus'
+
+        if value is None:
+            value = ""
+            params['status'] = ""
+            params['clearEmptyFields'] = True
+        else:
+            params['clearEmptyFields'] = False
+        res = self._portal.con.get(url,
+                                   params)
+        if 'success' in res:
+            self.contentStatus = value
+            self._hydrate()
 
     @property
     def homepage(self):
