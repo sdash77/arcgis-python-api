@@ -495,28 +495,7 @@ class _GeoEnrichment(object):
         :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
 
-        areas = []
-        if isinstance(study_areas, list):
-            #indexes = list(range(len(study_areas)))
-            #values = []
-            for idx, val in enumerate(study_areas):
-                if isinstance(val, FeatureSet):
-                    df = val.df
-                    #if len(df) > 100:
-                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
-                    #else:
-                    study_areas[idx] = [{'FeatureSet' : df.__feature_set__ }]
-                elif isinstance(val, SpatialDataFrame):
-                    #if len(val) > 100:
-                    #    areas[idx] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(df, 100))]
-                    #else:
-                    study_areas[idx] = [{'FeatureSet' : val.__feature_set__ }]
-                else:
-                    study_areas[idx] = val
-        elif isinstance(study_areas, SpatialDataFrame):
-            #if len(study_areas) > 100:
-            #    areas[0] = [{'FeatureSet' : d.__feature_set__ } for d in list(_chunks(study_areas, 100))]
-            #else:
+        if isinstance(study_areas, SpatialDataFrame):
             study_areas = [{'FeatureSet' : study_areas.__feature_set__ }]
         elif isinstance(study_areas, FeatureSet):
             study_areas = [{"FeatureSet" : study_areas.df.__feature_set__}]
