@@ -17,7 +17,7 @@ URLS = [
     "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services", # 10.05
     "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services", # 10.02
     "https://sampleserver6.arcgisonline.com/arcgis/rest", # 10.41
-    "http://acpythondev.esri.com/arcgis/rest" # 10.5
+    "http://acpythondev.esri.com/server/rest" # 10.5
 ]
 import os
 import arcgis
@@ -107,7 +107,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
 class ServerPortalTest(unittest.TestCase):
     """tests the connection to arcgis server object from portal"""
     def setUp(self):
-        self._gis = GIS('https://dev003246.esri.com/portal', 'andrew', 'password1')
+        self._gis = GIS('https://dev003246.esri.com/portal', 'admin', 'esri.agp')
     def test_server_portal_not_gis(self):
         """tests creating a Server object"""
         from arcgis.gis.server import Server
@@ -141,8 +141,8 @@ class ServerCatalogCreationTests(unittest.TestCase):
     """
     #----------------------------------------------------------------------
     def setUp(self):
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
     #----------------------------------------------------------------------
     def test_931_catalog(self):
         """catalog 931"""
@@ -212,8 +212,8 @@ class ServerPropertyTest(unittest.TestCase):
     """
     #----------------------------------------------------------------------
     def setUp(self):
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
     #----------------------------------------------------------------------
     def test_content(self):
         """catalog 10.5 content"""
@@ -297,8 +297,8 @@ class catalog_info_test(unittest.TestCase):
     """
     #----------------------------------------------------------------------
     def setUp(self):
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
         url_105 = URLS[5]
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
@@ -326,8 +326,8 @@ class server_logs_test(unittest.TestCase):
     """
     #----------------------------------------------------------------------
     def setUp(self):
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
         url_105 = URLS[5]
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
@@ -351,8 +351,8 @@ class server_machines_test(unittest.TestCase):
     #----------------------------------------------------------------------
     def setUp(self):
         url_105 = URLS[5]
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
@@ -381,8 +381,8 @@ class server_usagereports_test(unittest.TestCase):
     #----------------------------------------------------------------------
     def setUp(self):
         url_105 = URLS[5]
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
@@ -404,7 +404,7 @@ class server_usagereports_test(unittest.TestCase):
         res = report.query()
         self.assertIsInstance(res, dict)
 ############################################################################
-#@unittest.SkipTest
+@unittest.SkipTest
 class server_userandusers_test(unittest.TestCase):
     """
     test server usage module
@@ -412,8 +412,8 @@ class server_userandusers_test(unittest.TestCase):
     #----------------------------------------------------------------------
     def setUp(self):
         url_105 = URLS[5]
-        self._username = "arcgis_python_api"
-        self._password = "password1"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth =  ServicesDirectory(url=url_105,
                             username=self._username,
                             password=self._password).admin
@@ -434,13 +434,13 @@ class server_userandusers_test(unittest.TestCase):
                           fullname="b d", email="d@esri.com", description="account")
 
         self.assertIsInstance(user, User)
-    #@unittest.SkipTest
+    @unittest.SkipTest
     def test_get(self):
 
         isinstance(self.users, UserManager)
         user = self.users.get(username="arcgis_python_api")
         self.assertIsInstance(user, (list, User))
-    #@unittest.SkipTest
+    @unittest.SkipTest
     def test_me(self):
 
         self.assertIsInstance(self.users.me, User)
