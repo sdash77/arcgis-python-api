@@ -13,11 +13,12 @@ Functions can be applied to various rasters (or images), including the following
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
-from ._layer import ImageryLayer
-
+from .._layer import ImageryLayer
+from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra 
 from arcgis.gis import Item
 import copy
 import numbers
+from . import gbl
 
 #
 # def _raster_input(raster):
@@ -37,6 +38,38 @@ import numbers
 #         layer = None
 #
 #     return layer, raster
+
+
+def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+    if isinstance(layer, Item):
+        layer = layer.layers[0]
+
+    function_chain_ra = copy.deepcopy(function_chain)
+    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
+    if raster_ra2 is not None:
+        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2    
+    newlyr = ImageryLayer(layer._url, layer._gis)
+
+    newlyr._lazy_properties = layer.properties
+    newlyr._hydrated = True
+    newlyr._lazy_token = layer._token
+
+    # if layer._fn is not None: # chain the functions
+    #     old_chain = layer._fn
+    #     newlyr._fn = function_chain
+    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
+    # else:
+    newlyr._fn = function_chain
+    newlyr._fnra = function_chain_ra
+
+    newlyr._where_clause = layer._where_clause
+    newlyr._spatial_filter = layer._spatial_filter
+    newlyr._temporal_filter = layer._temporal_filter
+    newlyr._mosaic_rule = layer._mosaic_rule
+    newlyr._filtered = layer._filtered
+    newlyr._extent = layer._extent
+
+    return newlyr
 
 
 def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
@@ -520,8 +553,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
                      [<value2>, <red2>, <green2>, <blue2>]
                      ],
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object. (See, entire list of color ramp names under colormap raster function 
-                      at https://mufasa:6443/arcgis/sdk/rest/index.html#/Raster_function_objects/02ss0000003p000000/.
+                      or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
                       http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
     :param astype: output pixel type
@@ -2785,156 +2817,6 @@ def apply(raster, fn_name, **kwargs):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
-    if isinstance(layer, Item):
-        layer = layer.layers[0]
-
-    function_chain_ra = copy.deepcopy(function_chain)
-    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
-    if raster_ra2 is not None:
-        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
-
-    newlyr = ImageryLayer(layer._url, layer._gis)
-
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
-
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
-    newlyr._fn = function_chain
-    newlyr._fnra = function_chain_ra
-
-    newlyr._where_clause = layer._where_clause
-    newlyr._spatial_filter = layer._spatial_filter
-    newlyr._temporal_filter = layer._temporal_filter
-    newlyr._mosaic_rule = layer._mosaic_rule
-    newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
-
-    return newlyr
-
-
-
-def _raster_input(raster):
-    if isinstance(raster, ImageryLayer):
-        layer = raster
-        raster_ra = _get_raster_ra(raster)
-        raster = _get_raster(raster)
-    elif isinstance(raster, list):
-        mix_and_match = False # mixing rasters from two image services
-        # try:
-        #     r0 = raster[0]
-        #     r1 = raster[1]
-        #     if r0._fn is None and r1._fn is None and r0._url != r1._url:
-        #         mix_and_match = True
-        # except:
-        #     pass
-
-        for r in raster: # layer is first non numeric raster in list
-            if not isinstance(r, numbers.Number):
-                layer = r
-                break
-
-        for r in raster:
-            if not isinstance(r, numbers.Number):
-                if r._url != layer._url:
-                    mix_and_match = True
-
-        raster_ra = [_get_raster_ra(r) for r in raster]
-        if mix_and_match:
-            raster = [_get_raster_url(r, layer) for r in raster]
-        else:
-            raster = [_get_raster(r) for r in raster]
-    else: # maybe scalar for arithmetic functions, or a chained raster fn
-        layer = None
-        # raster = raster
-        raster_ra = raster
-
-    return layer, raster, raster_ra
-
-def _get_raster(raster):
-    if isinstance(raster, ImageryLayer):
-        if raster._fn is not None:
-            raster = raster._fn
-        else:
-            oids = raster.filtered_rasters()
-            if oids is None:
-                raster = '$$'
-            elif len(oids) == 1:
-                raster = '$' + str(oids[0])
-            else:
-                raster = ['$' + str(x) for x in oids]
-    return raster
-
-
-def _replace_raster_url(obj, url=None):
-    # replace all "Raster" : '$$' with url
-    if isinstance(obj, dict):
-        value = {k: _replace_raster_url(v, url)
-                 for k, v in obj.items()}
-    elif isinstance(obj, list):
-        value = [_replace_raster_url(elem, url)
-                 for elem in obj]
-    else:
-        value = obj
-
-    if value == '$$':
-        return url
-    elif isinstance(value, str) and len(value) > 0 and value[0] == '$':
-        return url + '/' + value.replace('$', '')
-    else:
-        return value
-
-
-
-def _get_raster_url(raster, layer):
-    if isinstance(raster, ImageryLayer):
-        if raster._fn is not None:
-            if raster._url == layer._url:
-                raster = raster._fn
-            else:
-                raster = _replace_raster_url(raster._fn, raster._url)
-
-        else:
-            if raster._url == layer._url:
-                raster = '$$'
-            else:
-                raster = raster._url
-
-            # oids = raster.filtered_rasters()
-            # if oids is None:
-            #     raster = '$$'
-            # elif len(oids) == 1:
-            #     raster = '$' + str(oids[0])
-            # else:
-            #     raster = ['$' + str(x) for x in oids]
-    return raster
-
-
-def _get_raster_ra(raster):
-    if isinstance(raster, ImageryLayer):
-        if raster._fnra is not None:
-            raster_ra = raster._fnra
-        else:
-            raster_ra = raster._url
-
-
-            #if raster._mosaic_rule is not None:
-            #    raster_ra['mosaicRule'] = raster._mosaic_rule
-    elif isinstance(raster, Item):
-        raise RuntimeError('Item not supported as input. Use ImageryLayer - e.g. item.layers[0]')
-        #raster_ra = {
-        #    'itemId': raster.itemid
-        #}
-    else:
-        raster_ra = raster
-
-    return raster_ra
-
 
 def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_reference_system='Geographic',
                  output_data_type='Vector-UV', astype=None):
@@ -3402,5 +3284,5 @@ def pansharpen(pan_raster,
 
     if sensor is not None:
         template_dict["rasterFunctionArguments"]['Sensor'] = sensor
-     
+    
     return _clone_layer(layer, template_dict, raster_ra1)
