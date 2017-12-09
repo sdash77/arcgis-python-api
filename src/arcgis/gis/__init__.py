@@ -4979,8 +4979,10 @@ class Item(dict):
         except:
             folder = None
 
-        large_thumbnail = item_properties.pop("largeThumbnail",
-                                              None)
+        if item_properties:
+            large_thumbnail = item_properties.pop("largeThumbnail", None)
+        else:
+            large_thumbnail = None
 
         if item_properties is not None:
             if 'tags' in item_properties:
