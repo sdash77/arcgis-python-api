@@ -1152,7 +1152,7 @@ def classify(input_raster,
     params["inputClassifierDefinition"] = input_classifier_definition
 
     if additional_input_raster is not None:
-        params["additionalInputRaster"] = additional_input_raster
+        params["additionalInputRaster"] = _layer_input(additional_input_raster)
 
     task_url, job_info = _analysis_job(gptool, task, params)
 
@@ -1294,7 +1294,7 @@ def train_classifier(input_raster,
     params["inputRaster"] = _layer_input(input_raster)
     params["inputTrainingSampleJSON"] = input_training_sample_json
     if segmented_raster is not None:
-        params["segmentedRaster"] = segmented_raster
+        params["segmentedRaster"] = _layer_input(segmented_raster)
     params["classifierParameters"] = classifier_parameters
     params["segmentAttributes"] = segment_attributes
 
