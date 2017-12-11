@@ -1150,8 +1150,8 @@ class FeatureCollection(Layer):
                                "type": "esriPMS",
                                "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                "contentType": "image/png",
-                               "width": 32,
-                               "height": 32}
+                               "width": 24,
+                               "height": 24}
 
         fc_layer_definition['drawingInfo'] = {'renderer':{'type':'simple',
                                                           'symbol':symbol}

@@ -241,7 +241,7 @@ class WebMap(collections.OrderedDict):
 
         if hasattr(layer, 'url'):
             new_layer['url'] = layer.url
-        elif isinstance(layer, arcgis.features.FeatureCollection): #feature collection item on web GIS
+        elif isinstance(layer, arcgis.features.FeatureCollection):  # feature collection item on web GIS
             if 'serviceItemId' in options:
                 # if ItemId is found, then type is fc and insert item id. Else, leave the type as ArcGISFeatureLayer
                 new_layer['type'] = "Feature Collection"
@@ -249,8 +249,14 @@ class WebMap(collections.OrderedDict):
             elif hasattr(layer, 'properties'):
                 if hasattr(layer.properties, 'layerDefinition'):
                     if hasattr(layer.properties.layerDefinition, 'serviceItemId'):
-                        new_layer['type'] = 'Feature Collection'  # if ItemId is found, then type is fc and insert item id
+                        new_layer['type'] = 'Feature Collection'   # if ItemId is found, then type is fc and insert item id
                         new_layer['itemId'] = layer.properties.layerDefinition.serviceItemId
+                elif hasattr(layer, "layer"):
+                    if hasattr(layer.layer, "layers"):
+                        if hasattr(layer.layer.layers[0], "layerDefinition"):
+                            if hasattr(layer.layer.layers[0].layerDefinition, 'serviceItemId'):
+                                new_layer['type'] = 'Feature Collection'  # if ItemId is found, then type is fc and insert item id
+                                new_layer['itemId'] = layer.layer.layers[0].layerDefinition.serviceItemId
 
         if layer_type == 'ArcGISImageServiceLayer':
             #find if raster functions are available
@@ -271,18 +277,21 @@ class WebMap(collections.OrderedDict):
 
         # inmem FeatureCollection
         if isinstance(layer, arcgis.features.FeatureCollection):
-            fc_layer_definition = dict(layer.properties.layerDefinition)
+            if hasattr(layer, "layer"):
+                if hasattr(layer.layer, "layers"):
+                    fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
+                    fc_feature_set = dict(layer.layer.layers[0].featureSet)
+            else:
+                fc_layer_definition = dict(layer.properties.layerDefinition)
+                fc_feature_set = dict(layer.properties.featureSet)
+
             if 'title' not in fc_layer_definition:
                 fc_layer_definition['title'] = title
 
-            fc_feature_set = dict(layer.properties.featureSet)
-
-            new_layer['featureCollection'] = {
-                'layers':[
-                    {'featureSet':fc_feature_set,
-                     'layerDefinition':fc_layer_definition
-                }]
-            }
+            new_layer['featureCollection'] = {'layers':
+                                              [{'featureSet': fc_feature_set,
+                                                'layerDefinition': fc_layer_definition}
+                                               ]}
 
         # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
         if isinstance(layer, arcgis.features.FeatureSet):
@@ -323,8 +332,8 @@ class WebMap(collections.OrderedDict):
                                  "type": "esriPMS",
                                  "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                  "contentType": "image/png",
-                                 "width": 32,
-                                 "height": 32}
+                                 "width": 24,
+                                 "height": 24}
             #endregion
 
             #insert symbol into the layerDefinition of featureCollection - pro style
