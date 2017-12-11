@@ -312,6 +312,7 @@ class Country(object):
 
     @_lazy_property
     def reports(self):
+        """Returns the available reports for this country as a Pandas dataframe"""
         import pandas as pd
         rdf = _find_report(self.properties.id)
         df = pd.io.json.json_normalize(rdf)
@@ -322,6 +323,7 @@ class Country(object):
 
 
 def get_countries(gis=None):
+    """Returns the countries for which there is GeoEnrichment data."""
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
@@ -942,7 +944,7 @@ def find_businesses(type_filters=None,
     as_featureset              Optional boolean.  The default is False. If True, the result will be
                                a arcgis.features.FeatureSet object instead of a SpatailDataFrame or
                                Pandas' DataFrame.
-    ------------------         --------------------------------------------------------------------
+    ----------------------     --------------------------------------------------------------------
     gis                        Optional GIS.  If None, the GIS object will be used from the
                                arcgis.env.active_gis.  This GIS object must be authenticated and
                                have the ability to consume credits
@@ -983,9 +985,10 @@ def standard_geography_query(source_country=None,
                              as_featureset=False,
                              gis=None):
     """
-    The GeoEnrichment class provides a helper method that returns standard geography IDs and
-    features for the supported geographic levels in the United States and Canada.
-    The GeoEnrichment class uses the concept of a study area to define the location of the point
+    This method allows you to search and query standard geography areas so that they can be used to
+    obtain facts about the location using the enrich() method or create reports about.
+
+    GeoEnrichment uses the concept of a study area to define the location of the point
     or area that you want to enrich with additional information. Locations can also be passed as
     one or many named statistical areas. This form of a study area lets you define an area by
     the ID of a standard geographic statistical feature, such as a census or postal area. For
@@ -1089,7 +1092,7 @@ def standard_geography_query(source_country=None,
     as_featureset              Optional boolean.  The default is False. If True, the result will be
                                a arcgis.features.FeatureSet object instead of a SpatailDataFrame or
                                Pandas' DataFrame.
-    ------------------         --------------------------------------------------------------------
+    ----------------------     --------------------------------------------------------------------
     gis                        Optional GIS.  If None, the GIS object will be used from the
                                arcgis.env.active_gis.  This GIS object must be authenticated and
                                have the ability to consume credits

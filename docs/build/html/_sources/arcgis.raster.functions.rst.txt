@@ -119,6 +119,18 @@ colormap
 ________
 .. automethod:: arcgis.raster.functions.colormap
 
+colormap_to_rgb
+_______________
+.. automethod:: arcgis.raster.functions.colormap_to_rgb
+
+colormap_to_rgb
+_______________
+.. automethod:: arcgis.raster.functions.colormap_to_rgb
+
+colorspace_conversion
+______________
+.. automethod:: arcgis.raster.functions.colorspace_conversion
+
 composite_band
 ______________
 .. automethod:: arcgis.raster.functions.composite_band
@@ -219,6 +231,10 @@ hillshade
 _________
 .. automethod:: arcgis.raster.functions.hillshade
 
+identity
+________
+.. automethod:: arcgis.raster.functions.identity
+
 INT
 ___
 .. automethod:: arcgis.raster.functions.INT
@@ -314,6 +330,10 @@ not_equal
 _________
 .. automethod:: arcgis.raster.functions.not_equal
 
+pansharpen
+__________
+.. automethod:: arcgis.raster.functions.pansharpen
+
 plus
 ____
 .. automethod:: arcgis.raster.functions.plus
@@ -386,6 +406,11 @@ focal_statistics
 __________
 .. automethod:: arcgis.raster.functions.focal_statistics
 
+statistics_histogram
+____________________
+.. automethod:: arcgis.raster.functions.statistics_histogram
+
+
 std
 ___
 .. automethod:: arcgis.raster.functions.std
@@ -410,6 +435,10 @@ tanh
 ____
 .. automethod:: arcgis.raster.functions.tanh
 
+tasseled_cap
+____________
+.. automethod:: arcgis.raster.functions.tasseled_cap
+
 threshold
 _________
 .. automethod:: arcgis.raster.functions.threshold
@@ -433,6 +462,10 @@ _______________
 variety
 _______
 .. automethod:: arcgis.raster.functions.variety
+
+vector_field
+_____________________
+.. automethod:: arcgis.raster.functions.vector_field
 
 vector_field_renderer
 _____________________

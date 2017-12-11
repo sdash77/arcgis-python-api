@@ -15,11 +15,11 @@ Contents:
    arcgis.gis.toc
    arcgis.env
    arcgis.features.toc
-   arcgis.geoenrichment
    arcgis.raster.toc
    arcgis.network.toc
    arcgis.geoanalytics.toc
    arcgis.geocoding
+   arcgis.geoenrichment
    arcgis.geometry
    arcgis.geoprocessing
    arcgis.mapping

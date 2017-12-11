@@ -45,3 +45,4 @@ Submodules
 
    arcgis.raster.analytics
    arcgis.raster.functions
+   arcgis.raster.functions.gbl

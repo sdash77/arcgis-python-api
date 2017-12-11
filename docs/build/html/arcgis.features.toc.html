@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features module &mdash; arcgis 1.2.4 documentation</title>
+  <title>arcgis.features module &mdash; arcgis 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.4 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.3.0 documentation" href="index.html"/>
         <link rel="next" title="arcgis.features.analysis module" href="arcgis.features.analysis.html"/>
         <link rel="prev" title="arcgis.env module" href="arcgis.env.html"/> 
 
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                1.2.4
+                1.3.0
               </div>
             
           
@@ -107,9 +107,11 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.gis.admin.html">arcgis.gis.admin module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#agoladminmanager">AGOLAdminManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portaladminmanager">PortalAdminManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#categorymanager">CategoryManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaborationmanager">CollaborationManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#creditmanager">CreditManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#identityprovidermanager">IdentityProviderManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#passwordpolicy">PasswordPolicy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#ux">UX</a></li>
@@ -150,6 +152,10 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#systemmanager">SystemManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#sitemanager">SiteManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#directorymanager">DirectoryManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#configurationstore">ConfigurationStore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#jobs">Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverdirectory">ServerDirectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverproperties">ServerProperties</a></li>
 </ul>
 </li>
 </ul>
@@ -313,6 +319,9 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#classify">classify</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#clip">clip</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap">colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap-to-rgb">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#id1">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colorspace-conversion">colorspace_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#composite-band">composite_band</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#con">con</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#contrast-brightness">contrast_brightness</a></li>
@@ -338,6 +347,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than-equal">greater_than_equal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gvitm">gvitm</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#hillshade">hillshade</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#identity">identity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">INT</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#is-null">is_null</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than">less_than</a></li>
@@ -362,6 +372,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ndvi">ndvi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#negate">negate</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#not-equal">not_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pansharpen">pansharpen</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#plus">plus</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#power">power</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pvi">pvi</a></li>
@@ -380,19 +391,38 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sqrt">sqrt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#square">square</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#focal-statistics">focal_statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#statistics-histogram">statistics_histogram</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std">std</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#stretch">stretch</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sultan">sultan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum">sum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tan">tan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tanh">tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tasseled-cap">tasseled_cap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#threshold">threshold</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#times">times</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#transpose-bits">transpose_bits</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tsavi">tsavi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#unit-conversion">unit_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety">variety</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field">vector_field</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field-renderer">vector_field_renderer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.raster.functions.gbl.html">arcgis.raster.functions.gbl module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-allocation">cost_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-distance">cost_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-allocation">euclidean_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-distance">euclidean_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#fill">fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-accumulation">flow_accumulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-distance">flow_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-direction">flow_direction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#least-cost-path">least_cost_path</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#nibble">nibble</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#stream-link">stream_link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#watershed">watershed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#zonal-statistics">zonal_statistics</a></li>
 </ul>
 </li>
 </ul>
@@ -433,6 +463,7 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html">arcgis.geoanalytics.find_locations module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#detect-incidents">detect_incidents</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#find-similar-locations">find_similar_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#geocode-locations">geocode_locations</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.manage_data.html">arcgis.geoanalytics.manage_data module</a><ul>
@@ -460,9 +491,20 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode-from-items">geocode_from_items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#analyze-geocode-input">analyze_geocode_input</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoenrichment.html">arcgis.geoenrichment module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#country">Country</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#get-countries">get_countries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#create-report">create_report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#enrich">enrich</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#find-businesses">find_businesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#standard-geography-query">standard_geography_query</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
@@ -810,6 +852,46 @@ value is true.</dd>
 <dd><p>Creates a feature layer from a GIS Item.
 The type of item should be a ‘Feature Service’ that represents a FeatureLayerCollection.
 The layer_id is the id of the layer in feature layer collection (feature service).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.FeatureLayer.generate_renderer">
+<code class="descname">generate_renderer</code><span class="sig-paren">(</span><em>definition</em>, <em>where=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureLayer.generate_renderer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation groups data using the supplied definition
+(classification definition) and an optional where clause. The
+result is a renderer object. Use baseSymbol and colorRamp to define
+the symbols assigned to each class. If the operation is performed
+on a table, the result is a renderer object containing the data
+classes and no symbols.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="82%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>definition</td>
+<td>required dict. The definition using the renderer that is generated.
+Use either class breaks or unique value classificatoin definitions.
+See: <a class="reference external" href="https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html">https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html</a></td>
+</tr>
+<tr class="row-odd"><td>where</td>
+<td>optional string. A where clause for which the data needs to be
+classified. Any legal SQL where clause operating on the fields in
+the dynamic layer/table is allowed.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1239,6 +1321,46 @@ value is true.</dd>
 <dd><p>Creates a feature layer from a GIS Item.
 The type of item should be a ‘Feature Service’ that represents a FeatureLayerCollection.
 The layer_id is the id of the layer in feature layer collection (feature service).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.Table.generate_renderer">
+<code class="descname">generate_renderer</code><span class="sig-paren">(</span><em>definition</em>, <em>where=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.Table.generate_renderer" title="Permalink to this definition">¶</a></dt>
+<dd><p>This operation groups data using the supplied definition
+(classification definition) and an optional where clause. The
+result is a renderer object. Use baseSymbol and colorRamp to define
+the symbols assigned to each class. If the operation is performed
+on a table, the result is a renderer object containing the data
+classes and no symbols.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%" />
+<col width="82%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>definition</td>
+<td>required dict. The definition using the renderer that is generated.
+Use either class breaks or unique value classificatoin definitions.
+See: <a class="reference external" href="https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html">https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html</a></td>
+</tr>
+<tr class="row-odd"><td>where</td>
+<td>optional string. A where clause for which the data needs to be
+classified. Any legal SQL where clause operating on the fields in
+the dynamic layer/table is allowed.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -1713,6 +1835,12 @@ spatial reference will be UnknownCoordinateSystem.</p>
 </dd></dl>
 
 <dl class="staticmethod">
+<dt id="arcgis.features.FeatureSet.from_geojson">
+<em class="property">static </em><code class="descname">from_geojson</code><span class="sig-paren">(</span><em>geojson</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.from_geojson" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a GeoJSON Feature Collection into a FeatureSet</p>
+</dd></dl>
+
+<dl class="staticmethod">
 <dt id="arcgis.features.FeatureSet.from_json">
 <em class="property">static </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>json_str</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.from_json" title="Permalink to this definition">¶</a></dt>
 <dd><p>returns a featureset from a JSON string</p>
@@ -1750,13 +1878,14 @@ spatial reference will be UnknownCoordinateSystem.</p>
 
 <dl class="method">
 <dt id="arcgis.features.FeatureSet.save">
-<code class="descname">save</code><span class="sig-paren">(</span><em>save_location</em>, <em>out_name</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.save" title="Permalink to this definition">¶</a></dt>
+<code class="descname">save</code><span class="sig-paren">(</span><em>save_location</em>, <em>out_name</em>, <em>encoding=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves a featureset object to a feature class
 Input:</p>
 <blockquote>
 <div><p>saveLocation - output location of the data
 outName - name of the table the data will be saved to</p>
 <blockquote>
+<div><blockquote>
 <div><dl class="docutils">
 <dt>Types:</dt>
 <dd><p class="first"><a href="#id1"><span class="problematic" id="id2">*</span></a>.csv - CSV file returned
@@ -1765,6 +1894,12 @@ outName - name of the table the data will be saved to</p>
 <blockquote class="last">
 <div>folder, a featureclass if the path is a GDB</div></blockquote>
 </dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>encoding - character encoding is used to represent a repertoire</dt>
+<dd>of characters by some kind of encoding system. The
+default is None.</dd>
 </dl>
 </div></blockquote>
 </div></blockquote>
@@ -1780,6 +1915,12 @@ outName - name of the table the data will be saved to</p>
 <dt id="arcgis.features.FeatureSet.to_dict">
 <code class="descname">to_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureSet.to_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>converts the object to Python dictionary</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="arcgis.features.FeatureSet.to_geojson">
+<code class="descname">to_geojson</code><a class="headerlink" href="#arcgis.features.FeatureSet.to_geojson" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts the object to GeoJSON</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1807,6 +1948,20 @@ outName - name of the table the data will be saved to</p>
 <p>Feature Collections can be stored as Items in the GIS, added as layers to a map or scene,
 passed as inputs to feature analysis tools, and returned as results from feature analysis tools
 if an output name for a feature layer is not specified when calling the tool.</p>
+<dl class="staticmethod">
+<dt id="arcgis.features.FeatureCollection.from_featureset">
+<em class="property">static </em><code class="descname">from_featureset</code><span class="sig-paren">(</span><em>fset</em>, <em>symbol=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureCollection.from_featureset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a FeatureCollection object from a FeatureSet object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A FeatureCollection object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="arcgis.features.FeatureCollection.query">
 <code class="descname">query</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.FeatureCollection.query" title="Permalink to this definition">¶</a></dt>
@@ -2028,20 +2183,63 @@ to the dataframe with the results of the select by location.</div></blockquote>
 the specified input. By default yields a new object.</p>
 <p>The original geometry column is replaced with the input.</p>
 <p>Parameters:
-keys: column label or array
+col: column label or array
 drop: boolean, default True</p>
 <blockquote>
 <div>Delete column to be used as the new geometry</div></blockquote>
 <dl class="docutils">
 <dt>inplace: boolean, default False</dt>
 <dd>Modify the SpatialDataFrame in place (do not create a new object)</dd>
-<dt>sr <span class="classifier-delimiter">:</span> <span class="classifier">str/result of fion.get_sr (optional)</span></dt>
+<dt>sr <span class="classifier-delimiter">:</span> <span class="classifier">str/integer the wkid value</span></dt>
 <dd>Coordinate system to use. If passed, overrides both DataFrame and
 col’s sr. Otherwise, tries to get sr from passed col values or
 DataFrame.</dd>
 </dl>
 <p>Returns:
 SpatialDataFrame</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="arcgis.features.SpatialDataFrame.to_feature_collection">
+<code class="descname">to_feature_collection</code><span class="sig-paren">(</span><em>name=None</em>, <em>drawing_info=None</em>, <em>extent=None</em>, <em>global_id_field=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.features.SpatialDataFrame.to_feature_collection" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts a Spatial DataFrame to a Feature Collection</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>optional argument</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>name</td>
+<td>optional string. Name of the Feature Collection</td>
+</tr>
+<tr class="row-odd"><td>drawing_info</td>
+<td>Optional dictionary. This is the rendering information for a
+Feature Collection.  Rendering information is a dictionary with
+the symbology, labelling and other properties defined.  See:
+<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/</a></td>
+</tr>
+<tr class="row-even"><td>extent</td>
+<td>Optional dictionary.  If desired, a custom extent can be
+provided to set where the map starts up when showing the data.
+The default is the full extent of the dataset in the Spatial
+DataFrame.</td>
+</tr>
+<tr class="row-odd"><td>global_id_field</td>
+<td>Optional string. The Global ID field of the dataset.</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">FeatureCollection object</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -2270,7 +2468,7 @@ in the store wherever possible</dd>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.4',
+            VERSION:'1.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

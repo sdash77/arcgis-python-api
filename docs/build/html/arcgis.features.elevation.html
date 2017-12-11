@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.features.elevation module &mdash; arcgis 1.2.4 documentation</title>
+  <title>arcgis.features.elevation module &mdash; arcgis 1.3.0 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.4 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.3.0 documentation" href="index.html"/>
         <link rel="up" title="arcgis.features module" href="arcgis.features.toc.html"/>
         <link rel="next" title="arcgis.features.managers module" href="arcgis.features.managers.html"/>
         <link rel="prev" title="arcgis.features.use_proximity module" href="arcgis.features.use_proximity.html"/> 
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.2.4
+                1.3.0
               </div>
             
           
@@ -108,9 +108,11 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.gis.admin.html">arcgis.gis.admin module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#agoladminmanager">AGOLAdminManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portaladminmanager">PortalAdminManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#categorymanager">CategoryManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaborationmanager">CollaborationManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#creditmanager">CreditManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#identityprovidermanager">IdentityProviderManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#passwordpolicy">PasswordPolicy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#ux">UX</a></li>
@@ -151,6 +153,10 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#systemmanager">SystemManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#sitemanager">SiteManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#directorymanager">DirectoryManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#configurationstore">ConfigurationStore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#jobs">Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverdirectory">ServerDirectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverproperties">ServerProperties</a></li>
 </ul>
 </li>
 </ul>
@@ -314,6 +320,9 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#classify">classify</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#clip">clip</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap">colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colormap-to-rgb">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#id1">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#colorspace-conversion">colorspace_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#composite-band">composite_band</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#con">con</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#contrast-brightness">contrast_brightness</a></li>
@@ -339,6 +348,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#greater-than-equal">greater_than_equal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#gvitm">gvitm</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#hillshade">hillshade</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#identity">identity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#int">INT</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#is-null">is_null</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#less-than">less_than</a></li>
@@ -363,6 +373,7 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#ndvi">ndvi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#negate">negate</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#not-equal">not_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pansharpen">pansharpen</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#plus">plus</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#power">power</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#pvi">pvi</a></li>
@@ -381,19 +392,38 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sqrt">sqrt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#square">square</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#focal-statistics">focal_statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#statistics-histogram">statistics_histogram</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#std">std</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#stretch">stretch</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sultan">sultan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#sum">sum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tan">tan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tanh">tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tasseled-cap">tasseled_cap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#threshold">threshold</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#times">times</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#transpose-bits">transpose_bits</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#tsavi">tsavi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#unit-conversion">unit_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#variety">variety</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field">vector_field</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.html#vector-field-renderer">vector_field_renderer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.raster.functions.gbl.html">arcgis.raster.functions.gbl module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-allocation">cost_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-distance">cost_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-allocation">euclidean_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-distance">euclidean_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#fill">fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-accumulation">flow_accumulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-distance">flow_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-direction">flow_direction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#least-cost-path">least_cost_path</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#nibble">nibble</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#stream-link">stream_link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#watershed">watershed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#zonal-statistics">zonal_statistics</a></li>
 </ul>
 </li>
 </ul>
@@ -434,6 +464,7 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html">arcgis.geoanalytics.find_locations module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#detect-incidents">detect_incidents</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#find-similar-locations">find_similar_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#geocode-locations">geocode_locations</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.manage_data.html">arcgis.geoanalytics.manage_data module</a><ul>
@@ -461,9 +492,20 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode-from-items">geocode_from_items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#analyze-geocode-input">analyze_geocode_input</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoenrichment.html">arcgis.geoenrichment module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#country">Country</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#get-countries">get_countries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#create-report">create_report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#enrich">enrich</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#find-businesses">find_businesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#standard-geography-query">standard_geography_query</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
@@ -593,7 +635,7 @@
 <h2>profile<a class="headerlink" href="#profile" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.elevation.profile">
-<code class="descclassname">elevation.</code><code class="descname">profile</code><span class="sig-paren">(</span><em>input_line_features: arcgis.features.feature.FeatureSet = {'exceededTransferLimit': False</em>, <em>'displayFieldName': ''</em>, <em>'geometryType': 'esriGeometryPolyline'</em>, <em>'features': []</em>, <em>'spatialReference': {'wkid': 102100</em>, <em>'latestWkid': 3857}</em>, <em>'fields': [{'alias': 'OID'</em>, <em>'name': 'OID'</em>, <em>'type': 'esriFieldTypeOID'}</em>, <em>{'alias': 'Shape_Length'</em>, <em>'name': 'Shape_Length'</em>, <em>'type': 'esriFieldTypeDouble'}]}</em>, <em>profile_id_field: str = None</em>, <em>dem_resolution: str = None</em>, <em>maximum_sample_distance: float = None</em>, <em>maximum_sample_distance_units: str = 'Meters'</em>, <em>gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.profile" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">elevation.</code><code class="descname">profile</code><span class="sig-paren">(</span><em>input_line_features: arcgis.features.feature.FeatureSet = {'features': [], 'geometryType': 'esriGeometryPolyline', 'fields': [{'name': 'OID', 'alias': 'OID', 'type': 'esriFieldTypeOID'}, {'name': 'Shape_Length', 'alias': 'Shape_Length', 'type': 'esriFieldTypeDouble'}], 'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 'exceededTransferLimit': False, 'displayFieldName': ''}, profile_id_field: str = None, dem_resolution: str = None, maximum_sample_distance: float = None, maximum_sample_distance_units: str = 'Meters', gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.profile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns elevation profiles for the input line features.</p>
 <p>Parameters:</p>
 <blockquote>
@@ -622,7 +664,7 @@
 <h2>viewshed<a class="headerlink" href="#viewshed" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.features.elevation.viewshed">
-<code class="descclassname">elevation.</code><code class="descname">viewshed</code><span class="sig-paren">(</span><em>input_points: arcgis.features.feature.FeatureSet = {'exceededTransferLimit': False</em>, <em>'displayFieldName': ''</em>, <em>'geometryType': 'esriGeometryPoint'</em>, <em>'features': []</em>, <em>'spatialReference': {'wkid': 102100</em>, <em>'latestWkid': 3857}</em>, <em>'fields': [{'alias': 'OID'</em>, <em>'name': 'OID'</em>, <em>'type': 'esriFieldTypeOID'}</em>, <em>{'alias': 'offseta'</em>, <em>'name': 'offseta'</em>, <em>'type': 'esriFieldTypeDouble'}</em>, <em>{'alias': 'offsetb'</em>, <em>'name': 'offsetb'</em>, <em>'type': 'esriFieldTypeDouble'}]}</em>, <em>maximum_distance: float = None</em>, <em>maximum_distance_units: str = 'Meters'</em>, <em>dem_resolution: str = None</em>, <em>observer_height: float = None</em>, <em>observer_height_units: str = 'Meters'</em>, <em>surface_offset: float = None</em>, <em>surface_offset_units: str = 'Meters'</em>, <em>generalize_viewshed_polygons: bool = True</em>, <em>gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.viewshed" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">elevation.</code><code class="descname">viewshed</code><span class="sig-paren">(</span><em>input_points: arcgis.features.feature.FeatureSet = {'features': [], 'geometryType': 'esriGeometryPoint', 'fields': [{'name': 'OID', 'alias': 'OID', 'type': 'esriFieldTypeOID'}, {'name': 'offseta', 'alias': 'offseta', 'type': 'esriFieldTypeDouble'}, {'name': 'offsetb', 'alias': 'offsetb', 'type': 'esriFieldTypeDouble'}], 'spatialReference': {'latestWkid': 3857, 'wkid': 102100}, 'exceededTransferLimit': False, 'displayFieldName': ''}, maximum_distance: float = None, maximum_distance_units: str = 'Meters', dem_resolution: str = None, observer_height: float = None, observer_height_units: str = 'Meters', surface_offset: float = None, surface_offset_units: str = 'Meters', generalize_viewshed_polygons: bool = True, gis=None</em><span class="sig-paren">)</span> &#x2192; arcgis.features.feature.FeatureSet<a class="headerlink" href="#arcgis.features.elevation.viewshed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns polygons of visible areas for a given set of input observation points.</p>
 <p>Parameters:</p>
 <blockquote>
@@ -723,7 +765,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.4',
+            VERSION:'1.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

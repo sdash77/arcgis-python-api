@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>arcgis.raster.functions module &mdash; arcgis 1.2.4 documentation</title>
+  <title>arcgis.raster.functions module &mdash; arcgis 1.3.0 documentation</title>
   
 
   
@@ -35,9 +35,9 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="arcgis 1.2.4 documentation" href="index.html"/>
+    <link rel="top" title="arcgis 1.3.0 documentation" href="index.html"/>
         <link rel="up" title="arcgis.raster module" href="arcgis.raster.toc.html"/>
-        <link rel="next" title="arcgis.network module" href="arcgis.network.toc.html"/>
+        <link rel="next" title="arcgis.raster.functions.gbl module" href="arcgis.raster.functions.gbl.html"/>
         <link rel="prev" title="arcgis.raster.analytics module" href="arcgis.raster.analytics.html"/> 
 
   
@@ -66,7 +66,7 @@
             
             
               <div class="version">
-                1.2.4
+                1.3.0
               </div>
             
           
@@ -108,9 +108,11 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.gis.admin.html">arcgis.gis.admin module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#agoladminmanager">AGOLAdminManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portaladminmanager">PortalAdminManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#categorymanager">CategoryManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaborationmanager">CollaborationManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#collaboration">Collaboration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#creditmanager">CreditManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#identityprovidermanager">IdentityProviderManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#passwordpolicy">PasswordPolicy</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#portalresourcemanager">PortalResourceManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.admin.html#ux">UX</a></li>
@@ -151,6 +153,10 @@
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#systemmanager">SystemManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#sitemanager">SiteManager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#directorymanager">DirectoryManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#configurationstore">ConfigurationStore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#jobs">Jobs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverdirectory">ServerDirectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.gis.server.html#serverproperties">ServerProperties</a></li>
 </ul>
 </li>
 </ul>
@@ -314,6 +320,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#classify">classify</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#clip">clip</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#colormap">colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#colormap-to-rgb">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id1">colormap_to_rgb</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#colorspace-conversion">colorspace_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#composite-band">composite_band</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#con">con</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#contrast-brightness">contrast_brightness</a></li>
@@ -339,6 +348,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#greater-than-equal">greater_than_equal</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gvitm">gvitm</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#hillshade">hillshade</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#identity">identity</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#int">INT</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#is-null">is_null</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#less-than">less_than</a></li>
@@ -363,6 +373,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#ndvi">ndvi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#negate">negate</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#not-equal">not_equal</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pansharpen">pansharpen</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#plus">plus</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#power">power</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pvi">pvi</a></li>
@@ -381,19 +392,38 @@
 <li class="toctree-l4"><a class="reference internal" href="#sqrt">sqrt</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#square">square</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#focal-statistics">focal_statistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#statistics-histogram">statistics_histogram</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#std">std</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#stretch">stretch</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sultan">sultan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sum">sum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#tan">tan</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#tanh">tanh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tasseled-cap">tasseled_cap</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#threshold">threshold</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#times">times</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#transpose-bits">transpose_bits</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#tsavi">tsavi</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#unit-conversion">unit_conversion</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#variety">variety</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vector-field">vector_field</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#vector-field-renderer">vector_field_renderer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="arcgis.raster.functions.gbl.html">arcgis.raster.functions.gbl module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-allocation">cost_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#cost-distance">cost_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-allocation">euclidean_allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#euclidean-distance">euclidean_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#fill">fill</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-accumulation">flow_accumulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-distance">flow_distance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#flow-direction">flow_direction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#least-cost-path">least_cost_path</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#nibble">nibble</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#stream-link">stream_link</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#watershed">watershed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.raster.functions.gbl.html#zonal-statistics">zonal_statistics</a></li>
 </ul>
 </li>
 </ul>
@@ -434,6 +464,7 @@
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html">arcgis.geoanalytics.find_locations module</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#detect-incidents">detect_incidents</a></li>
 <li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#find-similar-locations">find_similar_locations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="arcgis.geoanalytics.find_locations.html#geocode-locations">geocode_locations</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="arcgis.geoanalytics.manage_data.html">arcgis.geoanalytics.manage_data module</a><ul>
@@ -461,9 +492,20 @@
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocoder">Geocoder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#get-geocoders">get_geocoders</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode">geocode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#geocode-from-items">geocode_from_items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#analyze-geocode-input">analyze_geocode_input</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#reverse-geocode">reverse_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#batch-geocode">batch_geocode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="arcgis.geocoding.html#suggest">suggest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="arcgis.geoenrichment.html">arcgis.geoenrichment module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#country">Country</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#get-countries">get_countries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#create-report">create_report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#enrich">enrich</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#find-businesses">find_businesses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="arcgis.geoenrichment.html#standard-geography-query">standard_geography_query</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="arcgis.geometry.html">arcgis.geometry module</a><ul>
@@ -1360,7 +1402,7 @@ clipping_geometry will be removed.</li>
 <h2>colormap<a class="headerlink" href="#colormap" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
 <dt id="arcgis.raster.functions.colormap">
-<code class="descclassname">functions.</code><code class="descname">colormap</code><span class="sig-paren">(</span><em>raster</em>, <em>colormap_name=None</em>, <em>colormap=None</em>, <em>astype=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.colormap" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">functions.</code><code class="descname">colormap</code><span class="sig-paren">(</span><em>raster</em>, <em>colormap_name=None</em>, <em>colormap=None</em>, <em>colorramp=None</em>, <em>astype=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.colormap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
 a color map. For more information, see Colormap function at
 <a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm</a></p>
@@ -1368,21 +1410,110 @@ a color map. For more information, see Colormap function at
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>raster</strong> – input raster</li>
 <li><strong>colormap_name</strong> – colormap name, if one of Random | NDVI | Elevation | Gray</li>
 <li><strong>colormap</strong> – <p>[
 [&lt;value1&gt;, &lt;red1&gt;, &lt;green1&gt;, &lt;blue1&gt;], //[int, int, int, int]
-[&lt;value2&gt;, &lt;red2&gt;, &lt;green2&gt;, &lt;blue2&gt;]</p>
+[&lt;value2&gt;, &lt;red2&gt;, &lt;green2&gt;, &lt;blue2&gt;]
+],</p>
 </li>
+<li><strong>colorramp</strong> – Can be a string specifiying color ramp name like &lt;Black To White|Yellow To Red|Slope|more..&gt;
+or a color ramp object. 
+For more information about colorramp object, see color ramp object at
+<a class="reference external" href="http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/">http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/</a>)</li>
+<li><strong>astype</strong> – output pixel type</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the colorized raster</p>
 </td>
 </tr>
 </tbody>
 </table>
-<p>],
-:param astype: output pixel type
-:return: the clipped raster</p>
+</dd></dl>
+
+</div>
+<div class="section" id="colormap-to-rgb">
+<h2>colormap_to_rgb<a class="headerlink" href="#colormap-to-rgb" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.colormap_to_rgb">
+<code class="descclassname">functions.</code><code class="descname">colormap_to_rgb</code><span class="sig-paren">(</span><em>raster</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.colormap_to_rgb" title="Permalink to this definition">¶</a></dt>
+<dd><p>”
+The function is designed to work with single band image service that has
+internal colormap. It will convert the image into a three-band 8-bit RGB
+raster. This function takes no arguments except an input raster. For 
+qualified image service, there are two situations when ColormapToRGB 
+function is automatically applied: The “colormapToRGB” property of the 
+image service is set to true; or, client asks to export image into jpg 
+or png format. For more information, see 
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>raster</strong> – the input raster / imagery layer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Three band raster</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="id1">
+<h2>colormap_to_rgb<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt>
+<code class="descclassname">functions.</code><code class="descname">colormap_to_rgb</code><span class="sig-paren">(</span><em>raster</em><span class="sig-paren">)</span></dt>
+<dd><p>”
+The function is designed to work with single band image service that has
+internal colormap. It will convert the image into a three-band 8-bit RGB
+raster. This function takes no arguments except an input raster. For 
+qualified image service, there are two situations when ColormapToRGB 
+function is automatically applied: The “colormapToRGB” property of the 
+image service is set to true; or, client asks to export image into jpg 
+or png format. For more information, see 
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>raster</strong> – the input raster / imagery layer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Three band raster</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="colorspace-conversion">
+<h2>colorspace_conversion<a class="headerlink" href="#colorspace-conversion" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.colorspace_conversion">
+<code class="descclassname">functions.</code><code class="descname">colorspace_conversion</code><span class="sig-paren">(</span><em>raster</em>, <em>conversion_type='rgb_to_hsv'</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.colorspace_conversion" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ColorspaceConversion function converts the color model of a three-band
+unsigned 8-bit image from either the hue, saturation, and value (HSV)
+to red, green, and blue (RGB) or vice versa. An ExtractBand function and/or
+a Stretch function are sometimes used for converting the imagery into valid
+input of ColorspaceConversion function. For more information, see
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/color-model-conversion-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/color-model-conversion-function.htm</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>raster</strong> – the input raster</li>
+<li><strong>conversion_type</strong> – sting type, one of “rgb_to_hsv” or “hsv_to_rgb”. Default is “rgb_to_hsv”</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the output raster with this function applied to it</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -1769,7 +1900,7 @@ this conceptual help&lt;/a&gt; on how it works. The arguments for the elevation_
 <dl class="method">
 <dt id="arcgis.raster.functions.expression">
 <code class="descclassname">functions.</code><code class="descname">expression</code><span class="sig-paren">(</span><em>raster</em>, <em>expression='(B3 - B1 / B3 + B1)'</em>, <em>astype=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.expression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, <a href="#id1"><span class="problematic" id="id2">*</span></a>, and unary -.
+<dd><p>Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, <a href="#id2"><span class="problematic" id="id3">*</span></a>, and unary -.
 To identify the bands, prepend the band number with a B or b. For example: “BandIndexes”:”(B1 + B2) / (B3 * B5)”</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2061,6 +2192,29 @@ The arguments for the hillshade function are as follows:</p>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the output raster</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="identity">
+<h2>identity<a class="headerlink" href="#identity" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.identity">
+<code class="descclassname">functions.</code><code class="descname">identity</code><span class="sig-paren">(</span><em>raster</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.identity" title="Permalink to this definition">¶</a></dt>
+<dd><p>”
+The function is used to define the source raster as part of the default
+mosaicking behavior of the mosaic dataset. This function is a no-op function
+and takes no arguments except a raster. For more information, see
+(<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>raster</strong> – the input raster / imagery layer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the innput raster</td>
 </tr>
 </tbody>
 </table>
@@ -2683,6 +2837,38 @@ NDVI = ((NIR - Red)/(NIR + Red))</p>
 </dd></dl>
 
 </div>
+<div class="section" id="pansharpen">
+<h2>pansharpen<a class="headerlink" href="#pansharpen" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.pansharpen">
+<code class="descclassname">functions.</code><code class="descname">pansharpen</code><span class="sig-paren">(</span><em>pan_raster, ms_raster, ir_raster=None, fourth_band_of_ms_is_ir=True, weights=[0.166, 0.167, 0.167, 0.5], type='ESRI', sensor=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.pansharpen" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Pansharpening function uses a higher-resolution panchromatic raster to
+fuse with a lower-resolution, multiband raster. It can generate colorized 
+multispectral image with higher resolution. For more information, see 
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pan_raster</strong> – raster, which is panchromatic</li>
+<li><strong>ms_raster</strong> – raster, which is multispectral</li>
+<li><strong>ir_raster</strong> – Optional, if fourth_band_of_ms_is_ir is true or selected pansharpening method doesn’t require near-infrared image</li>
+<li><strong>fourth_band_of_ms_is_ir</strong> – Boolean, “true” if “ms_raster” has near-infrared image on fourth band</li>
+<li><strong>weights</strong> – Weights applied for Red, Green, Blue, Near-Infrared bands. 4-elements array, Sum of values is 1</li>
+<li><strong>type</strong> – string, describes the Pansharpening method one of “IHS”, “Brovey” “ESRI”, “SimpleMean”, “Gram-Schmidt”. Default is “ESRI”</li>
+<li><strong>sensor</strong> – string, it is an optional parameter to specify the sensor name</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">output raster with function applied</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="plus">
 <h2>plus<a class="headerlink" href="#plus" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
@@ -3199,6 +3385,35 @@ The arguments for the statistics function are as follows:</p>
 </dd></dl>
 
 </div>
+<div class="section" id="statistics-histogram">
+<h2>statistics_histogram<a class="headerlink" href="#statistics-histogram" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.statistics_histogram">
+<code class="descclassname">functions.</code><code class="descname">statistics_histogram</code><span class="sig-paren">(</span><em>raster</em>, <em>statistics=None</em>, <em>histograms=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.statistics_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>”
+The function is used to define the statistics and histogram of a raster.
+It is normally used for control the default display of exported image. 
+For more information, see Statistics and Histogram function, 
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>raster</strong> – the input raster / imagery layer</li>
+<li><strong>statistics</strong> – array of statistics objects. (Predefined statistics for each band)</li>
+<li><strong>histograms</strong> – array of histogram objects. (Predefined histograms for each band)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Statistics and Histogram defined raster</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="std">
 <h2>std<a class="headerlink" href="#std" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
@@ -3375,6 +3590,40 @@ Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100</dd>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the output raster</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="tasseled-cap">
+<h2>tasseled_cap<a class="headerlink" href="#tasseled-cap" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.tasseled_cap">
+<code class="descclassname">functions.</code><code class="descname">tasseled_cap</code><span class="sig-paren">(</span><em>raster</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.tasseled_cap" title="Permalink to this definition">¶</a></dt>
+<dd><p>”
+The function is designed to analyze and map vegetation and urban development
+changes detected by various satellite sensor systems. It is known as the 
+Tasseled Cap transformation due to the shape of the graphical distribution
+of data. This function takes no arguments except a raster. The input for 
+this function is the source raster of image service. There are no other 
+parameters for this function because all the information is derived from 
+the input’s properties and key metadata (bands, data type, and sensor name). 
+Only imagery from the Landsat MSS, Landsat TM, Landsat ETM+, IKONOS, 
+QuickBird, WorldView-2 and RapidEye sensors are supported. Prior to applying
+this function, there should not be any functions that would alter the pixel
+values in the function chain, such as the Stretch, Apparent Reflectance or
+Pansharpening function. The only exception is for Landsat ETM+; when using 
+Landsat ETM+, the Apparent Reflectance function must precede the Tasseled 
+Cap function. For more information, see 
+<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>raster</strong> – the input raster / imagery layer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the output raster with TasseledCap function applied to it</td>
 </tr>
 </tbody>
 </table>
@@ -3563,6 +3812,37 @@ Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimete
 </dd></dl>
 
 </div>
+<div class="section" id="vector-field">
+<h2>vector_field<a class="headerlink" href="#vector-field" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="arcgis.raster.functions.vector_field">
+<code class="descclassname">functions.</code><code class="descname">vector_field</code><span class="sig-paren">(</span><em>raster_u_mag</em>, <em>raster_v_dir</em>, <em>input_data_type='Vector-UV'</em>, <em>angle_reference_system='Geographic'</em>, <em>output_data_type='Vector-UV'</em>, <em>astype=None</em><span class="sig-paren">)</span><a class="headerlink" href="#arcgis.raster.functions.vector_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
+into a two-band raster (each band represents U/V or Magnitude/Direction). Data combination type (U-V or Magnitude-Direction)
+can also be converted interchangeably with this function.
+For more information, see Vector Field function
+(<a class="reference external" href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm">http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm</a>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>raster_u_mag</strong> – raster item representing ‘U’ or ‘Magnitude’ - imagery layers filtered by where clause, spatial and temporal filters</li>
+<li><strong>raster_v_dir</strong> – raster item representing ‘V’ or ‘Direction’ - imagery layers filtered by where clause, spatial and temporal filters</li>
+<li><strong>input_data_type</strong> – string, ‘Vector-UV’ or ‘Vector-MagDir’ per input used in ‘raster_u_mag’ and ‘raster_v_dir’</li>
+<li><strong>angle_reference_system</strong> – string, optional when ‘input_data_type’ is ‘Vector-UV’, one of “Geographic”, “Arithmetic”</li>
+<li><strong>output_data_type</strong> – string, ‘Vector-UV’ or ‘Vector-MagDir’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the output raster with this function applied to it</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="vector-field-renderer">
 <h2>vector_field_renderer<a class="headerlink" href="#vector-field-renderer" title="Permalink to this headline">¶</a></h2>
 <dl class="method">
@@ -3601,7 +3881,7 @@ Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimete
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="arcgis.network.toc.html" class="btn btn-neutral float-right" title="arcgis.network module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="arcgis.raster.functions.gbl.html" class="btn btn-neutral float-right" title="arcgis.raster.functions.gbl module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="arcgis.raster.analytics.html" class="btn btn-neutral" title="arcgis.raster.analytics module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -3635,7 +3915,7 @@ Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimete
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'1.2.4',
+            VERSION:'1.3.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
