@@ -1068,8 +1068,6 @@ class FeatureLayerCollection(_GISResource):
                                                url="%s/uploads" % self._url)
 
         except: pass
-        print()
-
 
     def _populate_layers(self):
         """
