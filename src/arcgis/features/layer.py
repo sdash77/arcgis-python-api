@@ -1061,6 +1061,16 @@ class FeatureLayerCollection(_GISResource):
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
 
+        try:
+            if "Uploads" in self.properties.capabilities.split(','):
+                from .managers import _UploadsManager
+                self.uploads = _UploadsManager(connection=self._con,
+                                               url="%s/uploads" % self._url)
+
+        except: pass
+        print()
+
+
     def _populate_layers(self):
         """
         populates the layers and tables for this feature service
