@@ -659,7 +659,125 @@ class FeatureLayer(Layer):
 
             return self._con.get(path=pop_url, params=params, token=self._token)
         return ""
+    # ----------------------------------------------------------------------
+    def append(self,
+               item_id=None,
+               upload_format="featureCollection",
+               source_table_name=None,
+               field_mappings=None,
+               edits=None,
+               source_info=None,
+               upsert=True,
+               skip_updates=False,
+               use_globalids=False,
+               update_geometry=True,
+               append_fields=None,
+               rollback=False):
+        """
+        Only available in AGOL
 
+        Update an existing hosted feature layer using append.
+
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        source_table_name       optional string. Required only when the source data contains more
+                                than one tables, e.g., for filegdb.
+                                Example: source_tabl_name=  "Building"
+        -------------------     --------------------------------------------------------------------
+        item_id                 optional string. The ID for the Portal item that contains the source file.
+                                Used in conjunction with editsUploadFormat.
+        -------------------     --------------------------------------------------------------------
+        field_mappings          optional list. Used to map source data to a destination layer.
+                                Syntax: fieldMappings=[{"name" : <"targerName">,
+                                                        "sourceName" : < "sourceName">}, ...]
+                                Examples: fieldMappings=[{"name" : "CountyID",
+                                                          "sourceName" : "GEOID10"}]
+        -------------------     --------------------------------------------------------------------
+        edits                   optional string. Only feature collection json is supported. Append
+                                supports all format through the upload_id or item_id.
+        -------------------     --------------------------------------------------------------------
+        source_info             optional dictionary. This is only needed when appending data from
+                                excel or csv. The appendSourceInfo can be the publishing parameter
+                                returned from analyze the csv or excel file.
+        -------------------     --------------------------------------------------------------------
+        upsert                  optional boolean. Optional parameter specifying whether the edits
+                                needs to be applied as updates if the feature already exists.
+                                Default is false.
+        -------------------     --------------------------------------------------------------------
+        skip_updates            Optional boolean. Parameter is used only when upsert is true.
+        -------------------     --------------------------------------------------------------------
+        use_globalids           Optional boolean. Specifying whether upsert needs to use GlobalId
+                                when matching features.
+        -------------------     --------------------------------------------------------------------
+        update_geometry         optional boolean. The parameter is used only when upsert is true.
+                                Skip updating the geometry and update only the attributes for
+                                existing features if they match source features by objectId or
+                                globalId.(as specified by useGlobalIds parameter).
+        -------------------     --------------------------------------------------------------------
+        append_fields           Optional list. The list of destination fields to append to. This is
+                                supported when upsert=true or false.
+                                Values:  ["fieldName1", "fieldName2",....]
+        -------------------     --------------------------------------------------------------------
+        upload_format           required string. The source append data format. The default is
+                                featureCollection format.
+                                Values: sqlite | shapefile | filegdb | featureCollection |
+                                geojson | csv | excel
+
+        -------------------     --------------------------------------------------------------------
+        rollback                Optional boolean. Optional parameter specifying whether the upsert
+                                edits needs to be rolled back in case of failure. Default is false.
+        ===================     ====================================================================
+
+        :return: boolean
+
+        """
+        import copy
+        upload_id = None
+        if self._gis.is_logged_in == False:
+            raise Exception("Authentication required to perform append.")
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("Append only available on ArcGIS Online.")
+        if self.properties.supportsAppend == False:
+            raise Exception("Append is not supported on this layer, please " +\
+                            "update service definition capabilities.")
+        params = {
+            'f' : 'json',
+            'sourceTableName' : source_table_name,
+            'fieldMappings' : field_mappings,
+            'edits' : edits,
+            'appendSourceInfo' : source_info,
+            'upsert' : upsert,
+            'skipUpdates' : skip_updates,
+            'useGlobalIds' : use_globalids,
+            'updateGeometry' : update_geometry,
+            'appendFields' : append_fields,
+            'appendUploadId' : upload_id,
+            'appendItemId' : item_id,
+            'appendUploadFormat' : upload_format,
+            'rollbackOnFailure' : rollback
+        }
+        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(',')
+        if upload_format not in upload_formats:
+            raise ValueError("Invalid upload format: %s." % upload_format)
+        cparams = copy.copy(params)
+        for k,v in cparams.items():
+            if v is None:
+                params.pop(k)
+            del k, v
+        url = self._url + "/append"
+        del cparams
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'statusUrl' in res:
+            surl = res['statusUrl']
+            sres = self._con.get(path=surl, params={'f' : 'json'})
+            while sres['status'].lower() != "completed":
+                sres = self._con.get(path=surl, params={'f' : 'json'})
+                if sres['status'].lower() in "failed":
+                    break
+            return True
+        return res
     # ----------------------------------------------------------------------
     def delete_features(self,
                         deletes=None,

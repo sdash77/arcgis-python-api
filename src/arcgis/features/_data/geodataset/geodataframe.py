@@ -234,8 +234,14 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         elif 'fid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
+        elif 'oid' in cols_lower:
+            fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
+            fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
         else:
-            del fs['objectIdFieldName']
+            self['OBJECTID'] = list(range(1, self.shape[0] + 1))
+            res = self.__feature_set__
+            del self['OBJECTID']
+            return res
         if 'objectIdFieldName' in fs:
             fields.append({
                 "name" : fs['objectIdFieldName'],
