@@ -471,3 +471,10 @@ vector_field_renderer
 _____________________
 .. automethod:: arcgis.raster.functions.vector_field_renderer
 
+weighted_overlay
+_____________________
+.. automethod:: arcgis.raster.functions.weighted_overlay
+
+weighted_sum
+_____________________
+.. automethod:: arcgis.raster.functions.weighted_sum

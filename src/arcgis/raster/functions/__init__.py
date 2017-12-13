@@ -2024,8 +2024,8 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The con operation
-
+    The con operation.Performs a conditional if/else evaluation on each of the input cells of an input raster.
+	For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2035,7 +2035,7 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 76, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
@@ -2453,7 +2453,13 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param raster: input raster
     :param kernel_columns: int (e.g. 3)
     :param kernel_rows: int (e.g. 3)
-    :param stat_type: int 1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+    :param stat_type: int or string 
+					  There are four types of focal statistical functions:
+					  1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+					  -Min-Calculates the minimum value of the pixels within the neighborhood
+				      -Max-Calculates the maximum value of the pixels within the neighborhood
+				      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
+				      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
     :param columns: int (e.g. 3)
     :param rows: int (e.g. 3)
     :param fill_no_data_only: bool
@@ -2463,6 +2469,8 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    statistics_types = ["Min", "Max", "Mean", "StandardDeviation"]
 
     template_dict = {
         "rasterFunction": "Statistics",
@@ -2479,8 +2487,11 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
         template_dict["rasterFunctionArguments"]["KernelColumns"] = kernel_columns
     if kernel_rows is not None:
         template_dict["rasterFunctionArguments"]["KernelRows"] = kernel_rows
-    if stat_type is not None:
-        template_dict["rasterFunctionArguments"]["Type"] = stat_type
+    if stat_type is not None: 
+        if isinstance(stat_type, str) and stat_type in statistics_types:
+            template_dict["rasterFunctionArguments"]['Type'] = stat_type
+        elif isinstance(stat_type, int):
+            template_dict["rasterFunctionArguments"]['Type'] = stat_type
     if columns is not None:
         template_dict["rasterFunctionArguments"]["Columns"] = columns
     if rows is not None:
@@ -3286,3 +3297,68 @@ def pansharpen(pan_raster,
         template_dict["rasterFunctionArguments"]['Sensor'] = sensor
     
     return _clone_layer(layer, template_dict, raster_ra1)
+
+
+def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
+               
+    """
+    The WeightedOverlay function allows you to overlay several rasters using a common 
+	measurement scale and weights each according to its importance. For more information, see
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm
+
+    :param raster: array of rasters
+    :param fields: array of string fields of the input rasters to be used for weighting.				 
+    :param influences: array of double, Each input raster is weighted according to its importance, or 
+				       its influence. The sum of the influence weights must equal 1
+    :param remaps: array of strings, Each value in an input raster is assigned a new value based on the 
+				   remap. The remap value can be a valid value or a NoData value.    
+	:param eval_from: required, numeric value of evaluation scale from
+	:param eval_to: required, numeric value of evaluation scale to
+    :return: output raster with function applied
+    """
+
+    layer, raster, raster_ra = _raster_input(rasters)   
+
+    template_dict = {
+        "rasterFunction" : "WeightedOverlay",
+        "rasterFunctionArguments" : { 
+            "Rasters" : raster,
+            "Fields" : fields,
+            "Influences": influences,
+            "Remaps" : remaps,
+            "EvalFrom" : eval_from,
+            "EvalTo": eval_to
+        },
+        "variableName": "Rasters"
+    }   
+    
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+
+
+def weighted_sum(rasters, fields, weights):
+               
+    """
+    The WeightedSum function allows you to overlay several rasters, multiplying each by their 
+	given weight and summing them together.  For more information, see
+    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
+
+    :param raster: array of rasters
+    :param fields: array of string fields of the input rasters to be used for weighting.				 
+    :param weights: array of double, The weight value by which to multiply the raster. 
+				    It can be any positive or negative decimal value.    
+    :return: output raster with function applied
+    """
+
+    layer, raster, raster_ra = _raster_input(rasters)   
+     
+    template_dict = {
+        "rasterFunction" : "WeightedSum",
+        "rasterFunctionArguments" : { 
+            "Rasters" : raster,
+            "Fields" : fields,
+            "Weights" : weights
+        },
+        "variableName": "Rasters"
+    }   
+    
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
