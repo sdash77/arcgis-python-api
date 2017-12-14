@@ -558,10 +558,10 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
             #remove json file in folder
             remove_result = res_mgr.remove('fld/root_resource_file.json')
-            if 'success' not in remove_result:
+            if not remove_result:
                 print(remove_result)
-            self.assertIsInstance(remove_result, dict, "Did not get dict when removing json resource file")
-            self.assertTrue(remove_result['success'], 'Failed to remove JSON file')
+            self.assertIsInstance(remove_result, bool, "Did not get bool when removing json resource file")
+            self.assertTrue(remove_result, 'Failed to remove JSON file')
 
             res_list_after_removal = res_mgr.list()
             self.assertEqual(len(res_list_after_removal), 1, "Number of resources after removal is not 1")
@@ -626,10 +626,10 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
             # remove all resources
             remove_result = res_mgr.remove() #checking if not specifying anything deletes all files.
-            if 'success' not in remove_result:
+            if not remove_result:
                 print(remove_result)
-            self.assertIsInstance(remove_result, dict, "Did not get dict when removing all resource files")
-            self.assertTrue(remove_result['success'], 'Failed to remove all files')
+            self.assertIsInstance(remove_result, bool, "Did not get bool when removing all resource files")
+            self.assertTrue(remove_result, 'Failed to remove all files')
 
             res_list_after_removal = res_mgr.list()
             self.assertEqual(len(res_list_after_removal), 0, "Number of resources after removing all is not 0")

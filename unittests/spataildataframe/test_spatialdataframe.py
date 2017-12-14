@@ -120,7 +120,7 @@ if HAS_ARCPY:
             self.assertIsInstance(spdf, SpatialDataFrame)
 
         def test_to_pickle(self):
-            out_file = r"c:\temp\test.pkl"
+            out_file = r"C:\Users\Default\AppData\Local\Temp\test.pkl"
             if os.path.isfile(out_file):
                 os.remove(out_file)
             from arcgis.features._data.geodataset.io import from_featureclass
@@ -131,7 +131,7 @@ if HAS_ARCPY:
         @unittest.skip
         def test_to_hdf(self):
             from uuid import uuid4
-            out_file = r"c:\temp\%s.hf5" % uuid4().hex
+            out_file = r"C:\Users\Default\AppData\Local\Temp\%s.hf5" % uuid4().hex
             if os.path.isfile(out_file):
                 os.remove(out_file)
             from arcgis.features._data.geodataset.io import from_featureclass

@@ -683,20 +683,17 @@ def enrich(study_areas,
             area_dict = area
             if isinstance(area, str): # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
                 area_dict = {'address': {'text': area}}
-            elif isinstance(area, dict): # pass through - user knows what they're sending
-                pass
             elif isinstance(area, Geometry): # geometry, polygons, points
                 area_dict = {'geometry': dict(area)}
             elif isinstance(area, BufferStudyArea):
-
                 # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
                 g = area.area
                 if isinstance(g, str):
                     area_dict = {'address': {'text': g}}
-                elif isinstance(g, dict):
-                    area_dict = g
                 elif isinstance(g, Geometry):  # geometry, polygons, points
                     area_dict = {'geometry': dict(g)}
+                elif isinstance(g, dict):
+                    area_dict = g
                 else:
                     raise ValueError('BufferStudyArea is only supported for Point geometry and addresses')
 
@@ -715,6 +712,9 @@ def enrich(study_areas,
 
             elif isinstance(area, NamedArea): # named area
                 area_dict = area.__studyarea__
+
+            elif isinstance(area, dict):  # pass through - user knows what they're sending
+                pass
             elif isinstance(area, list): # list of named areas, (union)
                 first_area = area[0]
                 ids = []
