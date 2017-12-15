@@ -2,11 +2,12 @@
 Helper classes for managing feature layers and datasets.  These class are not created by users directly.
 Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
-
-import collections
+from __future__ import absolute_import
+import os
 import json
-import tempfile
 import time
+import tempfile
+import collections
 
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
