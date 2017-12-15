@@ -3133,10 +3133,11 @@ class Group(dict):
         ============  ======================================
 
         :return:
-           A dictionary with a key of notAdded which contains the users that were not
-             added to the group.
+           A list which contains the users that were not added to the group.
         """
         users = []
+        if isinstance(usernames, (list, tuple)) == False:
+            usernames = [usernames]
         for u in usernames:
             if isinstance(u, str):
                 users.append(u)
