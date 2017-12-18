@@ -18,8 +18,7 @@ DATETIME_TYPES = (datetime,
 
 NUMERIC_TYPES = tuple(list(integer_types) + [
     np.int, np.int16,
-    np.int64, np.int32,
-    np.integer,
+    np.int32, np.integer,
     np.float, np.float32,
     np.float64, np.int8,
     np.int64, np.short])
