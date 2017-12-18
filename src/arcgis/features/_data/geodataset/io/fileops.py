@@ -251,7 +251,7 @@ def to_featureclass(df, out_name, out_location=None,
                 if df[col].dtype.type in NUMERIC_TYPES:
                     df[col] = df[col].fillna(0)
                 elif df[col].dtype.type in DATETIME_TYPES:
-                    dt_idx.append(idx)
+                    dt_idx.append(col)
                 else:
                     df.loc[df[col].isnull(), col] = ""
                 idx += 1
@@ -346,6 +346,7 @@ def to_featureclass(df, out_name, out_location=None,
                                               field_type=t)
                 except:
                     print('col %s' % col)
+        dt_idx = [col_insert.index(col) for col in dt_idx if col in col_insert]
         icur = da.InsertCursor(fc, col_insert)
         for index, row in df[df_cols].iterrows():
             if len(dt_idx) > 0:
