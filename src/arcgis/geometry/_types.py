@@ -7,7 +7,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from six import add_metaclass
 try:
     import arcpy
-    HASARCPY = False#True
+    HASARCPY = True
 except ImportError:
     HASARCPY = False
 try:
@@ -1566,64 +1566,6 @@ class Point(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
-    #----------------------------------------------------------------------
-    def svg(self, scale_factor=1., fill_color=None):
-        """Returns SVG circle element for the Point geometry.
-
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG circle diameter.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
-        """
-        if self.x is None:
-            return '<g />'
-        if fill_color is None:
-            fill_color = "#66cc99" if self.is_valid else "#ff3333"
-        return (
-            '<circle cx="{0.x}" cy="{0.y}" r="{1}" '
-            'stroke="#555555" stroke-width="{2}" fill="{3}" opacity="0.6" />'
-            ).format(self, 3. * scale_factor, 1. * scale_factor, fill_color)
-    def _repr_svg_(self):
-        """SVG representation for iPython notebook"""
-        svg_top = '<svg xmlns="http://www.w3.org/2000/svg" ' \
-            'xmlns:xlink="http://www.w3.org/1999/xlink" '
-        if self.x is None:
-            return svg_top + '/>'
-        else:
-            # Establish SVG canvas that will fit all the data + small space
-            xmin, ymin, xmax, ymax = self.geoextent
-            if xmin == xmax and ymin == ymax:
-                # This is a point; buffer using an arbitrary size
-                xmin, ymin, xmax, ymax = xmin-.01, ymin-.01, xmax+.01, ymax+.01
-            else:
-                # Expand bounds by a fraction of the data ranges
-                expand = 0.04  # or 4%, same as R plots
-                widest_part = max([xmax - xmin, ymax - ymin])
-                expand_amount = widest_part * expand
-                xmin -= expand_amount
-                ymin -= expand_amount
-                xmax += expand_amount
-                ymax += expand_amount
-            dx = xmax - xmin
-            dy = ymax - ymin
-            width = min([max([100., dx]), 300])
-            height = min([max([100., dy]), 300])
-            try:
-                scale_factor = max([dx, dy]) / max([width, height])
-            except ZeroDivisionError:
-                scale_factor = 1.
-            view_box = "{0} {1} {2} {3}".format(xmin, ymin, dx, dy)
-            transform = "matrix(1,0,0,-1,0,{0})".format(ymax + ymin)
-            return svg_top + (
-                'width="{1}" height="{2}" viewBox="{0}" '
-                'preserveAspectRatio="xMinYMin meet">'
-                '<g transform="{3}">{4}</g></svg>'
-                ).format(view_box, width, height, transform,
-                         self.svg(scale_factor))
-
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
