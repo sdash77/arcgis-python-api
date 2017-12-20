@@ -621,7 +621,7 @@ def convert_raster_to_feature(input_raster,
     params["inputRaster"] = _layer_input(input_raster)
 
     if output_name is None:
-        output_service_name = 'Calculate Density Analysis_' + _id_generator()
+        output_service_name = 'RasterToFeature_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')

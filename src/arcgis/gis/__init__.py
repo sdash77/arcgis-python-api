@@ -2420,36 +2420,47 @@ class ContentManager(object):
         """ Clone content to the GIS by creating new items.
 
         .. note::
-            Cloning an item will create a copy of the item and for certain item types
-            a copy of the item dependencies in the GIS.
+			Cloning an item will create a copy of the item and for certain 
+			item types a copy of the item dependencies in the GIS. 
+			
+			For example a web application created using Web AppBuilder 
+			or a Configurable App Template which is built from a web map 
+			that references one or more hosted feature layers. This function 
+			will clone all of these items to the GIS and swizzle the paths 
+			in the web map and web application to point to the new layers. 
+			
+			This creates an exact copy of the application, map, and layers 
+			in the GIS.	
 
-            For example if you clone a hosted web application created using Web AppBuilder
-            or a Configurable App Template, the web map that is used by that web application
-            and all the hosted feature layers used in the web map. It will then clone all of
-            these items to the new organization and swizzle the paths in the web map and
-            web application to point to the new layers. This creates a completely disconnected
-            copy of the application, map and layers in the GIS.
-
-
-        ======================  ==========================================================================
-        **Argument**            **Description**
-        ----------------------  --------------------------------------------------------------------------
-        items                   Required list. Collection of items to clone.
-        ----------------------  --------------------------------------------------------------------------
-        folder                  Optional string. Name of the folder where placing item.
-        ----------------------  --------------------------------------------------------------------------
-        item_extent             Optional Envelope. Extent set for any cloned items. Default is None, extent will remain unchanged. Spatial reference of the envelope will be used for any cloned feature layers.
-        ----------------------  --------------------------------------------------------------------------
-        use_org_basemap         Optional boolean. Indicating whether the basemap in any cloned web maps should be updated to the organizations default basemap. Default is False, basemap will not change.
-        ----------------------  --------------------------------------------------------------------------
-        copy_data               Optional boolean. Indicating whether the data should be copied with any feature layer or feature collections. Default is True, data will be copied.
-        ----------------------  --------------------------------------------------------------------------
-        search_existing_items   Optional boolean. Indicating whether items that have already been cloned should be searched for in the GIS and reused rather than cloned again.
-        ----------------------  --------------------------------------------------------------------------
-        item_mapping            Optional dictionary. Can be used to associate an item in the source GIS to an item in the target GIS. The target item will be used rather than cloning the source item.
-        ======================  ==========================================================================
-        group_mapping           Optional dictionary. Can be used to associate a group in the source GIS to a group in the target GIS. The target group will be used rather than cloning the source group.
-        ======================  ==========================================================================
+        =====================     ====================================================================
+        **Argument**              **Description**
+        ---------------------     --------------------------------------------------------------------
+        items                     Required list. Collection of Items to clone.
+        ---------------------     --------------------------------------------------------------------
+        folder                    Optional string. Name of the folder where placing item.
+        ---------------------     --------------------------------------------------------------------
+        item_extent               Optional Envelope. Extent set for any cloned items. Default is None, 
+                                  extent will remain unchanged. Spatial reference of the envelope will be 
+                                  used for any cloned feature layers.
+        ---------------------     --------------------------------------------------------------------
+        use_org_basemap           Optional boolean. Indicating whether the basemap in any cloned web maps 
+                                  should be updated to the organizations default basemap. Default is False, 
+                                  basemap will not change.
+        ---------------------     --------------------------------------------------------------------
+        copy_data                 Optional boolean. Indicating whether the data should be copied with any 
+                                  feature layer or feature collections. Default is True, data will be copied.
+        ---------------------     --------------------------------------------------------------------
+        search_existing_items     Optional boolean. Indicating whether items that have already been cloned 
+                                  should be searched for in the GIS and reused rather than cloned again.
+        ---------------------     --------------------------------------------------------------------
+        item_mapping              Optional dictionary. Can be used to associate an item id in the source 
+                                  GIS (key) to an item id in the target GIS (value). The target item will  
+                                  be used rather than cloning the source item.
+        ---------------------     --------------------------------------------------------------------
+        group_mapping             Optional dictionary. Can be used to associate a group id in the source 
+                                  GIS (key) to a group id in the target GIS (value). The target group will  
+                                  be used rather than cloning the source group.
+        =====================     ====================================================================
 
         :return:
            A list of items created during the clone.
