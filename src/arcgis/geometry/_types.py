@@ -496,6 +496,19 @@ class Geometry(BaseGeometry):
         return t
     #----------------------------------------------------------------------
     @property
+    def is_empty(self):
+        """boolean value that determines if the geometry is empty or not"""
+        if isinstance(self, Point):
+            return False
+        elif isinstance(self, Polygon):
+            return len(self['rings']) == 0
+        elif isinstance(self, Polyline):
+            return len(self['paths']) == 0
+        elif isinstance(self, MultiPoint):
+            return len(self['points']) == 0
+        return True
+    #----------------------------------------------------------------------
+    @property
     def as_arcpy(self):
         """returns the arcpy.Geometry object"""
         if HASARCPY:
@@ -1576,6 +1589,7 @@ class Point(Geometry):
             return np.array([self['x'], self['y']])
         else:
             return np.array([])
+
 ###########################################################################
 class MultiPoint(Geometry):
     """
