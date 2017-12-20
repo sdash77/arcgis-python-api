@@ -127,7 +127,8 @@ class GeometryFactory(type):
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
-        if hasattr(iterable, 'JSON') and HASARCPY:
+        if hasattr(iterable, 'JSON') and \
+           (HASARCPY or HASSHAPELY):
             iterable = json.loads(iterable.JSON)
         if cls is Geometry:
             if len(iterable) > 0:
@@ -646,7 +647,8 @@ class Geometry(BaseGeometry):
                     self.spatial_reference)
                                 ))
         elif HASSHAPELY:
-            return list(self.as_shapely.centroid.coords)[0]
+            c = tuple(list(self.as_shapely.centroid.coords)[0])
+            return c
         return
     #----------------------------------------------------------------------
     @property
@@ -872,7 +874,7 @@ class Geometry(BaseGeometry):
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "trueCentroid", None),
                                                 self.spatial_reference))
         elif HASSHAPELY:
-            return "SHAPELY"
+            return self.centroid
         elif isinstance(self, Point):
             return self
         return
