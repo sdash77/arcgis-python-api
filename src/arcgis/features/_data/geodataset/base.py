@@ -10,13 +10,23 @@ import numpy as np
 import pandas as pd
 from arcgis.geometry import _types
 from pandas import DataFrame, Series
+GEOTYPES = [_types.Geometry]
 try:
     import arcpy
-    HASARCPY = True
-    GEOTYPES = (arcpy.Geometry, _types.Geometry)
+    HASARCPY  = True
+    GEOTYPES.append(arcpy.Geometry)
 except ImportError:
     GEOTYPES = (_types.Geometry)
     HASARCPY = False
+
+try:
+    import shapely
+    from shapely.geometry.base import BaseGeometry as _BaseGeometry
+    HASSHAPELY = True
+    GEOTYPES.append(_BaseGeometry)
+except ImportError:
+    HASSHAPELY = False
+
 from warnings import warn
 try:
     from .index.quadtree import Index as QuadIndex
@@ -31,6 +41,9 @@ except ImportError:
     class RTreeError(Exception):
         pass
     HAS_SINDEX = False
+
+GEOTYPES = tuple(GEOTYPES)
+
 #--------------------------------------------------------------------------
 def _call_property(this, op, null_value=None, isGeoseries=False):
     """
@@ -276,9 +289,14 @@ class BaseSpatialPandas(object):
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
-        """Returns an Esri JSON representation of the geometry as a string."""
-        return _call_property(this=self, op="as_arcpy", isGeoseries=False)
+        """Returns an Esri ArcPy geometry in a Series"""
 
+        return _call_property(this=self, op="as_arcpy", isGeoseries=False)
+    #----------------------------------------------------------------------
+    @property
+    def as_shapely(self):
+        """Returns a Shapely Geometry Objects in a Series"""
+        return _call_property(this=self, op="as_shapely", isGeoseries=False)
     #----------------------------------------------------------------------
     @property
     def WKB(self):

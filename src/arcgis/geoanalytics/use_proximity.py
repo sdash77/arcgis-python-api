@@ -7,7 +7,7 @@ import json as _json
 
 import logging as _logging
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service
 
@@ -68,7 +68,7 @@ Parameters:
    output_name: Output Features Name (str). Required parameter.
 
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -81,6 +81,12 @@ Returns:
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+
+    if isinstance(input_layer, FeatureCollection) and \
+       'layers' in input_layer.properties and \
+       len(input_layer.properties.layers) > 0:
+        input_layer = FeatureSet.from_dict(
+            featureset_dict=input_layer._lazy_properties.layers[0].featureSet)
 
     params = {}
     for key, value in kwargs.items():

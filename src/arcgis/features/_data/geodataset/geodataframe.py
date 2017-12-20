@@ -34,6 +34,7 @@ GEOM_TYPES = (_types.Point, _types.MultiPoint,
               _types.Polygon,_types.Geometry,
               _types.Polyline,
               _types.BaseGeometry)
+
 try:
     import arcpy
     from arcpy import Geometry
@@ -46,7 +47,14 @@ try:
 except ImportError:
     # warning.warn("Missing Pro will cause functionality to be limited")
     HASARCPY = False
-
+try:
+    import shapely
+    from shapely.geometry.base import BaseGeometry as _BaseGeometry
+    GEOM_TYPES = [_BaseGeometry] + list(GEOM_TYPES)
+    GEOM_TYPES = tuple(GEOM_TYPES)
+    HASSHAPELY = True
+except:
+    HASSHAPELY = False
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
