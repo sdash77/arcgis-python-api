@@ -141,6 +141,16 @@ class GeometryFactory(type):
                             return Point({"x" : iterable['coordinates'][0],
                                           "y" : iterable['coordinates'][1],
                                           "spatialReference" : {"wkid" : 4326}})
+                        elif iterable['type'].lower() == 'polygon':
+                            return Geometry({
+                                'rings' : iterable['coordinates'],
+                                "spatialReference" : {"wkid" : 4326}
+                            })
+                        elif iterable['type'].lower() == 'linestring':
+                            return Geometry({
+                                'paths' : [iterable['coordinates']],
+                                "spatialReference" : {"wkid" : 4326}
+                            })
                         elif iterable['type'].lower() == "multipoint":
                             return Geometry(
                                 {
