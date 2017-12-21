@@ -593,6 +593,9 @@ define('mapview', [
                 console.log("***###***addlayer");
 
                 var newlayer = JSON.parse(this.model.get('_addlayer'));
+                if ((window.location.protocol === 'https:') && (newlayer.url.startsWith('http:'))) {
+                    newlayer.url = newlayer.url.replace("http://","https://")
+                }
                 console.log(newlayer);
                 if (newlayer.type == "KMLLayer") {
                     console.log("KMLLayer " + newlayer.url);

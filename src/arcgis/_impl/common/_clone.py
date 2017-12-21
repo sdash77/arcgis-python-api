@@ -13,7 +13,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.geometry import *
 
-_TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View',
+_TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
                           'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set']
 _TEMP_DIR = None
@@ -929,6 +929,311 @@ class _WebMapDefinition(_TextItemDefinition):
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
+class _OperationViewDefintion(_TextItemDefinition):
+    """
+    Represents the definition of an Operation View within ArcGIS Online or Portal
+    """
+
+    def clone(self, target, folder, clone_mapping, item_extent=None):
+        try:
+            new_item = None
+            original_item = self.info
+
+            # Get the item properties from the original application which will be applied when the new item is created
+            item_properties = self._get_item_properties(item_extent)
+
+            # Swizzle the item ids of the web maps, groups and URLs of defined in the application's data
+            app_json = self.data
+
+            if app_json is not None:
+                app_json_text = ''
+
+            if app_json and 'version' in app_json:
+                if app_json['version'] == "1.2":
+                    app_json = self._swizzle_ids(clone_mapping)
+                else:
+                    raise _ItemCreateException("Version {} is not supported".format(app_json['version']))
+            else:
+                raise _ItemCreateException("Operation View is not versioned and cannot be cloned")
+
+            # dump json
+            app_json_text = json.dumps(app_json)
+
+            # Perform a general find and replace of field names if field mapping is required
+            for service in clone_mapping['Feature Services']:
+                for layer_id in clone_mapping['Feature Services'][service]['layer_field_mapping']:
+                    field_mapping = clone_mapping['Feature Services'][service]['layer_field_mapping'][layer_id]
+                    app_json_text = _find_and_replace_fields(app_json_text, field_mapping)
+
+            item_properties['text'] = app_json_text
+
+            # Add the application to the target portal
+            thumbnail = self.thumbnail
+            if not thumbnail and self.portal_item:
+                temp_dir = os.path.join(_TEMP_DIR.name, original_item['id'])
+                if not os.path.exists(temp_dir):
+                    os.makedirs(temp_dir)
+                thumbnail = self.portal_item.download_thumbnail(temp_dir)
+            new_item = target.content.add(item_properties=item_properties, thumbnail=thumbnail,
+                                          folder=_deep_get(folder, 'title'))
+            return [new_item]
+
+        except Exception as ex:
+            raise _ItemCreateException(
+                "Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
+    def _swizzle_ids(self, clone_mapping):
+        """
+        Injects the new item ids into the operation view json
+        :param clone_mapping: The item id mapping dictionary
+        :return: the updated json/dict
+        """
+        app_json = self.data
+        if 'widgets' in app_json:
+            for widget in app_json['widgets']:
+                if widget['type'] == 'mapWidget':
+                    if 'mapId' in widget:
+                        widget['mapId'] = clone_mapping['Item IDs'][widget['mapId']]
+        if 'standaloneDataSources' in app_json:
+            for ds in app_json['standaloneDataSources']:
+                if 'serviceItemId' in ds:
+                    # update the url
+                    if 'url' in ds:
+                        for url, cloned_service in clone_mapping['Feature Services'].items():
+                            if cloned_service['id'] == clone_mapping['Item IDs'][ds["serviceItemId"]]:
+                                # get layer id from url
+                                layer_id = int(ds['url'].split("/")[-1])
+                                ds['url'] = "{}/{}".format(cloned_service['url'], cloned_service['layer_id_mapping'][layer_id])
+                    # update the item id
+                    ds['serviceItemId'] = clone_mapping['Item IDs'][ds['serviceItemId']]
+        return app_json
+
+    @staticmethod
+    def get_webmap_ids(data):
+        """
+        Parses an operation view json/dict at version 1.2 to find all of the webmap ids
+        :param data: The json/dict to parse
+        :return: A list of webmap ids
+        """
+        webmap_ids = set()
+        if 'widgets' in data:
+            for widget in data['widgets']:
+                if widget['type'] == 'mapWidget':
+                    if 'mapId' in widget:
+                        webmap_ids.add(widget['mapId'])
+        return list(webmap_ids)
+
+    @staticmethod
+    def get_layer_ids(data):
+        """
+        Parses an operation view json/dict at version 1.2 to find all of the webmap ids
+        :param data: The json/dict to parse
+        :return: A list of layer ids
+        """
+        layer_ids = set()
+        if 'standaloneDataSources' in data:
+            for ds in data['standaloneDataSources']:
+                if 'serviceItemId' in ds:
+                    layer_ids.add(ds['serviceItemId'])
+        return list(layer_ids)
+
+class _DashboardDefinition(_TextItemDefinition):
+    """
+    Represents the definition of a Dashboard within ArcGIS Online or Portal
+    """
+
+    def clone(self, target, folder, clone_mapping, item_extent=None):
+        try:
+            new_item = None
+            original_item = self.info
+
+            # Get the item properties from the original application which will be applied when the new item is created
+            item_properties = self._get_item_properties(item_extent)
+
+            # Swizzle the item ids of the web maps, groups and URLs of defined in the application's data
+            app_json = self.data
+
+            if app_json is not None:
+                app_json_text = ''
+
+            if app_json and 'version' in app_json:
+                if app_json['version'] == 24:
+                    app_json = self._swizzle_v24(clone_mapping)
+                else:
+                    raise _ItemCreateException("Dashboard version {} is not supported".format(app_json['version']))
+            else:
+                raise _ItemCreateException("Dashboard is not versioned and cannot be cloned")
+
+            # dump json
+            app_json_text = json.dumps(app_json)
+
+            # Perform a general find and replace of field names if field mapping is required
+            for service in clone_mapping['Feature Services']:
+                for layer_id in clone_mapping['Feature Services'][service]['layer_field_mapping']:
+                    field_mapping = clone_mapping['Feature Services'][service]['layer_field_mapping'][layer_id]
+                    app_json_text = _find_and_replace_fields(app_json_text, field_mapping)
+
+            item_properties['text'] = app_json_text
+
+            # Add the application to the target portal
+            thumbnail = self.thumbnail
+            if not thumbnail and self.portal_item:
+                temp_dir = os.path.join(_TEMP_DIR.name, original_item['id'])
+                if not os.path.exists(temp_dir):
+                    os.makedirs(temp_dir)
+                thumbnail = self.portal_item.download_thumbnail(temp_dir)
+            new_item = target.content.add(item_properties=item_properties, thumbnail=thumbnail,
+                                          folder=_deep_get(folder, 'title'))
+            return [new_item]
+
+        except Exception as ex:
+            raise _ItemCreateException(
+                "Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
+    def _swizzle_v24(self, clone_mapping):
+        """
+        Injects the new item ids into the dashboard json
+        :param clone_mapping: The item id mapping dictionary
+        :return: the updated json/dict
+        """
+        app_json = self.data
+        if 'widgets' in self.data:
+            for widget in app_json['widgets']:
+                if widget['type'] == 'mapWidget':
+                    if 'itemId' in widget:
+                        widget['itemId'] = clone_mapping['Item IDs'][widget['itemId']]
+                elif "datasets" in widget:
+                    for dataset in widget["datasets"]:
+                        if "dataSource" in dataset and "itemId" in dataset["dataSource"]:
+                            # in some cases the layer ids may have changed when cloning
+                            # so we can use a mapping between the old and new to update it
+                            for url, cloned_service in clone_mapping['Feature Services'].items():
+                                if cloned_service['id'] == clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]:
+                                    # update the layer id
+                                    dataset["dataSource"]["layerId"] = cloned_service['layer_id_mapping'][dataset["dataSource"]["layerId"]]
+                            # update the item id
+                            dataset["dataSource"]["itemId"] = clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]
+
+        if "headerPanel" in app_json and "selectors" in app_json["headerPanel"]:
+            for selector in app_json["headerPanel"]["selectors"]:
+                if "datasets" in selector:
+                    for dataset in selector["datasets"]:
+                        if "dataSource" in dataset and "itemId" in dataset["dataSource"]:
+                            # in some cases the layer ids may have changed when cloning
+                            # so we can use a mapping between the old and new to update it
+                            for url, cloned_service in clone_mapping['Feature Services'].items():
+                                if cloned_service['id'] == clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]:
+                                    # update the layer id
+                                    dataset["dataSource"]["layerId"] = cloned_service['layer_id_mapping'][dataset["dataSource"]["layerId"]]
+                            # update the item id
+                            dataset["dataSource"]["itemId"] = clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]
+
+        if "leftPanel" in app_json and "selectors" in app_json["leftPanel"]:
+            for selector in app_json["leftPanel"]["selectors"]:
+                if "datasets" in selector:
+                    for dataset in selector["datasets"]:
+                        if "dataSource" in dataset and "itemId" in dataset["dataSource"]:
+                            # in some cases the layer ids may have changed when cloning
+                            # so we can use a mapping between the old and new to update it
+                            for url, cloned_service in clone_mapping['Feature Services'].items():
+                                if cloned_service['id'] == clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]:
+                                    # update the layer id
+                                    dataset["dataSource"]["layerId"] = cloned_service['layer_id_mapping'][dataset["dataSource"]["layerId"]]
+                            # update the item id
+                            dataset["dataSource"]["itemId"] = clone_mapping['Item IDs'][dataset["dataSource"]["itemId"]]
+        return app_json
+
+    @staticmethod
+    def get_webmap_ids(data):
+        """
+        Parses a dashboard based on version to return the list of webmap ids
+        :param data: The json/dict to parse
+        :return: A list of webmap ids
+        """
+        if 'version' in data:
+            if data['version'] == 24:
+                webmap_ids = _DashboardDefinition._get_webmap_ids_v24(data)
+            else:
+                raise _ItemCreateException("Dashboard version {} is not supported".format(data['version']))
+        else:
+            raise _ItemCreateException("Dashboard is not versioned and cannot be cloned")
+        return list(webmap_ids)
+
+    @staticmethod
+    def _get_webmap_ids_v24(data):
+        """
+        Parses a dashboard at version 24 to find data webmap ids
+        :param data: The json/dict to parse
+        :return: A list of webmap ids
+        """
+        webmap_ids = set()
+        if 'widgets' in data:
+            for widget in data['widgets']:
+                if widget['type'] == 'mapWidget':
+                    if 'itemId' in widget:
+                        webmap_ids.add(widget['itemId'])
+        return list(webmap_ids)
+
+    @staticmethod
+    def get_layer_ids(data):
+        """
+        Parses a dashboard based on version to return the list of layer ids
+        :param data: The json/dict to parse
+        :return: A list of layer ids
+        """
+        if 'version' in data:
+            if data['version'] == 24:
+                layer_ids = _DashboardDefinition._get_layer_ids_v24(data)
+            else:
+                raise _ItemCreateException("Dashboard version {} is not supported".format(data['version']))
+        else:
+            raise _ItemCreateException("Dashboard is not versioned and cannot be cloned")
+        return list(layer_ids)
+
+    @staticmethod
+    def _get_layer_ids_v24(data):
+        """
+        Parses a dashboard at version 24 to find layer/service ids
+        :param data: The json/dict to parse
+        :return: A list of layer ids
+        """
+        layer_ids = set()
+        if "widgets" in data:
+            for widget in data["widgets"]:
+                if "datasets" in widget:
+                    layer_ids = layer_ids.union(_DashboardDefinition.
+                                                _parse_datasets_v24(widget["datasets"]), layer_ids)
+
+        if "headerPanel" in data and "selectors" in data["headerPanel"]:
+            for selector in data["headerPanel"]["selectors"]:
+                if "datasets" in selector:
+                    layer_ids = layer_ids.union(_DashboardDefinition.
+                                                _parse_datasets_v24(selector["datasets"]), layer_ids)
+
+        if "leftPanel" in data and "selectors" in data["leftPanel"]:
+            for selector in data["leftPanel"]["selectors"]:
+                if "datasets" in selector:
+                    layer_ids = layer_ids.union(_DashboardDefinition.
+                                                _parse_datasets_v24(selector["datasets"]), layer_ids)
+        return layer_ids
+
+    @staticmethod
+    def _parse_datasets_v24(datasets):
+        """
+        Parses a data set in a version 24 dashboard
+        :param datasets: the list of datasets
+        :return: A set of layer ids
+        """
+        layer_ids = set()
+        for dataset in datasets:
+            # newer schema
+            if "dataSource" in dataset:
+                ds = dataset["dataSource"]
+                # newer property
+                if "itemId" in ds:
+                    layer_ids.add(ds['itemId'])
+        return layer_ids
+
 class _ApplicationDefinition(_TextItemDefinition):
     """
     Represents the definition of an application within ArcGIS Online or Portal.
@@ -993,15 +1298,6 @@ class _ApplicationDefinition(_TextItemDefinition):
                                 app_json['httpProxy']['url'] = org_url + "sharing/proxy"
                         if 'geometryService' in app_json and 'geometry' in target.properties['helperServices']:
                             app_json['geometryService'] = target.properties['helperServices']['geometry']['url']
-
-                    elif original_item['type'] in ["Operation View", "Dashboard"]: #Operations Dashboard
-                        if 'widgets' in app_json:
-                            for widget in app_json['widgets']:
-                                if widget['type'] == 'mapWidget':
-                                    if 'itemId' in widget:
-                                        widget['itemId'] = clone_mapping['Item IDs'][widget['itemId']]
-                                    elif 'mapId' in widget:
-                                        widget['mapId'] = clone_mapping['Item IDs'][widget['mapId']]
 
                     else: #Configurable Application Template
                         if 'folderId' in app_json:
@@ -1579,19 +1875,19 @@ def _get_item_definitions(item, item_definitions):
         item_definitions.append(item_definition)
    
         webmap_ids = []
+        layer_ids = []
         app_json = item_definition.data 
         if app_json is not None:     
             if 'Story Map' in item['typeKeywords'] or 'Story Maps' in item['typeKeywords']:
                 webmap_ids = []
 
-            elif item['type'] in ["Operation View", "Dashboard"]: #Operations Dashboard
-                if 'widgets' in app_json:
-                    for widget in app_json['widgets']:
-                        if widget['type'] == 'mapWidget':
-                            if 'itemId' in widget:
-                                webmap_ids.append(widget['itemId'])
-                            elif 'mapId' in widget:
-                                webmap_ids.append(widget['mapId'])
+            elif item['type'] == "Operation View":
+                webmap_ids.extend(_OperationViewDefintion.get_webmap_ids(app_json))
+                layer_ids.extend(_OperationViewDefintion.get_layer_ids(app_json))
+
+            elif item['type'] == "Dashboard":
+                webmap_ids.extend(_DashboardDefinition.get_webmap_ids(app_json))
+                layer_ids.extend(_DashboardDefinition.get_layer_ids(app_json))
 
             elif "Web AppBuilder" in item['typeKeywords']: #Web AppBuilder
                 if 'map' in app_json:
@@ -1620,6 +1916,12 @@ def _get_item_definitions(item, item_definitions):
             except RuntimeError:
                 raise
             _get_item_definitions(webmap, item_definitions)
+        for layer_id in layer_ids:
+            try:
+                item = source.content.get(layer_id)
+            except RuntimeError:
+                raise
+            _get_item_definitions(item, item_definitions)
 
     # If the item is a web map find all the feature service layers and tables that make up the map
     elif item['type'] == 'Web Map':
@@ -1851,7 +2153,7 @@ def _get_item_definition(item):
     """  
        
     # If the item is an application or dashboard get the ApplicationDefinition
-    if item['type'] in ['Web Mapping Application', 'Operation View', 'Dashboard']:
+    if item['type'] == 'Web Mapping Application':
         app_json = None
         source_app_title = None
         update_url = False
@@ -1874,7 +2176,15 @@ def _get_item_definition(item):
                     pass
 
         return _ApplicationDefinition(dict(item), source_app_title=source_app_title, update_url=update_url, data=app_json, thumbnail=None, portal_item=item)
-      
+
+    elif item['type'] == 'Operation View':
+        app_json = item.get_data()
+        return _OperationViewDefintion(dict(item), data=app_json, thumbnail=None, portal_item=item)
+
+    elif item['type'] == 'Dashboard':
+        app_json = item.get_data()
+        return _DashboardDefinition(dict(item), data=app_json, thumbnail=None, portal_item=item)
+
     # If the item is a web map get the WebMapDefintion
     elif item['type'] == 'Web Map':
         webmap_json = item.get_data()
