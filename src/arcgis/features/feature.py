@@ -786,7 +786,7 @@ class FeatureSet(object):
                 geometry["rings"] = geom["coordinates"][0]
             elif geo_type == "MultiPolygon":
                 rings = []
-                if HASARCPY == 'foo':
+                if HASARCPY:
                     geom = arcpy.AsShape(geom)
                     geometry = Geometry(json.loads(geom))
                 else:

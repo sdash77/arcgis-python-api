@@ -34,6 +34,7 @@ GEOM_TYPES = (_types.Point, _types.MultiPoint,
               _types.Polygon,_types.Geometry,
               _types.Polyline,
               _types.BaseGeometry)
+
 try:
     import arcpy
     from arcpy import Geometry
@@ -46,12 +47,79 @@ try:
 except ImportError:
     # warning.warn("Missing Pro will cause functionality to be limited")
     HASARCPY = False
-
+try:
+    import shapely
+    from shapely.geometry.base import BaseGeometry as _BaseGeometry
+    GEOM_TYPES = [_BaseGeometry] + list(GEOM_TYPES)
+    GEOM_TYPES = tuple(GEOM_TYPES)
+    HASSHAPELY = True
+except:
+    HASSHAPELY = False
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
         A Spatial Dataframe is an object to manipulate, manage and translate
         data into new forms of information for users.
+
+        Functionality of the Spatial DataFrame is determined by the Geometry Engine
+        available to the object at creation.  It will first leverage the arcpy
+        geometry engine, then shapely, then it will create the geometry objects
+        without any engine.
+
+        **Scenerios**
+        =================   ======================================================
+        **Engine Type**     **Functionality**
+        -----------------   ------------------------------------------------------
+        ArcPy               Users will have the full functionality provided by the
+                            API.
+        -----------------   ------------------------------------------------------
+        Shapely             Users get a sub-set of operations, and all properties.
+
+                            :Valid Properties:
+
+                            - JSON
+                            - WKT
+                            - WKB
+                            - area
+                            - centroid
+                            - extent
+                            - first_point
+                            - hull_rectangle
+                            - is_multipart
+                            - label_point
+                            - last_point
+                            - length
+                            - length3D
+                            - part_count
+                            - point_count
+                            - true_centroid
+
+                            :Valid Functions:
+
+                            - boundary
+                            - buffer
+                            - contains
+                            - convex_hull
+                            - crosses
+                            - difference
+                            - disjoint
+                            - distance_to
+                            - equals
+                            - generalize
+                            - intersect
+                            - overlaps
+                            - symmetric_difference
+                            - touches
+                            - union
+                            - within
+
+                            Everything else will return None
+
+        -----------------   ------------------------------------------------------
+        No Engine           Values will return None by default
+        =================   ======================================================
+
+
 
         Required Parameters:
           None
