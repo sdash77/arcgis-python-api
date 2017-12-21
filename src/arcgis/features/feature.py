@@ -577,7 +577,11 @@ class FeatureSet(object):
                     if isinstance(feat.geometry, Geometry):
                         geoms.append(feat.geometry)
                     else:
-                        geoms.append(Geometry(feat.geometry))
+                        g = Geometry(feat.geometry)
+                        if 'spatialReference' not in g and \
+                           sr is not None:
+                            g['spatialReference'] = sr
+                        geoms.append(g)
                     del feat
                 df = json_normalize(attributes)
                 df.columns = df.columns.str.replace('attributes.', '')

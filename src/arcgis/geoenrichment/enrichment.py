@@ -744,7 +744,7 @@ def enrich(study_areas,
     if isinstance(areas, (SpatialDataFrame, list)) and len(areas) > 100:
         parts = []
         for chunk in _chunks(l=areas, n=100):
-            parts.append(ge.enrich(study_areas=chunk,
+            parts.append(ge.enrich(study_areas=chunk.copy(),
                                    data_collections=data_collections,
                                    analysis_variables=analysis_variables,
                                    add_derivative_variables=add_derivative_variables,
