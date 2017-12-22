@@ -1793,6 +1793,9 @@ class MapImageLayer(Layer):
                    map_range_values=None,
                    layer_range_values=None,
                    layer_parameter=None,
+                   f="json",
+                   save_folder=None,
+                   save_file=None,
                    **kwargs):
         """
         The export operation is performed on a map service resource.
@@ -1900,8 +1903,8 @@ class MapImageLayer(Layer):
         """
 
         params = {
-            "f": "json"
         }
+        params["f"] = f
         params['bbox'] = bbox
         if bbox_sr:
             params['bboxSR'] = bbox_sr
@@ -1940,11 +1943,29 @@ class MapImageLayer(Layer):
             params['layerRangeValues'] = layer_range_values
         if layer_parameter:
             params['layerParameterValues'] = layer_parameter
-        exportURL = self._url + "/export"
+        url = self._url + "/export"
         if len(kwargs) > 0:
             for k,v in kwargs.items():
                 params[k] = v
-        return self._con.get(exportURL, params, token=self._token)
+        #return self._con.get(exportURL, params, token=self._token)
+
+        if f == "json":
+            return self._con.post(url, params, token=self._token)
+        elif f == "image":
+            if save_folder is not None and save_file is not None:
+                return self._con.post(url, params,
+                                      out_folder=save_folder, try_json=False,
+                                      file_name=save_file, token=self._token)
+            else:
+                return self._con.post(url, params,
+                                      try_json=False, force_bytes=True,
+                                      token=self._token)
+        elif f == "kmz":
+            return self._con.post(url, params,
+                                  out_folder=save_folder,
+                                  file_name=save_file, token=self._token)
+        else:
+            print('Unsupported output format')
 
     # ----------------------------------------------------------------------
     def estimate_export_tiles_size(self,
