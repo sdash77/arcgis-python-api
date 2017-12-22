@@ -2145,6 +2145,8 @@ class ContentManager(object):
                 query += ' (type:"image service")'
             elif item_type == "imagery layer":
                 query += ' (type:"image service")'
+            elif item_type == "map image layer":
+                query += ' (type:"map service")'
             elif item_type == "vector tile layer":
                 query += ' (type:"vector tile service")'
             elif item_type == "scene layer":
