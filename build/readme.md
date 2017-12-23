@@ -1,4 +1,4 @@
-# Building `arcgis` package
+# Building `arcgis` package for conda
 
 ## Pre-requisites
 You need `conda-build` package installed. This can only be installed in the `root` environment. Hence run the following from terminal to activate your root and install the package
@@ -34,3 +34,15 @@ Similarly, update the build scripts `geosaurus/build/buildarcgis.sh` such that v
 
 ### Misc
 Here is the [api doc for conda build](https://conda.io/docs/commands/build/conda-build.html) with all its optional parameters and here is the [tutorial to build pacakges](https://conda.io/docs/building/build.html). My [detailed wiki here](https://devtopia.esri.com/atma6951/kiwi/wiki/Building-Conda-Packages)
+
+# Building `arcgis` package for pip
+
+If you would like to install the arcgis api with pip instead of conda, simply go back one directory to top level in geosaurus, and run the following command:
+
+```
+pip install ./src
+```
+
+This will install all depedencies and activate the map widget. 
+
+If you would like to upload the package to PyPI, see the following link: http://peterdowns.com/posts/first-time-with-pypi.html A guide for how to upload the arcgis platform to PyPI will be uploaded shortly once we start officially releasing through pip

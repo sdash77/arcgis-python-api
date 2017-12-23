@@ -22,32 +22,34 @@ Geosaurus is a comprehensive GIS expressed in Python.  A GIS is a container of g
 
 See the developer documentation and resources at https://developers.arcgis.com/python/
 
-## Getting Started
+## Getting Started (Installing)
+If you are an end user, and would like to use the most recent publicly facing API, [follow these installation instructions](https://developers.arcgis.com/python/guide/Install-and-set-up/).
 
-### Installing
+If you are an end user, and would like to use daily builds of this API, [follow these installation instructions](https://github.com/ArcGIS/geosaurus/wiki/Daily-Builds).
 
-[Install guide for end users](https://developers.arcgis.com/python/guide/Install-and-set-up/)
+If you are a developer, follow these instructions:
 
-Install steps for developers:
-
-* Install Anaconda for Python 3.5 from https://www.continuum.io/downloads
+* Install Anaconda for Python 3.X from https://www.continuum.io/downloads
 * Download or clone this repo. ```git clone https://github.com/ArcGIS/geosaurus.git```
 * ```conda env create --file environment.yml```
 * Windows: ```activate geosaurus_dev_env```
 * Linux/OSX: ```source activate geosaurus_dev_env```
-* ```pip install -e ./src``` (for using latest source code)
-* ```jupyter nbextension install --py --sys-prefix arcgis``` (for enabling the map widget for Jupyter notebook)
-* ```jupyter nbextension enable --py --sys-prefix arcgis``` (to initialize the map widget in the browser every time the notebook loads)
+* ```pip install -e ./src --no-deps``` (for using latest source code)
 * ```jupyter notebook``` (to start a jupyter notebook server)
 
-### Build the Documentation
+### The map widget isn't displaying
+Try running these commands: 
+* ```jupyter nbextension install --py --sys-prefix arcgis``` (for enabling the map widget for Jupyter notebook)
+* ```jupyter nbextension enable --py --sys-prefix arcgis``` (to initialize the map widget in the browser every time the notebook loads)
 
-```bash
-sphinx-apidoc -o apidoc -e -F -H arcgis -A Esri -V 0.1 -R 0.1 src
-cd apidoc
-make html
-open _build/html/index.html
-```
+## Build the Documentation
+
+Go to the ```./docs``` folder, and run the following commands:
+
+Windows: ```.\make.bat html```
+OSX/Linux: ```make html```
+
+The results will be in ```./docs/build/html```. Open the ```index.html``` file.
 
 # Want to contribute?
 See the wiki at https://github.com/ArcGIS/geosaurus/wiki for the project vision and guiding principles, areas needing help, and how to contribute.
