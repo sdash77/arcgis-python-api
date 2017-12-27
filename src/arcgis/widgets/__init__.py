@@ -23,6 +23,10 @@ try:
 except:
     from IPython.utils.traitlets import Unicode, Int, List, Bool, Dict
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 
 class MapView(widgets.DOMWidget):
     """Mapping widget for Jupyter Notebook"""
@@ -314,10 +318,13 @@ class MapView(widgets.DOMWidget):
                 else:
                     js_layer.update({"options": json.dumps(options)})
             else:
-                options = {} #to store extent and other properties
-
+                options = {} #to store extent and other properties            
+            if 'uses_gbl' in js_layer:                
+                if js_layer["uses_gbl"] is True:                    
+                    _LOGGER.warning("Uses global function. Cannot be used for visualization")
+                    return None
             self._addlayer = json.dumps(js_layer)
-            options['extent'] = self.extent
+            options['extent'] = self.extent            
 
             self._webmap.add_layer(item, options)
             # add to widget's layer list

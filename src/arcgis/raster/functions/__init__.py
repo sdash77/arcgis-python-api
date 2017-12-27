@@ -68,6 +68,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
+    newlyr._uses_gbl_function = layer._uses_gbl_function
 
     return newlyr
 

@@ -16,7 +16,7 @@ from arcgis.raster._layer import ImageryLayer
 from arcgis.gis import Item
 import copy
 import numbers
-from arcgis.raster.functions.utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra 
+from arcgis.raster.functions.utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra):
     if isinstance(layer, Item):
@@ -42,7 +42,7 @@ def _gbl_clone_layer(layer, function_chain, function_chain_ra):
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
-
+    newlyr._uses_gbl_function = True
     return newlyr
 
 
