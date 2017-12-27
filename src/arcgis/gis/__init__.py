@@ -6010,3 +6010,15 @@ class Layer(_GISResource):
         lyr_dict = {'type': type(self).__name__, 'url': url}
 
         return lyr_dict
+
+    @property
+    def _lyr_domains(self):
+        """
+        returns the domain information for any fields in the layer with domains
+        """
+        domains = []
+        for field in [field for field in self.properties.fields if field['domain'] != None]:
+            field_domain = dict(field.domain)
+            field_domain['fieldName'] = field.name
+            domains.append({field.name:field_domain})
+        return domains
