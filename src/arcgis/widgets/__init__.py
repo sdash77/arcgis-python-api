@@ -321,7 +321,8 @@ class MapView(widgets.DOMWidget):
                 options = {} #to store extent and other properties            
             if 'uses_gbl' in js_layer:                
                 if js_layer["uses_gbl"] is True:                    
-                    _LOGGER.warning("Uses global function. Cannot be used for visualization")
+                    _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
+                                   \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
                     return None
             self._addlayer = json.dumps(js_layer)
             options['extent'] = self.extent            

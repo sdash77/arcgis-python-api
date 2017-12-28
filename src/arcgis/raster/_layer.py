@@ -22,7 +22,7 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
-        self._uses_gbl_function = False
+        self._uses_gbl_function = False        
         # self._extent = self.properties.initialExtent
 
     @property
@@ -97,7 +97,7 @@ class ImageryLayer(Layer):
             lyr_dict.update({
                 "options": json.dumps(options_dict)
             })
-        lyr_dict = {"uses_gbl": self._uses_gbl_function}
+        lyr_dict.update({"uses_gbl": self._uses_gbl_function})
         return lyr_dict
 
     @classmethod
@@ -944,7 +944,8 @@ class ImageryLayer(Layer):
             if not self._uses_gbl_function:
                 params['renderingRule'] = self._fn
             else:
-                _LOGGER.warning("Uses global function. Cannot be used for visualization")
+                _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
+                                   \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
                 return None
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
@@ -2304,7 +2305,7 @@ class ImageryLayer(Layer):
 
 
     def _repr_jpeg_(self):
-        bbox_sr = None        
+        bbox_sr = None
         if 'spatialReference' in self.extent:
             bbox_sr = self.extent['spatialReference']
         return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
