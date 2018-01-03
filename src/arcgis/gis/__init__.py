@@ -1587,7 +1587,7 @@ class GroupManager(object):
                snippet=None, access='public', thumbnail=None,
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
-               provider_group_name=None):
+               provider_group_name=None, provider=None):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -1626,6 +1626,8 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
+        --------------------  ---------------------------------------------------------
+        provider              Optional string. Name of the provider.
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
         ====================  =========================================================
@@ -2422,17 +2424,17 @@ class ContentManager(object):
         """ Clone content to the GIS by creating new items.
 
         .. note::
-			Cloning an item will create a copy of the item and for certain 
-			item types a copy of the item dependencies in the GIS. 
-			
-			For example a web application created using Web AppBuilder 
-			or a Configurable App Template which is built from a web map 
-			that references one or more hosted feature layers. This function 
-			will clone all of these items to the GIS and swizzle the paths 
-			in the web map and web application to point to the new layers. 
-			
-			This creates an exact copy of the application, map, and layers 
-			in the GIS.	
+			Cloning an item will create a copy of the item and for certain
+			item types a copy of the item dependencies in the GIS.
+
+			For example a web application created using Web AppBuilder
+			or a Configurable App Template which is built from a web map
+			that references one or more hosted feature layers. This function
+			will clone all of these items to the GIS and swizzle the paths
+			in the web map and web application to point to the new layers.
+
+			This creates an exact copy of the application, map, and layers
+			in the GIS.
 
         =====================     ====================================================================
         **Argument**              **Description**
@@ -2441,26 +2443,26 @@ class ContentManager(object):
         ---------------------     --------------------------------------------------------------------
         folder                    Optional string. Name of the folder where placing item.
         ---------------------     --------------------------------------------------------------------
-        item_extent               Optional Envelope. Extent set for any cloned items. Default is None, 
-                                  extent will remain unchanged. Spatial reference of the envelope will be 
+        item_extent               Optional Envelope. Extent set for any cloned items. Default is None,
+                                  extent will remain unchanged. Spatial reference of the envelope will be
                                   used for any cloned feature layers.
         ---------------------     --------------------------------------------------------------------
-        use_org_basemap           Optional boolean. Indicating whether the basemap in any cloned web maps 
-                                  should be updated to the organizations default basemap. Default is False, 
+        use_org_basemap           Optional boolean. Indicating whether the basemap in any cloned web maps
+                                  should be updated to the organizations default basemap. Default is False,
                                   basemap will not change.
         ---------------------     --------------------------------------------------------------------
-        copy_data                 Optional boolean. Indicating whether the data should be copied with any 
+        copy_data                 Optional boolean. Indicating whether the data should be copied with any
                                   feature layer or feature collections. Default is True, data will be copied.
         ---------------------     --------------------------------------------------------------------
-        search_existing_items     Optional boolean. Indicating whether items that have already been cloned 
+        search_existing_items     Optional boolean. Indicating whether items that have already been cloned
                                   should be searched for in the GIS and reused rather than cloned again.
         ---------------------     --------------------------------------------------------------------
-        item_mapping              Optional dictionary. Can be used to associate an item id in the source 
-                                  GIS (key) to an item id in the target GIS (value). The target item will  
+        item_mapping              Optional dictionary. Can be used to associate an item id in the source
+                                  GIS (key) to an item id in the target GIS (value). The target item will
                                   be used rather than cloning the source item.
         ---------------------     --------------------------------------------------------------------
-        group_mapping             Optional dictionary. Can be used to associate a group id in the source 
-                                  GIS (key) to a group id in the target GIS (value). The target group will  
+        group_mapping             Optional dictionary. Can be used to associate a group id in the source
+                                  GIS (key) to a group id in the target GIS (value). The target group will
                                   be used rather than cloning the source group.
         =====================     ====================================================================
 
