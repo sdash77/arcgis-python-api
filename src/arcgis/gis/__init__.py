@@ -1626,10 +1626,11 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
-        --------------------  ---------------------------------------------------------
-        provider              Optional string. Name of the provider.
+
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
+        --------------------  ---------------------------------------------------------
+        provider              Optional string. Name of the provider.
         ====================  =========================================================
 
         :return:
