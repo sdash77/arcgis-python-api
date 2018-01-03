@@ -2145,6 +2145,8 @@ class ContentManager(object):
                 query += ' (type:"image service")'
             elif item_type == "imagery layer":
                 query += ' (type:"image service")'
+            elif item_type == "map image layer":
+                query += ' (type:"map service")'
             elif item_type == "vector tile layer":
                 query += ' (type:"vector tile service")'
             elif item_type == "scene layer":
@@ -6008,3 +6010,15 @@ class Layer(_GISResource):
         lyr_dict = {'type': type(self).__name__, 'url': url}
 
         return lyr_dict
+
+    @property
+    def _lyr_domains(self):
+        """
+        returns the domain information for any fields in the layer with domains
+        """
+        domains = []
+        for field in [field for field in self.properties.fields if field['domain'] != None]:
+            field_domain = dict(field.domain)
+            field_domain['fieldName'] = field.name
+            domains.append({field.name:field_domain})
+        return domains

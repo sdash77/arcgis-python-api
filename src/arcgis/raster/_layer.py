@@ -7,6 +7,9 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureSet
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
@@ -19,6 +22,7 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
+        self._uses_gbl_function = False        
         # self._extent = self.properties.initialExtent
 
     @property
@@ -93,7 +97,7 @@ class ImageryLayer(Layer):
             lyr_dict.update({
                 "options": json.dumps(options_dict)
             })
-
+        lyr_dict.update({"uses_gbl": self._uses_gbl_function})
         return lyr_dict
 
     @classmethod
@@ -934,10 +938,15 @@ class ImageryLayer(Layer):
             if 'function_chain' in rendering_rule:
                 params['renderingRule'] = rendering_rule['function_chain']
             else:
-                params['renderingRule'] = rendering_rule
-        elif self._fn is not None:
-            params['renderingRule'] = self._fn
+                params['renderingRule'] = rendering_rule        
 
+        elif self._fn is not None:
+            if not self._uses_gbl_function:
+                params['renderingRule'] = self._fn
+            else:
+                _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
+                                   \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
+                return None
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
 

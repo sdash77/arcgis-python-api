@@ -23,6 +23,10 @@ try:
 except:
     from IPython.utils.traitlets import Unicode, Int, List, Bool, Dict
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 
 class MapView(widgets.DOMWidget):
     """Mapping widget for Jupyter Notebook"""
@@ -314,10 +318,14 @@ class MapView(widgets.DOMWidget):
                 else:
                     js_layer.update({"options": json.dumps(options)})
             else:
-                options = {} #to store extent and other properties
-
+                options = {} #to store extent and other properties            
+            if 'uses_gbl' in js_layer:                
+                if js_layer["uses_gbl"] is True:                    
+                    _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
+                                   \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
+                    return None
             self._addlayer = json.dumps(js_layer)
-            options['extent'] = self.extent
+            options['extent'] = self.extent            
 
             self._webmap.add_layer(item, options)
             # add to widget's layer list

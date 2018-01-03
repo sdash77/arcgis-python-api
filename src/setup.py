@@ -6,11 +6,70 @@ https://github.com/pypa/sampleproject
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+from setuptools.command.egg_info import egg_info
 # To use a consistent encoding
 from codecs import open
 from os import path
+import logging
+log = logging.getLogger()
 
 here = path.abspath(path.dirname(__file__))
+
+def _install_enable_nbextensions_arcgis():
+    """This function will run after 'pip install' finishes. It activates the 
+    map widget for notebooks, equivalent of running the following commands:
+        - jupyter nbextension install --py --sys-prefix arcgis
+        - jupyter nbextension enable --py --sys-prefix arcgis
+    """
+    try:
+        import notebook.nbextensions as nbext
+        import arcgis
+    except ImportError as e:
+        log.exception("arcgis/notebook packages don't appear to be installed: "\
+                      "map widget not activated, may not work. The rest of "\
+                      "install is unaffected by this. Exception caught: ")
+        return
+
+    with _lower_log_level_to_debug(): #outputs success or failure to console
+        nbext.install_nbextension_python("arcgis", logger = log)
+        nbext.enable_nbextension_python("arcgis", logger = log)
+
+class _lower_log_level_to_debug:
+    """Use with "with" syntax like "with _lower_log_to_debug():". Lowers
+    the global root "log" object to DEBUG, resets it back to original after"""
+    def __enter__(self):
+        self.prev_logging_level = log.level
+        log.setLevel(logging.DEBUG)
+
+    def __exit__(self, type, value, traceback):
+        log.setLevel(self.prev_logging_level)
+
+#Each of these classes represent the different modes that pip install
+#can go into, and what logic can be run after pip install finishes
+class PostDevelopCommand(develop):
+    """Post-installation logic to run for development mode"""
+    def run(self):
+        develop.run(self)
+        logging.info("Post-install logic in develop mode running")
+        _install_enable_nbextensions_arcgis()
+
+class PostInstallCommand(install):
+    """Post-installation logic to run for installation mode"""
+    def run(self):
+        install.run(self)
+        f = open('/Users/davi9349/helloworldfrominstall.txt', 'w')
+        f.close()
+        logging.info("Post-install logic in develop mode running")
+        _install_enable_nbextensions_arcgis()
+
+class PostEggInfoCommand(egg_info):
+    """Post-installation logic to run for 'egg_info' mode"""
+    def run(self):
+        egg_info.run(self)
+        logging.info("Post-install logic in egg mode running")
+        _install_enable_nbextensions_arcgis()
 
 # Get the long description from the README file
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -70,16 +129,27 @@ setup(
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     packages=find_packages(),
-    package_data={'arcgis': [
-                       'widgets/*.js',
-                       'widgets/*.css',
-                       'widgets/icons/*.png',
-                       'widgets/requirejs/*.js']},
+    package_data={'arcgis': ['widgets/*.js',
+                             'widgets/*.css',
+                             'widgets/icons/*.png',
+                             'widgets/requirejs/*.js']},
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['six'],
+    install_requires=[
+        'six',
+        'pandas',
+        'ipywidgets >=5.2.2,<7',
+        'widgetsnbextension >=1.2.6,<3',
+        'winkerberos;platform_system=="Windows"'],
+
+    # These classes will execute code after 'pip install' finishes
+    # In this case, it will activate the 'arcgis' ipywidget
+    # See the top of this setup.py file
+    cmdclass={'develop': PostDevelopCommand,
+              'install': PostInstallCommand,
+              'egg_info': PostEggInfoCommand},
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

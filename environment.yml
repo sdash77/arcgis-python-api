@@ -8,5 +8,7 @@ dependencies:
 - python=3.6
 - setuptools
 - widgetsnbextension >=1.2.6,<3
+- nbconvert
+- beautifulsoup4
 - pip:
   - xmlrunner
