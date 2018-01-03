@@ -194,28 +194,58 @@ class GIS(object):
         from arcgis._impl.tools import _Tools
 
         if profile is not None:
+            cfg = os.path.expanduser("~") + '/.arcgisprofile'
+            # read
+            config = configparser.ConfigParser()
+            # Determine if an existing profile exists to update
+            if os.path.isfile(cfg):
+                config.read(cfg)
+
             if url is None and username is None and password is None and \
                 key_file is None and cert_file is None and \
                 client_id is None:
-                # read
-                cfg = os.path.expanduser("~") + '/.arcgisprofile'
-                config = configparser.ConfigParser()
-                config.read(cfg)
 
+                old_format = False  # Flag to see if original v1.3 format
                 if profile in config:
-                    url = rot13(config[profile].get('url'))
-                    username = rot13(config[profile].get('username'))
-                    password = rot13(config[profile].get('password'))
-                    key_file = rot13(config[profile].get('key_file'))
-                    cert_file = rot13(config[profile].get('cert_file'))
-                    client_id = rot13(config[profile].get('client_id'))
+                    if '://' in config[profile].get('url'):
+                        old_format = True
+
+                    if old_format:
+                        url = rot13(config[profile].get('url'), of=True)
+                        username = rot13(config[profile].get('username'), of=True)
+                        password = rot13(config[profile].get('password'), of=True)
+                        key_file = rot13(config[profile].get('key_file'), of=True)
+                        cert_file = rot13(config[profile].get('cert_file'), of=True)
+                        client_id = rot13(config[profile].get('client_id'), of=True)
+                        # Silently update to new format
+                        config[profile] = {}
+                        if url is not None:
+                            config[profile]['url'] = rot13(url)
+                        if username is not None:
+                            config[profile]['username'] = rot13(username)
+                        if password is not None:
+                            config[profile]['password'] = rot13(password)
+                        if key_file is not None:
+                            config[profile]['key_file'] = rot13(key_file)
+                        if cert_file is not None:
+                            config[profile]['cert_file'] = rot13(cert_file)
+                        if client_id is not None:
+                            config[profile]['client_id'] = rot13(client_id)
+
+                        with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
+                            config.write(configfile)
+                    else:
+                        url = rot13(config[profile].get('url'), b64=True)
+                        username = rot13(config[profile].get('username'), b64=True)
+                        password = rot13(config[profile].get('password'), b64=True)
+                        key_file = rot13(config[profile].get('key_file'), b64=True)
+                        cert_file = rot13(config[profile].get('cert_file'), b64=True)
+                        client_id = rot13(config[profile].get('client_id'), b64=True)
                 else:
                     raise RuntimeError('No such profile was found.')
             else:
-                # write
-                config = configparser.ConfigParser()
-                config[profile] = {
-                }
+                # If a previous profile with this name exist, it will overwrite
+                config[profile] = {}
 
                 if url is not None:
                     config[profile]['url']= rot13(url)
@@ -230,7 +260,6 @@ class GIS(object):
                 if client_id is not None:
                     config[profile]['client_id']= rot13(client_id)
 
-                cfg = os.path.expanduser("~") + '/.arcgisprofile'
                 with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
                     config.write(configfile)
 
@@ -5806,10 +5835,19 @@ class Item(dict):
             return []
         return ps
 
-def rot13(s):
+
+def rot13(s, b64=False, of=False):
     if s is None:
         return None
     result = ""
+
+    # If b64 is True, then first convert back to a string
+    if b64:
+        try:
+            s = base64.b64decode(s).decode()
+        except:
+            raise RuntimeError('Reading value from profile is not correctly formatted. ' + \
+                               'Update by creating a new connection using the profile option.')
 
     # Loop over characters.
     for v in s:
@@ -5832,7 +5870,13 @@ def rot13(s):
         result += chr(c)
 
     # Return transformation.
-    return result
+    if of:
+        return result
+    if not b64:
+        # if not base64 to start, need to convert to base64 for saving to file
+        return (base64.b64encode(result.encode())).decode()
+    else:
+        return result
 
 
 class _GISResource(object):
