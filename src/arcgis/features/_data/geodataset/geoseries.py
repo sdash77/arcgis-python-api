@@ -86,7 +86,7 @@ class GeoSeries(BaseSpatialPandas, Series):
         """Constructor"""
         if not OLD_PANDAS:
             args = _convert_array_args(args)
-        sr = kwargs.pop('sr', None)
+        sr = kwargs.pop('sr', {'wkid' : 4326})
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.sr = sr
@@ -230,8 +230,106 @@ class GeoSeries(BaseSpatialPandas, Series):
         else:
             return False
 
-    def plot(self, *args, **kwargs):
-        raise NotImplementedError()#return plot_series(self, *args, **kwargs)
+    def plot(self, map_widget, static=False, **kwargs):
+        """
+        Draws a Geometry Series on a Map object.
+
+
+
+        """
+        from arcgis.features import FeatureCollection, FeatureSet
+
+        from arcgis import geometry
+        gis = arcgis.env.active_gis
+        if gis is None:
+            from arcgis.gis import GIS
+            gis = GIS()
+        if self.sr:
+            sr = self.sr
+        else:
+            sr = self.sr
+        extent = None
+        if HASARCPY:
+            if sr:
+                wkid = None
+                if hasattr(sr, 'factoryCode'):
+                    wkid = {'wkid' : sr.factoryCode}
+                elif isinstance(sr, geometry.SpatialReference):
+                    wkid = self.sr
+                ext = self.geoextent
+                extent = {
+                    "xmin" : ext[0],
+                    "ymin" : ext[1],
+                    "xmax" : ext[2],
+                    "ymax" : ext[3],
+                    "spatialReference" : wkid
+                }
+            else:
+                ext = self.geoextent
+                extent = {
+                    "xmin" : ext[0],
+                    "ymin" : ext[1],
+                    "xmax" : ext[2],
+                    "ymax" : ext[3],
+                    "spatialReference" : {'wkid' : 4326}
+                }
+        else:
+            sr = self.sr
+            if self.sr is None:
+                sr = {'wkid' : 4326}
+
+            ext = self.geoextent
+            extent = {
+                "xmin" : ext[0],
+                "ymin" : ext[1],
+                "xmax" : ext[2],
+                "ymax" : ext[3],
+                "spatialReference" : sr
+            }
+        m = map_widget
+        symbol = kwargs.pop('symbol', None)
+        popup = kwargs.pop('popup', None)
+        try:
+            _geom_types = {
+                _types.Point :  "esriGeometryPoint",
+                _types.Polyline : "esriGeometryPolyline",
+                _types.MultiPoint : "esriGeometryMultipoint",
+                _types.Polygon : "esriGeometryPolygon"
+            }
+            fs = {
+                "objectIdFieldName" : "",
+                "globalIdFieldName" : "",
+                "displayFieldName" : "",
+                "geometryType" : _geom_types[type(self.geometry[self.first_valid_index()])],
+                "spatialReference" : sr,
+                "fields" : [],
+                "features" : []
+            }
+            features = []
+            fields = []
+            fields.append({
+                "name" : "FID",
+                "type" : "esriFieldTypeOID",
+                "alias" : "FID"
+            })
+
+            for idx, geom in enumerate(self.tolist()):
+                features.append(
+                    {
+                        "geometry" : dict(geom),
+                        "attributes" : {'FID' : idx + 1}
+                    }
+                )
+            fs['fields'] = fields
+            fs['features'] = features
+            fs = FeatureSet.from_dict(fs)
+            m.draw(fs, symbol=symbol, popup=popup)
+            if extent and \
+               isinstance(extent, dict):
+                m.extent = extent
+        except:
+            raise Exception('Could not plot the Spatial DataFrame.')
+        return
 
     #plot.__doc__ = plot_series.__doc__
 
