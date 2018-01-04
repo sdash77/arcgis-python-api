@@ -8,6 +8,8 @@ dependencies:
 - python=3.6
 - setuptools
 - widgetsnbextension >=1.2.6,<3
+- keyring
+- keyrings.alt
 - nbconvert
 - beautifulsoup4
 - pip:

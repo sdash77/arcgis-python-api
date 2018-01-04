@@ -12,10 +12,12 @@ from setuptools.command.egg_info import egg_info
 # To use a consistent encoding
 from codecs import open
 from os import path
+import sys
 import logging
 log = logging.getLogger()
 
 here = path.abspath(path.dirname(__file__))
+ignore_post_install = False
 
 def _install_enable_nbextensions_arcgis():
     """This function will run after 'pip install' finishes. It activates the 
@@ -23,6 +25,9 @@ def _install_enable_nbextensions_arcgis():
         - jupyter nbextension install --py --sys-prefix arcgis
         - jupyter nbextension enable --py --sys-prefix arcgis
     """
+    if ignore_post_install:
+        return
+
     try:
         import notebook.nbextensions as nbext
         import arcgis
@@ -59,8 +64,6 @@ class PostInstallCommand(install):
     """Post-installation logic to run for installation mode"""
     def run(self):
         install.run(self)
-        f = open('/Users/davi9349/helloworldfrominstall.txt', 'w')
-        f.close()
         logging.info("Post-install logic in develop mode running")
         _install_enable_nbextensions_arcgis()
 
@@ -74,6 +77,10 @@ class PostEggInfoCommand(egg_info):
 # Get the long description from the README file
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
+
+if "--ignore-post-install" in sys.argv:
+    sys.argv.remove("--ignore-post-install")
+    ignore_post_install = True
 
 setup(
     name='arcgis',
