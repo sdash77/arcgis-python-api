@@ -230,20 +230,54 @@ class GeoSeries(BaseSpatialPandas, Series):
         else:
             return False
 
-    def plot(self, map_widget, static=False, **kwargs):
+    def plot(self,
+             map_widget,
+             style=None,
+             cmap=None,
+             **kwargs):
         """
         Draws a Geometry Series on a Map object.
-
-
-
         """
+        line_styles = {
+            '-' : 'esriSLSSolid', # default
+            '-.' : 'esriSLSDashDot',
+            '-..' : 'esriSLSDashDotDot',
+            '.' : 'esriSLSDot'
+        }
+        point_styles = {
+            "o" : "esriSMSCircle", #default
+            "+" : "esriSMSCross",
+            "D" : "esriSMSDiamond",
+            "s" : "esriSMSSquare",
+            "x" : "esriSMSX",
+            "^" : "esriSMSTriangle"
+        }
+        polygon_styles = {
+            '\\' : "esriSFSBackwardDiagonal",
+            "/" : "esriSFSForwardDiagonal",
+
+            # esriSFSCross | esriSFSDiagonalCross
+            #|  | esriSFSHorizontal | esriSFSNull
+            #| esriSFSSolid | esriSFSVertical >
+            #/   - diagonal hatching
+
+            #|   - vertical
+            #-   - horizontal
+            #+   - crossed
+            #x   - crossed diagonal
+            #o   - small circle
+            #O   - large circle
+            #.   - dots
+            #*   - stars
+        }
+        import arcgis
         from arcgis.features import FeatureCollection, FeatureSet
 
         from arcgis import geometry
         gis = arcgis.env.active_gis
         if gis is None:
-            from arcgis.gis import GIS
-            gis = GIS()
+
+            gis = arcgis.gis.GIS()
         if self.sr:
             sr = self.sr
         else:
@@ -256,7 +290,7 @@ class GeoSeries(BaseSpatialPandas, Series):
                     wkid = {'wkid' : sr.factoryCode}
                 elif isinstance(sr, geometry.SpatialReference):
                     wkid = self.sr
-                ext = self.geoextent
+                ext = self.series_extent
                 extent = {
                     "xmin" : ext[0],
                     "ymin" : ext[1],
@@ -265,7 +299,7 @@ class GeoSeries(BaseSpatialPandas, Series):
                     "spatialReference" : wkid
                 }
             else:
-                ext = self.geoextent
+                ext = self.series_extent
                 extent = {
                     "xmin" : ext[0],
                     "ymin" : ext[1],
