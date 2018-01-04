@@ -19,11 +19,12 @@ class BaseServer(object):
     _properties = None
     def __init__(self, url, gis=None, initialize=True, **kwargs):
         """class initializer"""
-        if gis is None and \
-           'connection' in kwargs:
-            connection = kwargs.pop('connection', None)
+        if gis is None and 'connection' in kwargs:
+            connection = kwargs['connection']
+            gis = kwargs.pop('connection', None)
         super(BaseServer, self).__init__()
         self._url = url
+
         #gis = kwargs.pop('gis', None)
         if gis is None and \
            isinstance(gis, GIS):
@@ -33,8 +34,6 @@ class BaseServer(object):
             self._con = gis
         elif hasattr(gis, '_con'):
             self._gis = gis._con
-        elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
-            self._con = gis
         else:
             raise ValueError("gis must be of type SiteConnection")
         if initialize:

@@ -91,7 +91,7 @@ class DataStoreManager(BaseServer):
         self._datastores = None
         if self._datastores is None:
             self._datastores = []
-            for item in self.items['rootItems']:
+            for item in self.data_items['rootItems']:
                 for path in self.search(parent_path=item)['items']:
                     self._datastores.append(Datastore(datastore=self,
                                                       path=path['path'],
