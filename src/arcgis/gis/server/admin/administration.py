@@ -1,5 +1,5 @@
 """
-   Adminstration.py allows users to control ArcGIS Server 10.1+
+   Adminstration.py allows users to control ArcGIS for Server 10.1+
    through the Administration REST API
 
 """
@@ -18,21 +18,27 @@ from .._common import ServerConnection
 ########################################################################
 class Server(BaseServer):
     """
-    An ArcGIS Enterprise server used for hosting services.
+    An ArcGIS Enterprise Server site used for hosting GIS Web services.
 
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    Required string. The web address to the ArcGIS Server administration
-                           end point.
+    url                    Required string. The URL to the ArcGIS Server administration
+                           end point for the ArcGIS Server Site.
 
-                           Example: https://mysite.com/arcgis/admin
+                           Example: https://gis.mysite.com/arcgis/admin
 
                            The URL should be formatted as follows:
-                           <scheme>://<host>:<port (optional)>/<web adapter>/admin
+                           <scheme>://<fully_qualified_domain_name>:<port (optional)>/<web adaptor>/admin
+                           
+                           Note: Using the fully-qualified domain name to the server, also known as the
+                           Web Context URL, is recommended as generally the SSL Certificate binding for
+                           the web server uses this hostname.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS object to which this Server is federated with.
+    gis                    Optional string. The GIS object representing the Portal which thi
+                           Server is federated with. The GIS object should be logged in with a username
+                           in the publisher or administrator Role in order to administer the Server
     ==================     ====================================================================
 
     =====================     ====================================================================
@@ -46,23 +52,29 @@ class Server(BaseServer):
                               token URL will return as the Portal token and ArcGIS Server users
                               will not validate correctly.
     ---------------------     --------------------------------------------------------------------
-    username                  Optional string. The login username for BUILT-IN security.
+    username                  Optional string. The login username for BUILT-IN GIS Server security.
     ---------------------     --------------------------------------------------------------------
     password                  Optional string. A secret word or phrase that must be used to gain
                               access to the account above.
     ---------------------     --------------------------------------------------------------------
-    key_file                  Optional string. The path to PKI key file.
+    key_file                  Optional string. The path to a PKI key file used to authenticate the
+                              user to the Web Server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
-    cert_file                 Optional string. The path to PKI cert file.
+    cert_file                 Optional string. The path to PKI cert file used to authenticate the
+                              user to the Web Server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
-    proxy_host                Optional string. The web address to the proxy host.
+    proxy_host                Optional string. The web address to the proxy host if the environment
+                              where the Python API is running requires a proxy host for access to the
+                              Site URL or GIS URL.
 
                               Example: proxy.mysite.com
     ---------------------     --------------------------------------------------------------------
-    proxy_port                Optional integer. The port where the proxy resides on, default is 80.
+    proxy_port                Optional integer. The port which the proxy is accessed through,
+                              default is 80.
     ---------------------     --------------------------------------------------------------------
-    expiration                Optional integer. This is the length of time a token is valid for.
-                              Example 1440 is one week. The Default is 60.
+    expiration                Optional integer. This is the length of time in minutes that a token
+                              requested through this login process will be valid for.
+                              Example: 1440 is one day. The Default is 60.
     ---------------------     --------------------------------------------------------------------
     all_ssl                   Optional boolean. If True, all calls will be made over HTTPS instead
                               of HTTP. The default is False.
