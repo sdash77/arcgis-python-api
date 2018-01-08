@@ -56,21 +56,21 @@ class GIS(object):
     """
     .. _gis:
 
-    A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
-    (search, create, retrieve) GIS resources such as content, users, and groups.
+    A GIS is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment. The GIS object 
+    provides helper objects to manage (search, create, retrieve) GIS resources such as content, users, and groups.
 
-    Additionally, the GIS object has properties to query it's state, which is accessible using the properties attribute.
+    Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
 
     The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
 
     The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
-    or an ArcGIS Portal. User credentials can be passed in using username/password
-    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
-    PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
+    or an ArcGIS Enterprise Portal. User credentials can be passed in using username/password
+    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP, PKI, Integrated Windows Authentication
+    (using NTLM and Kerberos) and Anonymous access.
 
     If no url is provided, ArcGIS Online is used. If username/password
-    or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
+    or key/cert files are not provided, the currently logged-in user's credentials (IWA) or anonymous access is used.
 
     A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
     specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile.
@@ -85,23 +85,28 @@ class GIS(object):
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
     url                 Optional string. If URL is None, then the URL will be ArcGIS
-                        Online.  This should be a web address to either a local portal
+                        Online.  This should be a web address to either a local Portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<host>/<web_adatpor> (Portal Example)
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> (Portal Example)
+                        https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
-    username            Optional string. The login user name (case sensitive).
+    username            Optional string. The login user name (case-sensitive).
     ----------------    ---------------------------------------------------------------
     password            Optional string. If a username is provided, a password is
-                        expected.  This is case sensitive. If the password is not
-                        provided, the user is prompted.
+                        expected.  This is case-sensitive. If the password is not
+                        provided, the user is prompted in the interactive dialog.
     ----------------    ---------------------------------------------------------------
-    key_file            Optional string. The file path to a user's key certificate.
+    key_file            Optional string. The file path to a user's key certificate for PKI
+                        authentication
     ----------------    ---------------------------------------------------------------
-    cert_file           Optional string. The file path to a user's certificate file.
+    cert_file           Optional string. The file path to a user's certificate file for PKI
+                        authentication
     ----------------    ---------------------------------------------------------------
-    verify_cert         Optional boolean. If a site has an invalid certificate, set the
-                        value to False.  This will ensure that all SSL certification
-                        are ignore.  The default is True.
+    verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
+                        being accessed via the IP or hostname instead of the name on the
+                        certificate, set this value to False.  This will ensure that all
+                        SSL certificate issues are ignored.
+                        The default is True.
                         **Warning** Setting the value to False can be a security risk.
     ----------------    ---------------------------------------------------------------
     set_active          Optional boolean. The default is True.  If True, the GIS object
@@ -111,8 +116,9 @@ class GIS(object):
     client_id           Optional string. Used for OAuth athentication.  This is the
                         client ID value.
     ----------------    ---------------------------------------------------------------
-    profile             Optional string. If set, the profile contains login information
-                        for a given site.
+    profile             Optional string. the name of the profile that the user wishes to use
+                        to authenticate, if set, the identified profile will be used to login
+                        to the specified GIS.
     ================    ===============================================================
 
     In addition to explicitly named parameters, the GIS object supports optional key word
@@ -121,7 +127,8 @@ class GIS(object):
     ================    ===============================================================
     **kwargs**          **Description**
     ----------------    ---------------------------------------------------------------
-    proxy_host          Optional string. The host name of the proxy server.
+    proxy_host          Optional string. The host name of the proxy server used to allow HTTP/S
+                        access in the network where the script is run.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ================    ===============================================================
@@ -3174,7 +3181,8 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     Required string. The list of usernames to be added.
+        usernames     Required list of strings or single string.
+                      The list of usernames or single username to be added.
         ============  ======================================
 
         :return:
