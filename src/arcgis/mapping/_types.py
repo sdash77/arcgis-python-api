@@ -51,7 +51,7 @@ class WebMap(collections.OrderedDict):
 
     def __init__(self, webmapitem=None):
         """
-        Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on 
+        Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
         if webmapitem:
@@ -143,6 +143,8 @@ class WebMap(collections.OrderedDict):
         :return:
             True if layer was successfully added. Else, raises appropriate exception.
         """
+        if options is None:
+            options = {}
         #region extact basic info from options
         title = options['title'] if options and 'title' in options else None
         opacity = options['opacity'] if options and 'opacity' in options else 1
@@ -418,7 +420,7 @@ class WebMap(collections.OrderedDict):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
         If extent is not in wgs84, it projects
-        :return: 
+        :return:
         """
         if isinstance(self._extent, list):
             #passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
