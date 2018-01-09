@@ -15,7 +15,7 @@ from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
 from arcgis.gis import GIS
 from arcgis.geometry import _types
 
-from arcgis.features._data.geodataset.___viz.symbol import create_symbol, _cmap2rgb
+from arcgis.features._data.geodataset.viz.symbol import create_symbol, _cmap2rgb
 
 __all__ = ['render']
 
