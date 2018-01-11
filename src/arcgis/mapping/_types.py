@@ -13,8 +13,10 @@ import arcgis.gis
 import arcgis.env
 from warnings import warn
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
+
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
 _log = logging.getLogger(__name__)
@@ -111,7 +113,7 @@ class WebMap(collections.OrderedDict):
         return 'WebMap at ' + self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid
 
     def __str__(self):
-        return json.dumps(self)
+        return json.dumps(self, default=_date_handler)
 
     def add_layer(self, layer, options=None):
         """
@@ -521,7 +523,7 @@ class WebMap(collections.OrderedDict):
 
         item_properties['type'] = 'Web Map'
         item_properties['extent'] = self._process_extent()
-        item_properties['text'] = json.dumps(self._webmapdict)
+        item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
 
         if 'title' not in item_properties or 'snippet' not in item_properties or 'tags' not in item_properties:
             raise RuntimeError("title, snippet and tags are required in item_properties dictionary")
@@ -595,11 +597,12 @@ class WebMap(collections.OrderedDict):
         """
 
         if self.item is not None:
-            item_properties['text'] = json.dumps(self._webmapdict)
+            item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
             item_properties['extent'] = self._process_extent()
             if 'type' in item_properties:
                 item_properties.pop('type')  # type should not be changed.
-            return self.item.update({'text': json.dumps(self._webmapdict), 'extent':self._process_extent()})
+            return self.item.update({'text': json.dumps(self._webmapdict, default=_date_handler),
+                                     'extent':self._process_extent()})
         else:
             raise RuntimeError('Item object missing, you should use `save()` method if you are creating a '
                                'new web map item')
@@ -841,7 +844,8 @@ class OfflineMapAreaManager(object):
             from arcgis.geoprocessing._tool import Toolbox
             pkg_tb = Toolbox(self._url, gis=self._gis)
 
-            result = pkg_tb.refresh_map_area_package(json.dumps(_update_list))
+            result = pkg_tb.refresh_map_area_package(json.dumps(_update_list,
+                                                                default=_date_handler))
             return result
         else:
             return None
@@ -899,7 +903,8 @@ class WebScene(collections.OrderedDict):
         return 'WebScene at ' + self.item._portal.url  + "/home/webscene/viewer.html?webscene=" + self.item.itemid
 
     def __str__(self):
-        return json.dumps(self)
+        return json.dumps(self,
+                          default=_date_handler)
 
     def update(self):
         # with _tempinput(self.__str__()) as tempfilename:

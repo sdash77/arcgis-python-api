@@ -57,7 +57,7 @@ class GIS(object):
     """
     .. _gis:
 
-    A GIS is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment. The GIS object 
+    A GIS is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment. The GIS object
     provides helper objects to manage (search, create, retrieve) GIS resources such as content, users, and groups.
 
     Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
@@ -75,12 +75,12 @@ class GIS(object):
 
     Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
     specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
-    user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password 
-    in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module. 
-    (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has 
-    been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration 
+    user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
+    in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
+    (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has
+    been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
     file/password manager by that profile name. Multiple profiles can be created and used in parallel.
-    
+
     See https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/ for examples.
 
 
@@ -189,10 +189,10 @@ class GIS(object):
 
         Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
         specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
-        user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password 
-        in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module. 
-        (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has 
-        been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration 
+        user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
+        in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
+        (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has
+        been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
         file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
         If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
@@ -226,7 +226,7 @@ class GIS(object):
             if password is not None:
                 self._securely_store_password(profile, password)
             self._write_any_config_changes_to_file(config, cfg_file_path)
-          
+
             # Update __init__() args with data from config file/keyring store
             if config.has_option(profile,   "url"):
                 url =       config[profile]["url"]
@@ -239,7 +239,7 @@ class GIS(object):
             if config.has_option(profile,   "client_id"):
                 client_id = config[profile]["client_id"]
             password = self._securely_get_password(profile)
-                      
+
         if url is None:
             url = "https://www.arcgis.com"
         if self._uri_validator(url) == False and str(url).lower() != 'pro':
@@ -322,7 +322,7 @@ class GIS(object):
     def _config_is_in_old_format(self, config):
         """ Any version <= 1.3 of the API used a different config file
         formatting that, among other things, did not store the last time
-        a profile was modified. Thus, if 'date_modified' is not found in any 
+        a profile was modified. Thus, if 'date_modified' is not found in any
         profile, it is the old format
         """
         for profile in config.keys():
@@ -340,7 +340,7 @@ class GIS(object):
         other fields in a rot13 character shifted fashion anymore.
 
         This function goes through all profiles in the .arcgisprofile file
-        and makes it compatible with the new format. Note: this function just 
+        and makes it compatible with the new format. Note: this function just
         updates 'config' obj passed in; changes are written to file elsewhere
         """
         _log.info("Doing one time update of .arcgisprofile to new format...")
@@ -351,7 +351,7 @@ class GIS(object):
         for profile in config.keys():
             for attr_key in config[profile].keys():
                 unscrambled_attr_value = rot13(config[profile][attr_key],
-                                               of=True)  
+                                               of=True)
                 if attr_key in attributes_to_rewrite_to_config:
                     config[profile][attr_key] =  unscrambled_attr_value
                 if attr_key in attributes_to_write_to_keyring:
@@ -389,12 +389,12 @@ class GIS(object):
 
     def _write_any_config_changes_to_file(self, config, cfg_file_path):
         """write the config object to the .arcgisprofile file"""
-        config.write(open(cfg_file_path, "w")) 
+        config.write(open(cfg_file_path, "w"))
 
     def _securely_store_password(self, profile, password):
         """Securely stores the password in an O.S. specific store via the
         keyring package. Can be retrieved later with just the profile name.
-        
+
         If keyring is not properly set up system-wide, raise a RuntimeError
         """
         import keyring
@@ -407,7 +407,7 @@ class GIS(object):
 
     def _securely_get_password(self, profile):
         """Securely gets the profile specific password stored via keyring
-        
+
         If keyring is not properly set up system-wide OR if a password is not
         found through keyring, log the respective warning and return 'None'
         """
@@ -434,7 +434,7 @@ class GIS(object):
 
     def _securely_delete_password(self, profile):
         """Securely deletes the profile specific password via keyring
-        
+
         If keyring is not properly set up system-wide, log a warning
         """
         import keyring
@@ -445,7 +445,7 @@ class GIS(object):
         else:
             _log.warn(self._get_keyring_failure_message())
             return False
- 
+
     def _current_keyring_is_recommended(self):
         """The keyring project recommends 4 secure keyring backends. The
         defaults on Windows/OSX should be the recommended backends, but Linux
@@ -460,7 +460,7 @@ class GIS(object):
                                keyring.backends.kwallet.DBusKeyring ]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
- 
+
     def _get_keyring_failure_message(self):
         """An informative failure msg about the backend keyring being used"""
         import keyring
@@ -473,7 +473,7 @@ class GIS(object):
                "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
                "for Python doc (http://bit.ly/2CK2wG8)."\
                "".format(keyring.get_keyring())
-                             
+
     def _uri_validator(self, x):
         from urllib.parse import urlparse
         if x is None:
@@ -3202,7 +3202,7 @@ class Group(dict):
                         <br/><b>Summary</b>: """ + str(snippet) + """
                         <br/><b>Description</b>: """ + str(description)  + """
                         <br/><b>Owner</b>: """ + str(owner)  + """
-                        <br/><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Created</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -3718,7 +3718,7 @@ class User(dict):
                         <br/><b>First Name</b>: """ + str(firstName) + """
                         <br/><b>Last Name</b>: """ + str(lastName)  + """
                         <br/><b>Username</b>: """ + str(self.username)  + """
-                        <br/><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Joined</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -4919,7 +4919,7 @@ class Item(dict):
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
                         <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self._ux_item_type() + """ by """ + self.owner + """
-                        <br/>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
+                        <br/>Last Modified: """ + datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
                         <br/>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
                 </div>

@@ -9,7 +9,7 @@ from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureCollection
 from arcgis.features import FeatureSet
 from arcgis.features._data.geodataset import GeoSeries
-
+from arcgis.widgets import MapView
 CLASSIFICATIONS = {
 
     "simple": {'renderer_type' : 'u'}, # simple
@@ -165,10 +165,10 @@ def plot(df,
         name = uuid.uuid4().hex[:7]
     if map_widget is None:
         map_exists = False
-        from arcgis.mapping import WebMap
-        map_widget = WebMap()
+        map_widget = MapView()
+
     fc = df.to_feature_collection(name=name)
-    if renderer_type is None:
+    if renderer_type in [None, 's']:
         renderer_type = 's' # simple (default)
         r = generate_renderer(sdf_or_series=df,
                    label=name,
@@ -234,8 +234,21 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     if map_exists:
-        map_widget.add_layer(layer=fc)
+        map_widget.add_layer(fc, options={'title':name})
     else:
-        map_widget.add_layer(layer=fc)
+        map_widget.add_layer(fc, options={'title':name})
         return map_widget
 
+if __name__ == "__main__":
+    from arcgis.features import SpatialDataFrame
+    from arcgis.gis import GIS
+    from arcgis.mapping import WebMap
+    from arcgis.features._data.geodataset.viz import plot,display_colormaps
+    gis = GIS(username='AndrewSolutions', password='fujiFUJI1')
+    wm = gis.map()
+    df = SpatialDataFrame.from_featureclass(r"D:\GIS\gp\schema.gdb\test_pts").head(5)
+    #wm.add_layer(item=df, )
+    plot(df=df,
+         map_widget=wm,
+         renderer_type='s',
+         palette='Accent')
