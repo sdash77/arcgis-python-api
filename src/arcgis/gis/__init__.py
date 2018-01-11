@@ -19,6 +19,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+from datetime import datetime
 
 import arcgis._impl.portalpy as portalpy
 import arcgis.env
@@ -72,12 +73,14 @@ class GIS(object):
     If no url is provided, ArcGIS Online is used. If username/password
     or key/cert files are not provided, the currently logged-in user's credentials (IWA) or anonymous access is used.
 
-    A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile.
-    The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
-    or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
-    saved in the configuration file by that profile name.
-
+    Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
+    specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
+    user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password 
+    in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module. 
+    (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has 
+    been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration 
+    file/password manager by that profile name. Multiple profiles can be created and used in parallel.
+    
     See https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/ for examples.
 
 
@@ -184,11 +187,13 @@ class GIS(object):
         If no url is provided, ArcGIS Online is used. If username/password
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
 
-        A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-        specifying a profile name. The profile is stored in the users home directory in a configuration file named arcgisprofile.
-        The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
-        or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
-        saved in the configuration file by that profile name.
+        Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
+        specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
+        user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password 
+        in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module. 
+        (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has 
+        been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration 
+        file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
         If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
         in a testing environment and wish to disable certificate verification, you may specify verify_cert=False to disable
@@ -201,75 +206,40 @@ class GIS(object):
         from arcgis._impl.tools import _Tools
 
         if profile is not None:
-            cfg = os.path.expanduser("~") + '/.arcgisprofile'
-            # read
+            # Load config
+            cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
             config = configparser.ConfigParser()
-            # Determine if an existing profile exists to update
-            if os.path.isfile(cfg):
-                config.read(cfg)
+            if os.path.isfile(cfg_file_path):
+                config.read(cfg_file_path)
 
-            if url is None and username is None and password is None and \
-                key_file is None and cert_file is None and \
-                client_id is None:
+            # Update config to >v1.3 format if it's old
+            if self._config_is_in_old_format(config):
+                self._update_config_to_new_format(config)
 
-                old_format = False  # Flag to see if original v1.3 format
-                if profile in config:
-                    if '://' in config[profile].get('url'):
-                        old_format = True
-
-                    if old_format:
-                        url = rot13(config[profile].get('url'), of=True)
-                        username = rot13(config[profile].get('username'), of=True)
-                        password = rot13(config[profile].get('password'), of=True)
-                        key_file = rot13(config[profile].get('key_file'), of=True)
-                        cert_file = rot13(config[profile].get('cert_file'), of=True)
-                        client_id = rot13(config[profile].get('client_id'), of=True)
-                        # Silently update to new format
-                        config[profile] = {}
-                        if url is not None:
-                            config[profile]['url'] = rot13(url)
-                        if username is not None:
-                            config[profile]['username'] = rot13(username)
-                        if password is not None:
-                            config[profile]['password'] = rot13(password)
-                        if key_file is not None:
-                            config[profile]['key_file'] = rot13(key_file)
-                        if cert_file is not None:
-                            config[profile]['cert_file'] = rot13(cert_file)
-                        if client_id is not None:
-                            config[profile]['client_id'] = rot13(client_id)
-
-                        with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
-                            config.write(configfile)
-                    else:
-                        url = rot13(config[profile].get('url'), b64=True)
-                        username = rot13(config[profile].get('username'), b64=True)
-                        password = rot13(config[profile].get('password'), b64=True)
-                        key_file = rot13(config[profile].get('key_file'), b64=True)
-                        cert_file = rot13(config[profile].get('cert_file'), b64=True)
-                        client_id = rot13(config[profile].get('client_id'), b64=True)
-                else:
-                    raise RuntimeError('No such profile was found.')
-            else:
-                # If a previous profile with this name exist, it will overwrite
-                config[profile] = {}
-
-                if url is not None:
-                    config[profile]['url']= rot13(url)
-                if username is not None:
-                    config[profile]['username']= rot13(username)
-                if password is not None:
-                    config[profile]['password']= rot13(password)
-                if key_file is not None:
-                    config[profile]['key_file']= rot13(key_file)
-                if cert_file is not None:
-                    config[profile]['cert_file']= rot13(cert_file)
-                if client_id is not None:
-                    config[profile]['client_id']= rot13(client_id)
-
-                with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
-                    config.write(configfile)
-
+            # Add any __init__() args to config/keyring store
+            if profile not in config.keys():
+                _log.info("Adding new profile {} to config...".format(profile))
+                config.add_section(profile)
+                self._add_timestamp_to_profile_data_in_config(config, profile)
+            self._update_profile_data_in_config(config, profile, url, username,
+                                                key_file, cert_file, client_id)
+            if password is not None:
+                self._securely_store_password(profile, password)
+            self._write_any_config_changes_to_file(config, cfg_file_path)
+          
+            # Update __init__() args with data from config file/keyring store
+            if config.has_option(profile,   "url"):
+                url =       config[profile]["url"]
+            if config.has_option(profile,   "username"):
+                username =  config[profile]["username"]
+            if config.has_option(profile,   "key_file"):
+                key_file =  config[profile]["key_file"]
+            if config.has_option(profile,   "cert_file"):
+                cert_file = config[profile]["cert_file"]
+            if config.has_option(profile,   "client_id"):
+                client_id = config[profile]["client_id"]
+            password = self._securely_get_password(profile)
+                      
         if url is None:
             url = "https://www.arcgis.com"
         if self._uri_validator(url) == False and str(url).lower() != 'pro':
@@ -349,6 +319,161 @@ class GIS(object):
         if set_active:
             arcgis.env.active_gis = self
 
+    def _config_is_in_old_format(self, config):
+        """ Any version <= 1.3 of the API used a different config file
+        formatting that, among other things, did not store the last time
+        a profile was modified. Thus, if 'date_modified' is not found in any 
+        profile, it is the old format
+        """
+        for profile in config.keys():
+             if config[profile].name == "DEFAULT":
+                 #ignore the default profile (it's not user defined)
+                 continue
+             if "date_modified" not in config[profile]:
+                 return True
+        return False
+
+    def _update_config_to_new_format(self, config):
+        """ The new config file does not store the password at all, instead
+        storing it through the keyring module (see below functions). The new
+        config file also has a 'date_modified' field, and does not store the
+        other fields in a rot13 character shifted fashion anymore.
+
+        This function goes through all profiles in the .arcgisprofile file
+        and makes it compatible with the new format. Note: this function just 
+        updates 'config' obj passed in; changes are written to file elsewhere
+        """
+        _log.info("Doing one time update of .arcgisprofile to new format...")
+        attributes_to_rewrite_to_config = [ 'url', 'username', 'key_file',
+                                          'cert_file', 'client_id' ]
+        attributes_to_write_to_keyring = [ 'password' ]
+
+        for profile in config.keys():
+            for attr_key in config[profile].keys():
+                unscrambled_attr_value = rot13(config[profile][attr_key],
+                                               of=True)  
+                if attr_key in attributes_to_rewrite_to_config:
+                    config[profile][attr_key] =  unscrambled_attr_value
+                if attr_key in attributes_to_write_to_keyring:
+                    self._securely_store_password(profile,
+                                                  unscrambled_attr_value)
+                    config.remove_option(profile, attr_key)
+                self._add_timestamp_to_profile_data_in_config(config, profile)
+
+    def _update_profile_data_in_config(self, config, profile, url = None,
+                                       username = None, key_file = None,
+                                       cert_file = None, client_id = None):
+        """Updates the specific profile in the config object to include
+        any of the user defined arguments. This will overwrite old values.
+        ***USE THIS FUNCTION INSTEAD OF MANUALLY MODIFYING PROFILE DATA***
+        """
+        if url is not None:
+            config[profile]["url"] = url
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if username is not None:
+            config[profile]["username"] = username
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if key_file is not None:
+            config[profile]["key_file"] = key_file
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if cert_file is not None:
+            config[profile]["cert_file"] = cert_file
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if client_id is not None:
+            config[profile]["client_id"] = client_id
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+
+    def _add_timestamp_to_profile_data_in_config(self, config, profile):
+        """Sets the 'date_modified' field to this moment's datetime"""
+        config[profile]["date_modified"] = str(datetime.now())
+
+    def _write_any_config_changes_to_file(self, config, cfg_file_path):
+        """write the config object to the .arcgisprofile file"""
+        config.write(open(cfg_file_path, "w")) 
+
+    def _securely_store_password(self, profile, password):
+        """Securely stores the password in an O.S. specific store via the
+        keyring package. Can be retrieved later with just the profile name.
+        
+        If keyring is not properly set up system-wide, raise a RuntimeError
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            return keyring.set_password("arcgis_python_api_profile_passwords",
+                                        profile,
+                                        password)
+        else:
+            raise RuntimeError(self._get_keyring_failure_message())
+
+    def _securely_get_password(self, profile):
+        """Securely gets the profile specific password stored via keyring
+        
+        If keyring is not properly set up system-wide OR if a password is not
+        found through keyring, log the respective warning and return 'None'
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            # password will be None if no password is found for the profile
+            password = keyring.get_password(
+                                         "arcgis_python_api_profile_passwords",
+                                         profile)
+        else:
+            password = None
+            _log.warn(self._get_keyring_failure_message())
+
+        if password is None:
+            _log.warn("Profile {0} does not have a password on file through "\
+                      "keyring. If you are expecting this behavior (PKI or "\
+                      "IWA authentication, entering password through "\
+                      "run-time prompt, etc.), please ignore this message. "\
+                      "If you would like to store your password in the {0} "\
+                      "profile, run GIS(profile = '{0}', password = ...). "\
+                      "See the API doc for more details. "\
+                      "(http://bit.ly/2CK2wG8)".format(profile))
+        return password
+
+    def _securely_delete_password(self, profile):
+        """Securely deletes the profile specific password via keyring
+        
+        If keyring is not properly set up system-wide, log a warning
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            return keyring.delete_password(
+                                         "arcgis_python_api_profile_passwords",
+                                         profile)
+        else:
+            _log.warn(self._get_keyring_failure_message())
+            return False
+ 
+    def _current_keyring_is_recommended(self):
+        """The keyring project recommends 4 secure keyring backends. The
+        defaults on Windows/OSX should be the recommended backends, but Linux
+        needs some system-wide software installed and configured to securely
+        function. Return if the current keyring is a supported, properly
+        configured backend
+        """
+        import keyring
+        supported_keyrings = [ keyring.backends.OS_X.Keyring,
+                               keyring.backends.SecretService.Keyring,
+                               keyring.backends.Windows.WinVaultKeyring,
+                               keyring.backends.kwallet.DBusKeyring ]
+        current_keyring = type(keyring.get_keyring())
+        return current_keyring in supported_keyrings
+ 
+    def _get_keyring_failure_message(self):
+        """An informative failure msg about the backend keyring being used"""
+        import keyring
+        return "Keyring backend being used ({}) either failed to install "\
+               "or is not recommended by the keyring project (i.e. it is "\
+               "not secure). This means you can not use stored passwords "\
+               "through GIS's persistent profiles. Note that extra system-"\
+               "wide steps must be taken on a Linux machine to use the python "\
+               "keyring module securely. Read more about this at the "\
+               "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
+               "for Python doc (http://bit.ly/2CK2wG8)."\
+               "".format(keyring.get_keyring())
+                             
     def _uri_validator(self, x):
         from urllib.parse import urlparse
         if x is None:

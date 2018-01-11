@@ -149,6 +149,7 @@ setup(
         'pandas',
         'ipywidgets >=5.2.2,<7',
         'widgetsnbextension >=1.2.6,<3',
+        'keyring',
         'winkerberos;platform_system=="Windows"'],
 
     # These classes will execute code after 'pip install' finishes
