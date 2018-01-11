@@ -479,22 +479,57 @@ class FeatureLayerCollectionManager(_GISResource):
                     capabilities="Query",
                     view_layers=None):
         """
-        Creates a View of an Existing Feature Service.
+        Creates a view of an existing feature service. You can create a view, if you need a different view of the data
+        represented by a hosted feature layer—for example, you want to apply different editor settings, apply different
+        styles or filters, define which features or fields are available, or share the data to different groups than
+        the hosted feature layer—create a hosted feature layer view of that hosted feature layer.
 
-        Parameters:
-         :name: Name of the new view item
-         :spatial_reference:
-         :extent: initial extent of the object
-         :allow_schema_changes: boolean that determines if a view can alter a
-          service's schema.
-         :updateable: boolean value that says if a view can update values
-         :capabilities: determines what operations a user can do on a given
-          view
-         :view_layers: optional dictionary used to define the layers that
-          are referenced inside the view.  The default is all layers.
-        :Returns:
-         Item for  the view
+        When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
+        view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
+        layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
+        properties and settings on this item separately from the hosted feature layer from which it is created.
+
+        For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
+        feature layer view with the public.
+
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        name                     Required string. Name of the new view item
+        --------------------     --------------------------------------------------------------------
+        spatial_reference        Optional dict. Specify the spatial reference of the view
+        --------------------     --------------------------------------------------------------------
+        extent                   Optional dict. Specify the extent of the view
+        --------------------     --------------------------------------------------------------------
+        allow_schema_changes     Optional bool. Default is True. Determines if a view can alter a
+                                  service's schema.
+        --------------------     --------------------------------------------------------------------
+        updateable               Optional bool. Default is True. Determines if view can update values
+        --------------------     --------------------------------------------------------------------
+        capabilities             Optional string. Specify capabilities as a comma separated string.
+                                  For example "Query, Update, Delete". Default is 'Query'.
+        --------------------     --------------------------------------------------------------------
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
+                                  that you want in the view.
+        ====================     ====================================================================
+
+        .. code-block:: python  (optional)
+
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+
+           crime_fl_item = gis.content.search("2012 crime")[0]
+           crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
+
+           # Create a view with just the first layer
+           crime_view = crime_flc.manager.create_view(name='Crime in 2012", updateable=False,
+                                                        view_layers=[crime_flc.layers[0]])
+
+        :return:
+            Returns the newly created item for the view.
         """
+
         import os
         from . import FeatureLayerCollection
         gis = self._gis
@@ -541,6 +576,17 @@ class FeatureLayerCollectionManager(_GISResource):
                         }
                         },
                         "name" : lyr.manager.properties['name']
+                    })
+        elif isinstance(view_layers, list):
+            for lyr in view_layers:
+                add_def['layers'].append(
+                    {
+                        "adminLayerInfo": {"viewLayerDefinition":
+                                               {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                                                "sourceLayerId": lyr.manager.properties['id'],
+                                                "sourceLayerFields": "*"}
+                                           },
+                        "name": lyr.manager.properties['name']
                     })
         else:
             add_def = view_layers
