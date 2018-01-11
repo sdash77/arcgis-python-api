@@ -283,6 +283,9 @@ class WebMap(collections.OrderedDict):
                 if hasattr(layer.layer, "layers"):
                     fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
                     fc_feature_set = dict(layer.layer.layers[0].featureSet)
+                else:
+                    fc_layer_definition = dict(layer.layer.layerDefinition)
+                    fc_feature_set = dict(layer.layer.featureSet)
             else:
                 fc_layer_definition = dict(layer.properties.layerDefinition)
                 fc_feature_set = dict(layer.properties.featureSet)

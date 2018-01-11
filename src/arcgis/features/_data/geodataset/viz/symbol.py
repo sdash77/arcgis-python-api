@@ -13,7 +13,6 @@ import arcgis
 from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
 from arcgis.gis import GIS
 from arcgis.geometry import _types
-
 ###########################################################################
 ALLOWED_CMAPS = ['Accent', 'Accent_r', 'Blues', 'Blues_r',
                  'BrBG', 'BrBG_r', 'BuGn', 'BuGn_r', 'BuPu',
@@ -153,7 +152,7 @@ def _cmap2rgb(cmap, step, alpha=1):
     from matplotlib import cm
     t = getattr(cm, cmap)(step, bytes=True)
     t = [int(i) for i in t]
-    t[-1] = alpha
+    t[-1] = alpha * 255
     return t
 ###########################################################################
 def display_colormaps():
@@ -164,7 +163,6 @@ def display_colormaps():
     This is a variation of http://matplotlib.org/examples/color/colormaps_reference.html
 
     """
-
     cmaps =  [('All Color Maps', ALLOWED_CMAPS)]
     nrows = max(len(cmap_list) for cmap_category, cmap_list in cmaps)
     gradient = np.linspace(0, 1, 256)
@@ -232,7 +230,6 @@ def create_symbol(geometry_type,
     =======================  =========================================================
 
 
-
     =======================  =========================================================
     **Optional Argument**    **Description**
     -----------------------  ---------------------------------------------------------
@@ -243,6 +240,39 @@ def create_symbol(geometry_type,
     symbol_type              optional string. This is the symbology used by the
                              geometry.  For example 's' for a Line geometry is a solid
                              line. And '-' is a dash line.
+
+                             **Point Symbols**
+
+                             + 'o' - Circle (default)
+                             + '+' - Cross
+                             + 'D' - Diamond
+                             + 's' - Square
+                             + 'x' - X
+
+                             **Polyline Symbols**
+
+                             + 's' - Solid (default)
+                             + '-' - Dash
+                             + '-.' - Dash Dot
+                             + '-..' - Dash Dot Dot
+                             + '.' - Dot
+                             + '--' - Long Dash
+                             + '--.' - Long Dash Dot
+                             + 'n' - Null
+                             + 's-' - Short Dash
+                             + 's-.' - Short Dash Dot
+                             + 's-..' - Short Dash Dot Dot
+                             + 's.' - Short Dot
+
+                             **Polygon Symbols**
+
+                             + 's' - Solid Fill (default)
+                             + '\' - Backward Diagonal
+                             + '/' - Forward Diagonal
+                             + '|' - Vertical Bar
+                             + '-' - Horizontal Bar
+                             + 'x' - Diagonal Cross
+                             + '+' - Cross
     -----------------------  ---------------------------------------------------------
     cmap                     optional string or list.  This is the color scheme a user
                              can provide if the exact color is not needed, or a user
@@ -263,19 +293,41 @@ def create_symbol(geometry_type,
     ====================  =========================================================
     **Argument**          **Description**
     --------------------  ---------------------------------------------------------
-    marker_size
+    marker_size           optional float.  Numeric size of the symbol given in
+                          points.
     --------------------  ---------------------------------------------------------
-    marker_angle
+    marker_angle          optional float. Numeric value used to rotate the symbol.
+                          The symbol is rotated counter-clockwise. For example,
+                          The following, angle=-30, in will create a symbol rotated
+                          -30 degrees counter-clockwise; that is, 30 degrees
+                          clockwise.
     --------------------  ---------------------------------------------------------
-    marker_xoffset
+    marker_xoffset        Numeric value indicating the offset on the x-axis in points.
     --------------------  ---------------------------------------------------------
-    marker_yoffset
+    marker_yoffset        Numeric value indicating the offset on the y-axis in points.
     --------------------  ---------------------------------------------------------
-    line_width
+    line_width            optional float. Numeric value indicating the width of the line in points
     --------------------  ---------------------------------------------------------
-    outline_style
+    outline_style         Optional string. For polygon point, and line geometries , a
+                          customized outline type can be provided.
+
+                          Allowed Styles:
+
+                          + 's' - Solid (default)
+                          + '-' - Dash
+                          + '-.' - Dash Dot
+                          + '-..' - Dash Dot Dot
+                          + '.' - Dot
+                          + '--' - Long Dash
+                          + '--.' - Long Dash Dot
+                          + 'n' - Null
+                          + 's-' - Short Dash
+                          + 's-.' - Short Dash Dot
+                          + 's-..' - Short Dash Dot Dot
+                          + 's.' - Short Dot
     --------------------  ---------------------------------------------------------
-    outline_color
+    outline_color         optional string or list.  This is the same color as the
+                          cmap property, but specifically applies to the outline_color.
     ====================  =========================================================
 
     **Picture Symbol**
@@ -285,29 +337,52 @@ def create_symbol(geometry_type,
     ====================  =========================================================
     **Argument**          **Description**
     --------------------  ---------------------------------------------------------
-    marker_angle
+    marker_angle          Numeric value that defines the number of degrees ranging
+                          from 0-360, that a marker symbol is rotated. The rotation
+                          is from East in a counter-clockwise direction where East
+                          is the 0 axis.
     --------------------  ---------------------------------------------------------
-    marker_xoffset
+    marker_xoffset        Numeric value indicating the offset on the x-axis in points.
     --------------------  ---------------------------------------------------------
-    marker_yoffset
+    marker_yoffset        Numeric value indicating the offset on the y-axis in points.
     --------------------  ---------------------------------------------------------
-    height
+    height                Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
     --------------------  ---------------------------------------------------------
-    width
+    width                 Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
     --------------------  ---------------------------------------------------------
-    url
+    url                   String value indicating the URL of the image. The URL should be relative if working with static layers. A full URL should be used for map service dynamic layers. A relative URL can be dereferenced by accessing the map layer image resource or the feature layer image resource.
     --------------------  ---------------------------------------------------------
-    image_data
+    image_data            String value indicating the base64 encoded data.
     --------------------  ---------------------------------------------------------
-    xscale
+    xscale                Numeric value indicating the scale factor in x direction.
     --------------------  ---------------------------------------------------------
-    yscale
+    yscale                Numeric value indicating the scale factor in y direction.
     --------------------  ---------------------------------------------------------
-    outline_cmap
+    outline_color         optional string or list.  This is the same color as the
+                          cmap property, but specifically applies to the outline_color.
     --------------------  ---------------------------------------------------------
-    outline_style
+    outline_style         Optional string. For polygon point, and line geometries , a
+                          customized outline type can be provided.
+
+                          Allowed Styles:
+
+                          + 's' - Solid (default)
+                          + '-' - Dash
+                          + '-.' - Dash Dot
+                          + '-..' - Dash Dot Dot
+                          + '.' - Dot
+                          + '--' - Long Dash
+                          + '--.' - Long Dash Dot
+                          + 'n' - Null
+                          + 's-' - Short Dash
+                          + 's-.' - Short Dash Dot
+                          + 's-..' - Short Dash Dot Dot
+                          + 's.' - Short Dot
     --------------------  ---------------------------------------------------------
-    line_width
+    outline_color         optional string or list.  This is the same color as the
+                          cmap property, but specifically applies to the outline_color.
+    --------------------  ---------------------------------------------------------
+    line_width            optional float. Numeric value indicating the width of the line in points
     ====================  =========================================================
 
     **Text Symbol**
@@ -398,13 +473,13 @@ def create_symbol(geometry_type,
     ====================  =========================================================
     **Argument**          **Description**
     --------------------  ---------------------------------------------------------
-    line_width
+    line_width            optional float. Numeric value indicating the width of the line in points
     --------------------  ---------------------------------------------------------
-    cap
+    cap                   Optional string.  The cap style.
     --------------------  ---------------------------------------------------------
-    join
+    join                  Optional string. The join style.
     --------------------  ---------------------------------------------------------
-    miter_limit
+    miter_limit           Optional string. Size threshold for showing mitered line joins.
     ====================  =========================================================
 
     :returns: Dictionary
@@ -554,22 +629,22 @@ def create_symbol(geometry_type,
         elif geometry_type.lower() == "polygon":
             symbol = {
                 "type" : "esriPFS",
-                #"color" : [0,0,0,255],
+                "color" : cmap,
                 "xoffset" : marker_xoffset,
                 "yoffset" : marker_yoffset,
-                #"xscale" : kwargs.pop('xscale', 1),
-                #"yscale" : kwargs.pop('yscale', 1),
+                "xscale" : kwargs.pop('xscale', None),
+                "yscale" : kwargs.pop('yscale', None),
                 "width" : kwargs.pop('width', 10),
                 "height" : kwargs.pop('height', 10),
                 "angle" : marker_angle,
                 "url" : kwargs.pop('url', ""),
                 "imageData" : kwargs.pop('image_data', None),
-                #"outline" : {
-                #    "color" : outline_cmap,
-                #    "width" : line_width,
-                #    "type" : "esriSLS",
-                #    "style" : outline_style
-                #}
+                "outline" : {
+                   "color" : outline_cmp,
+                   "width" : line_width,
+                   "type" : "esriSLS",
+                   "style" : outline_style
+                }
             }
             return symbol
     elif symbol_type.lower() == 'picture' and \

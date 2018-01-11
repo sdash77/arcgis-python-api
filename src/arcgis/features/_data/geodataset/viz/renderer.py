@@ -6,7 +6,6 @@ import json
 
 import pandas as pd
 import numpy as np
-import pysal as ps
 import matplotlib.pyplot as plt
 
 import arcgis
@@ -30,11 +29,279 @@ RENDERER_TYPES = {
     'v' : "vector field"#
 }
 
-def render(sdf_or_series,
-           label=None,
-           render_type=None,
-           cmap=None,
-           **symbol_args):
+def generate_renderer(sdf_or_series,
+                      label=None,
+                      render_type=None,
+                      cmap=None,
+                      **symbol_args):
+    """
+    Generates the Renderer JSON
+
+
+    ======================  =========================================================
+    **Explicit Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    sdf_or_series           required SpatialDataFrame. The spatial dataset to render.
+    ----------------------  ---------------------------------------------------------
+    label                   optional string. Name of the layer in the TOC/Legend
+    ----------------------  ---------------------------------------------------------
+    render_type             optional string.  Determines the type of renderer to use
+                            for the provided dataset. The default is 's' which is for
+                            simple renderers.
+
+                            Allowed values:
+
+                            + 's' - is a simple renderer that uses one symbol only.
+                            + 'u' - unique renderer symbolizes features based on one
+                                    or more matching string attributes.
+                            + 'c' - A class breaks renderer symbolizes based on the
+                                    value of some numeric attribute.
+                            + 'h' - heatmap renders point data into a raster
+                                    visualization that emphasizes areas of higher
+                                    density or weighted values.
+    ----------------------  ---------------------------------------------------------
+    cmap                    optional string/dict.  Color mapping.  For simple renderer,
+                            just provide a string.  For more robust renderers like
+                            unique renderer, a dictionary can be given.
+    ======================  =========================================================
+
+    ** Simple Renderer**
+
+    A simple renderer is a renderer that uses one symbol only.
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    symbol_type             optional string. This is the type of symbol the user
+                            needs to create.  Valid inputs are: simple, picture, text,
+                            or carto.  The default is simple.
+    ----------------------  ---------------------------------------------------------
+    symbol_type             optional string. This is the symbology used by the
+                            geometry.  For example 's' for a Line geometry is a solid
+                            line. And '-' is a dash line.
+
+                            **Point Symbols**
+
+                            + 'o' - Circle (default)
+                            + '+' - Cross
+                            + 'D' - Diamond
+                            + 's' - Square
+                            + 'x' - X
+
+                            **Polyline Symbols**
+
+                            + 's' - Solid (default)
+                            + '-' - Dash
+                            + '-.' - Dash Dot
+                            + '-..' - Dash Dot Dot
+                            + '.' - Dot
+                            + '--' - Long Dash
+                            + '--.' - Long Dash Dot
+                            + 'n' - Null
+                            + 's-' - Short Dash
+                            + 's-.' - Short Dash Dot
+                            + 's-..' - Short Dash Dot Dot
+                            + 's.' - Short Dot
+
+                            **Polygon Symbols**
+
+                            + 's' - Solid Fill (default)
+                            + '\' - Backward Diagonal
+                            + '/' - Forward Diagonal
+                            + '|' - Vertical Bar
+                            + '-' - Horizontal Bar
+                            + 'x' - Diagonal Cross
+                            + '+' - Cross
+    ----------------------  ---------------------------------------------------------
+    description             Description of the renderer.
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           String value which controls the origin and direction of
+                            rotation on point features. If the rotationType is
+                            defined as arithmetic, the symbol is rotated from East in
+                            a counter-clockwise direction where East is the 0 degree
+                            axis. If the rotationType is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An array of objects used to set rendering properties.
+    ======================  =========================================================
+
+    **Heatmap Renderer**
+
+    The HeatmapRenderer renders point data into a raster visualization that emphasizes
+    areas of higher density or weighted values.
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    blur_radius             The radius (in pixels) of the circle over which the
+                            majority of each point's value is spread.
+    ----------------------  ---------------------------------------------------------
+    field                   This is optional as this renderer can be created if no
+                            field is specified. Each feature gets the same
+                            value/importance/weight or with a field where each
+                            feature is weighted by the field's value.
+    ----------------------  ---------------------------------------------------------
+    max_intensity           The pixel intensity value which is assigned the final
+                            color in the color ramp.
+    ----------------------  ---------------------------------------------------------
+    min_intensity           The pixel intensity value which is assigned the initial
+                            color in the color ramp.
+    ----------------------  ---------------------------------------------------------
+    ratio                   A number between 0-1. Describes what portion along the
+                            gradient the colorStop is added.
+    ======================  =========================================================
+
+    **Unique Renderer**
+
+    This renderer symbolizes features based on one or more matching string attributes.
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    background_fill_symbol  A symbol used for polygon features as a background if the
+                            renderer uses point symbols, e.g. for bivariate types &
+                            size rendering. Only applicable to polygon layers.
+                            PictureFillSymbols can also be used outside of the Map
+                            Viewer for Size and Predominance and Size renderers.
+    ----------------------  ---------------------------------------------------------
+    default_label           Default label for the default symbol used to draw
+                            unspecified values.
+    ----------------------  ---------------------------------------------------------
+    default_symbol          Symbol used when a value cannot be matched.
+    ----------------------  ---------------------------------------------------------
+    field1, field2, field3  Attribute field renderer uses to match values.
+    ----------------------  ---------------------------------------------------------
+    field_delimiter         String inserted between the values if multiple attribute
+                            fields are specified.
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets. Rotation is set using a visual variable of type
+                            rotation info with a specified field or value expression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           String property which controls the origin and direction
+                            of rotation. If the rotation type is defined as
+                            arithmetic the symbol is rotated from East in a
+                            counter-clockwise direction where East is the 0 degree
+                            axis. If the rotation type is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    arcade_expression       An Arcade expression evaluating to either a string or a
+                            number.
+    ----------------------  ---------------------------------------------------------
+    arcade_title            The title identifying and describing the associated
+                            Arcade expression as defined in the valueExpression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An array of objects used to set rendering properties.
+    ======================  =========================================================
+
+    **Class Breaks Renderer**
+
+    A class breaks renderer symbolizes based on the value of some numeric attribute.
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    background_fill_symbol  A symbol used for polygon features as a background if the
+                            renderer uses point symbols, e.g. for bivariate types &
+                            size rendering. Only applicable to polygon layers.
+                            PictureFillSymbols can also be used outside of the Map
+                            Viewer for Size and Predominance and Size renderers.
+    ----------------------  ---------------------------------------------------------
+    default_label           Default label for the default symbol used to draw
+                            unspecified values.
+    ----------------------  ---------------------------------------------------------
+    default_symbol          Symbol used when a value cannot be matched.
+    ----------------------  ---------------------------------------------------------
+    method                  Determines the classification method that was used to
+                            generate class breaks.
+
+                            Must be one of the following values:
+
+                            + esriClassifyDefinedInterval
+                            + esriClassifyEqualInterval
+                            + esriClassifyGeometricalInterval
+                            + esriClassifyNaturalBreaks
+                            + esriClassifyQuantile
+                            + esriClassifyStandardDeviation
+                            + esriClassifyManual
+
+    ----------------------  ---------------------------------------------------------
+    field                   Attribute field used for renderer.
+    ----------------------  ---------------------------------------------------------
+    min_value               The minimum numeric data value needed to begin class
+                            breaks.
+    ----------------------  ---------------------------------------------------------
+    normalization_field     Used when normalizationType is field. The string value
+                            indicating the attribute field by which the data value is
+                            normalized.
+    ----------------------  ---------------------------------------------------------
+    normalization_total     Used when normalizationType is percent-of-total, this
+                            number property contains the total of all data values.
+    ----------------------  ---------------------------------------------------------
+    normalization_type      Determine how the data was normalized.
+
+                            Must be one of the following values:
+
+                            + esriNormalizeByField
+                            + esriNormalizeByLog
+                            + esriNormalizeByPercentOfTotal
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           A string property which controls the origin and direction
+                            of rotation. If the rotation_type is defined as
+                            arithmetic, the symbol is rotated from East in a
+                            couter-clockwise direction where East is the 0 degree
+                            axis. If the rotationType is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    arcade_expression       An Arcade expression evaluating to a number.
+    ----------------------  ---------------------------------------------------------
+    arcade_title            The title identifying and describing the associated
+                            Arcade expression as defined in the arcade_expression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An object used to set rendering options.
+    ======================  =========================================================
+
+    """
+    if 'alpha' in symbol_args:
+        alpha = symbol_args['alpha']
+    else:
+        alpha = 1
+
     renderer = None
     if render_type is None:
         render_type = 's'
@@ -61,13 +328,13 @@ def render(sdf_or_series,
             "symbol" : symbol
         }
         return renderer
-    elif renderer_type.lower() == "h":
+    elif render_type.lower() == "h":
         colorStops = []
         field = symbol_args.pop('field', None)
         stops = symbol_args.pop('stops', 2)
         ratio = symbol_args.pop('ratio', .01)
         maxPixelIntensity = symbol_args.pop('max_intensity', 10000)
-        minPixelIntensity = symbol_args.pop('max_intensity', 0)
+        minPixelIntensity = symbol_args.pop('min_intensity', 0)
         r = 0
         for cstep in np.linspace(0,255,
                                  num=stops,
@@ -75,13 +342,15 @@ def render(sdf_or_series,
             colorStops.append(
                 {
                     'ratio' : r,
-                    'color' : _cmap2rgb(cmap=cmap, cstep=cstep)
+                    'color' : _cmap2rgb(cmap=cmap, step=cstep,
+                                        alpha=alpha)
                 }
             )
             r += ratio
             del cstep
         renderer = {
             'type' : 'heatmap',
+            'field' : field,
             'blurRadius' : symbol_args.pop('blur_radius', 10),
             "maxPixelIntensity" : maxPixelIntensity,
             "minPixelIntensity" : minPixelIntensity,
@@ -101,7 +370,13 @@ def render(sdf_or_series,
         field1 = symbol_args.pop("field1", None)
         if field1 is None:
             raise ValueError("You must provide a single field name to use unique value renderer as field1='columnname'")
-        fields = symbol_args.pop('fields', None)
+        field2 = symbol_args.pop('field2', None)
+        field3 = symbol_args.pop('field2', None)
+        fields = [field1]
+        if field2 is not None:
+            fields.append(field2)
+        if field3 is not None:
+            fields.append(field3)
         if isinstance(fields, str):
             fields = [fields]
         field_delimiter = symbol_args.pop('field_delimiter', ',')
@@ -117,7 +392,7 @@ def render(sdf_or_series,
             "rotationType" : rotation_type,
             "valueExpression" : symbol_args.pop("arcade_expression", None),
             "valueExpressionTitle" : symbol_args.pop("arcade_title", None),
-            "visualVariable" : symbol_args.pop('visual_variable', None)
+            "visualVariables" : symbol_args.pop('visual_variables', None)
         }
         c = 1
         for f in fields:
@@ -147,30 +422,30 @@ def render(sdf_or_series,
                 "label" : uval,
                 "description" : "",
                 "symbol" : create_symbol(
-                geometry_type=sdf_or_series.geometry_type.lower(),
-                symbol_type=st,
-                symbol_style=ss,
-                cmap=cmap,
-                **symbol_args)
+                    geometry_type=sdf_or_series.geometry_type.lower(),
+                    symbol_type=st,
+                    symbol_style=ss,
+                    cmap=cmap,
+                    **symbol_args)
             })
         renderer['uniqueValueInfos'] = unique_values
-    elif renderer_type == "v":
+    elif render_type == "v":
         renderer = {
             'type' : 'vectorField',
-            'visualVariable' : symbol_args.pop('visual_variable', None),
+            'visualVariables' : symbol_args.pop('visual_variables', None),
             'style' : symbol_args.pop('style'),
             'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
             'flowRepresentation' : symbol_args.pop('flow', 'flow_from'),
             'attributeField' : symbol_args.pop('attribute_field', None)
         }
-    elif renderer_type == "c":
+    elif render_type == "c":
         class_count = symbol_args.pop('class_count', 3) # number of classess for class break
 
         renderer = {
             "type" : "classBreaks",
             "valueExpression" : symbol_args.pop('arcade_expression', None),
             'valueExpressionTitle' : symbol_args.pop('arcade_title', None),
-            'visualVariable' : symbol_args.pop('visual_variable', None),
+            'visualVariables' : symbol_args.pop('visual_variables', None),
             'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
             'rotationExpression' : symbol_args.pop('rotation_expression', None),
             'normalizationType' : symbol_args.pop('normalization_type', None),
@@ -191,8 +466,9 @@ def render(sdf_or_series,
         maxValue = sdf_or_series[renderer['field']].max()
         def pairwise(iterable, fillvalue=999):
             "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+            import itertools
             a, b = itertools.tee(iterable)
-            next(b, None)
+            next(b, fillvalue)
             return itertools.zip_longest(a, b)
         # calculate the class breaks from column data
         cbs = []
@@ -214,12 +490,12 @@ def render(sdf_or_series,
                                              **symbol_args)
                 }
             })
-            del cb
+            del pair
         renderer['classBreakInfos'] = cbs
         return renderer
-    #elif renderer_type == "p":
+    #elif render_type == "p":
     #    renderer = {}
-    elif renderer_type == "str":
+    elif render_type == "str":
         renderer = {
             'computeGamma' : symbol_args.pop('compute_gamma', True),
             'dra' : symbol_args.pop('dra', None),
@@ -236,11 +512,11 @@ def render(sdf_or_series,
             'useGamma' : symbol_args.pop('use_gamme', False)
         }
         return renderer
-    elif renderer_type == "t":
+    elif render_type == "t":
         renderer = {
             'type' : 'temporal',
             'latestObservationRenderer' : symbol_args.pop('latest_observation',
-                                                          render(
+                                                          generate_renderer(
                                                               label="Latest",
                                                               render_type='s',
                                                               cmap=cmap,
@@ -248,7 +524,7 @@ def render(sdf_or_series,
                                                               **symbol_args)
                                                           ),
             'observationRenderer' : symbol_args.pop('observation',
-                                                    render(
+                                                    generate_renderer(
                                                         label="Observation",
                                                         render_type='s',
                                                         cmap=cmap,
@@ -256,7 +532,7 @@ def render(sdf_or_series,
                                                         **symbol_args)
                                                     ),
             'trackRenderer' : symbol_args.pop('track',
-                                              render(
+                                              generate_renderer(
                                                   label="Track",
                                                   render_type='s',
                                                   cmap=cmap,
