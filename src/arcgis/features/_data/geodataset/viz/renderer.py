@@ -331,19 +331,31 @@ def generate_renderer(sdf_or_series,
     elif render_type.lower() == "h":
         colorStops = []
         field = symbol_args.pop('field', None)
-        stops = symbol_args.pop('stops', 2)
+        stops = symbol_args.pop('stops', 3)
         ratio = symbol_args.pop('ratio', .01)
-        maxPixelIntensity = symbol_args.pop('max_intensity', 10000)
+        show_none = symbol_args.pop('show_none', False)
+        maxPixelIntensity = symbol_args.pop('max_intensity', 10)
         minPixelIntensity = symbol_args.pop('min_intensity', 0)
         r = 0
-        for cstep in np.linspace(0,255,
+        if stops < 3:
+            stops = 3
+        ratios = np.linspace(0,1, num=stops)
+        for idx, cstep in enumerate(np.linspace(0,255,
                                  num=stops,
-                                 dtype=np.int).tolist():
+                                 dtype=np.int).tolist()):
+            if r == 0 and show_none == True:
+                calpha = alpha
+            elif r == 0 and show_none == False:
+                calpha = 0
+            else:
+                calpha = alpha
+
             colorStops.append(
                 {
-                    'ratio' : r,
-                    'color' : _cmap2rgb(cmap=cmap, step=cstep,
-                                        alpha=alpha)
+                    'ratio' : ratios[idx],
+                    'color' : _cmap2rgb(cmap=cmap,
+                                        step=cstep,
+                                        alpha=calpha)
                 }
             )
             r += ratio
@@ -458,7 +470,7 @@ def generate_renderer(sdf_or_series,
                 cmap=cmap)
                                               ),
             'defaultLabel' : symbol_args.pop('default_label', 'Other'),
-            'classificationMethod' : symbol_args.pop('method', 'esriClassifyEqualInterval'),
+            'classificationMethod' : symbol_args.pop('method', None),
             'classBreakInfos' : [],
             'backgroundFillSymbol' : symbol_args.pop('background_fill_symbol', None)
         }
@@ -474,27 +486,34 @@ def generate_renderer(sdf_or_series,
         cbs = []
         breaks = np.linspace(minValue, maxValue,
                              num=class_count).tolist()
+        steps = np.linspace(0, 255,
+                            len(breaks),
+                            dtype=np.int)
         ss = symbol_args.pop('symbol_style', None)
         st = symbol_args.pop('symbol_type', None)
-        for pair in pairwise(breaks, fillvalue=maxValue):
+        import sys
+        for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
 
             cbs.append({
-                "classBreakInfo": {
-                    'classMaxValue' : pair[1],
-                    'label' : "%s - %s" % (pair[0], pair[1]),
-                    'description' : "%s - %s" % (pair[0], pair[1]),
-                    'symbol' : create_symbol(geometry_type=sdf_or_series.geometry_type,
-                                             symbol_style=ss,
-                                             symbol_type=st,
-                                             cmap=cmap,
-                                             **symbol_args)
-                }
+
+                'classMaxValue' : pair[1] or pair[0],
+                'label' : "%s - %s" % (pair[0], pair[1] or pair[0]),
+                'description' : "%s - %s" % (pair[0], pair[1] or pair[0]),
+                'symbol' : create_symbol(geometry_type=sdf_or_series.geometry_type,
+                                         symbol_style=ss,
+                                         symbol_type=st,
+                                         cmap=cmap,
+                                         cstep=steps[idx],
+                                         **symbol_args)
+
             })
             del pair
         renderer['classBreakInfos'] = cbs
+        for key in [k for k,v in renderer.items() if v is None]:
+            del renderer[key]
         return renderer
-    #elif render_type == "p":
-    #    renderer = {}
+    elif render_type == "p":
+        raise NotImplemented("Predominance is not implemented, please use unique values")
     elif render_type == "str":
         renderer = {
             'computeGamma' : symbol_args.pop('compute_gamma', True),

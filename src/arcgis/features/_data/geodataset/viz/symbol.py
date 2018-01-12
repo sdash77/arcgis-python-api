@@ -41,8 +41,8 @@ ALLOWED_CMAPS = ['Accent', 'Accent_r', 'Blues', 'Blues_r',
              'inferno_r', 'jet', 'jet_r', 'magma', 'magma_r',
              'nipy_spectral', 'nipy_spectral_r', 'ocean', 'ocean_r',
              'pink', 'pink_r', 'plasma', 'plasma_r', 'prism', 'prism_r',
-             'rainbow', 'rainbow_r', 'seismic', 'seismic_r', 'spectral',
-             'spectral_r', 'spring', 'spring_r', 'summer', 'summer_r',
+             'rainbow', 'rainbow_r', 'seismic', 'seismic_r',
+             'spring', 'spring_r', 'summer', 'summer_r',
              'terrain', 'terrain_r', 'viridis', 'viridis_r', 'winter',
              'winter_r']
 ###########################################################################
@@ -237,7 +237,7 @@ def create_symbol(geometry_type,
                              needs to create.  Valid inputs are: simple, picture, text,
                              or carto.  The default is simple.
     -----------------------  ---------------------------------------------------------
-    symbol_type              optional string. This is the symbology used by the
+    symbol_style             optional string. This is the symbology used by the
                              geometry.  For example 's' for a Line geometry is a solid
                              line. And '-' is a dash line.
 

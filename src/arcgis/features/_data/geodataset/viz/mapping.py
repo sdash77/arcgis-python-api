@@ -238,17 +238,3 @@ def plot(df,
     else:
         map_widget.add_layer(fc, options={'title':name})
         return map_widget
-
-if __name__ == "__main__":
-    from arcgis.features import SpatialDataFrame
-    from arcgis.gis import GIS
-    from arcgis.mapping import WebMap
-    from arcgis.features._data.geodataset.viz import plot,display_colormaps
-    gis = GIS(username='AndrewSolutions', password='fujiFUJI1')
-    wm = gis.map()
-    df = SpatialDataFrame.from_featureclass(r"D:\GIS\gp\schema.gdb\test_pts").head(5)
-    #wm.add_layer(item=df, )
-    plot(df=df,
-         map_widget=wm,
-         renderer_type='s',
-         palette='Accent')
