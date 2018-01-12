@@ -8,7 +8,6 @@ is the most important and provides the entry point into the GIS.
 from __future__ import absolute_import
 
 import base64
-import datetime
 import json
 import locale
 import logging
@@ -3202,7 +3201,7 @@ class Group(dict):
                         <br/><b>Summary</b>: """ + str(snippet) + """
                         <br/><b>Description</b>: """ + str(description)  + """
                         <br/><b>Owner</b>: """ + str(owner)  + """
-                        <br/><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Created</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -3718,7 +3717,7 @@ class User(dict):
                         <br/><b>First Name</b>: """ + str(firstName) + """
                         <br/><b>Last Name</b>: """ + str(lastName)  + """
                         <br/><b>Username</b>: """ + str(self.username)  + """
-                        <br/><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Joined</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -4919,7 +4918,7 @@ class Item(dict):
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
                         <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self._ux_item_type() + """ by """ + self.owner + """
-                        <br/>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
+                        <br/>Last Modified: """ + datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
                         <br/>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
                 </div>
@@ -6048,15 +6047,13 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        try:
+
+        if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)
+        else:
             dictdata = self._con.post(self.url, params, token=self._lazy_token)
-            self._lazy_properties = PropertyMap(dictdata)
-        except: # VectorTileLayer is GET only
-            try:
-                dictdata = self._con.get(self.url, params, token=self._lazy_token)
-                self._lazy_properties = PropertyMap(dictdata)
-            except:
-                raise
+
+        self._lazy_properties = PropertyMap(dictdata)
 
     @property
     def properties(self):
