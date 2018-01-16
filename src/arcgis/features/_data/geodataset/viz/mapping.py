@@ -3,8 +3,8 @@ Mapping Holds the Plot function for creating a FeatureCollection JSON plus the r
 """
 
 import arcgis
-from arcgis.features._data.geodataset.viz.renderer import generate_renderer
-from arcgis.features._data.geodataset.viz.symbol import create_symbol, display_colormaps, show_styles
+from arcgis.mapping.renderer import generate_renderer
+from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
 from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureCollection
 from arcgis.features import FeatureSet
@@ -64,7 +64,7 @@ def plot(df,
     map_widget              optional WebMap object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
-    palette                 optional string/dict.  Color mapping.  For simple renderer,
+    colors                  optional string/dict.  Color mapping.  For simple renderer,
                             just provide a string.  For more robust renderers like
                             unique renderer, a dictionary can be given.
     ----------------------  ---------------------------------------------------------
@@ -152,7 +152,7 @@ def plot(df,
         plot(df=sdf, map_widget=map_widget,
              name=name, renderer_type=renderer_type,
             symbol_type=symbol_type, symbol_style=symbol_style,
-            col=col, palette=palette, alpha=1, **kwargs)
+            col=col, colors=colors, alpha=1, **kwargs)
         return
     r = None
     if isinstance(col, str):
@@ -170,7 +170,9 @@ def plot(df,
     fc = df.to_feature_collection(name=name)
     if renderer_type in [None, 's']:
         renderer_type = 's' # simple (default)
-        r = generate_renderer(sdf_or_series=df,
+        r = generate_renderer(
+                   geometry_type=df.geometry_type.lower(),
+                   sdf_or_series=df,
                    label=name,
                    symbol_type=symbol_type,
                    symbol_style=symbol_style,
@@ -194,7 +196,8 @@ def plot(df,
                 idx += 1
         elif renderer_type == 'c':
             kwargs['field'] = col[0]
-        r = generate_renderer(sdf_or_series=df,
+        r = generate_renderer(geometry_type=df.geometry_type.lower(),
+                              sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
                               symbol_style=symbol_style,
@@ -204,7 +207,8 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'h':
-        r = generate_renderer(sdf_or_series=df,
+        r = generate_renderer(geometry_type=df.geometry_type.lower(),
+                              sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
                               symbol_style=symbol_style,
@@ -214,7 +218,8 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'str':
-        r = generate_renderer(sdf_or_series=df,
+        r = generate_renderer(geometry_type=df.geometry_type.lower(),
+                              sdf_or_series=df,
                               label=name,
                               symbol_type=None,
                               symbol_style=None,
@@ -224,7 +229,8 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 't':
-        r = generate_renderer(sdf_or_series=df,
+        r = generate_renderer(geometry_type=df.geometry_type.lower(),
+                              sdf_or_series=df,
                               label=name,
                               symbol_type=None,
                               symbol_style=None,
