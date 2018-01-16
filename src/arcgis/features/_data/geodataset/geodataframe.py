@@ -1100,7 +1100,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                      symbol_type=kwargs.pop('symbol_type', None),
                      symbol_style=kwargs.pop('symbol_style', None),
                      col=kwargs.pop('col', None),
-                     palette=kwargs.pop('palette', 'jet'),
+                     cmap=kwargs.pop('cmap', None) or kwargs.pop('colors', 'jet'),
                      alpha=kwargs.pop('alpha', 1),
                      **kwargs)
                 return True
@@ -1112,7 +1112,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                             symbol_type=kwargs.pop('symbol_type', None),
                             symbol_style=kwargs.pop('symbol_style', None),
                             col=kwargs.pop('col', None),
-                            palette=kwargs.pop('palette', 'jet'),
+                            cmap=kwargs.pop('cmap', None) or kwargs.pop('colors', 'jet'),
                             alpha=kwargs.pop('alpha', 1),
                             **kwargs)
         if ('kind' in kwargs and \

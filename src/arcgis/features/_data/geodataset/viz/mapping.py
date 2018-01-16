@@ -45,7 +45,7 @@ def plot(df,
          symbol_type=None,
          symbol_style=None,
          col=None,
-         palette='jet',
+         colors='jet',
          alpha=1,
          **kwargs):
     """
@@ -130,10 +130,10 @@ def plot(df,
     col                     optional string/list. Field or fields used for heatmap,
                             class breaks, or unique renderers.
     ----------------------  ---------------------------------------------------------
-    pallette                optional string. The color map to draw from in order to
-                            visualize the data.  The default pallette is 'jet'. To
-                            get a visual representation of the allowed color maps,
-                            use the **display_colormaps** method.
+    colors                  optional string. The color map to draw from in order to
+                            visualize the data.  The default cmap is 'jet'. To get a
+                            visual representation of the allowed color maps,use
+                            the **display_colormaps** method.
     ----------------------  ---------------------------------------------------------
     alpha                   optional float.  This is a value between 0 and 1 with 1
                             being the default value.  The alpha sets the transparancy
@@ -175,7 +175,7 @@ def plot(df,
                    symbol_type=symbol_type,
                    symbol_style=symbol_style,
                    render_type=renderer_type,
-                   cmap=palette,
+                   colors=colors,
                    alpha=alpha,
                    **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
@@ -199,7 +199,7 @@ def plot(df,
                               symbol_type=symbol_type,
                               symbol_style=symbol_style,
                               render_type=renderer_type,
-                              cmap=palette,
+                              colors=colors,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
@@ -209,7 +209,7 @@ def plot(df,
                               symbol_type=symbol_type,
                               symbol_style=symbol_style,
                               render_type=renderer_type,
-                              cmap=palette,
+                              colors=colors,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
@@ -219,7 +219,7 @@ def plot(df,
                               symbol_type=None,
                               symbol_style=None,
                               render_type=renderer_type,
-                              cmap=palette,
+                              colors=colors,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
@@ -229,7 +229,7 @@ def plot(df,
                               symbol_type=None,
                               symbol_style=None,
                               render_type=renderer_type,
-                              cmap=palette,
+                              colors=colors,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r

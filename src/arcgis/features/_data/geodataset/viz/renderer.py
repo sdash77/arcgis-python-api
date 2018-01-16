@@ -32,7 +32,7 @@ RENDERER_TYPES = {
 def generate_renderer(sdf_or_series,
                       label=None,
                       render_type=None,
-                      cmap=None,
+                      colors=None,
                       **symbol_args):
     """
     Generates the Renderer JSON
@@ -60,7 +60,7 @@ def generate_renderer(sdf_or_series,
                                     visualization that emphasizes areas of higher
                                     density or weighted values.
     ----------------------  ---------------------------------------------------------
-    cmap                    optional string/dict.  Color mapping.  For simple renderer,
+    colors                  optional string/dict.  Color mapping.  For simple renderer,
                             just provide a string.  For more robust renderers like
                             unique renderer, a dictionary can be given.
     ======================  =========================================================
@@ -297,6 +297,7 @@ def generate_renderer(sdf_or_series,
     ======================  =========================================================
 
     """
+
     if 'alpha' in symbol_args:
         alpha = symbol_args['alpha']
     else:
@@ -311,12 +312,12 @@ def generate_renderer(sdf_or_series,
         render_type = render_type.lower()
     if render_type == 's':
         symbol = symbol_args.pop('symbol', None)
-        if symbol is None:
+        if symbol is None:###TODO: LOOK HERE
             symbol = create_symbol(
                 geometry_type=sdf_or_series.geometry_type.lower(),
                 symbol_type=symbol_args.pop('symbol_type', None),
                 symbol_style=symbol_args.pop('symbol_style', None),
-                cmap=cmap,
+                colors=colors,
                 **symbol_args)
         renderer = {
             "type" : "simple",
@@ -353,7 +354,7 @@ def generate_renderer(sdf_or_series,
             colorStops.append(
                 {
                     'ratio' : ratios[idx],
-                    'color' : _cmap2rgb(cmap=cmap,
+                    'color' : _cmap2rgb(colors=colors,
                                         step=cstep,
                                         alpha=calpha)
                 }
@@ -370,14 +371,19 @@ def generate_renderer(sdf_or_series,
         }
         return renderer
     elif render_type == 'u':
-
+        st = symbol_args.pop('symbol_type', None)
+        ss = symbol_args.pop('symbol_style', None)
         default_symbol = symbol_args.pop('default_symbol', None)
         if default_symbol is None:
+            if isinstance(colors, (list, tuple)):
+                ccmap = colors[0]
+            else:
+                ccmap = colors
             default_symbol = create_symbol(
                 geometry_type=sdf_or_series.geometry_type.lower(),
-                symbol_type=symbol_args.pop('symbol_type', None),
-                symbol_style=symbol_args.pop('symbol_style', None),
-                cmap=cmap,
+                symbol_type=st,
+                symbol_style=ss,
+                colors=ccmap,
                 **symbol_args)
         field1 = symbol_args.pop("field1", None)
         if field1 is None:
@@ -426,8 +432,6 @@ def generate_renderer(sdf_or_series,
         if len(uvals) > 10:
             uvals = uvals[:10]
         unique_values = []
-        st = symbol_args.pop('symbol_type', None)
-        ss = symbol_args.pop('symbol_style', None)
         for uval in uvals:
             unique_values.append({
                 "value" : uval,
@@ -437,7 +441,7 @@ def generate_renderer(sdf_or_series,
                     geometry_type=sdf_or_series.geometry_type.lower(),
                     symbol_type=st,
                     symbol_style=ss,
-                    cmap=cmap,
+                    colors=colors,
                     **symbol_args)
             })
         renderer['uniqueValueInfos'] = unique_values
@@ -467,7 +471,7 @@ def generate_renderer(sdf_or_series,
             'field' : symbol_args.pop('field'),
             'defaultSymbol' : symbol_args.pop('default_symbol', create_symbol(
                 geometry_type=sdf_or_series.geometry_type,
-                cmap=cmap)
+                colors=colors)
                                               ),
             'defaultLabel' : symbol_args.pop('default_label', 'Other'),
             'classificationMethod' : symbol_args.pop('method', None),
@@ -502,7 +506,7 @@ def generate_renderer(sdf_or_series,
                 'symbol' : create_symbol(geometry_type=sdf_or_series.geometry_type,
                                          symbol_style=ss,
                                          symbol_type=st,
-                                         cmap=cmap,
+                                         colors=colors,
                                          cstep=steps[idx],
                                          **symbol_args)
 
@@ -538,7 +542,7 @@ def generate_renderer(sdf_or_series,
                                                           generate_renderer(
                                                               label="Latest",
                                                               render_type='s',
-                                                              cmap=cmap,
+                                                              colors=colors,
                                                               sdf_or_series=sdf_or_series,
                                                               **symbol_args)
                                                           ),
@@ -546,7 +550,7 @@ def generate_renderer(sdf_or_series,
                                                     generate_renderer(
                                                         label="Observation",
                                                         render_type='s',
-                                                        cmap=cmap,
+                                                        colors=colors,
                                                         sdf_or_series=sdf_or_series,
                                                         **symbol_args)
                                                     ),
@@ -554,7 +558,7 @@ def generate_renderer(sdf_or_series,
                                               generate_renderer(
                                                   label="Track",
                                                   render_type='s',
-                                                  cmap=cmap,
+                                                  colors=colors,
                                                   sdf_or_series=sdf_or_series,
                                                   **symbol_args)
                                               )

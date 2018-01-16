@@ -74,7 +74,7 @@ LINE_STYLES = {
 POINT_STYLES = {
     "o" : "esriSMSCircle", #default
     "+" : "esriSMSCross",
-    "D" : "esriSMSDiamond",
+    "d" : "esriSMSDiamond",
     "s" : "esriSMSSquare",
     "x" : "esriSMSX",
     #"^" : "esriSMSTriangle" # Does not render in web maps
@@ -103,7 +103,7 @@ POLYGON_STYLES_DISPLAY = {
 POINT_STYLES_DISPLAY = {
     "o" : "Circle (default)", #default
     "+" : "Cross",
-    "D" : "Diamond",
+    "d" : "Diamond",
     "s" : "Square",
     "x" : "X",
     #"^" : "esriSMSTriangle" # Does not render in web maps
@@ -147,10 +147,10 @@ cmaps = [('Perceptually Uniform Sequential', ['viridis', 'plasma', 'inferno', 'm
              'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg', 'hsv',
             'gist_rainbow', 'rainbow', 'jet', 'nipy_spectral', 'gist_ncar'])]
 ###########################################################################
-def _cmap2rgb(cmap, step, alpha=1):
+def _cmap2rgb(colors, step, alpha=1):
     """converts a color map to RGBA list"""
     from matplotlib import cm
-    t = getattr(cm, cmap)(step, bytes=True)
+    t = getattr(cm, colors)(step, bytes=True)
     t = [int(i) for i in t]
     t[-1] = alpha * 255
     return t
@@ -210,7 +210,7 @@ def show_styles(geometry_type):
 def create_symbol(geometry_type,
                   symbol_type=None,
                   symbol_style=None,
-                  cmap=None,
+                  colors=None,
                   **kwargs):
     """
     Generates a Symbol from a given set of Paramters
@@ -274,7 +274,7 @@ def create_symbol(geometry_type,
                              + 'x' - Diagonal Cross
                              + '+' - Cross
     -----------------------  ---------------------------------------------------------
-    cmap                     optional string or list.  This is the color scheme a user
+    colors                     optional string or list.  This is the color scheme a user
                              can provide if the exact color is not needed, or a user
                              can provide a list with the color defined as:
                              [red, green blue, alpha]. The values red, green, blue are
@@ -327,7 +327,7 @@ def create_symbol(geometry_type,
                           + 's.' - Short Dot
     --------------------  ---------------------------------------------------------
     outline_color         optional string or list.  This is the same color as the
-                          cmap property, but specifically applies to the outline_color.
+                          colors property, but specifically applies to the outline_color.
     ====================  =========================================================
 
     **Picture Symbol**
@@ -359,7 +359,7 @@ def create_symbol(geometry_type,
     yscale                Numeric value indicating the scale factor in y direction.
     --------------------  ---------------------------------------------------------
     outline_color         optional string or list.  This is the same color as the
-                          cmap property, but specifically applies to the outline_color.
+                          colors property, but specifically applies to the outline_color.
     --------------------  ---------------------------------------------------------
     outline_style         Optional string. For polygon point, and line geometries , a
                           customized outline type can be provided.
@@ -380,7 +380,7 @@ def create_symbol(geometry_type,
                           + 's.' - Short Dot
     --------------------  ---------------------------------------------------------
     outline_color         optional string or list.  This is the same color as the
-                          cmap property, but specifically applies to the outline_color.
+                          colors property, but specifically applies to the outline_color.
     --------------------  ---------------------------------------------------------
     line_width            optional float. Numeric value indicating the width of the line in points
     ====================  =========================================================
@@ -491,8 +491,8 @@ def create_symbol(geometry_type,
         symbol_type = "simple"
 
     gtype = geometry_type.upper()
-    if cmap is None:
-        cmap = 'jet'
+    if colors is None:
+        colors = 'jet'
     cstep = kwargs.pop('cstep', 1)
     renderer_type = "simple"
 
@@ -504,28 +504,28 @@ def create_symbol(geometry_type,
     line_width = kwargs.pop('line_width', 2)
 
     outline_style = LINE_STYLES[kwargs.pop('outline_style', "s")]
-    outline_color = kwargs.pop('outline_color', cmap)
+    outline_color = kwargs.pop('outline_color', colors)
 
-    if isinstance(cmap, str):
-        cmap = list(
-            _cmap2rgb(cmap=cmap, step=cstep,alpha=alpha))
-    elif isinstance(cmap, (list, tuple)) and \
-         len(cmap) == 4:
-        cmap = cmap
+    if isinstance(colors, str):
+        colors = list(
+            _cmap2rgb(colors=colors, step=cstep,alpha=alpha))
+    elif isinstance(colors, (list, tuple)) and \
+         len(colors) == 4:
+        colors = colors
     else:
-        cmap = list(_cmap2rgb(
-            cmap='jet',
+        colors = list(_cmap2rgb(
+            colors='jet',
             step=cstep,
             alpha=alpha))
     if isinstance(outline_color, str):
-        outline_cmap = list(_cmap2rgb(cmap=outline_color,
+        outline_cmap = list(_cmap2rgb(colors=outline_color,
                                       step=int(np.random.randint(0,255)),
                                       alpha=alpha))
     elif isinstance(outline_color, (tuple, list)) and \
          len(outline_color) == 4:
         outline_cmap = outline_color
     else:
-        outline_cmap = list(_cmap2rgb(cmap='jet',
+        outline_cmap = list(_cmap2rgb(colors='jet',
                                       step=int(np.random.randint(0,255)),
                                       alpha=alpha))
 
@@ -561,31 +561,31 @@ def create_symbol(geometry_type,
         # build the symbol
         symbol = { }
         symbol["type"] = symbol_type
-        if isinstance(cmap, str):
-            cmap = list(
-                _cmap2rgb(cmap=cmap, step=cstep,alpha=alpha))
-        elif isinstance(cmap, (list, tuple)) and \
-             len(cmap) == 4:
-            cmap = cmap
+        if isinstance(colors, str):
+            colors = list(
+                _cmap2rgb(colors=colors, step=cstep,alpha=alpha))
+        elif isinstance(colors, (list, tuple)) and \
+             len(colors) == 4:
+            colors = colors
         else:
-            cmap = list(_cmap2rgb(
-                cmap='jet',
+            colors = list(_cmap2rgb(
+                colors='jet',
                 step=cstep,
                 alpha=alpha))
         if isinstance(outline_color, str):
-            outline_cmap = list(_cmap2rgb(cmap=outline_color,
+            outline_cmap = list(_cmap2rgb(colors=outline_color,
                                           step=int(np.random.randint(0,255)),
                                           alpha=alpha))
         elif isinstance(outline_color, (tuple, list)) and \
              len(outline_color) == 4:
             outline_cmap = outline_color
         else:
-            outline_cmap = list(_cmap2rgb(cmap='jet',
+            outline_cmap = list(_cmap2rgb(colors='jet',
                                           step=int(np.random.randint(0,255)),
                                           alpha=alpha))
         if gtype == "POINT":
             symbol["style"] = symbol_style
-            symbol["color"] = cmap
+            symbol["color"] = colors
             symbol["size"] = marker_size
             symbol["angle"] = marker_angle
             symbol["xoffset"] = marker_xoffset
@@ -598,11 +598,11 @@ def create_symbol(geometry_type,
             }
         elif gtype in ['LINE', 'POLYLINE']:
             symbol["style"] = symbol_style
-            symbol["color"] = cmap
+            symbol["color"] = colors
             symbol["width"] = line_width
         elif gtype in ['POLYGON']:
             symbol["style"] = symbol_style
-            symbol["color"] = cmap
+            symbol["color"] = colors
             symbol['outline'] = {
                 'style': outline_style,
                 'type': 'esriSLS',
@@ -629,7 +629,7 @@ def create_symbol(geometry_type,
         elif geometry_type.lower() == "polygon":
             symbol = {
                 "type" : "esriPFS",
-                "color" : cmap,
+                "color" : colors,
                 "xoffset" : marker_xoffset,
                 "yoffset" : marker_yoffset,
                 "xscale" : kwargs.pop('xscale', None),
@@ -653,12 +653,12 @@ def create_symbol(geometry_type,
     elif symbol_type.lower() == 'text' and \
          geometry_type.lower() in ['point']:
         symbol = {
-            "color": cmap,
+            "color": colors,
             "type": "esriTS",
             "horizontalAlignment": kwargs.pop("horizontal_alignment", 'center'),
             'verticalAlignment' : kwargs.pop('vertical_alignment', 'middle'),
             'rightToLeft' : kwargs.pop('right_to_left', False),
-            "backgroundColor" : kwargs.pop('background_color', cmap),
+            "backgroundColor" : kwargs.pop('background_color', colors),
             "borderLineColor" : outline_cmap,
             "borderLineSize" : line_width,
             "haloColor" : kwargs.pop('halo_color', None),
@@ -687,7 +687,7 @@ def create_symbol(geometry_type,
         join = kwargs.pop('join', 'esriLJSMiter')
         miter_limit = kwargs.pop('miter_limit', 1)
         symbol = {
-            "color" : cmap,
+            "color" : colors,
             'width' : line_width,
             'type' : "esriCLS",
             "cap" : cap,
