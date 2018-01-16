@@ -8,7 +8,6 @@ is the most important and provides the entry point into the GIS.
 from __future__ import absolute_import
 
 import base64
-import datetime
 import json
 import locale
 import logging
@@ -6048,10 +6047,12 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        try:
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
-        except: # VectorTileLayer is GET only
+
+        if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
+        else:
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+
         self._lazy_properties = PropertyMap(dictdata)
 
     @property
