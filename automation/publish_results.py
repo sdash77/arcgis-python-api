@@ -18,44 +18,69 @@ def publish_results(*args, **kwargs):
                       "publishing (Exception thrown => {}".format(e))
         return
 
-    if re.match(MASTER_REGEX, kwargs["automation_type"]) or \
-       re.match(LINUX_SLAVE_REGEX, kwargs["automation_type"]):
-        _publish_to_ftp_server_master(ftp = ftp,
-                                      build_number = kwargs["build_number"])
-        _remove_old_builds_from_ftp_master(ftp = ftp,
-                               build_number = kwargs["build_number"])
+    if re.match(MASTER_REGEX, kwargs["automation_type"]):
+        _publish_conda_to_ftp_master(ftp = ftp,
+                                     build_number = kwargs["build_number"])
+        _publish_pip_to_ftp_packages(ftp = ftp,
+                                     build_number = kwargs["build_number"])
+        _remove_old_builds_from_ftp_server(ftp = ftp,
+                                     build_number = kwargs["build_number"])
+
+    if re.match(LINUX_SLAVE_REGEX, kwargs["automation_type"]):
+        _publish_conda_to_ftp_master(ftp = ftp,
+                                     build_number = kwargs["build_number"])
 
     if re.match(PUBLISH_REGEX, kwargs["automation_type"]):
-        _publish_to_ftp_branch(ftp = ftp,
+        _publish_conda_to_ftp_branch(ftp = ftp,
                                ftp_folder_name = kwargs["ftp_folder_name"])
 
-def _publish_to_ftp_server_master(ftp, build_number):
+def _publish_conda_to_ftp_master(ftp, build_number):
+    """Pushes any files in staging/conda_builds to ftp://zion/master"""
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
+    # conda packages for the specific build number, installable via:
+    # conda install -c ftp://zion/master/{build_num}
     buildnum_dst_dir_path = "master/{}".format(build_number)
+    # conda packages for the most recent master, overwritten. installable via:
+    # conda install -c ftp://zion/master
     rootmaster_dst_dir_path = "master"  
 
-    #make the master/{build_number} folder on ftp site
     _make_dir_ignore_if_exists(ftp, buildnum_dst_dir_path)
-    #upload conda packages to that folder. Can then install via:
-    #conda install -c ftp://zion/master/43 arcgis
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = buildnum_dst_dir_path)
-    #upload conda packages to root on ftp site, replace old ones. This makes
-    #conda install -c ftp://zion/master arcgis
-    #install the most recently uploaded conda package
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = rootmaster_dst_dir_path)
 
-def _publish_to_ftp_branch(ftp, ftp_folder_name):
+def _publish_conda_to_ftp_branch(ftp, ftp_folder_name):
+    """Pushes any files in staging/conda_builds to ftp://zion/ftp_fold_name"""
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
     _make_dir_ignore_if_exists(ftp, ftp_folder_name) 
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = ftp_folder_name)
 
+def _publish_pip_to_ftp_packages(ftp, build_number):
+    """Pushes any files in staging/pip_builds to ftp://zion/packages"""
+    src_dir_path = os.path.join(STAGING_DIR, "pip_builds")
+    for root, _, files in os.walk(src_dir_path):
+        for file_name in files:
+            src_file_path = os.path.join(root, file_name)
+            #The 'master' tarball is the most recently uploaded one (overwrite)
+            master_dst = "packages/{}".format(file_name)
+            _storbinary_overwrite_if_exists(ftp, master_dst, src_file_path)
+            log.info("Uploading {} -> ftp://{}/{}".format(src_file_path,
+                                                          FTP_SITE,
+                                                          master_dst))
+            #The 'buildnumber' tarball is specific to this build
+            bldnum_dst = "packages/build-number-{}.tar.gz".format(build_number)
+            _storbinary_overwrite_if_exists(ftp, bldnum_dst, src_file_path)
+            log.info("Uploading {} -> ftp://{}/{}".format(src_file_path,
+                                                          FTP_SITE,
+                                                          bldnum_dst))
+
 def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
+    """Upload the contents of a directory, overwriting folders and files"""
     for name in os.listdir(src_dir_path):
         curr_src_path = os.path.join(src_dir_path, name)
         curr_dst_path = "{}/{}".format(dst_dir_path, name) #ftp servers use '/'
@@ -72,24 +97,30 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
 def _delete_directory_recursive(ftp, dst_dir_path):
+    """Delete everything in a directory"""
     _del_dir_recurs_helper(ftp, dst_dir_path)
     ftp.rmd(dst_dir_path)
     log.info("ftp://{}/{}/ deleted recursively".format(FTP_SITE, dst_dir_path))
 
 def _del_dir_recurs_helper(ftp, dst_dir_path):
     for curr_path in ftp.nlst(dst_dir_path):
-        try: #will not throw exception if durr_path is a file
+        try: # will not throw exception if durr_path is a file
             ftp.delete(curr_path)
-        except error_perm as e: #will throw exception if curr_path is a dir
+        except error_perm as e: # will throw exception if curr_path is a dir
             if e.args[0].startswith('550'):
                 _del_dir_recurs_helper(ftp, curr_path)
                 ftp.rmd(curr_path)
 
-def _remove_old_builds_from_ftp_master(ftp, build_number):
+def _remove_old_builds_from_ftp_server(ftp, build_number):
+    """Only keep NUM_BUILDS on build server, delete old files/folders"""
     upper_range_builds = build_number - NUM_BUILDS_TO_KEEP
     for build_number_to_delete in range(0, upper_range_builds):
+        # Deletes the conda builds
         _remove_dir_ignore_if_doesnt_exist(ftp,
                                     "master/{}".format(build_number_to_delete))
+        # Deletes the pip builds
+        _delete_file_ignore_if_doesnt_exist(ftp,
+                                    "packages/build-number-{}.tar.gz")
 
 def _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path):
     try:
@@ -104,6 +135,15 @@ def _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path):
 def _storbinary(ftp, curr_dst_path, curr_src_path):
     ftp.storbinary("STOR {}".format(curr_dst_path),
                    open(curr_src_path, 'rb'))
+
+def _delete_file_ignore_if_doesnt_exist(ftp, file_path_on_ftp_server):
+    try:
+        ftp.delete(file_path_on_ftp_server)
+    except error_perm as e:
+        if e.args[0].startswith('550'):
+            return
+        else:
+            raise e
 
 def _make_dir_ignore_if_exists(ftp, dir_):
     try:

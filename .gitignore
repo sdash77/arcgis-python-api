@@ -66,3 +66,6 @@ src/.vscode/settings.json
 /unittests/test-results/
 /*.wpr
 /*.wpu
+
+#Any builds from setup.py for pip go in a dist folder
+/src/dist

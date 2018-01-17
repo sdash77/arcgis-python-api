@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Build the arcgis python api for any specified os/py, placing the generated
-conda packages in ./output/. 
+conda packages and pip packages in ./output/. 
 Can be run as a standalone script ('python build.py --all') 
 or imported as a library ('from build import build_conda_packages')
 Run with --help or see README.md for more info."""
@@ -23,6 +23,9 @@ BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
 BASE_INDEX_CMD = "cd {output_dir} && conda index {os_build_target}"
 BASE_UPLOAD_CMD = "anaconda upload -f {conda_package}"
 
+#Note that this command alone will place pkgs in src/dist, not build/output
+BASE_PIP_BUILD_CMD = "cd {src_dir} && python setup.py sdist"
+
 SUPPORTED_WIN = ['win-32', 'win-64']
 SUPPORTED_LINUX = ['linux-32', 'linux-64']
 SUPPORTED_OSX = ['osx-64']
@@ -42,6 +45,15 @@ BUILD_DIR = os.path.abspath(os.path.join(
 BUILD_OUTPUT_DIR = os.path.abspath(os.path.join(
     BUILD_DIR,
     "output"))
+BUILD_OUTPUT_PIP_DIR = os.path.abspath(os.path.join(
+    BUILD_OUTPUT_DIR,
+    "pip"))
+SRC_DIR = os.path.abspath(os.path.join(
+    GEOSAURUS_ROOT_DIR,
+    "src"))
+SRC_DIST_DIR = os.path.abspath(os.path.join(
+    SRC_DIR,
+    "dist"))
 
 def _main():
     args = _parse_cmd_line_args()
@@ -51,6 +63,10 @@ def _main():
         build_conda_packages_default()
     elif _all_is_specified_anywhere(args):
         build_conda_packages_for_all_os_and_py()
+        build_pip_package(clear_output_folder = False)
+    elif _only_pip_is_specified(args):
+        build_pip_package()
+        return
     elif _only_python_is_specified(args):
         build_conda_packages(python_versions = args.python,
                              os_build_targets = [ _determine_current_os() ])
@@ -66,6 +82,9 @@ def _main():
 
     if _upload_is_specified_anywhere(args):
         upload_any_conda_packages_in_output_folder()
+
+    if _pip_is_specified_anywhere(args):
+        build_pip_package(clear_output_folder = False)
 
 # Running from cmd line setup funcs
 def _parse_cmd_line_args():
@@ -84,15 +103,17 @@ def _parse_cmd_line_args():
         "behavior, plus upload any results to the anaconda cloud",
         formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--python", "-p", type=str, nargs="*",
-        help="What python versions to target (3.5, 3.6, etc.)")
+        help="What python versions to target for conda (3.5, 3.6, etc.)")
     parser.add_argument("--os", "-o", type=str, nargs="*",
-        help="What OSes and architectures to target (linux-64, win-32, etc.)")
+        help="What OSes/archs. to target for conda (linux-64, win-32, etc.)")
     parser.add_argument("--all", "-a", action="store_true",
-        help="Builds for all supported O.S. and py supported by this system")
+        help="Builds for pip AND all supported conda pkgs for O.S. and py")
     parser.add_argument("--upload", "-u", action="store_true",
-        help="Upload results to anaconda cloud (Note: anaconda-client must "\
-             "be configured on root conda enviroment and 'anaconda login' "\
-             "must have been run)")
+        help="Upload conda results to anaconda cloud (Note: anaconda-client "\
+             "must be configured on root conda enviroment and 'anaconda "\
+             "login' must have been run)")
+    parser.add_argument("--pip", "-i", action="store_true",
+        help="Build the pip .tar.gz package and place it in ./output/pip")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Print all DEBUG log msgs (i.e. print 'conda build' cmd output)")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
@@ -116,8 +137,9 @@ def _setup_logging(args):
 
 # Human readable cmd arg parsing funcs
 def _no_target_specified(args):
-    """returns False if at least one of --all, --python, or --os passed in"""
-    return (not args.all) and (not args.os) and (not args.python)
+    """returns False if >= 1 of --all, --python, --os, --pip passed in"""
+    return ((not args.all) and (not args.os) and
+            (not args.python) and (not args.pip))
 
 def _all_is_specified_anywhere(args):
     return args.all
@@ -133,6 +155,12 @@ def _only_os_is_specified(args):
 
 def _both_os_and_python_are_specified(args):
     return args.python and args.os
+
+def _pip_is_specified_anywhere(args):
+    return args.pip
+
+def _only_pip_is_specified(args):
+    return args.pip and not (args.python or args.os or args.upload)
 
 # build conda package funcs (Public facing)
 def build_conda_packages_default(clear_output_folder = True):
@@ -283,6 +311,15 @@ def _run_conda_index_command(output_dir, os_build_target):
     _run_shell_cmd(BASE_INDEX_CMD.format(output_dir = output_dir,
                                          os_build_target = os_build_target))
 
+def build_pip_package(clear_output_folder = True):
+    """Build the pip .tar.gz for hosting on pypi servers"""
+    if clear_output_folder:
+       _clear_output_folder() 
+    _run_shell_cmd(BASE_PIP_BUILD_CMD.format(src_dir = SRC_DIR))
+    if os.path.exists(BUILD_OUTPUT_PIP_DIR):
+        shutil.rmtree(BUILD_OUTPUT_PIP_DIR)
+    shutil.copytree(SRC_DIST_DIR, BUILD_OUTPUT_PIP_DIR)
+
 def _copy_noarch_dir(src, dst):
     noarch_dir_src = os.path.join(src, "noarch")
     noarch_dir_dst = os.path.join(dst, "noarch")
@@ -335,6 +372,7 @@ def _determine_current_os():
     architecture = "64" if is_64_bit else "32"
     return "{target_os}-{architecture}".format(target_os = target_os,
                                                architecture = architecture)
+
 if __name__ == "__main__":
     try:
         _main()

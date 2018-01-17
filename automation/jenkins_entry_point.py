@@ -13,16 +13,19 @@ from arcgis import __version__ as _geosaurus_version
 
 from automation_setup import automation_setup
 from build_conda_package import build_conda_package
+from build_pip_package import build_pip_package
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
 from publish_results import publish_results
 from automation_cleanup import automation_cleanup
 
-_regex_and_funcs = [(MASTER_REGEX, [automation_setup,
-                                    run_unit_tests, 
-                                    build_documentation,
+#The core logic of what functions are run in what order for each job
+_regex_and_funcs = [(MASTER_REGEX, [automation_setup, 
                                     build_conda_package,
+                                    build_pip_package,
                                     publish_results,
+                                    build_documentation,
+                                    run_unit_tests,
                                     automation_cleanup]),
 
               (LINUX_SLAVE_REGEX,  [automation_setup,
@@ -31,8 +34,8 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
                                     automation_cleanup]),
               
               (PULL_REQUEST_REGEX, [automation_setup,
-                                    run_unit_tests,
                                     build_documentation,
+                                    run_unit_tests,
                                     automation_cleanup]),
               
                    (PUBLISH_REGEX, [automation_setup,
@@ -60,7 +63,7 @@ def _parse_args():
     parser.add_argument("--password", "-p", type=str, required=False,
         help="The password for the previously entered username")
     parser.add_argument("--ftp-folder-name", "-f", type=str, required=False,
-        help="If 'publish' auto-type,the name of the folder to write "\
+        help="If 'publish' auto-type, the name of the folder to write "\
              "conda packages to on the FTP server.")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
