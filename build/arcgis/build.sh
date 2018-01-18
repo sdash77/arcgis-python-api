@@ -1,3 +1,3 @@
 #!/bin/bash
 
-$PYTHON setup.py install --ignore-post-install
+$PYTHON setup.py install --conda-install-mode

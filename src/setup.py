@@ -18,9 +18,26 @@ from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
 import logging
 log = logging.getLogger()
-
 here = path.abspath(path.dirname(__file__))
-ignore_post_install = False
+
+#Conda uses this setup file, but we want to supress some functionality
+if "--conda-install-mode" in sys.argv:
+    sys.argv.remove("--conda-install-mode")
+    conda_install_mode = True
+else:
+    conda_install_mode = False
+
+if conda_install_mode:
+    #conda handles its own depedencies, so don't specify any pip-depedencies
+    install_requires_depedencies = []
+else:
+    install_requires_depedencies = [
+        'six',
+        'pandas',
+        'ipywidgets >=5.2.2,<7',
+        'widgetsnbextension >=1.2.6,<3',
+        'keyring',
+        'winkerberos;platform_system=="Windows"']
 
 def _post_install():
     """This function will run after 'pip install' finishes. It has 2 parts:
@@ -32,7 +49,8 @@ def _post_install():
        this issue: https://bugs.python.org/issue28150, equivalent of running
        '/Applications/Python X.X/Install Certificates.command' cmd
     """
-    if ignore_post_install:
+    if conda_install_mode:
+	#Don't run any post installation methods for conda installs
         return
 
     # 1) activate the notebook map widget
@@ -106,10 +124,6 @@ class PostEggInfoCommand(egg_info):
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
 
-if "--ignore-post-install" in sys.argv:
-    sys.argv.remove("--ignore-post-install")
-    ignore_post_install = True
-
 setup(
     name='arcgis',
 
@@ -172,13 +186,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'six',
-        'pandas',
-        'ipywidgets >=5.2.2,<7',
-        'widgetsnbextension >=1.2.6,<3',
-        'keyring',
-        'winkerberos;platform_system=="Windows"'],
+    install_requires = install_requires_depedencies,
 
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
