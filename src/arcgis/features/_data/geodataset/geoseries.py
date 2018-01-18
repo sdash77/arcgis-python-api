@@ -86,7 +86,7 @@ class GeoSeries(BaseSpatialPandas, Series):
         """Constructor"""
         if not OLD_PANDAS:
             args = _convert_array_args(args)
-        sr = kwargs.pop('sr', None)
+        sr = kwargs.pop('sr', {'wkid' : 4326})
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.sr = sr
@@ -230,8 +230,15 @@ class GeoSeries(BaseSpatialPandas, Series):
         else:
             return False
 
-    def plot(self, *args, **kwargs):
-        raise NotImplementedError()#return plot_series(self, *args, **kwargs)
+    def plot(self,
+             map_widget,
+             style=None,
+             cmap=None,
+             **kwargs):
+        """
+        Draws a Geometry Series on a Map object.
+        """
+        raise NotImplementedError("Series plotting is not implemented currently.")
 
     #plot.__doc__ = plot_series.__doc__
 

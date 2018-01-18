@@ -12,6 +12,7 @@ from arcgis.raster import ImageryLayer
 from arcgis.gis import Layer
 from arcgis.gis import Item
 from arcgis.mapping import WebMap
+from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
 try:
     from ipywidgets import widgets
@@ -318,14 +319,15 @@ class MapView(widgets.DOMWidget):
                 else:
                     js_layer.update({"options": json.dumps(options)})
             else:
-                options = {} #to store extent and other properties            
-            if 'uses_gbl' in js_layer:                
-                if js_layer["uses_gbl"] is True:                    
+                options = {} #to store extent and other properties
+            if 'uses_gbl' in js_layer:
+                if js_layer["uses_gbl"] is True:
                     _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
                                    \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
                     return None
-            self._addlayer = json.dumps(js_layer)
-            options['extent'] = self.extent            
+            self._addlayer = json.dumps(js_layer,
+                                        default=_date_handler)
+            options['extent'] = self.extent
 
             self._webmap.add_layer(item, options)
             # add to widget's layer list
@@ -486,7 +488,7 @@ class MapView(widgets.DOMWidget):
     def _update_webmap_basemap(self):
         """
         Internal method, reads the mapwidget's basemap and applied that for the internal web map
-        :return: 
+        :return:
         """
 
         if self._js_basemap:

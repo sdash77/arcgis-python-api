@@ -185,12 +185,12 @@ def _to_utf8(data):
 #--------------------------------------------------------------------------
 class _DisableLogger():
     def __enter__(self):
-       logging.disable(logging.CRITICAL)
+        logging.disable(logging.CRITICAL)
     def __exit__(self, a, b, c):
-       logging.disable(logging.NOTSET)
+        logging.disable(logging.NOTSET)
 
 # --------------------------------------------------------------------------
 def chunks(l, n):
-   """yield successive n-sized chunks from l."""
-   for i in range(0, len(l), n):
-       yield l[i:i + n]
+    """yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

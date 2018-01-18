@@ -339,6 +339,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 l = self[col].str.len().max()
                 if str(l) == 'nan':
                     l = 255
+
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeString",
@@ -496,10 +497,629 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         return SpatialDataFrame(data, sr=self.sr).__finalize__(self)
     #----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
-        """ writes the spatial dataframe to a map """
+        """
+        Plot draws the data on a web map. The user can describe in simple terms how to
+        renderer spatial data using symbol.  To make the process simplier a pallette
+        for which colors are drawn from can be used instead of explicit colors.
+
+
+        ======================  =========================================================
+        **Explicit Argument**   **Description**
+        ----------------------  ---------------------------------------------------------
+        df                      required SpatialDataFrame or GeoSeries. This is the data
+                                to map.
+        ----------------------  ---------------------------------------------------------
+        map_widget              optional WebMap object. This is the map to display the
+                                data on.
+        ----------------------  ---------------------------------------------------------
+        palette                 optional string/dict.  Color mapping.  For simple renderer,
+                                just provide a string.  For more robust renderers like
+                                unique renderer, a dictionary can be given.
+        ----------------------  ---------------------------------------------------------
+        renderer_type           optional string.  Determines the type of renderer to use
+                                for the provided dataset. The default is 's' which is for
+                                simple renderers.
+
+                                Allowed values:
+
+                                + 's' - is a simple renderer that uses one symbol only.
+                                + 'u' - unique renderer symbolizes features based on one
+                                        or more matching string attributes.
+                                + 'c' - A class breaks renderer symbolizes based on the
+                                        value of some numeric attribute.
+                                + 'h' - heatmap renders point data into a raster
+                                        visualization that emphasizes areas of higher
+                                        density or weighted values.
+        ----------------------  ---------------------------------------------------------
+        symbol_type             optional string. This is the type of symbol the user
+                                needs to create.  Valid inputs are: simple, picture, text,
+                                or carto.  The default is simple.
+        ----------------------  ---------------------------------------------------------
+        symbol_type             optional string. This is the symbology used by the
+                                geometry.  For example 's' for a Line geometry is a solid
+                                line. And '-' is a dash line.
+
+                                Allowed symbol types based on geometries:
+
+                                **Point Symbols**
+
+                                 + 'o' - Circle (default)
+                                 + '+' - Cross
+                                 + 'D' - Diamond
+                                 + 's' - Square
+                                 + 'x' - X
+
+                                 **Polyline Symbols**
+
+                                 + 's' - Solid (default)
+                                 + '-' - Dash
+                                 + '-.' - Dash Dot
+                                 + '-..' - Dash Dot Dot
+                                 + '.' - Dot
+                                 + '--' - Long Dash
+                                 + '--.' - Long Dash Dot
+                                 + 'n' - Null
+                                 + 's-' - Short Dash
+                                 + 's-.' - Short Dash Dot
+                                 + 's-..' - Short Dash Dot Dot
+                                 + 's.' - Short Dot
+
+                                 **Polygon Symbols**
+
+                                 + 's' - Solid Fill (default)
+                                 + '\' - Backward Diagonal
+                                 + '/' - Forward Diagonal
+                                 + '|' - Vertical Bar
+                                 + '-' - Horizontal Bar
+                                 + 'x' - Diagonal Cross
+                                 + '+' - Cross
+
+        ----------------------  ---------------------------------------------------------
+        col                     optional string/list. Field or fields used for heatmap,
+                                class breaks, or unique renderers.
+        ----------------------  ---------------------------------------------------------
+        pallette                optional string. The color map to draw from in order to
+                                visualize the data.  The default pallette is 'jet'. To
+                                get a visual representation of the allowed color maps,
+                                use the **display_colormaps** method.
+        ----------------------  ---------------------------------------------------------
+        alpha                   optional float.  This is a value between 0 and 1 with 1
+                                being the default value.  The alpha sets the transparancy
+                                of the renderer when applicable.
+        ======================  =========================================================
+
+        ** Render Syntax **
+
+        The render syntax allows for users to fully customize symbolizing the data.
+
+        ** Simple Renderer**
+
+        A simple renderer is a renderer that uses one symbol only.
+
+        ======================  =========================================================
+        **Optional Argument**   **Description**
+        ----------------------  ---------------------------------------------------------
+        symbol_type             optional string. This is the type of symbol the user
+                                needs to create.  Valid inputs are: simple, picture, text,
+                                or carto.  The default is simple.
+        ----------------------  ---------------------------------------------------------
+        symbol_type             optional string. This is the symbology used by the
+                                geometry.  For example 's' for a Line geometry is a solid
+                                line. And '-' is a dash line.
+
+                                **Point Symbols**
+
+                                + 'o' - Circle (default)
+                                + '+' - Cross
+                                + 'D' - Diamond
+                                + 's' - Square
+                                + 'x' - X
+
+                                **Polyline Symbols**
+
+                                + 's' - Solid (default)
+                                + '-' - Dash
+                                + '-.' - Dash Dot
+                                + '-..' - Dash Dot Dot
+                                + '.' - Dot
+                                + '--' - Long Dash
+                                + '--.' - Long Dash Dot
+                                + 'n' - Null
+                                + 's-' - Short Dash
+                                + 's-.' - Short Dash Dot
+                                + 's-..' - Short Dash Dot Dot
+                                + 's.' - Short Dot
+
+                                **Polygon Symbols**
+
+                                + 's' - Solid Fill (default)
+                                + '\' - Backward Diagonal
+                                + '/' - Forward Diagonal
+                                + '|' - Vertical Bar
+                                + '-' - Horizontal Bar
+                                + 'x' - Diagonal Cross
+                                + '+' - Cross
+        ----------------------  ---------------------------------------------------------
+        description             Description of the renderer.
+        ----------------------  ---------------------------------------------------------
+        rotation_expression     A constant value or an expression that derives the angle
+                                of rotation based on a feature attribute value. When an
+                                attribute name is specified, it's enclosed in square
+                                brackets.
+        ----------------------  ---------------------------------------------------------
+        rotation_type           String value which controls the origin and direction of
+                                rotation on point features. If the rotationType is
+                                defined as arithmetic, the symbol is rotated from East in
+                                a counter-clockwise direction where East is the 0 degree
+                                axis. If the rotationType is defined as geographic, the
+                                symbol is rotated from North in a clockwise direction
+                                where North is the 0 degree axis.
+
+                                Must be one of the following values:
+
+                                + arithmetic
+                                + geographic
+
+        ----------------------  ---------------------------------------------------------
+        visual_variables        An array of objects used to set rendering properties.
+        ======================  =========================================================
+
+        **Heatmap Renderer**
+
+        The HeatmapRenderer renders point data into a raster visualization that emphasizes
+        areas of higher density or weighted values.
+
+        ======================  =========================================================
+        **Optional Argument**   **Description**
+        ----------------------  ---------------------------------------------------------
+        blur_radius             The radius (in pixels) of the circle over which the
+                                majority of each point's value is spread.
+        ----------------------  ---------------------------------------------------------
+        field                   This is optional as this renderer can be created if no
+                                field is specified. Each feature gets the same
+                                value/importance/weight or with a field where each
+                                feature is weighted by the field's value.
+        ----------------------  ---------------------------------------------------------
+        max_intensity           The pixel intensity value which is assigned the final
+                                color in the color ramp.
+        ----------------------  ---------------------------------------------------------
+        min_intensity           The pixel intensity value which is assigned the initial
+                                color in the color ramp.
+        ----------------------  ---------------------------------------------------------
+        ratio                   A number between 0-1. Describes what portion along the
+                                gradient the colorStop is added.
+        ======================  =========================================================
+
+        **Unique Renderer**
+
+        This renderer symbolizes features based on one or more matching string attributes.
+
+        ======================  =========================================================
+        **Optional Argument**   **Description**
+        ----------------------  ---------------------------------------------------------
+        background_fill_symbol  A symbol used for polygon features as a background if the
+                                renderer uses point symbols, e.g. for bivariate types &
+                                size rendering. Only applicable to polygon layers.
+                                PictureFillSymbols can also be used outside of the Map
+                                Viewer for Size and Predominance and Size renderers.
+        ----------------------  ---------------------------------------------------------
+        default_label           Default label for the default symbol used to draw
+                                unspecified values.
+        ----------------------  ---------------------------------------------------------
+        default_symbol          Symbol used when a value cannot be matched.
+        ----------------------  ---------------------------------------------------------
+        field1, field2, field3  Attribute field renderer uses to match values.
+        ----------------------  ---------------------------------------------------------
+        field_delimiter         String inserted between the values if multiple attribute
+                                fields are specified.
+        ----------------------  ---------------------------------------------------------
+        rotation_expression     A constant value or an expression that derives the angle
+                                of rotation based on a feature attribute value. When an
+                                attribute name is specified, it's enclosed in square
+                                brackets. Rotation is set using a visual variable of type
+                                rotation info with a specified field or value expression
+                                property.
+        ----------------------  ---------------------------------------------------------
+        rotation_type           String property which controls the origin and direction
+                                of rotation. If the rotation type is defined as
+                                arithmetic the symbol is rotated from East in a
+                                counter-clockwise direction where East is the 0 degree
+                                axis. If the rotation type is defined as geographic, the
+                                symbol is rotated from North in a clockwise direction
+                                where North is the 0 degree axis.
+                                Must be one of the following values:
+
+                                + arithmetic
+                                + geographic
+
+        ----------------------  ---------------------------------------------------------
+        arcade_expression       An Arcade expression evaluating to either a string or a
+                                number.
+        ----------------------  ---------------------------------------------------------
+        arcade_title            The title identifying and describing the associated
+                                Arcade expression as defined in the valueExpression
+                                property.
+        ----------------------  ---------------------------------------------------------
+        visual_variables        An array of objects used to set rendering properties.
+        ======================  =========================================================
+
+        **Class Breaks Renderer**
+
+        A class breaks renderer symbolizes based on the value of some numeric attribute.
+
+        ======================  =========================================================
+        **Optional Argument**   **Description**
+        ----------------------  ---------------------------------------------------------
+        background_fill_symbol  A symbol used for polygon features as a background if the
+                                renderer uses point symbols, e.g. for bivariate types &
+                                size rendering. Only applicable to polygon layers.
+                                PictureFillSymbols can also be used outside of the Map
+                                Viewer for Size and Predominance and Size renderers.
+        ----------------------  ---------------------------------------------------------
+        default_label           Default label for the default symbol used to draw
+                                unspecified values.
+        ----------------------  ---------------------------------------------------------
+        default_symbol          Symbol used when a value cannot be matched.
+        ----------------------  ---------------------------------------------------------
+        method                  Determines the classification method that was used to
+                                generate class breaks.
+
+                                Must be one of the following values:
+
+                                + esriClassifyDefinedInterval
+                                + esriClassifyEqualInterval
+                                + esriClassifyGeometricalInterval
+                                + esriClassifyNaturalBreaks
+                                + esriClassifyQuantile
+                                + esriClassifyStandardDeviation
+                                + esriClassifyManual
+
+        ----------------------  ---------------------------------------------------------
+        field                   Attribute field used for renderer.
+        ----------------------  ---------------------------------------------------------
+        min_value               The minimum numeric data value needed to begin class
+                                breaks.
+        ----------------------  ---------------------------------------------------------
+        normalization_field     Used when normalizationType is field. The string value
+                                indicating the attribute field by which the data value is
+                                normalized.
+        ----------------------  ---------------------------------------------------------
+        normalization_total     Used when normalizationType is percent-of-total, this
+                                number property contains the total of all data values.
+        ----------------------  ---------------------------------------------------------
+        normalization_type      Determine how the data was normalized.
+
+                                Must be one of the following values:
+
+                                + esriNormalizeByField
+                                + esriNormalizeByLog
+                                + esriNormalizeByPercentOfTotal
+        ----------------------  ---------------------------------------------------------
+        rotation_expression     A constant value or an expression that derives the angle
+                                of rotation based on a feature attribute value. When an
+                                attribute name is specified, it's enclosed in square
+                                brackets.
+        ----------------------  ---------------------------------------------------------
+        rotation_type           A string property which controls the origin and direction
+                                of rotation. If the rotation_type is defined as
+                                arithmetic, the symbol is rotated from East in a
+                                couter-clockwise direction where East is the 0 degree
+                                axis. If the rotationType is defined as geographic, the
+                                symbol is rotated from North in a clockwise direction
+                                where North is the 0 degree axis.
+
+                                Must be one of the following values:
+
+                                + arithmetic
+                                + geographic
+
+        ----------------------  ---------------------------------------------------------
+        arcade_expression       An Arcade expression evaluating to a number.
+        ----------------------  ---------------------------------------------------------
+        arcade_title            The title identifying and describing the associated
+                                Arcade expression as defined in the arcade_expression
+                                property.
+        ----------------------  ---------------------------------------------------------
+        visual_variables        An object used to set rendering options.
+        ======================  =========================================================
+
+
+
+        ** Symbol Syntax **
+
+        =======================  =========================================================
+        **Optional Argument**    **Description**
+        -----------------------  ---------------------------------------------------------
+        symbol_type              optional string. This is the type of symbol the user
+                                 needs to create.  Valid inputs are: simple, picture, text,
+                                 or carto.  The default is simple.
+        -----------------------  ---------------------------------------------------------
+        symbol_type              optional string. This is the symbology used by the
+                                 geometry.  For example 's' for a Line geometry is a solid
+                                 line. And '-' is a dash line.
+
+                                 **Point Symbols**
+
+                                 + 'o' - Circle (default)
+                                 + '+' - Cross
+                                 + 'D' - Diamond
+                                 + 's' - Square
+                                 + 'x' - X
+
+                                 **Polyline Symbols**
+
+                                 + 's' - Solid (default)
+                                 + '-' - Dash
+                                 + '-.' - Dash Dot
+                                 + '-..' - Dash Dot Dot
+                                 + '.' - Dot
+                                 + '--' - Long Dash
+                                 + '--.' - Long Dash Dot
+                                 + 'n' - Null
+                                 + 's-' - Short Dash
+                                 + 's-.' - Short Dash Dot
+                                 + 's-..' - Short Dash Dot Dot
+                                 + 's.' - Short Dot
+
+                                 **Polygon Symbols**
+
+                                 + 's' - Solid Fill (default)
+                                 + '\' - Backward Diagonal
+                                 + '/' - Forward Diagonal
+                                 + '|' - Vertical Bar
+                                 + '-' - Horizontal Bar
+                                 + 'x' - Diagonal Cross
+                                 + '+' - Cross
+        -----------------------  ---------------------------------------------------------
+        cmap                     optional string or list.  This is the color scheme a user
+                                 can provide if the exact color is not needed, or a user
+                                 can provide a list with the color defined as:
+                                 [red, green blue, alpha]. The values red, green, blue are
+                                 from 0-255 and alpha is a float value from 0 - 1.
+                                 The default value is 'jet' color scheme.
+        -----------------------  ---------------------------------------------------------
+        cstep                    optional integer.  If provided, its the color location on
+                                 the color scheme.
+        =======================  =========================================================
+
+        **Simple Symbols**
+
+        This is a list of optional parameters that can be given for point, line or
+        polygon geometries.
+
+        ====================  =========================================================
+        **Argument**          **Description**
+        --------------------  ---------------------------------------------------------
+        marker_size           optional float.  Numeric size of the symbol given in
+                              points.
+        --------------------  ---------------------------------------------------------
+        marker_angle          optional float. Numeric value used to rotate the symbol.
+                              The symbol is rotated counter-clockwise. For example,
+                              The following, angle=-30, in will create a symbol rotated
+                              -30 degrees counter-clockwise; that is, 30 degrees
+                              clockwise.
+        --------------------  ---------------------------------------------------------
+        marker_xoffset        Numeric value indicating the offset on the x-axis in points.
+        --------------------  ---------------------------------------------------------
+        marker_yoffset        Numeric value indicating the offset on the y-axis in points.
+        --------------------  ---------------------------------------------------------
+        line_width            optional float. Numeric value indicating the width of the line in points
+        --------------------  ---------------------------------------------------------
+        outline_style         Optional string. For polygon point, and line geometries , a
+                              customized outline type can be provided.
+
+                              Allowed Styles:
+
+                              + 's' - Solid (default)
+                              + '-' - Dash
+                              + '-.' - Dash Dot
+                              + '-..' - Dash Dot Dot
+                              + '.' - Dot
+                              + '--' - Long Dash
+                              + '--.' - Long Dash Dot
+                              + 'n' - Null
+                              + 's-' - Short Dash
+                              + 's-.' - Short Dash Dot
+                              + 's-..' - Short Dash Dot Dot
+                              + 's.' - Short Dot
+        --------------------  ---------------------------------------------------------
+        outline_color         optional string or list.  This is the same color as the
+                              cmap property, but specifically applies to the outline_color.
+        ====================  =========================================================
+
+        **Picture Symbol**
+
+        This type of symbol only applies to Points, MultiPoints and Polygons.
+
+        ====================  =========================================================
+        **Argument**          **Description**
+        --------------------  ---------------------------------------------------------
+        marker_angle          Numeric value that defines the number of degrees ranging
+                              from 0-360, that a marker symbol is rotated. The rotation
+                              is from East in a counter-clockwise direction where East
+                              is the 0 axis.
+        --------------------  ---------------------------------------------------------
+        marker_xoffset        Numeric value indicating the offset on the x-axis in points.
+        --------------------  ---------------------------------------------------------
+        marker_yoffset        Numeric value indicating the offset on the y-axis in points.
+        --------------------  ---------------------------------------------------------
+        height                Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
+        --------------------  ---------------------------------------------------------
+        width                 Numeric value used if needing to resize the symbol. Specify a value in points. If images are to be displayed in their original size, leave this blank.
+        --------------------  ---------------------------------------------------------
+        url                   String value indicating the URL of the image. The URL should be relative if working with static layers. A full URL should be used for map service dynamic layers. A relative URL can be dereferenced by accessing the map layer image resource or the feature layer image resource.
+        --------------------  ---------------------------------------------------------
+        image_data            String value indicating the base64 encoded data.
+        --------------------  ---------------------------------------------------------
+        xscale                Numeric value indicating the scale factor in x direction.
+        --------------------  ---------------------------------------------------------
+        yscale                Numeric value indicating the scale factor in y direction.
+        --------------------  ---------------------------------------------------------
+        outline_color         optional string or list.  This is the same color as the
+                              cmap property, but specifically applies to the outline_color.
+        --------------------  ---------------------------------------------------------
+        outline_style         Optional string. For polygon point, and line geometries , a
+                              customized outline type can be provided.
+
+                              Allowed Styles:
+
+                              + 's' - Solid (default)
+                              + '-' - Dash
+                              + '-.' - Dash Dot
+                              + '-..' - Dash Dot Dot
+                              + '.' - Dot
+                              + '--' - Long Dash
+                              + '--.' - Long Dash Dot
+                              + 'n' - Null
+                              + 's-' - Short Dash
+                              + 's-.' - Short Dash Dot
+                              + 's-..' - Short Dash Dot Dot
+                              + 's.' - Short Dot
+        --------------------  ---------------------------------------------------------
+        outline_color         optional string or list.  This is the same color as the
+                              cmap property, but specifically applies to the outline_color.
+        --------------------  ---------------------------------------------------------
+        line_width            optional float. Numeric value indicating the width of the line in points
+        ====================  =========================================================
+
+        **Text Symbol**
+
+        This type of symbol only applies to Points, MultiPoints and Polygons.
+
+        ====================  =========================================================
+        **Argument**          **Description**
+        --------------------  ---------------------------------------------------------
+        font_decoration       The text decoration. Must be one of the following values:
+                              - line-through
+                              - underline
+                              - none
+        --------------------  ---------------------------------------------------------
+        font_family           Optional string. The font family.
+        --------------------  ---------------------------------------------------------
+        font_size             Optional float. The font size in points.
+        --------------------  ---------------------------------------------------------
+        font_style            Optional string. The text style.
+                              - italic
+                              - normal
+                              - oblique
+        --------------------  ---------------------------------------------------------
+        font_weight           Optional string. The text weight.
+                              Must be one of the following values:
+                              - bold
+                              - bolder
+                              - lighter
+                              - normal
+        --------------------  ---------------------------------------------------------
+        background_color      optional string/list. Background color is represented as
+                              a four-element array or string of a color map.
+        --------------------  ---------------------------------------------------------
+        halo_color            Optional string/list. Color of the halo around the text.
+                              The default is None.
+        --------------------  ---------------------------------------------------------
+        halo_size             Optional integer/float. The point size of a halo around
+                              the text symbol.
+        --------------------  ---------------------------------------------------------
+        horizontal_alignment  optional string. One of the following string values
+                              representing the horizontal alignment of the text.
+                              Must be one of the following values:
+                              - left
+                              - right
+                              - center
+                              - justify
+        --------------------  ---------------------------------------------------------
+        kerning               optional boolean. Boolean value indicating whether to
+                              adjust the spacing between characters in the text string.
+        --------------------  ---------------------------------------------------------
+        line_color            optional string/list. Outline color is represented as
+                              a four-element array or string of a color map.
+        --------------------  ---------------------------------------------------------
+        line_width            optional integer/float. Outline size.
+        --------------------  ---------------------------------------------------------
+        marker_angle          optional int. A numeric value that defines the number of
+                              degrees (0 to 360) that a text symbol is rotated. The
+                              rotation is from East in a counter-clockwise direction
+                              where East is the 0 axis.
+        --------------------  ---------------------------------------------------------
+        marker_xoffset        optional int/float.Numeric value indicating the offset
+                              on the x-axis in points.
+        --------------------  ---------------------------------------------------------
+        marker_yoffset        optional int/float.Numeric value indicating the offset
+                              on the x-axis in points.
+        --------------------  ---------------------------------------------------------
+        right_to_left         optional boolean. Set to true if using Hebrew or Arabic
+                              fonts.
+        --------------------  ---------------------------------------------------------
+        rotated               optional boolean. Boolean value indicating whether every
+                              character in the text string is rotated.
+        --------------------  ---------------------------------------------------------
+        text                  Required string.  Text Value to display next to geometry.
+        --------------------  ---------------------------------------------------------
+        vertical_alignment    Optional string. One of the following string values
+                              representing the vertical alignment of the text.
+                              Must be one of the following values:
+                              - top
+                              - bottom
+                              - middle
+                              - baseline
+        ====================  =========================================================
+
+        **Cartographic Symbol**
+
+        This type of symbol only applies to line geometries.
+
+        ====================  =========================================================
+        **Argument**          **Description**
+        --------------------  ---------------------------------------------------------
+        line_width            optional float. Numeric value indicating the width of the line in points
+        --------------------  ---------------------------------------------------------
+        cap                   Optional string.  The cap style.
+        --------------------  ---------------------------------------------------------
+        join                  Optional string. The join style.
+        --------------------  ---------------------------------------------------------
+        miter_limit           Optional string. Size threshold for showing mitered line joins.
+        ====================  =========================================================
+
+        The kwargs parameter accepts all parameters of the create_symbol method and the
+        create_renderer method.
+
+
+        """
         if ('kind' in kwargs and \
            kwargs['kind'] == 'map') or \
            (len(args) > 3 and args[3] == 'map'):
+            from arcgis.features._data.geodataset.viz import plot
+            has_wm = True
+            wm = kwargs.pop('map_widget', None)
+            if wm is None:
+                has_wm = False
+                wm = GIS().map()
+            if has_wm:
+                plot(df=self,
+                     map_widget=wm,
+                     name=kwargs.pop('name', "Feature Collection Layer"),
+                     renderer_type=kwargs.pop("renderer_type", None),
+                     symbol_type=kwargs.pop('symbol_type', None),
+                     symbol_style=kwargs.pop('symbol_style', None),
+                     col=kwargs.pop('col', None),
+                     colors=kwargs.pop('cmap', None) or kwargs.pop('colors', 'jet'),
+                     alpha=kwargs.pop('alpha', 1),
+                     **kwargs)
+                return True
+            else:
+                return plot(df=self,
+                            map_widget=wm,
+                            name=kwargs.pop('name', "Feature Collection Layer"),
+                            renderer_type=kwargs.pop("renderer_type", None),
+                            symbol_type=kwargs.pop('symbol_type', None),
+                            symbol_style=kwargs.pop('symbol_style', None),
+                            col=kwargs.pop('col', None),
+                            colors=kwargs.pop('cmap', None) or kwargs.pop('colors', 'jet'),
+                            alpha=kwargs.pop('alpha', 1),
+                            **kwargs)
+        if ('kind' in kwargs and \
+           kwargs['kind'] == 'map') or \
+           (len(args) > 3 and args[3] == 'map') and \
+           ('as_graphic' in kwargs and kwargs['as_graphic']):
             from arcgis.features import FeatureCollection, FeatureSet
             from arcgis import geometry
             if self._gis is None:

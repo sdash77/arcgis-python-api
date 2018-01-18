@@ -556,7 +556,7 @@ class Server(BaseServer):
         a site is no longer required, you can delete the site, which will
         cause all of the resources to be cleaned up.
         """
-        if self._sitemanager:
+        if self._sitemanager is None:
             if self._sitemanager is None:
                 self._sitemanager = SiteManager(self._sm)
             return self._sitemanager
