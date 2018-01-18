@@ -9,25 +9,51 @@ from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.egg_info import egg_info
+
 # To use a consistent encoding
 from codecs import open
 from os import path
 import sys
+from glob import glob
+from subprocess import check_output, CalledProcessError, STDOUT
 import logging
 log = logging.getLogger()
-
 here = path.abspath(path.dirname(__file__))
-ignore_post_install = False
 
-def _install_enable_nbextensions_arcgis():
-    """This function will run after 'pip install' finishes. It activates the 
-    map widget for notebooks, equivalent of running the following commands:
+#Conda uses this setup file, but we want to supress some functionality
+if "--conda-install-mode" in sys.argv:
+    sys.argv.remove("--conda-install-mode")
+    conda_install_mode = True
+else:
+    conda_install_mode = False
+
+if conda_install_mode:
+    #conda handles its own depedencies, so don't specify any pip-depedencies
+    install_requires_depedencies = []
+else:
+    install_requires_depedencies = [
+        'six',
+        'pandas',
+        'ipywidgets >=5.2.2,<7',
+        'widgetsnbextension >=1.2.6,<3',
+        'keyring',
+        'winkerberos;platform_system=="Windows"']
+
+def _post_install():
+    """This function will run after 'pip install' finishes. It has 2 parts:
+    1) activate the notebook map widget, equivalent of running these cmds:
         - jupyter nbextension install --py --sys-prefix arcgis
         - jupyter nbextension enable --py --sys-prefix arcgis
+        - jupyter nbextension enable --py --sys-prefix widgetsnbextension
+    2) If the O.S. is Mac OSX, run the OpenSSL workaround as described in
+       this issue: https://bugs.python.org/issue28150, equivalent of running
+       '/Applications/Python X.X/Install Certificates.command' cmd
     """
-    if ignore_post_install:
+    if conda_install_mode:
+	#Don't run any post installation methods for conda installs
         return
 
+    # 1) activate the notebook map widget
     try:
         import notebook.nbextensions as nbext
         import arcgis
@@ -38,8 +64,30 @@ def _install_enable_nbextensions_arcgis():
         return
 
     with _lower_log_level_to_debug(): #outputs success or failure to console
-        nbext.install_nbextension_python("arcgis", logger = log)
-        nbext.enable_nbextension_python("arcgis", logger = log)
+        nbext.install_nbextension_python("arcgis",
+                                         sys_prefix = True, logger = log)
+        nbext.enable_nbextension_python("arcgis",
+                                         sys_prefix = True, logger = log)
+        nbext.enable_nbextension_python("widgetsnbextension",
+                                         sys_prefix = True, logger = log)
+
+    # 2) If the OS is Mac OSX, run the OpenSSL workaround
+    platform_is_osx = sys.platform == "darwin"
+    if not platform_is_osx:
+        return
+    for potential_cert_script in glob("/Applications/Python*/*"):
+        if "Install Certificates.command" in potential_cert_script:
+            try:
+                cmd_output = check_output(potential_cert_script,
+                                          stderr=STDOUT)
+                log.warn("OpenSSL workaround for OSX completed succesfully. "\
+                         "See https://bugs.python.org/issue28150 for info. "\
+                         "".format(cmd_output.decode("utf-8")))
+            except CalledProcessError as e:
+                log.warn("OpenSSL workaround for OSX did not complete "\
+                         "successfully. This may or may not allow secure SSL "
+                         "to work. See https://bugs.python.org/issue28150. "\
+                         "Output: {}".format(e.output))
 
 class _lower_log_level_to_debug:
     """Use with "with" syntax like "with _lower_log_to_debug():". Lowers
@@ -51,36 +99,30 @@ class _lower_log_level_to_debug:
     def __exit__(self, type, value, traceback):
         log.setLevel(self.prev_logging_level)
 
-#Each of these classes represent the different modes that pip install
-#can go into, and what logic can be run after pip install finishes
+# Each of these classes represent the different modes that pip install
+# can go into, and what logic can be run after pip install finishes
 class PostDevelopCommand(develop):
     """Post-installation logic to run for development mode"""
     def run(self):
+        _post_install()
         develop.run(self)
-        logging.info("Post-install logic in develop mode running")
-        _install_enable_nbextensions_arcgis()
 
 class PostInstallCommand(install):
     """Post-installation logic to run for installation mode"""
     def run(self):
-        install.run(self)
-        logging.info("Post-install logic in develop mode running")
-        _install_enable_nbextensions_arcgis()
+        _post_install()
+        #see http://bit.ly/2DfCXxx for why 'do_egg_install' instead of 'run'
+        install.do_egg_install(self)
 
 class PostEggInfoCommand(egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
     def run(self):
+        _post_install()
         egg_info.run(self)
-        logging.info("Post-install logic in egg mode running")
-        _install_enable_nbextensions_arcgis()
 
 # Get the long description from the README file
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
-
-if "--ignore-post-install" in sys.argv:
-    sys.argv.remove("--ignore-post-install")
-    ignore_post_install = True
 
 setup(
     name='arcgis',
@@ -144,21 +186,15 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'six',
-        'pandas',
-        'ipywidgets >=5.2.2,<7',
-        'widgetsnbextension >=1.2.6,<3',
-        'keyring',
-        'winkerberos;platform_system=="Windows"'],
+    install_requires = install_requires_depedencies,
 
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
     cmdclass={'develop': PostDevelopCommand,
               'install': PostInstallCommand,
-              'egg_info': PostEggInfoCommand},
-
+              'egg_info': PostEggInfoCommand}
+    
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
