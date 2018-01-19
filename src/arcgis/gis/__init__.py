@@ -2413,6 +2413,71 @@ class ContentManager(object):
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
         ================  ==========================================================================
 
+        In addition to the parameters aboce, you can specify additional information to help publish CSV
+        data.
+
+        =====================  ==========================================================================
+        **Optional Argument**  **Description**
+        ---------------------  --------------------------------------------------------------------------
+        location_type          Optional string. Indicates the type of spatial information stored in the
+                               dataset.
+
+                               Values for CSV:
+
+                                  + coordinates
+                                  + address (default)
+                                  + lookup
+                                  + none
+
+                               Values for Excel:
+
+                                  + coordinates
+                                  + address (default)
+                                  + none
+
+                               When location_type = coordinates, the CSV or Excel data contains x,y
+                               information.
+                               When location_type = address, the CSV or Excel data contains address
+                               fields that will be geocoded to a single point.
+                               When location_type = lookup, the CSV or Excel data contains fields that
+                               can be mapped to well-known sets of geographies.
+                               When location_type = none, the CSV or Excel data contains no spatial
+                               content and data will be loaded and subsequently queried as tabular data.
+
+                               Based on this parameter, additional parameters will be required, for
+                               example, when specifying location_type = coordinates, the latitude and
+                               longitude field names must be specified.
+        ---------------------  --------------------------------------------------------------------------
+        latitude_field         Optional string. If location_type = coordinates, the name of the field that
+                               contains the y coordinate.
+        ---------------------  --------------------------------------------------------------------------
+        longitude_field        Optional string. If location_type = coordinates, the name of the field that
+                               contains the x coordinate.
+        ---------------------  --------------------------------------------------------------------------
+        coordinate_field_type  Optional string. Specify the type of coordinates that contain location
+                               information. Values: LatitudeAndLongitude (default), MGRS, USNG
+        ---------------------  --------------------------------------------------------------------------
+        coordinate_field_name  Optional string. The name of the field that contains the coordinates
+                               specified in coordinate_field_type
+        ---------------------  --------------------------------------------------------------------------
+        lookup_type            Optional string. The type of place to look up.
+        ---------------------  --------------------------------------------------------------------------
+        lookup_fields          Optional string. A JSON object with name value pairs that define the
+                               fields used to look up the location.
+        ---------------------  --------------------------------------------------------------------------
+        geocode_url            Optional string. The URL of the geocoding service that supports batch
+                               geocoding.
+        ---------------------  --------------------------------------------------------------------------
+        source_locale          Optional string. The locale used for the geocoding service source.
+        ---------------------  --------------------------------------------------------------------------
+        source_country         Optional string. The two character country code associated with the
+                               geocoding service, default is 'world'.
+        ---------------------  --------------------------------------------------------------------------
+        country_hint           Optional string. If first time analyzing, the hint is used. If source
+                               country is already specified than source_country is used.
+        =====================  ==========================================================================
+
+
         When publishing a Spatial Dataframe, additional options can be given:
 
         =====================  ==========================================================================
@@ -2511,7 +2576,8 @@ class ContentManager(object):
                     publish_parameters['targetSR'] = { 'wkid' : target_sr }
                 return item.publish(publish_parameters=publish_parameters)
             return
-        elif isinstance(df, pd.DataFrame):
+        elif isinstance(df, pd.DataFrame) and \
+             'location_type' not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
 
@@ -2551,6 +2617,59 @@ class ContentManager(object):
 
             fc = FeatureCollection(res['featureCollection']['layers'][0])
             return fc
+        elif isinstance(df, pd.DataFrame) and \
+             'location_type' in kwargs:
+            path = "content/features/analyze"
+
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
+
+                "analyzeParameters" : {
+                    "enableGlobalGeocoding": "true",
+                    "sourceLocale":kwargs.pop("source_locale", "us-en"),
+
+                    "sourceCountry": kwargs.pop("source_country", ""),
+                    "sourceCountryHint": kwargs.pop("country_hint", ""),
+                    "geocodeServiceUrl": kwargs.pop("geocode_url",
+                                                    self._gis.properties.helperServices.geocode[0]['url']),
+                    #"locationType": kwargs.pop('location_type', None),
+                    #"latitudeFieldName" : kwargs.pop("latitude_field", None),
+                    #"longitudeFieldName" : kwargs.pop("longitude_field", None),
+                    #"coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
+
+                    #"coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
+
+                }
+            }
+            update_dict = {}
+            update_dict["locationType"] = kwargs.pop('location_type', "")
+            update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
+            update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
+            update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
+            update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
+            rk = []
+            for k,v in update_dict.items():
+                if v == "":
+                    rk.append(k)
+            for k in rk:
+                del update_dict[k]
+
+            res = self._portal.con.post(path, postdata)
+            res['publishParameters'].update(update_dict)
+            path = "content/features/generate"
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
+                "publishParameters" : json.dumps(res['publishParameters'])
+            }
+            res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
+
+            fc = FeatureCollection(res['featureCollection']['layers'][0])
+            return fc
+            #return
         return None
 
     def is_service_name_available(self, service_name, service_type):
