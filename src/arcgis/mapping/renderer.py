@@ -4,10 +4,6 @@ Creates renderer dictionaries that can be used to help visualize webmap content
 
 import json
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
 import arcgis
 from arcgis._impl.common._utils import chunks
 from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
@@ -321,6 +317,8 @@ def generate_renderer(geometry_type,
     ======================  =========================================================
 
     """
+    import numpy as np
+
     if isinstance(colors, str):
         colors = colors.split(',')
     if 'alpha' in symbol_args:
