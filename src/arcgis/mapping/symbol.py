@@ -5,9 +5,8 @@ Generates Symbol Types
 """
 import json
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+
+
 
 import arcgis
 from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
@@ -163,6 +162,9 @@ def display_colormaps(colors=None):
     This is a variation of http://matplotlib.org/examples/color/colormaps_reference.html
 
     """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     if colors is None:
         cmaps =  [('All Color Maps', ALLOWED_CMAPS)]
     elif isinstance(colors, (str)):
@@ -201,8 +203,9 @@ def display_colormaps(colors=None):
 ###########################################################################
 def show_styles(geometry_type):
     """
-    provides a print out of the available styles for a given geometry type
+    Returns the available styles for a given geometry type as a Pandas dataframe
     """
+    import pandas as pd
     if geometry_type.lower() in ['point', 'multipoint']:
         c = POINT_STYLES_DISPLAY
     elif geometry_type.lower() in ['polyline', 'line']:
@@ -493,6 +496,9 @@ def create_symbol(geometry_type,
     :returns: Dictionary
 
     """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     alpha = kwargs.pop('alpha', 1)
     symbol = kwargs.pop('symbol', None)
     if symbol_type is None:
@@ -648,7 +654,7 @@ def create_symbol(geometry_type,
                 "url" : kwargs.pop('url', ""),
                 "imageData" : kwargs.pop('image_data', None),
                 "outline" : {
-                   "color" : outline_cmp,
+                   "color" : outline_cmap,
                    "width" : line_width,
                    "type" : "esriSLS",
                    "style" : outline_style
