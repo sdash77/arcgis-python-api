@@ -53,43 +53,85 @@ def aggregate_points(point_layer,
 
     For an example with time, suppose you had point features of every transaction made at various coffee shop locations and no area layer. The data has been recorded over a year and each transaction has a location and a time stamp. Assuming each transaction has a TOTAL_SALES attribute, you can get the sum of all TOTAL_SALES within the space and time of interest. If these transactions are for a single city, we could generate areas that are 1-kilometer grids and look at weekly time slices to summarize the transactions in both time and space.
 
-Parameters:
 
-   point_layer: Input Points (features). Required parameter.
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    point_layer                              Required Input Points layer (features).
+    ------------------------------------     --------------------------------------------------------------------
+    bin_type                                 Optional string parameter. If polygon_layer is not defined, it is required.
+                                             Choice list:['Square', 'Hexagon']
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size                                 Bin Size (float). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size_unit                            Bin Size Unit (str). Optional parameter.
+                                             Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+    ------------------------------------     --------------------------------------------------------------------
+    polygon_layer                            Optional Input Polygons layer (features). If bin_type and bin properties are not defined, it is
+                                             required.
+    ------------------------------------     --------------------------------------------------------------------
+    time_step_interval                       Time Step Interval (int). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    time_step_interval_unit                  Time Step Interval Unit (str). Optional parameter.
+                                             Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+    ------------------------------------     --------------------------------------------------------------------
+    time_step_repeat_interval                Time Step Repeat Interval (int). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    time_step_repeat_interval_unit           Time Step Repeat Interval Unit (str). Optional parameter.
+                                             Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+    ------------------------------------     --------------------------------------------------------------------
+    time_step_reference                      Time Step Reference (datetime). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    summary_fields                           Summary Statistics (str). Optional parameter.
 
-   bin_type: Output Bin Type (str). Optional parameter.
-      Choice list:['Square', 'Hexagon']
+                                             The summary_fields string must enclose a Python list. Each list item must be a Python dictionary
+                                             with two keys. See the Key:Value definitions below.
 
-   bin_size: Bin Size (float). Optional parameter.
-
-   bin_size_unit: Bin Size Unit (str). Optional parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
-
-   polygon_layer: Input Polygons (features). Optional parameter.
-
-   time_step_interval: Time Step Interval (int). Optional parameter.
-
-   time_step_interval_unit: Time Step Interval Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-
-   time_step_repeat_interval: Time Step Repeat Interval (int). Optional parameter.
-
-   time_step_repeat_interval_unit: Time Step Repeat Interval Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-
-   time_step_reference: Time Step Reference (datetime). Optional parameter.
-
-   summary_fields: Summary Statistics (str). Optional parameter.
-
-   output_name: Output Features Name (str). Optional parameter.
-        
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                             See URL 1 below for full details.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Output Features Name (str). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
 
 
-Returns:
-   output - Output Features as Item
+    *Key:Value Dictionary Options for Argument summary_fields*
 
 
+    =================  =====================================================================
+    **Key**            **Value**
+    -----------------  ---------------------------------------------------------------------
+    statisticType      Required string. Indicates statistic to summarize. See URL 1 below for full explanation.
+
+                       Choice list numeric fields:['Count', 'Sum', 'Mean', 'Min', 'Max', 'Range', 'Stddev', 'Var']
+
+                       Choice list for string fields:['Count', 'Any']
+    -----------------  ---------------------------------------------------------------------
+    onStatisticField   Required string. Provides the field name to summarize.
+
+                       See https://developers.arcgis.com/python/guide/working-with-feature-layers-and-features/#Querying-feature-layers
+                       for instructions to query a feature layer for field names.
+    =================  =====================================================================
+
+
+    For detailed explanation see:
+
+    URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Aggregate_Points/02r3000002rr000000/
+
+        **Returns:** Output Features as Item
+
+    *Example*
+
+    .. code-block:: python
+
+            # Usage Example: Using summary_fields on a layer.
+
+            agg_pts_item = aggregate_points(input_points_layer,
+                              bin_size=0.5,
+                              bin_type='Hexagon',
+                              bin_size_unit='Miles',
+                              summary_fields='[{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]'
+                              )
     """
     kwargs = locals()
 
