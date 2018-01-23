@@ -3810,7 +3810,8 @@ class User(dict):
                                        new_security_question, new_security_answer)
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
-               thumbnail=None, fullname=None, email=None, culture=None, region=None):
+               thumbnail=None, fullname=None, email=None, culture=None, region=None,
+               first_name=None, last_name=None):
         """ Updates this user's properties.
 
         .. note::
@@ -3841,22 +3842,54 @@ class User(dict):
         culture           Optional string. The two-letter language code, fr for example.
         ----------------  ----------------------------------------------------------
         region            Optional string. The two-letter country code, FR for example.
+        ----------------  ----------------------------------------------------------
+        first_name        Optional string. User's first name.
+        ----------------  ----------------------------------------------------------
+        last_name         Optional string. User's first name.
         ================  ==========================================================
-
-
 
         :return:
            A boolean indicating success (True) or failure (False).
 
         """
         user_type = None
-        if tags is not None:
-            if type(tags) is list:
-                tags = ",".join(tags)
+        if tags is not None and \
+           isinstance(tags, list):
+            tags = ",".join(tags)
+        import copy
+        params = {"f" : "json",
+                  'access' : access,
+                  'preferredView' : preferred_view,
+                  'description' : description,
+                  'tags' : tags,
+                  'password' : None,
+                  'fullname' : fullname,
+                  'email' : email,
+                  'securityQuestionIdx' : None,
+                  'securityAnswer' : None,
+                  'culture' : culture,
+                  'region' : region,
+                  'firstName' : first_name,
+                  'lastName' : last_name
+                  }
+        for k,v in copy.copy(params).items():
+            if v is None:
+                del params[k]
 
-        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region,
+        if thumbnail:
+            files = {'thumbnail' : thumbnail}
+        else:
+            files = None
+        url = "%s/sharing/rest/community/users/%s/update" % (self._gis._url,
+                                                             self.username)
+        ret = self._gis._con.post(path=url,
+                                  postdata=params,
+                                  files=files)
+        ret = self._portal.update_user(self.username, access, preferred_view,
+                                      description, tags, thumbnail, fullname,
+                                       email, culture, region,
                                        user_type)
-        if ret:
+        if ret['success'] == True:
             self._hydrate()
         return ret
     #----------------------------------------------------------------------
