@@ -15,17 +15,25 @@ requirements:
         - python
         - setuptools
         - six
-        - pandas
+        - notebook 
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
+        - pandas
+        - numpy
+        - pyshp
+        - matplotlib
         - keyring
         - winkerberos      [win]
     run:
         - python
         - six
-        - pandas
+        - notebook
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
+        - pandas
+        - numpy
+        - pyshp
+        - matplotlib
         - keyring
         - winkerberos      [win]
 test:

@@ -33,9 +33,13 @@ if conda_install_mode:
 else:
     install_requires_depedencies = [
         'six',
-        'pandas',
+        'notebook',
         'ipywidgets >=5.2.2,<7',
-        'widgetsnbextension >=1.2.6,<3',
+        'widgetsnbextension >=1.2.6,<3', 
+        'pandas',
+        'numpy',
+        'pyshp',
+        'matplotlib',
         'keyring',
         'winkerberos;platform_system=="Windows"']
 
