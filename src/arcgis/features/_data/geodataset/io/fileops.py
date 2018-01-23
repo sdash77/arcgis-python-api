@@ -89,7 +89,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             if geom.type == "Polygon":
                 shpfile.poly(geom['rings'])
             elif geom.type == "Polyline":
-                shpfile.line(geom['path'])
+                shpfile.line(geom['paths'])
             elif geom.type == "Point":
                 shpfile.point(x=geom.x, y=geom.y)
             else:
