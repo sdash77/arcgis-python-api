@@ -137,7 +137,7 @@ def aggregate_points(point_layer,
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -150,13 +150,13 @@ def aggregate_points(point_layer,
         output_service_name = output_name.replace(' ', '_')
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points')
-    
+
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-        
+
     param_db = {
         "point_layer": (_FeatureSet, "pointLayer"),
         "bin_type": (str, "binType"),
@@ -196,7 +196,7 @@ aggregate_points.__annotations__ = {
                      'summary_fields': str,
                      'output_name': str
                 }
-    
+
 def _describe_dataset(input_layer,
                      gis=None):
     """
@@ -206,7 +206,7 @@ Parameters:
 
    input_layer: Input Dataset (feature layer). Required parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -218,14 +218,14 @@ Returns:
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
             params[key] = value
 
     _set_context(params)
-        
+
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "context": (str, "context"),
@@ -304,7 +304,7 @@ Parameters:
 
    output_name: Output Features Name (str). Optional parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -316,7 +316,7 @@ Returns:
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -329,13 +329,13 @@ Returns:
         output_service_name = output_name.replace(' ', '_')
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features')
-    
+
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-        
+
     param_db = {
         "target_layer": (_FeatureSet, "targetLayer"),
         "join_layer": (_FeatureSet, "joinLayer"),
@@ -386,6 +386,8 @@ def reconstruct_tracks(input_layer,
                        summary_fields = None,
                        time_split = None,
                        time_split_unit = None,
+                       distance_split=None,
+                       distance_split_unit=None,
                        output_name = None,
                        gis=None):
     """
@@ -426,9 +428,14 @@ def reconstruct_tracks(input_layer,
    time_split_unit: Duration Split Threshold Unit (str). Optional parameter.
       Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
+   distance_split: A distance used to split tracks. Any features in the inputLayer that are in the same track and are greater than this distance apart will be split into a new track. The units of the distance values are supplied by the distance_unit parameter.
+
+   distance_split_unit: The distance unit to be used with the distance value specified in distanceSplit.
+       Values: Meters,Kilometers,Feet,Miles,NauticalMiles, or Yards
+
    output_name: Output Features Name (str). Required parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -440,7 +447,7 @@ Returns:
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -453,13 +460,13 @@ Returns:
         output_service_name = output_name.replace(' ', '_')
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks')
-    
+
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-    
+
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "track_fields": (str, "trackFields"),
@@ -468,6 +475,8 @@ Returns:
         "summary_fields": (str, "summaryFields"),
         "time_split": (int, "timeSplit"),
         "time_split_unit": (str, "timeSplitUnit"),
+        "distance_split": (int, "distanceSplit"),
+        "distance_split_unit": (str, "distanceSplitUnit"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
@@ -490,7 +499,7 @@ reconstruct_tracks.__annotations__ = {
                        'summary_fields': str,
                        'time_split': int,
                        'time_split_unit': str,
-                       'output_name': str}	
+                       'output_name': str}
 
 def summarize_attributes(input_layer,
                          fields = None,
@@ -520,7 +529,7 @@ def summarize_attributes(input_layer,
 
    output_name: Output Features Name (str). Required parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -530,10 +539,10 @@ Returns:
     """
     kwargs = locals()
 
-    
+
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -546,13 +555,13 @@ Returns:
         output_service_name = output_name.replace(' ', '_')
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes')
-    
+
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-    
+
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "fields": (str, "fields"),
@@ -624,7 +633,7 @@ def summarize_within(summary_polygons,
 
    output_name: Output Features Name (str). Required parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -634,10 +643,10 @@ Returns:
     """
     kwargs = locals()
 
-    
+
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    
+
     params = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -650,13 +659,13 @@ Returns:
         output_service_name = output_name.replace(' ', '_')
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within')
-    
+
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-    
+
     param_db = {
         "summary_polygons": (_FeatureSet, "summaryPolygons"),
         "bin_type": (str, "binType"),
