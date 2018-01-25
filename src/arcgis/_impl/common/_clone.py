@@ -1220,12 +1220,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Get the layer and table definitions from the original service and prepare them for the new service
                 layers_definition = self.layers_definition
                 relationships = {}
+                time_infos = {}
                 for layer in layers_definition['layers'] + layers_definition['tables']:
                     # Need to remove relationships first and add them back individually
                     # after all layers and tables have been added to the definition
                     if 'relationships' in layer and layer['relationships'] is not None and len(layer['relationships']) != 0:
                         relationships[layer['id']] = layer['relationships']
                         layer['relationships'] = []
+
+                    # Remove time settings first and add them back after the layer has been created
+                    if 'timeInfo' in layer and layer['timeInfo'] is not None:
+                        time_infos[layer['id']] = layer['timeInfo']
+                        del layer['timeInfo']
 
                     # Need to remove all indexes duplicated for fields.
                     # Services get into this state due to a bug in 10.4 and 1.2
@@ -1411,6 +1417,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             field_visibility.append({'name' : field_name, 'visible' : visible})
                         if need_update:
                             update_definition['fields'] = field_visibility
+
+                    # Add time settings back to the layer
+                    if layer_id in time_infos:
+                        time_info = time_infos[layer_id]
+                        start_time = _deep_get(time_info, "startTimeField")
+                        if start_time and start_time in field_mapping:
+                            time_info["startTimeField"] = field_mapping[start_time]
+                        elif start_time == "":
+                            time_info["startTimeField"] = None
+                        end_time = _deep_get(time_info, "endTimeField")
+                        if end_time and end_time in field_mapping:
+                            time_info["endTimeField"] = field_mapping[end_time]
+                        elif end_time == "":
+                            time_info["endTimeField"] = None
+                        update_definition['timeInfo'] = time_info                      
 
                     # Update the definition of the layer
                     if len(update_definition) > 0 or len(delete_definition) > 0:
@@ -2001,7 +2022,15 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                         else: #Configurable Application Template
                             if 'folderId' in app_json:
-                                app_json['folderId'] = _deep_get(self.folder, 'id')
+                                user = self.target.users.me
+                                if self.folder is not None:
+                                    folders = user.folders
+                                    target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
+                                    if target_folder:
+                                        app_json['folderId'] = _deep_get(target_folder, 'id')
+                                else:
+                                    app_json['folderId'] = None
+
                             if 'values' in app_json:
                                 if 'group' in app_json['values']:
                                     app_json['values']['group'] = self._clone_mapping['Group IDs'][app_json['values']['group']]
@@ -2161,7 +2190,7 @@ class _FormDefinition(_ItemDefinition):
 
                 # Add the new item
                 new_item = self.target.content.add(item_properties=item_properties, data=None, thumbnail=thumbnail, folder=self.folder)
-                self.created_item.append(new_item)
+                self.created_items.append(new_item)
 
                 # Update Survey123 form data
                 original_item = self.info
@@ -2346,7 +2375,15 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 workforce_json['groupId'] = self._clone_mapping['Group IDs'][group_id]
 
                 # Update the folder reference
-                workforce_json['folderId'] = self.folder['id']
+                if 'folderId' in workforce_json:
+                    user = self.target.users.me
+                    if self.folder is not None:
+                        folders = user.folders
+                        target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
+                        if target_folder:
+                            workforce_json['folderId'] = _deep_get(target_folder, 'id')
+                    else:
+                        workforce_json['folderId'] = None
 
                 # Update the application integration references
                 integrations = _deep_get(workforce_json, 'assignmentIntegrations')
@@ -2369,7 +2406,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                         os.makedirs(temp_dir)
                     thumbnail = self.portal_item.download_thumbnail(temp_dir)
                 new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_item.append(new_item)
+                self.created_items.append(new_item)
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
