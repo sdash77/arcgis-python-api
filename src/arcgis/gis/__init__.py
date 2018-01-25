@@ -1871,7 +1871,7 @@ class GroupManager(object):
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',
-               max_groups=1000, outside_org=False):
+               max_groups=1000, outside_org=False, categories=None):
         """
         Searches for portal groups.
 
@@ -1915,7 +1915,7 @@ class GroupManager(object):
            A list of groups matching the specified query.
         """
         grouplist = []
-        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
+        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org, categories)
         for group in groups:
             grouplist.append(Group(self._gis, group['id'], group))
         return grouplist
