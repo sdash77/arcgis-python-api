@@ -66,14 +66,14 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
 
-        # cls.portal_url = _conf_reader['arcgiscom']['url']
-        # cls.portal_username = _conf_reader['arcgiscom']['admin_user']
-        # cls.portal_password = _conf_reader['arcgiscom']['admin_password']
+        cls.portal_url = _conf_reader['arcgiscom']['url']
+        cls.portal_username = _conf_reader['arcgiscom']['admin_user']
+        cls.portal_password = _conf_reader['arcgiscom']['admin_password']
 
         # temporary until tool gets released on production
-        cls.portal_url = "https://devext.arcgis.com"
-        cls.portal_username = "amani_devtesting"
-        cls.portal_password = "123devtesting@1"
+        # cls.portal_url = "https://devext.arcgis.com"
+        # cls.portal_username = "amani_devtesting"
+        # cls.portal_password = "123devtesting@1"
 
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
@@ -133,7 +133,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_create_OfflineMapAreaManager(self):
         try:
-            wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')
+            # wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             wm = WebMap(wmitem)
             oma_manager = wm.offline_areas
 
@@ -153,7 +154,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_list_offline_areas(self):
         try:
-            wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')
+            # wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             wm = WebMap(wmitem)
 
             offline_areas = wm.offline_areas.list()
@@ -178,13 +180,15 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         :return:
         """
         try:
-            wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')
+            # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('220075cffbcd4d61a0e2231fe53aac0e')
             wm = WebMap(wmitem)
 
-            bookmark1 = wm.definition.bookmarks[0]['name']
+            bookmark1 = wm.definition.bookmarks[-1]['name']
 
             import arcgis
             arcgis.env.verbose = True
+            oma_mgr = wm.offline_areas
             oma_item = wm.offline_areas.create(bookmark1, self.test_case_name, 'automated test', 'python api', 'dino_test')
             arcgis.env.verbose = False
 
@@ -216,7 +220,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         :return:
         """
         try:
-            wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')
+            # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             wm = WebMap(wmitem)
 
             oma_item = wm.offline_areas.list()[0]
@@ -246,7 +251,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         :return:
         """
         try:
-            wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')
+            # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
             wm = WebMap(wmitem)
 
             import arcgis
