@@ -473,6 +473,7 @@ class _DeepCloner():
 
     def clone(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            asyncio.set_event_loop(asyncio.new_event_loop())
             loop = asyncio.get_event_loop()
             results = loop.run_until_complete(self._clone(executor))
             loop.close()
@@ -2149,7 +2150,7 @@ class _ApplicationDefinition(_TextItemDefinition):
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
-            return [new_item]
+            return new_item
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
@@ -2410,7 +2411,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
-            return [new_item]
+            return new_item
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
