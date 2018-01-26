@@ -1908,6 +1908,8 @@ class GroupManager(object):
         ----------------  --------------------------------------------------------
         outside_org       Optional boolean. Controls whether to search outside
                           your org. Default is False, do not search ourside your org.
+        ----------------  --------------------------------------------------------
+        categories        Optional string or list. A string of category values.
         ================  ========================================================
 
 
