@@ -114,10 +114,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
                 "xssInputRule": "rejectInvalid"
             },
             "tables": [],
-            "name": output_service_name.replace(' ', '_'),
-            "options": {
-                "dataSourceType": "spatiotemporal"
-            }
+            "name": output_service_name.replace(' ', '_')
         }
 
     output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")

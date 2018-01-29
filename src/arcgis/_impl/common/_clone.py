@@ -16,7 +16,10 @@ from arcgis.geometry import *
 
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
-                          'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set']
+                          'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set',
+                          'Document Link', 'Geocode Service', 'Geodata Service', 'Application', 
+                          'Geometry Service', 'Geoprocessing Service', 'Network Analysis Service',
+                          'Workflow Manager Service']
 
 #region Group and Item Definition Classes
 
@@ -55,13 +58,12 @@ class _DeepCloner():
         for item in self._items:
             user = self.target.users.me
             # Get the definitions associated with the item
-            item_definitions = []
             self._get_item_definitions(item)
 
             # Test if the user has the correct privileges to create the items requested
             if 'privileges' in user and user['privileges'] is not None:
                 privileges = user.privileges
-                for item_definition in item_definitions:
+                for item_definition in self._graph.values():
                     if isinstance(item_definition, _ItemDefinition):
                         if 'portal:user:createItem' not in privileges:
                             raise Exception("To clone this item you must have permission to create new content in the target organization.")
@@ -112,7 +114,7 @@ class _DeepCloner():
             group_id = item['id']
 
             search_query = 'group:{0}'.format(group_id)
-            group_items = source.content.search(search_query, max_items=1000)
+            group_items = source.content.search(search_query, max_items=1000, outside_org=True)
             for group_item in group_items:
                 item_definition2 = self._get_item_definitions(group_item)
                 item_definition.add_parent(item_definition2)
@@ -152,7 +154,7 @@ class _DeepCloner():
                                 group = source.groups.get(group_id)
                             except RuntimeError:
                                 raise
-                            self._graph[group_id] = self._get_item_definitions(group)
+                            item_definition.add_child(self._get_item_definitions(group))
 
                         if 'webmap' in app_json['values']:
                             if isinstance(app_json['values']['webmap'], list):
@@ -473,6 +475,7 @@ class _DeepCloner():
 
     def clone(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            asyncio.set_event_loop(asyncio.new_event_loop())
             loop = asyncio.get_event_loop()
             results = loop.run_until_complete(self._clone(executor))
             loop.close()
@@ -723,7 +726,8 @@ class _ItemDefinition(CloneNode):
         self.thumbnail = thumbnail
         self._item_property_names = ['title', 'type', 'description', 
                                      'snippet', 'tags', 'culture',
-                                     'accessInformation', 'licenseInfo', 'typeKeywords', 'extent']
+                                     'accessInformation', 'licenseInfo', 
+                                     'typeKeywords', 'extent', 'url']
         self.portal_item = portal_item
         self.folder = folder
         self.item_extent = item_extent
@@ -838,6 +842,7 @@ class _TextItemDefinition(_ItemDefinition):
             return new_item
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
 
 class _FeatureCollectionDefinition(_TextItemDefinition):
     """
@@ -1220,12 +1225,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Get the layer and table definitions from the original service and prepare them for the new service
                 layers_definition = self.layers_definition
                 relationships = {}
+                time_infos = {}
                 for layer in layers_definition['layers'] + layers_definition['tables']:
                     # Need to remove relationships first and add them back individually
                     # after all layers and tables have been added to the definition
                     if 'relationships' in layer and layer['relationships'] is not None and len(layer['relationships']) != 0:
                         relationships[layer['id']] = layer['relationships']
                         layer['relationships'] = []
+
+                    # Remove time settings first and add them back after the layer has been created
+                    if 'timeInfo' in layer and layer['timeInfo'] is not None:
+                        time_infos[layer['id']] = layer['timeInfo']
+                        del layer['timeInfo']
 
                     # Need to remove all indexes duplicated for fields.
                     # Services get into this state due to a bug in 10.4 and 1.2
@@ -1412,6 +1423,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         if need_update:
                             update_definition['fields'] = field_visibility
 
+                    # Add time settings back to the layer
+                    if layer_id in time_infos:
+                        time_info = time_infos[layer_id]
+                        start_time = _deep_get(time_info, "startTimeField")
+                        if start_time and start_time in field_mapping:
+                            time_info["startTimeField"] = field_mapping[start_time]
+                        elif start_time == "":
+                            time_info["startTimeField"] = None
+                        end_time = _deep_get(time_info, "endTimeField")
+                        if end_time and end_time in field_mapping:
+                            time_info["endTimeField"] = field_mapping[end_time]
+                        elif end_time == "":
+                            time_info["endTimeField"] = None
+                        update_definition['timeInfo'] = time_info                      
+
                     # Update the definition of the layer
                     if len(update_definition) > 0 or len(delete_definition) > 0:
                         layer_admin = new_layer.manager
@@ -1456,6 +1482,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Get the item properties from the original item
                 item_properties = self._get_item_properties(self.item_extent)
+                del item_properties['url']
 
                 # Merge type keywords from what is created by default for the new item and what was in the original item
                 type_keywords = list(new_item['typeKeywords'])
@@ -2001,7 +2028,15 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                         else: #Configurable Application Template
                             if 'folderId' in app_json:
-                                app_json['folderId'] = _deep_get(self.folder, 'id')
+                                user = self.target.users.me
+                                if self.folder is not None:
+                                    folders = user.folders
+                                    target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
+                                    if target_folder:
+                                        app_json['folderId'] = _deep_get(target_folder, 'id')
+                                else:
+                                    app_json['folderId'] = None
+
                             if 'values' in app_json:
                                 if 'group' in app_json['values']:
                                     app_json['values']['group'] = self._clone_mapping['Group IDs'][app_json['values']['group']]
@@ -2120,7 +2155,7 @@ class _ApplicationDefinition(_TextItemDefinition):
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
-            return [new_item]
+            return new_item
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
@@ -2161,7 +2196,7 @@ class _FormDefinition(_ItemDefinition):
 
                 # Add the new item
                 new_item = self.target.content.add(item_properties=item_properties, data=None, thumbnail=thumbnail, folder=self.folder)
-                self.created_item.append(new_item)
+                self.created_items.append(new_item)
 
                 # Update Survey123 form data
                 original_item = self.info
@@ -2346,7 +2381,15 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 workforce_json['groupId'] = self._clone_mapping['Group IDs'][group_id]
 
                 # Update the folder reference
-                workforce_json['folderId'] = self.folder['id']
+                if 'folderId' in workforce_json:
+                    user = self.target.users.me
+                    if self.folder is not None:
+                        folders = user.folders
+                        target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
+                        if target_folder:
+                            workforce_json['folderId'] = _deep_get(target_folder, 'id')
+                    else:
+                        workforce_json['folderId'] = None
 
                 # Update the application integration references
                 integrations = _deep_get(workforce_json, 'assignmentIntegrations')
@@ -2369,11 +2412,11 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                         os.makedirs(temp_dir)
                     thumbnail = self.portal_item.download_thumbnail(temp_dir)
                 new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_item.append(new_item)
+                self.created_items.append(new_item)
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
-            return [new_item]
+            return new_item
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
@@ -2511,15 +2554,17 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                 new_connection_properties['connection_info']['url'] = new_service['url']
                                                 new_connection_properties['dataset'] = str(new_id)
 
-                                                if 'version' in new_connection_properties['connection_info']:
-                                                    if new_service['url'] not in service_version_infos:
-                                                        try:
-                                                            service_version_infos[new_service['url']] = _get_version_management_server(self.target, new_service['url'])
-                                                        except:
-                                                            raise Exception('Failed to retrieve Version Manager from target feature layer')
-                                                    version_info = service_version_infos[new_service['url']]
-                                                    new_connection_properties['connection_info']['version'] = version_info['defaultVersionName']
-                                                    new_connection_properties['connection_info']['versionguid'] = version_info['defaultVersionGuid']
+                                                if new_service['url'] not in service_version_infos:
+                                                    try:
+                                                        service_version_infos[new_service['url']] = _get_version_management_server(target, new_service['url'])
+                                                    except:
+                                                        service_version_infos[new_service['url']] = {}
+                                                version_info = service_version_infos[new_service['url']]
+                                                for key, value in {'defaultVersionName' : 'version', 'defaultVersionGuid': 'versionguid'}.items():
+                                                    if key in version_info:
+                                                        new_connection_properties['connection_info'][value] = version_info[key]
+                                                    elif value in new_connection_properties['connection_info']:
+                                                        del new_connection_properties['connection_info'][value]
 
                                                 lyr.updateConnectionProperties(connection_properties, new_connection_properties, validate=False)
                             aprx.save()
