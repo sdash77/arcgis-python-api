@@ -51,5 +51,22 @@ OSX/Linux: ```make html```
 
 The results will be in ```./docs/build/html```. Open the ```index.html``` file.
 
+## Navigating the Repository
+* automation
+    * This folder contains all of the code run for our C.I. system at http://zion/
+* build
+    * This folder contains build.py, the script used to generate all conda packages, or pip packages
+    * This folder also contains all the conda config, like build/arcgis/meta.yaml, etc.
+* docs
+    * This folder contains the script and source for generating our API doc
+* examples
+    * Example notebooks
+* src
+    * This folder contains the pip config (setup.py, setup.cfg, etc.)
+    * This folder also contains the actual source code of the API at src/arcgis
+    * Note that src/changelog.txt only represents the changelog for pip releases
+* unittests
+    * This folder contains all of our unit tests, integration tests, etc.
+
 # Want to contribute?
 See the wiki at https://github.com/ArcGIS/geosaurus/wiki for the project vision and guiding principles, areas needing help, and how to contribute.

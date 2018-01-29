@@ -5,10 +5,11 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-from setuptools.command.develop import develop
-from setuptools.command.install import install
-from setuptools.command.egg_info import egg_info
+from setuptools import setup
+from setuptools import find_packages
+from setuptools.command.develop import develop as _develop
+from setuptools.command.install import install as _install
+from setuptools.command.egg_info import egg_info as _egg_info
 
 # To use a consistent encoding
 from codecs import open
@@ -16,6 +17,7 @@ from os import path
 import sys
 from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
+import atexit
 import logging
 log = logging.getLogger()
 here = path.abspath(path.dirname(__file__))
@@ -29,11 +31,10 @@ else:
 
 if conda_install_mode:
     #conda handles its own depedencies, so don't specify any pip-depedencies
-    install_requires_depedencies = []
+    depedencies = []
 else:
-    install_requires_depedencies = [
+    depedencies = [
         'six',
-        'notebook',
         'ipywidgets >=5.2.2,<7',
         'widgetsnbextension >=1.2.6,<3', 
         'pandas',
@@ -61,19 +62,24 @@ def _post_install():
     try:
         import notebook.nbextensions as nbext
         import arcgis
+        activate_map_widget = True
     except ImportError as e:
         log.exception("arcgis/notebook packages don't appear to be installed: "\
                       "map widget not activated, may not work. The rest of "\
                       "install is unaffected by this. Exception caught: ")
-        return
+        activate_map_widget = False
 
-    with _lower_log_level_to_debug(): #outputs success or failure to console
-        nbext.install_nbextension_python("arcgis",
-                                         sys_prefix = True, logger = log)
-        nbext.enable_nbextension_python("arcgis",
-                                         sys_prefix = True, logger = log)
-        nbext.enable_nbextension_python("widgetsnbextension",
-                                         sys_prefix = True, logger = log)
+    if activate_map_widget:
+        log.warn("Attempting to activate map widget...")
+        try:
+            log.warn(nbext.install_nbextension_python("arcgis",
+                                              sys_prefix = True, logger = log))
+            log.warn(nbext.enable_nbextension_python("arcgis",
+                                              sys_prefix = True, logger = log))
+            log.warn(nbext.enable_nbextension_python("widgetsnbextension",
+                                              sys_prefix = True, logger = log))
+        except Exception as e:
+            log.exception("Activating map widget failed: Continuing install..")
 
     # 2) If the OS is Mac OSX, run the OpenSSL workaround
     platform_is_osx = sys.platform == "darwin"
@@ -87,42 +93,31 @@ def _post_install():
                 log.warn("OpenSSL workaround for OSX completed succesfully. "\
                          "See https://bugs.python.org/issue28150 for info. "\
                          "".format(cmd_output.decode("utf-8")))
-            except CalledProcessError as e:
+            except Exception as e:
                 log.warn("OpenSSL workaround for OSX did not complete "\
                          "successfully. This may or may not allow secure SSL "
                          "to work. See https://bugs.python.org/issue28150. "\
                          "Output: {}".format(e.output))
 
-class _lower_log_level_to_debug:
-    """Use with "with" syntax like "with _lower_log_to_debug():". Lowers
-    the global root "log" object to DEBUG, resets it back to original after"""
-    def __enter__(self):
-        self.prev_logging_level = log.level
-        log.setLevel(logging.DEBUG)
-
-    def __exit__(self, type, value, traceback):
-        log.setLevel(self.prev_logging_level)
-
 # Each of these classes represent the different modes that pip install
 # can go into, and what logic can be run after pip install finishes
-class PostDevelopCommand(develop):
+class develop(_develop):
     """Post-installation logic to run for development mode"""
     def run(self):
-        _post_install()
-        develop.run(self)
+        self.execute(_post_install, (), msg="Running post-install...")
+        super().run()
 
-class PostInstallCommand(install):
+class install(_install):
     """Post-installation logic to run for installation mode"""
     def run(self):
-        _post_install()
-        #see http://bit.ly/2DfCXxx for why 'do_egg_install' instead of 'run'
-        install.do_egg_install(self)
-
-class PostEggInfoCommand(egg_info):
+        self.execute(_post_install, (), msg="Running post-install...")
+        super().run()
+        
+class egg_info(_egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
     def run(self):
-        _post_install()
-        egg_info.run(self)
+        self.execute(_post_install, (), msg="Running post-install...")
+        super().run()
 
 # Get the long description from the README file
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -134,10 +129,10 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.3.0',
+    version='1.3.0.post2',
 
-    description='ArcGIS Python API',
-    long_description='The ArcGIS API for Python lets ArcGIS Online and ArcGIS Enterprise users, analysts, developers and administrators script and automate tasks ranging from performing big data analysis to content management and administration of their web GIS. The API integrates well with the Jupyter Notebook and the SciPy stack and enables academics, data scientists, and GIS analysts to share programs and reproducible research with others.',
+    description='ArcGIS API for Python',
+    long_description='ArcGIS API for Python is a Python library for working with maps and geospatial data, powered by web GIS. It provides simple and efficient tools for sophisticated vector and raster analysis, geocoding, map making, routing and directions, as well as for organizing and managing a GIS with users, groups and information items. In addition to working with your own data, the library enables access to ready to use maps and curated geographic data from Esri and other authoritative sources. It also integrates well with the scientific Python ecosystem and includes rich support for Pandas and Jupyter notebook.',
 
     # The project's main homepage.
     url='https://developers.arcgis.com/python/',
@@ -152,28 +147,40 @@ setup(
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         # How mature is this project? Common values are
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
         'Development Status :: 5 - Production/Stable',
+
+        # Topics
+        'Topic :: Scientific/Engineering :: GIS',
+        'Topic :: Internet :: WWW/HTTP :: Site Management',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Scientific/Engineering :: Visualization',
+        'Topic :: Software Development :: Libraries :: Python Modules',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
 
+        # Frameworks
+        'Framework :: IPython',
+        'Framework :: Jupyter',
+
+        # OS
+        'Operating System :: OS Independent',
+  
         # Pick your license as you wish (should match "license" above)
         'License :: Other/Proprietary License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        #'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
 
     # What does your project relate to?
-    keywords='gis geographic spatial',
+    keywords='gis arcgis geographic spatial spatial-data '\
+             'spatial-data-analysis spatial-analysis data-science maps '\
+             'mapping web-mapping python native-development',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -190,15 +197,17 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires = install_requires_depedencies,
+    install_requires = depedencies,
+    setup_requires = depedencies,
 
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    cmdclass={'develop': PostDevelopCommand,
-              'install': PostInstallCommand,
-              'egg_info': PostEggInfoCommand}
-    
+    cmdclass={
+            'develop': develop,
+            'install': install,
+            'egg_info': egg_info}
+
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

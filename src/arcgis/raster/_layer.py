@@ -11,6 +11,18 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+def _get_input_raster(fnarg_ra, fnarg):
+#gets raster url from _fnra and rendering rule from _fn 
+    for key,value in fnarg_ra.items():
+        if key == "Raster" and isinstance(value,dict):
+            return _get_input_raster(value["rasterFunctionArguments"], fnarg)
+        if key == "Rasters":
+            if isinstance(value,list):
+                return _get_input_raster(value[0]["rasterFunctionArguments"], fnarg)
+        elif (key == "Raster"  or key == "Rasters") and not isinstance(value,dict):
+            input_raster_dict = {"url":fnarg_ra[key],"renderingRule":fnarg}
+            return input_raster_dict
+
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
         super(ImageryLayer, self).__init__(url, gis)
@@ -2302,6 +2314,26 @@ class ImageryLayer(Layer):
                 return generate_raster(self._fnra, output_name=output_name, gis=g)
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
+
+    def to_features(self, 
+                    field="Value",
+                    output_type="Polygon",
+                    simplify=True,
+                    output_name=None,
+                    gis=None):
+        
+        g = self._gis
+
+        if gis is not None:
+            g = gis
+
+        from arcgis.raster.analytics import convert_raster_to_feature
+        input_raster_dict=None        
+        if self._fnra is None:
+            return convert_raster_to_feature(self._url, field, output_type, simplify, output_name, gis)
+        fnarg_ra = self._fnra['rasterFunctionArguments']
+        fnarg = self._fn
+        return convert_raster_to_feature(_get_input_raster(fnarg_ra, fnarg), field, output_type, simplify, output_name, gis)
 
 
     def _repr_jpeg_(self):
