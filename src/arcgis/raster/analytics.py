@@ -319,6 +319,7 @@ def convert_feature_to_raster(input_feature,
 
     output_cell_size : Required LinearUnit. The cell size and unit for the output rasters.
                        The available units are Feet, Miles, Meters, and Kilometers.
+                       eg - {"distance":60,"units":meters}
 
     value_field : Optional string.  The field that will be used to assign values to the output raster.
 
@@ -572,8 +573,8 @@ def summarize_raster_within(input_zone_layer,
 
 def convert_raster_to_feature(input_raster,
                               field="Value",
-                              output_type="Point",
-                              simplify_lines_or_polygons=True,
+                              output_type="Polygon",
+                              simplify=True,
                               output_name=None,
                               gis=None):
     """
@@ -581,17 +582,20 @@ def convert_raster_to_feature(input_raster,
 
     Parameters
     ----------
-    input_raster : Required string
+    input_raster : Required. The input raster that will be converted to a feature dataset.
 
     field : Optional string - field that specifies which value will be used for the conversion.
-        It can be any integer or text value.
+        It can be any integer or a string field.
         A field containing floating-point values can only be used if the output is to a point dataset.
-        The default choice is to use the Value field, which contains the value in each raster cell.
+        Default is "Value"
 
     output_type : Optional string
         One of the following: ['Point', 'Line', 'Polygon']
 
-    simplify_lines_or_polygons : Optional bool
+    simplify : Optional bool, This option that specifies how the features should be smoothed. It is 
+               only available for line and polygon output.
+               True, then the features will be smoothed out. This is the default.
+               if False, then The features will follow exactly the cell boundaries of the raster dataset.
 
     output_name : Optional. If not provided, an Feature layer is created by the method and used as the output .
         You can pass in an existing Feature Service Item from your GIS to use that instead.
@@ -631,8 +635,8 @@ def convert_raster_to_feature(input_raster,
         params["field"] = field
     if output_type is not None:
         params["outputType"] = output_type
-    if simplify_lines_or_polygons is not None:
-        params["simplifyLinesOrPolygons"] = simplify_lines_or_polygons
+    if simplify is not None:
+        params["simplifyLinesOrPolygons"] = simplify
     _set_context(params)
 
 
