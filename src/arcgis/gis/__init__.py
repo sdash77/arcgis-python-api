@@ -5422,7 +5422,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        buildInitialCache = False
+        buildInitialCache = json.dumps(False)
         if file_type is None:
             if self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
@@ -5604,7 +5604,7 @@ class Item(dict):
             res = self._portal.con.post(path, postdata)
             publish_parameters =  res['publishParameters']
             publish_parameters.update(publish_parameters_orig)
-
+        #params['overwrite'] = json.dumps(overwrite)
         ret = self._portal.publish_item(self.itemid, None,
                                         None, fileType,
                                         publish_parameters, output_type,
