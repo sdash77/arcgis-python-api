@@ -349,7 +349,7 @@ class Portal(object):
         if outputType is not None:
             postdata['outputType'] = outputType
 
-        postdata['overwrite'] = overwrite
+        postdata['overwrite'] = json.dumps(overwrite)
 
         postdata['buildInitialCache'] = buildInitialCache
 
