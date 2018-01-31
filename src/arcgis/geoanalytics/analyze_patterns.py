@@ -13,28 +13,28 @@ from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service
 
-_log = _logging.getLogger(__name__)
+_log=_logging.getLogger(__name__)
 
-_use_async = True
+_use_async=True
 
 
 def calculate_density(
     input_layer,
-    fields = None,
-    weight = """Uniform""",
-    bin_type = """Square""",
-    bin_size = None,
-    bin_size_unit = None,
-    time_step_interval = None,
-    time_step_interval_unit = None,
-    time_step_repeat_interval = None,
-    time_step_repeat_interval_unit = None,
-    time_step_reference = None,
-    radius = None,
-    radius_unit = None,
-    area_units = """SquareKilometers""",
-    output_name = None,
-    gis = None):                      
+    fields=None,
+    weight="""Uniform""",
+    bin_type="""Square""",
+    bin_size=None,
+    bin_size_unit=None,
+    time_step_interval=None,
+    time_step_interval_unit=None,
+    time_step_repeat_interval=None,
+    time_step_repeat_interval_unit=None,
+    time_step_reference=None,
+    radius=None,
+    radius_unit=None,
+    area_units="""SquareKilometers""",
+    output_name=None,
+    gis=None):
     """
 
 
@@ -79,7 +79,7 @@ Parameters:
 
    output_name: Output Features Name (str). Required parameter.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used. 
+   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
 Returns:
@@ -87,31 +87,31 @@ Returns:
 
 
     """
-    kwargs = locals()
+    kwargs=locals()
 
-    gis = _arcgis.env.active_gis if gis is None else gis
-    url = gis.properties.helperServices.geoanalytics.url
-    
-    params = {}
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
     for key, value in kwargs.items():
         if value is not None:
-            params[key] = value
+            params[key]=value
 
     if output_name is None:
-        output_service_name = 'Calculate Density Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name='Calculate Density Analysis_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name=output_name.replace(' ', '_')
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Density')
-    
-    params['output_name'] = _json.dumps({
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Calculate Density')
+
+    params['output_name']=_json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-    
-    param_db = {
+
+    param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
         "fields": (str, "fields"),
         "weight": (str, "weight"),
@@ -130,7 +130,7 @@ Returns:
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values = [
+    return_values=[
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
@@ -142,7 +142,7 @@ Returns:
         raise
 
 
-calculate_density.__annotations__ = {
+calculate_density.__annotations__={
     'fields': str,
     'weight': str,
     'bin_type': str,
@@ -161,16 +161,19 @@ calculate_density.__annotations__ = {
 
 def find_hot_spots(
     point_layer,
-    bin_size = 5,
-    bin_size_unit = "Miles",
-    neighborhood_distance = 5,
-    neighborhood_distance_unit = "Miles",
-    time_step_interval = None,
-    time_step_interval_unit = None,
-    time_step_alignment = None,
-    time_step_reference = None,
-    output_name = None,
-    gis = None):
+    bin_size=5,
+    bin_size_unit="Miles",
+    neighborhood_distance=5,
+    neighborhood_distance_unit="Miles",
+    time_step_interval=None,
+    time_step_interval_unit=None,
+    time_step_alignment=None,
+    time_step_reference=None,
+    cell_size=None,
+    cell_size_units=None,
+    shape_type=None,
+    output_name=None,
+    gis=None):
     """
 
 
@@ -199,6 +202,12 @@ def find_hot_spots(
 
        time_step_reference: Time Step Reference (_datetime). Optional parameter.
 
+       cell_size: optional integer determining the grid size.
+
+       cell_size_units: optional string. The unit of the cell size.
+
+       shape_type: optional string.  The cell shape.
+
        output_name: Output Features Name (str). Optional parameter.
 
        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -209,31 +218,31 @@ def find_hot_spots(
 
 
     """
-    kwargs = locals()
+    kwargs=locals()
 
-    gis = _arcgis.env.active_gis if gis is None else gis
-    url = gis.properties.helperServices.geoanalytics.url
-    
-    params = {}
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
     for key, value in kwargs.items():
         if value is not None:
-            params[key] = value
+            params[key]=value
 
     if output_name is None:
-        output_service_name = 'Hotspot Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name='Hotspot Analysis_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name=output_name.replace(' ', '_')
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Hotspots')
-    
-    params['output_name'] = _json.dumps({
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots')
+
+    params['output_name']=_json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     _set_context(params)
-    
-    param_db = {
+
+    param_db={
         "point_layer": (_FeatureSet, "pointLayer"),
         "bin_size": (float, "binSize"),
         "bin_size_unit": (str, "binSizeUnit"),
@@ -243,11 +252,14 @@ def find_hot_spots(
         "time_step_interval_unit": (str, "timeStepIntervalUnit"),
         "time_step_alignment": (str, "timeStepAlignment"),
         "time_step_reference": (_datetime, "timeStepReference"),
+        "cell_size" : (int, "cellSize"),
+        "cell_size_units": (str, "cellSizeUnits"),
+        "shape_type" : (str, "shapeType"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values = [
+    return_values=[
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
@@ -258,7 +270,7 @@ def find_hot_spots(
         output_service.delete()
         raise
 
-find_hot_spots.__annotations__ = {
+find_hot_spots.__annotations__={
     'bin_size': float,
     'bin_size_unit': str,
     'neighborhood_distance': float,
@@ -275,11 +287,11 @@ def create_space_time_cube(point_layer: _FeatureSet,
                            bin_size_unit: str,
                            time_step_interval: int,
                            time_step_interval_unit: str,
-                           time_step_alignment: str = None,
-                           time_step_reference: _datetime = None,
-                           summary_fields: str = None,
-                           output_name: str = None,
-                           context: str = None,
+                           time_step_alignment: str=None,
+                           time_step_reference: _datetime=None,
+                           summary_fields: str=None,
+                           output_name: str=None,
+                           context: str=None,
                            gis=None) -> DataFile:
     """
     Summarizes a set of points into a netCDF data structure by aggregating them into space-time bins. Within each bin,
@@ -318,19 +330,19 @@ def create_space_time_cube(point_layer: _FeatureSet,
        output_cube - Output Space Time Cube as a DataFile
 
     """
-    kwargs = locals()
+    kwargs=locals()
 
-    gis = _arcgis.env.active_gis if gis is None else gis
-    url = gis.properties.helperServices.geoanalytics.url
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
 
-    params = {}
+    params={}
     for key, value in kwargs.items():
         if value is not None:
-            params[key] = value
+            params[key]=value
 
     _set_context(params)
 
-    param_db = {
+    param_db={
         "point_layer": (_FeatureSet, "pointLayer"),
         "bin_size": (float, "binSize"),
         "bin_size_unit": (str, "binSizeUnit"),
@@ -343,7 +355,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
         "context": (str, "context"),
         "output_cube": (DataFile, "Output Space Time Cube"),
     }
-    return_values = [
+    return_values=[
         {"name": "output_cube", "display_name": "Output Space Time Cube", "type": DataFile},
     ]
 

@@ -7,6 +7,23 @@ _log = _logging.getLogger(__name__)
 _use_async = False
 
 
+def _get_list_value(index, array):
+    """
+    helper operation to loop a list of values regardless of the index value
+
+    Example:
+    >>> a = [111,222,333]
+    >>> list_loop(15, a)
+    111
+    """
+    if len(array) == 0:
+        return None
+    elif index >= 0 and index < len(array):
+        return array[index]
+    return array[index % len(array)]
+
+
+
 def export_map(web_map_as_json = None,
                format = """PDF""",
                layout_template = """MAP_ONLY""",
@@ -67,7 +84,7 @@ export_map.__annotations__ = {
                'format': str,
                'layout_template': str
             }
-               
+
 def get_layout_templates(gis=None):
     """
 

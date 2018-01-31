@@ -9,9 +9,6 @@ from __future__ import print_function
 import argparse
 from os.path import dirname, abspath, join as pjoin
 
-from notebook.nbextensions import install_nbextension
-from notebook.services.config import ConfigManager
-
 def install(user=False, symlink=False, enable=False):
     """Install the widget nbextension and optionally enable it.
 
@@ -22,6 +19,12 @@ def install(user=False, symlink=False, enable=False):
     symlink: bool
         Symlink instead of copy (for development).
     """
+    try:
+        from notebook.nbextensions import install_nbextension
+        from notebook.services.config import ConfigManager
+    except ModuleNotFoundError:
+        print('"notebook" not installed, silently failing...')
+        return
     widgetsdir = pjoin(dirname(abspath(__file__)), 'widgets')
     install_nbextension(widgetsdir, destination='arcgis', user=user, symlink=symlink)
 

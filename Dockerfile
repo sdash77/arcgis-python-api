@@ -3,8 +3,8 @@
 FROM jupyter/base-notebook
 
 # Pass in URL to where to get samples ZIP
-ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.2.4.zip"
-ARG githubfolder="arcgis-python-api-1.2.4"
+ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.3.zip"
+ARG githubfolder="arcgis-python-api-1.3"
 
 MAINTAINER Esri Docker <docker_sdk@esri.com>
 LABEL vendor="Esri"
@@ -23,10 +23,16 @@ RUN conda install -y unzip \
                      scikit-learn \
     && conda clean -y -a
 RUN conda install jupyter_dashboards -c conda-forge -y
+RUN conda install notebook=5.2.1 -y \
+    && conda clean -y -a
 
 # Install latest Python API from Conda
 RUN conda install -c esri arcgis -y \
     && conda clean -y -a
+
+RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js
+RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js.map
+RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/outputarea.js
 
 # Pull latest SDK from GitHub
 RUN wget -O samples.zip $sampleslink \

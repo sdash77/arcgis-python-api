@@ -139,52 +139,16 @@ class GeometryFactory(type):
                     elif 'type' in iterable and \
                          'coordinates' in iterable:
                         if iterable['type'].lower() == "point":
-                            return Point({"x" : iterable['coordinates'][0],
-                                          "y" : iterable['coordinates'][1],
-                                          "spatialReference" : {"wkid" : 4326}})
-                        elif iterable['type'].lower() == 'polygon':
-                            return Geometry({
-                                'rings' : iterable['coordinates'],
-                                "spatialReference" : {"wkid" : 4326}
-                            })
-                        elif iterable['type'].lower() == 'linestring':
-                            return Geometry({
-                                'paths' : [iterable['coordinates']],
-                                "spatialReference" : {"wkid" : 4326}
-                            })
+                            return Point._from_geojson(data=iterable)
+                        elif iterable['type'].lower() in ['polygon', 'multipolygon']:
+                            return Polygon._from_geojson(iterable)
+                        elif iterable['type'].lower() in ['linestring', 'multilinestring']:
+                            return Polyline._from_geojson(iterable,
+                                                          sr=None)
                         elif iterable['type'].lower() == "multipoint":
-                            return Geometry(
-                                {
-                                    'points' : [list(coord) for coord in iterable['coordinates']],
-                                    "spatialReference" : {"wkid" : 4326}
-                                }
-                            )
-                        elif iterable['type'].lower() == 'multilinestring':
-                            parts = []
-                            for part in iterable['coordinates']:
-                                pieces = []
-                                for pnt in part:
-                                    pieces.append(list(pnt))
-                                parts.append(pieces)
-                            return Geometry(
-                                {
-                                    'paths' : parts,
-                                    "spatialReference" : {"wkid" : 4326}
-                                }
-                            )
-                        elif iterable['type'].lower() == 'multipolygon':
-                            parts = []
-                            for part in iterable['coordinates']:
-                                pieces = []
-                                for pnt in part:
-                                    pieces.append(list(pnt))
-                                parts.append(pieces)
-                            return Geometry(
-                                {
-                                    'rings' : parts,
-                                    "spatialReference" : {"wkid" : 4326}
-                                }
-                            )
+                            return MultiPoint._from_geojson(data=iterable)
+                        else:
+                            raise Exception("Invalid GeoJSON")
                     elif 'xmin' in iterable:
                         return Envelope(iterable)
                     elif 'wkt' in iterable or \
@@ -345,6 +309,7 @@ class Geometry(BaseGeometry):
             for i in [(self['xmin'] + self['xmax'])/2,
                       (self['ymin'] + self['ymax'])/2]:
                 yield i
+
     #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
@@ -1601,6 +1566,19 @@ class Point(Geometry):
             return np.array([self['x'], self['y']])
         else:
             return np.array([])
+    @classmethod
+    def _from_geojson(cls, data, sr=None):
+        if sr == None:
+            sr = {'wkid' : 4326}
+        coordkey = ([d for d in data if d.lower() == 'coordinates']
+                     or ['coordinates']).pop()
+        coordinates = data[coordkey]
+
+        return cls({
+            "x" : coordinates[0],
+            "y" : coordinates[1],
+            "spatialReference" : sr
+        })
 
 ###########################################################################
 class MultiPoint(Geometry):
@@ -1653,6 +1631,16 @@ class MultiPoint(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    #----------------------------------------------------------------------
+    @classmethod
+    def _from_geojson(cls, data, sr=None):
+        if sr is None:
+            sr = {'wkid' : 4326}
+        coordkey = ([d for d in data if d.lower() == 'coordinates']
+                     or ['coordinates']).pop()
+        coordinates = data[coordkey]
+        return cls({'points' : [p for p in coordinates],
+                    'spatialReference' : sr})
 ###########################################################################
 class Polyline(Geometry):
     """
@@ -1702,6 +1690,20 @@ class Polyline(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    @classmethod
+    def _from_geojson(cls, data, sr=None):
+        if sr is None:
+            sr = {'wkid' : 4326}
+        coordkey = ([d for d in data if d.lower() == 'coordinates']
+                     or ['coordinates']).pop()
+        if data['type'].lower() == 'linestring':
+            coordinates = [data[coordkey]]
+        else:
+            coordinates = data[coordkey]
+        return cls(
+            {'paths' : [[p for p in part] for part in coordinates],
+             'spatialReference' : sr
+             })
 ###########################################################################
 class Polygon(Geometry):
     """
@@ -1751,3 +1753,27 @@ class Polygon(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    @classmethod
+    def _from_geojson(cls, data, sr=None):
+        if sr is None:
+            sr = {'wkid' : 4326}
+        coordkey = ([d for d in data if d.lower() == 'coordinates']
+                     or ['coordinates']).pop()
+        coordinates = data[coordkey]
+        typekey = ([d for d in data if d.lower() == 'type']
+                     or ['type']).pop()
+        if data[typekey].lower() == "polygon":
+            coordinates = [coordinates]
+        part_list = []
+        for part in coordinates:
+            part_item = []
+            for idx, ring in enumerate(part):
+                #if idx:
+                #    part_item.append(None)
+                for coord in ring:
+                    part_item.append(coord)
+            if part_item:
+                part_list.append(part_item)
+        return cls({'rings' : part_list,
+                'spatialReference' : sr
+                })

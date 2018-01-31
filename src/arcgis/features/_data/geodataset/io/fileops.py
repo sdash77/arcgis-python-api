@@ -27,6 +27,12 @@ try:
     HASPYSHP = True
 except:
     HASPYSHP = False
+try:
+    import fiona
+    HASFIONA = True
+except:
+    HASFIONA = False
+
 _log=logging.getLogger(__name__)
 
 def _pyshp_to_shapefile(df, out_path, out_name):
@@ -89,7 +95,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             if geom.type == "Polygon":
                 shpfile.poly(geom['rings'])
             elif geom.type == "Polyline":
-                shpfile.line(geom['path'])
+                shpfile.line(geom['paths'])
             elif geom.type == "Point":
                 shpfile.point(x=geom.x, y=geom.y)
             else:
@@ -196,6 +202,42 @@ def from_featureclass(filename, **kwargs):
         sdf.set_geometry(col='SHAPE')
         sdf.reset_index(inplace=True)
         return sdf
+    elif HASARCPY == False and \
+         HASPYSHP == False and \
+         HASFIONA == True and \
+         (filename.lower().find('.shp') > -1 or \
+          os.path.dirname(filename).lower().find('.gdb') > -1):
+        is_gdb = os.path.dirname(filename).lower().find('.gdb') > -1
+        if is_gdb:
+            with fiona.drivers():
+                from arcgis.geometry import _types
+                fp = os.path.dirname(filename)
+                fn = os.path.basename(filename)
+                geoms = []
+                atts = []
+                with fiona.open(path=fp, layer=fn) as source:
+                    meta = source.meta
+                    cols = list(source.schema['properties'].keys())
+                    for idx, row in source.items():
+                        geoms.append(_types.Geometry(row['geometry']))
+                        atts.append(list(row['properties'].values()))
+                        del idx, row
+                    df = pd.DataFrame(data=atts, columns=cols)
+                    return SpatialDataFrame(data=df, geometry=geoms)
+        else:
+            with fiona.drivers():
+                from arcgis.geometry import _types
+                geoms = []
+                atts = []
+                with fiona.open(path=filename) as source:
+                    meta = source.meta
+                    cols = list(source.schema['properties'].keys())
+                    for idx, row in source.items():
+                        geoms.append(_types.Geometry(row['geometry']))
+                        atts.append(list(row['properties'].values()))
+                        del idx, row
+                    df = pd.DataFrame(data=atts, columns=cols)
+                    return SpatialDataFrame(data=df, geometry=geoms)
     return
 #--------------------------------------------------------------------------
 def to_featureclass(df, out_name, out_location=None,

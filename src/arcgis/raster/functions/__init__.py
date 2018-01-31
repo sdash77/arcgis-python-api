@@ -2233,7 +2233,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
+def resample(raster, resampling_type=None, input_cellsize=None, output_cellsize=None, astype=None):
     """
     The resample function resamples pixel values from a given resolution.The arguments for the resample function are as follows:
 
@@ -2241,6 +2241,7 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
     :param resampling_type: one of NearestNeighbor,Bilinear,Cubic,Majority,BilinearInterpolationPlus,BilinearGaussBlur,
             BilinearGaussBlurPlus, Average, Minimum, Maximum,VectorAverage(require two bands)
     :param input_cellsize: point that defines cellsize in source spatial reference
+    :param output_cellsize: point that defines output cellsize
     :param astype: output pixel type
     :return: the output raster
 
@@ -2279,6 +2280,8 @@ def resample(raster, resampling_type=None, input_cellsize=None, astype=None):
         template_dict["rasterFunctionArguments"]["ResamplingType"] = resampling_type
     if input_cellsize is not None:
         template_dict["rasterFunctionArguments"]["InputCellsize"] = input_cellsize
+    if output_cellsize is not None:
+        template_dict["rasterFunctionArguments"]["OutputCellsize"] = output_cellsize
 
     return _clone_layer(layer, template_dict, raster_ra)
 

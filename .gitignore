@@ -11,6 +11,8 @@ $RECYCLE.BIN/
 *.pyc
 src/geosaurus/__pycache__/
 src/arcgis.egg-info/
+src/.eggs/
+src/dist/
 .vs/
 *.pyproj
 *.sln
@@ -66,3 +68,6 @@ src/.vscode/settings.json
 /unittests/test-results/
 /*.wpr
 /*.wpu
+
+#Any builds from setup.py for pip go in a dist folder
+/src/dist

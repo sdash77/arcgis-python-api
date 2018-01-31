@@ -11,16 +11,16 @@ from __init__ import *
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build
 
-def build_conda_package(*args, **kwargs):
-    build.build_conda_packages_for_all_os_and_py()
+def build_pip_package(*args, **kwargs):
+    build.build_pip_package()
     _move_output_to_staging()   
 
 def _move_output_to_staging():
-    output_dir_of_conda_packages = os.path.join(BUILD_DIR, "output")
-    shutil.copytree(output_dir_of_conda_packages,
-                    os.path.join(STAGING_DIR, 'conda_builds'))
-    log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
+    output_dir_of_pip_package = os.path.join(BUILD_DIR, "output", "pip")
+    shutil.copytree(output_dir_of_pip_package,
+                    os.path.join(STAGING_DIR, 'pip_builds'))
+    log.info("moved {} contents to {}...".format(output_dir_of_pip_package,
                                                  STAGING_DIR))
 
 if __name__ == "__main__":
-    build_conda_package()
+    build_pip_package()

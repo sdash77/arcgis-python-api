@@ -8,7 +8,6 @@ is the most important and provides the entry point into the GIS.
 from __future__ import absolute_import
 
 import base64
-import datetime
 import json
 import locale
 import logging
@@ -19,6 +18,7 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
+from datetime import datetime
 
 import arcgis._impl.portalpy as portalpy
 import arcgis.env
@@ -56,27 +56,29 @@ class GIS(object):
     """
     .. _gis:
 
-    A GIS is representative of ArcGIS Online or ArcGIS Enterprise. The GIS object provides helper objects to manage
-    (search, create, retrieve) GIS resources such as content, users, and groups.
+    A GIS is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment. The GIS object
+    provides helper objects to manage (search, create, retrieve) GIS resources such as content, users, and groups.
 
-    Additionally, the GIS object has properties to query it's state, which is accessible using the properties attribute.
+    Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
 
     The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
     as well as the results of your analysis. To create a new map, call the map() method.
 
     The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
-    or an ArcGIS Portal. User credentials can be passed in using username/password
-    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
-    PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
+    or an ArcGIS Enterprise Portal. User credentials can be passed in using username/password
+    pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP, PKI, Integrated Windows Authentication
+    (using NTLM and Kerberos) and Anonymous access.
 
     If no url is provided, ArcGIS Online is used. If username/password
-    or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
+    or key/cert files are not provided, the currently logged-in user's credentials (IWA) or anonymous access is used.
 
-    A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-    specifying a profile name. The profile is stored in the users home directory in a config file named .arcgisprofile.
-    The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
-    or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
-    saved in the configuration file by that profile name.
+    Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
+    specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
+    user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
+    in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
+    (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has
+    been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
+    file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
     See https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/ for examples.
 
@@ -85,23 +87,28 @@ class GIS(object):
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
     url                 Optional string. If URL is None, then the URL will be ArcGIS
-                        Online.  This should be a web address to either a local portal
+                        Online.  This should be a web address to either a local Portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<host>/<web_adatpor> (Portal Example)
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> (Portal Example)
+                        https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
-    username            Optional string. The login user name (case sensitive).
+    username            Optional string. The login user name (case-sensitive).
     ----------------    ---------------------------------------------------------------
     password            Optional string. If a username is provided, a password is
-                        expected.  This is case sensitive. If the password is not
-                        provided, the user is prompted.
+                        expected.  This is case-sensitive. If the password is not
+                        provided, the user is prompted in the interactive dialog.
     ----------------    ---------------------------------------------------------------
-    key_file            Optional string. The file path to a user's key certificate.
+    key_file            Optional string. The file path to a user's key certificate for PKI
+                        authentication
     ----------------    ---------------------------------------------------------------
-    cert_file           Optional string. The file path to a user's certificate file.
+    cert_file           Optional string. The file path to a user's certificate file for PKI
+                        authentication
     ----------------    ---------------------------------------------------------------
-    verify_cert         Optional boolean. If a site has an invalid certificate, set the
-                        value to False.  This will ensure that all SSL certification
-                        are ignore.  The default is True.
+    verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
+                        being accessed via the IP or hostname instead of the name on the
+                        certificate, set this value to False.  This will ensure that all
+                        SSL certificate issues are ignored.
+                        The default is True.
                         **Warning** Setting the value to False can be a security risk.
     ----------------    ---------------------------------------------------------------
     set_active          Optional boolean. The default is True.  If True, the GIS object
@@ -111,8 +118,9 @@ class GIS(object):
     client_id           Optional string. Used for OAuth athentication.  This is the
                         client ID value.
     ----------------    ---------------------------------------------------------------
-    profile             Optional string. If set, the profile contains login information
-                        for a given site.
+    profile             Optional string. the name of the profile that the user wishes to use
+                        to authenticate, if set, the identified profile will be used to login
+                        to the specified GIS.
     ================    ===============================================================
 
     In addition to explicitly named parameters, the GIS object supports optional key word
@@ -121,7 +129,8 @@ class GIS(object):
     ================    ===============================================================
     **kwargs**          **Description**
     ----------------    ---------------------------------------------------------------
-    proxy_host          Optional string. The host name of the proxy server.
+    proxy_host          Optional string. The host name of the proxy server used to allow HTTP/S
+                        access in the network where the script is run.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ================    ===============================================================
@@ -177,11 +186,13 @@ class GIS(object):
         If no url is provided, ArcGIS Online is used. If username/password
         or key/cert files are not provided, logged in user credentials (IWA) or anonymous access is used.
 
-        A persisted profile for the GIS can be created by giving the GIS and it's authorization credentials and
-        specifying a profile name. The profile is stored in the users home directory in a configuration file named arcgisprofile.
-        The profile is NOT ENCRYPTED and you need to take care to protect the saved profile using operating system security
-        or other means. Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials
-        saved in the configuration file by that profile name.
+        Persisted profiles for the GIS can be created by giving the GIS authorization credentials and
+        specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
+        user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
+        in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
+        (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has
+        been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
+        file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
         If the GIS uses a secure (https) url, certificate verification is performed. If you are using self signed certificates
         in a testing environment and wish to disable certificate verification, you may specify verify_cert=False to disable
@@ -194,74 +205,39 @@ class GIS(object):
         from arcgis._impl.tools import _Tools
 
         if profile is not None:
-            cfg = os.path.expanduser("~") + '/.arcgisprofile'
-            # read
+            # Load config
+            cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
             config = configparser.ConfigParser()
-            # Determine if an existing profile exists to update
-            if os.path.isfile(cfg):
-                config.read(cfg)
+            if os.path.isfile(cfg_file_path):
+                config.read(cfg_file_path)
 
-            if url is None and username is None and password is None and \
-                key_file is None and cert_file is None and \
-                client_id is None:
+            # Update config to >v1.3 format if it's old
+            if self._config_is_in_old_format(config):
+                self._update_config_to_new_format(config)
 
-                old_format = False  # Flag to see if original v1.3 format
-                if profile in config:
-                    if '://' in config[profile].get('url'):
-                        old_format = True
+            # Add any __init__() args to config/keyring store
+            if profile not in config.keys():
+                _log.info("Adding new profile {} to config...".format(profile))
+                config.add_section(profile)
+                self._add_timestamp_to_profile_data_in_config(config, profile)
+            self._update_profile_data_in_config(config, profile, url, username,
+                                                key_file, cert_file, client_id)
+            if password is not None:
+                self._securely_store_password(profile, password)
+            self._write_any_config_changes_to_file(config, cfg_file_path)
 
-                    if old_format:
-                        url = rot13(config[profile].get('url'), of=True)
-                        username = rot13(config[profile].get('username'), of=True)
-                        password = rot13(config[profile].get('password'), of=True)
-                        key_file = rot13(config[profile].get('key_file'), of=True)
-                        cert_file = rot13(config[profile].get('cert_file'), of=True)
-                        client_id = rot13(config[profile].get('client_id'), of=True)
-                        # Silently update to new format
-                        config[profile] = {}
-                        if url is not None:
-                            config[profile]['url'] = rot13(url)
-                        if username is not None:
-                            config[profile]['username'] = rot13(username)
-                        if password is not None:
-                            config[profile]['password'] = rot13(password)
-                        if key_file is not None:
-                            config[profile]['key_file'] = rot13(key_file)
-                        if cert_file is not None:
-                            config[profile]['cert_file'] = rot13(cert_file)
-                        if client_id is not None:
-                            config[profile]['client_id'] = rot13(client_id)
-
-                        with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
-                            config.write(configfile)
-                    else:
-                        url = rot13(config[profile].get('url'), b64=True)
-                        username = rot13(config[profile].get('username'), b64=True)
-                        password = rot13(config[profile].get('password'), b64=True)
-                        key_file = rot13(config[profile].get('key_file'), b64=True)
-                        cert_file = rot13(config[profile].get('cert_file'), b64=True)
-                        client_id = rot13(config[profile].get('client_id'), b64=True)
-                else:
-                    raise RuntimeError('No such profile was found.')
-            else:
-                # If a previous profile with this name exist, it will overwrite
-                config[profile] = {}
-
-                if url is not None:
-                    config[profile]['url']= rot13(url)
-                if username is not None:
-                    config[profile]['username']= rot13(username)
-                if password is not None:
-                    config[profile]['password']= rot13(password)
-                if key_file is not None:
-                    config[profile]['key_file']= rot13(key_file)
-                if cert_file is not None:
-                    config[profile]['cert_file']= rot13(cert_file)
-                if client_id is not None:
-                    config[profile]['client_id']= rot13(client_id)
-
-                with os.fdopen(os.open(cfg, os.O_WRONLY | os.O_CREAT, 0o600), 'w') as configfile:
-                    config.write(configfile)
+            # Update __init__() args with data from config file/keyring store
+            if config.has_option(profile,   "url"):
+                url =       config[profile]["url"]
+            if config.has_option(profile,   "username"):
+                username =  config[profile]["username"]
+            if config.has_option(profile,   "key_file"):
+                key_file =  config[profile]["key_file"]
+            if config.has_option(profile,   "cert_file"):
+                cert_file = config[profile]["cert_file"]
+            if config.has_option(profile,   "client_id"):
+                client_id = config[profile]["client_id"]
+            password = self._securely_get_password(profile)
 
         if url is None:
             url = "https://www.arcgis.com"
@@ -341,6 +317,161 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
+
+    def _config_is_in_old_format(self, config):
+        """ Any version <= 1.3 of the API used a different config file
+        formatting that, among other things, did not store the last time
+        a profile was modified. Thus, if 'date_modified' is not found in any
+        profile, it is the old format
+        """
+        for profile in config.keys():
+             if config[profile].name == "DEFAULT":
+                 #ignore the default profile (it's not user defined)
+                 continue
+             if "date_modified" not in config[profile]:
+                 return True
+        return False
+
+    def _update_config_to_new_format(self, config):
+        """ The new config file does not store the password at all, instead
+        storing it through the keyring module (see below functions). The new
+        config file also has a 'date_modified' field, and does not store the
+        other fields in a rot13 character shifted fashion anymore.
+
+        This function goes through all profiles in the .arcgisprofile file
+        and makes it compatible with the new format. Note: this function just
+        updates 'config' obj passed in; changes are written to file elsewhere
+        """
+        _log.info("Doing one time update of .arcgisprofile to new format...")
+        attributes_to_rewrite_to_config = [ 'url', 'username', 'key_file',
+                                          'cert_file', 'client_id' ]
+        attributes_to_write_to_keyring = [ 'password' ]
+
+        for profile in config.keys():
+            for attr_key in config[profile].keys():
+                unscrambled_attr_value = rot13(config[profile][attr_key],
+                                               of=True)
+                if attr_key in attributes_to_rewrite_to_config:
+                    config[profile][attr_key] =  unscrambled_attr_value
+                if attr_key in attributes_to_write_to_keyring:
+                    self._securely_store_password(profile,
+                                                  unscrambled_attr_value)
+                    config.remove_option(profile, attr_key)
+                self._add_timestamp_to_profile_data_in_config(config, profile)
+
+    def _update_profile_data_in_config(self, config, profile, url = None,
+                                       username = None, key_file = None,
+                                       cert_file = None, client_id = None):
+        """Updates the specific profile in the config object to include
+        any of the user defined arguments. This will overwrite old values.
+        ***USE THIS FUNCTION INSTEAD OF MANUALLY MODIFYING PROFILE DATA***
+        """
+        if url is not None:
+            config[profile]["url"] = url
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if username is not None:
+            config[profile]["username"] = username
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if key_file is not None:
+            config[profile]["key_file"] = key_file
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if cert_file is not None:
+            config[profile]["cert_file"] = cert_file
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+        if client_id is not None:
+            config[profile]["client_id"] = client_id
+            self._add_timestamp_to_profile_data_in_config(config, profile)
+
+    def _add_timestamp_to_profile_data_in_config(self, config, profile):
+        """Sets the 'date_modified' field to this moment's datetime"""
+        config[profile]["date_modified"] = str(datetime.now())
+
+    def _write_any_config_changes_to_file(self, config, cfg_file_path):
+        """write the config object to the .arcgisprofile file"""
+        config.write(open(cfg_file_path, "w"))
+
+    def _securely_store_password(self, profile, password):
+        """Securely stores the password in an O.S. specific store via the
+        keyring package. Can be retrieved later with just the profile name.
+
+        If keyring is not properly set up system-wide, raise a RuntimeError
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            return keyring.set_password("arcgis_python_api_profile_passwords",
+                                        profile,
+                                        password)
+        else:
+            raise RuntimeError(self._get_keyring_failure_message())
+
+    def _securely_get_password(self, profile):
+        """Securely gets the profile specific password stored via keyring
+
+        If keyring is not properly set up system-wide OR if a password is not
+        found through keyring, log the respective warning and return 'None'
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            # password will be None if no password is found for the profile
+            password = keyring.get_password(
+                                         "arcgis_python_api_profile_passwords",
+                                         profile)
+        else:
+            password = None
+            _log.warn(self._get_keyring_failure_message())
+
+        if password is None:
+            _log.warn("Profile {0} does not have a password on file through "\
+                      "keyring. If you are expecting this behavior (PKI or "\
+                      "IWA authentication, entering password through "\
+                      "run-time prompt, etc.), please ignore this message. "\
+                      "If you would like to store your password in the {0} "\
+                      "profile, run GIS(profile = '{0}', password = ...). "\
+                      "See the API doc for more details. "\
+                      "(http://bit.ly/2CK2wG8)".format(profile))
+        return password
+
+    def _securely_delete_password(self, profile):
+        """Securely deletes the profile specific password via keyring
+
+        If keyring is not properly set up system-wide, log a warning
+        """
+        import keyring
+        if self._current_keyring_is_recommended():
+            return keyring.delete_password(
+                                         "arcgis_python_api_profile_passwords",
+                                         profile)
+        else:
+            _log.warn(self._get_keyring_failure_message())
+            return False
+
+    def _current_keyring_is_recommended(self):
+        """The keyring project recommends 4 secure keyring backends. The
+        defaults on Windows/OSX should be the recommended backends, but Linux
+        needs some system-wide software installed and configured to securely
+        function. Return if the current keyring is a supported, properly
+        configured backend
+        """
+        import keyring
+        supported_keyrings = [ keyring.backends.OS_X.Keyring,
+                               keyring.backends.SecretService.Keyring,
+                               keyring.backends.Windows.WinVaultKeyring,
+                               keyring.backends.kwallet.DBusKeyring ]
+        current_keyring = type(keyring.get_keyring())
+        return current_keyring in supported_keyrings
+
+    def _get_keyring_failure_message(self):
+        """An informative failure msg about the backend keyring being used"""
+        import keyring
+        return "Keyring backend being used ({}) either failed to install "\
+               "or is not recommended by the keyring project (i.e. it is "\
+               "not secure). This means you can not use stored passwords "\
+               "through GIS's persistent profiles. Note that extra system-"\
+               "wide steps must be taken on a Linux machine to use the python "\
+               "keyring module securely. Read more about this at the "\
+               "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
+               "for Python doc (http://bit.ly/2CK2wG8)."\
+               "".format(keyring.get_keyring())
 
     def _uri_validator(self, x):
         from urllib.parse import urlparse
@@ -1740,7 +1871,7 @@ class GroupManager(object):
         return None
 
     def search(self, query='', sort_field='title', sort_order='asc',
-               max_groups=1000, outside_org=False):
+               max_groups=1000, outside_org=False, categories=None):
         """
         Searches for portal groups.
 
@@ -1777,6 +1908,8 @@ class GroupManager(object):
         ----------------  --------------------------------------------------------
         outside_org       Optional boolean. Controls whether to search outside
                           your org. Default is False, do not search ourside your org.
+        ----------------  --------------------------------------------------------
+        categories        Optional string or list. A string of category values.
         ================  ========================================================
 
 
@@ -1784,7 +1917,7 @@ class GroupManager(object):
            A list of groups matching the specified query.
         """
         grouplist = []
-        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org)
+        groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org, categories)
         for group in groups:
             grouplist.append(Group(self._gis, group['id'], group))
         return grouplist
@@ -2282,6 +2415,71 @@ class ContentManager(object):
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
         ================  ==========================================================================
 
+        In addition to the parameters aboce, you can specify additional information to help publish CSV
+        data.
+
+        =====================  ==========================================================================
+        **Optional Argument**  **Description**
+        ---------------------  --------------------------------------------------------------------------
+        location_type          Optional string. Indicates the type of spatial information stored in the
+                               dataset.
+
+                               Values for CSV:
+
+                                  + coordinates
+                                  + address (default)
+                                  + lookup
+                                  + none
+
+                               Values for Excel:
+
+                                  + coordinates
+                                  + address (default)
+                                  + none
+
+                               When location_type = coordinates, the CSV or Excel data contains x,y
+                               information.
+                               When location_type = address, the CSV or Excel data contains address
+                               fields that will be geocoded to a single point.
+                               When location_type = lookup, the CSV or Excel data contains fields that
+                               can be mapped to well-known sets of geographies.
+                               When location_type = none, the CSV or Excel data contains no spatial
+                               content and data will be loaded and subsequently queried as tabular data.
+
+                               Based on this parameter, additional parameters will be required, for
+                               example, when specifying location_type = coordinates, the latitude and
+                               longitude field names must be specified.
+        ---------------------  --------------------------------------------------------------------------
+        latitude_field         Optional string. If location_type = coordinates, the name of the field that
+                               contains the y coordinate.
+        ---------------------  --------------------------------------------------------------------------
+        longitude_field        Optional string. If location_type = coordinates, the name of the field that
+                               contains the x coordinate.
+        ---------------------  --------------------------------------------------------------------------
+        coordinate_field_type  Optional string. Specify the type of coordinates that contain location
+                               information. Values: LatitudeAndLongitude (default), MGRS, USNG
+        ---------------------  --------------------------------------------------------------------------
+        coordinate_field_name  Optional string. The name of the field that contains the coordinates
+                               specified in coordinate_field_type
+        ---------------------  --------------------------------------------------------------------------
+        lookup_type            Optional string. The type of place to look up.
+        ---------------------  --------------------------------------------------------------------------
+        lookup_fields          Optional string. A JSON object with name value pairs that define the
+                               fields used to look up the location.
+        ---------------------  --------------------------------------------------------------------------
+        geocode_url            Optional string. The URL of the geocoding service that supports batch
+                               geocoding.
+        ---------------------  --------------------------------------------------------------------------
+        source_locale          Optional string. The locale used for the geocoding service source.
+        ---------------------  --------------------------------------------------------------------------
+        source_country         Optional string. The two character country code associated with the
+                               geocoding service, default is 'world'.
+        ---------------------  --------------------------------------------------------------------------
+        country_hint           Optional string. If first time analyzing, the hint is used. If source
+                               country is already specified than source_country is used.
+        =====================  ==========================================================================
+
+
         When publishing a Spatial Dataframe, additional options can be given:
 
         =====================  ==========================================================================
@@ -2380,7 +2578,8 @@ class ContentManager(object):
                     publish_parameters['targetSR'] = { 'wkid' : target_sr }
                 return item.publish(publish_parameters=publish_parameters)
             return
-        elif isinstance(df, pd.DataFrame):
+        elif isinstance(df, pd.DataFrame) and \
+             'location_type' not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
 
@@ -2420,6 +2619,59 @@ class ContentManager(object):
 
             fc = FeatureCollection(res['featureCollection']['layers'][0])
             return fc
+        elif isinstance(df, pd.DataFrame) and \
+             'location_type' in kwargs:
+            path = "content/features/analyze"
+
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
+
+                "analyzeParameters" : {
+                    "enableGlobalGeocoding": "true",
+                    "sourceLocale":kwargs.pop("source_locale", "us-en"),
+
+                    "sourceCountry": kwargs.pop("source_country", ""),
+                    "sourceCountryHint": kwargs.pop("country_hint", ""),
+                    "geocodeServiceUrl": kwargs.pop("geocode_url",
+                                                    self._gis.properties.helperServices.geocode[0]['url']),
+                    #"locationType": kwargs.pop('location_type', None),
+                    #"latitudeFieldName" : kwargs.pop("latitude_field", None),
+                    #"longitudeFieldName" : kwargs.pop("longitude_field", None),
+                    #"coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
+
+                    #"coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
+
+                }
+            }
+            update_dict = {}
+            update_dict["locationType"] = kwargs.pop('location_type', "")
+            update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
+            update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
+            update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
+            update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
+            rk = []
+            for k,v in update_dict.items():
+                if v == "":
+                    rk.append(k)
+            for k in rk:
+                del update_dict[k]
+
+            res = self._portal.con.post(path, postdata)
+            res['publishParameters'].update(update_dict)
+            path = "content/features/generate"
+            postdata = {
+                "f": "pjson",
+                "text" : df.to_csv(),
+                "filetype" : "csv",
+                "publishParameters" : json.dumps(res['publishParameters'])
+            }
+            res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
+
+            fc = FeatureCollection(res['featureCollection']['layers'][0])
+            return fc
+            #return
         return None
 
     def is_service_name_available(self, service_name, service_type):
@@ -2502,140 +2754,11 @@ class ContentManager(object):
         """
 
         import arcgis._impl.common._clone as clone
-
-        clone_mapping = {'Item IDs' : {}, 'Group IDs' : {}, 'Feature Services' : {}}
-        if item_mapping is not None:
-            clone_mapping['Item IDs'] = item_mapping
-        if group_mapping is not None:
-            clone_mapping['Group IDs'] = group_mapping
-        created_items = []
-
-        for item in items:
-            try:
-                clone._TEMP_DIR = tempfile.TemporaryDirectory()
-
-                # Create folder if it doesn't already exist
-                user = self._gis.users.me
-                target_folder = None
-                if folder is not None:
-                    folders = user.folders
-                    target_folder = next((f for f in folders if f['title'].lower() == folder.lower()), None)
-                    if target_folder is None:
-                        target_folder = self.create_folder(folder)
-
-                # Get the definitions associated with the item
-                item_definitions = []
-                clone._get_item_definitions(item, item_definitions)
-                item_definitions = sorted(item_definitions, key=clone._sort_item_types)
-
-                # Test if the user has the correct privileges to create the items requested
-                if 'privileges' in user and user['privileges'] is not None:
-                    privileges = user.privileges
-                    for item_definition in item_definitions:
-                        if isinstance(item_definition, clone._ItemDefinition):
-                            if 'portal:user:createItem' not in privileges:
-                                raise Exception("To clone this item you must have permission to create new content in the target organization.")
-
-                        if isinstance(item_definition, clone._GroupDefinition):
-                            if 'portal:user:createGroup' not in privileges or 'portal:user:shareToGroup' not in privileges:
-                                raise Exception("To clone this item you must have permission to create new groups and share content to groups in the target organization.")
-
-                        if isinstance(item_definition, clone._FeatureServiceDefinition):
-                            if 'portal:publisher:publishFeatures' not in privileges:
-                                raise Exception("To clone this item you must have permission to publish hosted feature layers in the target organization.")
-
-                # Clone the groups
-                for group in [g for g in item_definitions if isinstance(g, clone._GroupDefinition)]:
-                    item_definitions.remove(group)
-                    original_group = group.info
-
-                    new_group = None
-                    if original_group['id'] in clone_mapping['Group IDs']:
-                        new_group = self._gis.groups.get(clone_mapping['Group IDs'][original_group['id']])
-                    else:
-                        if search_existing_items:
-                            new_group = clone._search_for_existing_group(user, original_group)
-
-                        if not new_group:
-                            new_group = group.clone(self._gis)
-                            created_items.append(new_group)
-                        clone_mapping['Group IDs'][original_group['id']] = new_group['id']
-
-                wgs84_extent = None
-                if item_extent:
-                    wgs84_extent = clone._wgs84_envelope(item_extent)
-
-                # Clone the items
-                for item_definition in item_definitions:
-                    original_item = item_definition.info
-                    new_item_created = False
-                    result = []
-
-                    new_item = None
-                    if original_item['id'] in clone_mapping['Item IDs']:
-                        new_item = self.get(clone_mapping['Item IDs'][original_item['id']])
-                    else:
-                        if search_existing_items:
-                            new_item = clone._search_org_for_existing_item(self._gis, original_item)
-                        if not new_item:
-                            result = []
-                            if isinstance(item_definition, clone._WebMapDefinition):
-                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, use_org_basemap)
-                            elif isinstance(item_definition, clone._FeatureCollectionDefinition):
-                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, copy_data)
-                            elif isinstance(item_definition, clone._FeatureServiceDefinition):
-                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent, item_extent, copy_data)
-                            else:
-                                result = item_definition.clone(self._gis, target_folder, clone_mapping, wgs84_extent)
-                            new_item = result[0]
-                            new_item_created = True
-                            created_items.append(new_item)
-
-                    if new_item['owner'] == user['username']:
-                        clone._share_item_with_groups(new_item, item_definition.sharing, clone_mapping['Group IDs'])
-                    clone_mapping['Item IDs'][original_item['id']] = new_item['id']
-
-                    if isinstance(item_definition, clone._ApplicationDefinition):
-                        # With Portal sometimes after sharing the application the url is reset.
-                        # Check if the url is incorrect after sharing and set back to correct url.
-                        if 'url' in new_item and new_item['url'] is not None:
-                            url = new_item['url']
-                            new_item = self.get(new_item['id'])
-                            if new_item['url'] != url:
-                                new_item.update({'url' : url})
-
-                    if isinstance(item_definition, clone._FeatureServiceDefinition) and original_item['url'] not in clone_mapping['Feature Services']:
-                        # Need to handle Feature Services as their layer ids and fields names can change during creation.
-                        if not new_item_created:
-                            result = clone._compare_feature_service(new_item, item_definition)
-                        new_item, layer_field_mapping, layer_id_mapping, layer_fields, relationship_field_mapping = result
-                        clone_mapping['Feature Services'][original_item['url']] = {'id' : new_item['id'], 'url' : new_item['url'], 'layer_field_mapping' : layer_field_mapping, 'layer_id_mapping' : layer_id_mapping, 'layer_fields' : layer_fields, 'relationship_field_mapping' : relationship_field_mapping}
-
-                # Update Survey123 form data
-                for form in [i for i in item_definitions if isinstance(i, clone._FormDefinition)]:
-                    original_item = form.info
-                    if original_item['id'] in clone_mapping['Item IDs']:
-                        new_item = self.get(clone_mapping['Item IDs'][original_item['id']])
-                        form.update_form(self._gis, new_item, clone_mapping)
-
-            except Exception as ex:
-                if isinstance(ex, clone._ItemCreateException):
-                    message = ex.args[1]
-                    if isinstance(ex.args[1], (Item, Group)):
-                        created_items.append(ex.args[1])
-
-                for created_item in reversed(created_items):
-                    try:
-                        if created_item is not None:
-                            created_item.delete()
-                    except Exception:
-                        continue
-                raise
-
-            finally:
-                clone._TEMP_DIR.cleanup()
-
-        return created_items
+        wgs84_extent = None
+        if item_extent:
+            wgs84_extent = clone._wgs84_envelope(item_extent)
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
+        return deep_cloner.clone()
 
     def _bulk_update(self, itemids, properties):
         """
@@ -3070,7 +3193,7 @@ class Group(dict):
                         <br/><b>Summary</b>: """ + str(snippet) + """
                         <br/><b>Description</b>: """ + str(description)  + """
                         <br/><b>Owner</b>: """ + str(owner)  + """
-                        <br/><b>Created</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Created</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -3174,7 +3297,8 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     Required string. The list of usernames to be added.
+        usernames     Required list of strings or single string.
+                      The list of usernames or single username to be added.
         ============  ======================================
 
         :return:
@@ -3585,7 +3709,7 @@ class User(dict):
                         <br/><b>First Name</b>: """ + str(firstName) + """
                         <br/><b>Last Name</b>: """ + str(lastName)  + """
                         <br/><b>Username</b>: """ + str(self.username)  + """
-                        <br/><b>Joined</b>: """ + str(datetime.datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
+                        <br/><b>Joined</b>: """ + str(datetime.fromtimestamp(self.created/1000).strftime("%B %d, %Y")) + """
 
                     </div>
                 </div>
@@ -3688,7 +3812,8 @@ class User(dict):
                                        new_security_question, new_security_answer)
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
-               thumbnail=None, fullname=None, email=None, culture=None, region=None):
+               thumbnail=None, fullname=None, email=None, culture=None, region=None,
+               first_name=None, last_name=None):
         """ Updates this user's properties.
 
         .. note::
@@ -3719,22 +3844,54 @@ class User(dict):
         culture           Optional string. The two-letter language code, fr for example.
         ----------------  ----------------------------------------------------------
         region            Optional string. The two-letter country code, FR for example.
+        ----------------  ----------------------------------------------------------
+        first_name        Optional string. User's first name.
+        ----------------  ----------------------------------------------------------
+        last_name         Optional string. User's first name.
         ================  ==========================================================
-
-
 
         :return:
            A boolean indicating success (True) or failure (False).
 
         """
         user_type = None
-        if tags is not None:
-            if type(tags) is list:
-                tags = ",".join(tags)
+        if tags is not None and \
+           isinstance(tags, list):
+            tags = ",".join(tags)
+        import copy
+        params = {"f" : "json",
+                  'access' : access,
+                  'preferredView' : preferred_view,
+                  'description' : description,
+                  'tags' : tags,
+                  'password' : None,
+                  'fullname' : fullname,
+                  'email' : email,
+                  'securityQuestionIdx' : None,
+                  'securityAnswer' : None,
+                  'culture' : culture,
+                  'region' : region,
+                  'firstName' : first_name,
+                  'lastName' : last_name
+                  }
+        for k,v in copy.copy(params).items():
+            if v is None:
+                del params[k]
 
-        ret = self._portal.update_user(self.username, access, preferred_view, description, tags, thumbnail, fullname, email, culture, region,
+        if thumbnail:
+            files = {'thumbnail' : thumbnail}
+        else:
+            files = None
+        url = "%s/sharing/rest/community/users/%s/update" % (self._gis._url,
+                                                             self.username)
+        ret = self._gis._con.post(path=url,
+                                  postdata=params,
+                                  files=files)
+        ret = self._portal.update_user(self.username, access, preferred_view,
+                                      description, tags, thumbnail, fullname,
+                                       email, culture, region,
                                        user_type)
-        if ret:
+        if ret['success'] == True:
             self._hydrate()
         return ret
     #----------------------------------------------------------------------
@@ -4786,7 +4943,7 @@ class Item(dict):
                         <a href='""" + portalurl + """' target='_blank'><b>""" + self.title + """</b>
                         </a>
                         <br/>""" + snippet + """<img src='""" + self._get_icon() +"""' style="vertical-align:middle;">""" + self._ux_item_type() + """ by """ + self.owner + """
-                        <br/>Last Modified: """ + datetime.datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
+                        <br/>Last Modified: """ + datetime.fromtimestamp(self.modified/1000).strftime("%B %d, %Y") + """
                         <br/>""" + str(self.numComments) + """ comments, """ +  str(numViews) + """ views
                     </div>
                 </div>
@@ -5265,7 +5422,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        buildInitialCache = False
+        buildInitialCache = json.dumps(False)
         if file_type is None:
             if self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
@@ -5447,7 +5604,7 @@ class Item(dict):
             res = self._portal.con.post(path, postdata)
             publish_parameters =  res['publishParameters']
             publish_parameters.update(publish_parameters_orig)
-
+        #params['overwrite'] = json.dumps(overwrite)
         ret = self._portal.publish_item(self.itemid, None,
                                         None, fileType,
                                         publish_parameters, output_type,
@@ -5915,10 +6072,12 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        try:
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
-        except: # VectorTileLayer is GET only
+
+        if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
+        else:
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+
         self._lazy_properties = PropertyMap(dictdata)
 
     @property
