@@ -314,6 +314,17 @@ class GIS(object):
                     self.admin = AGOLAdminManager(gis=self)
             except:
                 pass
+        if self._con._auth.lower() != 'anon' and \
+           self._con._auth is not None and\
+           hasattr(self.users.me, 'role') and \
+           self.users.me.role == 'org_publisher' and \
+           self._portal.is_arcgisonline == False:
+            try:
+                from .admin.portaladmin import PortalAdminManager
+                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                gis=self, is_admin=False)
+            except:
+                pass
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
@@ -3887,13 +3898,9 @@ class User(dict):
         ret = self._gis._con.post(path=url,
                                   postdata=params,
                                   files=files)
-        ret = self._portal.update_user(self.username, access, preferred_view,
-                                      description, tags, thumbnail, fullname,
-                                       email, culture, region,
-                                       user_type)
         if ret['success'] == True:
             self._hydrate()
-        return ret
+        return ret['success']
     #----------------------------------------------------------------------
     def disable(self):
         """
