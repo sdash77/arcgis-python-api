@@ -43,21 +43,37 @@ class PortalAdminManager(BasePortalAdmin):
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
-        super(PortalAdminManager, self).__init__(url=url,
-                                                 gis=gis,
-                                                 **kwargs)
-        initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, _ArcGISConnection):
-            self._con = gis
-        elif isinstance(gis, GIS):
-            self._gis = gis
-            self._con = gis._con
+        if kwargs.pop('is_admin', True):
+            super(PortalAdminManager, self).__init__(url=url,
+                                                     gis=gis,
+                                                     **kwargs)
+            initialize = kwargs.pop("initialize", False)
+            if isinstance(gis, _ArcGISConnection):
+                self._con = gis
+            elif isinstance(gis, GIS):
+                self._gis = gis
+                self._con = gis._con
+            else:
+                raise ValueError(
+                    "connection must be of type GIS or _ArcGISConnection")
+            try:
+                self.resources = PortalResourceManager(gis=self._gis)
+            except:
+                pass
+            if initialize:
+                self._init(self._gis)
         else:
-            raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
-        self.resources = PortalResourceManager(gis=self._gis)
-        if initialize:
-            self._init(self._gis)
+            super(PortalAdminManager, self).__init__(url=url,
+                                                     gis=gis,
+                                                     is_admin=False,
+                                                     initialize=False)
+            if isinstance(gis, _ArcGISConnection):
+                self._con = gis
+            elif isinstance(gis, GIS):
+                self._gis = gis
+                self._con = gis._con
+
+
     #----------------------------------------------------------------------
     @property
     def ux(self):

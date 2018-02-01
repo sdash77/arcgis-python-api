@@ -15,7 +15,7 @@ from six import iteritems, integer_types
 from datetime import datetime
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 from ..utils import sanitize_field_name
-from .....geometry import _types
+from arcgis.geometry import _types
 try:
     import arcpy
     from arcpy import da
@@ -145,6 +145,7 @@ def from_featureclass(filename, **kwargs):
         geoms = []
         geom_idx = flds.index('SHAPE')
         shape_type = desc.shapeType
+        from arcgis.geometry import _types
         default_polygon = _types.Geometry(arcpy.Polygon(arcpy.Array([arcpy.Point(0,0)]* 3)))
         default_polyline = _types.Geometry(arcpy.Polyline(arcpy.Array([arcpy.Point(0,0)]* 2)))
         default_point = _types.Geometry(arcpy.PointGeometry(arcpy.Point()))
