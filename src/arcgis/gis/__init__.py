@@ -3990,6 +3990,102 @@ class User(dict):
                                                user_type="arcgisonly")
             self._hydrate()
     #----------------------------------------------------------------------
+    @property
+    def linked_accounts(self):
+        """returns all linked account for the current user as User objects"""
+        url = "%s/sharing/rest/community/users/%s/linkedUsers" % (self._gis._url,
+                                                                  self.username)
+        start = 1
+        params = {
+            'f' : 'json',
+            'num' : 10,
+            'start' : start
+        }
+        users = []
+        res = self._gis._con.get(url, params)
+        users = res["linkedUsers"]
+        if len(users) == 0:
+            return users
+        else:
+            while (res["nextStart"] > -1):
+                start += 10
+                params['start'] = start
+                res = self._gis._con.get(url, params)
+                users += res['linkedUsers']
+        users = [self._gis.users.get(user['username']) for user in users]
+        return users
+    #----------------------------------------------------------------------
+    def link_account(self, username, user_gis):
+        """
+        If you use multiple accounts for ArcGIS Online and Esri websites,
+        you can link them so you can switch between accounts and share your
+        Esri customer information with My Esri, e-Learning, and GeoNet. You
+        can link your organizational, public, enterprise, and social login
+        accounts. Your content and privileges are unique to each account.
+        From Esri websites, only Esri access-enabled accounts appear in
+        your list of linked accounts.
+
+        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        addtional information.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        username          required string/User. This is the username or User object
+                          that a user wants to link to.
+        ----------------  ----------------------------------------------------------
+        user_gis          required GIS.  This is the GIS object for the username.
+                          In order to link an account, a user must be able to login
+                          to that account.  The GIS object is the entry into that
+                          account.
+        ================  ==========================================================
+
+        returns: Boolean. True for success, False for failure.
+
+        """
+        userToken = user_gis._con.token
+        if isinstance(username, User):
+            username = username.username
+        params = {
+            'f' : 'json',
+            'user' : username,
+            'userToken' : userToken
+        }
+        url = "%s/sharing/rest/community/users/%s/linkUser" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
+    def unlink_account(self, username):
+        """
+        When a user wishes to no longer have a linked account, the unlink method
+        allows for the removal if linked accounts.
+
+        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        addtional information.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        username          required string/User. This is the username or User object
+                          that a user wants to unlink.
+        ================  ==========================================================
+
+        returns: boolean.
+        """
+        if isinstance(username, User):
+            username = username.username
+        params = {
+            'f' : 'json',
+            'user' : username
+        }
+        url = "%s/sharing/rest/community/users/%s/unlinkUser" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
     def update_role(self, role):
         """
         Updates this user's role to org_user, org_publisher, org_admin, or a custom role.
