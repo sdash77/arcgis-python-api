@@ -9,6 +9,7 @@ import warnings
 import arcgis
 from six import string_types, integer_types
 
+
 HAS_PANDAS = True
 try:
     import pandas as pd
@@ -39,6 +40,7 @@ try:
     import arcpy
     from arcpy import Geometry
     HASARCPY = True
+    HAS_ARCPY = True
     GEOM_TYPES = [arcpy.Point, arcpy.Polygon,
                   arcpy.Geometry, arcpy.PointGeometry,
                   arcpy.Polyline, arcpy.Multipatch,
@@ -47,6 +49,7 @@ try:
 except ImportError:
     # warning.warn("Missing Pro will cause functionality to be limited")
     HASARCPY = False
+    HAS_ARCPY = False
 try:
     import shapely
     from shapely.geometry.base import BaseGeometry as _BaseGeometry
@@ -234,11 +237,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
             if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
-                if all(isinstance(x, _types.Geometry) \
-                       for x in self[self._geometry_column_name]) == False:
+                if all(isinstance(x, _types.Geometry) for x in self[self._geometry_column_name]) == False:
                     geometry = [_types.Geometry(g) for g in self['SHAPE'].tolist()]
                     del self['SHAPE']
-
                     self.set_geometry(geometry, inplace=True)
         if self.sr is None:
             self.sr = self._sr(sr)
@@ -1572,6 +1573,30 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         from arcgis.features import FeatureSet
         return FeatureSet.from_dataframe(self)
+    #----------------------------------------------------------------------
+    def _to_arcpy_featureset(self):
+        """
+        Converts a Spatial DataFrame to arcpy.FeatureSet so it can be used
+        in geoprocessing tools.
+
+        returns: arcpy.FeatureSet
+        """
+        if HAS_ARCPY:
+            import uuid, string, random
+            l = []
+            for i in range(3):
+                l.append(random.choice(string.ascii_letters))
+            l = "".join(l)
+            out_name = l
+            res = self.to_featureclass(out_location="in_memory",
+                                       out_name=out_name)
+
+            fs = arcpy.FeatureSet(res)
+            arcpy.Delete_management(res)
+
+            return fs
+        else:
+            raise Exception("ArcPy must be present to convert to arcpy.FeatureSet object")
     #----------------------------------------------------------------------
     def to_featurelayer(self,
                         title,
