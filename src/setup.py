@@ -37,7 +37,7 @@ else:
         'six',
         'ipywidgets >=5.2.2,<7',
         'widgetsnbextension >=1.2.6,<3', 
-        'pandas',
+        'pandas >=0.22',
         'numpy',
         'pyshp',
         'matplotlib',
