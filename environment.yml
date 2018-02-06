@@ -3,7 +3,7 @@ channels:
 - defaults
 dependencies:
 - ipywidgets >=5.2.2,<7
-- pandas
+- pandas >=0.22
 - pip
 - python=3.6
 - setuptools
