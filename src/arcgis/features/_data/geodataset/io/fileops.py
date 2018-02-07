@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from six import iteritems, integer_types
 from datetime import datetime
+from six.moves.urllib import request
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 from ..utils import sanitize_field_name
 from arcgis.geometry import _types
@@ -40,7 +41,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
     Saves a SpatialDataFrame to a Shapefile using pyshp
 
     :Parameters:
-     :df: spatail dataframe
+     :df: spatial dataframe
      :out_path: folder location to save the data
      :out_name: name of the shapefile
     :Output:
@@ -105,6 +106,33 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             del row
             del geom
         shpfile.save(out_fc)
+
+
+        # create the PRJ file
+        try:
+            wkid = df.sr['wkid']
+            try:
+                wkid = df.sr['latestWkid']
+            except:
+                pass # try and use wkid instead
+
+            prj_filename = out_fc.replace('.shp', '.prj')
+
+            url = 'http://epsg.io/{}.esriwkt'.format(wkid)
+
+            opener = request.build_opener()
+            opener.addheaders = [('User-Agent', 'geosaurus')]
+            resp = opener.open(url)
+
+            wkt = resp.read().decode('utf-8')
+            if len(wkt) > 0:
+                prj = open(prj_filename, "w")
+                prj.write(wkt)
+                prj.close()
+        except:
+            # Unable to write PRJ file.
+            pass
+
         del shpfile
         return out_fc
     return None

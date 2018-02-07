@@ -18,7 +18,7 @@ from arcgis.geometry import *
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
                           'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set',
-                          'Document Link', 'Geocode Service', 'Geodata Service', 'Application', 
+                          'Document Link', 'Geocode Service', 'Geodata Service', 'Application',
                           'Geometry Service', 'Geoprocessing Service', 'Network Analysis Service',
                           'Workflow Manager Service']
 
@@ -384,9 +384,10 @@ class _DeepCloner():
 
                 arcpy.ExtractPackage_management(ppkx, extract_dir)
 
+                # 1.x versions of Pro use a different folder name
                 project_folder = 'p20'
-                version = float(arcpy.GetInstallInfo()['Version'])
-                if version < 2.0:
+                version = arcpy.GetInstallInfo()['Version']
+                if version.startswith('1'):
                     project_folder = 'p12'
 
                 project_dir = os.path.join(extract_dir, project_folder)
@@ -461,7 +462,7 @@ class _DeepCloner():
 
             if new_item.type in ['Feature Service', 'Map Service']:
                 layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item)
-                self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping, 
+                self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping,
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
 
         # Then use graph to clone rest of things
@@ -698,7 +699,7 @@ class _GroupDefinition(CloneNode):
         """Clone the group in the target organization.
         Keyword arguments:
         target - The instance of arcgis.gis.GIS (the portal) to group to."""
-    
+
         try:
             new_group = None
             original_group = self.info
@@ -749,14 +750,14 @@ class _ItemDefinition(CloneNode):
     def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True):
         super().__init__(target, clone_mapping, search_existing)
         self.info = info
-        self._data = data    
+        self._data = data
         self.sharing = sharing
         if not self.sharing:
             self.sharing = {"access": "private", "groups": []}
         self.thumbnail = thumbnail
-        self._item_property_names = ['title', 'type', 'description', 
+        self._item_property_names = ['title', 'type', 'description',
                                      'snippet', 'tags', 'culture',
-                                     'accessInformation', 'licenseInfo', 
+                                     'accessInformation', 'licenseInfo',
                                      'typeKeywords', 'extent', 'url']
         self.portal_item = portal_item
         self.folder = folder
@@ -791,11 +792,11 @@ class _ItemDefinition(CloneNode):
 
         return item_properties
 
-    def clone(self):  
+    def clone(self):
         """Clone the item in the target organization.
         Keyword arguments:
         """
-    
+
         try:
             new_item = None
             original_item = self.info
@@ -843,7 +844,7 @@ class _TextItemDefinition(_ItemDefinition):
     Represents the definition of a text based item within ArcGIS Online or Portal.
     """
 
-    def clone(self):  
+    def clone(self):
         """Clone the item in the target organization.
         """
         try:
@@ -882,12 +883,12 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
     def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, copy_data=False, search_existing=True):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
         self.copy_data = copy_data
-     
+
     def clone(self):
         """Clone the item in the target organization.
         Keyword arguments:
         """
-    
+
         try:
             new_item=None
             original_item = self.info
@@ -975,7 +976,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         spatial_reference -  The spatial reference to return the features in"""
         if spatial_reference is None:
             spatial_reference = { 'wkid' : 102100 }
-      
+
         total_features = []
         record_count = feature_layer.query(return_count_only=True)
         max_record_count = feature_layer.properties['maxRecordCount']
@@ -1002,13 +1003,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         features = self.features
         original_layers = []
         if not features and self.portal_item:
-            svc = FeatureLayerCollection.fromitem(self.portal_item)    
+            svc = FeatureLayerCollection.fromitem(self.portal_item)
             features = {}
             original_layers = svc.layers + svc.tables
             for layer in original_layers:
                 features[str(layer.properties['id'])] = self._get_features(layer, spatial_reference)
         else:
-            return   
+            return
 
         # Update the feature attributes if field names have changed
         for layer_id in features:
@@ -1028,8 +1029,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             if layer_id not in layer_ids or layer_id not in layers:
                 continue
 
-            properties = layers[layer_id].properties  
-            if 'globalIdField' not in properties:  
+            properties = layers[layer_id].properties
+            if 'globalIdField' not in properties:
                 continue
 
             global_id_field = properties['globalIdField']
@@ -1086,8 +1087,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 layer_ids.remove(related_layer_id)
                 object_id_field = layers[related_layer_id].properties['objectIdField']
                 object_id_mapping[related_layer_id] = {related_layer_features[i]['attributes'][object_id_field] : add_results[i]['objectId'] for i in range(0, len(related_layer_features))}
-                      
-        # Add features to all other layers and tables                           
+
+        # Add features to all other layers and tables
         for layer_id in layer_ids:
             layer_features = features[str(layer_id)]
             if len(layer_features) == 0:
@@ -1111,12 +1112,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     layer_features = features[str(layer_id)]
                     if layer_id not in object_id_mapping:
                         continue
-                    
+
                     for feature in layer_features:
                         original_oid = feature['attributes'][object_id_field]
                         if original_oid not in object_id_mapping[layer_id]:
                             continue
-                        
+
                         oid = object_id_mapping[layer_id][original_oid]
                         attachment_infos = original_attachments.get_list(original_oid)
                         if len(attachment_infos) > 0:
@@ -1454,7 +1455,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             time_info["endTimeField"] = field_mapping[end_time]
                         elif end_time == "":
                             time_info["endTimeField"] = None
-                        update_definition['timeInfo'] = time_info                      
+                        update_definition['timeInfo'] = time_info
 
                     # Update the definition of the layer
                     if len(update_definition) > 0 or len(delete_definition) > 0:
@@ -1584,7 +1585,7 @@ class _WebMapDefinition(_TextItemDefinition):
     def clone(self):
         """Clone the web map in the target organization.
         """
-    
+
         try:
             new_item = None
             original_item = self.info
@@ -1991,7 +1992,7 @@ class _ApplicationDefinition(_TextItemDefinition):
     """
     Represents the definition of an application within ArcGIS Online or Portal.
     """
-    
+
     def __init__(self, target, clone_mapping, info, source_app_title=None, update_url=True, data=None, sharing=None, thumbnail=None, portal_item=None, item_extent=None, folder=None, search_existing=True):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
         self._source_app_title = source_app_title
@@ -2010,8 +2011,8 @@ class _ApplicationDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the application in the target organization.
-        """  
-    
+        """
+
         try:
             new_item = None
             original_item = self.info
@@ -2359,7 +2360,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the form in the target organization.
-        """  
+        """
 
         try:
             new_item = None
@@ -2454,7 +2455,7 @@ class _ProMapDefinition(_ItemDefinition):
 
     def clone(self):
         """Clone the pro map in the target organization.
-        """  
+        """
 
         try:
             new_item = None
@@ -2507,7 +2508,7 @@ class _ProMapDefinition(_ItemDefinition):
             self.resolved = True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
             return new_item
-        
+
         except Exception as ex:
             if isinstance(ex, _ItemCreateException):
                 raise
@@ -2526,7 +2527,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
 
     def clone(self):
         """Clone the pro map in the target organization.
-        """  
+        """
 
         try:
             new_item = None
@@ -2549,9 +2550,10 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                         os.makedirs(extract_dir)
                         arcpy.ExtractPackage_management(ppkx, extract_dir)
 
+                    # 1.x versions of Pro use a different folder name
                     project_folder = 'p20'
-                    version = float(arcpy.GetInstallInfo()['Version'])
-                    if version < 2.0:
+                    version = arcpy.GetInstallInfo()['Version']
+                    if version.startswith('1'):
                         project_folder = 'p12'
 
                     project_dir = os.path.join(extract_dir, project_folder)
@@ -2619,7 +2621,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
             return new_item
-        
+
         except Exception as ex:
             if isinstance(ex, _ItemCreateException):
                 raise
@@ -2662,14 +2664,14 @@ def _compare_service(new_item, original_item):
     layer_field_mapping = {}
     layer_id_mapping = {}
     relationship_field_mapping = {}
-       
+
     new_service = None
     if new_item['type'] == 'Feature Service':
         new_service = FeatureLayerCollection.fromitem(new_item)
     elif new_item['type'] == 'Map Service':
         new_service = MapImageLayer.fromitem(new_item)
     new_layers = [l.properties for l in new_service.layers + new_service.tables]
-    
+
     original_layers = None
     if isinstance(original_item, gis.Item):
         if original_item['type'] == 'Feature Service':
@@ -2679,8 +2681,8 @@ def _compare_service(new_item, original_item):
         original_layers = [l.properties for l in original_service.layers + original_service.tables]
     else:
         layers_definition = original_item.layers_definition
-        original_layers = layers_definition['layers'] + layers_definition['tables']      
-       
+        original_layers = layers_definition['layers'] + layers_definition['tables']
+
     if len(new_layers) < len(original_layers):
         raise Exception('{0} {1} layers and tables must match the source {2} {3}'.format(new_item['type'], new_item['title'], original_item['type'], original_item['title']))
 
@@ -2700,7 +2702,7 @@ def _compare_service(new_item, original_item):
         layer_id_mapping[id] = new_layer_ids.pop(0)
 
     for original_id, new_id in layer_id_mapping.items():
-        field_mapping = {}            
+        field_mapping = {}
         for layer in original_layers:
             if layer['id'] == original_id:
                 new_layer = next((l for l in new_layers if l['id'] == new_id), None)
@@ -2710,7 +2712,7 @@ def _compare_service(new_item, original_item):
                     break
                 new_fields_lower = [f['name'].lower() for f in new_fields]
 
-                if 'editFieldsInfo' in layer and layer['editFieldsInfo'] is not None:                            
+                if 'editFieldsInfo' in layer and layer['editFieldsInfo'] is not None:
                     if 'editFieldsInfo' in new_layer and new_layer['editFieldsInfo'] is not None:
                         for editor_field in ['creationDateField', 'creatorField', 'editDateField', 'editorField']:
                             original_editor_field_name = _deep_get(layer, 'editFieldsInfo', editor_field)
@@ -2739,7 +2741,7 @@ def _compare_service(new_item, original_item):
                         if field['name'] != new_field['name']:
                             field_mapping[field['name']] = new_field['name']
                     except ValueError:
-                        pass    
+                        pass
                 break
         if len(field_mapping) > 0:
             layer_field_mapping[original_id] = field_mapping
