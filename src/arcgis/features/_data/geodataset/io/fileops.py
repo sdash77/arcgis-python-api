@@ -149,6 +149,7 @@ def from_featureclass(filename, **kwargs):
      fields: list of fields to extract from the table
     """
     from .. import SpatialDataFrame
+    from arcgis.geometry import _types
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
@@ -173,7 +174,6 @@ def from_featureclass(filename, **kwargs):
         geoms = []
         geom_idx = flds.index('SHAPE')
         shape_type = desc.shapeType
-        from arcgis.geometry import _types
         default_polygon = _types.Geometry(arcpy.Polygon(arcpy.Array([arcpy.Point(0,0)]* 3)))
         default_polyline = _types.Geometry(arcpy.Polyline(arcpy.Array([arcpy.Point(0,0)]* 2)))
         default_point = _types.Geometry(arcpy.PointGeometry(arcpy.Point()))
