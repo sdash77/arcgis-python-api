@@ -18,8 +18,8 @@ requirements:
         - notebook 
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
-        - pandas
-        - numpy
+        - pandas >=0.22
+        - numpy >=1.13
         - pyshp
         - matplotlib
         - keyring
@@ -30,8 +30,8 @@ requirements:
         - notebook
         - ipywidgets >=5.2.2,<7
         - widgetsnbextension >=1.2.6,<3
-        - pandas
-        - numpy
+        - pandas >=0.22
+        - numpy >=1.13
         - pyshp
         - matplotlib
         - keyring

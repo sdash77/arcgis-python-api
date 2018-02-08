@@ -123,10 +123,6 @@ colormap_to_rgb
 _______________
 .. automethod:: arcgis.raster.functions.colormap_to_rgb
 
-colormap_to_rgb
-_______________
-.. automethod:: arcgis.raster.functions.colormap_to_rgb
-
 colorspace_conversion
 ______________
 .. automethod:: arcgis.raster.functions.colorspace_conversion

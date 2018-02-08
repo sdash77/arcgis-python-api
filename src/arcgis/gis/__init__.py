@@ -314,6 +314,50 @@ class GIS(object):
                     self.admin = AGOLAdminManager(gis=self)
             except:
                 pass
+        elif self._con._auth.lower() != 'anon' and \
+             self._con._auth is not None and\
+             hasattr(self.users.me, 'role') and \
+             self.users.me.role == 'org_publisher' and \
+             self._portal.is_arcgisonline == False:
+            try:
+                from .admin.portaladmin import PortalAdminManager
+                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                gis=self, is_admin=False)
+            except:
+                pass
+        elif self._con._auth.lower() != 'anon' and \
+             self._con._auth is not Nonez and\
+             hasattr(self.users.me, 'privileges') and \
+             self._portal.is_arcgisonline == False:
+            privs = ['portal:publisher:publishFeatures',
+                     'portal:publisher:publishScenes',
+                     'portal:publisher:publishServerGPServices',
+                     'portal:publisher:publishServerServices',
+                     'portal:publisher:publishTiles']
+            for priv in privs:
+                if priv in gis.users.me.privileges:
+                    can_publish = True
+                    break
+                else:
+                    can_publish = False
+            if can_publish:
+                try:
+                    from .admin.portaladmin import PortalAdminManager
+                    self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                    gis=self, is_admin=False)
+                except:
+                    pass
+        if self._con._auth.lower() != 'anon' and \
+           self._con._auth is not None and\
+           hasattr(self.users.me, 'role') and \
+           self.users.me.role == 'org_publisher' and \
+           self._portal.is_arcgisonline == False:
+            try:
+                from .admin.portaladmin import PortalAdminManager
+                self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
+                                                gis=self, is_admin=False)
+            except:
+                pass
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
@@ -325,11 +369,11 @@ class GIS(object):
         profile, it is the old format
         """
         for profile in config.keys():
-             if config[profile].name == "DEFAULT":
-                 #ignore the default profile (it's not user defined)
-                 continue
-             if "date_modified" not in config[profile]:
-                 return True
+            if config[profile].name == "DEFAULT":
+                #ignore the default profile (it's not user defined)
+                continue
+            if "date_modified" not in config[profile]:
+                return True
         return False
 
     def _update_config_to_new_format(self, config):
@@ -344,7 +388,7 @@ class GIS(object):
         """
         _log.info("Doing one time update of .arcgisprofile to new format...")
         attributes_to_rewrite_to_config = [ 'url', 'username', 'key_file',
-                                          'cert_file', 'client_id' ]
+                                            'cert_file', 'client_id' ]
         attributes_to_write_to_keyring = [ 'password' ]
 
         for profile in config.keys():
@@ -414,7 +458,7 @@ class GIS(object):
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
             password = keyring.get_password(
-                                         "arcgis_python_api_profile_passwords",
+                "arcgis_python_api_profile_passwords",
                                          profile)
         else:
             password = None
@@ -439,7 +483,7 @@ class GIS(object):
         import keyring
         if self._current_keyring_is_recommended():
             return keyring.delete_password(
-                                         "arcgis_python_api_profile_passwords",
+                "arcgis_python_api_profile_passwords",
                                          profile)
         else:
             _log.warn(self._get_keyring_failure_message())
@@ -593,7 +637,7 @@ class GIS(object):
         ==================     ====================================================================
 
 
-       :return:
+        :return:
           The map widget (displayed in Jupyter Notebook when queried).
         """
         try:
@@ -1262,12 +1306,12 @@ class UserManager(object):
 
         if self._gis._portal.is_arcgisonline:
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
-                         ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
+                ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
                          '''</p>
 <p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
 <p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
 <p>If you have difficulty signing in, please contact ''' + self._gis.properties.user.fullName + \
-                         '(' + self._gis.properties.user.email + '''). Be sure to include a description of the problem, the error message, and a screenshot.</p>
+                                                         '(' + self._gis.properties.user.email + '''). Be sure to include a description of the problem, the error message, and a screenshot.</p>
 <p>For your reference, you can access the home page of the organization here: <br>''' + self._gis.properties.user.fullName + '''</p>
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
@@ -1282,7 +1326,7 @@ class UserManager(object):
                     'email': email,
                     'role': role,
                     'level': level
-                } ] },
+                    } ] },
                 'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
                 'html' : email_text
             }
@@ -1496,7 +1540,7 @@ class RoleManager(object):
             role_id = self._portal.create_role(name, description)
             if role_id is not None:
                 role_data = {
-                  "id": role_id,
+                    "id": role_id,
                   "name": name,
                   "description": description
                 }
@@ -2561,7 +2605,7 @@ class ContentManager(object):
                 import random
                 import string
                 name = "%s%s.shp" % (random.choice(string.ascii_lowercase),
-                                   uuid4().hex[:5])
+                                     uuid4().hex[:5])
                 ds = df.to_featureclass(out_location=temp_dir,
                                         out_name=name)
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
@@ -2573,7 +2617,7 @@ class ContentManager(object):
                 shutil.rmtree(temp_dir,
                               ignore_errors=True)
                 publish_parameters =  {"hasStaticData":True, "name": os.path.splitext(item['name'])[0],
-                                        "maxRecordCount":2000, "layerInfo":{"capabilities":capabilities}}
+                                       "maxRecordCount":2000, "layerInfo":{"capabilities":capabilities}}
                 if target_sr is not None:
                     publish_parameters['targetSR'] = { 'wkid' : target_sr }
                 return item.publish(publish_parameters=publish_parameters)
@@ -2706,17 +2750,17 @@ class ContentManager(object):
         """ Clone content to the GIS by creating new items.
 
         .. note::
-			Cloning an item will create a copy of the item and for certain
-			item types a copy of the item dependencies in the GIS.
+        Cloning an item will create a copy of the item and for certain
+        item types a copy of the item dependencies in the GIS.
 
-			For example a web application created using Web AppBuilder
-			or a Configurable App Template which is built from a web map
-			that references one or more hosted feature layers. This function
-			will clone all of these items to the GIS and swizzle the paths
-			in the web map and web application to point to the new layers.
+        For example a web application created using Web AppBuilder
+        or a Configurable App Template which is built from a web map
+        that references one or more hosted feature layers. This function
+        will clone all of these items to the GIS and swizzle the paths
+        in the web map and web application to point to the new layers.
 
-			This creates an exact copy of the application, map, and layers
-			in the GIS.
+        This creates an exact copy of the application, map, and layers
+        in the GIS.
 
         =====================     ====================================================================
         **Argument**              **Description**
@@ -2874,7 +2918,7 @@ class ResourceManager(object):
         if not file and (not text or not file_name):
             raise ValueError("Please provide a valid file or text/file_name.")
         query_url = 'content/users/'+ self._item.owner +\
-                        '/items/' + self._item.itemid + '/addResources'
+            '/items/' + self._item.itemid + '/addResources'
 
         files = [] #create a list of named tuples to hold list of files
         if file and os.path.isfile(os.path.abspath(file)):
@@ -2943,7 +2987,7 @@ class ResourceManager(object):
         """
 
         query_url = 'content/users/' + self._item.owner + \
-                    '/items/' + self._item.itemid + '/updateResources'
+            '/items/' + self._item.itemid + '/updateResources'
 
         files = []  # create a list of named tuples to hold list of files
         if not os.path.isfile(os.path.abspath(file)):
@@ -3079,7 +3123,7 @@ class ResourceManager(object):
             delete_all = 'true'
 
         query_url = 'content/users/'+ self._item.owner +\
-                        '/items/' + self._item.itemid + '/removeResources'
+            '/items/' + self._item.itemid + '/removeResources'
         params = {'f':'json',
                   'resource': safe_file_format if safe_file_format else "",
                   'deleteAll':delete_all}
@@ -3279,7 +3323,7 @@ class Group(dict):
 
                 file_path = os.path.join(save_folder, file_name)
                 self._portal.con.get(path=thumbnail_url_path, try_json=False,
-                                            out_folder=save_folder,
+                                     out_folder=save_folder,
                                             file_name=file_name)
                 return file_path
 
@@ -3887,13 +3931,9 @@ class User(dict):
         ret = self._gis._con.post(path=url,
                                   postdata=params,
                                   files=files)
-        ret = self._portal.update_user(self.username, access, preferred_view,
-                                      description, tags, thumbnail, fullname,
-                                       email, culture, region,
-                                       user_type)
         if ret['success'] == True:
             self._hydrate()
-        return ret
+        return ret['success']
     #----------------------------------------------------------------------
     def disable(self):
         """
@@ -3982,6 +4022,102 @@ class User(dict):
                 ret = self._portal.update_user(self.username,
                                                user_type="arcgisonly")
             self._hydrate()
+    #----------------------------------------------------------------------
+    @property
+    def linked_accounts(self):
+        """returns all linked account for the current user as User objects"""
+        url = "%s/sharing/rest/community/users/%s/linkedUsers" % (self._gis._url,
+                                                                  self.username)
+        start = 1
+        params = {
+            'f' : 'json',
+            'num' : 10,
+            'start' : start
+        }
+        users = []
+        res = self._gis._con.get(url, params)
+        users = res["linkedUsers"]
+        if len(users) == 0:
+            return users
+        else:
+            while (res["nextStart"] > -1):
+                start += 10
+                params['start'] = start
+                res = self._gis._con.get(url, params)
+                users += res['linkedUsers']
+        users = [self._gis.users.get(user['username']) for user in users]
+        return users
+    #----------------------------------------------------------------------
+    def link_account(self, username, user_gis):
+        """
+        If you use multiple accounts for ArcGIS Online and Esri websites,
+        you can link them so you can switch between accounts and share your
+        Esri customer information with My Esri, e-Learning, and GeoNet. You
+        can link your organizational, public, enterprise, and social login
+        accounts. Your content and privileges are unique to each account.
+        From Esri websites, only Esri access-enabled accounts appear in
+        your list of linked accounts.
+
+        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        addtional information.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        username          required string/User. This is the username or User object
+                          that a user wants to link to.
+        ----------------  ----------------------------------------------------------
+        user_gis          required GIS.  This is the GIS object for the username.
+                          In order to link an account, a user must be able to login
+                          to that account.  The GIS object is the entry into that
+                          account.
+        ================  ==========================================================
+
+        returns: Boolean. True for success, False for failure.
+
+        """
+        userToken = user_gis._con.token
+        if isinstance(username, User):
+            username = username.username
+        params = {
+            'f' : 'json',
+            'user' : username,
+            'userToken' : userToken
+        }
+        url = "%s/sharing/rest/community/users/%s/linkUser" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
+    #----------------------------------------------------------------------
+    def unlink_account(self, username):
+        """
+        When a user wishes to no longer have a linked account, the unlink method
+        allows for the removal if linked accounts.
+
+        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        addtional information.
+
+        ================  ==========================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------
+        username          required string/User. This is the username or User object
+                          that a user wants to unlink.
+        ================  ==========================================================
+
+        returns: boolean.
+        """
+        if isinstance(username, User):
+            username = username.username
+        params = {
+            'f' : 'json',
+            'user' : username
+        }
+        url = "%s/sharing/rest/community/users/%s/unlinkUser" % (self._gis._url, self.username)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
     #----------------------------------------------------------------------
     def update_role(self, role):
         """
@@ -4115,7 +4251,7 @@ class User(dict):
 
                 file_path = os.path.join(save_folder, file_name)
                 return self._portal.con.get(path=thumbnail_url_path, try_json=False,
-                                     out_folder=save_folder,
+                                            out_folder=save_folder,
                                      file_name=file_name)
         else:
             return None
@@ -4221,7 +4357,7 @@ class Item(dict):
 
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
-            self.type == 'Feature Service' or \
+               self.type == 'Feature Service' or \
             self.type == 'Big Data File Share' or \
             self.type == 'Image Service' or \
             self.type == 'Map Service' or \
@@ -4434,7 +4570,7 @@ class Item(dict):
         return "%s/home/item.html?id=%s" % (self._portal.resturl.replace("/sharing/rest/", ""), itemid)
 
     def copy_feature_layer_collection(self, service_name, layers=None, tables=None, folder=None,
-                                description=None, snippet=None, owner=None):
+                                      description=None, snippet=None, owner=None):
         """
         This operation allows users to copy existing Feature Layer Collections and select the
         layers/tables that the user wants in the service.
@@ -4487,7 +4623,7 @@ class Item(dict):
                    'supportsApplyEditsWithGlobalIds', 'name', 'supportedQueryFormats',
                    'xssPreventionInfo', 'copyrightText', 'currentVersion',
                    'syncCapabilities', '_ssl', 'hasStaticData', 'hasVersionedData',
-                    'editorTrackingInfo', 'name']
+                   'editorTrackingInfo', 'name']
         parent = None
         if description is None:
             description = self.description
@@ -4600,7 +4736,7 @@ class Item(dict):
             save_path = self._workdir
         if data_path:
             download_path = self._portal.con.get(path=data_path, file_name=self.name or self.title,
-                                        out_folder=save_path, try_json=False, force_bytes=False)
+                                                 out_folder=save_path, try_json=False, force_bytes=False)
             if download_path == '':
                 return None
             else:
@@ -4838,7 +4974,7 @@ class Item(dict):
             file_name="metadata.xml"
             file_path = os.path.join(save_folder, file_name)
             self._portal.con.get(path=metadataurlpath,
-                                     out_folder=save_folder,
+                                 out_folder=save_folder,
                                      file_name=file_name, try_json=False)
             return file_path
 
@@ -5688,7 +5824,7 @@ class Item(dict):
 
     #----------------------------------------------------------------------
     def create_tile_service(self,
-                             title,
+                            title,
                              min_scale,
                              max_scale,
                              cache_info=None,
@@ -5754,9 +5890,9 @@ class Item(dict):
                               }
             pp = {"minScale":min_scale,"maxScale":max_scale,"name":title,
                   "tilingSchema":{"tileCacheInfo": cache_info,
-                  "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
+                                  "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
                   "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
-                  "packetSize":128}},"cacheOnDemand":True,
+                                      "packetSize":128}},"cacheOnDemand":True,
                   "cacheOnDemandMinScale":144448,
                   "capabilities":"Map,ChangeTracking"}
             params = {
