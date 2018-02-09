@@ -734,7 +734,8 @@ class FeatureLayer(Layer):
         """
         import copy
         upload_id = None
-        if self._gis.is_logged_in == False:
+        if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
+           (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
             raise Exception("Authentication required to perform append.")
         if self._gis._portal.is_arcgisonline == False:
             raise Exception("Append only available on ArcGIS Online.")

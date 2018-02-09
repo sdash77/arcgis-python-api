@@ -186,7 +186,11 @@ def from_featureclass(filename, **kwargs):
 
             for row in rows:
                 row = list(row)
-                g = _types.Geometry(row.pop(geom_idx))
+                # Prevent curves/arcs
+                if row[geom_idx].type in ['polyline', 'polygon']:
+                    g = _types.Geometry(row.pop(geom_idx).generalize(0))
+                else:
+                    g = _types.Geometry(row.pop(geom_idx))
                 if g == {}:
                     if shape_type.lower() == 'point':
                         g = default_point
@@ -336,7 +340,7 @@ def to_featureclass(df, out_name, out_location=None,
            overwrite:
             arcpy.Delete_management(fc)
         if arcpy.Exists(fc) ==  False:
-            sr = None
+            sr = df.sr
             if df.sr is None:
                 sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
                 if isinstance(sr, dict) and \
@@ -346,8 +350,22 @@ def to_featureclass(df, out_name, out_location=None,
                     sr = sr
                 else:
                     sr = None
-            else:
+            elif df.sr:
+                sr = _types.SpatialReference(df.sr).as_arcpy
+            elif sr is None:
+                sr = df['SHAPE'].loc[df['SHAPE'].first_valid_index()].spatial_reference
+                if isinstance(sr, dict) and \
+                               'wkid' in sr:
+                    sr = arcpy.SpatialReference(sr['wkid'])
+                elif isinstance(sr, arcpy.SpatialReference):
+                    sr = sr
+                else:
+                    sr = None
+            elif isinstance(sr, dict):
+                sr = _types.SpatialReference(sr).as_arcpy
+            elif isinstance(sr, _types.SpatialReference):
                 sr = df.sr.as_arcpy
+
             fc = arcpy.CreateFeatureclass_management(out_path=out_location,
                                                      out_name=out_name,
                                                      geometry_type=df.geometry_type.upper(),

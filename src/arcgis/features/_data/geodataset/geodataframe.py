@@ -242,7 +242,10 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                     del self['SHAPE']
                     self.set_geometry(geometry, inplace=True)
         if self.sr is None:
-            self.sr = self._sr(sr)
+            try:
+                self.sr = self.geometry[self.geometry.first_valid_index()].spatialReference
+            except:
+                self.sr = self._sr(sr)
         self._delete_index()
     #----------------------------------------------------------------------
     @property
@@ -254,6 +257,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """sets the spatial reference"""
         if isinstance(sr, _types.SpatialReference):
             return sr
+        elif isinstance(sr, dict):
+            return _types.SpatialReference(sr)
         elif isinstance(sr, integer_types):
             return _types.SpatialReference({'wkid' : sr})
         elif isinstance(sr, string_types):
@@ -1588,13 +1593,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 l.append(random.choice(string.ascii_letters))
             l = "".join(l)
             out_name = l
-            res = self.to_featureclass(out_location="in_memory",
+            res = self.to_featureclass(out_location='in_memory',
                                        out_name=out_name)
 
-            fs = arcpy.FeatureSet(res)
-            arcpy.Delete_management(res)
-
-            return fs
+            feature_set = arcpy.FeatureSet()
+            feature_set.load(fc)
+            return feature_set
         else:
             raise Exception("ArcPy must be present to convert to arcpy.FeatureSet object")
     #----------------------------------------------------------------------
@@ -1640,7 +1644,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if sr:
             sr = self._sr(sr=sr)
         if not sr:
-            sr = getattr(col, 'sr', self.sr)
+            sr = getattr(col, 'sr', None)
             if sr is None and \
                isinstance(col, GeoSeries):
                 col.sr = self.sr

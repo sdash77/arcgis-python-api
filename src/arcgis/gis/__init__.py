@@ -274,7 +274,7 @@ class GIS(object):
             else:
                 raise
         try:
-            if url.lower().find("www.arcgis.com") > -1 and \
+            if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
@@ -326,7 +326,7 @@ class GIS(object):
             except:
                 pass
         elif self._con._auth.lower() != 'anon' and \
-             self._con._auth is not Nonez and\
+             self._con._auth is not None and\
              hasattr(self.users.me, 'privileges') and \
              self._portal.is_arcgisonline == False:
             privs = ['portal:publisher:publishFeatures',
@@ -2408,6 +2408,45 @@ class ContentManager(object):
             else:
                 print('Folder already exists.')
         return None
+
+    def delete_items(self, items):
+        """
+        Deletes a collection of items from a users content.
+
+        ================  ==========================================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------------------------
+        items             list of Item or Item Ids.  This is an array of items to be deleted from
+                          the current user's content
+        ================  ==========================================================================
+
+        Returns: boolean. True on
+        """
+        if self._gis._portal.con.baseurl.endswith("/"):
+            url = "%s/%s/%s/deleteItems" % (self._gis._portal.con.baseurl[:-1],
+                                            "content/users",
+                                            self._gis.users.me.username)
+        else:
+            url = "%s/%s/%s/deleteItems" % (self._gis._portal.con.baseurl,
+                                            "content/users",
+                                            self._gis.users.me.username)
+        params = {
+        'f' : 'json',
+        'items' : ""
+        }
+        ditems = []
+        for item in items:
+            if isinstance(item, str):
+                ditems.append(item)
+            elif isinstance(item, Item):
+                ditems.append(item.id)
+            del item
+        if len(ditems) > 0:
+            params['items'] = ",".join(ditems)
+            res = self._gis._con.post(path=url, postdata=params)
+            return all([r['success'] for r in res['results']])
+        return False
+
 
     def delete_folder(self, folder, owner=None):
         """
@@ -5502,7 +5541,7 @@ class Item(dict):
             return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False,
-                file_type=None):
+                file_type=None, build_initial_cache=False):
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature, tiled map, vector tile and scene services.
@@ -5545,6 +5584,10 @@ class Item(dict):
                                geojson, scenepackage, vectortilepackage, imageCollection,
                                mapService, and sqliteGeodatabase are valid entries. This is an
                                optional parameter.
+        -------------------    ---------------------------------------------------------------
+        build_initial_cache    Optional boolean.  The boolean value (default False), if true
+                               and applicable for the file_type, the value will built cache
+                               for the service.
         ===================    ===============================================================
 
 
@@ -5558,7 +5601,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        buildInitialCache = json.dumps(False)
+        buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
