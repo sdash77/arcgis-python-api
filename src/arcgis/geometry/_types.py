@@ -590,7 +590,7 @@ class Geometry(BaseGeometry):
 
                 area += part[i][0] * part[j][1]
                 area -= part[j][0] * part[i][1]
-                print((n, area, i, j))
+                # print((n, area, i, j))
             area_parts.append(area / 2.0)
             area = 0.0
         return sum(area_parts)
