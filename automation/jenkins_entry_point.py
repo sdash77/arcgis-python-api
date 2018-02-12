@@ -8,8 +8,9 @@ log = logging.getLogger()
 
 from __init__ import *
 #import geosaurus_root/src seperate module
-sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "src"))
+sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR, "src"))
 from arcgis import __version__ as _geosaurus_version
+
 
 from automation_setup import automation_setup
 from build_conda_package import build_conda_package
@@ -25,7 +26,6 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
                                     build_pip_package,
                                     publish_results,
                                     build_documentation,
-                                    run_unit_tests,
                                     automation_cleanup]),
 
               (LINUX_SLAVE_REGEX,  [automation_setup,
@@ -35,12 +35,15 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
               
               (PULL_REQUEST_REGEX, [automation_setup,
                                     build_documentation,
-                                    run_unit_tests,
                                     automation_cleanup]),
               
                    (PUBLISH_REGEX, [automation_setup,
                                     build_conda_package,
                                     publish_results,
+                                    automation_cleanup]),
+
+                 (UNIT_TEST_REGEX, [automation_setup,
+                                    run_unit_tests,
                                     automation_cleanup])]
 
 def _main():

@@ -21,6 +21,7 @@ MASTER_REGEX = ".*master.*"
 PULL_REQUEST_REGEX = ".*pull.*request.*"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
+UNIT_TEST_REGEX = ".*unit.*test.*"
 
 log.setLevel(logging.DEBUG)
 log_file_path = os.path.join(STAGING_DIR, "log.log")
