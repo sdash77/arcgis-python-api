@@ -129,7 +129,10 @@ class GeometryFactory(type):
             iterable = ()
         if hasattr(iterable, 'JSON') and \
            (HASARCPY or HASSHAPELY):
-            iterable = json.loads(iterable.JSON)
+            if type(iterable.JSON) == str:
+                iterable = json.loads(iterable.JSON)
+            elif type(iterable.JSON) == dict:
+                iterable = iterable.JSON
         if cls is Geometry:
             if len(iterable) > 0:
                 if isinstance(iterable, dict):
