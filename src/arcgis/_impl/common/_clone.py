@@ -475,30 +475,43 @@ class _DeepCloner():
             loop = asyncio.get_event_loop()
             # things to execute async
             futures = []
+            synchronous_clone = []
             for node in leaf_nodes:
                 if node.info['id'] not in self._clone_mapping['Item IDs'] and node.info['id'] not in self._clone_mapping['Group IDs']:
-                    futures.append(
-                        loop.run_in_executor(
-                            excecutor,
-                            node.clone,
+                    if isinstance(node, _ProProjectPackageDefinition):
+                        synchronous_clone.append(node)
+                    else:
+                        futures.append(
+                            loop.run_in_executor(
+                                excecutor,
+                                node.clone,
+                            )
                         )
-                    )
                 else:
                     node.resolved = True
+            results = []
+            if len(synchronous_clone) > 0:
+                for node in synchronous_clone:
+                    try:
+                        results.append(node.clone())
+                    except _ItemCreateException as ex:
+                        results.append(ex)
+                        break
             if len(futures) > 0:
-                results = await asyncio.gather(*futures, return_exceptions=True)
-                # if any of the results are an _ItemCreate Exception, then delete all created items/groups
-                for result in results:
-                    if isinstance(result, _ItemCreateException):
-                        for node in self._graph.values():
-                            for item in node.created_items:
-                                item.delete()
-                        raise result
-                    # only return created items, not groups or item already found in target portal
+                results.extend(await asyncio.gather(*futures, return_exceptions=True))
+                
+            # if any of the results are an _ItemCreate Exception, then delete all created items/groups
+            for result in results:
+                if isinstance(result, _ItemCreateException):
                     for node in self._graph.values():
                         for item in node.created_items:
-                            if item not in cloned_items and isinstance(item, arcgis.gis.Item):
-                                cloned_items.append(item)
+                            item.delete()
+                    raise result
+                # only return created items, not groups or item already found in target portal
+                for node in self._graph.values():
+                    for item in node.created_items:
+                        if item not in cloned_items and isinstance(item, arcgis.gis.Item):
+                            cloned_items.append(item)
             level += 1
             leaf_nodes = self._get_leaf_nodes()
         logging.getLogger().info("Completed")
@@ -1275,7 +1288,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     # Due to a bug at 10.5.1 any domains for a double field must explicitly have a float code rather than int
                     for field in layer['fields']:
                         field_type = _deep_get(field, 'type')
-                        if field_type == "esriFieldTypeDouble":
+                        if field_type in ["esriFieldTypeDouble", "esriFieldTypeSingle"]:
                             coded_values = _deep_get(field, 'domain', 'codedValues')
                             if coded_values is not None:
                                 for coded_value in coded_values:
@@ -2584,7 +2597,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
 
                                                 if new_service['url'] not in service_version_infos:
                                                     try:
-                                                        service_version_infos[new_service['url']] = _get_version_management_server(target, new_service['url'])
+                                                        service_version_infos[new_service['url']] = _get_version_management_server(self.target, new_service['url'])
                                                     except:
                                                         service_version_infos[new_service['url']] = {}
                                                 version_info = service_version_infos[new_service['url']]
