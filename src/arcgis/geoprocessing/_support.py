@@ -330,18 +330,19 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
 
     ret_type, _ = param_db[ret_param_name]
 
-    ret_val = None
-    if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
-        jsondict = output_val
-        if 'mapImage' in jsondict:  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
-            ret_val = jsondict
-        elif ret_type == FeatureSet and 'url' in jsondict:
-            ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
+    ret_val = output_val
+    if output_val is not None:
+        if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+            jsondict = output_val
+            if 'mapImage' in jsondict:  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
+                ret_val = jsondict
+            elif ret_type == FeatureSet and 'url' in jsondict:
+                ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
+            else:
+                result = ret_type.from_dict(jsondict)
+                result._con = gptool._con
+                result._token = gptool._token
+                ret_val = result
         else:
-            result = ret_type.from_dict(jsondict)
-            result._con = gptool._con
-            result._token = gptool._token
-            ret_val = result
-    else:
-        ret_val = output_val
+            ret_val = output_val
     return ret_param_name, ret_val

@@ -957,13 +957,16 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = result['value']
-                    if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
-                        ret_val = jsondict
+                    if jsondict is not None:
+                        if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
+                            ret_val = jsondict
+                        else:
+                            result_obj = ret_type.from_dict(jsondict)
+                            result_obj._con = self._con
+                            result_obj._token = self._token
+                            ret_val = result_obj
                     else:
-                        result_obj = ret_type.from_dict(jsondict)
-                        result_obj._con = self._con
-                        result_obj._token = self._token
-                        ret_val = result_obj
+                        ret_val = jsondict
                 else:
                     ret_val = result['value']
 
@@ -1005,13 +1008,16 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = resp[retParamName]
-                    if 'mapImage' in jsondict:
-                        ret_val = jsondict
+                    if jsondict is not None:
+                        if 'mapImage' in jsondict:
+                            ret_val = jsondict
+                        else:
+                            result = ret_type.from_dict(jsondict)
+                            result._con = self._con
+                            result._token = self._token
+                            ret_val =  result
                     else:
-                        result = ret_type.from_dict(jsondict)
-                        result._con = self._con
-                        result._token = self._token
-                        ret_val =  result
+                        ret_val = jsondict
                 else:
                     ret_val = resp[retParamName]
 
