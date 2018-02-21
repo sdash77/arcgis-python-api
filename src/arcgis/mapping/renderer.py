@@ -89,6 +89,13 @@ def _ri_creator(**kwargs):
     ri = {
         'type' : 'rotationInfo'
     }
+    if 'ri_type' in kwargs:
+        ri['rotatationType'] = kwargs.pop('ri_type')
+        ri['valueExpression'] = kwargs.pop('ri_expression', None)
+        ri['valueExpressionTitle'] = kwargs.pop('ri_expression_title', 'ri_title')
+        ri['field'] = kwargs.pop('ri_field', None)
+
+        return ri
     return None
 #--------------------------------------------------------------------------
 def visual_variables(geometry_type, sdf_or_list, **kwargs):
@@ -104,7 +111,8 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ======================  =========================================================
     **optional variables**  **description**
     ----------------------  ---------------------------------------------------------
-    trans_info_field        Attribute field used for setting the transparency of a feature if no valueExpression is provided.
+    trans_info_field        Attribute field used for setting the transparency of a
+                            feature if no trans_value_exp is provided.
     ----------------------  ---------------------------------------------------------
     trans_norm_field        Attribute field used to normalize the data.
     ----------------------  ---------------------------------------------------------
@@ -112,7 +120,9 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ----------------------  ---------------------------------------------------------
     trans_value_exp         An Arcade expression evaluating to a number.
     ----------------------  ---------------------------------------------------------
-    trans_exp_title         The title identifying and describing the associated Arcade expression as defined in the valueExpression property.
+    trans_exp_title         The title identifying and describing the associated
+                            Arcade expression as defined in the valueExpression
+                            property.
     ----------------------  ---------------------------------------------------------
 
     **Size Info Visual Variable**
@@ -127,39 +137,57 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ======================  =========================================================
     **arguements**          **description**
     ----------------------  ---------------------------------------------------------
-    si_field
+    si_field                Attribute field used for size rendering if no
+                            si_expression is provided.
     ----------------------  ---------------------------------------------------------
-    si_maxDataValue
+    si_max_data_value       The maximum data value.
     ----------------------  ---------------------------------------------------------
-    si_max_size
+    si_max_size             Specifies the largest marker size to use at any given map
+                            scale. Can be either a fixed number or object, depending
+                            on whether the user chose a fixed range or not.
     ----------------------  ---------------------------------------------------------
-    si_minDataValue
+    si_min_data_value       The minimum data value.
     ----------------------  ---------------------------------------------------------
-    si_minSize
+    si_min_size             Specifies the smallest marker size to use at any given
+                            map scale. Can be either a fixed number or object,
+                            depending on whether the user chose a fixed range or not.
     ----------------------  ---------------------------------------------------------
-    si_norm_field
+    si_norm_field           Attribute field used to normalize the data.
     ----------------------  ---------------------------------------------------------
-    si_stops
+    si_stops                An array of objects that defines the thematic size ramp
+                            in a sequence of data or expression stops.
     ----------------------  ---------------------------------------------------------
-    si_target
+    si_target               Only used when sizeInfo is used for polygon outlines.
+                            Value of this property must be outline
     ----------------------  ---------------------------------------------------------
-    si_expression
+    si_expression           An Arcade expression evaluating to a number
     ----------------------  ---------------------------------------------------------
-    si_expression_title
+    si_expression_title     the title identifying and describing the associated
+                            Arcade expression
     ----------------------  ---------------------------------------------------------
-    si_value_unit
+    si_value_unit           A string value indicating the required unit of measurement.
     ======================  =========================================================
 
     ======================  =========================================================
     **arguements**          **description**
     ----------------------  ---------------------------------------------------------
-    ri_field
+    ri_field                Attribute field used for setting the rotation of a symbol
+                            if no ri_expression is provided.
     ----------------------  ---------------------------------------------------------
-    ri_type
+    ri_type                 Defines the origin and direction of rotation depending on
+                            how the angle of rotation was measured. Possible values
+                            are geographic which rotates the symbol from the north in
+                            a clockwise direction and arithmetic which rotates the
+                            symbol from the east in a counter-clockwise direction.
+                            Must be one of the following values:
+
+                            - geographic
+                            - arithmetic
+
     ----------------------  ---------------------------------------------------------
-    ri_expression
+    ri_expression           An Arcade expression evaluating to a number.
     ----------------------  ---------------------------------------------------------
-    ri_expression_title
+    ri_expression_title     The title identifying and describing the ri_expression
     ======================  =========================================================
 
 
@@ -184,7 +212,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
         v.append(ri)
     return v
 
-
+#--------------------------------------------------------------------------
 def generate_renderer(geometry_type,
                       sdf_or_series=None,
                       label=None,
