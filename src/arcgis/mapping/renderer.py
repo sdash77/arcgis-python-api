@@ -19,11 +19,138 @@ RENDERER_TYPES = {
     "u" : 'unique',#
     'h' : 'heatmap',#
     'c' : 'ClassBreaks',#
-    #"p" : 'Predominance',
+    "p" : 'Predominance',
     'str' : 'Stretch',#
     't' : "Temporal",#
     'v' : "vector field"#
 }
+def _trans_info(data, **kwargs):
+    ti = None
+    if 'trans_info_field' in symbol_args:
+        ti = {}
+        ti['field'] = kwargs.pop('trans_info_field', None)
+        ti['normalizationField'] = kwargs.pop('trans_norm_field', None)
+        stops = kwargs.pop('trans_stops', None)
+        if stops is None and \
+           data:
+            stops = []
+            if isinstance(data, SpatialDataFrame):
+                data = data[ti['trans_info_field']].unique().tolist()
+            for d in data:
+                stops.append({
+                    "stop": {
+                        "value": d,
+                        "transparency": 100/len(data)
+                    }
+                })
+                del d
+            del data
+
+        else:
+            raise Exception("Cannot create transparancy info.")
+        ti['stops'] = stops
+        ti['type'] = 'transparancyInfo'
+        ti['valueExpression'] = kwargs.pop('trans_value_exp', None)
+        ti['valueExpressionTitle'] = kwargs.pop('trans_exp_title', None)
+    return ti
+def _si_creator(**kwargs):
+    si = {
+        'type' : 'sizeInfo'
+    }
+
+    return None
+def _ri_creator(**kwargs):
+    """creates rotation information for visual variables"""
+    ri = {
+        'type' : 'rotationInfo'
+    }
+    return None
+def visual_variables(geometry_type, data=None, **kwargs):
+    """
+    a function to create visual variables
+
+    This operation allows developers to take a deep dive into developing custom renderer.
+    Here a user/developer can create transparancy, size information, and other rules to
+    improve the overall feel and look of spatial information on a map.
+
+    Each type of information is detailed in the tables below.
+
+    ======================  =========================================================
+    **optional variables**  **description**
+    ----------------------  ---------------------------------------------------------
+    trans_info_field        Attribute field used for setting the transparency of a feature if no valueExpression is provided.
+    ----------------------  ---------------------------------------------------------
+    trans_norm_field        Attribute field used to normalize the data.
+    ----------------------  ---------------------------------------------------------
+    trans_stops             An array of transparency stop objects.
+    ----------------------  ---------------------------------------------------------
+    trans_value_exp         An Arcade expression evaluating to a number.
+    ----------------------  ---------------------------------------------------------
+    trans_exp_title         The title identifying and describing the associated Arcade expression as defined in the valueExpression property.
+    ----------------------  ---------------------------------------------------------
+
+    **Size Info Visual Variable**
+
+    The size Info visual variable defines how size is applied to features based on the
+    values of a numeric field attribute. The minimum and maximum values of the data
+    should be indicated along with their respective size values. You must specify
+    minSize and maxSize or stops to construct the size ramp. All features with values
+    falling in between the specified min and max data values (or stops) will be scaled
+    proportionally between the provided min and max sizes.
+
+    ======================  =========================================================
+    **arguements**          **description**
+    ----------------------  ---------------------------------------------------------
+    si_field
+    ----------------------  ---------------------------------------------------------
+    si_maxDataValue
+    ----------------------  ---------------------------------------------------------
+    si_max_size
+    ----------------------  ---------------------------------------------------------
+    si_minDataValue
+    ----------------------  ---------------------------------------------------------
+    si_minSize
+    ----------------------  ---------------------------------------------------------
+    si_norm_field
+    ----------------------  ---------------------------------------------------------
+    si_stops
+    ----------------------  ---------------------------------------------------------
+    si_target
+    ----------------------  ---------------------------------------------------------
+    si_expression
+    ----------------------  ---------------------------------------------------------
+    si_expression_title
+    ----------------------  ---------------------------------------------------------
+    si_value_unit
+    ======================  =========================================================
+
+    ======================  =========================================================
+    **arguements**          **description**
+    ----------------------  ---------------------------------------------------------
+    ri_field
+    ----------------------  ---------------------------------------------------------
+    ri_type
+    ----------------------  ---------------------------------------------------------
+    ri_expression
+    ----------------------  ---------------------------------------------------------
+    ri_expression_title
+    ======================  =========================================================
+
+
+
+    """
+    v = []
+    ti = _trans_info(data=data, nstops=nstops, **kwargs)
+    if ti:
+        v.append(ti)
+    si = _si_creator(**kwargs)
+    if si:
+        v.append(si)
+    ri = _ri_creator(**kwargs)
+    if ri:
+        v.append(ri)
+    return v
+
 
 def generate_renderer(geometry_type,
                       sdf_or_series=None,
@@ -96,7 +223,7 @@ def generate_renderer(geometry_type,
                             needs to create.  Valid inputs are: simple, picture, text,
                             or carto.  The default is simple.
     ----------------------  ---------------------------------------------------------
-    symbol_type             optional string. This is the symbology used by the
+    symbol_style            optional string. This is the symbology used by the
                             geometry.  For example 's' for a Line geometry is a solid
                             line. And '-' is a dash line.
 
@@ -316,9 +443,66 @@ def generate_renderer(geometry_type,
     visual_variables        An object used to set rendering options.
     ======================  =========================================================
 
+    ** Predominance Renderer **
+
+    ======================  =========================================================
+    **arguements**          **description**
+    ----------------------  ---------------------------------------------------------
+    colors                  list of colors to use in color_infos
+    ----------------------  ---------------------------------------------------------
+    color_fields            list of fields to create color information from
+    ----------------------  ---------------------------------------------------------
+    colors_steps            dictionary of break values, if none is provide the break
+                            are generated from the fields.
+    ----------------------  ---------------------------------------------------------
+    background_fill_symbol  A symbol used for polygon features as a background if the
+                            renderer uses point symbols, e.g. for bivariate types &
+                            size rendering. Only applicable to polygon layers.
+                            PictureFillSymbols can also be used outside of the Map
+                            Viewer for Size and Predominance and Size renderers.
+    ----------------------  ---------------------------------------------------------
+    default_label           Default label for the default symbol used to draw
+                            unspecified values.
+    ----------------------  ---------------------------------------------------------
+    default_symbolt         Symbol used when a value cannot be classified.
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets. Rotation is set using a visual variable of type
+                            rotationInfo with a specified field or valueExpression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           String value which controls the origin and direction of
+                            rotation on point features. If the rotationType is
+                            defined as arithmetic, the symbol is rotated from East
+                            in a counter-clockwise direction where East is the 0
+                            degree axis. If the rotationType is defined as geographic,
+                            the symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+
+                            Must be one of the following values:
+
+                            - arithmetic
+                            - geographic
+
+    ----------------------  ---------------------------------------------------------
+    unique_value_infos      An array of uniqueValueInfo objects.
+    ----------------------  ---------------------------------------------------------
+    value_expression        An Arcade expression evaluating to either a string or a number.
+    ----------------------  ---------------------------------------------------------
+    expression_title        The title identifying and describing the associated Arcade
+                            expression as defined in the valueExpression property.
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An array of objects used to set rendering properties.
+    ======================  =========================================================
+
+    :returns: dict
+
     """
     import numpy as np
-
+    if colors is None:
+        colors = 'jet'
     if isinstance(colors, str):
         colors = colors.split(',')
     if 'alpha' in symbol_args:
@@ -559,7 +743,21 @@ def generate_renderer(geometry_type,
             del renderer[key]
         return renderer
     elif render_type == "p":
-        raise NotImplemented("Predominance is not implemented, please use unique values")
+
+        renderer = {
+            'type' : 'uniqueValue',
+            'valueExpression' : symbol_args.pop('value_expression', None),
+            'backgroundFillSymbol' : symbol_args.pop('background_fill_symbol',
+                                                     create_symbol(geometry_type="polygon")),
+            'defaultSymbol' : create_symbol(geometry_type=geometry_type),
+            'rotationExpression' : symbol_args.pop('rotation_expression', None),
+            'rotationType' : symbol_args.pop("rotation_type", None),
+            'uniqueValuesInfos' : symbol_args.pop('unique_value_infos', []),
+            'valueExpressionTitle' : symbol_args.pop('expression_title', 'Predominance'),
+            'visualVariables' : symbol_args.pop('visual_variables', [])
+        }
+
+        return renderer
     elif render_type == "str":
         renderer = {
             'computeGamma' : symbol_args.pop('compute_gamma', True),
