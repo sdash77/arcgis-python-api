@@ -24,48 +24,74 @@ RENDERER_TYPES = {
     't' : "Temporal",#
     'v' : "vector field"#
 }
+#--------------------------------------------------------------------------
 def _trans_info(data, **kwargs):
+    """creates a transparancy information for visual variables"""
     ti = None
     if 'trans_info_field' in symbol_args:
         ti = {}
+
         ti['field'] = kwargs.pop('trans_info_field', None)
         ti['normalizationField'] = kwargs.pop('trans_norm_field', None)
         stops = kwargs.pop('trans_stops', None)
         if stops is None and \
            data:
             stops = []
-            if isinstance(data, SpatialDataFrame):
-                data = data[ti['trans_info_field']].unique().tolist()
+            transp = 100/len(data)
             for d in data:
+
                 stops.append({
                     "stop": {
                         "value": d,
-                        "transparency": 100/len(data)
+                        "transparency": transp
                     }
                 })
+                transp += transp
                 del d
             del data
-
-        else:
+        elif data is None and stops is None:
             raise Exception("Cannot create transparancy info.")
+
         ti['stops'] = stops
         ti['type'] = 'transparancyInfo'
         ti['valueExpression'] = kwargs.pop('trans_value_exp', None)
         ti['valueExpressionTitle'] = kwargs.pop('trans_exp_title', None)
     return ti
+#--------------------------------------------------------------------------
 def _si_creator(**kwargs):
+    """creates the size information from key/value pairs"""
     si = {
         'type' : 'sizeInfo'
     }
+    if 'si_field' in kwargs or \
+       'si_minSize' in kwargs:
+        si['expression'] = kwargs.pop('si_expresion', 'view.scale')
+        si['field'] = kwargs.pop('si_field', None)
+        si['maxDataValue'] = kwargs.pop('si_max_data_value', None)
+        si['maxSize'] = kwargs.pop('si_max_size', 20)
+        si['minDatavalue'] = kwargs.pop('si_min_data_value', None)
+        si['minSize'] = kwargs.pop('si_min_size', 10)
 
+        si['normalizationField'] = kwargs.pop('si_norm_field', None)
+        si['stops'] = kwargs.pop('si_stops', None)
+        if 'si_target' in kwargs:
+            si['target'] = kwargs.pop('si_target', None)
+        si['valueExpression'] = kwargs.pop('si_expression', None)
+        si['valueExpressionTitle'] = kwargs.pop('si_expression_title', None)
+        si['valueUnit'] = kwargs.pop('si_value_unit', None)
+        return si
+    else:
+        return None
     return None
+#--------------------------------------------------------------------------
 def _ri_creator(**kwargs):
     """creates rotation information for visual variables"""
     ri = {
         'type' : 'rotationInfo'
     }
     return None
-def visual_variables(geometry_type, data=None, **kwargs):
+#--------------------------------------------------------------------------
+def visual_variables(geometry_type, sdf_or_list, **kwargs):
     """
     a function to create visual variables
 
@@ -140,7 +166,14 @@ def visual_variables(geometry_type, data=None, **kwargs):
 
     """
     v = []
-    ti = _trans_info(data=data, nstops=nstops, **kwargs)
+    if isinstance(sdf_or_list, SpatialDataFrame) and \
+       'trans_info_field' in kwargs:
+
+        data = sdf_or_list[trans_info_field].unique().tolist()
+    elif isinstance(sdf_or_list, (tuple, list)):
+        data = list(set(sdf_or_list))
+
+    ti = _trans_info(data=data, **kwargs)
     if ti:
         v.append(ti)
     si = _si_creator(**kwargs)
@@ -310,7 +343,7 @@ def generate_renderer(geometry_type,
                             gradient the colorStop is added.
     ======================  =========================================================
 
-    **Unique Renderer**
+    **Predominance/Unique Renderer**
 
     This renderer symbolizes features based on one or more matching string attributes.
 
@@ -443,59 +476,7 @@ def generate_renderer(geometry_type,
     visual_variables        An object used to set rendering options.
     ======================  =========================================================
 
-    ** Predominance Renderer **
 
-    ======================  =========================================================
-    **arguements**          **description**
-    ----------------------  ---------------------------------------------------------
-    colors                  list of colors to use in color_infos
-    ----------------------  ---------------------------------------------------------
-    color_fields            list of fields to create color information from
-    ----------------------  ---------------------------------------------------------
-    colors_steps            dictionary of break values, if none is provide the break
-                            are generated from the fields.
-    ----------------------  ---------------------------------------------------------
-    background_fill_symbol  A symbol used for polygon features as a background if the
-                            renderer uses point symbols, e.g. for bivariate types &
-                            size rendering. Only applicable to polygon layers.
-                            PictureFillSymbols can also be used outside of the Map
-                            Viewer for Size and Predominance and Size renderers.
-    ----------------------  ---------------------------------------------------------
-    default_label           Default label for the default symbol used to draw
-                            unspecified values.
-    ----------------------  ---------------------------------------------------------
-    default_symbolt         Symbol used when a value cannot be classified.
-    ----------------------  ---------------------------------------------------------
-    rotation_expression     A constant value or an expression that derives the angle
-                            of rotation based on a feature attribute value. When an
-                            attribute name is specified, it's enclosed in square
-                            brackets. Rotation is set using a visual variable of type
-                            rotationInfo with a specified field or valueExpression
-                            property.
-    ----------------------  ---------------------------------------------------------
-    rotation_type           String value which controls the origin and direction of
-                            rotation on point features. If the rotationType is
-                            defined as arithmetic, the symbol is rotated from East
-                            in a counter-clockwise direction where East is the 0
-                            degree axis. If the rotationType is defined as geographic,
-                            the symbol is rotated from North in a clockwise direction
-                            where North is the 0 degree axis.
-
-                            Must be one of the following values:
-
-                            - arithmetic
-                            - geographic
-
-    ----------------------  ---------------------------------------------------------
-    unique_value_infos      An array of uniqueValueInfo objects.
-    ----------------------  ---------------------------------------------------------
-    value_expression        An Arcade expression evaluating to either a string or a number.
-    ----------------------  ---------------------------------------------------------
-    expression_title        The title identifying and describing the associated Arcade
-                            expression as defined in the valueExpression property.
-    ----------------------  ---------------------------------------------------------
-    visual_variables        An array of objects used to set rendering properties.
-    ======================  =========================================================
 
     :returns: dict
 
@@ -585,7 +566,7 @@ def generate_renderer(geometry_type,
             "colorStops" : colorStops
         }
         return renderer
-    elif render_type == 'u':
+    elif render_type == ['u', 'p']:
         if sdf_or_series is None:
             raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
                              " or Pandas DataFrame for this type of renderer")
@@ -741,22 +722,6 @@ def generate_renderer(geometry_type,
         renderer['classBreakInfos'] = cbs
         for key in [k for k,v in renderer.items() if v is None]:
             del renderer[key]
-        return renderer
-    elif render_type == "p":
-
-        renderer = {
-            'type' : 'uniqueValue',
-            'valueExpression' : symbol_args.pop('value_expression', None),
-            'backgroundFillSymbol' : symbol_args.pop('background_fill_symbol',
-                                                     create_symbol(geometry_type="polygon")),
-            'defaultSymbol' : create_symbol(geometry_type=geometry_type),
-            'rotationExpression' : symbol_args.pop('rotation_expression', None),
-            'rotationType' : symbol_args.pop("rotation_type", None),
-            'uniqueValuesInfos' : symbol_args.pop('unique_value_infos', []),
-            'valueExpressionTitle' : symbol_args.pop('expression_title', 'Predominance'),
-            'visualVariables' : symbol_args.pop('visual_variables', [])
-        }
-
         return renderer
     elif render_type == "str":
         renderer = {

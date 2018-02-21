@@ -335,7 +335,7 @@ class GIS(object):
                      'portal:publisher:publishServerServices',
                      'portal:publisher:publishTiles']
             for priv in privs:
-                if priv in gis.users.me.privileges:
+                if priv in self.users.me.privileges:
                     can_publish = True
                     break
                 else:
