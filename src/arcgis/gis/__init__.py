@@ -2141,7 +2141,7 @@ class ContentManager(object):
     #----------------------------------------------------------------------
     def analyze(self,
                 url=None,
-                itemid=None,
+                item=None,
                 file_path=None,
                 text=None,
                 file_type=None,
@@ -2167,7 +2167,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         url                        optional string. The URL of the csv file.
         -----------------------    -------------------------------------------------------------
-        itemid                     optional string. The ID of the item to be analyzed.
+        item                       optional string/Item. The ID or Item of the item to be
+                                   analyzed.
         -----------------------    -------------------------------------------------------------
         file_path                  optional string. The file to be analyzed.
         -----------------------    -------------------------------------------------------------
@@ -2200,8 +2201,11 @@ class ContentManager(object):
         files = None
         if not (text or file_path or itemid or url):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
-        if itemid:
-            parms['itemid'] = itemid
+        if item:
+            if isinstance(item, str):
+                parms['itemid'] = itemid
+            elif isinstance(item, Item):
+                params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
             files = {'file' : file_path}
         elif text:
