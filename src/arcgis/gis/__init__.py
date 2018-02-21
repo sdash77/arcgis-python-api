@@ -335,7 +335,7 @@ class GIS(object):
                      'portal:publisher:publishServerServices',
                      'portal:publisher:publishTiles']
             for priv in privs:
-                if priv in gis.users.me.privileges:
+                if priv in self.users.me.privileges:
                     can_publish = True
                     break
                 else:
@@ -2137,6 +2137,110 @@ class ContentManager(object):
             return Item(self._gis, itemid)
         else:
             return None
+
+    #----------------------------------------------------------------------
+    def analyze(self,
+                url=None,
+                item=None,
+                file_path=None,
+                text=None,
+                file_type=None,
+                source_locale='en',
+                geocoding_service=None,
+                location_type=None,
+                source_country='world',
+                country_hint=None
+                ):
+        """
+        The Analyze call helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or generating features using the Publish or Generate operation, respectively.
+
+        Analyze returns information about the file including the fields present as well as sample records. Analyze attempts to detect the presence of location fields that may be present as either X,Y fields or address fields.
+
+        Analyze packages its result so that publishParameters within the JSON response contains information that can be passed back to the server in a subsequent call to Publish or Generate. The publishParameters subobject contains properties that describe the resulting layer after publishing, including its fields, the desired renderer, and so on. Analyze will suggest defaults for the renderer.
+
+        In a typical workflow, the client will present portions of the Analyze results to the user for editing before making the call to Publish or Generate.
+
+        If the file to be analyzed currently exists in the portal as an item, callers can pass in its itemId. Callers can also directly post the file. In this case, the request must be a multipart post request pursuant to IETF RFC1867. The third option for text files is to pass the text in as the value of the text parameter.
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        url                        optional string. The URL of the csv file.
+        -----------------------    -------------------------------------------------------------
+        item                       optional string/Item. The ID or Item of the item to be
+                                   analyzed.
+        -----------------------    -------------------------------------------------------------
+        file_path                  optional string. The file to be analyzed.
+        -----------------------    -------------------------------------------------------------
+        text                       optional string. The text in the file to be analyzed.
+        -----------------------    -------------------------------------------------------------
+        file_type                  optional string. The type of the input file: shapefile, csv or excel
+        -----------------------    -------------------------------------------------------------
+        source_locale              optional string. The locale used for the geocoding service source.
+        -----------------------    -------------------------------------------------------------
+        geocoding_service          optional string/geocoder. The URL of the service.
+        -----------------------    -------------------------------------------------------------
+        location_type              optional string. Indicates the type of spatial information stored in the dataset.
+
+                                   Values for CSV: coordinates | address | lookup | none
+                                   Values for Excel: coordinates | address | none
+        -----------------------    -------------------------------------------------------------
+        source_country             optional string. The two character country code associated with the geocoding service, default is "world".
+        -----------------------    -------------------------------------------------------------
+        country_hint               optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        =======================    =============================================================
+
+        :returns: dictionary
+
+        """
+        surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
+        params = {
+            'f' : 'json',
+            'analyzeParameters' : {}
+        }
+        files = None
+        if not (text or file_path or itemid or url):
+            return Exception("Must provide an itemid, file_path or text to analyze data.")
+        if item:
+            if isinstance(item, str):
+                parms['itemid'] = itemid
+            elif isinstance(item, Item):
+                params['itemid'] = item.itemid
+        elif file_path and os.path.isfile(file_path):
+            files = {'file' : file_path}
+        elif text:
+            params['text'] = text
+        elif url:
+            params['sourceUrl'] = url
+
+        params['analyzeParameters']['sourcelocale'] = source_locale
+        if geocoding_service:
+            from arcgis.geocoding._functions import Geocoder
+            if isinstance(geocoding_service, Geocoder):
+                params['analyzeParameters']['geocodeServiceUrl'] = geocoding_service.url
+            else:
+                params['analyzeParameters']['geocodeServiceUrl'] = geocoding_service
+        if location_type:
+            params['analyzeParameters']['locationType'] = location_type
+
+        if file_type is None and \
+           (url or file_path):
+            d = url or file_path
+            if d:
+                if str(d).lower().endswith('.csv'):
+                    params['fileType'] = 'csv'
+                elif str(d).lower().endswith('.xls') or \
+                     str(d).lower().endswith('.xlsx'):
+                    params['fileType'] = 'excel'
+        if source_country:
+            params['analyzeParameters']['sourceCountry'] = source_country
+        if country_hint:
+            params['analyzeParameters']['sourcecountryhint'] = country_hint
+
+        gis = self._gis
+        params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
+        return gis._con.post(url=surl, postdata=params, files=files)
+
 
     def create_service(self, name,
                        service_description="",

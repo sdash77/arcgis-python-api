@@ -19,12 +19,200 @@ RENDERER_TYPES = {
     "u" : 'unique',#
     'h' : 'heatmap',#
     'c' : 'ClassBreaks',#
-    #"p" : 'Predominance',
+    "p" : 'Predominance',
     'str' : 'Stretch',#
     't' : "Temporal",#
     'v' : "vector field"#
 }
+#--------------------------------------------------------------------------
+def _trans_info(data, **kwargs):
+    """creates a transparancy information for visual variables"""
+    ti = None
+    if 'trans_info_field' in symbol_args:
+        ti = {}
 
+        ti['field'] = kwargs.pop('trans_info_field', None)
+        ti['normalizationField'] = kwargs.pop('trans_norm_field', None)
+        stops = kwargs.pop('trans_stops', None)
+        if stops is None and \
+           data:
+            stops = []
+            transp = 100/len(data)
+            for d in data:
+
+                stops.append({
+                    "stop": {
+                        "value": d,
+                        "transparency": transp
+                    }
+                })
+                transp += transp
+                del d
+            del data
+        elif data is None and stops is None:
+            raise Exception("Cannot create transparancy info.")
+
+        ti['stops'] = stops
+        ti['type'] = 'transparancyInfo'
+        ti['valueExpression'] = kwargs.pop('trans_value_exp', None)
+        ti['valueExpressionTitle'] = kwargs.pop('trans_exp_title', None)
+    return ti
+#--------------------------------------------------------------------------
+def _si_creator(**kwargs):
+    """creates the size information from key/value pairs"""
+    si = {
+        'type' : 'sizeInfo'
+    }
+    if 'si_field' in kwargs or \
+       'si_minSize' in kwargs:
+        si['expression'] = kwargs.pop('si_expresion', 'view.scale')
+        si['field'] = kwargs.pop('si_field', None)
+        si['maxDataValue'] = kwargs.pop('si_max_data_value', None)
+        si['maxSize'] = kwargs.pop('si_max_size', 20)
+        si['minDatavalue'] = kwargs.pop('si_min_data_value', None)
+        si['minSize'] = kwargs.pop('si_min_size', 10)
+
+        si['normalizationField'] = kwargs.pop('si_norm_field', None)
+        si['stops'] = kwargs.pop('si_stops', None)
+        if 'si_target' in kwargs:
+            si['target'] = kwargs.pop('si_target', None)
+        si['valueExpression'] = kwargs.pop('si_expression', None)
+        si['valueExpressionTitle'] = kwargs.pop('si_expression_title', None)
+        si['valueUnit'] = kwargs.pop('si_value_unit', None)
+        return si
+    else:
+        return None
+    return None
+#--------------------------------------------------------------------------
+def _ri_creator(**kwargs):
+    """creates rotation information for visual variables"""
+    ri = {
+        'type' : 'rotationInfo'
+    }
+    if 'ri_type' in kwargs:
+        ri['rotatationType'] = kwargs.pop('ri_type')
+        ri['valueExpression'] = kwargs.pop('ri_expression', None)
+        ri['valueExpressionTitle'] = kwargs.pop('ri_expression_title', 'ri_title')
+        ri['field'] = kwargs.pop('ri_field', None)
+
+        return ri
+    return None
+#--------------------------------------------------------------------------
+def visual_variables(geometry_type, sdf_or_list, **kwargs):
+    """
+    a function to create visual variables
+
+    This operation allows developers to take a deep dive into developing custom renderer.
+    Here a user/developer can create transparancy, size information, and other rules to
+    improve the overall feel and look of spatial information on a map.
+
+    Each type of information is detailed in the tables below.
+
+    ======================  =========================================================
+    **optional variables**  **description**
+    ----------------------  ---------------------------------------------------------
+    trans_info_field        Attribute field used for setting the transparency of a
+                            feature if no trans_value_exp is provided.
+    ----------------------  ---------------------------------------------------------
+    trans_norm_field        Attribute field used to normalize the data.
+    ----------------------  ---------------------------------------------------------
+    trans_stops             An array of transparency stop objects.
+    ----------------------  ---------------------------------------------------------
+    trans_value_exp         An Arcade expression evaluating to a number.
+    ----------------------  ---------------------------------------------------------
+    trans_exp_title         The title identifying and describing the associated
+                            Arcade expression as defined in the valueExpression
+                            property.
+    ----------------------  ---------------------------------------------------------
+
+    **Size Info Visual Variable**
+
+    The size Info visual variable defines how size is applied to features based on the
+    values of a numeric field attribute. The minimum and maximum values of the data
+    should be indicated along with their respective size values. You must specify
+    minSize and maxSize or stops to construct the size ramp. All features with values
+    falling in between the specified min and max data values (or stops) will be scaled
+    proportionally between the provided min and max sizes.
+
+    ======================  =========================================================
+    **arguements**          **description**
+    ----------------------  ---------------------------------------------------------
+    si_field                Attribute field used for size rendering if no
+                            si_expression is provided.
+    ----------------------  ---------------------------------------------------------
+    si_max_data_value       The maximum data value.
+    ----------------------  ---------------------------------------------------------
+    si_max_size             Specifies the largest marker size to use at any given map
+                            scale. Can be either a fixed number or object, depending
+                            on whether the user chose a fixed range or not.
+    ----------------------  ---------------------------------------------------------
+    si_min_data_value       The minimum data value.
+    ----------------------  ---------------------------------------------------------
+    si_min_size             Specifies the smallest marker size to use at any given
+                            map scale. Can be either a fixed number or object,
+                            depending on whether the user chose a fixed range or not.
+    ----------------------  ---------------------------------------------------------
+    si_norm_field           Attribute field used to normalize the data.
+    ----------------------  ---------------------------------------------------------
+    si_stops                An array of objects that defines the thematic size ramp
+                            in a sequence of data or expression stops.
+    ----------------------  ---------------------------------------------------------
+    si_target               Only used when sizeInfo is used for polygon outlines.
+                            Value of this property must be outline
+    ----------------------  ---------------------------------------------------------
+    si_expression           An Arcade expression evaluating to a number
+    ----------------------  ---------------------------------------------------------
+    si_expression_title     the title identifying and describing the associated
+                            Arcade expression
+    ----------------------  ---------------------------------------------------------
+    si_value_unit           A string value indicating the required unit of measurement.
+    ======================  =========================================================
+
+    ======================  =========================================================
+    **arguements**          **description**
+    ----------------------  ---------------------------------------------------------
+    ri_field                Attribute field used for setting the rotation of a symbol
+                            if no ri_expression is provided.
+    ----------------------  ---------------------------------------------------------
+    ri_type                 Defines the origin and direction of rotation depending on
+                            how the angle of rotation was measured. Possible values
+                            are geographic which rotates the symbol from the north in
+                            a clockwise direction and arithmetic which rotates the
+                            symbol from the east in a counter-clockwise direction.
+                            Must be one of the following values:
+
+                            - geographic
+                            - arithmetic
+
+    ----------------------  ---------------------------------------------------------
+    ri_expression           An Arcade expression evaluating to a number.
+    ----------------------  ---------------------------------------------------------
+    ri_expression_title     The title identifying and describing the ri_expression
+    ======================  =========================================================
+
+
+
+    """
+    v = []
+    if isinstance(sdf_or_list, SpatialDataFrame) and \
+       'trans_info_field' in kwargs:
+
+        data = sdf_or_list[trans_info_field].unique().tolist()
+    elif isinstance(sdf_or_list, (tuple, list)):
+        data = list(set(sdf_or_list))
+
+    ti = _trans_info(data=data, **kwargs)
+    if ti:
+        v.append(ti)
+    si = _si_creator(**kwargs)
+    if si:
+        v.append(si)
+    ri = _ri_creator(**kwargs)
+    if ri:
+        v.append(ri)
+    return v
+
+#--------------------------------------------------------------------------
 def generate_renderer(geometry_type,
                       sdf_or_series=None,
                       label=None,
@@ -96,7 +284,7 @@ def generate_renderer(geometry_type,
                             needs to create.  Valid inputs are: simple, picture, text,
                             or carto.  The default is simple.
     ----------------------  ---------------------------------------------------------
-    symbol_type             optional string. This is the symbology used by the
+    symbol_style            optional string. This is the symbology used by the
                             geometry.  For example 's' for a Line geometry is a solid
                             line. And '-' is a dash line.
 
@@ -183,7 +371,7 @@ def generate_renderer(geometry_type,
                             gradient the colorStop is added.
     ======================  =========================================================
 
-    **Unique Renderer**
+    **Predominance/Unique Renderer**
 
     This renderer symbolizes features based on one or more matching string attributes.
 
@@ -316,9 +504,14 @@ def generate_renderer(geometry_type,
     visual_variables        An object used to set rendering options.
     ======================  =========================================================
 
+
+
+    :returns: dict
+
     """
     import numpy as np
-
+    if colors is None:
+        colors = 'jet'
     if isinstance(colors, str):
         colors = colors.split(',')
     if 'alpha' in symbol_args:
@@ -401,7 +594,7 @@ def generate_renderer(geometry_type,
             "colorStops" : colorStops
         }
         return renderer
-    elif render_type == 'u':
+    elif render_type == ['u', 'p']:
         if sdf_or_series is None:
             raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
                              " or Pandas DataFrame for this type of renderer")
@@ -558,8 +751,6 @@ def generate_renderer(geometry_type,
         for key in [k for k,v in renderer.items() if v is None]:
             del renderer[key]
         return renderer
-    elif render_type == "p":
-        raise NotImplemented("Predominance is not implemented, please use unique values")
     elif render_type == "str":
         renderer = {
             'computeGamma' : symbol_args.pop('compute_gamma', True),

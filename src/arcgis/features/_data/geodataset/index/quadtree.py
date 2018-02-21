@@ -249,7 +249,7 @@ class Index(_QuadTree):
         Returns:
         - A list of inserted items whose bounding boxes intersect with the input bbox.
         """
-        return self._intersect(bbox)
+        return list(self._intersect(bbox))
 
     @property
     def count(self):
