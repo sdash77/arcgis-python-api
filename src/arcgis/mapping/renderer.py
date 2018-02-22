@@ -594,7 +594,7 @@ def generate_renderer(geometry_type,
             "colorStops" : colorStops
         }
         return renderer
-    elif render_type == ['u', 'p']:
+    elif render_type in ['u', 'p']:
         if sdf_or_series is None:
             raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
                              " or Pandas DataFrame for this type of renderer")
