@@ -3999,6 +3999,17 @@ class User(dict):
         :returns:
            A boolean indicating success (True) or failure (False).
         """
+        if 'roleId' in self and \
+           self['roleId'] != 'iAAAAAAAAAAAAAAA':
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+        elif not ('roleId' in self) and level == 1:
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+
+
         if not isinstance(level, int):
             raise ValueError("level must be an integer with values 1 or 2")
 
