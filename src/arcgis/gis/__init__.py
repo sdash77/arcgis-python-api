@@ -133,6 +133,10 @@ class GIS(object):
                         access in the network where the script is run.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
+    ----------------    ---------------------------------------------------------------
+    token               Optional string. This is the Enterprise token for built-in
+                        logins. This parameter is only honored if the username/password
+                        is None and the security for the site uses BUILT-IN security.
     ================    ===============================================================
 
 
@@ -257,6 +261,7 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
+        utoken = kwargs.pop('token', None)
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -266,6 +271,10 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
+            if not (utoken is None):
+                self._portal.con._token = utoken
+                self._portal.con._auth = "BUILTIN"
+
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
