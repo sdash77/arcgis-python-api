@@ -1791,7 +1791,8 @@ class GroupManager(object):
                snippet=None, access='public', thumbnail=None,
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
-               provider_group_name=None, provider=None):
+               provider_group_name=None, provider=None,
+               max_file_size=None, user_update_items=False):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -1835,11 +1836,25 @@ class GroupManager(object):
         provider_group_name   Optional string. The name of the domain group.
         --------------------  ---------------------------------------------------------
         provider              Optional string. Name of the provider.
+        --------------------  ---------------------------------------------------------
+        max_file_size         Optional integer.  This is the maximum file file allowed
+                              be uploaded/shared to a group. Default value is: 1024000
+        --------------------  ---------------------------------------------------------
+        users_update_items    Optional boolean.  Members can update all items in this
+                              group.  Updates to an item can include changes to the
+                              item's description, tags, metadata, as well as content.
+                              This option can't be disabled once the group has
+                              been created. Default is False.
         ====================  =========================================================
 
         :return:
             The group if successfully created, None if unsuccessful.
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if user_update_items is None:
+            user_update_items = False
+
         if type(tags) is list:
             tags = ",".join(tags)
         params = {
@@ -1851,8 +1866,14 @@ class GroupManager(object):
         if provider_group_name:
             params['provider'] = provider
             params['providerGroupName'] = provider_group_name
+        if user_update_items == True:
+            params['capabilities'] = "updateitemcontrol"
+        else:
+            params['capabilities'] = ""
+        params['MAX_FILE_SIZE'] = max_file_size
+
         group = self._portal.create_group_from_dict(params, thumbnail)
-        #print(groupid)
+
         if group is not None:
             return Group(self._gis, group['id'], group)
         else:
@@ -3598,7 +3619,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None):
+               thumbnail=None, max_file_size=None, user_update_items=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -3631,16 +3652,34 @@ class Group(dict):
                             True means the group is searchable.
         ------------------  ---------------------------------------------------------
         thumbnail           Optional string. URL or file location to a new group image.
+        ------------------  ---------------------------------------------------------
+        max_file_size       Optional integer.  This is the maximum file file allowed
+                            be uploaded/shared to a group. Default value is: 1024000
+        ------------------  ---------------------------------------------------------
+        users_update_items  Optional boolean.  Members can update all items in this
+                            group.  Updates to an item can include changes to the
+                            item's description, tags, metadata, as well as content.
+                            This option can't be disabled once the group has
+                            been created. Default is False.
         ==================  =========================================================
 
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if user_update_items is None:
+            user_update_items = False
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        resp = self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
+        isinstance(self._portal, portalpy.Portal)
+        resp = self._portal.update_group(self.groupid, title, tags,
+                                         description, snippet, access,
+                                         is_invitation_only, sort_field,
+                                         sort_order, is_view_only, thumbnail,
+                                         max_file_size, user_update_items)
         if resp:
             self._hydrate()
         return resp
