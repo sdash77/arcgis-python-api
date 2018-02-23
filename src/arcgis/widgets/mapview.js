@@ -200,6 +200,7 @@ define('mapview', [
      "esri/geometry/Multipoint",
      "esri/layers/FeatureLayer",
      "esri/renderers/smartMapping",
+	 "esri/renderers/jsonUtils",
      "esri/symbols/SimpleFillSymbol",
      "esri/symbols/SimpleLineSymbol",
      "esri/renderers/HeatmapRenderer",
@@ -237,6 +238,7 @@ define('mapview', [
      Multipoint,
      FeatureLayer,
      smartMapping,
+	 jsonUtils,
      SimpleFillSymbol,
      SimpleLineSymbol,
      HeatmapRenderer,
@@ -661,7 +663,7 @@ define('mapview', [
                             // this.touch();
                         }
 
-                        if (lyr_options.renderer == "ClassedSizeRenderer") {
+                        else if (lyr_options.renderer == "ClassedSizeRenderer") {
                             console.log("ClassedSizeRenderer...");
                             setTimeout(function () { createClassedSizeRenderer(lyr_options); }, 500);
                             /*layer.on("load", function () {
@@ -670,7 +672,7 @@ define('mapview', [
                              });*/
                         }
 
-                        if (lyr_options.renderer == "ClassedColorRenderer") {
+                        else if (lyr_options.renderer == "ClassedColorRenderer") {
                             setTimeout(function () { createClassedColorRenderer(lyr_options); }, 500);
                             /*layer.on("load", function () {
                                 console.log("BBB");
@@ -678,6 +680,10 @@ define('mapview', [
                              });
                              */
                         }
+						else{
+							var renderer = jsonUtils.fromJson(lyr_options.renderer); 
+							layer.setRenderer(renderer);
+						}
 
                         function createClassedColorRenderer(lyr_options) {
                             //smart mapping functionality begins

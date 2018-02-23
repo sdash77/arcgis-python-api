@@ -958,7 +958,8 @@ class ImageryLayer(Layer):
             else:
                 _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
                                    \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
-                return None
+                return None 
+
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
 
@@ -2334,13 +2335,178 @@ class ImageryLayer(Layer):
         fnarg_ra = self._fnra['rasterFunctionArguments']
         fnarg = self._fn
         return convert_raster_to_feature(_get_input_raster(fnarg_ra, fnarg), field, output_type, simplify, output_name, gis)
+    
+    
+    def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes 
+        of all the functions in the function chain, representing the rasters in a blue rectangular 
+        box, attributes in green rectangular box and the raster function names in yellow. 
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the 
+                              attributes of the function and not only it's function name and raster 
+                              inputs 
+                              Set to False by default, to display only he raster function name and 
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches, 
+                              seperated by a comma. If only a single number is given, this is used 
+                              for both the width and the height. If defined and the drawing is 
+                              larger than the given size, the drawing is uniformly scaled down so 
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: G - Graph item
+        """
+        import re
+        try:
+            from graphviz import Digraph
+        except:
+            print("Graphviz needs to be installed. ")
+
+        global nodenumber
+        nodenumber=0
+        function_dictionary=self._fnra
+        def _raster_slicestring(slice_string):
+            try:
+                subString = re.search('/services/(.+?)/ImageServer', slice_string).group(1)
+            except AttributeError:
+                subString = slice_string
+            return subString
+
+        def _toolname_slicestring(slice_string):
+            try:
+                subString = re.search('(.+?)_sa', slice_string).group(1)
+            except AttributeError:
+                subString = slice_string
+            return subString
+
+        G = Digraph(comment='Raster Function Chain', format='svg') # To declare the graph
+        G.clear() #clear all previous cases of the same name
+        G.attr(rankdir='LR', len='1',splines='ortho',nodesep='0.5',size=graph_size)   #Display graph from Left to Right
+
+        def _raster_function_graph(rfa_value,rfa_key,root):
+            global nodenumber
+            if isinstance(rfa_value,dict):
+                for k in rfa_value.keys():
+                    if k=="rasterFunction":
+                        _function_graph(rfa_value,rfa_key,root)
+
+            elif isinstance(rfa_value,list):
+                for rfa_value_search_dict in rfa_value:
+                    if isinstance(rfa_value_search_dict,dict):
+                        for rfa_value_search_key in rfa_value_search_dict.keys():
+                            if rfa_value_search_key=="rasterFunction":
+                                _function_graph(rfa_value_search_dict,rfa_key,root)
+                    else:
+                        nodenumber+=1
+                        rastername=_raster_slicestring(str(rfa_value_search_dict))
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
+
+            elif (isinstance(rfa_value,int) or isinstance(rfa_value,float)):
+                nodenumber+=1
+                rastername=str(rfa_value)
+                G.node(str(nodenumber), rastername, style=('filled'), shape='circle',color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
+
+            elif isinstance(rfa_value,str):
+                nodenumber+=1
+                rastername=_raster_slicestring(rfa_value)
+                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
+        
+            
+        def _attribute_function_graph(rfa_value,rfa_key,root):
+            global nodenumber
+            nodenumber+=1
+            rastername=rfa_key+" = "+str(rfa_value)
+            G.node(str(nodenumber), rastername, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
+            G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
+            
+        def _function_graph(dictionary,childnode,connect):
+            global nodenumber
+            if isinstance(dictionary, dict):
+                for dkey, dvalue in dictionary.items():
+                    if dkey == "rasterFunction" and dvalue != "GPAdapter":
+                        nodenumber+=1
+                        G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                        G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                        connect=nodenumber  
+                        for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
+                            if dkey == "rasterFunctionArguments":
+                                for key, value in dvalue.items():        
+                                    if (key == "Raster" or key=="Raster2" or key=="Rasters" or key=="PanImage" or key=="MSImage"):
+                                        _raster_function_graph(value,key,connect)
+                                    elif show_attributes==True:
+                                        _attribute_function_graph(value,key,connect)
+                                    
+                    elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments 
+                        for rf_key, rf_value in dictionary.items():
+                             if rf_key == "rasterFunctionArguments":  
+                                for gbl_key, gbl_value in rf_value.items():
+                                    if gbl_key=="toolName":
+                                        toolname=_toolname_slicestring(gbl_value)
+                                        nodenumber+=1
+                                        G.node(str(nodenumber), toolname, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                                        G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                                        connect=nodenumber
+                                    elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") : #To check if rasterFunctionArguments has rasters in it
+                                        _raster_function_graph(gbl_value,gbl_key,connect)
+                                    elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
+                                        _attribute_function_graph(gbl_value,gbl_key,connect)
+        
+
+
+         #To find first rasterFunction
+        root=nodenumber=0
+        for dkey, dvalue in function_dictionary.items():
+            if dkey == "rasterFunction" and dvalue != "GPAdapter": #To find first rasterFunction
+                G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
+                for rf_key, rf_value in function_dictionary.items():
+                    if rf_key == "rasterFunctionArguments":         #To check dictionary again for rasterFunctionArguments
+                        for rfa_key, rfa_value in rf_value.items():
+                            if rfa_key=="rasterFunction":           #To check if rasterFunctionArguments has another rasterFunction chain in it
+                                _function_graph(rfa_value,rfa_key,nodenumber)
+                            elif rfa_key == "Raster" or rfa_key=="Raster2" or rfa_key=="Rasters" or rfa_key=="PanImage" or rfa_key=="MSImage": #To check if rasterFunctionArguments includes raster inputs in it
+                                _raster_function_graph(rfa_value,rfa_key,root)
+                            elif show_attributes==True:
+                                _attribute_function_graph(rfa_value,rfa_key,root)
+        
+            elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments 
+                for rf_key, rf_value in function_dictionary.items():
+                     if rf_key == "rasterFunctionArguments":  
+                        for gbl_key, gbl_value in rf_value.items():
+                            if gbl_key=="toolName":
+                                toolname=_toolname_slicestring(gbl_value)
+                                #To check if rasterFunctionArguments has another rasterFunction chain in it
+                                G.node(str(nodenumber), toolname, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                            elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") : #To check if rasterFunctionArguments includes raster inputs in it
+                                _raster_function_graph(gbl_value,gbl_key,root)
+                            elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
+                                _attribute_function_graph(gbl_value,gbl_key,root)
+    
+        return G
 
 
     def _repr_jpeg_(self):
         bbox_sr = None
         if 'spatialReference' in self.extent:
             bbox_sr = self.extent['spatialReference']
-        return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
+        if not self._uses_gbl_function:
+            return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
+
+    def _repr_svg_(self):
+        if self._uses_gbl_function:
+            graph=self.draw_graph()
+            svg_graph=graph.pipe().decode('utf-8')
+            return svg_graph
+        else:
+            return None
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -3407,12 +3573,3 @@ class RasterManager(object):
                                             footprint=footprint,
                                             geodata_transforms=geodata_transforms,
                                             apply_method=apply_method)
-
-
-
-
-
-
-
-
-
