@@ -1801,7 +1801,7 @@ class GroupManager(object):
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
                provider_group_name=None, provider=None,
-               max_file_size=None, user_update_items=False):
+               max_file_size=None, users_update_items=False):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -1846,7 +1846,7 @@ class GroupManager(object):
         --------------------  ---------------------------------------------------------
         provider              Optional string. Name of the provider.
         --------------------  ---------------------------------------------------------
-        max_file_size         Optional integer.  This is the maximum file file allowed
+        max_file_size         Optional integer.  This is the maximum file size allowed
                               be uploaded/shared to a group. Default value is: 1024000
         --------------------  ---------------------------------------------------------
         users_update_items    Optional boolean.  Members can update all items in this
@@ -1861,8 +1861,8 @@ class GroupManager(object):
         """
         if max_file_size is None:
             max_file_size = 1024000
-        if user_update_items is None:
-            user_update_items = False
+        if users_update_items is None:
+            users_update_items = False
 
         if type(tags) is list:
             tags = ",".join(tags)
@@ -1875,7 +1875,7 @@ class GroupManager(object):
         if provider_group_name:
             params['provider'] = provider
             params['providerGroupName'] = provider_group_name
-        if user_update_items == True:
+        if users_update_items == True:
             params['capabilities'] = "updateitemcontrol"
         else:
             params['capabilities'] = ""
@@ -3628,7 +3628,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None, max_file_size=None, user_update_items=False):
+               thumbnail=None, max_file_size=None, users_update_items=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -3662,7 +3662,7 @@ class Group(dict):
         ------------------  ---------------------------------------------------------
         thumbnail           Optional string. URL or file location to a new group image.
         ------------------  ---------------------------------------------------------
-        max_file_size       Optional integer.  This is the maximum file file allowed
+        max_file_size       Optional integer.  This is the maximum file size allowed
                             be uploaded/shared to a group. Default value is: 1024000
         ------------------  ---------------------------------------------------------
         users_update_items  Optional boolean.  Members can update all items in this
@@ -3678,8 +3678,8 @@ class Group(dict):
         """
         if max_file_size is None:
             max_file_size = 1024000
-        if user_update_items is None:
-            user_update_items = False
+        if users_update_items is None:
+            users_update_items = False
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
@@ -3688,7 +3688,7 @@ class Group(dict):
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
                                          sort_order, is_view_only, thumbnail,
-                                         max_file_size, user_update_items)
+                                         max_file_size, users_update_items)
         if resp:
             self._hydrate()
         return resp
