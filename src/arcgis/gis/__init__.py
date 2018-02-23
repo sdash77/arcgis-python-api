@@ -5570,7 +5570,7 @@ class Item(dict):
 
     def related_items(self, rel_type, direction="forward"):
         """
-        Retrieves the items related to this item. Relationsships can be added and deleted using
+        Retrieves the items related to this item. Relationships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
 
         ===============     ====================================================================
