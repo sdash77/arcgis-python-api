@@ -4048,7 +4048,7 @@ class User(dict):
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
-               first_name=None, last_name=None):
+               first_name=None, last_name=None, security_question=None, security_answer=None):
         """ Updates this user's properties.
 
         .. note::
@@ -4057,33 +4057,67 @@ class User(dict):
             want to update the description, then only provide
             the description argument.
 
-        ================  ==========================================================
-        **Argument**      **Description**
-        ----------------  ----------------------------------------------------------
-        access            Optional string. The access level for the user, values
-                          allowed are private, org, public.
-        ----------------  ----------------------------------------------------------
-        preferred_view    Optional string. The preferred view for the user, values allowed are Web, GIS, null.
-        ----------------  ----------------------------------------------------------
-        description       Optional string. A description of the user.
-        ----------------  ----------------------------------------------------------
-        tags              Optional string. Tags listed as comma-separated values, or a list of strings.
-        ----------------  ----------------------------------------------------------
-        thumbnail         Optional string. The path or url to a file of type PNG, GIF,
-                          or JPEG. Maximum allowed size is 1 MB.
-        ----------------  ----------------------------------------------------------
-        fullname          Optional string. The full name of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        email             Optional string. The e-mail address of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        culture           Optional string. The two-letter language code, fr for example.
-        ----------------  ----------------------------------------------------------
-        region            Optional string. The two-letter country code, FR for example.
-        ----------------  ----------------------------------------------------------
-        first_name        Optional string. User's first name.
-        ----------------  ----------------------------------------------------------
-        last_name         Optional string. User's first name.
-        ================  ==========================================================
+        .. note::
+            When updating the security question, you must provide a
+            security_answer as well.
+
+        ==================  ==========================================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------------------------
+        access              Optional string. The access level for the user, values
+                            allowed are private, org, public.
+        ------------------  ----------------------------------------------------------
+        preferred_view      Optional string. The preferred view for the user, values allowed are Web, GIS, null.
+        ------------------  ----------------------------------------------------------
+        description         Optional string. A description of the user.
+        ------------------  ----------------------------------------------------------
+        tags                Optional string. Tags listed as comma-separated values, or a list of strings.
+        ------------------  ----------------------------------------------------------
+        thumbnail           Optional string. The path or url to a file of type PNG, GIF,
+                            or JPEG. Maximum allowed size is 1 MB.
+        ------------------  ----------------------------------------------------------
+        fullname            Optional string. The full name of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        email               Optional string. The e-mail address of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        culture             Optional string. The two-letter language code, fr for example.
+        ------------------  ----------------------------------------------------------
+        region              Optional string. The two-letter country code, FR for example.
+        ------------------  ----------------------------------------------------------
+        first_name          Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        last_name           Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        security_question   Optional integer.  The is a number from 1-14.  The
+                            questions are as follows:
+
+                            1. What city were you born in?
+                            2. What was your high school mascot?
+                            3. What is your mother's maden name?
+                            4. What was the make of your first car?
+                            5. What high school did you got to?
+                            6. What is the last name of your best friend?
+                            7. What is the middle name of your youngest sibling?
+                            8. What is the name of the street on which your grew up?
+                            9. What is the name of your favorite fictional character?
+                            10. What is the name of your favorite pet?
+                            11. What is the name of your favorite restaurant?
+                            12. What is the title of your facorite book?
+                            13. What is your dream job?
+                            14. Where did you go on your first date?
+
+                            Usage Example:
+
+                            security_question=13
+        ------------------  ----------------------------------------------------------
+        security_answer     Optional string.  This is the answer to security querstion.
+                            If you are changing a user's question, an answer must be
+                            provided.
+
+                            Usage example:
+
+                            security_answer="Working on the Python API"
+        ==================  ==========================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -4109,6 +4143,9 @@ class User(dict):
                   'firstName' : first_name,
                   'lastName' : last_name
                   }
+        if security_answer and security_question:
+            params['securityQuestionIdx'] = security_question
+            params['securityAnswer'] = security_answer
         for k,v in copy.copy(params).items():
             if v is None:
                 del params[k]
