@@ -133,6 +133,10 @@ class GIS(object):
                         access in the network where the script is run.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
+    ----------------    ---------------------------------------------------------------
+    token               Optional string. This is the Enterprise token for built-in
+                        logins. This parameter is only honored if the username/password
+                        is None and the security for the site uses BUILT-IN security.
     ================    ===============================================================
 
 
@@ -257,6 +261,7 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
+        utoken = kwargs.pop('token', None)
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -266,6 +271,10 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
+            if not (utoken is None):
+                self._portal.con._token = utoken
+                self._portal.con._auth = "BUILTIN"
+
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
@@ -1791,7 +1800,8 @@ class GroupManager(object):
                snippet=None, access='public', thumbnail=None,
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
-               provider_group_name=None, provider=None):
+               provider_group_name=None, provider=None,
+               max_file_size=None, users_update_items=False):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -1835,11 +1845,25 @@ class GroupManager(object):
         provider_group_name   Optional string. The name of the domain group.
         --------------------  ---------------------------------------------------------
         provider              Optional string. Name of the provider.
+        --------------------  ---------------------------------------------------------
+        max_file_size         Optional integer.  This is the maximum file size allowed
+                              be uploaded/shared to a group. Default value is: 1024000
+        --------------------  ---------------------------------------------------------
+        users_update_items    Optional boolean.  Members can update all items in this
+                              group.  Updates to an item can include changes to the
+                              item's description, tags, metadata, as well as content.
+                              This option can't be disabled once the group has
+                              been created. Default is False.
         ====================  =========================================================
 
         :return:
             The group if successfully created, None if unsuccessful.
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if users_update_items is None:
+            users_update_items = False
+
         if type(tags) is list:
             tags = ",".join(tags)
         params = {
@@ -1851,8 +1875,14 @@ class GroupManager(object):
         if provider_group_name:
             params['provider'] = provider
             params['providerGroupName'] = provider_group_name
+        if users_update_items == True:
+            params['capabilities'] = "updateitemcontrol"
+        else:
+            params['capabilities'] = ""
+        params['MAX_FILE_SIZE'] = max_file_size
+
         group = self._portal.create_group_from_dict(params, thumbnail)
-        #print(groupid)
+
         if group is not None:
             return Group(self._gis, group['id'], group)
         else:
@@ -3598,7 +3628,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None):
+               thumbnail=None, max_file_size=None, users_update_items=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -3631,16 +3661,34 @@ class Group(dict):
                             True means the group is searchable.
         ------------------  ---------------------------------------------------------
         thumbnail           Optional string. URL or file location to a new group image.
+        ------------------  ---------------------------------------------------------
+        max_file_size       Optional integer.  This is the maximum file size allowed
+                            be uploaded/shared to a group. Default value is: 1024000
+        ------------------  ---------------------------------------------------------
+        users_update_items  Optional boolean.  Members can update all items in this
+                            group.  Updates to an item can include changes to the
+                            item's description, tags, metadata, as well as content.
+                            This option can't be disabled once the group has
+                            been created. Default is False.
         ==================  =========================================================
 
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if users_update_items is None:
+            users_update_items = False
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        resp = self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
+        isinstance(self._portal, portalpy.Portal)
+        resp = self._portal.update_group(self.groupid, title, tags,
+                                         description, snippet, access,
+                                         is_invitation_only, sort_field,
+                                         sort_order, is_view_only, thumbnail,
+                                         max_file_size, users_update_items)
         if resp:
             self._hydrate()
         return resp
@@ -3951,6 +3999,17 @@ class User(dict):
         :returns:
            A boolean indicating success (True) or failure (False).
         """
+        if 'roleId' in self and \
+           self['roleId'] != 'iAAAAAAAAAAAAAAA':
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+        elif not ('roleId' in self) and level == 1:
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+
+
         if not isinstance(level, int):
             raise ValueError("level must be an integer with values 1 or 2")
 
@@ -4000,7 +4059,7 @@ class User(dict):
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
-               first_name=None, last_name=None):
+               first_name=None, last_name=None, security_question=None, security_answer=None):
         """ Updates this user's properties.
 
         .. note::
@@ -4009,33 +4068,67 @@ class User(dict):
             want to update the description, then only provide
             the description argument.
 
-        ================  ==========================================================
-        **Argument**      **Description**
-        ----------------  ----------------------------------------------------------
-        access            Optional string. The access level for the user, values
-                          allowed are private, org, public.
-        ----------------  ----------------------------------------------------------
-        preferred_view    Optional string. The preferred view for the user, values allowed are Web, GIS, null.
-        ----------------  ----------------------------------------------------------
-        description       Optional string. A description of the user.
-        ----------------  ----------------------------------------------------------
-        tags              Optional string. Tags listed as comma-separated values, or a list of strings.
-        ----------------  ----------------------------------------------------------
-        thumbnail         Optional string. The path or url to a file of type PNG, GIF,
-                          or JPEG. Maximum allowed size is 1 MB.
-        ----------------  ----------------------------------------------------------
-        fullname          Optional string. The full name of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        email             Optional string. The e-mail address of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        culture           Optional string. The two-letter language code, fr for example.
-        ----------------  ----------------------------------------------------------
-        region            Optional string. The two-letter country code, FR for example.
-        ----------------  ----------------------------------------------------------
-        first_name        Optional string. User's first name.
-        ----------------  ----------------------------------------------------------
-        last_name         Optional string. User's first name.
-        ================  ==========================================================
+        .. note::
+            When updating the security question, you must provide a
+            security_answer as well.
+
+        ==================  ==========================================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------------------------
+        access              Optional string. The access level for the user, values
+                            allowed are private, org, public.
+        ------------------  ----------------------------------------------------------
+        preferred_view      Optional string. The preferred view for the user, values allowed are Web, GIS, null.
+        ------------------  ----------------------------------------------------------
+        description         Optional string. A description of the user.
+        ------------------  ----------------------------------------------------------
+        tags                Optional string. Tags listed as comma-separated values, or a list of strings.
+        ------------------  ----------------------------------------------------------
+        thumbnail           Optional string. The path or url to a file of type PNG, GIF,
+                            or JPEG. Maximum allowed size is 1 MB.
+        ------------------  ----------------------------------------------------------
+        fullname            Optional string. The full name of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        email               Optional string. The e-mail address of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        culture             Optional string. The two-letter language code, fr for example.
+        ------------------  ----------------------------------------------------------
+        region              Optional string. The two-letter country code, FR for example.
+        ------------------  ----------------------------------------------------------
+        first_name          Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        last_name           Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        security_question   Optional integer.  The is a number from 1-14.  The
+                            questions are as follows:
+
+                            1. What city were you born in?
+                            2. What was your high school mascot?
+                            3. What is your mother's maden name?
+                            4. What was the make of your first car?
+                            5. What high school did you got to?
+                            6. What is the last name of your best friend?
+                            7. What is the middle name of your youngest sibling?
+                            8. What is the name of the street on which your grew up?
+                            9. What is the name of your favorite fictional character?
+                            10. What is the name of your favorite pet?
+                            11. What is the name of your favorite restaurant?
+                            12. What is the title of your facorite book?
+                            13. What is your dream job?
+                            14. Where did you go on your first date?
+
+                            Usage Example:
+
+                            security_question=13
+        ------------------  ----------------------------------------------------------
+        security_answer     Optional string.  This is the answer to security querstion.
+                            If you are changing a user's question, an answer must be
+                            provided.
+
+                            Usage example:
+
+                            security_answer="Working on the Python API"
+        ==================  ==========================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -4061,6 +4154,9 @@ class User(dict):
                   'firstName' : first_name,
                   'lastName' : last_name
                   }
+        if security_answer and security_question:
+            params['securityQuestionIdx'] = security_question
+            params['securityAnswer'] = security_answer
         for k,v in copy.copy(params).items():
             if v is None:
                 del params[k]

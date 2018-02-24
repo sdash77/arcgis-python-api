@@ -1932,7 +1932,7 @@ class Portal(object):
     def update_group(self, group_id, title=None, tags=None, description=None,
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None):
+                     thumbnail=None, **kwargs):
         """ Updates a group.
 
         .. note::
@@ -1962,6 +1962,15 @@ class Portal(object):
         sort_order            optional string, asc or desc for ascending or descending.
         ------------------  --------------------------------------------------------
         is_view_only          optional boolean, defines whether the group is searchable
+        ------------------  ---------------------------------------------------------
+        max_file_size       Optional integer.  This is the maximum file file allowed
+                            be uploaded/shared to a group. Default value is: 1024000
+        ------------------  ---------------------------------------------------------
+        users_update_items  Optional boolean.  Members can update all items in this
+                            group.  Updates to an item can include changes to the
+                            item's description, tags, metadata, as well as content.
+                            This option can't be disabled once the group has
+                            been created. Default is False.
         ==================  ========================================================
 
         :return:
@@ -1990,7 +1999,13 @@ class Portal(object):
             properties['sortOrder'] = sort_order
         if is_view_only:
             properties['isViewOnly'] = is_view_only
-
+        if 'max_file_size' in kwargs:
+            properties['MAX_FILE_SIZE'] = kwargs.pop("max_file_size", 1024000)
+        users_update_items = kwargs.pop('users_update_items', False)
+        if users_update_items == False:
+            properties['capabilities'] = ""
+        else:
+            properties['capabilities'] = "updateitemcontrol"
         postdata.update(properties)
 
         files = []
