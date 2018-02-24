@@ -193,6 +193,8 @@ define('mapview', [
      "esri/layers/RasterFunction",
      "esri/layers/MosaicRule",
      "esri/layers/ArcGISImageServiceLayer",
+     "esri/layers/ArcGISDynamicMapServiceLayer",
+     "esri/layers/ArcGISTiledMapServiceLayer", 
      "esri/layers/ImageServiceParameters",
      "esri/geometry/Polyline",
      "esri/geometry/Polygon",
@@ -231,6 +233,8 @@ define('mapview', [
      RasterFunction,
      MosaicRule,
      ArcGISImageServiceLayer,
+     ArcGISDynamicMapServiceLayer,
+     ArcGISTiledMapServiceLayer,
      ImageServiceParameters,
      Polyline,
      Polygon,
@@ -608,6 +612,14 @@ define('mapview', [
                     kml.on("load", function () {
                         domStyle.set("loading", "display", "none");
                     });
+                }
+                else if (newlayer.type == "ArcGISTiledMapServiceLayer") {
+                    var tl = new ArcGISTiledMapServiceLayer(newlayer.url);
+                    this.map.addLayer(tl);
+                }
+                else if (newlayer.type == "ArcGISDynamicMapServiceLayer") {
+                    var dmsl = new ArcGISDynamicMapServiceLayer(newlayer.url);
+                    this.map.addLayer(dmsl);
                 }
                 else if (newlayer.type == "VectorTileLayer") {
                     var vtl = new VectorTileLayer(newlayer.url);
