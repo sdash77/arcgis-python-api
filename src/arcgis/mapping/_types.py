@@ -70,9 +70,9 @@ class WebMap(collections.OrderedDict):
             self._extent = self.item.extent
 
         else:
-            #defualt spatial ref for current web map
-            self._default_spatial_reference = {'wkid':102100,
-                                               'latestWkid':3857}
+            #default spatial ref for current web map
+            self._default_spatial_reference = {'wkid': 4326,
+                                               'latestWkid': 4326}
 
             #pump in a simple, default webmap dict - no layers yet, just basemap
             self._basemap = {
@@ -307,6 +307,10 @@ class WebMap(collections.OrderedDict):
                     layer_spatial_ref = layer.spatial_reference
                 else:
                     layer_spatial_ref = self._default_spatial_reference
+
+            if 'spatialReference' not in layer.features[0].geometry: # webmap seems to need spatialref for each geometry
+                for feature in layer:
+                    feature.geometry['spatialReference'] = layer_spatial_ref
 
             fset_dict = layer.to_dict()
             fc_layer_definition = {'geometryType':fset_dict['geometryType'],

@@ -341,6 +341,7 @@ define('mapview', [
                         that.map.on("click", onMouseClick);
 
                         that.mode_changed();
+                        that.basemap_changed();
                         that.layer_changed();
                         that.start_time_changed();
                         that.end_time_changed();
@@ -403,6 +404,7 @@ define('mapview', [
 
 
                 that.mode_changed();
+                that.basemap_changed();
                 that.layer_changed();
                 that.start_time_changed();
                 that.end_time_changed();
