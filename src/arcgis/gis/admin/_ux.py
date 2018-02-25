@@ -173,14 +173,14 @@ class UX(object):
                     r['innerHTML'] = "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;" + \
                         " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;" +\
                         " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"+\
-                        " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; margin-bottom:0; line-height:normal; "+\
-                        "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; color:#369;'>ArcGIS Enterprise</span></div>"
-            update_result = self._gis.update_properties({"clearEmptyFields" : True,
-                                                         "thumbnail": " ",
-                                                         "rotatorPanels" : rp})
-            update_result = self._gis.update_properties({"clearEmptyFields" : True,
+                        " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; " \
+                        "margin-bottom:0; line-height:normal; "+\
+                        "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; " \
+                        "color:#369;'>{}</span></div>".format(self._gis.properties.name)
+
+            update_result = self._gis.update_properties({"clearEmptyFields": True,
                                                          "thumbnail": "",
-                                                         "rotatorPanels" : rp})
+                                                         "rotatorPanels": rp})
 
         return update_result
     #----------------------------------------------------------------------
