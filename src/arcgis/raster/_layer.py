@@ -2366,7 +2366,7 @@ class ImageryLayer(Layer):
         try:
             from graphviz import Digraph
         except:
-            print("Graphviz needs to be installed. ")
+            print("Graphviz needs to be installed. pip install graphviz")
 
         global nodenumber
         nodenumber=0
