@@ -127,6 +127,10 @@ colorspace_conversion
 ______________
 .. automethod:: arcgis.raster.functions.colorspace_conversion
 
+complex
+_______
+.. automethod:: arcgis.raster.functions.complex
+
 composite_band
 ______________
 .. automethod:: arcgis.raster.functions.composite_band
@@ -210,6 +214,10 @@ ____
 geometric
 _________
 .. automethod:: arcgis.raster.functions.geometric
+
+grayscale
+_________
+.. automethod:: arcgis.raster.functions.grayscale
 
 greater_than
 ____________
@@ -346,6 +354,10 @@ cellstats_range
 _______________
 .. automethod:: arcgis.raster.functions.cellstats_range
 
+raster_calculator
+_________________
+.. automethod:: arcgis.raster.functions.raster_calculator
+
 remap
 _____
 .. automethod:: arcgis.raster.functions.remap
@@ -389,6 +401,14 @@ ____
 slope
 _____
 .. automethod:: arcgis.raster.functions.slope
+
+spectral_conversion
+___________________
+.. automethod:: arcgis.raster.functions.spectral_conversion
+
+speckle
+_______
+.. automethod:: arcgis.raster.functions.speckle
 
 sqrt
 ____
