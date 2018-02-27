@@ -510,19 +510,21 @@ def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     return band_arithmetic(raster, expression, astype, 0)
 
-def classify(raster1, raster2, classifier_definition, astype=None):
+def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
     classifies a segmented raster to a categorical raster.
 
     :param raster1: the first raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+    :param raster2: Optional segmentation raster -  If provided, pixels in each segment will get same class assignments. 
+                    imagery layers filtered by where clause, spatial and temporal filters
     :param classifier_definition: the classifier parameters as a Python dictionary / json format
 
     :return: the output raster with this function applied to it
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
-    layer2, raster_2, raster_ra2 = _raster_input(raster1,raster2)
+    if raster2 is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -530,15 +532,22 @@ def classify(raster1, raster2, classifier_definition, astype=None):
         "rasterFunction": "Classify",
         "rasterFunctionArguments": {
             "ClassifierDefinition": classifier_definition,
-            "Raster": raster_1,
-            "Raster2": raster_2
+            "Raster": raster_1
         }
     }
+    if classifier_definition is None:
+        raise RuntimeError("classifier_definition cannot be empty")
+    template_dict["rasterFunctionArguments"]["ClassifierDefinition"] = classifier_definition
+
+    if raster2 is not None:
+        template_dict["rasterFunctionArguments"]["Raster2"] = raster_2
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+    if raster2 is not None:
+        return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
