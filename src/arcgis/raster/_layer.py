@@ -2322,7 +2322,15 @@ class ImageryLayer(Layer):
                     simplify=True,
                     output_name=None,
                     gis=None):
-        
+        """
+        Converts this raster to features of the specified type using Raster Analytics
+        :param field: numerical or a string field on the input layer that will be used for the conversion.
+        :param output_type: str, type of output. Point, Line or Polygon
+        :param simplify: bool to specify if features will be smoothed out
+        :param output_name: name of output feature layer
+        :param gis: the GIS to be used for conversion. Must have support for Raster Analytics.
+        :return: converted feature layer
+        """
         g = self._gis
 
         if gis is not None:
