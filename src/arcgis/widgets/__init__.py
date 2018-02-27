@@ -312,8 +312,9 @@ class MapView(widgets.DOMWidget):
 
             js_layer = item._lyr_json
 
-            if js_layer['type'] == 'MapImageLayer':
-                js_layer['type'] = 'ArcGISTiledMapServiceLayer' if 'TilesOnly' in item.properties.capabilities else 'ArcGISDynamicMapServiceLayer'
+            if 'type' in js_layer:
+                if js_layer['type'] == 'MapImageLayer':
+                    js_layer['type'] = 'ArcGISTiledMapServiceLayer' if 'TilesOnly' in item.properties.capabilities else 'ArcGISDynamicMapServiceLayer'
 
             if options is not None:
                 if 'options' in js_layer:  # ImageryLayers may have rendering rules in options
