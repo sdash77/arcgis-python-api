@@ -318,6 +318,20 @@ class UX(object):
         if 'group' in content and \
            isinstance(content['group'], Group):
             content['homePageFeaturedContent'] = content['group'].groupid
+        elif isinstance(content, dict) and \
+             'group' in content:
+            c = {}
+            c['homePageFeaturedContent'] = content['group']
+            if 'count' in content:
+                c['homePageFeaturedContentCount'] = content['count']
+            else:
+                c['homePageFeaturedContentCount'] = 12
+            content = c
+        elif isinstance(content, str):
+            c = {}
+            c['homePageFeaturedContent'] = content
+            c['homePageFeaturedContentCount'] = 12
+            content = c
         if content is None:
             content = {'homePageFeaturedContent': "",
                         'homePageFeaturedContentCount' : 12}
