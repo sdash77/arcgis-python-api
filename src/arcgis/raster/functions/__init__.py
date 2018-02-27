@@ -183,7 +183,7 @@ def arg_median(rasters, undefined_class=None, astype=None):
 
     Consider values from all bands as an array. After sorting the array in ascending order, the median is the
     one value separating the lower half of the array from the higher half. More specifically, if the ascend-sorted
-    array has n values, the median is the ith (0-based) value, where:
+    array has n values, the median is the ith (0-based) value, where: i = ( (n-1) / 2 )
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
 
