@@ -105,7 +105,7 @@ def _analysis_job(gptool, task, params):
 
     resp = gptool._con.post(submit_url, params, token=gptool._token)
     # print(resp)
-    return task_url, resp
+    return task_url, resp, resp['jobId']
 
 def _analysis_job_status(gptool, task_url, job_info):
     """ Tracks the status of the submitted Analysis job."""
@@ -160,33 +160,32 @@ def _analysis_job_status(gptool, task_url, job_info):
         raise Exception("No job url.")
 
 
-def _analysis_job_results(gptool, task_url, job_info):
+def _analysis_job_results(gptool, task_url, job_info, job_id=None):
     """ Use the job result json to get information about the feature service
         created from the Analysis job."""
 
     # Get the paramUrl to get information about the Analysis job results.
     #
-    if "jobId" in job_info:
+    if job_id is None:
         job_id = job_info.get("jobId")
-        if "results" in job_info:
-            results = job_info.get("results")
-            result_values = {}
-            for key in list(results.keys()):
-                param_value = results[key]
-                if "paramUrl" in param_value:
-                    param_url = param_value.get("paramUrl")
-                    result_url = "{}/jobs/{}/{}".format(task_url,
-                                                        job_id,
-                                                        param_url)
 
-                    params = {"f": "json"}
-                    param_result = gptool._con.post(result_url, params, token=gptool._token)
+    if "results" in job_info:
+        results = job_info.get("results")
+        result_values = {}
+        for key in list(results.keys()):
+            param_value = results[key]
+            if "paramUrl" in param_value:
+                param_url = param_value.get("paramUrl")
+                result_url = "{}/jobs/{}/{}".format(task_url,
+                                                    job_id,
+                                                    param_url)
 
-                    job_value = param_result.get("value")
-                    result_values[key] = job_value
-            return result_values
-        else:
-            raise Exception("Unable to get analysis job results.")
+                params = {"f": "json"}
+                param_result = gptool._con.post(result_url, params, token=gptool._token)
+
+                job_value = param_result.get("value")
+                result_values[key] = job_value
+        return result_values
     else:
         raise Exception("Unable to get analysis job results.")
 
@@ -255,8 +254,9 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         submit_url = "{}/submitJob".format(task_url)
 
         job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+        job_id = job_info['jobId']
         job_info = _analysis_job_status(gptool, task_url, job_info)
-        resp = _analysis_job_results(gptool, task_url, job_info)
+        resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
         # ---------------------async-out---------------------#
         output_dict = {}
