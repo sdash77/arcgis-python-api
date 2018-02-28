@@ -2323,13 +2323,30 @@ class ImageryLayer(Layer):
                     output_name=None,
                     gis=None):
         """
-        Converts this raster to features of the specified type using Raster Analytics
-        :param field: numerical or a string field on the input layer that will be used for the conversion.
-        :param output_type: str, type of output. Point, Line or Polygon
-        :param simplify: bool to specify if features will be smoothed out
-        :param output_name: name of output feature layer
-        :param gis: the GIS to be used for conversion. Must have support for Raster Analytics.
-        :return: converted feature layer
+        Converts this raster to a persisted feature layer of the specified type using Raster Analytics.
+
+        Distributed raster analysis is used for generating a new feature layer by
+        applying raster functions at source resolution across the extent of the raster
+        and performing a raster to features conversion.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        field                 optional string. numerical or a string field on the input layer
+                              that will be used for the conversion
+        -----------------     --------------------------------------------------------------------
+        output_type           string, type of output. Point, Line or Polygon
+        -----------------     --------------------------------------------------------------------
+        simplify              boolean, specify if features will be smoothed out
+        -----------------     --------------------------------------------------------------------
+        output_name           string, name of output feature layer
+        -----------------     --------------------------------------------------------------------
+        gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
+                              output. The GIS must have Raster Analytics capability.
+        =================     ====================================================================
+
+        :return:  converted feature layer item
+
         """
         g = self._gis
 
