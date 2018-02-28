@@ -451,7 +451,7 @@ class _AsyncResource(_GISResource):
 
         resp = self._con.post(submit_url, params, token=self._token)
         # print(resp)
-        return task_url, resp
+        return task_url, resp, resp['jobId']
 
     def _analysis_job_status(self, task_url, job_info):
         """ Tracks the status of the submitted Analysis job."""
@@ -506,33 +506,32 @@ class _AsyncResource(_GISResource):
         else:
             raise Exception("No job url.")
 
-    def _analysis_job_results(self, task_url, job_info):
+    def _analysis_job_results(self, task_url, job_info, job_id=None):
         """ Use the job result json to get information about the feature service
             created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #
-        if "jobId" in job_info:
+        if job_id is None:
             job_id = job_info.get("jobId")
-            if "results" in job_info:
-                results = job_info.get("results")
-                result_values = {}
-                for key in list(results.keys()):
-                    param_value = results[key]
-                    if "paramUrl" in param_value:
-                        param_url = param_value.get("paramUrl")
-                        result_url = "{}/jobs/{}/{}".format(task_url,
-                                                            job_id,
-                                                            param_url)
 
-                        params = {"f": "json"}
-                        param_result = self._con.post(result_url, params, token=self._token)
+        if "results" in job_info:
+            results = job_info.get("results")
+            result_values = {}
+            for key in list(results.keys()):
+                param_value = results[key]
+                if "paramUrl" in param_value:
+                    param_url = param_value.get("paramUrl")
+                    result_url = "{}/jobs/{}/{}".format(task_url,
+                                                        job_id,
+                                                        param_url)
 
-                        job_value = param_result.get("value")
-                        result_values[key] = job_value
-                return result_values
-            else:
-                raise Exception("Unable to get analysis job results.")
+                    params = {"f": "json"}
+                    param_result = self._con.post(result_url, params, token=self._token)
+
+                    job_value = param_result.get("value")
+                    result_values[key] = job_value
+            return result_values
         else:
             raise Exception("Unable to get analysis job results.")
 
@@ -957,13 +956,16 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = result['value']
-                    if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
-                        ret_val = jsondict
+                    if jsondict is not None:
+                        if 'mapImage' in jsondict: # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
+                            ret_val = jsondict
+                        else:
+                            result_obj = ret_type.from_dict(jsondict)
+                            result_obj._con = self._con
+                            result_obj._token = self._token
+                            ret_val = result_obj
                     else:
-                        result_obj = ret_type.from_dict(jsondict)
-                        result_obj._con = self._con
-                        result_obj._token = self._token
-                        ret_val = result_obj
+                        ret_val = jsondict
                 else:
                     ret_val = result['value']
 
@@ -985,6 +987,7 @@ class Toolbox(_AsyncResource):
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
             job_info = self._con.post(submit_url, gp_params, token=self._token)
+            job_id = job_info['jobId']
             try:
                 isCan = False
                 job_info = super()._analysis_job_status(task_url, job_info)
@@ -995,7 +998,7 @@ class Toolbox(_AsyncResource):
                 isCan = True
             if isCan:
                 job_info = super()._analysis_job_status(task_url, job_info)
-            resp = super()._analysis_job_results(task_url, job_info)
+            resp = super()._analysis_job_results(task_url, job_info, job_id)
             # print('***'+str(resp))
 
             output_dict = {}
@@ -1005,13 +1008,16 @@ class Toolbox(_AsyncResource):
                 ret_val = None
                 if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     jsondict = resp[retParamName]
-                    if 'mapImage' in jsondict:
-                        ret_val = jsondict
+                    if jsondict is not None:
+                        if 'mapImage' in jsondict:
+                            ret_val = jsondict
+                        else:
+                            result = ret_type.from_dict(jsondict)
+                            result._con = self._con
+                            result._token = self._token
+                            ret_val =  result
                     else:
-                        result = ret_type.from_dict(jsondict)
-                        result._con = self._con
-                        result._token = self._token
-                        ret_val =  result
+                        ret_val = jsondict
                 else:
                     ret_val = resp[retParamName]
 
@@ -1020,7 +1026,7 @@ class Toolbox(_AsyncResource):
             # tools with output map service - add another output:
             result_layer = self.properties.resultMapServerName
             if result_layer != '':
-                job_id = job_info.get("jobId")
+                #job_id = job_info.get("jobId")
                 result_layer_url = self.url.replace('/GPServer', '/MapServer') + '/jobs/' + job_id
 
                 output_dict['result_layer'] = MapImageLayer(result_layer_url, self._gis)

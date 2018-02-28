@@ -731,13 +731,42 @@ class ServerConnection(object):
         redirect_handler.max_redirections = 30
         redirect_handler.max_repeats = 30
         handlers = [redirect_handler]
-        if self._auth == "BASICAUTH": # used by LDAP
+        if self._username and self._password:
+
             passman = request.HTTPPasswordMgrWithDefaultRealm()
             passman.add_password(None,
                                  self._parsed_org_url,
                                  self._username,
                                  self._password)
             handlers.append(request.HTTPBasicAuthHandler(passman))
+            passman = request.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None,
+                                 self._parsed_org_url,
+                                 self._username,
+                                 self._password)
+            handlers.append(request.HTTPDigestAuthHandler(passman))
+            if os.name == 'nt':
+                try:
+                    from arcgis._impl.common._iwa import NtlmSspiAuthHandler, KerberosSspiAuthHandler
+
+                    auth_krb = KerberosSspiAuthHandler()
+                    handlers.append(auth_krb)
+
+                    try:
+                        auth_NTLM = NtlmSspiAuthHandler()
+                        handlers.append(auth_NTLM)
+                    except:
+                        pass
+
+
+
+                except Error as err:
+                    _log.error("winkerberos packages is required for IWA authentication (NTLM and Kerberos).")
+                    _log.error("Please install it:\n\tconda install winkerberos")
+                    _log.error(str(err))
+            else:
+                _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
+
 
         if self._auth == "PKI" or \
            (self.cert_file is not None and self.key_file is not None):

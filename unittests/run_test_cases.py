@@ -39,6 +39,22 @@ import unittest
 import sys
 import xmlrunner
 import atexit
+import traceback
+
+#Make sure we're importing the arcgis package at ../src
+GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname( __file__ ),
+    '..'))
+sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR, "src"))
+import arcgis
+expected_file_path = os.path.join(GEOSAURUS_ROOT_DIR, "src", "arcgis", "__init__.py")
+try:
+    assert arcgis.__file__ == expected_file_path
+except AssertionError as e:
+    print("ERROR: the arcgis package being tested should be {}".format(expected_file_path))
+    print("Instead, it is {}. Not running tests...".format(arcgis.__file__))
+
+print("Running tests against this arcgis src at {}".format(arcgis.__file__))
 
 def module(pathName):
     """
@@ -110,7 +126,8 @@ def run_test_cases(args):
     try:
         _setup_testing(args)
     except Exception as e:
-        print("Unhandled exception on setup: still attempting to run {}".format(e))
+        print("Unhandled exception on setting up unit testing. Still attemping to run..")
+        print(traceback.format_exc())
     _trigger_xml_runner()
 
 def _setup_testing(args):
@@ -137,26 +154,10 @@ def _setup_testing(args):
     test_names_to_skip = arguments.skip
     names = arguments.names
     coverage_path = arguments.coverage
-    run_on_src = arguments.run_on_src
     test_results_dir = arguments.test_results_dir
-
-    # Update module path, because otherwise loadTestsFromname cannot find the
-    # modules to import.
     from pathlib import Path
     current_file_path = Path(os.path.realpath(__file__))
-
-    if run_on_src:
-        # If run_on_src is True, then treat the test results as dev tests. No conda package is built. 'src' folder is
-        # added to system pythonpath env variable and the tests are run against that src.
-
-        src_path = current_file_path.parent.parent.joinpath("src")
-        print('Running tests against src from git repo at: ', src_path.__str__())
-        sys.path.append(src_path.__str__())
-    else:
-        print('Running tests against installed conda package')
-
     unittest_path = current_file_path.parent
-    sys.path.append(unittest_path.__str__())
 
     for name in names:
         if os.path.isdir(name):

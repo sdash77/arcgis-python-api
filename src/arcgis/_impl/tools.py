@@ -143,7 +143,7 @@ class _AsyncService(_GISService):
 
         resp = self._con.post(submit_url, params, token=self._token)
         #print(resp)
-        return task_url, resp
+        return task_url, resp, resp['jobId']
 
     def _analysis_job_status(self, task_url, job_info):
         """ Tracks the status of the submitted Analysis job."""
@@ -198,33 +198,32 @@ class _AsyncService(_GISService):
         else:
             raise Exception("No job url.")
 
-    def _analysis_job_results(self, task_url, job_info):
+    def _analysis_job_results(self, task_url, job_info, job_id=None):
         """ Use the job result json to get information about the feature service
             created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #
-        if "jobId" in job_info:
+        if job_id is None:
             job_id = job_info.get("jobId")
-            if "results" in job_info:
-                results = job_info.get("results")
-                result_values = {}
-                for key in list(results.keys()):
-                    param_value = results[key]
-                    if "paramUrl" in param_value:
-                        param_url = param_value.get("paramUrl")
-                        result_url = "{}/jobs/{}/{}".format(task_url,
-                                                                            job_id,
-                                                                            param_url)
 
-                        params = { "f" : "json" }
-                        param_result = self._con.post(result_url, params, token=self._token)
+        if "results" in job_info:
+            results = job_info.get("results")
+            result_values = {}
+            for key in list(results.keys()):
+                param_value = results[key]
+                if "paramUrl" in param_value:
+                    param_url = param_value.get("paramUrl")
+                    result_url = "{}/jobs/{}/{}".format(task_url,
+                                                                        job_id,
+                                                                        param_url)
 
-                        job_value = param_result.get("value")
-                        result_values[key] = job_value
-                return result_values
-            else:
-                raise Exception("Unable to get analysis job results.")
+                    params = { "f" : "json" }
+                    param_result = self._con.post(result_url, params, token=self._token)
+
+                    job_value = param_result.get("value")
+                    result_values[key] = job_value
+            return result_values
         else:
             raise Exception("Unable to get analysis job results.")
 
@@ -492,10 +491,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['aggregatedLayer']['itemId']
@@ -563,10 +562,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['hotSpotsResultLayer']['itemId']
@@ -670,10 +669,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         if output_name is not None:
             itemid = job_values['outliersResultLayer']['itemId']
             item = arcgis.gis.Item(self._gis, itemid)
@@ -750,10 +749,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['bufferLayer']['itemId']
@@ -825,10 +824,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['driveTimeAreasLayer']['itemId']
@@ -880,10 +879,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['dissolvedLayer']['itemId']
@@ -934,10 +933,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['mergedLayer']['itemId']
@@ -1015,10 +1014,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1067,10 +1066,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outputLayer']['itemId']
@@ -1141,10 +1140,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['enrichedLayer']['itemId']
@@ -1210,10 +1209,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['outputLayer']['itemId']
@@ -1274,10 +1273,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         return self._gis.content.get(job_values['contentID']['itemId'])
 
 
@@ -1316,10 +1315,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1365,10 +1364,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1414,10 +1413,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1501,10 +1500,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1597,10 +1596,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1707,10 +1706,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['resultLayer']['itemId']
@@ -1796,10 +1795,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['viewshedLayer']['itemId']
@@ -1861,10 +1860,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['similarResultLayer']['itemId']
@@ -1932,10 +1931,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['snapPourPtsLayer']['itemId']
@@ -2016,10 +2015,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['nearestLayer']['itemId']
@@ -2119,10 +2118,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
@@ -2205,10 +2204,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['traceLayer']['itemId']
@@ -2281,10 +2280,10 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
@@ -2329,9 +2328,9 @@ class _FeatureAnalysisTools(_AsyncService):
         if output_name:
             params["outputName"] = output_name
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         route_layer_items = []
 
         for itemid in job_values["routeLayers"]["items"]:
@@ -2443,10 +2442,10 @@ class _RasterAnalysisTools(_AsyncService):
         if num_instances is not None:
             params["numInstances"] = num_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
             "properties":{
@@ -2518,10 +2517,10 @@ class _RasterAnalysisTools(_AsyncService):
         if num_instances is not None:
             params["numInstances"] = num_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
                 "properties":{
@@ -2604,10 +2603,10 @@ class _RasterAnalysisTools(_AsyncService):
         if num_instances is not None:
             params["numInstances"] = num_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
                 "properties":{
@@ -2684,10 +2683,10 @@ class _RasterAnalysisTools(_AsyncService):
         if num_instances is not None:
             params["numInstances"] = num_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
                 "properties":{
@@ -2765,10 +2764,10 @@ class _RasterAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
                 "properties":{
@@ -2850,10 +2849,10 @@ class _RasterAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         item_properties = {
                 "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -2917,10 +2916,10 @@ class _RasterAnalysisTools(_AsyncService):
             params["Additional_Input_Raster"] = additional_input_raster
         params["Number_of_Instances"] = number_of_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
             "properties":{
@@ -2996,10 +2995,10 @@ class _RasterAnalysisTools(_AsyncService):
         params["Remove_Tiiling_Artifacts"] = remove_tiiling_artifacts
         params["Number_of_Instances"] = number_of_instances
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
             "properties":{
@@ -3050,10 +3049,10 @@ class _RasterAnalysisTools(_AsyncService):
         params["Classifier_Parameters"] = classifier_parameters
         params["Segment_Attributes"] = segment_attributes
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
 
         return job_values['Output_Classifier_Definition']
 
@@ -3152,10 +3151,10 @@ class _RasterAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
                 "properties":{
@@ -3333,10 +3332,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -3397,27 +3396,28 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
-        if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
-            item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-                    }
-                }
-            output_service.update(item_properties)
-            return output_service
-        else:
-            # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output_json'])
+        # if output_name is not None:
+        #     #url = job_values['output']['url']
+        #     #return FeatureLayer(url, self._gis) #item
+        #     item_properties = {
+        #         "properties":{
+        #             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+        #             "jobType": "GPServer",
+        #             "jobId": job_info['jobId'],
+        #             "jobStatus": "completed"
+        #             }
+        #         }
+        #     output_service.update(item_properties)
+        #     return output_service
+        # else:
+        #     # Feature Collection
+        #     return arcgis.features.FeatureCollection(job_values['output_json'])
+        return job_values['output_json']
 
 
     def join_features(self,
@@ -3530,10 +3530,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -3644,10 +3644,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -3778,10 +3778,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -3897,10 +3897,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4003,10 +4003,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4120,10 +4120,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4189,10 +4189,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4257,10 +4257,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4328,10 +4328,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4412,10 +4412,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4542,10 +4542,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']
@@ -4655,10 +4655,10 @@ class _GeoanalyticsTools(_AsyncService):
         if context is not None:
             params["context"] = json.dumps(context)
 
-        task_url, job_info = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
             #url = job_values['output']['url']

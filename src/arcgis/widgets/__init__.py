@@ -311,6 +311,11 @@ class MapView(widgets.DOMWidget):
                         item.layer.layerDefinition.drawingInfo['renderer']['symbol'] = options['symbol']
 
             js_layer = item._lyr_json
+
+            if 'type' in js_layer:
+                if js_layer['type'] == 'MapImageLayer':
+                    js_layer['type'] = 'ArcGISTiledMapServiceLayer' if 'TilesOnly' in item.properties.capabilities else 'ArcGISDynamicMapServiceLayer'
+
             if options is not None:
                 if 'options' in js_layer:  # ImageryLayers may have rendering rules in options
                     lyr_options = json.loads(js_layer['options'])

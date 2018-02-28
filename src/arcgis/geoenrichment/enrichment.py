@@ -653,6 +653,9 @@ def enrich(study_areas,
     Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
     the format of intersection_geographies parameter.
 
+    Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
+    return_geometry=False
+
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
     import pandas as pd

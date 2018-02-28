@@ -13,7 +13,7 @@ def run_unit_tests(*args, **kwargs):
 #            timeout=600)
     args = ['run_unit_tests',
                 #mimics sys.argv: argv[0] is always the file name
-            os.path.join(GEOSAURUS_ROOT_DIR, 'unittests', 'geometry'),
+            os.path.join(GEOSAURUS_ROOT_DIR, 'unittests'),
                 #Run the tests on geometry tests directory (for demo purposes)
             '--test_results_dir', STAGING_DIR
                 #Send all test_results .xml files to the staging dir

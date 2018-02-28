@@ -45,13 +45,10 @@ def local_time_to_online(dt=None):
     if dt is None:
         dt = datetime.datetime.now()
 
-    if isinstance(dt, date):
-        dt = datetime.datetime.combine(dt, datetime.datetime.min.time())
+    if isinstance(dt, datetime.datetime) and dt.tzinfo:
+        dt = dt.astimezone()
 
-    is_dst = time.daylight and time.localtime().tm_isdst > 0
-    utc_offset =  (time.altzone if is_dst else time.timezone)
-
-    return int((time.mktime(dt.timetuple())  * 1000) + (utc_offset *1000))
+    return int(time.mktime(dt.timetuple())  * 1000)
 #----------------------------------------------------------------------
 def online_time_to_string(value,timeFormat):
     """

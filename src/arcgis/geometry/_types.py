@@ -129,7 +129,10 @@ class GeometryFactory(type):
             iterable = ()
         if hasattr(iterable, 'JSON') and \
            (HASARCPY or HASSHAPELY):
-            iterable = json.loads(iterable.JSON)
+            if type(iterable.JSON) == str:
+                iterable = json.loads(iterable.JSON)
+            elif type(iterable.JSON) == dict:
+                iterable = iterable.JSON
         if cls is Geometry:
             if len(iterable) > 0:
                 if isinstance(iterable, dict):
@@ -590,7 +593,7 @@ class Geometry(BaseGeometry):
 
                 area += part[i][0] * part[j][1]
                 area -= part[j][0] * part[i][1]
-                print((n, area, i, j))
+                # print((n, area, i, j))
             area_parts.append(area / 2.0)
             area = 0.0
         return sum(area_parts)

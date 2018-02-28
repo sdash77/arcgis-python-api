@@ -40,7 +40,7 @@ class Geocoder(_GISResource):
         try:
             self._address_field = self.properties.singleLineAddressField.name
         except:
-            print("Geocoder does not support single line address input")
+            pass #print("Geocoder does not support single line address input")
 
     @classmethod
     def fromitem(cls, item):

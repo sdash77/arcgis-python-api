@@ -133,6 +133,10 @@ class GIS(object):
                         access in the network where the script is run.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
+    ----------------    ---------------------------------------------------------------
+    token               Optional string. This is the Enterprise token for built-in
+                        logins. This parameter is only honored if the username/password
+                        is None and the security for the site uses BUILT-IN security.
     ================    ===============================================================
 
 
@@ -257,6 +261,7 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
+        utoken = kwargs.pop('token', None)
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -266,6 +271,10 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
+            if not (utoken is None):
+                self._portal.con._token = utoken
+                self._portal.con._auth = "BUILTIN"
+
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
@@ -274,7 +283,7 @@ class GIS(object):
             else:
                 raise
         try:
-            if url.lower().find("www.arcgis.com") > -1 and \
+            if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
@@ -326,7 +335,7 @@ class GIS(object):
             except:
                 pass
         elif self._con._auth.lower() != 'anon' and \
-             self._con._auth is not Nonez and\
+             self._con._auth is not None and\
              hasattr(self.users.me, 'privileges') and \
              self._portal.is_arcgisonline == False:
             privs = ['portal:publisher:publishFeatures',
@@ -335,7 +344,7 @@ class GIS(object):
                      'portal:publisher:publishServerServices',
                      'portal:publisher:publishTiles']
             for priv in privs:
-                if priv in gis.users.me.privileges:
+                if priv in self.users.me.privileges:
                     can_publish = True
                     break
                 else:
@@ -1791,7 +1800,8 @@ class GroupManager(object):
                snippet=None, access='public', thumbnail=None,
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
-               provider_group_name=None, provider=None):
+               provider_group_name=None, provider=None,
+               max_file_size=None, users_update_items=False):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -1835,11 +1845,25 @@ class GroupManager(object):
         provider_group_name   Optional string. The name of the domain group.
         --------------------  ---------------------------------------------------------
         provider              Optional string. Name of the provider.
+        --------------------  ---------------------------------------------------------
+        max_file_size         Optional integer.  This is the maximum file size allowed
+                              be uploaded/shared to a group. Default value is: 1024000
+        --------------------  ---------------------------------------------------------
+        users_update_items    Optional boolean.  Members can update all items in this
+                              group.  Updates to an item can include changes to the
+                              item's description, tags, metadata, as well as content.
+                              This option can't be disabled once the group has
+                              been created. Default is False.
         ====================  =========================================================
 
         :return:
             The group if successfully created, None if unsuccessful.
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if users_update_items is None:
+            users_update_items = False
+
         if type(tags) is list:
             tags = ",".join(tags)
         params = {
@@ -1851,8 +1875,14 @@ class GroupManager(object):
         if provider_group_name:
             params['provider'] = provider
             params['providerGroupName'] = provider_group_name
+        if users_update_items == True:
+            params['capabilities'] = "updateitemcontrol"
+        else:
+            params['capabilities'] = ""
+        params['MAX_FILE_SIZE'] = max_file_size
+
         group = self._portal.create_group_from_dict(params, thumbnail)
-        #print(groupid)
+
         if group is not None:
             return Group(self._gis, group['id'], group)
         else:
@@ -2138,6 +2168,110 @@ class ContentManager(object):
         else:
             return None
 
+    #----------------------------------------------------------------------
+    def analyze(self,
+                url=None,
+                item=None,
+                file_path=None,
+                text=None,
+                file_type=None,
+                source_locale='en',
+                geocoding_service=None,
+                location_type=None,
+                source_country='world',
+                country_hint=None
+                ):
+        """
+        The Analyze call helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or generating features using the Publish or Generate operation, respectively.
+
+        Analyze returns information about the file including the fields present as well as sample records. Analyze attempts to detect the presence of location fields that may be present as either X,Y fields or address fields.
+
+        Analyze packages its result so that publishParameters within the JSON response contains information that can be passed back to the server in a subsequent call to Publish or Generate. The publishParameters subobject contains properties that describe the resulting layer after publishing, including its fields, the desired renderer, and so on. Analyze will suggest defaults for the renderer.
+
+        In a typical workflow, the client will present portions of the Analyze results to the user for editing before making the call to Publish or Generate.
+
+        If the file to be analyzed currently exists in the portal as an item, callers can pass in its itemId. Callers can also directly post the file. In this case, the request must be a multipart post request pursuant to IETF RFC1867. The third option for text files is to pass the text in as the value of the text parameter.
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        url                        optional string. The URL of the csv file.
+        -----------------------    -------------------------------------------------------------
+        item                       optional string/Item. The ID or Item of the item to be
+                                   analyzed.
+        -----------------------    -------------------------------------------------------------
+        file_path                  optional string. The file to be analyzed.
+        -----------------------    -------------------------------------------------------------
+        text                       optional string. The text in the file to be analyzed.
+        -----------------------    -------------------------------------------------------------
+        file_type                  optional string. The type of the input file: shapefile, csv or excel
+        -----------------------    -------------------------------------------------------------
+        source_locale              optional string. The locale used for the geocoding service source.
+        -----------------------    -------------------------------------------------------------
+        geocoding_service          optional string/geocoder. The URL of the service.
+        -----------------------    -------------------------------------------------------------
+        location_type              optional string. Indicates the type of spatial information stored in the dataset.
+
+                                   Values for CSV: coordinates | address | lookup | none
+                                   Values for Excel: coordinates | address | none
+        -----------------------    -------------------------------------------------------------
+        source_country             optional string. The two character country code associated with the geocoding service, default is "world".
+        -----------------------    -------------------------------------------------------------
+        country_hint               optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        =======================    =============================================================
+
+        :returns: dictionary
+
+        """
+        surl = "%s/sharing/rest/content/features/analyze" % self._gis._url
+        params = {
+            'f' : 'json',
+            'analyzeParameters' : {}
+        }
+        files = None
+        if not (text or file_path or itemid or url):
+            return Exception("Must provide an itemid, file_path or text to analyze data.")
+        if item:
+            if isinstance(item, str):
+                parms['itemid'] = itemid
+            elif isinstance(item, Item):
+                params['itemid'] = item.itemid
+        elif file_path and os.path.isfile(file_path):
+            files = {'file' : file_path}
+        elif text:
+            params['text'] = text
+        elif url:
+            params['sourceUrl'] = url
+
+        params['analyzeParameters']['sourcelocale'] = source_locale
+        if geocoding_service:
+            from arcgis.geocoding._functions import Geocoder
+            if isinstance(geocoding_service, Geocoder):
+                params['analyzeParameters']['geocodeServiceUrl'] = geocoding_service.url
+            else:
+                params['analyzeParameters']['geocodeServiceUrl'] = geocoding_service
+        if location_type:
+            params['analyzeParameters']['locationType'] = location_type
+
+        if file_type is None and \
+           (url or file_path):
+            d = url or file_path
+            if d:
+                if str(d).lower().endswith('.csv'):
+                    params['fileType'] = 'csv'
+                elif str(d).lower().endswith('.xls') or \
+                     str(d).lower().endswith('.xlsx'):
+                    params['fileType'] = 'excel'
+        if source_country:
+            params['analyzeParameters']['sourceCountry'] = source_country
+        if country_hint:
+            params['analyzeParameters']['sourcecountryhint'] = country_hint
+
+        gis = self._gis
+        params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
+        return gis._con.post(url=surl, postdata=params, files=files)
+
+
     def create_service(self, name,
                        service_description="",
                        has_static_data=False,
@@ -2408,6 +2542,45 @@ class ContentManager(object):
             else:
                 print('Folder already exists.')
         return None
+
+    def delete_items(self, items):
+        """
+        Deletes a collection of items from a users content.
+
+        ================  ==========================================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------------------------
+        items             list of Item or Item Ids.  This is an array of items to be deleted from
+                          the current user's content
+        ================  ==========================================================================
+
+        Returns: boolean. True on
+        """
+        if self._gis._portal.con.baseurl.endswith("/"):
+            url = "%s/%s/%s/deleteItems" % (self._gis._portal.con.baseurl[:-1],
+                                            "content/users",
+                                            self._gis.users.me.username)
+        else:
+            url = "%s/%s/%s/deleteItems" % (self._gis._portal.con.baseurl,
+                                            "content/users",
+                                            self._gis.users.me.username)
+        params = {
+        'f' : 'json',
+        'items' : ""
+        }
+        ditems = []
+        for item in items:
+            if isinstance(item, str):
+                ditems.append(item)
+            elif isinstance(item, Item):
+                ditems.append(item.id)
+            del item
+        if len(ditems) > 0:
+            params['items'] = ",".join(ditems)
+            res = self._gis._con.post(path=url, postdata=params)
+            return all([r['success'] for r in res['results']])
+        return False
+
 
     def delete_folder(self, folder, owner=None):
         """
@@ -3455,7 +3628,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None):
+               thumbnail=None, max_file_size=None, users_update_items=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -3488,16 +3661,34 @@ class Group(dict):
                             True means the group is searchable.
         ------------------  ---------------------------------------------------------
         thumbnail           Optional string. URL or file location to a new group image.
+        ------------------  ---------------------------------------------------------
+        max_file_size       Optional integer.  This is the maximum file size allowed
+                            be uploaded/shared to a group. Default value is: 1024000
+        ------------------  ---------------------------------------------------------
+        users_update_items  Optional boolean.  Members can update all items in this
+                            group.  Updates to an item can include changes to the
+                            item's description, tags, metadata, as well as content.
+                            This option can't be disabled once the group has
+                            been created. Default is False.
         ==================  =========================================================
 
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
+        if max_file_size is None:
+            max_file_size = 1024000
+        if users_update_items is None:
+            users_update_items = False
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        resp = self._portal.update_group(self.groupid, title, tags, description, snippet, access, is_invitation_only, sort_field, sort_order, is_view_only, thumbnail)
+        isinstance(self._portal, portalpy.Portal)
+        resp = self._portal.update_group(self.groupid, title, tags,
+                                         description, snippet, access,
+                                         is_invitation_only, sort_field,
+                                         sort_order, is_view_only, thumbnail,
+                                         max_file_size, users_update_items)
         if resp:
             self._hydrate()
         return resp
@@ -3808,6 +3999,17 @@ class User(dict):
         :returns:
            A boolean indicating success (True) or failure (False).
         """
+        if 'roleId' in self and \
+           self['roleId'] != 'iAAAAAAAAAAAAAAA':
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+        elif not ('roleId' in self) and level == 1:
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+
+
         if not isinstance(level, int):
             raise ValueError("level must be an integer with values 1 or 2")
 
@@ -3857,7 +4059,7 @@ class User(dict):
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
-               first_name=None, last_name=None):
+               first_name=None, last_name=None, security_question=None, security_answer=None):
         """ Updates this user's properties.
 
         .. note::
@@ -3866,33 +4068,67 @@ class User(dict):
             want to update the description, then only provide
             the description argument.
 
-        ================  ==========================================================
-        **Argument**      **Description**
-        ----------------  ----------------------------------------------------------
-        access            Optional string. The access level for the user, values
-                          allowed are private, org, public.
-        ----------------  ----------------------------------------------------------
-        preferred_view    Optional string. The preferred view for the user, values allowed are Web, GIS, null.
-        ----------------  ----------------------------------------------------------
-        description       Optional string. A description of the user.
-        ----------------  ----------------------------------------------------------
-        tags              Optional string. Tags listed as comma-separated values, or a list of strings.
-        ----------------  ----------------------------------------------------------
-        thumbnail         Optional string. The path or url to a file of type PNG, GIF,
-                          or JPEG. Maximum allowed size is 1 MB.
-        ----------------  ----------------------------------------------------------
-        fullname          Optional string. The full name of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        email             Optional string. The e-mail address of this user, only for built-in users.
-        ----------------  ----------------------------------------------------------
-        culture           Optional string. The two-letter language code, fr for example.
-        ----------------  ----------------------------------------------------------
-        region            Optional string. The two-letter country code, FR for example.
-        ----------------  ----------------------------------------------------------
-        first_name        Optional string. User's first name.
-        ----------------  ----------------------------------------------------------
-        last_name         Optional string. User's first name.
-        ================  ==========================================================
+        .. note::
+            When updating the security question, you must provide a
+            security_answer as well.
+
+        ==================  ==========================================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------------------------
+        access              Optional string. The access level for the user, values
+                            allowed are private, org, public.
+        ------------------  ----------------------------------------------------------
+        preferred_view      Optional string. The preferred view for the user, values allowed are Web, GIS, null.
+        ------------------  ----------------------------------------------------------
+        description         Optional string. A description of the user.
+        ------------------  ----------------------------------------------------------
+        tags                Optional string. Tags listed as comma-separated values, or a list of strings.
+        ------------------  ----------------------------------------------------------
+        thumbnail           Optional string. The path or url to a file of type PNG, GIF,
+                            or JPEG. Maximum allowed size is 1 MB.
+        ------------------  ----------------------------------------------------------
+        fullname            Optional string. The full name of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        email               Optional string. The e-mail address of this user, only for built-in users.
+        ------------------  ----------------------------------------------------------
+        culture             Optional string. The two-letter language code, fr for example.
+        ------------------  ----------------------------------------------------------
+        region              Optional string. The two-letter country code, FR for example.
+        ------------------  ----------------------------------------------------------
+        first_name          Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        last_name           Optional string. User's first name.
+        ------------------  ----------------------------------------------------------
+        security_question   Optional integer.  The is a number from 1-14.  The
+                            questions are as follows:
+
+                            1. What city were you born in?
+                            2. What was your high school mascot?
+                            3. What is your mother's maden name?
+                            4. What was the make of your first car?
+                            5. What high school did you got to?
+                            6. What is the last name of your best friend?
+                            7. What is the middle name of your youngest sibling?
+                            8. What is the name of the street on which your grew up?
+                            9. What is the name of your favorite fictional character?
+                            10. What is the name of your favorite pet?
+                            11. What is the name of your favorite restaurant?
+                            12. What is the title of your facorite book?
+                            13. What is your dream job?
+                            14. Where did you go on your first date?
+
+                            Usage Example:
+
+                            security_question=13
+        ------------------  ----------------------------------------------------------
+        security_answer     Optional string.  This is the answer to security querstion.
+                            If you are changing a user's question, an answer must be
+                            provided.
+
+                            Usage example:
+
+                            security_answer="Working on the Python API"
+        ==================  ==========================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -3918,6 +4154,9 @@ class User(dict):
                   'firstName' : first_name,
                   'lastName' : last_name
                   }
+        if security_answer and security_question:
+            params['securityQuestionIdx'] = security_question
+            params['securityAnswer'] = security_answer
         for k,v in copy.copy(params).items():
             if v is None:
                 del params[k]
@@ -5388,7 +5627,7 @@ class Item(dict):
 
     def related_items(self, rel_type, direction="forward"):
         """
-        Retrieves the items related to this item. Relationsships can be added and deleted using
+        Retrieves the items related to this item. Relationships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
 
         ===============     ====================================================================
@@ -5502,7 +5741,7 @@ class Item(dict):
             return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False,
-                file_type=None):
+                file_type=None, build_initial_cache=False):
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature, tiled map, vector tile and scene services.
@@ -5545,6 +5784,10 @@ class Item(dict):
                                geojson, scenepackage, vectortilepackage, imageCollection,
                                mapService, and sqliteGeodatabase are valid entries. This is an
                                optional parameter.
+        -------------------    ---------------------------------------------------------------
+        build_initial_cache    Optional boolean.  The boolean value (default False), if true
+                               and applicable for the file_type, the value will built cache
+                               for the service.
         ===================    ===============================================================
 
 
@@ -5558,7 +5801,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        buildInitialCache = json.dumps(False)
+        buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'

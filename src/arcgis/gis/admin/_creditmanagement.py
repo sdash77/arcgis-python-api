@@ -96,3 +96,47 @@ class CreditManager(object):
         if 'success' in res:
             return res['success']
         return res
+    #----------------------------------------------------------------------
+    def credit_usage(self, start_time=None, end_time=None):
+        """
+        returns the total credit consumption for a given time period.
+
+        ===================   ===============================================
+        **arguements**        **description**
+        -------------------   -----------------------------------------------
+        start_time            datetime.datetime object. This is the date to
+                              start at.
+        -------------------   -----------------------------------------------
+        end_time              datetime.datetime object. This is the stop time
+                              to look for credit consumption. It needs to be
+                              at least 1 day previous than then start_time.
+        ===================   ===============================================
+
+        returns: dictionary
+        """
+        import datetime
+        if isinstance(start_time, datetime.datetime):
+            start_time =int(start_time.timestamp() * 1000)
+        else:
+            start_time = int(datetime.datetime.now().timestamp() * 1000)
+        if isinstance(end_time, datetime.datetime):
+            end_time = int(end_time.timestamp() * 1000)
+        else:
+            end_time = int((datetime.datetime.now() - datetime.timedelta(days=5)).timestamp() * 1000)
+        path = "portals/self/usage"
+        params = {
+        'f' : 'json',
+        'startTime' : end_time,
+        'endTime' : start_time,
+        'period' : '1d',
+        'groupby' : 'stype,etype',
+        'vars' : 'credits,num'
+        }
+        data = self._con.get(path, params)
+        res = {}
+        for d in data['data']:
+            if d['stype'] in res:
+                res[d['stype']] += sum([float(a[1]) for a in d['credits']])
+            else:
+                res[d['stype']] = sum([float(a[1]) for a in d['credits']])
+        return res

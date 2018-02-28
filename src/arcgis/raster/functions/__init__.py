@@ -14,7 +14,7 @@ Functions can be applied to various rasters (or images), including the following
 # Mosaic datasets
 # Rasters within mosaic datasets
 from .._layer import ImageryLayer
-from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra 
+from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
 from arcgis.gis import Item
 import copy
 import numbers
@@ -48,6 +48,34 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
     if raster_ra2 is not None:
         function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2    
+    newlyr = ImageryLayer(layer._url, layer._gis)
+
+    newlyr._lazy_properties = layer.properties
+    newlyr._hydrated = True
+    newlyr._lazy_token = layer._token
+
+    # if layer._fn is not None: # chain the functions
+    #     old_chain = layer._fn
+    #     newlyr._fn = function_chain
+    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
+    # else:
+    newlyr._fn = function_chain
+    newlyr._fnra = function_chain_ra
+
+    newlyr._where_clause = layer._where_clause
+    newlyr._spatial_filter = layer._spatial_filter
+    newlyr._temporal_filter = layer._temporal_filter
+    newlyr._mosaic_rule = layer._mosaic_rule
+    newlyr._filtered = layer._filtered
+    newlyr._extent = layer._extent
+    newlyr._uses_gbl_function = layer._uses_gbl_function
+
+    return newlyr
+
+def _clone_layer_pansharpen(layer, function_chain, function_chain_ra):
+    if isinstance(layer, Item):
+        layer = layer.layers[0]
+      
     newlyr = ImageryLayer(layer._url, layer._gis)
 
     newlyr._lazy_properties = layer.properties
@@ -155,7 +183,7 @@ def arg_median(rasters, undefined_class=None, astype=None):
 
     Consider values from all bands as an array. After sorting the array in ascending order, the median is the
     one value separating the lower half of the array from the higher half. More specifically, if the ascend-sorted
-    array has n values, the median is the ith (0-based) value, where:
+    array has n values, the median is the ith (0-based) value, where: i = ( (n-1) / 2 )
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
 
@@ -193,8 +221,8 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster1, raster_ra1 = _raster_input(raster1)
-    layer2, raster2, raster_ra2 = _raster_input(raster2)
+    layer1, raster_1, raster_ra1 = _raster_input(raster1)
+    layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -220,8 +248,8 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
         "rasterFunction": "Arithmetic",
         "rasterFunctionArguments": {
             "OperationType": operation_type,
-            "Raster": raster1,
-            "Raster2": raster2
+            "Raster": raster_1,
+            "Raster2": raster_2
         }
     }
 
@@ -482,19 +510,21 @@ def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     return band_arithmetic(raster, expression, astype, 0)
 
-def classify(raster1, raster2, classifier_definition, astype=None):
+def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
     classifies a segmented raster to a categorical raster.
 
     :param raster1: the first raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
+    :param raster2: Optional segmentation raster -  If provided, pixels in each segment will get same class assignments. 
+                    imagery layers filtered by where clause, spatial and temporal filters
     :param classifier_definition: the classifier parameters as a Python dictionary / json format
 
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster1, raster_ra1 = _raster_input(raster1)
-    layer2, raster2, raster_ra2 = _raster_input(raster2)
+    layer1, raster_1, raster_ra1 = _raster_input(raster1)
+    if raster2 is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -502,15 +532,22 @@ def classify(raster1, raster2, classifier_definition, astype=None):
         "rasterFunction": "Classify",
         "rasterFunctionArguments": {
             "ClassifierDefinition": classifier_definition,
-            "Raster": raster1,
-            "Raster2": raster2
+            "Raster": raster_1
         }
     }
+    if classifier_definition is None:
+        raise RuntimeError("classifier_definition cannot be empty")
+    template_dict["rasterFunctionArguments"]["ClassifierDefinition"] = classifier_definition
+
+    if raster2 is not None:
+        template_dict["rasterFunctionArguments"]["Raster2"] = raster_2
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+    if raster2 is not None:
+        return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
@@ -2850,8 +2887,8 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
     :return: the output raster with this function applied to it
     """
 
-    layer1, raster_u_mag, raster_ra1 = _raster_input(raster_u_mag)
-    layer2, raster_v_dir, raster_ra2 = _raster_input(raster_v_dir)
+    layer1, raster_u_mag_1, raster_ra1 = _raster_input(raster_u_mag)
+    layer2, raster_v_dir_1, raster_ra2 = _raster_input(raster_u_mag, raster_v_dir)
 
     layer = layer1 if layer1 is not None else layer2
 
@@ -2865,8 +2902,8 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
     template_dict = {
         "rasterFunction": "VectorField",
         "rasterFunctionArguments": {
-            "Raster1": raster_u_mag,
-            "Raster2": raster_v_dir,            
+            "Raster1": raster_u_mag_1,
+            "Raster2": raster_v_dir_1,            
         }
     }
 
@@ -3259,10 +3296,10 @@ def pansharpen(pan_raster,
     :return: output raster with function applied
     """
 
-    layer1, pan_raster, raster_ra1 = _raster_input(pan_raster)
-    layer2, ms_raster, raster_ra2 = _raster_input(ms_raster)
+    layer1, pan_raster_1, raster_ra1 = _raster_input(pan_raster)
+    layer2, ms_raster_1, raster_ra2 = _raster_input(pan_raster, ms_raster)
     if ir_raster is not None:
-        layer3, ir_raster, raster_ra3 = _raster_input(ir_raster)
+        layer3, ir_raster_1, raster_ra3 = _raster_input(pan_raster, ir_raster)
 
     if layer1 is not None:
         layer = layer1
@@ -3283,8 +3320,8 @@ def pansharpen(pan_raster,
         "rasterFunction" : "Pansharpening",
         "rasterFunctionArguments" : {      
             "Weights" : weights,            
-            "PanImage": pan_raster,
-            "MSImage" : ms_raster
+            "PanImage": pan_raster_1,
+            "MSImage" : ms_raster_1
         }
     }
 
@@ -3292,15 +3329,21 @@ def pansharpen(pan_raster,
         template_dict["rasterFunctionArguments"]['PansharpeningType'] = pansharpening_types[type]
 
     if ir_raster is not None:
-        template_dict["rasterFunctionArguments"]['InfraredImage'] = ir_raster
+        template_dict["rasterFunctionArguments"]['InfraredImage'] = ir_raster_1
 
     if isinstance(fourth_band_of_ms_is_ir, bool):
         template_dict["rasterFunctionArguments"]['UseFourthBandOfMSAsIR'] = fourth_band_of_ms_is_ir
 
     if sensor is not None:
         template_dict["rasterFunctionArguments"]['Sensor'] = sensor
-    
-    return _clone_layer(layer, template_dict, raster_ra1)
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']['PanImage'] = raster_ra1
+    function_chain_ra['rasterFunctionArguments']['MSImage'] = raster_ra2
+    if ir_raster is not None:
+        function_chain_ra['rasterFunctionArguments']['InfraredImage'] = raster_ra3
+
+    return _clone_layer_pansharpen(layer, template_dict, function_chain_ra)
 
 
 def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):

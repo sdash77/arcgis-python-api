@@ -285,10 +285,10 @@ def generate_raster(raster_function,
     _set_context(params)
 
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -368,10 +368,10 @@ def convert_feature_to_raster(input_feature,
         params["valueField"] = value_field
     _set_context(params)
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -449,10 +449,10 @@ def copy_raster(input_raster,
         params["clipSetting"] = clip_setting
     _set_context(params)
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -555,10 +555,10 @@ def summarize_raster_within(input_zone_layer,
         params["ignoreMissingValues"] = ignore_missing_values
     _set_context(params)
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -640,10 +640,10 @@ def convert_raster_to_feature(input_raster,
     _set_context(params)
 
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -773,10 +773,10 @@ def calculate_density(input_point_or_line_features,
     _set_context(params)
 
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -912,10 +912,10 @@ def create_viewshed(input_elevation_surface,
     _set_context(params)
 
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     # print(job_values)
     if output_name is not None:
         # url = job_values['output']['url']
@@ -1065,10 +1065,10 @@ def interpolate_points(input_point_features,
     _set_context(params)
 
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     # print(job_values)
     # if output_name is not None:
         # url = job_values['output']['url']
@@ -1155,10 +1155,10 @@ def classify(input_raster,
     if additional_input_raster is not None:
         params["additionalInputRaster"] = _layer_input(additional_input_raster)
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -1240,10 +1240,10 @@ def segment(input_raster,
     params["bandIndexes"] = band_indexes
     params["removeTilingArtifacts"] = remove_tiling_artifacts
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -1299,9 +1299,9 @@ def train_classifier(input_raster,
     params["classifierParameters"] = classifier_parameters
     params["segmentAttributes"] = segment_attributes
 
-    task_url, job_info = _analysis_job(gptool, task, params)
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
-    job_values = _analysis_job_results(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     # print(job_values)
     return job_values['outputClassifierDefinition']

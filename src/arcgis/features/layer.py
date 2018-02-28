@@ -734,7 +734,8 @@ class FeatureLayer(Layer):
         """
         import copy
         upload_id = None
-        if self._gis.is_logged_in == False:
+        if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
+           (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
             raise Exception("Authentication required to perform append.")
         if self._gis._portal.is_arcgisonline == False:
             raise Exception("Append only available on ArcGIS Online.")
@@ -855,26 +856,39 @@ class FeatureLayer(Layer):
         """
            This operation adds, updates, and deletes features to the
            associated feature layer or table in a single call.
-           Inputs:
-              adds - The array of features to be added.
-              updates - The array of features to be updateded.
-              deletes - string of OIDs to remove from service
-              gdbVersion - Geodatabase version to apply the edits.
-              useGlobalIds - instead of referencing the default Object ID
-                              field, the service will look at a GUID field
-                              to track changes.  This means the GUIDs will
-                              be passed instead of OIDs for delete,
-                              update or add features.
-              rollbackOnFailure - Optional parameter to specify if the
-                                  edits should be applied only if all
-                                  submitted edits succeed. If false, the
-                                  server will apply the edits that succeed
-                                  even if some of the submitted edits fail.
-                                  If true, the server will apply the edits
-                                  only if all edits succeed. The default
-                                  value is true.
-           Output:
-              dictionary of messages
+
+           =====================   ===========================================
+           **Inputs**              **Description**
+           ---------------------   -------------------------------------------
+           adds                    Optional FeatureSet/List. The array of
+                                   features to be added.
+           ---------------------   -------------------------------------------
+           updates                 Optional FeatureSet/List. The array of
+                                   features to be updateded.
+           ---------------------   -------------------------------------------
+           deletes                 Optional FeatureSet/List. string of OIDs to
+                                   remove from service
+           ---------------------   -------------------------------------------
+           use_global_ids          Optional boolean. Instead of referencing
+                                   the default Object ID field, the service
+                                   will look at a GUID field to track changes.
+                                   This means the GUIDs will be passed instead
+                                   of OIDs for delete, update or add features.
+           ---------------------   -------------------------------------------
+           gdb_version             Optional boolean. Geodatabase version to
+                                   apply the edits.
+           ---------------------   -------------------------------------------
+           rollback_on_failure     Optional boolean. Optional parameter to
+                                   specify if the edits should be applied only
+                                   if all submitted edits succeed. If false, the
+                                   server will apply the edits that succeed
+                                   even if some of the submitted edits fail.
+                                   If true, the server will apply the edits
+                                   only if all edits succeed. The default
+                                   value is true.
+           =====================   ===========================================
+
+           Output: dictionary
         """
         if adds is None:
             adds = []

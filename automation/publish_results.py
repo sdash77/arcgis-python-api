@@ -113,14 +113,19 @@ def _del_dir_recurs_helper(ftp, dst_dir_path):
 
 def _remove_old_builds_from_ftp_server(ftp, build_number):
     """Only keep NUM_BUILDS on build server, delete old files/folders"""
-    upper_range_builds = build_number - NUM_BUILDS_TO_KEEP
-    for build_number_to_delete in range(0, upper_range_builds):
-        # Deletes the conda builds
-        _remove_dir_ignore_if_doesnt_exist(ftp,
-                                    "master/{}".format(build_number_to_delete))
-        # Deletes the pip builds
-        _delete_file_ignore_if_doesnt_exist(ftp,
-                                    "packages/build-number-{}.tar.gz")
+    log.debug("Attempting to delete old builds...")
+    upper_range_builds = int(build_number) - NUM_BUILDS_TO_KEEP
+    for build_num_to_delete in range(1, upper_range_builds):
+        conda_fld = "master/{}".format(build_num_to_delete)
+        pip_pkg = "packages/build-number-{}.tar.gz".format(build_num_to_delete)
+        try:
+            _delete_directory_recursive(ftp, conda_fld)
+            log.debug("Deleted ftp://{}/{}".format(FTP_SITE, conda_fld))
+
+            _delete_file_ignore_if_doesnt_exist(ftp, pip_pkg)
+            log.debug("Deleted ftp://{}/{}".format(FTP_SITE, pip_pkg))
+        except error_perm as e:
+            log.debug("Skipping deleting build {}".format(build_num_to_delete))
 
 def _storbinary_overwrite_if_exists(ftp, curr_dst_path, curr_src_path):
     try:

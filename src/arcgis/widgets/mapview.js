@@ -193,6 +193,8 @@ define('mapview', [
      "esri/layers/RasterFunction",
      "esri/layers/MosaicRule",
      "esri/layers/ArcGISImageServiceLayer",
+     "esri/layers/ArcGISDynamicMapServiceLayer",
+     "esri/layers/ArcGISTiledMapServiceLayer", 
      "esri/layers/ImageServiceParameters",
      "esri/geometry/Polyline",
      "esri/geometry/Polygon",
@@ -200,6 +202,7 @@ define('mapview', [
      "esri/geometry/Multipoint",
      "esri/layers/FeatureLayer",
      "esri/renderers/smartMapping",
+	 "esri/renderers/jsonUtils",
      "esri/symbols/SimpleFillSymbol",
      "esri/symbols/SimpleLineSymbol",
      "esri/renderers/HeatmapRenderer",
@@ -230,6 +233,8 @@ define('mapview', [
      RasterFunction,
      MosaicRule,
      ArcGISImageServiceLayer,
+     ArcGISDynamicMapServiceLayer,
+     ArcGISTiledMapServiceLayer,
      ImageServiceParameters,
      Polyline,
      Polygon,
@@ -237,6 +242,7 @@ define('mapview', [
      Multipoint,
      FeatureLayer,
      smartMapping,
+	 jsonUtils,
      SimpleFillSymbol,
      SimpleLineSymbol,
      HeatmapRenderer,
@@ -339,6 +345,7 @@ define('mapview', [
                         that.map.on("click", onMouseClick);
 
                         that.mode_changed();
+                        that.basemap_changed();
                         that.layer_changed();
                         that.start_time_changed();
                         that.end_time_changed();
@@ -401,6 +408,7 @@ define('mapview', [
 
 
                 that.mode_changed();
+                that.basemap_changed();
                 that.layer_changed();
                 that.start_time_changed();
                 that.end_time_changed();
@@ -605,6 +613,14 @@ define('mapview', [
                         domStyle.set("loading", "display", "none");
                     });
                 }
+                else if (newlayer.type == "ArcGISTiledMapServiceLayer") {
+                    var tl = new ArcGISTiledMapServiceLayer(newlayer.url);
+                    this.map.addLayer(tl);
+                }
+                else if (newlayer.type == "ArcGISDynamicMapServiceLayer") {
+                    var dmsl = new ArcGISDynamicMapServiceLayer(newlayer.url);
+                    this.map.addLayer(dmsl);
+                }
                 else if (newlayer.type == "VectorTileLayer") {
                     var vtl = new VectorTileLayer(newlayer.url);
                     this.map.addLayer(vtl);
@@ -661,7 +677,7 @@ define('mapview', [
                             // this.touch();
                         }
 
-                        if (lyr_options.renderer == "ClassedSizeRenderer") {
+                        else if (lyr_options.renderer == "ClassedSizeRenderer") {
                             console.log("ClassedSizeRenderer...");
                             setTimeout(function () { createClassedSizeRenderer(lyr_options); }, 500);
                             /*layer.on("load", function () {
@@ -670,7 +686,7 @@ define('mapview', [
                              });*/
                         }
 
-                        if (lyr_options.renderer == "ClassedColorRenderer") {
+                        else if (lyr_options.renderer == "ClassedColorRenderer") {
                             setTimeout(function () { createClassedColorRenderer(lyr_options); }, 500);
                             /*layer.on("load", function () {
                                 console.log("BBB");
@@ -678,6 +694,10 @@ define('mapview', [
                              });
                              */
                         }
+						else{
+							var renderer = jsonUtils.fromJson(lyr_options.renderer); 
+							layer.setRenderer(renderer);
+						}
 
                         function createClassedColorRenderer(lyr_options) {
                             //smart mapping functionality begins

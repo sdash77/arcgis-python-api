@@ -173,14 +173,14 @@ class UX(object):
                     r['innerHTML'] = "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;" + \
                         " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;" +\
                         " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"+\
-                        " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; margin-bottom:0; line-height:normal; "+\
-                        "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; color:#369;'>ArcGIS Enterprise</span></div>"
-            update_result = self._gis.update_properties({"clearEmptyFields" : True,
-                                                         "thumbnail": " ",
-                                                         "rotatorPanels" : rp})
-            update_result = self._gis.update_properties({"clearEmptyFields" : True,
+                        " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; " \
+                        "margin-bottom:0; line-height:normal; "+\
+                        "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; " \
+                        "color:#369;'>{}</span></div>".format(self._gis.properties.name)
+
+            update_result = self._gis.update_properties({"clearEmptyFields": True,
                                                          "thumbnail": "",
-                                                         "rotatorPanels" : rp})
+                                                         "rotatorPanels": rp})
 
         return update_result
     #----------------------------------------------------------------------
@@ -283,20 +283,17 @@ class UX(object):
     @property
     def featured_content(self):
         """
-        Returns the featured content group information.  The information
-        can then be set using the 'set_featured_content()'.
+        Gets what group chosen for featured content and how many items will be displayed.
+        Featured content show up as items in a ribbon on the home page of the portal.
 
           :return: dictionary
 
         :Usage Example:
 
-        >>> data = ux.get_featured_content()
-        >>> ux.set_featured_content(data)
-        True
-
+        >>> data = ux.featured_content
         """
-        return {'group' : self._gis.properties['homePageFeaturedContent'],
-                'count' : self._gis.properties['homePageFeaturedContentCount']}
+        return {'group': self._gis.properties['homePageFeaturedContent'],
+                'count': self._gis.properties['homePageFeaturedContentCount']}
     #----------------------------------------------------------------------
     @featured_content.setter
     def featured_content(self, content):
@@ -306,21 +303,36 @@ class UX(object):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         content           optional dictionary, defines the group and count of the feature
-                          content area on an organizational site.  A value of None will
+                          content area on an organizational home page.  A value of None will
                           reset the value back to the install defaults.
                           Example:
-                          {'group': <group id>, 'count' : 12}
+                          {'group': <group object or id>, 'count' : 12}
         ================  ===============================================================
 
          :return: boolean
         """
         from .. import Group
-        if 'group' in content and \
-           isinstance(content['group'], Group):
-            content['homePageFeaturedContent'] = content['group'].groupid
         if content is None:
             content = {'homePageFeaturedContent': "",
-                        'homePageFeaturedContentCount' : 12}
+                        'homePageFeaturedContentCount': 12}
+        elif 'group' in content and \
+           isinstance(content['group'], Group):
+            content['homePageFeaturedContent'] = content['group'].groupid
+        elif 'group' in content and \
+             isinstance('group', str):
+            c = {}
+            c['homePageFeaturedContent'] = content['group']
+            if 'count' in content:
+                c['homePageFeaturedContentCount'] = content['count']
+            else:
+                c['homePageFeaturedContentCount'] = 12
+            content = c
+        elif isinstance(content, str):
+            c = {}
+            c['homePageFeaturedContent'] = content
+            c['homePageFeaturedContentCount'] = 12
+            content = c
+
         return self._gis.update_properties(content)
     #----------------------------------------------------------------------
     def set_background(self, background_file=None, is_built_in=True):

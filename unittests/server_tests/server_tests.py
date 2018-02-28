@@ -107,13 +107,13 @@ if AGOL_USERNAME and AGOL_PASSWORD:
 class ServerPortalTest(unittest.TestCase):
     """tests the connection to arcgis server object from portal"""
     def setUp(self):
-        self._gis = GIS('https://dev003246.esri.com/portal', 'admin', 'esri.agp')
+        self._gis = GIS('https://dev0002320.esri.com/portal', 'admin', 'esri.agp')
     def test_server_portal_not_gis(self):
         """tests creating a Server object"""
         from arcgis.gis.server import Server
-        s = Server(url="https://dev003247.esri.com:6443/arcgis", gis=None,
+        s = Server(url="https://dev0002320.esri.com/portal", gis=None,
                username="admin", password="esri.agp",
-               tokenurl="https://dev003247.esri.com:6443/arcgis/admin/generateToken")
+               tokenurl="https://dev0002320.esri.com:6443/arcgis/admin/generateToken")
         self.assertIsInstance(s, Server)
     #@unittest.SkipTest
     def test_portal_get_server_manager(self):
