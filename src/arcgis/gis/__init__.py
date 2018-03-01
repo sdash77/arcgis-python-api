@@ -2229,11 +2229,11 @@ class ContentManager(object):
             'analyzeParameters' : {}
         }
         files = None
-        if not (text or file_path or itemid or url):
+        if not (text or file_path or item or url):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
         if item:
             if isinstance(item, str):
-                parms['itemid'] = itemid
+                parms['itemid'] = item
             elif isinstance(item, Item):
                 params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
@@ -2269,7 +2269,7 @@ class ContentManager(object):
 
         gis = self._gis
         params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
-        return gis._con.post(url=surl, postdata=params, files=files)
+        return gis._con.post(path=surl, postdata=params, files=files)
 
 
     def create_service(self, name,
