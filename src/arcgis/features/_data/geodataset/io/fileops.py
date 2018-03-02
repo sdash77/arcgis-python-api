@@ -153,7 +153,7 @@ def from_featureclass(filename, **kwargs):
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
-        sr = kwargs.pop('sr', arcpy.SpatialReference(4326))
+        sr = kwargs.pop('sr', arcpy.Describe(filename).spatialReference or arcpy.SpatialReference(4326))
         fields = kwargs.pop('fields', None)
         desc = arcpy.Describe(filename)
         if not fields:
