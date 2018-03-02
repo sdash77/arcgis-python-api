@@ -316,11 +316,11 @@ class UX(object):
         """
         from .. import Group
         if content is None:
-            content = {'homePageFeaturedContent': 'null',
-                       'homePageFeaturedContentCount': 12}
-        elif isinstance(content, dict) and \
-             'group' in content and \
-             isinstance(content['group'], Group):
+            content = {'homePageFeaturedContent': "",
+                        'homePageFeaturedContentCount': 12,
+                       'clearEmptyFields':True}
+        elif 'group' in content and \
+           isinstance(content['group'], Group):
             content['homePageFeaturedContent'] = content['group'].groupid
         elif isinstance(content, dict) and \
              'group' in content and \
