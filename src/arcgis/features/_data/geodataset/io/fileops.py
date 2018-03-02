@@ -273,6 +273,102 @@ def from_featureclass(filename, **kwargs):
                     return SpatialDataFrame(data=df, geometry=geoms)
     return
 #--------------------------------------------------------------------------
+def _arcpy_to_featureclass(df, out_name, out_location=None,
+                           overwrite=True, out_sr=None,
+                           skip_invalid=True):
+    """
+    """
+    import arcgis
+    import numpy as np
+    import datetime
+    from arcpy import da
+    from arcgis.features import SpatialDataFrame
+
+    gtype = df.geometry_type.upper()
+    gname = df.geometry.name
+    df = df.copy()
+
+    if overwrite and \
+       arcpy.Exists(os.path.join(out_location, out_name)):
+        arcpy.Delete_management(os.path.join(out_location, out_name))
+    elif overwrite == False and \
+        arcpy.Exists(os.path.join(out_location, out_name)):
+        raise Exception("Dataset exists, please provide a new out_name or location.")
+
+    if out_sr is None:
+        try:
+            if isinstance(df.sr, dict):
+                sr = arcgis.geometry.SpatialReference(df.sr).as_arcpy
+            elif isinstance(df.sr, arcgis.geometry.SpatialReference):
+                sr = df.sr.as_arcpy
+        except:
+            sr = arcpy.SpatialReference(4326)
+    else:
+        if isinstance(df.sr, dict):
+            sr = arcgis.geometry.SpatialReference(df.sr).as_arcpy
+        elif isinstance(df.sr, arcgis.geometry.SpatialReference):
+            sr = df.sr.as_arcpy
+        elif isinstance(out_sr, arcpy.SpatialReference):
+            sr = out_sr
+    fc = arcpy.CreateFeatureclass_management(out_path=out_location,
+                                             out_name=out_name,
+                                             geometry_type=gtype.upper(),
+                                             spatial_reference=sr)[0]
+    df['JOIN_ID_FIELD_DROP'] = df.index.tolist()
+    flds = df.columns.tolist()
+
+    flds.pop(flds.index(gname))
+    flds_lower = [f.lower() for f in flds]
+    for f in ['objectid', 'oid', 'fid']:
+        if f in flds_lower:
+            idx = flds_lower.index(f)
+            flds.pop(idx)
+            flds_lower.pop(idx)
+            del idx
+        del f
+    array = [tuple(row) for row in df[flds].as_matrix()]
+    geoms = df.geometry.as_arcpy.tolist()
+    dtypes = []
+
+    for idx, a in enumerate(array[0]):
+        if isinstance(a,
+                      STRING_TYPES):
+            dtypes.append((flds[idx], '<U%s' %  df[flds[idx]].map(len).max()))
+        elif flds[idx].lower() in ['fid', 'oid', 'objectid']:
+            dtypes.append((flds[idx], np.int32))
+        elif isinstance(a,
+                        (int, np.int32)):
+            dtypes.append((flds[idx], np.int64))
+        elif isinstance(a,
+                        (float, np.float, np.float64)):
+            dtypes.append((flds[idx], np.float64))
+        elif isinstance(a,
+                        (datetime.datetime, pd.datetime)):
+            dtypes.append((flds[idx], '<M8[us]'))
+        else:
+            dtypes.append((flds[idx], type(a)))
+        del idx, a
+
+    array = np.array(array, dtype=dtypes)
+    del dtypes, flds, flds_lower
+
+    with da.InsertCursor(fc, ['SHAPE@']) as icur:
+        for g in geoms:
+            if skip_invalid:
+                try:
+                    icur.insertRow([g])
+                except: pass
+            else:
+                icur.insertRow([g])
+    desc = arcpy.Describe(fc)
+    oidField = desc.oidFieldName
+    del desc
+    da.ExtendTable(in_table=fc, table_match_field=oidField,
+                   in_array=array, array_match_field='JOIN_ID_FIELD_DROP',
+                   append_only=False)
+    del df['JOIN_ID_FIELD_DROP']
+    return fc
+#--------------------------------------------------------------------------
 def to_featureclass(df, out_name, out_location=None,
                     overwrite=True, out_sr=None,
                     skip_invalid=True):
