@@ -1702,13 +1702,7 @@ class _OperationViewDefintion(_TextItemDefinition):
                 if app_json is not None:
                     app_json_text = ''
 
-                if app_json and 'version' in app_json:
-                    if app_json['version'] == "1.2":
-                        app_json = self._swizzle_ids(self._clone_mapping)
-                    else:
-                        raise _ItemCreateException("Version {} is not supported".format(app_json['version']))
-                else:
-                    raise _ItemCreateException("Operation View is not versioned and cannot be cloned")
+                app_json = self._swizzle_ids(self._clone_mapping)
 
                 # dump json
                 app_json_text = json.dumps(app_json)
@@ -1819,7 +1813,7 @@ class _DashboardDefinition(_TextItemDefinition):
                     app_json_text = ''
 
                 if app_json and 'version' in app_json:
-                    if app_json['version'] == 24:
+                    if app_json['version'] >= 24:
                         app_json = self._swizzle_v24(self._clone_mapping)
                     else:
                         raise _ItemCreateException("Dashboard version {} is not supported".format(app_json['version']))
@@ -1917,7 +1911,7 @@ class _DashboardDefinition(_TextItemDefinition):
         :return: A list of webmap ids
         """
         if 'version' in data:
-            if data['version'] == 24:
+            if data['version'] >= 24:
                 webmap_ids = _DashboardDefinition._get_webmap_ids_v24(data)
             else:
                 raise _ItemCreateException("Dashboard version {} is not supported".format(data['version']))
@@ -1948,7 +1942,7 @@ class _DashboardDefinition(_TextItemDefinition):
         :return: A list of layer ids
         """
         if 'version' in data:
-            if data['version'] == 24:
+            if data['version'] >= 24:
                 layer_ids = _DashboardDefinition._get_layer_ids_v24(data)
             else:
                 raise _ItemCreateException("Dashboard version {} is not supported".format(data['version']))
