@@ -2229,11 +2229,11 @@ class ContentManager(object):
             'analyzeParameters' : {}
         }
         files = None
-        if not (text or file_path or itemid or url):
+        if not (text or file_path or item or url):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
         if item:
             if isinstance(item, str):
-                parms['itemid'] = itemid
+                parms['itemid'] = item
             elif isinstance(item, Item):
                 params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
@@ -2269,7 +2269,7 @@ class ContentManager(object):
 
         gis = self._gis
         params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
-        return gis._con.post(url=surl, postdata=params, files=files)
+        return gis._con.post(path=surl, postdata=params, files=files)
 
 
     def create_service(self, name,
@@ -2972,9 +2972,10 @@ class ContentManager(object):
 
         import arcgis._impl.common._clone as clone
         wgs84_extent = None
-        if item_extent:
-            wgs84_extent = clone._wgs84_envelope(item_extent)
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
+        service_extent = item_extent
+        if service_extent:
+            wgs84_extent = clone._wgs84_envelope(service_extent)
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
         return deep_cloner.clone()
 
     def _bulk_update(self, itemids, properties):

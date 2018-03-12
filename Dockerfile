@@ -3,8 +3,8 @@
 FROM jupyter/base-notebook
 
 # Pass in URL to where to get samples ZIP
-ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.3.zip"
-ARG githubfolder="arcgis-python-api-1.3"
+ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.4.zip"
+ARG githubfolder="arcgis-python-api-1.4"
 
 MAINTAINER Esri Docker <docker_sdk@esri.com>
 LABEL vendor="Esri"
@@ -21,6 +21,9 @@ RUN conda install -y unzip \
                      seaborn \
                      scikit-image \
                      scikit-learn \
+					 pysal \
+					 pyshp \
+					 keyring \
     && conda clean -y -a
 RUN conda install jupyter_dashboards -c conda-forge -y
 RUN conda install notebook=5.2.1 -y \
@@ -47,4 +50,4 @@ RUN mkdir -p /home/jovyan/.jupyter/custom
 RUN wget -O ~/.jupyter/custom/custom.css https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/custom.css
 RUN mv /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo_old.png
 RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/logo.png
-RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/templates/tree.html https://s3-us-west-1.amazonaws.com/notebooks-esri-com-alb-logs/notebookfiles/tree.html
+#RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/templates/tree.html https://s3-us-west-1.amazonaws.com/notebooks-esri-com-alb-logs/notebookfiles/tree.html

@@ -1932,7 +1932,7 @@ class Portal(object):
     def update_group(self, group_id, title=None, tags=None, description=None,
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None, **kwargs):
+                     thumbnail=None, max_file_size=None, users_update_items=None):
         """ Updates a group.
 
         .. note::
@@ -1999,9 +1999,13 @@ class Portal(object):
             properties['sortOrder'] = sort_order
         if is_view_only:
             properties['isViewOnly'] = is_view_only
-        if 'max_file_size' in kwargs:
-            properties['MAX_FILE_SIZE'] = kwargs.pop("max_file_size", 1024000)
-        users_update_items = kwargs.pop('users_update_items', False)
+        if max_file_size:
+            properties['MAX_FILE_SIZE'] = max_file_size
+        elif max_file_size is None:
+            properties['MAX_FILE_SIZE'] = 1024000
+        if users_update_items is None:
+            users_update_items = False
+
         if users_update_items == False:
             properties['capabilities'] = ""
         else:
