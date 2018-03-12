@@ -3585,13 +3585,23 @@ class Group(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string.  The username of the new group owner.
+        target_owner      Required string or User.  The username of the new group owner.
         ================  ========================================================
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
-        return self._portal.reassign_group(self.groupid, target_owner)
+        params = {'f' : 'json'}
+        if isinstance(target_owner, User):
+            params['targetUsername'] = target_owner.username
+        else:
+            params['targetUsername'] = target_owner
+        res = self._gis._con.post('community/groups/' + self.groupid + '/reassign', params)
+        if res:
+            self._hydrated = False
+            self._hydrate()
+            return res.get('success')
+        return False
 
     def get_members(self):
         """
