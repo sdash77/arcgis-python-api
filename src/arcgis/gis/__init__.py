@@ -3634,7 +3634,10 @@ class Group(dict):
                 print(user)
 
         """
-        return self._portal.get_group_members(self.groupid)
+        url = '%s/community/groups/%s/users' % (self._gis._portal.resturl,
+                                                self.groupid)
+        params = {'f': 'json'}
+        return self._gis._con.post(url, params)
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
