@@ -5,7 +5,7 @@ import arcpy
 from arcgis.features import SpatialDataFrame
 import pandas as pd
 
-from arcgis.arctools._base import _process_kwargs, _process_results
+from arcgis.gp._base import _process_kwargs, _process_results
 
 
 #--------------------------------------------------------------------------
