@@ -29,7 +29,7 @@ class _DeepCloner():
     """
     A class to handle all of the deep cloning actions
     """
-    def __init__(self, target, items=None, folder=None, item_extent=None,
+    def __init__(self, target, items=None, folder=None, item_extent=None, service_extent=None,
                  use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None):
         self._graph = {}
         self.folder = folder
@@ -37,6 +37,7 @@ class _DeepCloner():
         self.target = target
         self._items = items
         self._item_extent = item_extent
+        self._service_extent = service_extent
         self._use_org_basemap = use_org_basemap
         self._copy_data = copy_data
         self._search_existing_items=search_existing_items
@@ -265,7 +266,7 @@ class _DeepCloner():
 
             item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view,
                                                         view_sources, view_source_fields, features=None, data=data, folder=self.folder,
-                                                        thumbnail=None, portal_item=item, copy_data=self._copy_data, service_extent=self._item_extent, search_existing=self._search_existing_items)
+                                                        thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
             self._graph[item.id] = item_definition
             if is_view and source_fs_definition:
                 item_definition.add_child(source_fs_definition)
@@ -604,7 +605,7 @@ class _DeepCloner():
             data = item.get_data()
 
             return _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
-                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, service_extent=self._item_extent, search_existing=self._search_existing_items)
+                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
 
         # If the item is a feature collection get the FeatureCollectionDefintion
         elif item['type'] == 'Feature Collection':
@@ -940,8 +941,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
     Represents the definition of a hosted feature service within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, service_extent=None, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, service_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, item_extent=None, service_extent=None, search_existing=True):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
         self._service_definition = service_definition
         self._service_extent = service_extent
         self._layers_definition = layers_definition
@@ -2258,6 +2259,7 @@ class _FormDefinition(_ItemDefinition):
 
         form_zip = self.portal_item.download(temp_dir)
         zip_file = zipfile.ZipFile(form_zip)
+        org_url = _get_org_url(self.target)
 
         try:
             # Extract the zip archive to a sub folder
@@ -2295,6 +2297,10 @@ class _FormDefinition(_ItemDefinition):
                     for key, value in clone_mapping['Services'].items():
                         data = re.sub(key, value['url'], data, 0, re.IGNORECASE)
 
+                    for key, value in clone_mapping['Item IDs'].items():
+                        url = '{0}sharing/rest/content/items/{1}'.format(org_url, value)
+                        data = re.sub('(?<=")([^<]+?{0})(?=")'.format(key), url, data, 0, re.IGNORECASE)
+
                     with open(os.path.join(zip_dir, path), 'w') as file:
                         file.write(data)
 
@@ -2318,6 +2324,10 @@ class _FormDefinition(_ItemDefinition):
 
                         for key, value in clone_mapping['Services'].items():
                             data = re.sub(key, value['url'], data, 0, re.IGNORECASE)
+
+                        for key, value in clone_mapping['Item IDs'].items():
+                            url = '{0}sharing/rest/content/items/{1}'.format(org_url, value)
+                            data = re.sub('(?<=>)([^<]+?{0})(?=<)'.format(key), url, data, 0, re.IGNORECASE)
 
                         with open(os.path.join(xlsx_dir, 'xl/sharedStrings.xml'), 'w') as file:
                             file.write(data)
@@ -2875,7 +2885,7 @@ def _get_org_url(target):
     else:
         url = urlparse(org_url)
         org_url = org_url.replace(url.scheme, scheme)
-    return org_url
+    return org_url.rstrip('/') + '/'
 
 
 def _compare_url(url1, url2):

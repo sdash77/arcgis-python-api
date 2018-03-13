@@ -2972,9 +2972,10 @@ class ContentManager(object):
 
         import arcgis._impl.common._clone as clone
         wgs84_extent = None
-        if item_extent:
-            wgs84_extent = clone._wgs84_envelope(item_extent)
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
+        service_extent = item_extent
+        if service_extent:
+            wgs84_extent = clone._wgs84_envelope(service_extent)
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
         return deep_cloner.clone()
 
     def _bulk_update(self, itemids, properties):
