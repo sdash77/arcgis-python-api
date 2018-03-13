@@ -9,7 +9,7 @@ from arcgis.gp._base import _process_kwargs, _process_results
 
 
 #--------------------------------------------------------------------------
-def buffer(features=None, output_name=None, buffer_distance_or_field=None, line_side=None, line_end_type=None, dissolve_option=None, dissolve_field=None, method=None):
+def buffer(features, buffer_distance_or_field=None, line_side=None, line_end_type=None, dissolve_option=None, dissolve_field=None, method=None, return_sdf=True):
     '''Buffer_analysis(features, output_name, buffer_distance_or_field, {line_side}, {line_end_type}, {dissolve_option}, {dissolve_field;dissolve_field...}, {method})
 
         Creates buffer polygons around input features to a specified distance.
@@ -97,20 +97,24 @@ def buffer(features=None, output_name=None, buffer_distance_or_field=None, line_
       output_name (Feature Class):
           The feature class containing the output buffers.'''
     kwargs = locals()
-    argdb = {'buffer_distance_or_field': 'buffer_distance_or_field',
-             'out_feature_class': 'output_name', 'dissolve_field': 'dissolve_field',
-             'method': 'method', 'dissolve_option': 'dissolve_option',
-             'in_features': 'features', 'line_end_type': 'line_end_type',
-             'line_side': 'line_side'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'line_side': 'line_side', 'in_features': 'features', 'method': 'method', 'dissolve_option': 'dissolve_option', 'line_end_type': 'line_end_type', 'out_feature_class': 'output_name', 'buffer_distance_or_field': 'buffer_distance_or_field', 'dissolve_field': 'dissolve_field'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Buffer(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def clip(features=None, clip_features=None, output_name=None, cluster_tolerance=None):
+def clip(features, clip_features, cluster_tolerance=None, return_sdf=True):
     '''Clip_analysis(features, clip_features, output_name, {cluster_tolerance})
 
         Extracts input features that overlay the clip features.Use this tool
@@ -135,16 +139,24 @@ def clip(features=None, clip_features=None, output_name=None, cluster_tolerance=
       output_name (Feature Class):
           The feature class to be created.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'cluster_tolerance': 'cluster_tolerance', 'clip_features': 'clip_features'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'clip_features': 'clip_features', 'out_feature_class': 'output_name', 'in_features': 'features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Clip(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def create_thiessen_polygons(features=None, output_name=None, fields_to_copy=None):
+def create_thiessen_polygons(features, fields_to_copy=None, return_sdf=True):
     '''CreateThiessenPolygons_analysis(features, output_name, {fields_to_copy})
 
         Creates Thiessen polygons from point features.Each Thiessen polygon
@@ -171,16 +183,24 @@ def create_thiessen_polygons(features=None, output_name=None, fields_to_copy=Non
           The output feature class containing the Thiessen polygons that are
           generated from the point input features.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'fields_to_copy': 'fields_to_copy'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'in_features': 'features', 'fields_to_copy': 'fields_to_copy'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.CreateThiessenPolygons(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def enrich_layer(features=None, output_name=None, country=None, data_collection=None, variables=None, buffer_type=None, distance=None, unit=None):
+def enrich_layer(features, country=None, data_collection=None, variables=None, buffer_type=None, distance=None, unit=None, return_sdf=True):
     '''EnrichLayer_analysis(features, output_name, country, data_collection, {variables;variables...}, {buffer_type}, {distance}, {unit})
 
         Enriches your data by adding demographic and landscape facts about
@@ -279,16 +299,24 @@ def enrich_layer(features=None, output_name=None, country=None, data_collection=
           The output feature class, which is a copy of the input features with
           new attribute fields added.'''
     kwargs = locals()
-    argdb = {'variables': 'variables', 'out_feature_class': 'output_name', 'country': 'country', 'data_collection': 'data_collection', 'unit': 'unit', 'in_features': 'features', 'buffer_type': 'buffer_type', 'distance': 'distance'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'buffer_type': 'buffer_type', 'data_collection': 'data_collection', 'in_features': 'features', 'distance': 'distance', 'variables': 'variables', 'out_feature_class': 'output_name', 'unit': 'unit', 'country': 'country'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.EnrichLayer(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def erase(features=None, erase_features=None, output_name=None, cluster_tolerance=None):
+def erase(features, erase_features, cluster_tolerance=None, return_sdf=True):
     '''Erase_analysis(features, erase_features, output_name, {cluster_tolerance})
 
         Creates a feature class by overlaying the input features with the
@@ -311,16 +339,24 @@ def erase(features=None, erase_features=None, output_name=None, cluster_toleranc
           The feature class that will contain only those Input Features that are
           not coincident with the Erase Features.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'erase_features': 'erase_features', 'cluster_tolerance': 'cluster_tolerance', 'out_feature_class': 'output_name'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'in_features': 'features', 'erase_features': 'erase_features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Erase(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def frequency(table=None, out_table=None, frequency_fields=None, summary_fields=None):
+def frequency(table=None, out_table=None, frequency_fields=None, summary_fields=None, return_sdf=True):
     '''Frequency_analysis(table, out_table, frequency_fields;frequency_fields..., {summary_fields;summary_fields...})
 
         Reads a table and a set of fields and creates a new table containing
@@ -343,16 +379,24 @@ def frequency(table=None, out_table=None, frequency_fields=None, summary_fields=
       out_table (Table):
           The table that will store the calculated frequency statistics.'''
     kwargs = locals()
-    argdb = {'in_table': 'table', 'out_table': 'out_table', 'frequency_fields': 'frequency_fields', 'summary_fields': 'summary_fields'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'summary_fields': 'summary_fields', 'in_table': 'table', 'frequency_fields': 'frequency_fields', 'out_table': 'out_table'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Frequency(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def generate_near_table(features=None, near_features=None, out_table=None, search_radius=None, location=None, angle=None, closest=None, closest_count=None, method=None):
+def generate_near_table(features, near_features, out_table=None, search_radius=None, location=None, angle=None, closest=None, closest_count=None, method=None, return_sdf=True):
     '''GenerateNearTable_analysis(features, near_features;near_features..., out_table, {search_radius}, {location}, {angle}, {closest}, {closest_count}, {method})
 
         Calculates distances and other proximity information between features
@@ -392,11 +436,11 @@ def generate_near_table(features=None, near_features=None, out_table=None, searc
           NEAR_ANGLE field in the output table. A near angle measures direction
           of the line connecting an input feature to its nearest feature at
           their closest locations. When the PLANAR method is used in the method
-          parameter, the angle is within the range of -180° to 180°, with 0° to
-          the east, 90° to the north, 180° (or -180°) to the west, and -90° to
+          parameter, the angle is within the range of -180 to 180, with 0 to
+          the east, 90 to the north, 180 (or -180) to the west, and -90 to
           the south. When the GEODESIC method is used, the angle is within the
-          range of -180° to 180°, with 0° to the north, 90° to the east, 180°
-          (or -180°) to the south, and -90° to the west.
+          range of -180 to 180, with 0 to the north, 90 to the east, 180
+          (or -180) to the south, and -90 to the west.
 
           * NO_ANGLE-NEAR_ANGLE will not be added to the output table. This is
           the default.
@@ -433,16 +477,24 @@ def generate_near_table(features=None, near_features=None, out_table=None, searc
       out_table (Table):
           The output table containing the result of the analysis.'''
     kwargs = locals()
-    argdb = {'near_features': 'near_features', 'closest': 'closest', 'location': 'location', 'out_table': 'out_table', 'in_features': 'features', 'search_radius': 'search_radius', 'closest_count': 'closest_count', 'angle': 'angle', 'method': 'method'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'angle': 'angle', 'closest_count': 'closest_count', 'search_radius': 'search_radius', 'in_features': 'features', 'out_table': 'out_table', 'near_features': 'near_features', 'closest': 'closest', 'location': 'location', 'method': 'method'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.GenerateNearTable(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def graphic_buffer(features=None, output_name=None, buffer_distance_or_field=None, line_caps=None, line_joins=None, miter_limit=None, max_deviation=None):
+def graphic_buffer(features, buffer_distance_or_field=None, line_caps=None, line_joins=None, miter_limit=None, max_deviation=None, return_sdf=True):
     '''GraphicBuffer_analysis(features, output_name, buffer_distance_or_field, {line_caps}, {line_joins}, {miter_limit}, {max_deviation})
 
         Creates buffer polygons around input features to a specified distance.
@@ -511,16 +563,24 @@ def graphic_buffer(features=None, output_name=None, buffer_distance_or_field=Non
       output_name (Feature Class):
           The feature class containing the output buffers.'''
     kwargs = locals()
-    argdb = {'buffer_distance_or_field': 'buffer_distance_or_field', 'line_caps': 'line_caps', 'out_feature_class': 'output_name', 'max_deviation': 'max_deviation', 'line_joins': 'line_joins', 'miter_limit': 'miter_limit', 'in_features': 'features'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'line_caps': 'line_caps', 'in_features': 'features', 'miter_limit': 'miter_limit', 'out_feature_class': 'output_name', 'line_joins': 'line_joins', 'buffer_distance_or_field': 'buffer_distance_or_field', 'max_deviation': 'max_deviation'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.GraphicBuffer(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def identity(features=None, identity_features=None, output_name=None, joattributes=None, cluster_tolerance=None, relationship=None):
+def identity(features, identity_features, joattributes=None, cluster_tolerance=None, relationship=None, return_sdf=True):
     '''Identity_analysis(features, identity_features, output_name, {joattributes}, {cluster_tolerance}, {relationship})
 
         Computes a geometric intersection of the input features and identity
@@ -577,16 +637,24 @@ def identity(features=None, identity_features=None, output_name=None, joattribut
           The feature class that will be created and to which the results will
           be written.'''
     kwargs = locals()
-    argdb = {'out_feature_class': 'output_name', 'identity_features': 'identity_features', 'relationship': 'relationship', 'in_features': 'features', 'cluster_tolerance': 'cluster_tolerance', 'join_attributes': 'joattributes'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'join_attributes': 'joattributes', 'relationship': 'relationship', 'cluster_tolerance': 'cluster_tolerance', 'out_feature_class': 'output_name', 'identity_features': 'identity_features', 'in_features': 'features'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Identity(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def intersect(features=None, output_name=None, joattributes=None, cluster_tolerance=None, output_type=None):
+def intersect(features, joattributes=None, cluster_tolerance=None, output_type=None, return_sdf=True):
     '''Intersect_analysis(features;features..., output_name, {joattributes}, {cluster_tolerance}, {output_type})
 
         Computes a geometric intersection of the input features. Features or
@@ -636,16 +704,24 @@ def intersect(features=None, output_name=None, joattributes=None, cluster_tolera
       output_name (Feature Class):
           The output feature class.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'output_type': 'output_type', 'cluster_tolerance': 'cluster_tolerance', 'join_attributes': 'joattributes'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'join_attributes': 'joattributes', 'in_features': 'features', 'output_type': 'output_type', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Intersect(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def multiple_ring_buffer(Input_Features=None, Output_Feature_class=None, Distances=None, Buffer_Unit=None, Field_Name=None, Dissolve_Option=None, Outside_Polygons_Only=None):
+def multiple_ring_buffer(Input_Features=None, Output_Feature_class=None, Distances=None, Buffer_Unit=None, Field_Name=None, Dissolve_Option=None, Outside_Polygons_Only=None, return_sdf=True):
     '''MultipleRingBuffer_analysis(Input_Features, Output_Feature_class, Distances;Distances..., {Buffer_Unit}, {Field_Name}, {Dissolve_Option}, {Outside_Polygons_Only})
 
         Creates multiple buffers at specified distances around the input
@@ -723,16 +799,24 @@ def multiple_ring_buffer(Input_Features=None, Output_Feature_class=None, Distanc
       Output_Feature_class (Feature Class):
           The output feature class that will contain multiple buffers.'''
     kwargs = locals()
-    argdb = {'Distances': 'Distances', 'Buffer_Unit': 'Buffer_Unit', 'Dissolve_Option': 'Dissolve_Option', 'Output_Feature_class': 'Output_Feature_class', 'Outside_Polygons_Only': 'Outside_Polygons_Only', 'Input_Features': 'Input_Features', 'Field_Name': 'Field_Name'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'Dissolve_Option': 'Dissolve_Option', 'Input_Features': 'Input_Features', 'Outside_Polygons_Only': 'Outside_Polygons_Only', 'Distances': 'Distances', 'Field_Name': 'Field_Name', 'Buffer_Unit': 'Buffer_Unit', 'Output_Feature_class': 'Output_Feature_class'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.MultipleRingBuffer(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def near(features=None, near_features=None, search_radius=None, location=None, angle=None, method=None):
+def near(features, near_features, search_radius=None, location=None, angle=None, method=None, return_sdf=True):
     '''Near_analysis(features, near_features;near_features..., {search_radius}, {location}, {angle}, {method})
 
         Calculates distance and additional proximity information between the
@@ -770,11 +854,11 @@ def near(features=None, near_features=None, search_radius=None, location=None, a
           NEAR_ANGLE field in the output table. A near angle measures direction
           of the line connecting an input feature to its nearest feature at
           their closest locations. When the PLANAR method is used in the method
-          parameter, the angle is within the range of -180° to 180°, with 0° to
-          the east, 90° to the north, 180° (or -180°) to the west, and -90° to
+          parameter, the angle is within the range of -180 to 180, with 0 to
+          the east, 90 to the north, 180 (or -180) to the west, and -90 to
           the south. When the GEODESIC method is used, the angle is within the
-          range of -180° to 180°, with 0° to the north, 90° to the east, 180°
-          (or -180°) to the south, and -90° to the west.
+          range of -180 to 180, with 0 to the north, 90 to the east, 180
+          (or -180) to the south, and -90 to the west.
 
           * NO_ANGLE-The near angle values will not be written. This is the
           default.
@@ -795,16 +879,24 @@ def near(features=None, near_features=None, search_radius=None, location=None, a
           into account the curvature of the spheroid and correctly deals with
           data near the dateline and poles.'''
     kwargs = locals()
-    argdb = {'near_features': 'near_features', 'location': 'location', 'search_radius': 'search_radius', 'in_features': 'features', 'method': 'method', 'angle': 'angle'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'angle': 'angle', 'search_radius': 'search_radius', 'in_features': 'features', 'near_features': 'near_features', 'location': 'location', 'method': 'method'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Near(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def pairwise_buffer(features=None, output_name=None, buffer_distance_or_field=None, dissolve_option=None, dissolve_field=None, method=None, max_deviation=None):
+def pairwise_buffer(features, buffer_distance_or_field=None, dissolve_option=None, dissolve_field=None, method=None, max_deviation=None, return_sdf=True):
     '''PairwiseBuffer_analysis(features, output_name, buffer_distance_or_field, {dissolve_option}, {dissolve_field;dissolve_field...}, {method}, {max_deviation})
 
         Creates buffer polygons around input features to a specified distance
@@ -877,16 +969,24 @@ def pairwise_buffer(features=None, output_name=None, buffer_distance_or_field=No
       output_name (Feature Class):
           The feature class containing the output buffers.'''
     kwargs = locals()
-    argdb = {'buffer_distance_or_field': 'buffer_distance_or_field', 'out_feature_class': 'output_name', 'method': 'method', 'in_features': 'features', 'max_deviation': 'max_deviation', 'dissolve_field': 'dissolve_field', 'dissolve_option': 'dissolve_option'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'dissolve_field': 'dissolve_field', 'method': 'method', 'dissolve_option': 'dissolve_option', 'out_feature_class': 'output_name', 'max_deviation': 'max_deviation', 'buffer_distance_or_field': 'buffer_distance_or_field', 'in_features': 'features'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.PairwiseBuffer(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def pairwise_dissolve(features=None, output_name=None, dissolve_field=None, statistics_fields=None, multi_part=None):
+def pairwise_dissolve(features, dissolve_field=None, statistics_fields=None, multi_part=None, return_sdf=True):
     '''PairwiseDissolve_analysis(features, output_name, {dissolve_field;dissolve_field...}, {statistics_fields;statistics_fields...}, {multi_part})
 
         Aggregates features based on specified attributes using a parallel
@@ -946,16 +1046,24 @@ def pairwise_dissolve(features=None, output_name=None, dissolve_field=None, stat
           The feature class to be created that will contain the aggregated
           features.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'multi_part': 'multi_part', 'out_feature_class': 'output_name', 'dissolve_field': 'dissolve_field', 'statistics_fields': 'statistics_fields'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'multi_part': 'multi_part', 'statistics_fields': 'statistics_fields', 'in_features': 'features', 'dissolve_field': 'dissolve_field'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.PairwiseDissolve(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def pairwise_intersect(features=None, output_name=None, joattributes=None, cluster_tolerance=None, output_type=None):
+def pairwise_intersect(features, joattributes=None, cluster_tolerance=None, output_type=None, return_sdf=True):
     '''PairwiseIntersect_analysis(features;features..., output_name, {joattributes}, {cluster_tolerance}, {output_type})
 
         Computes a pairwise intersection of the input features. Features or
@@ -1013,16 +1121,24 @@ def pairwise_intersect(features=None, output_name=None, joattributes=None, clust
       output_name (Feature Class):
           The output feature class.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'output_type': 'output_type', 'cluster_tolerance': 'cluster_tolerance', 'join_attributes': 'joattributes'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'join_attributes': 'joattributes', 'in_features': 'features', 'output_type': 'output_type', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.PairwiseIntersect(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def point_distance(features=None, near_features=None, out_table=None, search_radius=None):
+def point_distance(features, near_features, out_table=None, search_radius=None, return_sdf=True):
     '''PointDistance_analysis(features, near_features, out_table, {search_radius})
 
         Determines the distances from input point features to all points in
@@ -1057,16 +1173,24 @@ def point_distance(features=None, near_features=None, out_table=None, search_rad
           specified, distances from all input features to all near features are
           calculated.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'near_features': 'near_features', 'out_table': 'out_table', 'search_radius': 'search_radius'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'near_features': 'near_features', 'search_radius': 'search_radius', 'in_features': 'features', 'out_table': 'out_table'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.PointDistance(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def polygon_neighbors(features=None, out_table=None, fields=None, area_overlap=None, both_sides=None, cluster_tolerance=None, out_linear_units=None, out_area_units=None):
+def polygon_neighbors(features, out_table=None, fields=None, area_overlap=None, both_sides=None, cluster_tolerance=None, out_linear_units=None, out_area_units=None, return_sdf=True):
     '''PolygonNeighbors_analysis(features, out_table, {fields;fields...}, {area_overlap}, {both_sides}, {cluster_tolerance}, {out_linear_units}, {out_area_units})
 
         Creates a table with statistics based on polygon contiguity
@@ -1165,16 +1289,24 @@ def polygon_neighbors(features=None, out_table=None, fields=None, area_overlap=N
       out_table (Table):
           The output table.'''
     kwargs = locals()
-    argdb = {'out_linear_units': 'out_linear_units', 'area_overlap': 'area_overlap', 'cluster_tolerance': 'cluster_tolerance', 'out_area_units': 'out_area_units', 'in_fields': 'fields', 'in_features': 'features', 'out_table': 'out_table', 'both_sides': 'both_sides'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'cluster_tolerance': 'cluster_tolerance', 'in_fields': 'fields', 'in_features': 'features', 'area_overlap': 'area_overlap', 'out_linear_units': 'out_linear_units', 'out_table': 'out_table', 'out_area_units': 'out_area_units', 'both_sides': 'both_sides'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.PolygonNeighbors(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def select(features=None, output_name=None, where_clause=None):
+def select(features, where_clause=None, return_sdf=True):
     '''Select_analysis(features, output_name, {where_clause})
 
         Extracts features from an input feature class or input feature layer,
@@ -1194,16 +1326,24 @@ def select(features=None, output_name=None, where_clause=None):
           The output feature class to be created. If no expression is used, it
           contains all input features.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'where_clause': 'where_clause'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'in_features': 'features', 'where_clause': 'where_clause'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Select(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def spatial_join(target_features=None, jofeatures=None, output_name=None, jooperation=None, jotype=None, field_mapping=None, match_option=None, search_radius=None, distance_field_name=None):
+def spatial_join(target_features, jofeatures, jooperation=None, jotype=None, field_mapping=None, match_option=None, search_radius=None, distance_field_name=None, return_sdf=True):
     '''SpatialJoanalysis(target_features, jofeatures, output_name, {jooperation}, {jotype}, {field_mapping}, {match_option}, {search_radius}, {distance_field_name})
 
         Joins attributes from one feature to another based on the spatial
@@ -1394,16 +1534,24 @@ def spatial_join(target_features=None, jofeatures=None, output_name=None, jooper
           the set of attributes to be transferred can be controlled by the field
           map parameter.'''
     kwargs = locals()
-    argdb = {'field_mapping': 'field_mapping', 'match_option': 'match_option', 'out_feature_class': 'output_name', 'target_features': 'target_features', 'distance_field_name': 'distance_field_name', 'join_features': 'jofeatures', 'search_radius': 'search_radius', 'join_type': 'jotype', 'join_operation': 'jooperation'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'distance_field_name': 'distance_field_name', 'match_option': 'match_option', 'search_radius': 'search_radius', 'target_features': 'target_features', 'field_mapping': 'field_mapping', 'out_feature_class': 'output_name', 'join_operation': 'jooperation', 'join_features': 'jofeatures', 'join_type': 'jotype'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.SpatialJoin(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def split(features=None, split_features=None, split_field=None, out_workspace=None, cluster_tolerance=None):
+def split(features, split_features, split_field=None, out_workspace=None, cluster_tolerance=None, return_sdf=True):
     '''Split_analysis(features, split_features, split_field, out_workspace, {cluster_tolerance})
 
         Splitting the Input Features creates a subset of multiple output
@@ -1431,16 +1579,24 @@ def split(features=None, split_features=None, split_field=None, out_workspace=No
           both). Set the value to be higher for data that has less coordinate
           accuracy and lower for datasets with extremely high accuracy.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'split_field': 'split_field', 'cluster_tolerance': 'cluster_tolerance', 'split_features': 'split_features', 'out_workspace': 'out_workspace'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_workspace': 'out_workspace', 'split_field': 'split_field', 'in_features': 'features', 'split_features': 'split_features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Split(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def split_by_attributes(Input_Table=None, Target_Workspace=None, Split_Fields=None):
+def split_by_attributes(Input_Table=None, Target_Workspace=None, Split_Fields=None, return_sdf=True):
     '''SplitByAttributes_analysis(Input_Table, Target_Workspace, Split_Fields;Split_Fields...)
 
         Splits an input dataset by unique attributes.
@@ -1456,16 +1612,24 @@ def split_by_attributes(Input_Table=None, Target_Workspace=None, Split_Fields=No
           The fields on which the input will be split into new feature classes
           or tables.'''
     kwargs = locals()
-    argdb = {'Input_Table': 'Input_Table', 'Target_Workspace': 'Target_Workspace', 'Split_Fields': 'Split_Fields'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'Target_Workspace': 'Target_Workspace', 'Input_Table': 'Input_Table', 'Split_Fields': 'Split_Fields'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.SplitByAttributes(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def statistics(table=None, out_table=None, statistics_fields=None, case_field=None):
+def statistics(table=None, out_table=None, statistics_fields=None, case_field=None, return_sdf=True):
     '''Statistics_analysis(table, out_table, statistics_fields;statistics_fields..., {case_field;case_field...})
 
         Calculates summary statistics for field(s) in a table.
@@ -1519,16 +1683,24 @@ def statistics(table=None, out_table=None, statistics_fields=None, case_field=No
           The output dBASE or geodatabase table that will store the calculated
           statistics.'''
     kwargs = locals()
-    argdb = {'in_table': 'table', 'case_field': 'case_field', 'out_table': 'out_table', 'statistics_fields': 'statistics_fields'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'statistics_fields': 'statistics_fields', 'in_table': 'table', 'out_table': 'out_table', 'case_field': 'case_field'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Statistics(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def summarize_nearby(features=None, sum_features=None, output_name=None, distance_type=None, distances=None, distance_units=None, time_of_day=None, time_zone=None, keep_all_polygons=None, sum_fields=None, sum_shape=None, shape_unit=None, group_field=None, add_mmaj=None, add_group_percent=None, Output_Grouped_Table=None):
+def summarize_nearby(features, sum_features, distance_type=None, distances=None, distance_units=None, time_of_day=None, time_zone=None, keep_all_polygons=None, sum_fields=None, sum_shape=None, shape_unit=None, group_field=None, add_mmaj=None, add_group_percent=None, Output_Grouped_Table=None, return_sdf=True):
     '''SummarizeNearby_analysis(features, sum_features, output_name, distance_type, distances;distances..., distance_units, {time_of_day}, {time_zone}, {keep_all_polygons}, {sum_fields;sum_fields...}, {sum_shape}, {shape_unit}, {group_field}, {add_mmaj}, {add_group_percent}, {Output_Grouped_Table})
 
         Finds features that are within a specified distance of features in
@@ -1768,16 +1940,24 @@ def summarize_nearby(features=None, sum_features=None, output_name=None, distanc
 
           * Percentage field.'''
     kwargs = locals()
-    argdb = {'time_of_day': 'time_of_day', 'add_group_percent': 'add_group_percent', 'keep_all_polygons': 'keep_all_polygons', 'Output_Grouped_Table': 'Output_Grouped_Table', 'in_features': 'features', 'sum_fields': 'sum_fields', 'sum_shape': 'sum_shape', 'distance_type': 'distance_type', 'in_sum_features': 'sum_features', 'group_field': 'group_field', 'out_feature_class': 'output_name', 'shape_unit': 'shape_unit', 'add_min_maj': 'add_mmaj', 'distance_units': 'distance_units', 'distances': 'distances', 'time_zone': 'time_zone'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'in_features': 'features', 'distance_units': 'distance_units', 'add_group_percent': 'add_group_percent', 'out_feature_class': 'output_name', 'Output_Grouped_Table': 'Output_Grouped_Table', 'distances': 'distances', 'in_sum_features': 'sum_features', 'add_min_maj': 'add_mmaj', 'group_field': 'group_field', 'time_zone': 'time_zone', 'sum_shape': 'sum_shape', 'time_of_day': 'time_of_day', 'shape_unit': 'shape_unit', 'keep_all_polygons': 'keep_all_polygons', 'sum_fields': 'sum_fields', 'distance_type': 'distance_type'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.SummarizeNearby(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def summarize_within(polygons=None, sum_features=None, output_name=None, keep_all_polygons=None, sum_fields=None, sum_shape=None, shape_unit=None, group_field=None, add_mmaj=None, add_group_percent=None, out_group_table=None):
+def summarize_within(sum_features, polygons=None, keep_all_polygons=None, sum_fields=None, sum_shape=None, shape_unit=None, group_field=None, add_mmaj=None, add_group_percent=None, out_group_table=None, return_sdf=True):
     '''SummarizeWithanalysis(polygons, sum_features, output_name, {keep_all_polygons}, {sum_fields;sum_fields...}, {sum_shape}, {shape_unit}, {group_field}, {add_mmaj}, {add_group_percent}, {out_group_table})
 
         Overlays a polygon layer with another layer to summarize the number of
@@ -1921,16 +2101,24 @@ def summarize_within(polygons=None, sum_features=None, output_name=None, keep_al
 
           * Percentage field.'''
     kwargs = locals()
-    argdb = {'group_field': 'group_field', 'in_polygons': 'polygons', 'out_feature_class': 'output_name', 'keep_all_polygons': 'keep_all_polygons', 'shape_unit': 'shape_unit', 'add_min_maj': 'add_mmaj', 'out_group_table': 'out_group_table', 'sum_fields': 'sum_fields', 'add_group_percent': 'add_group_percent', 'sum_shape': 'sum_shape', 'in_sum_features': 'sum_features'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'add_group_percent': 'add_group_percent', 'in_sum_features': 'sum_features', 'add_min_maj': 'add_mmaj', 'group_field': 'group_field', 'out_feature_class': 'output_name', 'sum_shape': 'sum_shape', 'in_polygons': 'polygons', 'shape_unit': 'shape_unit', 'keep_all_polygons': 'keep_all_polygons', 'sum_fields': 'sum_fields', 'out_group_table': 'out_group_table'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.SummarizeWithin(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def sym_diff(features=None, update_features=None, output_name=None, joattributes=None, cluster_tolerance=None):
+def sym_diff(features, update_features, joattributes=None, cluster_tolerance=None, return_sdf=True):
     '''SymDiff_analysis(features, update_features, output_name, {joattributes}, {cluster_tolerance})
 
         Features or portions of features in the input and update features
@@ -1963,16 +2151,24 @@ def sym_diff(features=None, update_features=None, output_name=None, joattributes
       output_name (Feature Class):
           The feature class to which the results will be written.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'update_features': 'update_features', 'out_feature_class': 'output_name', 'cluster_tolerance': 'cluster_tolerance', 'join_attributes': 'joattributes'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'update_features': 'update_features', 'join_attributes': 'joattributes', 'in_features': 'features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.SymDiff(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def table_select(table=None, out_table=None, where_clause=None):
+def table_select(table=None, out_table=None, where_clause=None, return_sdf=True):
     '''TableSelect_analysis(table, out_table, {where_clause})
 
         Selects table records matching a Structured Query Language (SQL)
@@ -1992,16 +2188,24 @@ def table_select(table=None, out_table=None, where_clause=None):
           The output table containing records from the input table that match
           the specified expression.'''
     kwargs = locals()
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
     argdb = {'in_table': 'table', 'out_table': 'out_table', 'where_clause': 'where_clause'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.TableSelect(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def tabulate_intersection(zone_features=None, zone_fields=None, class_features=None, out_table=None, class_fields=None, sum_fields=None, xy_tolerance=None, out_units=None):
+def tabulate_intersection(zone_features, class_features, zone_fields=None, out_table=None, class_fields=None, sum_fields=None, xy_tolerance=None, out_units=None, return_sdf=True):
     '''TabulateIntersection_analysis(zone_features, zone_fields;zone_fields..., class_features, out_table, {class_fields;class_fields...}, {sum_fields;sum_fields...}, {xy_tolerance}, {out_units})
 
         Computes the intersection between two feature classes and cross-
@@ -2082,16 +2286,24 @@ def tabulate_intersection(zone_features=None, zone_fields=None, class_features=N
           The table that will contain the cross-tabulation of intersections
           between zones and classes.'''
     kwargs = locals()
-    argdb = {'xy_tolerance': 'xy_tolerance', 'out_units': 'out_units', 'in_class_features': 'class_features', 'out_table': 'out_table', 'in_zone_features': 'zone_features', 'zone_fields': 'zone_fields', 'sum_fields': 'sum_fields', 'class_fields': 'class_fields'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'class_fields': 'class_fields', 'in_class_features': 'class_features', 'out_table': 'out_table', 'zone_fields': 'zone_fields', 'in_zone_features': 'zone_features', 'out_units': 'out_units', 'sum_fields': 'sum_fields', 'xy_tolerance': 'xy_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.TabulateIntersection(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def union(features=None, output_name=None, joattributes=None, cluster_tolerance=None, gaps=None):
+def union(features, joattributes=None, cluster_tolerance=None, gaps=None, return_sdf=True):
     '''Union_analysis(features;features..., output_name, {joattributes}, {cluster_tolerance}, {gaps})
 
         Computes a geometric union of the input features. All features and
@@ -2138,16 +2350,24 @@ def union(features=None, output_name=None, joattributes=None, cluster_tolerance=
       output_name (Feature Class):
           The feature class that will contain the results.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'out_feature_class': 'output_name', 'cluster_tolerance': 'cluster_tolerance', 'join_attributes': 'joattributes', 'gaps': 'gaps'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'gaps': 'gaps', 'join_attributes': 'joattributes', 'in_features': 'features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Union(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 
 
 
 #--------------------------------------------------------------------------
-def update(features=None, update_features=None, output_name=None, keep_borders=None, cluster_tolerance=None):
+def update(features, update_features, keep_borders=None, cluster_tolerance=None, return_sdf=True):
     '''Update_analysis(features, update_features, output_name, {keep_borders}, {cluster_tolerance})
 
         Computes the geometric intersection of the Input Features and Update
@@ -2179,9 +2399,17 @@ def update(features=None, update_features=None, output_name=None, keep_borders=N
       output_name (Feature Class):
           The feature class to contain the results.'''
     kwargs = locals()
-    argdb = {'in_features': 'features', 'update_features': 'update_features', 'out_feature_class': 'output_name', 'cluster_tolerance': 'cluster_tolerance', 'keep_borders': 'keep_borders'}
+    if 'return_sdf' in kwargs:
+        return_sdf = kwargs.pop('return_sdf', True)
+    else:
+        return_sdf = False
+
+    argdb = {'out_feature_class': 'output_name', 'update_features': 'update_features', 'keep_borders': 'keep_borders', 'in_features': 'features', 'cluster_tolerance': 'cluster_tolerance'}
     kwargs = _process_kwargs(argdb, **kwargs)
 
     result = arcpy.analysis.Update(**kwargs)
-    return _process_results(result)
+    if return_sdf:
+        return _process_results(result)
+    else:
+        return [r for r in result]
 

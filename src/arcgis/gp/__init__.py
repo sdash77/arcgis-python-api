@@ -5,4 +5,4 @@ except:
     HASARCPY = False
 
 if HASARCPY:
-    from arcgis.arctools.analysis import *
+    from arcgis.gp.analysis import *
