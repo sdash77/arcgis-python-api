@@ -1470,6 +1470,9 @@ class SpatialReference(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
+    #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """returns the class as an arcpy SpatialReference object"""
@@ -1509,6 +1512,9 @@ class Envelope(Geometry):
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -1559,6 +1565,9 @@ class Point(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -1618,6 +1627,9 @@ class MultiPoint(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
+    #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
         import numpy as np
@@ -1670,6 +1682,9 @@ class Polyline(Geometry):
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -1739,6 +1754,9 @@ class Polygon(Geometry):
     @property
     def type(self):
         return self._type
+    #----------------------------------------------------------------------
+    def __hash__(self):
+        return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
