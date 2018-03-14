@@ -1754,7 +1754,7 @@ class FeatureLayerCollection(_GISResource):
          :path: path of the file to upload
          :description: optional descriptive text for the upload item
         """
-        if (os.path.getsize(path) >> 20) > 900: #CHANGE ME TO <= 9
+        if (os.path.getsize(path) >> 20) <= 9:
             url = self._url + "/uploads/upload"
             params = {
                 "f" : "json",
