@@ -132,18 +132,33 @@ class FeatureLayer(Layer):
             Output:
               JSON Repsonse
         """
-        params = {'f': 'json'}
-        if self._dynamic_layer:
-            attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-            params['layer'] = self._dynamic_layer
+        if (os.path.getsize(file_path) >> 20) <= 9:
+            params = {'f': 'json'}
+            if self._dynamic_layer:
+                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
+                params['layer'] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            files = {'attachment': file_path}
+            res = self._con.post(path=attach_url,
+                                 postdata=params,
+                                 files=files, token=self._token)
+            return res
         else:
-            attach_url = self._url + "/%s/addAttachment" % oid
-        files = {'attachment': file_path}
-        res = self._con.post(path=attach_url,
-                             postdata=params,
-                             files=files, token=self._token)
-        return res
-
+            params = {'f': 'json'}
+            container = self.container
+            itemid = container.upload(file_path)
+            if self._dynamic_layer:
+                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
+                params['layer'] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            params['uploadId'] = itemid
+            res = self._con.post(attach_url,
+                                 params)
+            if res['addAttachmentResult']['success'] == True:
+                container._delete_upload(itemid)
+            return res
     # ----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
         """ removes an attachment from a feature service feature
@@ -1739,22 +1754,124 @@ class FeatureLayerCollection(_GISResource):
          :path: path of the file to upload
          :description: optional descriptive text for the upload item
         """
-        url = self._url + "/uploads/upload"
+        if (os.path.getsize(path) >> 20) <= 9:
+            url = self._url + "/uploads/upload"
+            params = {
+                "f" : "json",
+                'filename' : os.path.basename(path),
+                'overwrite' : True
+            }
+            files = {}
+            files['file'] = path
+            if description:
+                params['description'] = description
+            res = self._con.post(path=url,
+                                 postdata=params,
+                                 files=files)
+            if 'status' in res and \
+               res['status'] == 'success':
+                return True, res
+            elif 'success' in res:
+                return res['success'], res
+            return False, res
+        else:
+            file_path = path
+            item_id = self._register_upload(file_path)
+            self._upload_by_parts(item_id, file_path)
+            return self._commit_upload(item_id)
+    #----------------------------------------------------------------------
+    def _register_upload(self, file_path):
+        """returns the itemid for the upload by parts logic"""
+        r_url = "%s/uploads/register" % self._url
+        params = {'f' : 'json',
+                  'itemName' : os.path.basename(file_path).replace('.', '')
+                  }
+        reg_res = self._con.post(r_url, params)
+        if 'item' in reg_res and \
+           'itemID' in reg_res['item']:
+            return reg_res['item']['itemID']
+        return None
+    #----------------------------------------------------------------------
+    def _upload_by_parts(self, item_id, file_path):
+        """loads a file for attachmens by parts"""
+        import mmap, tempfile
+
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        upload_part_url = "%s/uploadPart" % b_url
         params = {
-            "f" : "json",
-            'filename' : os.path.basename(path),
-            'overwrite' : True
+            "f" : "json"
         }
-        files = {}
-        files['file'] = path
-        if description:
-            params['description'] = description
-        res = self._con.post(path=url,
-                             postdata=params,
-                             files=files)
-        if 'status' in res and \
-           res['status'] == 'success':
-            return True, res
-        elif 'success' in res:
-            return res['success'], res
-        return False, res
+        with open(file_path, 'rb') as f:
+            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            size = 1000000
+            steps =  int(os.fstat(f.fileno()).st_size / size)
+            if os.fstat(f.fileno()).st_size % size > 0:
+                steps += 1
+            for i in range(steps):
+                files = {}
+                tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
+                if os.path.isfile(tempFile):
+                    os.remove(tempFile)
+                with open(tempFile, 'wb') as writer:
+                    writer.write(mm.read(size))
+                    writer.flush()
+                    writer.close()
+                del writer
+                files['file'] = tempFile
+                params['partId'] = i + 1
+                res = self._con.post(upload_part_url,
+                                     postdata=params,
+                                     files=files)
+                if 'error' in res:
+                    raise Exception(res)
+                os.remove(tempFile)
+                del files
+            del mm
+        return True
+    #----------------------------------------------------------------------
+    def _commit_upload(self, item_id):
+        """commits an upload by parts upload"""
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        commit_part_url = "%s/commit" % b_url
+        params = {
+                'f':'json',
+                'parts' : self._uploaded_parts(itemid=item_id)
+        }
+        res = self._con.post(commit_part_url,
+                              params)
+        if 'error' in res:
+            raise Exception(res)
+        else:
+            return res['item']['itemID']
+    #----------------------------------------------------------------------
+    def _delete_upload(self, item_id):
+        """commits an upload by parts upload"""
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        delete_part_url = "%s/delete" % b_url
+        params = {
+                'f':'json',
+        }
+        res = self._con.post(delete_part_url,
+                              params)
+        if 'error' in res:
+            raise Exception(res)
+        else:
+            return res
+    #----------------------------------------------------------------------
+    def _uploaded_parts(self, itemid):
+        """
+        returns the parts uploaded for a given item
+
+        ==================   ==============================================
+        Arguements           Description
+        ------------------   ----------------------------------------------
+        itemid               required string. Id of the uploaded by parts item.
+        ==================   ==============================================
+
+        """
+        url = self._url + "/uploads/%s/parts" % itemid
+        params = {
+            "f" : "json"
+        }
+        res = self._con.get(url, params)
+        return ",".join(res['parts'])
