@@ -15,6 +15,77 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def append_data(input_layer, append_layer, field_mapping=None, gis=None):
+    """
+    The Append Data task appends tabular, point, line, or polygon data to an existing layer.
+    The input layer must be a hosted feature layer. The tool will add the appended data as
+    rows to the input layer. No new output layer is created.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       required service , The table, point, line or polygon features
+                      containing potential incidents.
+    ----------------  ---------------------------------------------------------------
+    append_layer      required service. The table, point, line, or polygon features
+                      to be appended to the input_layer. To append geometry, the
+                      append_layer must have the same geometry type as the
+                      input_layer. If the geometry types are not the same, the
+                      append_layer geometry will be removed and all other matching
+                      fields will be appended. The geometry of the inputLayer will
+                      always be maintained.
+    ----------------  ---------------------------------------------------------------
+    field_mapping     Defines how the fields in append_layer are appended to the
+                      input_layer.
+
+                      The following are set by default:
+
+                        - All appendLayer fields that match inputLayer schema will be appended.
+                        - Fields that exist in the inputLayer and not in the appendLayer will be appended with null values.
+                        - Fields that exist in the appendLayer and not in the inputLayer will not be appended.
+
+                      Optionally choose how inputLayer fields will be appended from the following:
+
+                      - AppendField - Matches the inputLayer field with an appendLayer field of a different name. Field types must match.
+                      - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS, the GIS on which this tool runs. If not
+                      specified, the active GIS is used.
+    ================  ===============================================================
+
+    :returns: boolean
+
+    """
+    kwargs = locals()
+    tool_name = "AppendData"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json"
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "append_layer": (_FeatureSet, "appendLayer"),
+        "field_mapping" : (str, "fieldMapping"),
+        "context": (str, "context")
+    }
+    return_values = [
+    ]
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return True
+    except:
+        raise
+
+    return False
+
+
 def calculate_fields(input_layer,
                      field_name,
                      data_type,
