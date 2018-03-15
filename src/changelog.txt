@@ -15,3 +15,8 @@ v1.3.0.post2
       did not change at all, appending .post2 to the release
     - Added try: except for activating jupyter widget so whole install wont
       fail
+
+v1.4.0
+    - Source code is the same as 1.4.0 on conda, no changes to pip-specific 
+      files. See the official release notes at the link on the top of this
+      file for description of bug fixes and new features.

@@ -2229,11 +2229,11 @@ class ContentManager(object):
             'analyzeParameters' : {}
         }
         files = None
-        if not (text or file_path or itemid or url):
+        if not (text or file_path or item or url):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
         if item:
             if isinstance(item, str):
-                parms['itemid'] = itemid
+                parms['itemid'] = item
             elif isinstance(item, Item):
                 params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
@@ -2269,7 +2269,7 @@ class ContentManager(object):
 
         gis = self._gis
         params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
-        return gis._con.post(url=surl, postdata=params, files=files)
+        return gis._con.post(path=surl, postdata=params, files=files)
 
 
     def create_service(self, name,
@@ -2972,9 +2972,10 @@ class ContentManager(object):
 
         import arcgis._impl.common._clone as clone
         wgs84_extent = None
-        if item_extent:
-            wgs84_extent = clone._wgs84_envelope(item_extent)
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
+        service_extent = item_extent
+        if service_extent:
+            wgs84_extent = clone._wgs84_envelope(service_extent)
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
         return deep_cloner.clone()
 
     def _bulk_update(self, itemids, properties):
@@ -3585,13 +3586,23 @@ class Group(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string.  The username of the new group owner.
+        target_owner      Required string or User.  The username of the new group owner.
         ================  ========================================================
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
-        return self._portal.reassign_group(self.groupid, target_owner)
+        params = {'f' : 'json'}
+        if isinstance(target_owner, User):
+            params['targetUsername'] = target_owner.username
+        else:
+            params['targetUsername'] = target_owner
+        res = self._gis._con.post('community/groups/' + self.groupid + '/reassign', params)
+        if res:
+            self._hydrated = False
+            self._hydrate()
+            return res.get('success')
+        return False
 
     def get_members(self):
         """
@@ -3624,7 +3635,10 @@ class Group(dict):
                 print(user)
 
         """
-        return self._portal.get_group_members(self.groupid)
+        url = '%s/community/groups/%s/users' % (self._gis._portal.resturl,
+                                                self.groupid)
+        params = {'f': 'json'}
+        return self._gis._con.post(url, params)
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,

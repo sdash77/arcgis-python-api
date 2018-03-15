@@ -1597,7 +1597,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                        out_name=out_name)
 
             feature_set = arcpy.FeatureSet()
-            feature_set.load(fc)
+            feature_set.load(res)
             return feature_set
         else:
             raise Exception("ArcPy must be present to convert to arcpy.FeatureSet object")

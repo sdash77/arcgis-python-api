@@ -315,11 +315,16 @@ class UX(object):
          :return: boolean
         """
         from .. import Group
-        if 'group' in content and \
+        if content is None:
+            content = {'homePageFeaturedContent': "",
+                        'homePageFeaturedContentCount': 12,
+                       'clearEmptyFields':True}
+        elif 'group' in content and \
            isinstance(content['group'], Group):
             content['homePageFeaturedContent'] = content['group'].groupid
         elif isinstance(content, dict) and \
-             'group' in content:
+             'group' in content and \
+             isinstance(content['group'], str):
             c = {}
             c['homePageFeaturedContent'] = content['group']
             if 'count' in content:
@@ -332,10 +337,7 @@ class UX(object):
             c['homePageFeaturedContent'] = content
             c['homePageFeaturedContentCount'] = 12
             content = c
-        if content is None:
-            content = {'homePageFeaturedContent': "",
-                        'homePageFeaturedContentCount' : 12}
-        return self._gis.update_properties(content)
+        self._gis.update_properties(content)
     #----------------------------------------------------------------------
     def set_background(self, background_file=None, is_built_in=True):
         """
