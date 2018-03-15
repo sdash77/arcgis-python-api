@@ -1925,7 +1925,7 @@ class ImageryLayer(Layer):
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
 
-        return self._con.get(url, params, token=self._token)
+        return self._con.post(url, params, token=self._token)
 
         # ----------------------------------------------------------------------
 
