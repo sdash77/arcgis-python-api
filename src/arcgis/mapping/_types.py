@@ -1039,20 +1039,20 @@ class MapImageLayerManager(_GISResource):
     def update_tiles(self, levels=None, extent=None):
         """
         The starts tile generation for ArcGIS Online.  The levels of detail
-        and the extent are provided to determine the area where tiles need
+        and the extent are needed to determine the area where tiles need
         to be rebuilt.
-
 
         ..Note: This operation is for ArcGIS Online only.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        levels              Optional string, The level of details to update
-                            example: "1,2,10,20"
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
         ---------------     ----------------------------------------------------
-        extent              Optional string, the area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500"
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
         ===============     ====================================================
 
         :returns:
@@ -1062,11 +1062,17 @@ class MapImageLayerManager(_GISResource):
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
             params = {
-                "f" : "json"
+                "f": "json"
             }
             if levels:
+                if isinstance(levels, list):
+                    levels = ",".join(str(e) for e in levels)
                 params['levels'] = levels
             if extent:
+                if isinstance(extent, dict):
+                    extent2 = "{},{},{},{}".format(extent['xmin'], extent['ymin'],
+                                                  extent['xmax'], extent['ymax'])
+                    extent = extent2
                 params['extent'] = extent
             return self._con.post(url, params)
         return None
