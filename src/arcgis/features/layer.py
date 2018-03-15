@@ -230,7 +230,7 @@ class FeatureLayer(Layer):
               return_z=False,
               return_m=False,
               multipatch_option=None,
-              quanitization_parameters=None,
+              quantization_parameters=None,
               return_centroid=False,
               return_all_records=True,
               **kwargs):
@@ -256,12 +256,13 @@ class FeatureLayer(Layer):
                         Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
                         esriSRUnit_Foot | esriSRUnit_Kilometer |
                         esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
-                time_filter - a TimeFilter object where either the start time
-                              or start and end time are defined to limit the
-                              search results for a given time.  The values in
-                              the timeFilter should be as UTC timestampes in
-                              milliseconds.  No checking occurs to see if they
-                              are in the right format.
+
+                time_filter  - optional list of [<startTime>, <endTime>] using
+                        datetime.date, datetime.datetime or timestamp in
+                        milliseconds
+                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                        datetime.date, datetime.datetime or timestamp in milliseconds
+
                 geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
                                   spatial relationship with another geometry
                 max_allowable_offset - This option can be used to specify the
@@ -398,7 +399,7 @@ class FeatureLayer(Layer):
             params['resultRecordCount'] = result_record_count
         if result_offset and not return_all_records:
             params['resultOffset'] = result_offset
-        if quanitization_parameters:
+        if quantization_parameters:
             params['quantizationParameters'] = quantization_parameters
         if multipatch_option:
             params['multipatchOption'] = multipatch_option
@@ -425,13 +426,22 @@ class FeatureLayer(Layer):
             params['distance'] = distance
         if units:
             params['units'] = units
-        if time_filter and \
-                isinstance(time_filter, TimeFilter):
-            for key, val in time_filter.filter:
-                params[key] = val
-        elif isinstance(time_filter, dict):
-            for key, val in time_filter.items():
-                params[key] = val
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            elif isinstance(time_filter, dict):
+                for key, val in time_filter.items():
+                    params[key] = val
+            else:
+                params['time'] = _date_handler(time_filter)
+
         if geometry_filter and \
                 isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
