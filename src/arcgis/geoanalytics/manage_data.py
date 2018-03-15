@@ -24,15 +24,14 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None):
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required service , The table, point, line or polygon features
-                      containing potential incidents.
+    input_layer       required FeatureLayer , The table, point, line or polygon features.
     ----------------  ---------------------------------------------------------------
-    append_layer      required service. The table, point, line, or polygon features
+    append_layer      required FeatureLayer. The table, point, line, or polygon features
                       to be appended to the input_layer. To append geometry, the
                       append_layer must have the same geometry type as the
                       input_layer. If the geometry types are not the same, the
                       append_layer geometry will be removed and all other matching
-                      fields will be appended. The geometry of the inputLayer will
+                      fields will be appended. The geometry of the input_layer will
                       always be maintained.
     ----------------  ---------------------------------------------------------------
     field_mapping     Defines how the fields in append_layer are appended to the
@@ -40,13 +39,13 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None):
 
                       The following are set by default:
 
-                        - All appendLayer fields that match inputLayer schema will be appended.
-                        - Fields that exist in the inputLayer and not in the appendLayer will be appended with null values.
-                        - Fields that exist in the appendLayer and not in the inputLayer will not be appended.
+                        - All append_layer fields that match input_layer schema will be appended.
+                        - Fields that exist in the input_layer and not in the append_layer will be appended with null values.
+                        - Fields that exist in the append_layer and not in the input_layer will not be appended.
 
-                      Optionally choose how inputLayer fields will be appended from the following:
+                      Optionally choose how input_layer fields will be appended from the following:
 
-                      - AppendField - Matches the inputLayer field with an appendLayer field of a different name. Field types must match.
+                      - AppendField - Matches the input_layer field with an append_layer field of a different name. Field types must match.
                       - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
