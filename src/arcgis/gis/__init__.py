@@ -3042,7 +3042,7 @@ class ContentManager(object):
 
         1. The staging service is published to the same system as the production service. Both services are active at the same time. The staging service is shared with a smaller set of users. Staging service is QA'd and made ready for production.
         2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will not be replaced or updated. Please use the portal home page to update item properties.
-        3. When the replaceService operation is used, the service running on the hosting server will be replaced (for example, its cache).
+        3. When the replace_service operation is used, the service running on the hosting server will be replaced (for example, its cache).
         4. It is the responsibility of the user to ensure both services are functionally equivalent for clients consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed with the anticipated layers and fields for its client application.
         5. If you want to retain the replaced production service, for example, to keep an archive of the evolution of the service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided, the production service being replaced will be archived with a time stamp when replace service was executed on it. You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
 
@@ -3818,7 +3818,7 @@ class Group(dict):
     def protected(self, value):
         """
         If set to True, the group will be prevented from being deleted.
-        If false, a group can be deleted as anytime.
+        If false, a group can be deleted.
         """
         params = {'f' : 'json'}
         if value == True and self.protected == False:
