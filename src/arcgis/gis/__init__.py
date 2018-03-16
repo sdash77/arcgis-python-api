@@ -6091,10 +6091,22 @@ class Item(dict):
                 raise Exception(ret[0]['error'])
             ms_url = self._gis.content.get(ret[0]['serviceItemId']).url
             ms = MapImageLayer(url=ms_url, gis=self._gis)
+
             serviceitem_id = ret[0]['serviceItemId']
             try:
-                ret = ms.manager.update_tiles()
-            except: pass
+                # first edit the tile service to set min, max scales
+                if not ms.properties.minScale:
+                    min_scale = ms.properties.tileInfo.lods[0]['scale']
+                    max_scale = ms.properties.tileInfo.lods[-1]['scale']
+                    edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+
+                # Get LoD from Map Image Layer
+                full_extent = dict(ms.properties.fullExtent)
+                lod_dict = ms.properties.tileInfo['lods']
+                lod = [current_lod['level'] for current_lod in lod_dict]
+                ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
+            except Exception as tiles_ex:
+                raise Exception('Error unpacking tiles :' + str(tiles_ex))
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
