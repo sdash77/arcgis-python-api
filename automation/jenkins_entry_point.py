@@ -11,26 +11,27 @@ from __init__ import *
 sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR, "src"))
 from arcgis import __version__ as _geosaurus_version
 
-
 from automation_setup import automation_setup
 from build_conda_package import build_conda_package
 from build_pip_package import build_pip_package
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
-from publish_results import publish_results
+from publish_to_ftp_site import publish_to_ftp_site
+from convert_notebooks import convert_notebooks
+from publish_html_to_dev_site import publish_html_to_dev_site
 from automation_cleanup import automation_cleanup
 
 #The core logic of what functions are run in what order for each job
 _regex_and_funcs = [(MASTER_REGEX, [automation_setup, 
                                     build_conda_package,
                                     build_pip_package,
-                                    publish_results,
+                                    publish_to_ftp_site,
                                     build_documentation,
                                     automation_cleanup]),
 
               (LINUX_SLAVE_REGEX,  [automation_setup,
                                     build_conda_package,
-                                    publish_results,
+                                    publish_to_ftp_site,
                                     automation_cleanup]),
               
               (PULL_REQUEST_REGEX, [automation_setup,
@@ -39,12 +40,17 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
               
                    (PUBLISH_REGEX, [automation_setup,
                                     build_conda_package,
-                                    publish_results,
+                                    publish_to_ftp_site,
                                     automation_cleanup]),
 
                  (UNIT_TEST_REGEX, [automation_setup,
                                     run_unit_tests,
-                                    automation_cleanup])]
+                                    automation_cleanup]),
+                 
+                 (DEV_SITE_REGEX, [automation_setup,
+                                   convert_notebooks,
+                                   publish_html_to_dev_site,
+                                   automation_cleanup])]
 
 def _main():
     args = _parse_args()
@@ -62,12 +68,16 @@ def _parse_args():
     parser.add_argument("--build-number", "-b", type=int, required=False,
         help="The build number currently running")
     parser.add_argument("--username", "-u", type=str, required=False,
-        help="The username for any ftp uploading")
+        help="The username for any authentication (i.e. ftp uploading)")
     parser.add_argument("--password", "-p", type=str, required=False,
         help="The password for the previously entered username")
     parser.add_argument("--ftp-folder-name", "-f", type=str, required=False,
-        help="If 'publish' auto-type, the name of the folder to write "\
+        help="For -a publish, the name of the folder to write "\
              "conda packages to on the FTP server.")
+    parser.add_argument("--notebooks-root-dir", "-n", type=str, required=False,
+        help="For -a dev_site, the root dir of notebooks to convert to html")
+    parser.add_argument("--html-output-dir", "-o", type=str, required=False,
+        help="For -a dev_site, the root of devel-website repo for publishing")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
 def _append_build_tag_to_args(args):
