@@ -948,15 +948,33 @@ class Geometry(BaseGeometry):
         elif self.type.lower() == "polygon":
             from ._convexhull import convex_hull
             combine_pts = [pt for part in self['rings'] for pt in part]
-            return convex_hull(pts=combine_pts)
+            try:
+                return Geometry({'rings' : [convex_hull(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
+            except:
+                from ._convexhull import convex_hull_GS
+                return Geometry({'rings' : [convex_hull_GS(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
         elif self.type.lower() == "polyline":
             from ._convexhull import convex_hull
             combine_pts = [pt for part in self['paths'] for pt in part]
-            return convex_hull(pts=combine_pts)
+            try:
+                return Geometry({'rings' : [convex_hull(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
+            except:
+                from ._convexhull import convex_hull_GS
+                return Geometry({'rings' : [convex_hull_GS(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
         elif self.type.lower() == "multipoint":
             from ._convexhull import convex_hull
             combine_pts = self['points']
-            return convex_hull(pts=combine_pts)
+            try:
+                return Geometry({'rings' : [convex_hull(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
+            except:
+                from ._convexhull import convex_hull_GS
+                return Geometry({'rings' : [convex_hull_GS(combine_pts)],
+                                 'spatialReference' : self['spatialReference']})
         return None
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
