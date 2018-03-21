@@ -1385,7 +1385,7 @@ class FeatureLayerCollection(_GISResource):
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
            geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                             spatial relationship with another geometry
+                             spatial relationship with another geometry. Only intersections are currently supported.
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
@@ -1491,8 +1491,10 @@ class FeatureLayerCollection(_GISResource):
             params['layerQueries'] = layer_queries
         if geometry_filter is not None and \
                 isinstance(geometry_filter, dict):
-            params['geometry'] = geometry_filter
-            #params.update(geometry_filter)
+            params['geometry'] = geometry_filter['geometry']
+            params['geometryType'] = geometry_filter['geometryType']
+            if 'inSR' in geometry_filter:
+                params['inSR'] = geometry_filter['inSR']
         if replica_sr is not None:
             params['replicaSR'] = replica_sr
         if replica_options is not None:
