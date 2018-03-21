@@ -18,6 +18,117 @@ _log=_logging.getLogger(__name__)
 _use_async=True
 
 
+def _build_enrichment_layer(attributes,
+                           bin_size,
+                           bin_unit="Meters",
+                           bin_type="Square",
+                           output_name=None,
+                           gis=None):
+    """
+    The Build Enrichment Layer task works with one or more layers of point, line, or polygon
+    features. The tool generates square or hexagonal bins and compiles information about each input
+    layer into each bin. For each input layer this information can include:
+
+        + Distance to Nearest- The distance from each bin to the nearest feature.
+        + Attribute of Nearest- An attribute value of the feature nearest to each bin.
+        + Attribute Summary of Related- A statistical summary of all features within
+          searchDistance of each bin.
+
+    Only the attributes that you specify in attributes will be included in the result layer. These
+    attributes can help you understand the proximity of your data throughout the extent of your
+    analysis. They can help you visualize answers to questions like:
+
+        + Given multiple layers of public transportation infrastructure, where in the city is least
+          accessible by public transportation?
+        + Given layers of lakes and rivers, what is the name of the water body closest to each
+          location in the US?
+        + Given a layer of household income, where in the US is the variation of income in the
+          surrounding 50 miles the largest?
+
+    The result of Build Enrichment Layer can also be used for enrichment in prediction and
+    classification workflows. The tool allows you to calculate and compile information from many
+    different data sources into single spatially-continuous layer in one step, reducing the amount
+    of effort required to train prediction and classification models.
+
+    ====================   ===================================================================
+    **Arguments**          **Description**
+    --------------------   -------------------------------------------------------------------
+    attributes             Required dictionary. A JSON array containing objects that describe
+                           the input layers and the attributes that will be calculated for
+                           each layer.
+    --------------------   -------------------------------------------------------------------
+    bin_size               Required float. The distance for the bins of type binType in the
+                           output polygon layer. Enrichment attributes will be calculated at
+                           the center of each bin. When generating bins, for Square, the
+                           number and units specified determine the height and length of the
+                           square. For Hexagon, the number and units specified determine the
+                           distance between parallel sides.
+    --------------------   -------------------------------------------------------------------
+    bin_unit               optional string. The distance unit for the bins that will be used
+                           to calculate enrichment attributes.
+
+                           Values: Meters (default), Kilometers, Feet, Miles, NauticalMiles,
+                           or Yards
+    --------------------   -------------------------------------------------------------------
+    bin_type               optional string. The type of bin that will be generated. Bin
+                           options are the following:
+
+                                + Hexagon.
+                                + Square (default)
+    --------------------   -------------------------------------------------------------------
+    output_name            optional string. output name of the service
+    --------------------   -------------------------------------------------------------------
+    gis                    optional GIS.  The enterprise site that you want to connect to.
+    ====================   ===================================================================
+
+    :returns: Feature Layer
+
+    """
+    kwargs=locals()
+
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key]=value
+
+    if output_name is None:
+        output_service_name='Build Enrichment Layer_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
+    else:
+        output_service_name=output_name.replace(' ', '_')
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Build Enrichment Layer ')
+
+    params['output_name']=_json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db={
+        "attributes": (str, 'enrichmentAttributes'),
+        "bin_type": (str, "binType"),
+        "bin_size": (float, "binSize"),
+        "bin_size_unit": (str, "binSizeUnit"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+    }
+    return_values=[
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+
+    try:
+        _execute_gp_tool(gis, "BuildEnrichmentLayer", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+
 def calculate_density(
     input_layer,
     fields=None,
