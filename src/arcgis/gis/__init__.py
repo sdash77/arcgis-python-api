@@ -2233,7 +2233,7 @@ class ContentManager(object):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
         if item:
             if isinstance(item, str):
-                parms['itemid'] = item
+                params['itemid'] = item
             elif isinstance(item, Item):
                 params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
