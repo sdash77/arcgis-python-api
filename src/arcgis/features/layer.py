@@ -398,7 +398,7 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-        if out_fields != '*':
+        if out_fields != '*' and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it

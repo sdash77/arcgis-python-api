@@ -2233,7 +2233,7 @@ class ContentManager(object):
             return Exception("Must provide an itemid, file_path or text to analyze data.")
         if item:
             if isinstance(item, str):
-                parms['itemid'] = item
+                params['itemid'] = item
             elif isinstance(item, Item):
                 params['itemid'] = item.itemid
         elif file_path and os.path.isfile(file_path):
@@ -3028,6 +3028,51 @@ class ContentManager(object):
             results.append(res)
             del i
         return results
+    #----------------------------------------------------------------------
+    def replace_service(self, replace_item, new_item, replaced_service_name):
+        """
+        The replace_service operation allows you to replace vector tile
+        layers. The replace_service operation on vector tile layers allows
+        you to perform quality control on a staging tile layer and to then
+        replace the production tile layer with minimal downtime. This
+        operation has the option to keep a backup of the production tile
+        layer.
+
+        Workflow for replace_service:
+
+        1. The staging service is published to the same system as the production service. Both services are active at the same time. The staging service is shared with a smaller set of users. Staging service is QA'd and made ready for production.
+        2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will not be replaced or updated. Please use the portal home page to update item properties.
+        3. When the replace_service operation is used, the service running on the hosting server will be replaced (for example, its cache).
+        4. It is the responsibility of the user to ensure both services are functionally equivalent for clients consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed with the anticipated layers and fields for its client application.
+        5. If you want to retain the replaced production service, for example, to keep an archive of the evolution of the service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided, the production service being replaced will be archived with a time stamp when replace service was executed on it. You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
+
+
+
+        ======================  ======================================================================
+        **Argument**            **Description**
+        ----------------------  ----------------------------------------------------------------------
+        replace_item            Required Item or Item's Id as string. The service to be replaced
+        ----------------------  ----------------------------------------------------------------------
+        new_item                Required Item or Item's Id as string. The replacement service.
+        ----------------------  ----------------------------------------------------------------------
+        replaced_service_name   Required string. The name of the replacement service.
+        ======================  ======================================================================
+
+        :returns: boolean
+        """
+        user = self._gis.users.me
+        isinstance(user, User)
+        isinstance(self._portal, portalpy.Portal)
+        url = "%s/content/%s/replaceService" % (self._portal.resturl, user.username)
+        params = {
+            'toReplaceItemId' : replace_item,
+            'replacementItemId' : new_item,
+            'replacedServiceName' : replaced_service_name
+        }
+        res = self._gis._con.post(path=url, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return False
 
 class ResourceManager(object):
     """
@@ -3760,6 +3805,36 @@ class Group(dict):
         except:
             print()
         return apps
+    #----------------------------------------------------------------------
+    @property
+    def protected(self):
+        """
+        Indicates if the group is protected from deletion.
+        Default value is false.
+        """
+        return self['protected']
+    #----------------------------------------------------------------------
+    @protected.setter
+    def protected(self, value):
+        """
+        If set to True, the group will be prevented from being deleted.
+        If false, a group can be deleted.
+        """
+        params = {'f' : 'json'}
+        if value == True and self.protected == False:
+            url = "%s/community/groups/%s/protect" % (self._portal.resturl, self.groupid)
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+        elif value == False and self.protected == True:
+            url = "%s/community/groups/%s/unprotect" % (self._portal.resturl, self.groupid)
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+        else:
+            raise ValueError("Input must be True/False.")
+
+
 
 class GroupApplication(object):
     """
@@ -6016,10 +6091,22 @@ class Item(dict):
                 raise Exception(ret[0]['error'])
             ms_url = self._gis.content.get(ret[0]['serviceItemId']).url
             ms = MapImageLayer(url=ms_url, gis=self._gis)
+
             serviceitem_id = ret[0]['serviceItemId']
             try:
-                ret = ms.manager.update_tiles()
-            except: pass
+                # first edit the tile service to set min, max scales
+                if not ms.properties.minScale:
+                    min_scale = ms.properties.tileInfo.lods[0]['scale']
+                    max_scale = ms.properties.tileInfo.lods[-1]['scale']
+                    edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+
+                # Get LoD from Map Image Layer
+                full_extent = dict(ms.properties.fullExtent)
+                lod_dict = ms.properties.tileInfo['lods']
+                lod = [current_lod['level'] for current_lod in lod_dict]
+                ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
+            except Exception as tiles_ex:
+                raise Exception('Error unpacking tiles :' + str(tiles_ex))
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)

@@ -1,3 +1,9 @@
+# About
+
+This tool takes a directory of notebooks, and converts all notebooks into HTML files.
+
+This tool is one part of many tools in that process from notebooks -> developers website. _It is recommended that you view this page for more information_ https://github.com/ArcGIS/geosaurus/wiki/Modifying-the-Developers-Website.
+
 # How to use this tool.
 
 ## Dependencies
@@ -11,31 +17,20 @@ The following Python libraries are required. **Note**: Python API or ArcPy is no
 ## About this tool
 Script needs the following command line parameters
  - path to the root level notebook folder
- - path to output folder to store the html file (optional. Uses input folder as default) 
+ - path to output folder to store the html file
  - whether of not to embed live nb link. (optional, defualt is False)
+ - Whether or not to change all image paths to a certain prefix
+ - What that image prefix should be
 
 The script performs the following.
  - renames notebooks. Spaces and underscores are changed to '-'. Special char is removed. Filenames are made to lower case
  - export notebooks to basic HTML (no styling)
  - embeds title to the start of body tag (for SEO)
  - if option to embed 'Try it live' is enabled, embeds the code for those buttons.
+ - Changes image paths
 
 ## Running the tool
 Call from terminal. Type `-h` following the tool name to pull up the help
-```
-λ python export_guide_samples_nb.py -h
-usage: export_guide_samples_nb.py [-h] [-o OUTPUT_PATH] [-e] input_path
-
-positional arguments:
-  input_path            Enter path to folder with guide or sample notebooks
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -o OUTPUT_PATH, --output_path OUTPUT_PATH
-                        Enter path to store html files
-  -e, --embed_tryitlive
-                        Embed Try it live button?
-```
 
 Call with command line args
 ```

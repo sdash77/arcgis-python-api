@@ -15,6 +15,151 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None):
+    """
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       required FeatureLayer. The point, line or polygon features.
+    ----------------  ---------------------------------------------------------------
+    overlay_layer     required FeatureLayer. The features that will be overlaid with the input_layer features.
+    ----------------  ---------------------------------------------------------------
+    overlay_type      optional string. The type of overlay to be performed.
+                      Values: intersect, erase
+
+                      + intersect - Computes a geometric intersection of the input layers. Features or portions of features that overlap in both the inputLayer and overlayLayer layers will be written to the output layer. This is the default.
+                      + erase - Only those features or portions of features in the overlay_layer that are not within the features in the input_layer layer are written to the output.
+    ----------------  ---------------------------------------------------------------
+    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS. The GIS object where the analysis will take place.
+    ================  ===============================================================
+
+    :returns: FeatureLayer
+    """
+    kwargs = locals()
+    tool_name = "OverlayLayers"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json",
+        "outputType" : "Input",
+        'tolerance' : 0,
+        'snapToInput' : 'false'
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    if output_name is None:
+        output_service_name = 'Overlay_Layers_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "overlay_layer": (_FeatureSet, "overlayLayer"),
+        "outputType" : (str, 'outputType'),
+        "overlay_type" : (str, "overlayType"),
+        "output_name": (str, "OutputName"),
+        "context": (str, "context"),
+        'tolerance' : (int, 'tolerance'),
+        "output": (_FeatureSet, "output"),
+        'snapToInput' : (str, 'snapToInput')
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+    return
+
+
+def append_data(input_layer, append_layer, field_mapping=None, gis=None):
+    """
+    The Append Data task appends tabular, point, line, or polygon data to an existing layer.
+    The input layer must be a hosted feature layer. The tool will add the appended data as
+    rows to the input layer. No new output layer is created.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       required FeatureLayer , The table, point, line or polygon features.
+    ----------------  ---------------------------------------------------------------
+    append_layer      required FeatureLayer. The table, point, line, or polygon features
+                      to be appended to the input_layer. To append geometry, the
+                      append_layer must have the same geometry type as the
+                      input_layer. If the geometry types are not the same, the
+                      append_layer geometry will be removed and all other matching
+                      fields will be appended. The geometry of the input_layer will
+                      always be maintained.
+    ----------------  ---------------------------------------------------------------
+    field_mapping     Defines how the fields in append_layer are appended to the
+                      input_layer.
+
+                      The following are set by default:
+
+                        - All append_layer fields that match input_layer schema will be appended.
+                        - Fields that exist in the input_layer and not in the append_layer will be appended with null values.
+                        - Fields that exist in the append_layer and not in the input_layer will not be appended.
+
+                      Optionally choose how input_layer fields will be appended from the following:
+
+                      - AppendField - Matches the input_layer field with an append_layer field of a different name. Field types must match.
+                      - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS, the GIS on which this tool runs. If not
+                      specified, the active GIS is used.
+    ================  ===============================================================
+
+    :returns: boolean
+
+    """
+    kwargs = locals()
+    tool_name = "AppendData"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json"
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "append_layer": (_FeatureSet, "appendLayer"),
+        "field_mapping" : (str, "fieldMapping"),
+        "context": (str, "context")
+    }
+    return_values = [
+    ]
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return True
+    except:
+        raise
+
+    return False
+
+
 def calculate_fields(input_layer,
                      field_name,
                      data_type,
