@@ -18,7 +18,7 @@ _log=_logging.getLogger(__name__)
 _use_async=True
 
 
-def build_enrichment_layer(attributes,
+def _build_enrichment_layer(attributes,
                            bin_size,
                            bin_unit="Meters",
                            bin_type="Square",
