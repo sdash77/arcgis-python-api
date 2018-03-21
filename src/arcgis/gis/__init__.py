@@ -2919,67 +2919,6 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
-    def update_webmaps(self, id_mappings, items=None, org=False):
-        """
-        Allows for the find/replace of item ids and urls in a webmap service.
-
-        This method allows for the quick updating a collection of WebMap Items.
-
-        =====================     ====================================================================
-        **Argument**              **Description**
-        ---------------------     --------------------------------------------------------------------
-        id_mappings               Required dictionary.  A mapping set of the old value to the new value.
-
-                                  Example:
-
-                                  {
-                                      'abcd123456' : 'efgh7890123',
-                                      'http://myoldservice.esri.com/spam', 'http://mynewservice.esri.com/eggs'
-                                  }
-        ---------------------     --------------------------------------------------------------------
-        items                     Optional list. List of web map items to update. If no item list if
-                                  provided, the current user item's will be search and update all WebMap
-                                  Items.
-        ---------------------     --------------------------------------------------------------------
-        org                       optional boolean.  If True, all WebMap will be updated.  If False,
-                                  webmap the current user owns will be updated. This parameter is only
-                                  valid if the items parameter is None.
-        =====================     ====================================================================
-
-        :returns: boolean
-
-        .. note::
-        On failure of an item, the value will be False, and the items that could not be updated will be returned.
-
-        """
-        if items is None and org == False:
-            items = self.search(
-                query="owner: %s" % dict(self._gis.properties['user'])['username'],
-                item_type="Web Map",
-                max_items=10000)
-        elif org == True and items is None:
-            items = self.search(query="*",
-                                item_type="Web Map",
-                                max_items=10000)
-        results = {'success': True, 'notUpdated' : [] }
-        for idx, item in enumerate(items):
-            if isinstance(item, str):
-                item = self.get(item)
-            if isinstance(item, Item) and \
-               item.type == 'Web Map':
-                data = json.dumps(item.get_data())
-                for k,v in id_mappings.items():
-                    data = data.replace(k,v)
-                res = item.update(data=data)
-                if res == False:
-                    results['notUpdated'].append(item)
-            else:
-                results['notUpdated'].append(item)
-            del idx, item
-        if len(results['notUpdated']) > 0:
-            return False, results['notUpdated']
-        return True
-
     def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None):
         """ Clone content to the GIS by creating new items.
 
