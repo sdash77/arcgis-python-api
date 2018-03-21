@@ -590,6 +590,8 @@ class _ArcGISConnection(object):
                 'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob'
             }
             token_info = self.post('oauth2/token', parameters, ssl=True, add_token=False)
+            if 'refresh_token' in token_info:
+                self._refresh_token = token_info['refresh_token']
             self._token = token_info['access_token']
 
             return self._token
