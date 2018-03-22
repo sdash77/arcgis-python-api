@@ -632,7 +632,7 @@ class ServerConnection(object):
                                                file_name=file_name)
             #  if the response is a file saved to disk, return it.
 
-            if os.path.isfile(resp_data):
+            if (len(resp_data) < 32767) and os.path.isfile(resp_data):
                 if force_bytes:
                     return open(resp_data, 'rb').read()
                 return resp_data
