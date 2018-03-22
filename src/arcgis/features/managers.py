@@ -26,6 +26,202 @@ class AttachmentManager(object):
     def __init__(self, layer):
         self._layer = layer
 
+    def query(self, where='1=1', oids=None, globalids=None,
+              attachment_types=None, size=None, keywords=None,
+              show_images=False):
+        """
+
+        The Query Attachments operation is performed on a feature service layer resource. The result
+        of this operation are attachments grouped by the source feature object Ids and global ids
+        (if exist).
+
+
+        =========================   ===============================================================
+        **Arguement**               **Description**
+        -------------------------   ---------------------------------------------------------------
+        where                       required string.  The definition expression to be applied to
+                                    the related layer/table. From the list of records that are
+                                    related to the specified object Ids, only those records that
+                                    conform to this expression will be returned.
+
+                                    Example: where="STATE_NAME = 'Alaska'".
+                                    The query results will return all attachments in Alaska.
+        -------------------------   ---------------------------------------------------------------
+        oids                        optional list/string. The object IDs of this layer/table to be
+                                    queried.
+
+                                    Syntax: objectIds=<objectId1>,<objectId2>
+
+                                    Example: objectIds=2. The query results will return attachments
+                                    only for the specified object id.
+        -------------------------   ---------------------------------------------------------------
+        globalids                   optional list/string. The global IDs of this layer/table to be
+                                    queried.
+
+                                    Syntax: globalIds=<globalIds1>,<globalIds2>
+
+                                    Example: globalIds=6s430c5a-kb75-4d52-a0db-b30bg060f0b9,35f0d027-8fc0-4905-a2f6-373c9600d017
+
+                                    The query results will return attachments only for specified
+                                    global id.
+        -------------------------   ---------------------------------------------------------------
+        attachment_types            optional list/string. The file format that is supported by
+                                    query attachment.
+
+                                    Supported attachment types:
+                                    bmp, ecw, emf, eps, ps, gif, img, jp2, jpc, j2k, jpf, jpg,
+                                    jpeg, jpe, png, psd, raw, sid, tif, tiff, wmf, wps, avi, mpg,
+                                    mpe, mpeg, mov, wmv, aif, mid, rmi, mp2, mp3, mp4, pma, mpv2,
+                                    qt, ra, ram, wav, wma, doc, docx, dot, xls, xlsx, xlt, pdf, ppt,
+                                    pptx, txt, zip, 7z, gz, gtar, tar, tgz, vrml, gml, json, xml,
+                                    mdb, geodatabase
+
+                                    Example: attachment_types='image/jpeg'
+        -------------------------   ---------------------------------------------------------------
+        size                        optional tuple/list. The file size of the attachment is
+                                    specified in bytes. You can enter a file size range
+                                    (1000,15000) to query for attachments with the specified range.
+
+                                    Example: size=1000,15000.
+                                    The query results will return all attachments within the
+                                    specified file size range (1000 - 15000) bytes.
+        -------------------------   ---------------------------------------------------------------
+        keywords                    optional string.  When attachments are uploaded, keywords can
+                                    be assigned to the uploaded file.  By passing a keyword value,
+                                    the values will be searched.
+
+                                    Example: keywords='airplanes'
+        -------------------------   ---------------------------------------------------------------
+
+        =========================   ===============================================================
+
+        :returns: list of downloaded files
+
+        """
+        import copy
+        result_offset = 0
+        if keywords is None:
+            keywords = []
+        elif isinstance(keywords, str):
+            keywords = keywords.split(',')
+        if oids is None:
+            oids = []
+        elif isinstance(oids, str):
+            oids = oids.split(',')
+        if globalids is None:
+            globalids = []
+        elif isinstance(globalids, str):
+            globalids = globalids.split(',')
+        if attachment_types is None:
+            attachment_types = []
+        elif isinstance(attachment_types, str):
+            attachment_types = attachment_types.split(',')
+        if isinstance(size, (tuple, list)):
+            size = ",".join(list([str(s) for s in size]))
+        elif size is None:
+            size = None
+        url = '{}/{}'.format(self._layer.url, 'queryAttachments')
+        params = {
+            'f' : 'json',
+            "attachmentTypes" : ",".join(attachment_types),
+            'objectIds' : ",".join([str(v) for v in oids]),
+            'globalIds' : ",".join([str(v) for v in globalids]),
+            "definitionExpression" : where,
+            'keywords' : ",".join([str(v) for v in keywords]),
+            'size' : None,
+        }
+
+        iterparams = copy.copy(params)
+        for k,v in iterparams.items():
+            if k in ['objectIds', 'globalIds',
+                     'attachmentTypes'] and \
+               v == "":
+                del params[k]
+            elif k == 'size' and \
+                 v is None:
+                del params[k]
+        columns = [col.upper() for col in ['ParentObjectid', 'ParentGlobalId', 'Id',
+                                           'Name', 'GlobalId', 'ContentType',
+                                           'Size','KeyWords', 'URL', 'IMAGE_PREVIEW']]
+        results = self._layer._con.post(url,params)
+        rows = []
+        for result in results['attachmentGroups']:
+            for data in result['attachmentInfos']:
+                token = self._layer._con.token
+                if not token is None:
+                    att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, result['parentObjectId'], data['id'], self._layer._con.token)
+                else:
+                    att_path = '{}/{}/attachments/{}'.format(self._layer.url, result['parentObjectId'], data['id'])
+                preview = None
+                if data['contentType'].find("image") > -1:
+                    preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
+
+                row = {
+                    "PARENTOBJECTID" : result['parentObjectId'],
+                    "PARENTGLOBALID" : result['parentGlobalId'],
+                    "ID" : data['id'],
+                    "NAME" : data['name'],
+                    "GLOBALID" : data['globalId'],
+                    "CONTENTTYPE" : data['contentType'],
+                    "SIZE" : data['size'],
+                    "KEYWORDS" : data['keywords'],
+                    "DOWNLOAD_URL" : "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path,
+                    "IMAGE_PREVIEW" : preview
+                }
+                rows.append(row)
+                del row
+        try:
+            import pandas as pd
+            if show_images == True:
+                from IPython.display import HTML
+                pd.set_option('display.max_colwidth', -1)
+                return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
+            else:
+                df = pd.DataFrame.from_dict(rows)
+                df.drop(['DOWNLOAD_URL', "IMAGE_PREVIEW"], axis=1, inplace=True)
+                return df
+        except:
+            return rows
+
+    def download_all(self, oids=None, save_folder=None, attachment_types=None):
+        """
+        downloads all attachments to a specific folder
+
+        =========================   ===============================================================
+        **Arguement**               **Description**
+        -------------------------   ---------------------------------------------------------------
+        oids                        optional list. A list of OIDs to download data from.
+        -------------------------   ---------------------------------------------------------------
+        save_folder                 optional string. Path to save data to.
+        -------------------------   ---------------------------------------------------------------
+        attachment_types            optional string.  Allows the limitation of file types by passing
+                                    a string of the item type.
+
+                                    **Example:** image/jpeg
+        =========================   ===============================================================
+
+        :returns: list of downloaded files
+
+        """
+        results = []
+        if save_folder is None:
+            save_folder = os.path.join(tempfile.gettempdir(), 'attachment_download')
+        if os.path.isdir(save_folder) == False:
+            os.makedirs(save_folder)
+        else:
+            import shutil
+            shutil.rmtree(save_folder)
+            os.makedirs(save_folder)
+        attachments = self.query(oids=oids, attachment_types=attachment_types)
+        for row in attachments.to_dict(orient='records') :
+            dlpath = os.path.join(save_folder, "%s" % int(row['PARENTOBJECTID']), "%s" % int(row['ID']))
+            if os.path.isdir(dlpath) == False:
+                os.makedirs(dlpath)
+            path = self.download(oid=int(row['PARENTOBJECTID']), attachment_id=int(row['ID']), save_path=dlpath)
+            results.append(path)
+            del row
+        return results
+
     def get_list(self, oid):
         """ returns the list of attachements for a given OBJECT ID """
         return self._layer._list_attachments(oid)['attachmentInfos']
