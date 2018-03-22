@@ -15,7 +15,7 @@ def automation_setup(*args, **kwargs):
 def _clear_staging_folder(files_to_ignore):
     for full_path in _paths_in_dir_to_delete(STAGING_DIR, files_to_ignore):
         if os.path.isdir(full_path):
-            shutil.rmtree(full_path)
+            shutil.rmtree(full_path, ignore_errors=True)
         else:
             os.remove(full_path)
 
@@ -24,9 +24,3 @@ def _paths_in_dir_to_delete(dir_, files_to_ignore):
         os.path.join(dir_, item)
         for item in os.listdir(dir_)
         if item not in files_to_ignore]
-
-if __name__ == "__main__":
-    try:
-        automation_setup()
-    except Exception as e:
-        log.exception(e)

@@ -118,9 +118,9 @@ class _DeepCloner():
             search_query = 'group:{0}'.format(group_id)
             group_items = source.content.search(search_query, max_items=1000, outside_org=True)
             for group_item in group_items:
-                item_definition2 = self._get_item_definitions(group_item)
-                item_definition.add_parent(item_definition2)
+                item_definition2 = self._get_item_definitions(group_item)         
                 if item_definition2 is not None:
+                    item_definition.add_parent(item_definition2)
                     item_definition2.sharing['groups'].append(group_id)
 
         # If the item is an application or dashboard find the web map or group that the application referencing
@@ -2176,8 +2176,6 @@ class _ApplicationDefinition(_TextItemDefinition):
                     code_attachment_properties = {'title' : new_item['title'], 'type' : 'Code Attachment', 'typeKeywords' : 'Code,Web Mapping Application,Javascript',
                                                     'relationshipType' : 'WMA2Code', 'originItemId' : new_item['id'], 'url' : url }
                     code_attachment = self.target.content.add(item_properties=code_attachment_properties, folder=self.folder)
-                    self.created_items.append(code_attachment)
-                    _share_item_with_groups(code_attachment, self.sharing, self._clone_mapping["Group IDs"])
 
                 # With Portal sometimes after sharing the application the url is reset.
                 # Check if the url is incorrect after sharing and set back to correct url.

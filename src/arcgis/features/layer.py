@@ -132,18 +132,33 @@ class FeatureLayer(Layer):
             Output:
               JSON Repsonse
         """
-        params = {'f': 'json'}
-        if self._dynamic_layer:
-            attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-            params['layer'] = self._dynamic_layer
+        if (os.path.getsize(file_path) >> 20) <= 9:
+            params = {'f': 'json'}
+            if self._dynamic_layer:
+                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
+                params['layer'] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            files = {'attachment': file_path}
+            res = self._con.post(path=attach_url,
+                                 postdata=params,
+                                 files=files, token=self._token)
+            return res
         else:
-            attach_url = self._url + "/%s/addAttachment" % oid
-        files = {'attachment': file_path}
-        res = self._con.post(path=attach_url,
-                             postdata=params,
-                             files=files, token=self._token)
-        return res
-
+            params = {'f': 'json'}
+            container = self.container
+            itemid = container.upload(file_path)
+            if self._dynamic_layer:
+                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
+                params['layer'] = self._dynamic_layer
+            else:
+                attach_url = self._url + "/%s/addAttachment" % oid
+            params['uploadId'] = itemid
+            res = self._con.post(attach_url,
+                                 params)
+            if res['addAttachmentResult']['success'] == True:
+                container._delete_upload(itemid)
+            return res
     # ----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
         """ removes an attachment from a feature service feature
@@ -230,7 +245,7 @@ class FeatureLayer(Layer):
               return_z=False,
               return_m=False,
               multipatch_option=None,
-              quanitization_parameters=None,
+              quantization_parameters=None,
               return_centroid=False,
               return_all_records=True,
               **kwargs):
@@ -256,12 +271,13 @@ class FeatureLayer(Layer):
                         Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
                         esriSRUnit_Foot | esriSRUnit_Kilometer |
                         esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
-                time_filter - a TimeFilter object where either the start time
-                              or start and end time are defined to limit the
-                              search results for a given time.  The values in
-                              the timeFilter should be as UTC timestampes in
-                              milliseconds.  No checking occurs to see if they
-                              are in the right format.
+
+                time_filter  - optional list of [<startTime>, <endTime>] using
+                        datetime.date, datetime.datetime or timestamp in
+                        milliseconds
+                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                        datetime.date, datetime.datetime or timestamp in milliseconds
+
                 geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
                                   spatial relationship with another geometry
                 max_allowable_offset - This option can be used to specify the
@@ -382,7 +398,7 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-        if out_fields != '*':
+        if out_fields != '*' and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
@@ -398,7 +414,7 @@ class FeatureLayer(Layer):
             params['resultRecordCount'] = result_record_count
         if result_offset and not return_all_records:
             params['resultOffset'] = result_offset
-        if quanitization_parameters:
+        if quantization_parameters:
             params['quantizationParameters'] = quantization_parameters
         if multipatch_option:
             params['multipatchOption'] = multipatch_option
@@ -425,13 +441,22 @@ class FeatureLayer(Layer):
             params['distance'] = distance
         if units:
             params['units'] = units
-        if time_filter and \
-                isinstance(time_filter, TimeFilter):
-            for key, val in time_filter.filter:
-                params[key] = val
-        elif isinstance(time_filter, dict):
-            for key, val in time_filter.items():
-                params[key] = val
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            elif isinstance(time_filter, dict):
+                for key, val in time_filter.items():
+                    params[key] = val
+            else:
+                params['time'] = _date_handler(time_filter)
+
         if geometry_filter and \
                 isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
@@ -1360,7 +1385,7 @@ class FeatureLayerCollection(_GISResource):
              layerQueries = {"0":{"queryOption": "useFilter", "useGeometry": true,
              "where": "requires_inspection = Yes"}}
            geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                             spatial relationship with another geometry
+                             spatial relationship with another geometry. Only intersections are currently supported.
            returnAttachments - If true, attachments are added to the replica and returned in the
             response. Otherwise, attachments are not included.
            returnAttachmentDatabyURL -  If true, a reference to a URL will be provided for each
@@ -1466,8 +1491,10 @@ class FeatureLayerCollection(_GISResource):
             params['layerQueries'] = layer_queries
         if geometry_filter is not None and \
                 isinstance(geometry_filter, dict):
-            params['geometry'] = geometry_filter
-            #params.update(geometry_filter)
+            params['geometry'] = geometry_filter['geometry']
+            params['geometryType'] = geometry_filter['geometryType']
+            if 'inSR' in geometry_filter:
+                params['inSR'] = geometry_filter['inSR']
         if replica_sr is not None:
             params['replicaSR'] = replica_sr
         if replica_options is not None:
@@ -1739,22 +1766,124 @@ class FeatureLayerCollection(_GISResource):
          :path: path of the file to upload
          :description: optional descriptive text for the upload item
         """
-        url = self._url + "/uploads/upload"
+        if (os.path.getsize(path) >> 20) <= 9:
+            url = self._url + "/uploads/upload"
+            params = {
+                "f" : "json",
+                'filename' : os.path.basename(path),
+                'overwrite' : True
+            }
+            files = {}
+            files['file'] = path
+            if description:
+                params['description'] = description
+            res = self._con.post(path=url,
+                                 postdata=params,
+                                 files=files)
+            if 'status' in res and \
+               res['status'] == 'success':
+                return True, res
+            elif 'success' in res:
+                return res['success'], res
+            return False, res
+        else:
+            file_path = path
+            item_id = self._register_upload(file_path)
+            self._upload_by_parts(item_id, file_path)
+            return self._commit_upload(item_id)
+    #----------------------------------------------------------------------
+    def _register_upload(self, file_path):
+        """returns the itemid for the upload by parts logic"""
+        r_url = "%s/uploads/register" % self._url
+        params = {'f' : 'json',
+                  'itemName' : os.path.basename(file_path).replace('.', '')
+                  }
+        reg_res = self._con.post(r_url, params)
+        if 'item' in reg_res and \
+           'itemID' in reg_res['item']:
+            return reg_res['item']['itemID']
+        return None
+    #----------------------------------------------------------------------
+    def _upload_by_parts(self, item_id, file_path):
+        """loads a file for attachmens by parts"""
+        import mmap, tempfile
+
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        upload_part_url = "%s/uploadPart" % b_url
         params = {
-            "f" : "json",
-            'filename' : os.path.basename(path),
-            'overwrite' : True
+            "f" : "json"
         }
-        files = {}
-        files['file'] = path
-        if description:
-            params['description'] = description
-        res = self._con.post(path=url,
-                             postdata=params,
-                             files=files)
-        if 'status' in res and \
-           res['status'] == 'success':
-            return True, res
-        elif 'success' in res:
-            return res['success'], res
-        return False, res
+        with open(file_path, 'rb') as f:
+            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+            size = 1000000
+            steps =  int(os.fstat(f.fileno()).st_size / size)
+            if os.fstat(f.fileno()).st_size % size > 0:
+                steps += 1
+            for i in range(steps):
+                files = {}
+                tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
+                if os.path.isfile(tempFile):
+                    os.remove(tempFile)
+                with open(tempFile, 'wb') as writer:
+                    writer.write(mm.read(size))
+                    writer.flush()
+                    writer.close()
+                del writer
+                files['file'] = tempFile
+                params['partId'] = i + 1
+                res = self._con.post(upload_part_url,
+                                     postdata=params,
+                                     files=files)
+                if 'error' in res:
+                    raise Exception(res)
+                os.remove(tempFile)
+                del files
+            del mm
+        return True
+    #----------------------------------------------------------------------
+    def _commit_upload(self, item_id):
+        """commits an upload by parts upload"""
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        commit_part_url = "%s/commit" % b_url
+        params = {
+                'f':'json',
+                'parts' : self._uploaded_parts(itemid=item_id)
+        }
+        res = self._con.post(commit_part_url,
+                              params)
+        if 'error' in res:
+            raise Exception(res)
+        else:
+            return res['item']['itemID']
+    #----------------------------------------------------------------------
+    def _delete_upload(self, item_id):
+        """commits an upload by parts upload"""
+        b_url = "%s/uploads/%s" % (self._url, item_id)
+        delete_part_url = "%s/delete" % b_url
+        params = {
+                'f':'json',
+        }
+        res = self._con.post(delete_part_url,
+                              params)
+        if 'error' in res:
+            raise Exception(res)
+        else:
+            return res
+    #----------------------------------------------------------------------
+    def _uploaded_parts(self, itemid):
+        """
+        returns the parts uploaded for a given item
+
+        ==================   ==============================================
+        Arguements           Description
+        ------------------   ----------------------------------------------
+        itemid               required string. Id of the uploaded by parts item.
+        ==================   ==============================================
+
+        """
+        url = self._url + "/uploads/%s/parts" % itemid
+        params = {
+            "f" : "json"
+        }
+        res = self._con.get(url, params)
+        return ",".join(res['parts'])

@@ -21,6 +21,3 @@ def _move_output_to_staging():
                     os.path.join(STAGING_DIR, 'conda_builds'))
     log.info("moved {} contents to {}...".format(output_dir_of_conda_packages,
                                                  STAGING_DIR))
-
-if __name__ == "__main__":
-    build_conda_package()

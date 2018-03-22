@@ -8,31 +8,27 @@ from __init__ import *
 FTP_SITE = "zion"
 NUM_BUILDS_TO_KEEP = 100
 
-def publish_results(*args, **kwargs):
-    try:
-        ftp = FTP(host = FTP_SITE,
-                  user = kwargs["username"],
-                  passwd = kwargs["password"])
-    except KeyError as e:
-        log.exception("FTP username/password not specified. Skipping "\
-                      "publishing (Exception thrown => {}".format(e))
-        return
+def publish_to_ftp_site(username, password, automation_type, build_number,
+                        ftp_folder_name, *args, **kwargs):
+    ftp = FTP(host = FTP_SITE,
+              user = username,
+              passwd = password)
 
-    if re.match(MASTER_REGEX, kwargs["automation_type"]):
+    if re.match(MASTER_REGEX, automation_type):
         _publish_conda_to_ftp_master(ftp = ftp,
-                                     build_number = kwargs["build_number"])
+                                     build_number = build_number)
         _publish_pip_to_ftp_packages(ftp = ftp,
-                                     build_number = kwargs["build_number"])
+                                     build_number = build_number)
         _remove_old_builds_from_ftp_server(ftp = ftp,
-                                     build_number = kwargs["build_number"])
+                                     build_number = build_number)
 
-    if re.match(LINUX_SLAVE_REGEX, kwargs["automation_type"]):
+    if re.match(LINUX_SLAVE_REGEX, automation_type):
         _publish_conda_to_ftp_master(ftp = ftp,
-                                     build_number = kwargs["build_number"])
+                                     build_number = build_number)
 
-    if re.match(PUBLISH_REGEX, kwargs["automation_type"]):
+    if re.match(PUBLISH_REGEX, automation_type):
         _publish_conda_to_ftp_branch(ftp = ftp,
-                               ftp_folder_name = kwargs["ftp_folder_name"])
+                               ftp_folder_name = ftp_folder_name)
 
 def _publish_conda_to_ftp_master(ftp, build_number):
     """Pushes any files in staging/conda_builds to ftp://zion/master"""

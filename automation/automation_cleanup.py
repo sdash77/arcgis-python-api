@@ -11,10 +11,3 @@ def automation_cleanup(*args, **kwargs):
     log.info("Note: if you're viewing this in Jenkins, Console Output (DEBUG)"\
              " link on the finished job should contain all the DEBUG messages"\
              ". (Console Output link just contains the INFO messages)")
-
-if __name__ == "__main__":
-    try:
-        automation_cleanup()
-    except Exception as e:
-        log.exception(e)
-        raise e
