@@ -17,8 +17,8 @@ from build_pip_package import build_pip_package
 from build_documentation import build_documentation
 from run_unit_tests import run_unit_tests
 from publish_to_ftp_site import publish_to_ftp_site
-from convert_notebooks import convert_notebooks
-from publish_html_to_dev_site import publish_html_to_dev_site
+from build_dev_website_and_publish import build_dev_website_and_publish
+from stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
 from automation_cleanup import automation_cleanup
 
 #The core logic of what functions are run in what order for each job
@@ -48,8 +48,8 @@ _regex_and_funcs = [(MASTER_REGEX, [automation_setup,
                                     automation_cleanup]),
                  
                  (DEV_SITE_REGEX, [automation_setup,
-                                   convert_notebooks,
-                                   publish_html_to_dev_site,
+                                   stage_notebooks_for_dev_web_repo,
+                                   build_dev_website_and_publish,
                                    automation_cleanup])]
 
 def _main():
@@ -75,9 +75,11 @@ def _parse_args():
         help="For -a publish, the name of the folder to write "\
              "conda packages to on the FTP server.")
     parser.add_argument("--notebooks-root-dir", "-n", type=str, required=False,
-        help="For -a dev_site, the root dir of notebooks to convert to html")
+        help="For -a dev_site, the root dir of arcgis-python-api repo")
+    parser.add_argument("--dev-website-repo", "-d", type=str, required=False,
+        help="for -a dev_site, the root dir of arcgis-for-developers repo")
     parser.add_argument("--html-output-dir", "-o", type=str, required=False,
-        help="For -a dev_site, the root of devel-website repo for publishing")
+        help="For -a dev_site, the dir where outputted html files get put") 
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
 def _append_build_tag_to_args(args):

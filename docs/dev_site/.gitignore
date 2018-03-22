@@ -1,0 +1,6 @@
+# Ignore everything in this directory
+*
+# Except the following
+!.gitignore
+!README.md
+!notebooks_to_dev_site.py

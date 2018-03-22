@@ -59,6 +59,7 @@ The results will be in ```./docs/build/html```. Open the ```index.html``` file.
     * This folder also contains all the conda config, like build/arcgis/meta.yaml, etc.
 * docs
     * This folder contains the script and source for generating our API doc
+    * This folder also contains the scripts to convert notebooks to html for the developer's website
 * examples
     * Example notebooks
 * src
