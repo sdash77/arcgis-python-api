@@ -1,5 +1,6 @@
-import os
 import sys
+import codecs
+import os
 import shutil
 import subprocess
 import logging
@@ -28,18 +29,19 @@ DEV_SITE_REGEX = ".*dev.*site.*"
 log.setLevel(logging.DEBUG)
 log_file_path = os.path.join(STAGING_DIR, "log.log")
 formatter = logging.Formatter(
-    '-----    %(levelname)s    |    '\
-    '%(asctime)s    |    '\
-    '%(filename)s line %(lineno)d'\
-    '     -----\n'\
-    '"%(message)s"')
+    u'-----    %(levelname)s    |    '\
+     '%(asctime)s    |    '\
+     '%(filename)s line %(lineno)d'\
+     '     -----\n'\
+     '"%(message)s"')
 
 file_handler = logging.FileHandler(log_file_path, "w")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 
-stdout_handler = logging.StreamHandler(stream=sys.stdout)
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+stdout_handler = logging.StreamHandler()
 stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 log.addHandler(stdout_handler)
@@ -50,12 +52,22 @@ def run_shell_command(cmd):
         byte_output = subprocess.check_output(cmd,
                                           stderr=subprocess.STDOUT,
                                           shell=True)
-        log.debug(byte_output.decode("utf-8"))
-        return byte_output
+        str_output = _bytes_to_str_cp850_workaround(byte_output)
+        log.debug(str_output)
+        return str_output
     except subprocess.CalledProcessError as e:
         log.warn("cmd failed, returned non-zero code. Output:\n"\
                  "{}".format(e.output.decode("utf-8")))
         raise e
+
+def _bytes_to_str_cp850_workaround(bytes_):
+    """Although python encodes everything in utf-8, The Windows CMD prompt 
+    has issues printing out some characters (A error was seen printing out 
+    the \u03BC Greek 'u'). These stack overflows: http://bit.ly/2HW4fXP and
+    http://bit.ly/2DLdbfX provide some insight. The workaround is to
+    decode to cp850, replace all unprinteable characters, encode
+    """
+    return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
 class set_stdout_log_to:
     """temporarely change the level of stdout logging.

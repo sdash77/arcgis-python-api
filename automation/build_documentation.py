@@ -5,7 +5,8 @@ log = logging.getLogger()
 
 from __init__ import *
 
-DOCS_DIR = os.path.abspath(os.path.join(GEOSAURUS_ROOT_DIR, "docs"))
+DOCS_DIR = os.path.abspath(os.path.join(GEOSAURUS_ROOT_DIR, 
+                                        "docs", "api_ref"))
 
 def build_documentation(*args, **kwargs):
     """Detects what OS is being used, runs the appropriate 'make' mechanism

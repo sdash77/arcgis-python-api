@@ -21,6 +21,3 @@ def _move_output_to_staging():
                     os.path.join(STAGING_DIR, 'pip_builds'))
     log.info("moved {} contents to {}...".format(output_dir_of_pip_package,
                                                  STAGING_DIR))
-
-if __name__ == "__main__":
-    build_pip_package()
