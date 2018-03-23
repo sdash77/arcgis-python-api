@@ -250,6 +250,13 @@ class GIS(object):
         if username is not None and password is None:
             from getpass import getpass
             password = getpass('Enter password: ')
+        # Assumes PFX is being passed in cert_file parameter and no key_file is specified
+        if (cert_file is not None) and (key_file is None) and\
+                (cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12")):
+            if password is None:
+                from getpass import getpass
+                password = getpass('Enter PFX password: ')
+            key_file, cert_file = self._pfx_to_pem(cert_file, password)
 
         self._url = url
         self._username = username
@@ -370,6 +377,41 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
+
+    def _pfx_to_pem(self, pfx_path, pfx_password):
+        """ Decrypts the .pfx file to be used with requests.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        pfx_path            Required string.  File pathname to .pfx file to parse.
+        ---------------     --------------------------------------------------------------------
+        pfx_password        Required string.  Password to open .pfx file to extract key/cert.
+        ===============     ====================================================================
+
+        :return:
+           File path to key_file located in a tempfile location
+           File path to cert_file located in a tempfile location
+        """
+        try:
+            import OpenSSL.crypto
+        except:
+            raise RuntimeError("OpenSSL.crypto library is not installed.  You must install this in order "+\
+                               "to use a PFX for connecting to a PKI protected portal.")
+        key_file = tempfile.NamedTemporaryFile(suffix='.pem', delete=False)
+        cert_file = tempfile.NamedTemporaryFile(suffix='.pem', delete=False)
+        k = open(key_file.name, 'wb')
+        c = open(cert_file.name, 'wb')
+        try:
+            pfx = open(pfx_path, 'rb').read()
+            p12 = OpenSSL.crypto.load_pkcs12(pfx, pfx_password)
+        except OpenSSL.crypto.Error:
+            raise RuntimeError("Invalid PFX password.  Unable to parse file.")
+        k.write(OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, p12.get_privatekey()))
+        c.write(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, p12.get_certificate()))
+        k.close()
+        c.close()
+        return key_file.name, cert_file.name
 
     def _config_is_in_old_format(self, config):
         """ Any version <= 1.3 of the API used a different config file
