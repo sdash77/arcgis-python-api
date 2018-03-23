@@ -1,12 +1,12 @@
 __version__ = '1.4.0'
 
-from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping
+from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping, apps
 
 from .gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
 #from .features._data.geodataset import SpatialDataFrame
-__all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster',
+__all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster', 'apps',
            'realtime', 'schematics', 'mapping',
              'aggregate_points',
              'calculate_density',
