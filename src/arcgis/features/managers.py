@@ -26,14 +26,13 @@ class AttachmentManager(object):
     def __init__(self, layer):
         self._layer = layer
 
-    def query(self, where='1=1', oids=None, globalids=None,
+    def search(self, where='1=1', object_ids=None, global_ids=None,
               attachment_types=None, size=None, keywords=None,
-              show_images=False):
+              show_images=False, as_df=False):
         """
 
-        The Query Attachments operation is performed on a feature service layer resource. The result
-        of this operation are attachments grouped by the source feature object Ids and global ids
-        (if exist).
+        The `search` method allows querying the layer for its attachments and returns the results as
+        a Pandas DataFrame or dict
 
 
         =========================   ===============================================================
@@ -47,7 +46,7 @@ class AttachmentManager(object):
                                     Example: where="STATE_NAME = 'Alaska'".
                                     The query results will return all attachments in Alaska.
         -------------------------   ---------------------------------------------------------------
-        oids                        optional list/string. The object IDs of this layer/table to be
+        object_ids                  optional list/string. The object IDs of this layer/table to be
                                     queried.
 
                                     Syntax: objectIds=<objectId1>,<objectId2>
@@ -55,7 +54,7 @@ class AttachmentManager(object):
                                     Example: objectIds=2. The query results will return attachments
                                     only for the specified object id.
         -------------------------   ---------------------------------------------------------------
-        globalids                   optional list/string. The global IDs of this layer/table to be
+        global_ids                   optional list/string. The global IDs of this layer/table to be
                                     queried.
 
                                     Syntax: globalIds=<globalIds1>,<globalIds2>
@@ -92,7 +91,13 @@ class AttachmentManager(object):
 
                                     Example: keywords='airplanes'
         -------------------------   ---------------------------------------------------------------
-
+        show_images                 optional bool. The default is False, when the value is True,
+                                    the results will be displayed as a HTML table. If the as_df is
+                                    set to False, this parameter will be ignored.
+        -------------------------   ---------------------------------------------------------------
+        as_df                       optional bool. Default is False, if True, the results will be
+                                    a Pandas' DataFrame.  If False, the values will be a list of
+                                    dictionary values.
         =========================   ===============================================================
 
         :returns: list of downloaded files
@@ -104,14 +109,14 @@ class AttachmentManager(object):
             keywords = []
         elif isinstance(keywords, str):
             keywords = keywords.split(',')
-        if oids is None:
-            oids = []
-        elif isinstance(oids, str):
-            oids = oids.split(',')
-        if globalids is None:
-            globalids = []
-        elif isinstance(globalids, str):
-            globalids = globalids.split(',')
+        if object_ids is None:
+            object_ids = []
+        elif isinstance(object_ids, str):
+            object_ids = object_ids.split(',')
+        if global_ids is None:
+            global_ids = []
+        elif isinstance(global_ids, str):
+            global_ids = global_ids.split(',')
         if attachment_types is None:
             attachment_types = []
         elif isinstance(attachment_types, str):
@@ -124,8 +129,8 @@ class AttachmentManager(object):
         params = {
             'f' : 'json',
             "attachmentTypes" : ",".join(attachment_types),
-            'objectIds' : ",".join([str(v) for v in oids]),
-            'globalIds' : ",".join([str(v) for v in globalids]),
+            'objectIds' : ",".join([str(v) for v in object_ids]),
+            'globalIds' : ",".join([str(v) for v in global_ids]),
             "definitionExpression" : where,
             'keywords' : ",".join([str(v) for v in keywords]),
             'size' : None,
@@ -170,9 +175,10 @@ class AttachmentManager(object):
                 }
                 rows.append(row)
                 del row
-        try:
+
+        if as_df == True:
             import pandas as pd
-            if show_images == True:
+            if show_images:
                 from IPython.display import HTML
                 pd.set_option('display.max_colwidth', -1)
                 return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
@@ -180,17 +186,18 @@ class AttachmentManager(object):
                 df = pd.DataFrame.from_dict(rows)
                 df.drop(['DOWNLOAD_URL', "IMAGE_PREVIEW"], axis=1, inplace=True)
                 return df
-        except:
+        else:
             return rows
+        return None
 
-    def download_all(self, oids=None, save_folder=None, attachment_types=None):
+    def _download_all(self, object_ids=None, save_folder=None, attachment_types=None):
         """
         downloads all attachments to a specific folder
 
         =========================   ===============================================================
         **Arguement**               **Description**
         -------------------------   ---------------------------------------------------------------
-        oids                        optional list. A list of OIDs to download data from.
+        object_ids                  optional list. A list of object_ids to download data from.
         -------------------------   ---------------------------------------------------------------
         save_folder                 optional string. Path to save data to.
         -------------------------   ---------------------------------------------------------------
@@ -206,13 +213,9 @@ class AttachmentManager(object):
         results = []
         if save_folder is None:
             save_folder = os.path.join(tempfile.gettempdir(), 'attachment_download')
-        if os.path.isdir(save_folder) == False:
+        if not os.path.isdir(save_folder):
             os.makedirs(save_folder)
-        else:
-            import shutil
-            shutil.rmtree(save_folder)
-            os.makedirs(save_folder)
-        attachments = self.query(oids=oids, attachment_types=attachment_types)
+        attachments = self.search(object_ids=object_ids, attachment_types=attachment_types, as_df=True)
         for row in attachments.to_dict(orient='records') :
             dlpath = os.path.join(save_folder, "%s" % int(row['PARENTOBJECTID']), "%s" % int(row['ID']))
             if os.path.isdir(dlpath) == False:
@@ -226,23 +229,62 @@ class AttachmentManager(object):
         """ returns the list of attachements for a given OBJECT ID """
         return self._layer._list_attachments(oid)['attachmentInfos']
 
-    def download(self, oid, attachment_id, save_path=None):
-        """ downloads attachment and returns it's path on disk """
-        att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, attachment_id)
-        att_list = self.get_list(oid)
+    def download(self, oid=None, attachment_id=None, save_path=None, return_all=False):
+        """
+        downloads attachment and returns it's path on disk
 
-        #get attachment file name
-        desired_att = [att for att in att_list if att['id']== attachment_id]
-        if len(desired_att) == 0: #bad attachment id
-            raise RuntimeError
+        =========================   ===============================================================
+        **Arguement**               **Description**
+        -------------------------   ---------------------------------------------------------------
+        oid                         optional list/string. A list of object Ids or a single value
+                                    to download data from.
+        -------------------------   ---------------------------------------------------------------
+        attachment_id               optional string. Id of the attachment to download. This is only
+                                    honored if return_all is False.
+        -------------------------   ---------------------------------------------------------------
+        save_folder                 optional string. Path to save data to.
+        -------------------------   ---------------------------------------------------------------
+        return_all                  optional bool.  The default is False. If True, all file will be
+                                    downloaded.
+        =========================   ===============================================================
+
+        :returns: if return_all is False, it returns a single file path else, its a list of downloaded files
+
+
+        """
+        if oid is None and \
+           attachment_id is None:
+            return_all = True
+        if isinstance(oid, list):
+            return_all = True
+        elif isinstance(oid, str):
+            oid = oid.split(',')
+            if len(oid) == 1:
+                return_all = False
+            else:
+                return_all = True
+        elif oid and attachment_id:
+            return_all = False
+
+        if not return_all:
+            att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, attachment_id)
+            att_list = self.get_list(oid)
+
+            #get attachment file name
+            desired_att = [att for att in att_list if att['id']== attachment_id]
+            if len(desired_att) == 0: #bad attachment id
+                raise RuntimeError
+            else:
+                att_name = desired_att[0]['name']
+
+            if not save_path:
+                save_path = tempfile.gettempdir()
+
+            return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
+                                        file_name=att_name, token=self._layer._token, force_bytes=False)
         else:
-            att_name = desired_att[0]['name']
-
-        if not save_path:
-            save_path = tempfile.gettempdir()
-
-        return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
-                                    file_name=att_name, token=self._layer._token, force_bytes=False)
+            return self._download_all(object_ids=oid,
+                                      save_folder=save_path)
 
     def add(self, oid, file_path):
         """ Adds an attachment to a feature layer
@@ -949,6 +991,8 @@ class FeatureLayerCollectionManager(_GISResource):
         :param data: path to data_file used to overwrite the hosted feature layer collection
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if self._gis._portal.is_arcgisonline == False:
+            return self._overwrite_portal(data=data_file)
         # region Get Item associated with the service
         if 'serviceItemId' in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
@@ -1019,9 +1063,8 @@ class FeatureLayerCollectionManager(_GISResource):
                 return {'error': 'Unable to overwrite the hosted feature layer collection'}
         else:
             return {'error': 'Unable to update related data item with new data'}
-        #end region
 
-        # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
     def _gen_overwrite_publishParameters(self, flc_item):
         """
