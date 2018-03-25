@@ -581,27 +581,24 @@ class GIS(object):
     @_lazy_property
     def users(self):
         """
-        The resource manager for GIS users.
+        The resource manager for GIS users. See :class:`~arcgis.gis.UserManager`.
         """
         return UserManager(self)
 
     @_lazy_property
     def groups(self):
         """
-        The resource manager for GIS groups.
+        The resource manager for GIS groups. See :class:`~arcgis.gis.GroupManager`.
         """
         return GroupManager(self)
 
     @_lazy_property
     def content(self):
         """
-        The resource manager for GIS content.
+        The resource manager for GIS content. See :class:`~arcgis.gis.ContentManager`.
         """
         return ContentManager(self)
 
-    # @_lazy_property
-    # def ux(self):
-    #     return UX(self)
 
     @_lazy_property
     def _datastores(self):
