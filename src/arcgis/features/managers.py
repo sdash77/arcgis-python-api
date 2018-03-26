@@ -229,9 +229,18 @@ class AttachmentManager(object):
         """ returns the list of attachements for a given OBJECT ID """
         return self._layer._list_attachments(oid)['attachmentInfos']
 
-    def download(self, oid=None, attachment_id=None, save_path=None, return_all=False):
+    def download(self, oid=None, attachment_id=None, save_path=None):
         """
-        downloads attachment and returns it's path on disk
+        downloads attachment and returns it's path on disk.
+
+        The download tool works as follows:
+
+            1). if nothing is given, all downloads will be downloaded.
+               - example: download()
+            2). If a single oid and attachment_id are given, the single file will download
+            3). If a list of oid values are given, all the attachments for those object ids will be saved locally.
+
+
 
         =========================   ===============================================================
         **Arguement**               **Description**
@@ -243,45 +252,65 @@ class AttachmentManager(object):
                                     honored if return_all is False.
         -------------------------   ---------------------------------------------------------------
         save_folder                 optional string. Path to save data to.
-        -------------------------   ---------------------------------------------------------------
-        return_all                  optional bool.  The default is False. If True, all file will be
-                                    downloaded.
         =========================   ===============================================================
 
-        :returns: if return_all is False, it returns a single file path else, its a list of downloaded files
+        :returns: list of downloaded files
 
 
         """
-        if oid is None and \
-           attachment_id is None:
-            return_all = True
-        if isinstance(oid, list):
-            return_all = True
-        elif isinstance(oid, str):
+        return_all = False
+        if isinstance(oid, str):
             oid = oid.split(',')
-            if len(oid) == 1:
-                return_all = False
-            else:
-                return_all = True
-        elif oid and attachment_id:
+            oid_len = len(oid)
+        elif isinstance(oid, int):
+            oid = str(oid).split(',')
+            oid_len = 1
+        elif isinstance(oid, (tuple, list)):
+            oid_len = len(oid)
+        elif oid is None:
+            oid_len = 0
+        else:
+            raise ValueError("oid must be of type list or string")
+        if isinstance(attachment_id, str):
+            attachment_id = attachment_id.split(',')
+            att_len = len(attachment_id)
+        elif isinstance(attachment_id, int):
+            attachment_id = str(attachment_id).split(',')
+            att_len = 1
+        elif isinstance(attachment_id, (tuple, list)):
+            att_len = len(attachment_id)
+        elif attachment_id is None:
+            att_len = 0
+        else:
+            raise ValueError("attachment_id must be of type list or string")
+        if oid_len == 1 and att_len > 0:
             return_all = False
+        elif oid_len > 1 and att_len > 0:
+            raise ValueError("You cannot provide more than one oid when providing attachment_id values.")
+        else:
+            return_all = True
 
         if not return_all:
-            att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, attachment_id)
-            att_list = self.get_list(oid)
+            oid = oid[0]
+            paths = []
+            for att in attachment_id:
+                att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, att)
+                att_list = self.get_list(oid)
 
-            #get attachment file name
-            desired_att = [att for att in att_list if att['id']== attachment_id]
-            if len(desired_att) == 0: #bad attachment id
-                raise RuntimeError
-            else:
-                att_name = desired_att[0]['name']
+                #get attachment file name
+                desired_att = [att for att in att_list if att['id'] == att]
+                if len(desired_att) == 0: #bad attachment id
+                    raise RuntimeError
+                else:
+                    att_name = desired_att[0]['name']
 
-            if not save_path:
-                save_path = tempfile.gettempdir()
+                if not save_path:
+                    save_path = tempfile.gettempdir()
 
-            return self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
-                                        file_name=att_name, token=self._layer._token, force_bytes=False)
+                path = self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
+                                            file_name=att_name, token=self._layer._token, force_bytes=False)
+                paths.append(path)
+            return paths
         else:
             return self._download_all(object_ids=oid,
                                       save_folder=save_path)
