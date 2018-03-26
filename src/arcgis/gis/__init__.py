@@ -5740,11 +5740,13 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
-        """ Returns items, urls, etc that this item is dependent on.  """
+        """ Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
+        is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
-        """ Returns items, urls, etc that are dependent to this item. """
+        """ Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
+        is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
