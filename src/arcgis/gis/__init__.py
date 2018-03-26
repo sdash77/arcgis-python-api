@@ -5518,6 +5518,46 @@ class Item(dict):
             self._hydrate() # refresh
             return resp
 
+    @property
+    def shared_with(self):
+        """
+        Reveals the privacy or sharing status of the current item. An item can be private or shared with one or more of
+        the following: A specified list of groups, to all members in the organization or to everyone (including
+        anonymous users). If the return is False for `org`, `everyone` and contains an empty list of `groups`, then the
+        item is private and visible only to the owner.
+
+        :return:
+            Dictionary of the following kind
+            {
+            'groups': [],  # one or more Group objects
+            'everyone': True | False,
+            'org': True | False
+            }
+        """
+        if not self._hydrated:
+            self._hydrate()  # hydrated properties needed below
+
+        # Call with owner info
+        resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+
+        # Get the sharing info
+        sharing_info = resp['sharing']
+        ret_dict = {'everyone': False,
+                    'org': False,
+                    'groups': []}
+
+        if sharing_info['access'] == 'public':
+            ret_dict['everyone'] = True
+            ret_dict['org'] = True
+
+        if sharing_info['access'] == 'org':
+            ret_dict['org'] = True
+
+        if len(sharing_info['groups']) > 0:
+            ret_dict['groups'] = [Group(self._gis, g) for g in sharing_info['groups']]
+
+        return ret_dict
+
     def share(self, everyone=False, org=False, groups=None, allow_members_to_edit=False):
         """
         Shares an item with the specified list of groups.
