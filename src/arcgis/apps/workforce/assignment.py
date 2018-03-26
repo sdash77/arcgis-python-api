@@ -4,7 +4,6 @@ import arcgis
 from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from .managers import *
-from . import _store
 from ._schemas import AssignmentSchema
 
 
@@ -501,7 +500,7 @@ class Assignment(FeatureModel):
 
     def _validate_assignment_type_on_server(self):
         errors = []
-        assignment_type = _store.get_assignment_type(self.project, code=self.assignment_type_code)
+        assignment_type = self.project._cached_assignment_types.get(self.assignment_type_code, None)
         if assignment_type is None:
             errors.append(ValidationError("Unrecognized assignment type", self))
         return errors
@@ -527,10 +526,8 @@ class Assignment(FeatureModel):
     def _validate_worker_on_server(self):
         errors = []
         if self.worker is not None:
-            where = "{}={}".format(self.worker._schema.object_id,
-                                   self.worker.object_id)
-            workers = _store.query_workers(self.project, where=where)
-            if not workers:
+            worker = self.project._cached_workers.get(self.worker_id, None)
+            if not worker:
                 errors.append(ValidationError("Unrecognized worker object_id", self))
         return errors
 
@@ -545,10 +542,8 @@ class Assignment(FeatureModel):
     def _validate_dispatcher_on_server(self):
         errors = []
         if self.dispatcher is not None:
-            where = "{} = {}".format(self.dispatcher._schema.object_id,
-                                     self.dispatcher.object_id)
-            dispatchers = _store.query_dispatchers(self.project, where=where)
-            if not dispatchers:
+            dispatcher = self.project._cached_dispatchers.get(self.dispatcher_id, None)
+            if not dispatcher:
                 errors.append(ValidationError("Unrecognized dispatcher object_id", self))
         return errors
 
@@ -556,18 +551,18 @@ class Assignment(FeatureModel):
         errors = []
         if self.status is None:
             errors.append(ValidationError("Assignment status cannot be None", self))
-        elif self.status == 0:
+        elif self.status == "unassigned":
             if self.worker is not None:
                 message = "An UNASSIGNED assignment cannot have a worker"
                 errors.append(ValidationError(message, self))
-        elif self.status == 1:
+        elif self.status == "assigned":
             if self.worker is None:
                 message = "An ASSIGNED assignment must have a worker"
                 errors.append(ValidationError(message, self))
             if self.assigned_date is None:
                 message = "An ASSIGNED assignment must have an assigned_date"
                 errors.append(ValidationError(message, self))
-        elif self.status == 2:
+        elif self.status == "in_progress":
             if self.worker is None:
                 message = "An IN PROGRESS assignment must have a worker"
                 errors.append(ValidationError(message, self))
@@ -577,7 +572,7 @@ class Assignment(FeatureModel):
             if self.in_progress_date is None:
                 message = "An IN PROGRESS assignment must have an in_progress_date"
                 errors.append(ValidationError(message, self))
-        elif self.status == 5:
+        elif self.status == "paused":
             if self.worker is None:
                 message = "A PAUSED assignment must have a worker"
                 errors.append(ValidationError(message, self))
@@ -590,7 +585,7 @@ class Assignment(FeatureModel):
             if self.paused_date is None:
                 message = "A PAUSED assignment must have a paused_date"
                 errors.append(ValidationError(message, self))
-        elif self.status == 3:
+        elif self.status == "completed":
             if self.worker is None:
                 message = "A COMPLETED assignment must have a worker"
                 errors.append(ValidationError(message, self))
@@ -603,7 +598,7 @@ class Assignment(FeatureModel):
             if self.completed_date is None:
                 message = "A COMPLETED assignment must have a completed_date"
                 errors.append(ValidationError(message, self))
-        elif self.status == 4:
+        elif self.status == "declined":
             if self.worker is None:
                 message = "A DECLINED assignment must have a worker"
                 errors.append(ValidationError(message, self))

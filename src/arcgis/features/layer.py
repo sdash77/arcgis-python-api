@@ -995,29 +995,42 @@ class FeatureLayer(Layer):
         calculate. System fields include ObjectId and GlobalId.
         See Calculate a field for more information on supported expressions
 
-        Inputs:
-           where - A where clause can be used to limit the updated records.
-                   Any legal SQL where clause operating on the fields in
-                   the layer is allowed.
-           calcExpression - The array of field/value info objects that
-                            contain the field or fields to update and their
-                            scalar values or SQL expression.  Allowed types
-                            are dictionary and list.  List must be a list
-                            of dictionary objects.
-                            Calculation Format is as follows:
-                               {"field" : "<field name>",
-                               "value" : "<value>"}
-           sqlFormat - The SQL format for the calcExpression. It can be
-                       either standard SQL92 (standard) or native SQL
-                       (native). The default is standard.
-                       Values: standard, native
-        Output:
-           JSON as string
-        Usage:
-        >>>print(fl.calculate(where="OBJECTID < 2",
-                              calcExpression={"field": "ZONE",
-                                              "value" : "R1"}))
-        {'updatedFeatureCount': 1, 'success': True}
+           =====================   ===========================================
+           **Inputs**              **Description**
+           ---------------------   -------------------------------------------
+           where                   A where clause can be used to limit the updated records.
+                                   Any legal SQL where clause operating on the fields in
+                                   the layer is allowed.
+           ---------------------   -------------------------------------------
+           calc_expression         The array of field/value info objects that
+                                   contain the field or fields to update and their
+                                   scalar values or SQL expression.  Allowed types
+                                   are dictionary and list.  List must be a list
+                                   of dictionary objects.
+                                   Calculation Format is as follows:
+                                   {"field" : "<field name>",  "value" : "<value>"}
+           ---------------------   -------------------------------------------
+           sql_format              The SQL format for the calcExpression. It can be
+                                   either standard SQL92 (standard) or native SQL
+                                   (native). The default is standard.
+                                   Values: standard, native
+           =====================   ===========================================
+
+        .. code-block:: python
+
+            # Usage Example 1: 
+
+            print(fl.calculate(where="OBJECTID < 2",
+                               calc_expression={"field": "ZONE", "value" : "R1"}))
+        
+        .. code-block:: python
+
+            # Usage Example 2:
+
+            print(fl.calculate(where="OBJECTID < 2001",
+                               calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
+
+        Output: dictionary with format {'updatedFeatureCount': 1, 'success': True}
         """
         url = self._url + "/calculate"
         params = {

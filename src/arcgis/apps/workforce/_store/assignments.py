@@ -63,6 +63,7 @@ def add_assignments(project, assignments):
         :raises ValidationError: Indicates that one or more assignments failed validation.
         :raises ServerError: Indicates that the server rejected the assignments.
     """
+    project._update_cached_objects()
     use_global_ids = True
     for assignment in assignments:
         assignment.project = project
@@ -82,6 +83,7 @@ def add_assignment(project, feature=None, geometry=None, assignment_type=None,
     """
     Adds a new assignment to the project
     """
+    project._update_cached_objects()
     assignment = workforce.Assignment(project,
                                       feature,
                                       geometry,
@@ -118,6 +120,7 @@ def update_assignments(project, assignments):
         :raises ValidationError: Indicates that one or more assignments failed validation.
         :raises ServerError: Indicates that the server rejected the updates.
     """
+    project._update_cached_objects()
     for assignment in assignments:
         validate(assignment._validate_for_update)
     features = [assignment.feature for assignment in assignments]
@@ -132,6 +135,7 @@ def update_assignment(project, assignment, geometry=None, assignment_type=None,
     """
     Sets the properties of an assignment and updates the item on the server
     """
+    project._update_cached_objects()
     if geometry:
         assignment.geometry = geometry
     if assigned_date:
@@ -178,6 +182,7 @@ def delete_assignments(project, assignments):
         :raises ValidationError: Indicates that one or more assignments failed validation.
         :raises ServerError: Indicates that the server rejected the removal.
     """
+    project._update_cached_objects()
     for assignment in assignments:
         validate(assignment._validate_for_remove)
     features = [assignment.feature for assignment in assignments]
