@@ -633,7 +633,8 @@ class GIS(object):
         return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
-        """Updates the GIS's properties from those in properties_dict.
+        """Updates the GIS's properties from those in properties_dict. This method can be useful 
+        for updating the utility services used by the GIS.
 
 
         ===============     ====================================================================
@@ -643,9 +644,31 @@ class GIS(object):
                             values that are to be updated.
         ===============     ====================================================================
 
-
         :return:
-           The item if successfully added, None if unsuccessful.
+           True if successfully updated, False if unsuccessful.
+
+
+        .. note::
+            For examples of the property names and key/values to use when updating utility services,
+            refer to the Portal parameters section at https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm
+
+        .. code-block:: python
+
+            # Usage Example: Update the geocode service
+
+            gis = GIS(profile='xyz')
+            upd = {'geocodeService': [{
+              "singleLineFieldName": "Single Line Input",
+              "name": "AtlantaLocator",
+              "url": "https://some.server.com/server/rest/services/GeoAnalytics/AtlantaLocator/GeocodeServer",
+              "itemId": "abc6e1fc691542938917893c8944606d",
+              "placeholder": "",
+              "placefinding": "true",
+              "batch": "true",
+              "zoomScale": 10000}]}
+
+            gis.update_properties(upd)
+    
         """
         postdata = self._portal._postdata()
         postdata.update(properties_dict)
