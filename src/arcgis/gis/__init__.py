@@ -6700,6 +6700,7 @@ class Layer(_GISResource):
     def __init__(self, url, gis=None):
         super(Layer, self).__init__(url, gis)
         self.filter = None
+        """optional attribute query string to select features to process by geoanalytics or spatial analysis tools"""
 
     @classmethod
     def fromitem(cls, item, index=0):
