@@ -47,6 +47,7 @@ def add_dispatcher(project, feature=None, contact_number=None, name=None, user_i
     """
     Adds a new dispatcher to the project
     """
+    project._update_cached_objects()
     dispatcher = workforce.Dispatcher(project,
                                       feature,
                                       contact_number,
@@ -65,6 +66,7 @@ def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_
     """
         Updates a dispatcher and submits changes to the server
     """
+    project._update_cached_objects()
     if contact_number:
         dispatcher.contact_number = contact_number
     if name:
@@ -85,6 +87,7 @@ def add_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the dispatchers.
     """
+    project._update_cached_objects()
     if dispatchers:
         use_global_ids = True
         for dispatcher in dispatchers:
@@ -108,6 +111,7 @@ def update_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the dispatchers.
     """
+    project._update_cached_objects()
     if dispatchers:
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_update)
@@ -123,6 +127,7 @@ def delete_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the removal.
     """
+    project._update_cached_objects()
     if dispatchers:
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_remove)

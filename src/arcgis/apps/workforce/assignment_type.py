@@ -95,7 +95,7 @@ class AssignmentType(Model):
         if assignments is None:
             schema = self.project._assignment_schema
             where = "{}={}".format(schema.assignment_type, self.code)
-            assignments = self.project.query_assignments(where=where)
+            assignments = self.project.assignments.search(where=where)
         else:
             assignments = [a for a in assignments if a.assignment_type.code == self.code]
         if assignments:
@@ -113,7 +113,7 @@ class AssignmentType(Model):
     def _validate_name_uniqueness(self, assignment_types=None):
         errors = []
         if assignment_types is None:
-            assignment_types = self.project.query_assignment_types()
+            assignment_types = self.project.assignment_types.search()
         for assignment_type in assignment_types:
             if assignment_type.name == self.name and assignment_type.code != self.code:
                 errors.append(ValidationError("AssignmentType name must be unique", self))

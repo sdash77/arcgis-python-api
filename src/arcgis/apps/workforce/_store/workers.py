@@ -48,6 +48,7 @@ def add_worker(project, feature=None, geometry=None, contact_number=None,
     """
         Creates and adds a worker to the project
     """
+    project._update_cached_objects()
     worker = workforce.Worker(project, feature, geometry, contact_number, name, notes, status, title, user_id)
     return add_workers(project, [worker])[0]
 
@@ -63,6 +64,7 @@ def add_workers(project, workers):
         :raises ValidationError: Indicates that one or more workers failed validation.
         :raises ServerError: Indicates that the server rejected the workers.
     """
+    project._update_cached_objects()
     if workers:
         use_global_ids = True
         for worker in workers:
@@ -82,8 +84,9 @@ def add_workers(project, workers):
 def update_worker(project, worker, geometry=None, contact_number=None,
                  name=None, notes=None, status=None, title=None, user_id=None):
     """
-        Updats a worker and submits the changes to the server
+        Updates a worker and submits the changes to the server
     """
+    project._update_cached_objects()
     if geometry:
         worker.geometry = geometry
     if contact_number:
@@ -108,6 +111,7 @@ def update_workers(project, workers):
         :raises ValidationError: Indicates that one or more workers failed validation.
         :raises ServerError: Indicates that the server rejected the workers.
     """
+    project._update_cached_objects()
     if workers:
         for worker in workers:
             validate(worker._validate_for_update)
@@ -122,6 +126,7 @@ def delete_workers(project, workers):
         :raises ValidationError: Indicates that one or more workers failed validation.
         :raises ServerError: Indicates that the server rejected the removal.
     """
+    project._update_cached_objects()
     if workers:
         for worker in workers:
             validate(worker._validate_for_remove)

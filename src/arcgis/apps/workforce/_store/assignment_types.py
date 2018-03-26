@@ -26,8 +26,7 @@ def get_assignment_types(project):
         :param project:
         :returns: A list of AssignmentTypes.
     """
-    feature_layer = FeatureLayer(project.assignments_layer_url, project.gis)
-    assignment_type_field = get_assignment_type_field(project, feature_layer)
+    assignment_type_field = get_assignment_type_field(project, project.assignments_layer)
     return coded_values_to_assignment_types(project, assignment_type_field['domain']['codedValues'])
 
 
@@ -36,7 +35,7 @@ def add_assignment_type(project, coded_value=None, name=None):
     Adds a new assignment type
     """
     assignment_type = workforce.AssignmentType(project, coded_value, name)
-    add_assignment_types(project, [assignment_type])
+    return add_assignment_types(project, [assignment_type])
 
 
 def add_assignment_types(project, assignment_types):
@@ -49,8 +48,7 @@ def add_assignment_types(project, assignment_types):
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     if assignment_types:
-        feature_layer = FeatureLayer(project.assignments_layer_url, project.gis)
-        assignment_type_field = get_assignment_type_field(project, feature_layer)
+        assignment_type_field = get_assignment_type_field(project, project.assignments_layer)
         coded_values = assignment_type_field['domain']['codedValues']
         existing_assignment_types = coded_values_to_assignment_types(project, coded_values)
         if existing_assignment_types:
@@ -62,7 +60,8 @@ def add_assignment_types(project, assignment_types):
             assignment_type.coded_value['code'] = max_code + 1
             max_code = assignment_type.code
             coded_values.append(assignment_type.coded_value)
-        feature_layer.manager.update_definition({"fields": [assignment_type_field]})
+            project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
+    return assignment_types
 
 
 def update_assignment_types(project, assignment_types):
@@ -72,8 +71,7 @@ def update_assignment_types(project, assignment_types):
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     if assignment_types:
-        feature_layer = FeatureLayer(project.assignments_layer_url, project.gis)
-        assignment_type_field = get_assignment_type_field(project, feature_layer)
+        assignment_type_field = get_assignment_type_field(project, project.assignments_layer)
         coded_values = assignment_type_field['domain']['codedValues']
         existing_assignment_types = coded_values_to_assignment_types(project, coded_values)
         for assignment_type in assignment_types:
@@ -81,7 +79,7 @@ def update_assignment_types(project, assignment_types):
             for i, coded_value in enumerate(coded_values):
                 if assignment_type.code == coded_value['code']:
                     coded_values[i] = assignment_type.coded_value
-        feature_layer.manager.update_definition({"fields": [assignment_type_field]})
+        project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
     return assignment_types
 
 
@@ -98,19 +96,18 @@ def delete_assignment_types(project, assignment_types):
         :param assignment_types: list of AssignmentTypes.
     """
     if assignment_types:
-        feature_layer = FeatureLayer(project.assignments_layer_url, project.gis)
         assignment_type_codes = [a.code for a in assignment_types]
         where = "{} IN ({})".format(project._assignment_schema.assignment_type,
                                     ','.join(map(str, assignment_type_codes)))
         affected_assignments = workforce._store.query_assignments(project, where)
         for assignment_type in assignment_types:
             validate(assignment_type._validate_for_remove, assignments=affected_assignments)
-        assignment_type_field = get_assignment_type_field(project, feature_layer)
+        assignment_type_field = get_assignment_type_field(project, project.assignments_layer)
         coded_values = assignment_type_field['domain']['codedValues']
         coded_values = [coded_value for coded_value in coded_values
                         if coded_value['code'] not in assignment_type_codes]
         assignment_type_field['domain']['codedValues'] = coded_values
-        feature_layer.manager.update_definition({"fields": [assignment_type_field]})
+        project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
 
 
 def get_assignment_type_field(project, feature_layer):

@@ -168,9 +168,9 @@ class Worker(FeatureModel):
             elif reduced_str == "onbreak":
                self._feature.attributes[self._schema.status] = 2
             else:
-               raise ValidationError("Invalid status")
+               raise ValidationError("Invalid status", self)
         else:
-            raise ValidationError("Invalid status")
+            raise ValidationError("Invalid status", self)
 
     @FeatureModel.geometry.setter
     def geometry(self, value):
@@ -197,7 +197,7 @@ class Worker(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        assignments = _store.query_assignments(self.project, "workerId = {}".format(self.object_id))
+        assignments = _store.query_assignments(self.project, "{} = {}".format(self.project._assignment_schema.worker_id, self.object_id))
         if assignments:
             errors.append(ValidationError("Cannot remove a Worker that has assignments", self))
         return errors
@@ -227,7 +227,7 @@ class Worker(FeatureModel):
             message = "The Worker user_id must match an accessible named user id"
             errors.append(ValidationError(message, self))
 
-        workers = _store.query_workers(self.project, "userId='{}'".format(self.user_id))
+        workers = [w for w in self.project._cached_workers.values() if w.user_id == self.user_id]
         duplicate_workers = [w for w in workers if w.object_id != self.object_id]
         if duplicate_workers:
             message = "There cannot be multiple Workers with the same user_id"
