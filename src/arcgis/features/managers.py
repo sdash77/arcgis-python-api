@@ -166,13 +166,14 @@ class AttachmentManager(object):
                     "PARENTGLOBALID" : result['parentGlobalId'],
                     "ID" : data['id'],
                     "NAME" : data['name'],
-                    "GLOBALID" : data['globalId'],
                     "CONTENTTYPE" : data['contentType'],
                     "SIZE" : data['size'],
                     "KEYWORDS" : data['keywords'],
                     "DOWNLOAD_URL" : "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path,
                     "IMAGE_PREVIEW" : preview
                 }
+                if 'globalId' in data:
+                    row["GLOBALID"] = data['globalId'],
                 rows.append(row)
                 del row
 
