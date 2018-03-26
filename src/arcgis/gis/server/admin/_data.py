@@ -914,12 +914,16 @@ class Datastore(BaseServer):
             True if the data item was successfully validated.
         """
         params = {
-            "f" : "json",
+            "f": "json",
             "item": self._json_dict
         }
         path = self._datastore._url + "/validateDataItem"
+        if params['item']['provider'] == 'ArcGIS Data Store':
+            path = self._url + "/machines/" + params['item']['info']['machines'][0]['name'] + "/validate"
+            res = self._con.post(path, {"f": "json"}, verify_cert=False)
+        else:
+            res = self._con.post(path, params, verify_cert=False)
 
-        res = self._con.post(path, params, verify_cert=False)
         return res['status'] == 'success'
     #----------------------------------------------------------------------
     @property
