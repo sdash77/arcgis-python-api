@@ -221,7 +221,7 @@ class AttachmentManager(object):
             if os.path.isdir(dlpath) == False:
                 os.makedirs(dlpath)
             path = self.download(oid=int(row['PARENTOBJECTID']), attachment_id=int(row['ID']), save_path=dlpath)
-            results.append(path)
+            results.append(path[0])
             del row
         return results
 
@@ -272,7 +272,7 @@ class AttachmentManager(object):
         else:
             raise ValueError("oid must be of type list or string")
         if isinstance(attachment_id, str):
-            attachment_id = attachment_id.split(',')
+            attachment_id = [int(att) for att in attachment_id.split(',')]
             att_len = len(attachment_id)
         elif isinstance(attachment_id, int):
             attachment_id = str(attachment_id).split(',')
@@ -295,10 +295,10 @@ class AttachmentManager(object):
             paths = []
             for att in attachment_id:
                 att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, att)
-                att_list = self.get_list(oid)
+                att_list = self.get_list(int(oid))
 
                 #get attachment file name
-                desired_att = [att for att in att_list if att['id'] == att]
+                desired_att = [att2 for att2 in att_list if att2['id'] == int(att)]
                 if len(desired_att) == 0: #bad attachment id
                     raise RuntimeError
                 else:
@@ -306,6 +306,8 @@ class AttachmentManager(object):
 
                 if not save_path:
                     save_path = tempfile.gettempdir()
+                if not os.path.isdir(save_path):
+                    os.makedirs(save_path)
 
                 path = self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
                                             file_name=att_name, token=self._layer._token, force_bytes=False)
