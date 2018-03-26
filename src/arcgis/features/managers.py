@@ -235,7 +235,7 @@ class AttachmentManager(object):
 
         The download tool works as follows:
 
-            1). if nothing is given, all downloads will be downloaded.
+            1). if nothing is given, all attachments will be downloaded
                - example: download()
             2). If a single oid and attachment_id are given, the single file will download
             3). If a list of oid values are given, all the attachments for those object ids will be saved locally.
