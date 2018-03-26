@@ -6153,6 +6153,8 @@ class Item(dict):
                 ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
+        elif not buildInitialCache and output_type.lower() in ['sceneservice']:
+            return Item(self._gis, ret[0]['serviceItemId'])
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
