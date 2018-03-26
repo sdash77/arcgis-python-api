@@ -6059,6 +6059,7 @@ class Item(dict):
 
             elif fileType == 'scenePackage':
                 name = re.sub(r'[\W_]+', '_', self['title'])
+                buildInitialCache = True
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 output_type = 'sceneService'
             elif fileType == 'featureService':
