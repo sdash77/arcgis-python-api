@@ -706,69 +706,68 @@ class FeatureLayer(Layer):
 
         Update an existing hosted feature layer using append.
 
-        ======================     ====================================================================
+        ========================   ====================================================================
         **Argument**               **Description**
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         source_table_name          optional string. Required only when the source data contains more
                                    than one tables, e.g., for filegdb.
                                    Example: source_tabl_name=  "Building"
-        ----------------------     --------------------------------------------------------------------
-        item_id                    optional string. The ID for the Portal item that contains the source file.
+        ------------------------   --------------------------------------------------------------------
+        item_id                    optional string. The ID for the Portal item that contains the source
+                                   file.
                                    Used in conjunction with editsUploadFormat.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         field_mappings             optional list. Used to map source data to a destination layer.
                                    Syntax: fieldMappings=[{"name" : <"targerName">,
-                                                        "sourceName" : < "sourceName">}, ...]
+                                                           "sourceName" : < "sourceName">}, ...]
                                    Examples: fieldMappings=[{"name" : "CountyID",
                                                              "sourceName" : "GEOID10"}]
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         edits                      optional string. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         source_info                optional dictionary. This is only needed when appending data from
                                    excel or csv. The appendSourceInfo can be the publishing parameter
                                    returned from analyze the csv or excel file.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         upsert                     optional boolean. Optional parameter specifying whether the edits
                                    needs to be applied as updates if the feature already exists.
                                    Default is false.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         skip_updates               Optional boolean. Parameter is used only when upsert is true.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         use_globalids              Optional boolean. Specifying whether upsert needs to use GlobalId
                                    when matching features.
-        ----------------------     --------------------------------------------------------------------
-        update_geometry            optional boolean. The parameter is used only when upsert is true.
+        ------------------------   --------------------------------------------------------------------
+        update_geometry            Optional boolean. The parameter is used only when upsert is true.
                                    Skip updating the geometry and update only the attributes for
                                    existing features if they match source features by objectId or
                                    globalId.(as specified by useGlobalIds parameter).
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         append_fields              Optional list. The list of destination fields to append to. This is
                                    supported when upsert=true or false.
                                    Values:  ["fieldName1", "fieldName2",....]
-        ----------------------     ------------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         upload_format              required string. The source append data format. The default is
                                    featureCollection format.
                                    Values: sqlite | shapefile | filegdb | featureCollection |
                                    geojson | csv | excel
-
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         rollback                   Optional boolean. Optional parameter specifying whether the upsert
                                    edits needs to be rolled back in case of failure. Default is false.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         skip_inserts               Used only when upsert is true. Used to skip inserts if the value is
                                    true. The default value is false.
-        ----------------------     --------------------------------------------------------------------
+        ------------------------   --------------------------------------------------------------------
         upsert_matching_field      Optional string. The layer field to be used when matching features
                                    with upsert. ObjectId, GlobalId, and any other field that has a
                                    unique index can be used with upsert.
-
-                                   This parameter overrides useGlobalIds; e.g., specifying
+                                   This parameter overrides use_globalids; e.g., specifying
                                    upsert_matching_field will be used even if you specify
-                                   use_globalids = true.
-
+                                   use_globalids = True.
                                    Example: upsert_matching_field="MyfieldWithUniqueIndex"
-        ======================     ====================================================================
+        ========================   ====================================================================
+
 
         :return: boolean
 
