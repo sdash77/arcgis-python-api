@@ -102,7 +102,8 @@ class GIS(object):
                         authentication
     ----------------    ---------------------------------------------------------------
     cert_file           Optional string. The file path to a user's certificate file for PKI
-                        authentication
+                        authentication. If a PFX or P12 certificate is used, a password is required.
+                        If a PEM file is used, the key_file is required.
     ----------------    ---------------------------------------------------------------
     verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
                         being accessed via the IP or hostname instead of the name on the
@@ -251,12 +252,15 @@ class GIS(object):
             from getpass import getpass
             password = getpass('Enter password: ')
         # Assumes PFX is being passed in cert_file parameter and no key_file is specified
-        if (cert_file is not None) and (key_file is None) and\
-                (cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12")):
-            if password is None:
-                from getpass import getpass
-                password = getpass('Enter PFX password: ')
-            key_file, cert_file = self._pfx_to_pem(cert_file, password)
+        if (cert_file is not None) and (key_file is None):
+            if (cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12")):
+                if password is None:
+                    from getpass import getpass
+                    password = getpass('Enter PFX password: ')
+                key_file, cert_file = self._pfx_to_pem(cert_file, password)
+            else:
+                raise Exception("key_file parameter is required along with cert_file when using PKI authentication.")
+
 
         self._url = url
         self._username = username
