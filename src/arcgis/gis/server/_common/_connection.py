@@ -675,8 +675,8 @@ class ServerConnection(object):
 
                 # If the JSON parsed correctly and there are no errors,
                 # return the JSON
-                if 'status' in resp_json: # FOR DEMO TODO REMOVE ME
-                    return resp_json['status'] == 'success'
+                #if 'status' in resp_json: # FOR DEMO TODO REMOVE ME
+                #    return resp_json['status'] == 'success'
                 return resp_json
 
             # If we couldnt parse the response to JSON, return it as is

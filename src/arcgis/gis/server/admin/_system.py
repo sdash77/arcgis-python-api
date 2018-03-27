@@ -24,7 +24,7 @@ class SystemManager(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -32,12 +32,12 @@ class SystemManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         gis                    Optional string. The GIS or Server object.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-        
+
         """
-        
+
         super(SystemManager, self).__init__(gis=gis,
                                      url=url)
         self._con = gis
@@ -98,10 +98,10 @@ class SystemManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the registered directory.
         ==================     ====================================================================
-        
+
         :returns:
             The ArcGIS Server directory as an object.
-        
+
         """
         url = self._url + "/directories"
         params = {
@@ -136,20 +136,20 @@ class SystemManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         directory_type         Required string. The type of server directory.
         ------------------     --------------------------------------------------------------------
-        max_age                Required integer. The length of time a file in the directory needs 
+        max_age                Required integer. The length of time a file in the directory needs
                                to be kept before it is deleted.
         ------------------     --------------------------------------------------------------------
-        cleanup_mode           Optional string. Defines if files in the server directory needs to 
+        cleanup_mode           Optional string. Defines if files in the server directory needs to
                                be cleaned up. The default is None.
         ------------------     --------------------------------------------------------------------
-        description            Optional string. An optional description for the server directory. 
+        description            Optional string. An optional description for the server directory.
                                The default is None.
         ==================     ====================================================================
-        
-        
+
+
         :return:
              A boolean indicating success (True).
-             
+
         """
         url = self._url + "/directories/register"
         params = {
@@ -171,9 +171,9 @@ class SystemManager(BaseServer):
     @property
     def licenses(self):
         """
-        Gets the license resource list.  The licenses resource lists the 
-        current license level of ArcGIS for Server and all authorized 
-        extensions. Contact Esri Customer Service if you have questions 
+        Gets the license resource list.  The licenses resource lists the
+        current license level of ArcGIS for Server and all authorized
+        extensions. Contact Esri Customer Service if you have questions
         about license levels or expiration properties.
         """
         url = self._url + "/licenses"
@@ -182,6 +182,15 @@ class SystemManager(BaseServer):
         }
         return self._con.get(path=url,
                              postdata=params)
+    #----------------------------------------------------------------------
+    @property
+    def platform_services(self):
+        """
+        Provides access to the platform services that are associated with GeoAnalytics.
+        """
+        url = self._url + "/platformservices"
+        return PlatformServiceManager(url=url, connection=self._con)
+
     #----------------------------------------------------------------------
     @property
     def jobs(self):
@@ -199,7 +208,7 @@ class SystemManager(BaseServer):
         Gets a list of all the Web Adaptors that have been registered
         with the site. The server will trust all these Web Adaptors and
         will authorize calls from these servers.
-        
+
         To configure a new Web Adaptor with the server, you'll need to use
         the configuration web page or the command line utility. For full
         instructions, see Configuring the Web Adaptor after installation.
@@ -230,13 +239,13 @@ class SystemManager(BaseServer):
     def update_web_adaptors_configuration(self, config):
         """
         You can use this operation to change the Web Adaptor configuration
-        and the sharedkey attribute. The sharedkey attribute must be present 
+        and the sharedkey attribute. The sharedkey attribute must be present
         in the request.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        config                 Required string. The configuration items to be updated for this web 
+        config                 Required string. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
         ==================     ====================================================================
 
@@ -268,7 +277,7 @@ class SystemManager(BaseServer):
             This operation is only meant to change the descriptive properties
             of the Web Adaptor and does not affect the configuration of the web
             server that deploys your Web Adaptor.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -278,14 +287,14 @@ class SystemManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         http_port              Required integer. The HTTP port of the web server.
         ------------------     --------------------------------------------------------------------
-        https_port             Required integer. The HTTPS (SSL) port of the web server that runs 
+        https_port             Required integer. The HTTPS (SSL) port of the web server that runs
                                the web adaptor.
         ==================     ====================================================================
 
-        
+
         :return:
             A boolean indicating success (True), else a Python dictionary containing an error message.
-            
+
         """
         url = self._url + "/webadaptors/{w}/update".format(w=wa_id)
         params = {
@@ -305,17 +314,17 @@ class SystemManager(BaseServer):
         Unregistering a Web Adaptor removes the Web Adaptor from the ArcGIS
         Server's trusted list. The Web Adaptor can no longer submit requests
         to the server.
-        
-        
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         wa_id                  Required string. The web adaptor ID.
         ==================     ====================================================================
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/webadaptors/{waid}/update".format(
             waid=wa_id)
@@ -343,10 +352,10 @@ class SystemManager(BaseServer):
         This operation clears the cache on all REST handlers in the system.
         While the server typically manages the REST cache for you, use this
         operation to get explicit control over the cache.
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         params = {'f': 'json'}
         url = self._url + "/handlers/rest/cache/clear"
@@ -359,28 +368,28 @@ class SystemManager(BaseServer):
     @property
     def deployment(self):
         """
-        Gets the load balancing value for this site.  Load balancing is an 
+        Gets the load balancing value for this site.  Load balancing is an
         ArcGIS Server deployment configuration resource that can
         control the load balancing functionality between GIS server
         machines. A value of True means that load balancing is disabled.
-           
+
         singleClusterMode - At 10.4, in large sites with a single cluster,
         the site is configured to prevent load balancing between GIS
         server machines. This reduces network traffic between machines
-        in the site and helps reduce load on your network. Upgrades 
-        from earlier versions will  set this property to true if the 
-        site uses a single cluster. Sites with multiple clusters cannot 
+        in the site and helps reduce load on your network. Upgrades
+        from earlier versions will  set this property to true if the
+        site uses a single cluster. Sites with multiple clusters cannot
         use singleClusterMode.
-           
+
         To prevent load balancing, the following criteria must be met:
-        
+
          - All machines in the site must participate in a single
            cluster. Multiple clusters cannot exist.
          - An external load balancer or ArcGIS Web Adaptor must be
            configured to forward requests to the site. If no external
            gateway exists, requests will only be handled by the
            machine designated in the request.
-        
+
         To enable load balancing, set this property to false. Updating
         this property will restart all machines in the site.
         """
@@ -401,45 +410,45 @@ class SystemManager(BaseServer):
                                 jsapi_arcgis_sdk,
                                 service_dir_enabled):
         """
-        Allows you to update the Services Directory configuration.  You can do such thing as 
-        enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer 
-        previews of services in the Services Directory so that they work with your own locally 
+        Allows you to update the Services Directory configuration.  You can do such thing as
+        enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
+        previews of services in the Services Directory so that they work with your own locally
         hosted JavaScript API and map viewer.
-        
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        allowed_origins          Required string. A comma-separated list of URLs of domains allowed to 
+        allowed_origins          Required string. A comma-separated list of URLs of domains allowed to
                                  make requests. An asterisk (*) can be used to denote all domains.
         --------------------     --------------------------------------------------------------------
-        arcgis_com_map           Required string. URL of the map viewer application used for service 
-                                 previews. Defaults to the ArcGIS.com map viewer but could be used 
+        arcgis_com_map           Required string. URL of the map viewer application used for service
+                                 previews. Defaults to the ArcGIS.com map viewer but could be used
                                  to point at your own Portal for ArcGIS map viewer.
         --------------------     --------------------------------------------------------------------
-        arcgis_com_map_text      Required string. The text to use for the preview link that opens 
+        arcgis_com_map_text      Required string. The text to use for the preview link that opens
                                  the map viewer.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis             Required string. The URL of the JavaScript API to use for service 
+        jsapi_arcgis             Required string. The URL of the JavaScript API to use for service
                                  previews. Defaults to the online ArcGIS API for JavaScript, but
                                  could be pointed at your own locally-installed instance of the
                                  JavaScript API.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis_css         Required string. The CSS file associated with the ArcGIS API for 
+        jsapi_arcgis_css         Required string. The CSS file associated with the ArcGIS API for
                                  JavaScript. Defaults to the online Dojo tundra.css.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis_css2        Required string. An additional CSS file associated with the ArcGIS 
+        jsapi_arcgis_css2        Required string. An additional CSS file associated with the ArcGIS
                                  API for JavaScript. Defaults to the online esri.css.
         --------------------     --------------------------------------------------------------------
         jsapi_arcgis_sdk         Required string. The URL of the ArcGIS API for JavaScript help.
         --------------------     --------------------------------------------------------------------
-        service_dir_enabled      Required string. Flag to enable/disable the HTML view of the 
+        service_dir_enabled      Required string. Flag to enable/disable the HTML view of the
                                  services directory.
         ====================     ====================================================================
 
-          
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         params = {
             "f" : "json",
@@ -465,10 +474,10 @@ class SystemManager(BaseServer):
         Gets the handler of this server. A handler exposes the GIS capabilities of ArcGIS Server through a
         specific interface/API. There are two types of handlers currently
         available in the server:
-        
+
           - Rest -- Exposes the REST-ful API
           - Soap -- Exposes the SOAP API
-          
+
         The Rest Handler resource exposes some of the administrative
         operations on the REST handler such as clearing the cache.
         """
@@ -486,7 +495,195 @@ class SystemManager(BaseServer):
         params = {'f': 'json'}
         return self._con.get(path=url,
                              params=params)
+########################################################################
+class PlatformServiceManager(BaseServer):
+    """
+    The Platform Services Manager allows you to view and manage your platform services in the ArcGIS
+    Server Administrator Directory. The Compute Platform and Synchronization services are used by
+    GeoAnalytics Server. For each platform service, you can start it, stop it, and view its status.
+    While a health check operation is exposed for all three platform services, only Compute Platform
+    Health Check returns valuable information.
 
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string. The service URL.
+    ------------------     --------------------------------------------------------------------
+    connection             Required ServerConnection. The connection object.
+    ------------------     --------------------------------------------------------------------
+    initialize             Optional string. Denotes whether to load the service properties at
+                           creation (True). Default is False.
+    ==================     ====================================================================
+
+    """
+    _cp = None
+    _mb = None
+    _ss = None
+    _con = None
+    _url = None
+    _json = None
+    _json_dict = None
+    #----------------------------------------------------------------------
+    def __init__(self,
+                 url,
+                 connection,
+                 initialize=False):
+        """
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The service URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required ServerConnection. The connection object.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the service properties at
+                               creation (True). Default is False.
+        ==================     ====================================================================
+
+        """
+        super(PlatformServiceManager, self).__init__(connection=connection,
+                                                     url=url)
+        self._url = url
+        self._con = connection
+        if initialize:
+            self._init(connection)
+    #----------------------------------------------------------------------
+    def _init(self, connection=None):
+        """loads the properties into the class"""
+        from arcgis._impl.common._mixins import PropertyMap
+        if connection is None:
+            connection = self._con
+        params = {"f":"json"}
+        try:
+            result = connection.get(path=self._url,
+                                    params=params)
+            if isinstance(result, dict):
+                self._json_dict = result
+                self._properties = PropertyMap(result)
+            else:
+                self._json_dict = {}
+                self._properties = PropertyMap({})
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
+    #----------------------------------------------------------------------
+    def get(self, service):
+        """
+        Returns a single instance of a Platform Service
+
+        ================   =================================================
+        **Arguements**     **Description**
+        ----------------   -------------------------------------------------
+        service            optional string. This is the name of the service
+                           that you want to examine.
+                           Allowed values: SYNCHRONIZATION_SERVICE,
+                           MESSAGE_BUS, or COMPUTE_PLATFORM
+        ================   =================================================
+
+        :returns PlatformService objects
+
+        """
+        services = []
+
+        if "platformservices" in self._json_dict:
+            for ps in self._json_dict["platformservices"]:
+                if ps['type'].lower() == service.lower():
+                    return PlatformService(url="%s/%s" % (self._url, ps['id']),
+                                           gis=self._con)
+        return None
+    #----------------------------------------------------------------------
+    def list(self):
+        """
+        Returns all Platform Services on the enterprise configuration.
+
+        :returns list of PlatformService objects
+
+        """
+        services = []
+        service = None
+        if service is None:
+            if "platformservices" in self._json_dict:
+                for ps in self._json_dict["platformservices"]:
+                    services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
+                                                    gis=self._con))
+        else:
+            if "platformservices" in self._json_dict:
+                for ps in self._json_dict["platformservices"]:
+                    if ps['type'].lower() == service.lower():
+                        services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
+                                                    gis=self._con))
+        return services
+########################################################################
+class PlatformService(BaseServer):
+    """
+    The platform service can be a message_bus, computre_platform, or synchronization_service.
+    Each platform service has the following operations: start, stop, status, and health check.
+
+    - The Compute Platform resource allows you to view and manage your compute platform service for ArcGIS GeoAnalytics Server in the ArcGIS Server Administrator Directory. You can start or stop the service, view its status, and run a health check.
+    - The Message Bus resource allows you to view and manage your message bus service in the ArcGIS Server Administrator Directory. You can start or stop the service, and view its status. While a health check operation is exposed, it will not return any valuable information.
+    - The Synchronization Service resource allows you to view and manage your synchronization service for ArcGIS GeoAnalytics Server in the ArcGIS Server Administrator Directory. You can start or stop the service and view its status. While a health check operation is exposed for the synchronization service, it will not return any valuable information.
+
+
+    """
+    _url = None
+    _con = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
+        """
+        Constructor
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        url                    Required string. The service URL.
+        ------------------     --------------------------------------------------------------------
+        connection             Required string. The connection string.
+        ------------------     --------------------------------------------------------------------
+        initialize             Optional string. Denotes whether to load the properties at creation
+                               (True). Default is False.
+        ==================     ====================================================================
+
+
+        """
+        initialize = True
+        self._url = url
+        self._con = connection
+        if initialize:
+            self._init(connection)
+    #----------------------------------------------------------------------
+    def start(self):
+        """
+        The Start method allows for the running of the service.
+        """
+        params = {'f': "json"}
+        url = "%s/start" % self._url
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def stop(self):
+        """
+        The Start method allows for the running of the service.
+        """
+        params = {'f': "json"}
+        url = "%s/stop" % self._url
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def status(self):
+        """
+        The status resource allows you to view the status of the service.
+        The
+        """
+        params = {'f': "json"}
+        url = "%s/status" % self._url
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    def health(self):
+        """
+        The health check operation allows you to view the health of the service.
+        """
+        params = {'f': "json"}
+        url = "%s/health" % self._url
+        return self._con.get(url, params)
 ########################################################################
 class ConfigurationStore(BaseServer):
     """
@@ -503,7 +700,7 @@ class ConfigurationStore(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -511,10 +708,10 @@ class ConfigurationStore(BaseServer):
         ------------------     --------------------------------------------------------------------
         connection             Required string. The connection string.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-        
+
         """
         super(ConfigurationStore, self).__init__(connection=connection,
                                                  url=url)
@@ -526,7 +723,7 @@ class ConfigurationStore(BaseServer):
     def recover(self):
         """
         Recovers the Configuration Store of the site.
-        
+
         If the shared configuration store for a site is unavailable, a site
         in read-only mode will operate in a degraded capacity that allows
         access to the ArcGIS Server Administrator Directory. You can recover
@@ -537,10 +734,10 @@ class ConfigurationStore(BaseServer):
         the local repository into the shared configuration store location.
         The copied local repository will be from the machine in the site
         where the recover operation is performed.
-        
+
         :return:
             A boolean indicating success (True).
-        
+
         """
         url = self._url + "/recover"
         params = {"f" : "json"}
@@ -556,7 +753,7 @@ class ConfigurationStore(BaseServer):
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
         configuration store.
-        
+
         When ArcGIS Server is installed, the default configuration store
         uses local paths. As the site grows (more server machines are
         added), the location of the store must be updated to use a shared
@@ -569,21 +766,21 @@ class ConfigurationStore(BaseServer):
         ------------------     --------------------------------------------------------------------
         type_value             Required string. The type of the configuration store. Values: FILESYSTEM
         ------------------     --------------------------------------------------------------------
-        gis                    Required string. A file path or connection URL to the physical 
+        gis                    Required string. A file path or connection URL to the physical
                                location of the store.
         ------------------     --------------------------------------------------------------------
-        move                   Optional string. A boolean to indicate if you want 
-                               to move the content of the current store to the new store. The 
-                               default True (move the content). 
+        move                   Optional string. A boolean to indicate if you want
+                               to move the content of the current store to the new store. The
+                               default True (move the content).
         ------------------     --------------------------------------------------------------------
-        run_async              Optional string. Determines if this operation must run asynchronously. 
+        run_async              Optional string. Determines if this operation must run asynchronously.
                                The default is False (doesn not have to run asynchronously).
         ==================     ====================================================================
-        
+
 
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/edit"
         params = {
@@ -617,7 +814,7 @@ class Jobs(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -625,10 +822,10 @@ class Jobs(BaseServer):
         ------------------     --------------------------------------------------------------------
         connection             Required string. The connection string.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-        
+
         """
         super(Jobs, self).__init__(connection=connection,
                                    url=url)
@@ -651,16 +848,16 @@ class Jobs(BaseServer):
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.
 
-           
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         job_id                 Required string. The ID of the job.
         ==================     ====================================================================
-        
+
         :return:
             A JSON dictionary containing progress information for the job ID.
-        
+
         """
         url = self._url + "/%s" % job_id
         params = {
@@ -675,9 +872,9 @@ class ServerProperties(BaseServer):
     intricate behavior. This Server Properties resource is a container for
     such properties. These properties are available to all server objects
     and extensions through the server environment interface.
-    
+
     The properties include:
-    
+
       - CacheSizeForSecureTileRequests -- An integer that specifies the
         number of users whose token information will be cached. This
         increases the speed of tile retrieval for cached services. If not
@@ -710,14 +907,14 @@ class ServerProperties(BaseServer):
 
       - messageFormat -- Defines the transmission protocol supported by
         the services catalog in the server.
-        Values: 
+        Values:
                - esriServiceCatalogMessageFormatBin,
                - esriServiceCatalogMessageFormatSoap,
                - esriServiceCatalogMessageFormatSoapOrBin
-               
+
       - messageVersion -- Defines the version supported by the services
         catalog in the server. Example: esriArcGISVersion101
-      - PushIdentityToDatabase -- Propogates the credentials of the logged-in 
+      - PushIdentityToDatabase -- Propogates the credentials of the logged-in
         user to make connections to an Oracle database. This
         property is only supported for use with Oracle databases.
         Values: True | False
@@ -735,7 +932,7 @@ class ServerProperties(BaseServer):
         Values: True | False
       - uploadFileExtensionWhitelist -- This specifies what files are
         allowed to be uploaded through the file upload API by
-        identifying the allowable extensions. It is a list of comma-separated 
+        identifying the allowable extensions. It is a list of comma-separated
         extensions without dots. If this property is not
         specified, a default list is used. This is the default list: soe,
         sd, sde, odc, csv, txt, zshp, kmz, and geodatabase.
@@ -761,7 +958,7 @@ class ServerProperties(BaseServer):
 
       - WebContextURL -- Defines the web front end as seen by your users.
         Example: http://mycompany.com/gis
-    
+
     """
     _con = None
     _url = None
@@ -774,7 +971,7 @@ class ServerProperties(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -782,10 +979,10 @@ class ServerProperties(BaseServer):
         ------------------     --------------------------------------------------------------------
         connection             Required string. The connection string.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-        
+
         """
         super(ServerProperties, self).__init__(connection=connection,
                                                url=url)
@@ -804,18 +1001,18 @@ class ServerProperties(BaseServer):
     #----------------------------------------------------------------------
     def update(self, properties):
         """
-        This operation allows you to update the server properties. See the ServerProperties 
+        This operation allows you to update the server properties. See the ServerProperties
         class description for all possible properties.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         properties             Required string. A Python dictionary of server properties to be updated.
         ==================     ====================================================================
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/update"
         params = {
@@ -832,7 +1029,7 @@ class DirectoryManager(object):
     """
     A collection of all the server directories is listed under this
     resource.
-    
+
     You can add a new directory using the Register Directory operation. You
     can then configure GIS services to use one or more of these
     directories. If you no longer need the server directory, you must
@@ -855,7 +1052,7 @@ class DirectoryManager(object):
         items such as map images, tile caches, and geoprocessing results.
         In addition, some directories contain configurations that power the
         GIS services.
-        
+
         :return:
             A dictionary of this server directory configuration properties.
         """
@@ -871,43 +1068,43 @@ class DirectoryManager(object):
             jsapi_arcgis_sdk,
             serviceDirEnabled):
         """
-        Allows you to update the Services Directory configuration.  You can do such thing as 
-        enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer 
-        previews of services in the Services Directory so that they work with your own locally 
+        Allows you to update the Services Directory configuration.  You can do such thing as
+        enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
+        previews of services in the Services Directory so that they work with your own locally
         hosted JavaScript API and map viewer.
-        
-        
+
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        allowed_origins          Required string. A comma-separated list of URLs of domains allowed to 
+        allowed_origins          Required string. A comma-separated list of URLs of domains allowed to
                                  make requests. An asterisk (*) can be used to denote all domains.
         --------------------     --------------------------------------------------------------------
-        arcgis_com_map           Required string. URL of the map viewer application used for service 
-                                 previews. Defaults to the ArcGIS.com map viewer but could be used 
+        arcgis_com_map           Required string. URL of the map viewer application used for service
+                                 previews. Defaults to the ArcGIS.com map viewer but could be used
                                  to point at your own Portal for ArcGIS map viewer.
         --------------------     --------------------------------------------------------------------
-        arcgis_com_map_text      Required string. The text to use for the preview link that opens 
+        arcgis_com_map_text      Required string. The text to use for the preview link that opens
                                  the map viewer.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis             Required string. The URL of the JavaScript API to use for service 
+        jsapi_arcgis             Required string. The URL of the JavaScript API to use for service
                                  previews. Defaults to the online ArcGIS API for JavaScript, but
                                  could be pointed at your own locally-installed instance of the
                                  JavaScript API.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis_css         Required string. The CSS file associated with the ArcGIS API for 
+        jsapi_arcgis_css         Required string. The CSS file associated with the ArcGIS API for
                                  JavaScript. Defaults to the online Dojo tundra.css.
         --------------------     --------------------------------------------------------------------
-        jsapi_arcgis_css2        Required string. An additional CSS file associated with the ArcGIS 
+        jsapi_arcgis_css2        Required string. An additional CSS file associated with the ArcGIS
                                  API for JavaScript. Defaults to the online esri.css.
         --------------------     --------------------------------------------------------------------
         jsapi_arcgis_sdk         Required string. The URL of the ArcGIS API for JavaScript help.
         --------------------     --------------------------------------------------------------------
-        service_dir_enabled      Required string. Flag to enable/disable the HTML view of the 
+        service_dir_enabled      Required string. Flag to enable/disable the HTML view of the
                                  services directory.
         ====================     ====================================================================
 
-          
+
         :return:
             A boolean indicating success (True).
 
@@ -923,7 +1120,7 @@ class DirectoryManager(object):
     def get(self, name):
         """
         Retrieves a single directory registered with ArcGIS Server.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -955,19 +1152,19 @@ class DirectoryManager(object):
         ------------------     --------------------------------------------------------------------
         directory_type         Required string. The type of server directory.
         ------------------     --------------------------------------------------------------------
-        max_age                Required integer. The length of time a file in the directory needs 
+        max_age                Required integer. The length of time a file in the directory needs
                                to be kept before it is deleted.
         ------------------     --------------------------------------------------------------------
-        cleanup_mode           Optional string. Defines if files in the server directory needs to 
+        cleanup_mode           Optional string. Defines if files in the server directory needs to
                                be cleaned up. The default is None.
         ------------------     --------------------------------------------------------------------
-        description            Optional string. An optional description for the server directory. 
+        description            Optional string. An optional description for the server directory.
                                The default is None.
         ==================     ====================================================================
-        
+
         :return:
             A boolean indicating success (True).
-        
+
         """
         return self._system._register(name, physicalPath, directoryType,
                                       maxFileAge, cleanupMode, description)
@@ -982,16 +1179,16 @@ class ServerDirectory(BaseServer):
     available on network shares, accessible to every machine in the site.
 
     The following directory types can be registered with the server:
-    
+
      - Output -- Stores various information generated by services, such as map
        images. Instances: One or more
-     - Cache -- Stores tile caches used by map, globe, and image services for 
+     - Cache -- Stores tile caches used by map, globe, and image services for
        rapid performance. Instances: One or more
      - Jobs -- Stores results and other information from geoprocessing
        services. Instances: One or more
      - System -- Stores files that are used internally by the GIS server.
-       Instances: One 
-      
+       Instances: One
+
     Server directories that contain output of various GIS
     services can be periodically cleaned to remove old unused files. By
     using the cleanup mode and maximum file age parameters, you control
@@ -1020,7 +1217,7 @@ class ServerDirectory(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -1028,10 +1225,10 @@ class ServerDirectory(BaseServer):
         ------------------     --------------------------------------------------------------------
         connection             Required string. The connection string.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-        
+
         """
         super(ServerDirectory, self).__init__(connection=connection,
                                               url=url)
@@ -1052,31 +1249,31 @@ class ServerDirectory(BaseServer):
         that are using this directory, causing them to restart. It is
         therefore recommended that any edit to the server directories be
         performed when the server is not under load.
-        
+
         This operation is mostly used when growing a single machine site to
         a multiple machine site configuration, which requires that the
         server directories and configuration store be put on a
         network-accessible file share.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         physical_path          Required string. The absolute physical path of the server directory.
         ------------------     --------------------------------------------------------------------
-        cleanup_mode           Optional string. Defines if files in the server directory needs to 
+        cleanup_mode           Optional string. Defines if files in the server directory needs to
                                be cleaned up. The default is None.
         ------------------     --------------------------------------------------------------------
-        max_age                Required integer. The length of time a file in the directory needs 
+        max_age                Required integer. The length of time a file in the directory needs
                                to be kept before it is deleted.
         ------------------     --------------------------------------------------------------------
-        description            Optional string. An optional description for the server directory. 
+        description            Optional string. An optional description for the server directory.
                                The default is None.
         ==================     ====================================================================
 
 
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/edit"
         params = {
@@ -1101,10 +1298,10 @@ class ServerDirectory(BaseServer):
         cleaner automatically cleans up the content within server
         directories at regular intervals. However, you can explicitly clean
         the directory by invoking this operation.
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/clean"
         params = {
@@ -1130,10 +1327,10 @@ class ServerDirectory(BaseServer):
         the local repository into the shared server directories location.
         The copied local repository will be from the machine in the site
         where the recover operation is performed.
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/recover"
         params = {'f': 'json'}
@@ -1145,10 +1342,10 @@ class ServerDirectory(BaseServer):
         Unregisters a server directory. Once a directory has been
         unregistered, it can no longer be referenced (used) from within a
         GIS service.
-        
+
         :return:
             A boolean indicating success (True).
-            
+
         """
         url = self._url + "/unregister"
         params = {
