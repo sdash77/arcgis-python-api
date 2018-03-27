@@ -169,12 +169,18 @@ class GIS(object):
         gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1",
                   password="password1", verify_cert=False)
 
+    .. code-block:: python
+
+        # Usage Example 5: Anonymous ArcGIS Online Login with Proxy
+
+        gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
 
     .. code-block:: python
-        USAGE EXAMPLE 5: Anonymous ArcGIS Online Login with Proxy
 
-    gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
+        # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
+        gis = GIS(url="https://pkienterprise.esri.com/portal",
+                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
 
     """
     _server_list = None
