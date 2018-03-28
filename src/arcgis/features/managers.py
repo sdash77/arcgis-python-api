@@ -169,11 +169,14 @@ class AttachmentManager(object):
                     "CONTENTTYPE" : data['contentType'],
                     "SIZE" : data['size'],
                     "KEYWORDS" : data['keywords'],
-                    "DOWNLOAD_URL" : "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path,
                     "IMAGE_PREVIEW" : preview
                 }
                 if 'globalId' in data:
-                    row["GLOBALID"] = data['globalId'],
+                    row["GLOBALID"] = data['globalId']
+                if as_df and show_images:
+                    row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
+                else:
+                    row["DOWNLOAD_URL"] = "%s" % att_path
                 rows.append(row)
                 del row
 
