@@ -1642,8 +1642,9 @@ class _WebMapDefinition(_TextItemDefinition):
                         feature_collection['itemId'] = self._clone_mapping['Item IDs'][feature_collection['itemId']]
 
                 for map_service_layer in map_service_layers:
+                    map_service_url = map_service_layer['url']
                     for original_url, new_service in self._clone_mapping['Services'].items():
-                        if _compare_url(feature_service_url, original_url):
+                        if _compare_url(map_service_url, original_url):
                             map_service_layer['url'] = new_service['url']
                             map_service_layer['itemId'] = new_service['id']
                             break
@@ -2892,6 +2893,8 @@ def _compare_url(url1, url2):
     url1 - The first url
     url2 - The second url"""
 
+    url1 = url1.rstrip("/")
+    url2 = url2.rstrip("/")
     url_parse1 = urlparse(url1)
     url_parse2 = urlparse(url2)
     return "{0}{1}".format(url_parse1.netloc.lower(), url_parse1.path.lower()) == "{0}{1}".format(url_parse2.netloc.lower(), url_parse2.path.lower())
