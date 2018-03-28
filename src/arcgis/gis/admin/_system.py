@@ -270,6 +270,83 @@ class System(BasePortalAdmin):
                   'languages' : value}
         self._con.post(path=url,
                        postdata=params)
+    #----------------------------------------------------------------------
+    @property
+    def content_configuration(self):
+        """
+        This resource allows an administrator to enable or disable external content discovery from the portal website.
+        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
+
+        - All basemaps owned by "esri_[lang]"
+        - All content owned by "esri_nav"
+        - All content owned by "esri"
+
+        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
+
+        When external content is disabled, System Languages are also disabled.
+        """
+        url = "%s/content/configuration" % self._url
+        params = {'f' : 'json'}
+        res = self._con.get(url, params)
+        return res["isExternalContentEnabled"]
+    #----------------------------------------------------------------------
+    @property
+    def content_configuration(self):
+        """
+        This resource allows an administrator to enable or disable external content discovery from the portal website.
+        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
+
+        - All basemaps owned by "esri_[lang]"
+        - All content owned by "esri_nav"
+        - All content owned by "esri"
+
+        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
+
+        When external content is disabled, System Languages are also disabled.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  required Boolean. If true, external content is enabled, else it is
+                               disabled.
+        ==================     ====================================================================
+
+        :returns: boolean
+
+        """
+        url = "%s/content/configuration" % self._url
+        params = {'f' : 'json'}
+        res = self._con.get(url, params)
+        return res["isExternalContentEnabled"]
+    #----------------------------------------------------------------------
+    @content_configuration.setter
+    def content_configuration(self, value):
+        """
+        This resource allows an administrator to enable or disable external content discovery from the portal website.
+        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
+
+        - All basemaps owned by "esri_[lang]"
+        - All content owned by "esri_nav"
+        - All content owned by "esri"
+
+        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
+
+        When external content is disabled, System Languages are also disabled.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  required Boolean. If true, external content is enabled, else it is
+                               disabled.
+        ==================     ====================================================================
+
+        """
+        import json
+        url = "%s/content/configuration/update" % self._url
+        params = {'f' : 'json',
+                  'externalContentEnabled': json.dumps(value)}
+        res = self._con.post(url, params)
+
 ########################################################################
 class WebAdaptors(BasePortalAdmin):
     """

@@ -253,6 +253,41 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """constructor for class as per Pandas' github page"""
         return SpatialDataFrame
     #----------------------------------------------------------------------
+    def info(self, verbose=None, buf=None, max_cols=None, memory_usage=None, null_counts=None):
+        """
+        Concise summary of a DataFrame.
+
+        Parameters
+        ----------
+        verbose : {None, True, False}, optional
+            Whether to print the full summary.
+            None follows the `display.max_info_columns` setting.
+            True or False overrides the `display.max_info_columns` setting.
+        buf : writable buffer, defaults to sys.stdout
+        max_cols : int, default None
+            Determines whether full summary or short summary is printed.
+            None follows the `display.max_info_columns` setting.
+        memory_usage : boolean/string, default None
+            Specifies whether total memory usage of the DataFrame
+            elements (including index) should be displayed. None follows
+            the `display.memory_usage` setting. True or False overrides
+            the `display.memory_usage` setting. A value of 'deep' is equivalent
+            of True, with deep introspection. Memory usage is shown in
+            human-readable units (base-2 representation).
+        null_counts : boolean, default None
+            Whether to show the non-null counts
+
+            - If None, then only show if the frame is smaller than
+              max_info_rows and max_info_columns.
+            - If True, always show counts.
+            - If False, never show counts.
+
+        """
+        cols = list(self.columns)
+        cols.pop(cols.index("SHAPE"))
+        return self[cols].info(verbose, buf, max_cols,
+                               memory_usage, null_counts)
+    #----------------------------------------------------------------------
     def _sr(self, sr):
         """sets the spatial reference"""
         if isinstance(sr, _types.SpatialReference):
