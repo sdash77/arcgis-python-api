@@ -601,6 +601,8 @@ class WebMap(collections.OrderedDict):
         """
 
         if self.item is not None:
+            if item_properties is None:
+                item_properties = {}
             item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
             item_properties['extent'] = self._process_extent()
             if 'type' in item_properties:

@@ -270,6 +270,57 @@ class Test_WebMap_AGO(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_update_webmap_empty_item_properties(self):
+        """
+        Update an existing web map with empty item properties dictionary.
+        :return:
+        """
+        try:
+            wm_obj = WebMap()
+
+            # flc_item = self.gis.content.get('99fd67933e754a1181cc755146be21ca')
+            flc_item = self.gis.content.get('36ed2b2b92bc4131af4a08634bbfa115')
+
+            # add item
+            wm_obj.add_layer(flc_item)
+            self.assertTrue(hasattr(wm_obj.definition, 'operationalLayers'),
+                            'Adding a layer does not create operationalLayers')
+            self.assertEqual(len(flc_item.layers), len(wm_obj.definition.operationalLayers))
+            self.assertEqual(len(flc_item.layers), len(wm_obj.layers))
+
+            # save web map
+            wmitem = wm_obj.save({'title': self.test_case_name,
+                                  'snippet': "automation",
+                                  'tags': "dev"})
+            self.assertIsInstance(wmitem, arcgis.gis.Item)
+
+            # update the web map by removing one of the layers.
+            wm_obj2 = WebMap(wmitem)
+
+            original_layers = wm_obj2.layers
+            self.assertEqual(len(flc_item.layers), len(original_layers), "Saved Web map does not have 3 layers")
+
+            wm_obj2.remove_layer(wm_obj2.layers[0])
+            wm_obj2.update()
+
+            wm_obj3 = WebMap(wmitem)
+            updated_layers = wm_obj3.layers
+            self.assertEqual(len(flc_item.layers)-1, len(updated_layers), "Web map was not correctly updated")
+
+            # all is well, delete the web map now
+            wmitem.delete()
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_add_allsupported_layertypes(self):
         """
         Compose a new web map with many operational layers. Add all supported layer types
