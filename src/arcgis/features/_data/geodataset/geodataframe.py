@@ -1319,12 +1319,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         Returns a SpatialDataFrame/Pandas' Dataframe from a FeatureLayer or Table object.
 
         ==============   ==============================================================
-        layer            required FeatureLayer/Table. This is the service endpoint object.
+        **Arguments**    **Description**
         --------------   --------------------------------------------------------------
-        GIS              required GIS.  The object to connect to a site.
+        layer            required FeatureLayer/Table. This is the service endpoint object.
         ==============   ==============================================================
 
-        :returns: SpatialDataFrame for services with geometry and Panda's Dataframe for table services.
+        :returns: SpatialDataFrame for feature layers with geometry and Panda's Dataframe for tables
+
         """
         from .io import from_layer
         return from_layer(layer=layer, **kwargs)

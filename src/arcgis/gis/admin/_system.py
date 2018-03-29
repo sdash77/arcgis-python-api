@@ -272,26 +272,7 @@ class System(BasePortalAdmin):
                        postdata=params)
     #----------------------------------------------------------------------
     @property
-    def content_configuration(self):
-        """
-        This resource allows an administrator to enable or disable external content discovery from the portal website.
-        Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
-
-        - All basemaps owned by "esri_[lang]"
-        - All content owned by "esri_nav"
-        - All content owned by "esri"
-
-        This resource will not disable ArcGIS Online utility services or Living Atlas content. For steps to disable these items, refer to the Portal Administrator guide.
-
-        When external content is disabled, System Languages are also disabled.
-        """
-        url = "%s/content/configuration" % self._url
-        params = {'f' : 'json'}
-        res = self._con.get(url, params)
-        return res["isExternalContentEnabled"]
-    #----------------------------------------------------------------------
-    @property
-    def content_configuration(self):
+    def content_discovery(self):
         """
         This resource allows an administrator to enable or disable external content discovery from the portal website.
         Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
@@ -319,8 +300,8 @@ class System(BasePortalAdmin):
         res = self._con.get(url, params)
         return res["isExternalContentEnabled"]
     #----------------------------------------------------------------------
-    @content_configuration.setter
-    def content_configuration(self, value):
+    @content_discovery.setter
+    def content_discovery(self, value):
         """
         This resource allows an administrator to enable or disable external content discovery from the portal website.
         Because some Esri-provided content requires external access to the internet, an administrator may choose to disable the content to prevent requests to ArcGIS Online resources. When disabling the content, a select group of items will be disabled:
