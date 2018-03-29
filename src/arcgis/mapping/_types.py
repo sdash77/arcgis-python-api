@@ -421,8 +421,17 @@ class WebMap(collections.OrderedDict):
             self.definition = (PropertyMap(self._webmapdict))
         # endregion
 
-        # update layers
-        self._layers.append(PropertyMap(new_layer))
+        # update layers property
+        if not self._layers:
+            self._layers = []
+            for l in self._webmapdict['operationalLayers']:
+                self._layers.append(PropertyMap(l))
+
+            #reverse the layer list - webmap viewer reverses the list always
+            self._layers.reverse()
+        else:
+            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+            self._layers.append(PropertyMap(new_layer))
         return True
 
     def _process_extent(self):
