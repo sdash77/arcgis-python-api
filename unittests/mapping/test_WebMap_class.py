@@ -129,7 +129,7 @@ class Test_WebMap_AGO(unittest.TestCase):
     def test_WebMap_obj_from_item(self):
         try:
             #search for a web map and test instantiating a WebMap object
-            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demograhic_map", "Web Map")
+            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demographic_map", "Web Map")
             if search_result:
                 wm_item = search_result
             else:
@@ -197,6 +197,46 @@ class Test_WebMap_AGO(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_layer_simple_FL_existing_wm(self):
+        """
+        Compose a new web map with one operational layer.
+        :return:
+        """
+        try:
+            # get existing web map with 2 layers.
+            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demographic_map2", "Web Map")
+            if search_result:
+                wm_item = search_result
+            else:
+                self.skipTest('Unable to find required webmap item')
+
+            wm_obj = WebMap(wm_item)
+
+            # region: Bug: Call add layers without inspecting list of layers
+
+            # use a hosted feature service layer for operational layer
+            from arcgis.features import FeatureLayer
+            fl = FeatureLayer(
+                url='https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities/FeatureServer/0',
+                gis=self.gis)
+
+            #add operational layer
+            wm_obj.add_layer(fl)
+            self.assertEqual(3, len(wm_obj.layers), "Error adding layer to existing web map")
+            #endregion
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_add_multilayer_FLC_Item(self):
