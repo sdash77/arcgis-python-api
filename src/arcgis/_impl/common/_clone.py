@@ -1095,7 +1095,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Add the related features to the layer in chunks
                 add_results = []
-                for features_chunk in [related_layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
+                for features_chunk in [related_layer_features[i:i+chunk_size] for i in range(0, len(related_layer_features), chunk_size)]:
                     edits = layers[related_layer_id].edit_features(adds=features_chunk)
                     add_results += edits['addResults']
                 layer_ids.remove(related_layer_id)
@@ -1120,27 +1120,28 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             layer_id = properties['id']
             if 'hasAttachments' in properties and properties['hasAttachments']:
                 if str(layer_id) in features and features[str(layer_id)] is not None:
-                    original_attachments = original_layer.attachments
-                    attachments = layers[layer_id].attachments
+                    original_attachment_manager = original_layer.attachments
+                    attachment_manager = layers[layer_id].attachments
                     object_id_field = layers[layer_id].properties['objectIdField']
                     layer_features = features[str(layer_id)]
                     if layer_id not in object_id_mapping:
                         continue
 
-                    for feature in layer_features:
-                        original_oid = feature['attributes'][object_id_field]
-                        if original_oid not in object_id_mapping[layer_id]:
-                            continue
+                    attachments = original_attachment_manager.search()
+                    if len(attachments) > 0:
+                        temp_dir = os.path.join(self._temp_dir.name, 'attachments')
+                        if not os.path.exists(temp_dir):
+                            os.makedirs(temp_dir)
 
-                        oid = object_id_mapping[layer_id][original_oid]
-                        attachment_infos = original_attachments.get_list(original_oid)
-                        if len(attachment_infos) > 0:
-                            temp_dir = os.path.join(self._temp_dir.name, 'attachments')
-                            if not os.path.exists(temp_dir):
-                                os.makedirs(temp_dir)
-                            for attachment_info in attachment_infos:
-                                attachment_file = original_attachments.download(original_oid, attachment_info['id'], temp_dir)
-                                attachments.add(oid, attachment_file)
+                        for attachment in attachments:
+                            original_oid = _deep_get(attachment, 'PARENTOBJECTID')
+                            if original_oid not in object_id_mapping[layer_id]:
+                                continue
+
+                            oid = object_id_mapping[layer_id][original_oid]
+                            attachment_files = original_attachment_manager.download(original_oid, attachment['ID'], temp_dir)
+                            if len(attachment_files) > 0:
+                                attachment_manager.add(oid, attachment_files[0])
 
     def _get_unique_name(self, target, name, force_add_guid_suffix=False):
         """Create a new unique name for the service.
