@@ -2894,6 +2894,9 @@ def _compare_url(url1, url2):
     url1 - The first url
     url2 - The second url"""
 
+    if url1 is None or url2 is None:
+       return False
+
     url1 = url1.rstrip("/")
     url2 = url2.rstrip("/")
     url_parse1 = urlparse(url1)
