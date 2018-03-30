@@ -639,7 +639,7 @@ class GIS(object):
         return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
-        """Updates the GIS's properties from those in properties_dict. This method can be useful 
+        """Updates the GIS's properties from those in properties_dict. This method can be useful
         for updating the utility services used by the GIS.
 
 
@@ -674,7 +674,7 @@ class GIS(object):
               "zoomScale": 10000}]}
 
             gis.update_properties(upd)
-    
+
         """
         postdata = self._portal._postdata()
         postdata.update(properties_dict)
@@ -2239,7 +2239,6 @@ class ContentManager(object):
             return Item(self._gis, itemid)
         else:
             return None
-
     #----------------------------------------------------------------------
     def analyze(self,
                 url=None,
@@ -3101,7 +3100,7 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
-    def replace_service(self, replace_item, new_item, replaced_service_name):
+    def replace_service(self, replace_item, new_item, replaced_service_name=None):
         """
         The replace_service operation allows you to replace vector tile
         layers. The replace_service operation on vector tile layers allows
@@ -3127,24 +3126,121 @@ class ContentManager(object):
         ----------------------  ----------------------------------------------------------------------
         new_item                Required Item or Item's Id as string. The replacement service.
         ----------------------  ----------------------------------------------------------------------
-        replaced_service_name   Required string. The name of the replacement service.
+        replaced_service_name   Optional string. The name of the replacement service.
         ======================  ======================================================================
 
         :returns: boolean
         """
         user = self._gis.users.me
-        isinstance(user, User)
-        isinstance(self._portal, portalpy.Portal)
         url = "%s/content/%s/replaceService" % (self._portal.resturl, user.username)
         params = {
             'toReplaceItemId' : replace_item,
-            'replacementItemId' : new_item,
-            'replacedServiceName' : replaced_service_name
+            'replacementItemId' : new_item
         }
+        if not replaced_service_name is None:
+            params['replacedServiceName'] = replaced_service_name
         res = self._gis._con.post(path=url, postdata=params)
         if 'success' in res:
             return res['success']
         return False
+    #----------------------------------------------------------------------
+    def copy(self, item, title=None, tags=None, snippet=None, description=None, layers=None):
+        """
+        Copy allows for the creation of Items that reference service data from another item.
+        Copy only applies to service data.
+
+        If title, tags, snippet of description is not provided the values from `item` will be used.
+
+        Copy use example:
+
+            + Vector tile service sprite customization
+            + Limiting feature service exposure
+            + Sharing content by reference with groups
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        item                       required Item.  This is the item to create the copy from.
+        -----------------------    -------------------------------------------------------------
+        title                      Optional string. The name of the new item.
+        -----------------------    -------------------------------------------------------------
+        tags                       Optional list of string. Descriptive words that help in the
+                                   searching and locating of the published information.
+        -----------------------    -------------------------------------------------------------
+        snippet                    Optional string. A brief summary of the information being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        description                Optional string. A long description of the Item being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        layers                     Optional list of integers.  If you have a layer with multiple
+                                   and you only want specific layers, an index can be provided
+                                   those layers.  If nothing is provided, all layers will be
+                                   visible.
+
+                                   Example: layers=[0,3]
+                                   Example 2: layers=[9]
+        =======================    =============================================================
+
+        :returns: Item
+
+        """
+        allowed_types = ["Vector Tile Service","Scene Service",
+                         "Image Service","Map Service",
+                         "Feature Service"]
+        if not item.type in allowed_types:
+            raise ValueError("Item of type: %s is not supported, copy only works with: %s" % (
+                item.type,
+                ",".join(allowed_types)
+            ))
+        from datetime import timezone
+        from uuid import uuid4
+        now = datetime.now(timezone.utc)
+        params = {
+            'f' : 'json',
+            'item' : item.title.replace(" ", "_") + "-_copy_%s" % int(now.timestamp() * 1000),
+            'type' :item.type,
+            'url' : item.url
+        }
+        if title is None:
+            title = item.title + " - Copy %s" % uuid4().hex[:6]
+        if tags is None:
+            tags = item.tags
+        if snippet is None:
+            snippet = item.snippet
+        if description is None:
+            description = item.description
+        params['title'] = title
+        params['tags'] = ",".join(tags)
+        params['snippet'] = snippet
+        params['description'] = description
+        if not layers is None:
+            text = {
+                "layers": []
+            }
+            lyrs = item.layers
+            for idx, lyr in enumerate(lyrs):
+                if idx in layers:
+                    text['layers'].append({
+                        "layerDefinition": {
+                            "defaultVisibility": True
+                            },
+                        "id": idx
+                    })
+            params['text'] = text
+        url = "%s/content/users/%s/addItem" % (self._gis._portal.resturl,
+                                               self._gis.users.me.username)
+        res = self._gis._con.post(url,
+                                  params)
+        if 'id' in res:
+            itemid = res['id']
+        else:
+            return None
+
+        if itemid is not None:
+            return Item(self._gis, itemid)
+        else:
+            return None
 
 class ResourceManager(object):
     """
