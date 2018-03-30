@@ -125,7 +125,64 @@ class ServiceManager(BaseServer):
 
         return self._services_list()
     #----------------------------------------------------------------------
-    #@property
+    def _export_services(self, folder):
+        """
+        Export services allows for the backup and storage of non-hosted services.
+
+        =================   ====================================================
+        **Argument**        **Description**
+        -----------------   ----------------------------------------------------
+        folder              required string.  This is the path to the save folder.
+                            The ArcGIS Account must have access to the location
+                            to write the backup file.
+        =================   ====================================================
+
+        :returns: string to the save location.
+
+        """
+        if os.path.isdir(folder) == False:
+            os.makedirs(folder)
+        url = self._url + "/exportServices"
+        params = {
+            "f" : "json",
+            "location" : folder,
+            "csrfPreventToken" : self._con.token
+        }
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'location' in res:
+            return res['location']
+        return None
+    #----------------------------------------------------------------------
+    def _import_services(self, file_path):
+        """
+        Import services allows for the backup and storage of non-hosted services.
+
+        =================   ====================================================
+        **Argument**        **Description**
+        -----------------   ----------------------------------------------------
+        file_path           required string.  File path with extension
+                            .agssiteservices.
+        =================   ====================================================
+
+        :returns: boolean
+
+        """
+        if os.path.isdir(folder) == False:
+            os.makedirs(folder)
+        url = self._url + "/importServices"
+        params = {
+            "f" : "json",
+            "csrfPreventToken" : self._con.token
+        }
+        files = {'location' : file_path}
+        res = self._con.post(path=url,
+                             files=files,
+                             postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def _services_list(self):
         """ returns the services in the current folder """
         self._services = []
