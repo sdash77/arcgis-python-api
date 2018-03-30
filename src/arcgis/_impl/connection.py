@@ -696,7 +696,8 @@ class _ArcGISConnection(object):
         if not force_bytes and \
            (maintype.lower() in ('image', 'application/x-zip-compressed') or \
             contentType == 'application/x-zip-compressed' or \
-           (contentDisposition is not None and contentDisposition.lower().find('attachment;') > -1)):
+           (contentDisposition is not None and contentDisposition.lower().find('attachment;') > -1)) or \
+           (contentDisposition is not None and contentDisposition.find("filename=") > -1):
             fname = self._get_file_name(contentDisposition=contentDisposition, url=resp.geturl()).split('?')[0]
             if out_folder is None:
                 out_folder = tempfile.gettempdir()
