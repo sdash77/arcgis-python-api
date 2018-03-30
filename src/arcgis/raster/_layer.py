@@ -2031,7 +2031,21 @@ class ImageryLayer(Layer):
         if not out_fields is None:
             params["outFields"] = out_fields
 
-        return self._con.get(url, params, token=self._token)['samples']
+        sample_data = self._con.get(url, params, token=self._token)['samples']
+        from copy import deepcopy
+        new_sample_data = deepcopy(sample_data)
+        # region: Try to convert values to list of numbers if it makes sense
+        try:
+            for element in new_sample_data:
+                if 'value' in element and isinstance(element['value'], str):
+                    pix_values_numbers = [float(s) for s in element['value'].split(' ')]
+                    element['values'] = pix_values_numbers
+            sample_data = new_sample_data
+        except:
+            pass  # revert and return the original data as is.
+
+        # endregion
+        return sample_data
 
     def key_properties(self, rendering_rule=None):
         """

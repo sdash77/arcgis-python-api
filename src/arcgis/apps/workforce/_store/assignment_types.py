@@ -1,8 +1,6 @@
 """ Defines store functions for working with AssignmentTypes.
 """
 
-from arcgis.features import FeatureLayer
-
 from ... import workforce
 from .utils import validate
 
@@ -35,7 +33,7 @@ def add_assignment_type(project, coded_value=None, name=None):
     Adds a new assignment type
     """
     assignment_type = workforce.AssignmentType(project, coded_value, name)
-    return add_assignment_types(project, [assignment_type])
+    return add_assignment_types(project, [assignment_type])[0]
 
 
 def add_assignment_types(project, assignment_types):

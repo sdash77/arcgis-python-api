@@ -1,6 +1,6 @@
 """ Defines store functions for working with Attachments.
 """
-import os
+
 from ... import workforce
 
 

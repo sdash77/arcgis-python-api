@@ -54,12 +54,7 @@ def add_dispatcher(project, feature=None, contact_number=None, name=None, user_i
                                       name,
                                       user_id
                                       )
-    use_global_ids = True
-    validate(dispatcher._validate_for_add)
-    if dispatcher.global_id is None:
-        use_global_ids = False
-
-    return add_features(project.dispatchers_layer, [dispatcher.feature], use_global_ids)[0]
+    return add_dispatchers(project, [dispatcher])[0]
 
 
 def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_id=None):

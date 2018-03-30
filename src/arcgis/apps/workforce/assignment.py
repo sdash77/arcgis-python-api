@@ -1,6 +1,5 @@
 """ Defines the Assignment object.
 """
-import arcgis
 from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from .managers import *
