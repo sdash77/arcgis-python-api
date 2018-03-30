@@ -6595,7 +6595,7 @@ class Item(dict):
         """
         Copy allows for the creation of an item that is derived from the current item.
 
-        For services, `copy` will create a new item that uses the URL as a reference.
+        For layers, `copy` will create a new item that uses the URL as a reference.
         For non-service based items, these will be copied and the exact same data will be
         provided.
 
@@ -6607,13 +6607,13 @@ class Item(dict):
             + Vector tile service sprite customization
             + Limiting feature service exposure
             + Sharing content by reference with groups
-            + Creating creating backup items.
+            + Creating backup items.
 
         **Usage Example**
 
         >>> item.copy()
         <Item title:"gisslideshow - Copy 94452b" type:Microsoft Powerpoint owner:geoguy>
-        >>> item.copy(title="GIS_Tutorial)
+        >>> item.copy(title="GIS_Tutorial")
         <Item title:"GIS_Tutorial" type:Microsoft Powerpoint owner:geoguy>
         >>> item.copy()
         <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
