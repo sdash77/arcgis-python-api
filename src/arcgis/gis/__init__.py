@@ -6596,7 +6596,7 @@ class Item(dict):
         Copy allows for the creation of an item that is derived from the current item.
 
         For layers, `copy` will create a new item that uses the URL as a reference.
-        For non-service based items, these will be copied and the exact same data will be
+        For non-layer based items, these will be copied and the exact same data will be
         provided.
 
 
