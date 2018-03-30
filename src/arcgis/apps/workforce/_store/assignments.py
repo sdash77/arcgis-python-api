@@ -1,9 +1,7 @@
 """ Defines store functions for working with assignments.
 """
 
-import arcgis
 from ... import workforce
-from .assignment_types import get_assignment_types
 from .dispatchers import query_dispatchers
 from .utils import add_features, remove_features, update_features, validate
 
@@ -72,7 +70,8 @@ def add_assignments(project, assignments):
             use_global_ids = False
 
     features = [assignment.feature for assignment in assignments]
-    return add_features(project.assignments_layer, features, use_global_ids)
+    add_features(project.assignments_layer, features, use_global_ids)
+    return assignments
 
 
 def add_assignment(project, feature=None, geometry=None, assignment_type=None,
@@ -105,12 +104,8 @@ def add_assignment(project, feature=None, geometry=None, assignment_type=None,
                                       work_order_id,
                                       worker
                                       )
-    use_global_ids = True
-    validate(assignment._validate_for_add)
-    if assignment.global_id is None:
-        use_global_ids = False
 
-    return add_features(project.assignments_layer, [assignment.feature], use_global_ids)[0]
+    return add_assignments(project, [assignment])[0]
 
 
 def update_assignments(project, assignments):
@@ -124,7 +119,8 @@ def update_assignments(project, assignments):
     for assignment in assignments:
         validate(assignment._validate_for_update)
     features = [assignment.feature for assignment in assignments]
-    return update_features(project.assignments_layer, features)
+    update_features(project.assignments_layer, features)
+    return assignments
     
     
 def update_assignment(project, assignment, geometry=None, assignment_type=None,

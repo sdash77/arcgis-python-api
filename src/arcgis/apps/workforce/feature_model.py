@@ -6,7 +6,6 @@ from arcgis.features import Feature
 from .exceptions import ValidationError
 from .model import Model
 from .utils import to_arcgis_date, from_arcgis_date
-from ._schemas import DispatcherSchema
 
 
 class FeatureModel(Model):
