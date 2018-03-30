@@ -3143,104 +3143,7 @@ class ContentManager(object):
         if 'success' in res:
             return res['success']
         return False
-    #----------------------------------------------------------------------
-    def copy(self, item, title=None, tags=None, snippet=None, description=None, layers=None):
-        """
-        Copy allows for the creation of Items that reference service data from another item.
-        Copy only applies to service data.
 
-        If title, tags, snippet of description is not provided the values from `item` will be used.
-
-        Copy use example:
-
-            + Vector tile service sprite customization
-            + Limiting feature service exposure
-            + Sharing content by reference with groups
-
-        =======================    =============================================================
-        **Argument**               **Description**
-        -----------------------    -------------------------------------------------------------
-        item                       required Item.  This is the item to create the copy from.
-        -----------------------    -------------------------------------------------------------
-        title                      Optional string. The name of the new item.
-        -----------------------    -------------------------------------------------------------
-        tags                       Optional list of string. Descriptive words that help in the
-                                   searching and locating of the published information.
-        -----------------------    -------------------------------------------------------------
-        snippet                    Optional string. A brief summary of the information being
-                                   published.
-        -----------------------    -------------------------------------------------------------
-        description                Optional string. A long description of the Item being
-                                   published.
-        -----------------------    -------------------------------------------------------------
-        layers                     Optional list of integers.  If you have a layer with multiple
-                                   and you only want specific layers, an index can be provided
-                                   those layers.  If nothing is provided, all layers will be
-                                   visible.
-
-                                   Example: layers=[0,3]
-                                   Example 2: layers=[9]
-        =======================    =============================================================
-
-        :returns: Item
-
-        """
-        allowed_types = ["Vector Tile Service","Scene Service",
-                         "Image Service","Map Service",
-                         "Feature Service"]
-        if not item.type in allowed_types:
-            raise ValueError("Item of type: %s is not supported, copy only works with: %s" % (
-                item.type,
-                ",".join(allowed_types)
-            ))
-        from datetime import timezone
-        from uuid import uuid4
-        now = datetime.now(timezone.utc)
-        params = {
-            'f' : 'json',
-            'item' : item.title.replace(" ", "_") + "-_copy_%s" % int(now.timestamp() * 1000),
-            'type' :item.type,
-            'url' : item.url
-        }
-        if title is None:
-            title = item.title + " - Copy %s" % uuid4().hex[:6]
-        if tags is None:
-            tags = item.tags
-        if snippet is None:
-            snippet = item.snippet
-        if description is None:
-            description = item.description
-        params['title'] = title
-        params['tags'] = ",".join(tags)
-        params['snippet'] = snippet
-        params['description'] = description
-        if not layers is None:
-            text = {
-                "layers": []
-            }
-            lyrs = item.layers
-            for idx, lyr in enumerate(lyrs):
-                if idx in layers:
-                    text['layers'].append({
-                        "layerDefinition": {
-                            "defaultVisibility": True
-                            },
-                        "id": idx
-                    })
-            params['text'] = text
-        url = "%s/content/users/%s/addItem" % (self._gis._portal.resturl,
-                                               self._gis.users.me.username)
-        res = self._gis._con.post(url,
-                                  params)
-        if 'id' in res:
-            itemid = res['id']
-        else:
-            return None
-
-        if itemid is not None:
-            return Item(self._gis, itemid)
-        else:
-            return None
 
 class ResourceManager(object):
     """
@@ -6687,7 +6590,183 @@ class Item(dict):
         except:
             return []
         return ps
+    #----------------------------------------------------------------------
+    def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
+        """
+        Copy allows for the creation of an item that is derived from the current item.
 
+        For services, `copy` will create a new item that uses the URL as a reference.
+        For non-service based items, these will be copied and the exact same data will be
+        provided.
+
+
+        If title, tags, snippet of description is not provided the values from `item` will be used.
+
+        Copy use example:
+
+            + Vector tile service sprite customization
+            + Limiting feature service exposure
+            + Sharing content by reference with groups
+            + Creating creating backup items.
+
+        **Usage Example**
+
+        >>> item.copy()
+        <Item title:"gisslideshow - Copy 94452b" type:Microsoft Powerpoint owner:geoguy>
+        >>> item.copy(title="GIS_Tutorial)
+        <Item title:"GIS_Tutorial" type:Microsoft Powerpoint owner:geoguy>
+        >>> item.copy()
+        <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
+
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        title                      Optional string. The name of the new item.
+        -----------------------    -------------------------------------------------------------
+        tags                       Optional list of string. Descriptive words that help in the
+                                   searching and locating of the published information.
+        -----------------------    -------------------------------------------------------------
+        snippet                    Optional string. A brief summary of the information being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        description                Optional string. A long description of the Item being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        layers                     Optional list of integers.  If you have a layer with multiple
+                                   and you only want specific layers, an index can be provided
+                                   those layers.  If nothing is provided, all layers will be
+                                   visible.
+
+                                   Example: layers=[0,3]
+                                   Example 2: layers=[9]
+        =======================    =============================================================
+
+        :returns: Item
+
+        """
+        TEXT_BASED_ITEM_TYPES = ['Web Map', 'Web Scene','360 VR Experience',
+                                 'Operation View', 'Workforce Project',
+                                 'Insights Model', 'Insights Page', 'Dashboard',
+                                 'Feature Collection', 'Insights Workbook',
+                                 'Feature Collection Template', 'Hub Initiative',
+                                 'Hub Site Application', 'Hub Page',
+                                 'Web Mapping Application', 'Mobile Application',
+                                 'Symbol Set', 'Color Set', 'Content Category Set',
+                                 'Windows Viewer Configuration']
+        FILE_BASED_ITEM_TYPES = ['CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
+                                 'Code Attachment', 'Operations Dashboard Add In',
+                                 'Native Application', 'Native Application Template', 'KML',
+                                 'Native Application Installer', 'Form', 'AppBuilder Widget Package',
+                                 'File Geodatabase','CSV', 'Image',  'Locator Package',
+                                 'Map Document', 'Shapefile', 'Microsoft Word', 'PDF',
+                                 'CAD Drawing', 'Service Definition', 'Image',
+                                 'Visio Document', 'iWork Keynote', 'iWork Pages',
+                                 'iWork Numbers', 'Report Template', 'Statistical Data Collection',
+                                 'SQLite Geodatabase', 'Mobile Basemap Package', 'Project Package',
+                                 'Task File', 'ArcPad Package', 'Explorer Map', 'Globe Document',
+                                 'Scene Document', 'Published Map', 'Map Template', 'Windows Mobile Package',
+                                 'Layout', 'Project Template', 'Layer', 'Explorer Package',
+                                 'Image Collection', 'Desktop Style', 'Geoprocessing Sample',
+                                 'Locator Package', 'Rule Package', 'Raster function template',
+                                 'ArcGIS Pro Configuration', 'Workflow Manager Package',
+                                 'Desktop Application', 'Desktop Application Template',
+                                 'Code Sample', 'Desktop Add In', 'Explorer Add In', 'ArcGIS Pro Add In',
+                                 'Microsoft Powerpoint', 'Microsoft Excel', 'Layer Package',
+                                 'Mobile Map Package', 'Geoprocessing Package', 'Scene Package',
+                                 'Tile Package', 'Vector Tile Package']
+        SERVICE_BASED_ITEM_TYPES = ["Vector Tile Service","Scene Service", 'WMS', 'WFS', 'WMTS',
+                                    'Geodata Service', 'Globe Service', 'Scene Service',
+                                    'Relational Database Connection',
+                                    'AppBuilder Extension', 'Document Link',
+                                    'Geometry Service', 'Geocoding Service',
+                                    'Network Analysis Service', 'Geoprocessing Service',
+                                    'Workflow Manager Service', "Image Service",
+                                    "Map Service", "Feature Service"]
+        item = self
+        from datetime import timezone
+        from uuid import uuid4
+        now = datetime.now(timezone.utc)
+        if title is None:
+            title = item.title + " - Copy %s" % uuid4().hex[:6]
+        if tags is None:
+            tags = item.tags
+        if snippet is None:
+            snippet = item.snippet
+        if description is None:
+            description = item.description
+
+        if item.type in SERVICE_BASED_ITEM_TYPES or \
+           item.type == 'KML' and item.url is not None:
+            params = {
+                'f' : 'json',
+                'item' : item.title.replace(" ", "_") + "-_copy_%s" % int(now.timestamp() * 1000),
+                'type' :item.type,
+                'url' : item.url
+            }
+
+            params['title'] = title
+            params['tags'] = ",".join(tags)
+            params['snippet'] = snippet
+            params['description'] = description
+            if not layers is None:
+                text = {
+                    "layers": []
+                }
+                lyrs = item.layers
+                for idx, lyr in enumerate(lyrs):
+                    if idx in layers:
+                        text['layers'].append({
+                            "layerDefinition": {
+                                "defaultVisibility": True
+                                },
+                            "id": idx
+                        })
+                params['text'] = text
+            url = "%s/content/users/%s/addItem" % (self._gis._portal.resturl,
+                                                   self._gis.users.me.username)
+            res = self._gis._con.post(url,
+                                      params)
+            if 'id' in res:
+                itemid = res['id']
+            else:
+                return None
+
+            if itemid is not None:
+                return Item(self._gis, itemid)
+            else:
+                return None
+        elif item.type in FILE_BASED_ITEM_TYPES:
+            fp = self.get_data()
+            sfp = os.path.split(fp)
+            fname, ext = os.path.splitext(sfp[1])
+            nfp = os.path.join(sfp[0],
+                               "%s_%s.%s" % (fname, uuid4().hex[:5], ext))
+            os.rename(fp, nfp)
+            ip = {
+                'type' : item.type,
+                'tags' : ",".join(item.tags),
+                'snippet' : snippet,
+                'description' : description,
+                'title' : title
+            }
+            item = self._gis.content.add(item_properties=ip, data=nfp)
+            os.remove(nfp)
+            return item
+        elif item.type in TEXT_BASED_ITEM_TYPES:
+            data = self.get_data()
+            ip = {
+                'type' : item.type,
+                'tags' : ",".join(item.tags),
+                'snippet' : snippet,
+                'description' : description,
+                'text' : data,
+                'title' : title
+            }
+            return self._gis.content.add(item_properties=ip)
+        else:
+            raise ValueError("Item of type: %s is not supported by copy" % (item.type))
+        return
 
 def rot13(s, b64=False, of=False):
     if s is None:
