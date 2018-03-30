@@ -75,24 +75,24 @@ def buffer(features, buffer_distance_or_field, line_side='full', line_end_type='
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     buffer_distance_or_field              Required Linear unit or Field. Distance [value or field]
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     buffer_distance_or_field              Required GPComposite. Distance [value or field]
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_end_type                         Optional GPString. End Type. Default value: round. Value choices: round, flat
+     line_end_type                         Optional String. End Type. Default value: round. Value choices: round, flat
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     method                                Optional GPString. Method. Default value: planar. Value choices: geodesic, planar
+     method                                Optional String. Method. Default value: planar. Value choices: geodesic, planar
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dissolve_option                       Optional GPString. Dissolve Type. Default value: none. Value choices: none, all, list
+     dissolve_field                        Optional Multiple Value. Dissolve Field(s). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_side                             Optional GPString. Side Type. Default value: full. Value choices: full, left, right, outside_only
+     line_side                             Optional String. Side Type. Default value: full. Value choices: full, left, right, outside_only
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dissolve_field                        Optional GPMultiValue. Dissolve Field(s). Default value: none
+     dissolve_option                       Optional String. Dissolve Type. Default value: none. Value choices: none, all, list
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'line_end_type': ['line_end_type', 'optional'], 'features': ['in_features', 'required'], 'dissolve_option': ['dissolve_option', 'optional'], 'buffer_distance_or_field': ['buffer_distance_or_field', 'required'], 'method': ['method', 'optional'], 'line_side': ['line_side', 'optional'], 'dissolve_field': ['dissolve_field', 'optional']}
+     in_db = {'buffer_distance_or_field': ['buffer_distance_or_field', 'required'], 'line_end_type': ['line_end_type', 'optional'], 'dissolve_field': ['dissolve_field', 'optional'], 'line_side': ['line_side', 'optional'], 'method': ['method', 'optional'], 'features': ['in_features', 'required'], 'dissolve_option': ['dissolve_option', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Buffer', inputs, in_db, out_db)
 
@@ -104,16 +104,16 @@ def clip(features, clip_features, cluster_tolerance=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clip_features                         Required GPFeatureLayer. Clip Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     clip_features                         Required Feature Layer. Clip Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'clip_features': ['clip_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'clip_features': ['clip_features', 'required']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Clip', inputs, in_db, out_db)
 
@@ -125,16 +125,16 @@ def erase(features, erase_features, cluster_tolerance=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     erase_features                        Required Feature Layer. Erase Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     erase_features                        Required GPFeatureLayer. Erase Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'erase_features': ['erase_features', 'required']}
+     in_db = {'erase_features': ['erase_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Erase', inputs, in_db, out_db)
 
@@ -146,20 +146,20 @@ def identity(features, identity_features, joattributes='all', cluster_tolerance=
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     identity_features                     Required Feature Layer. Identity Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     identity_features                     Required GPFeatureLayer. Identity Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     relationship                          Optional GPBoolean. Keep relationships. Default value: false. Value choices: keep_relationships, no_relationships
+     relationship                          Optional Boolean. Keep relationships. Default value: false. Value choices: keep_relationships, no_relationships
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     joattributes                          Optional GPString. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
+     joattributes                          Optional String. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'relationship': ['relationship', 'optional'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'joattributes': ['join_attributes', 'optional'], 'identity_features': ['identity_features', 'required']}
+     in_db = {'relationship': ['relationship', 'optional'], 'identity_features': ['identity_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'joattributes': ['join_attributes', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Identity', inputs, in_db, out_db)
 
@@ -171,17 +171,17 @@ def intersect(features, joattributes='all', cluster_tolerance='-1 unknown', outp
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPValueTable. Input Features
+     features                              Required Value Table. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_type                           Optional GPString. Output Type. Default value: input. Value choices: input, line, point
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: -1 unknown
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: -1 unknown
+     output_type                           Optional String. Output Type. Default value: input. Value choices: input, line, point
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     joattributes                          Optional GPString. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
+     joattributes                          Optional String. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'output_type': ['output_type', 'optional'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'joattributes': ['join_attributes', 'optional']}
+     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'output_type': ['output_type', 'optional'], 'joattributes': ['join_attributes', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Intersect', inputs, in_db, out_db)
 
@@ -193,18 +193,18 @@ def update(features, update_features, keep_borders='true', cluster_tolerance=Non
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_features                       Required GPFeatureLayer. Update Features
+     update_features                       Required Feature Layer. Update Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     keep_borders                          Optional Boolean. Borders. Default value: true. Value choices: borders, no_borders
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     keep_borders                          Optional GPBoolean. Borders. Default value: true. Value choices: borders, no_borders
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'update_features': ['update_features', 'required'], 'features': ['in_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'keep_borders': ['keep_borders', 'optional']}
+     in_db = {'update_features': ['update_features', 'required'], 'keep_borders': ['keep_borders', 'optional'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Update', inputs, in_db, out_db)
 
@@ -219,19 +219,19 @@ def split(features, split_features, split_field, out_workspace, cluster_toleranc
      split_field                           Required Field. Split Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     split_features                        Required Feature Layer. Split Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     split_features                        Required GPFeatureLayer. Split Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_workspace                         Required GPComposite. Target Workspace
+     out_workspace                         Required Workspace or Feature Dataset. Target Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'split_field': ['split_field', 'required'], 'features': ['in_features', 'required'], 'split_features': ['split_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'out_workspace': ['out_workspace', 'required']}
+     in_db = {'split_field': ['split_field', 'required'], 'split_features': ['split_features', 'required'], 'features': ['in_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'out_workspace': ['out_workspace', 'required']}
      out_db = {}
      return _execute_tool('analysis', 'Split', inputs, in_db, out_db)
 
@@ -243,22 +243,22 @@ def near(features, near_features, search_radius=None, location='false', angle='f
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     near_features                         Required GPMultiValue. Near Features
+     near_features                         Required Multiple Value. Near Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_radius                         Optional GPLinearUnit. Search Radius. Default value: none
+     method                                Optional String. Method. Default value: planar. Value choices: planar, geodesic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     method                                Optional GPString. Method. Default value: planar. Value choices: planar, geodesic
+     location                              Optional Boolean. Location. Default value: false. Value choices: location, no_location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location                              Optional GPBoolean. Location. Default value: false. Value choices: location, no_location
+     angle                                 Optional Boolean. Angle. Default value: false. Value choices: angle, no_angle
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     angle                                 Optional GPBoolean. Angle. Default value: false. Value choices: angle, no_angle
+     search_radius                         Optional Linear unit. Search Radius. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'search_radius': ['search_radius', 'optional'], 'near_features': ['near_features', 'required'], 'features': ['in_features', 'required'], 'location': ['location', 'optional'], 'method': ['method', 'optional'], 'angle': ['angle', 'optional']}
+     in_db = {'near_features': ['near_features', 'required'], 'search_radius': ['search_radius', 'optional'], 'method': ['method', 'optional'], 'location': ['location', 'optional'], 'features': ['in_features', 'required'], 'angle': ['angle', 'optional']}
      out_db = {}
      return _execute_tool('analysis', 'Near', inputs, in_db, out_db)
 
@@ -270,16 +270,16 @@ def point_distance(features, near_features, search_radius=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     near_features                         Required GPFeatureLayer. Near Features
+     near_features                         Required Feature Layer. Near Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_radius                         Optional GPLinearUnit. Search Radius. Default value: none
+     search_radius                         Optional Linear unit. Search Radius. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'search_radius': ['search_radius', 'optional'], 'near_features': ['near_features', 'required'], 'features': ['in_features', 'required']}
+     in_db = {'near_features': ['near_features', 'required'], 'features': ['in_features', 'required'], 'search_radius': ['search_radius', 'optional']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'PointDistance', inputs, in_db, out_db)
 
@@ -291,9 +291,9 @@ def select(features, where_clause=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          Optional GPSQLExpression. Expression. Default value: none
+     where_clause                          Optional SQL Expression. Expression. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -309,9 +309,9 @@ def table_select(table, where_clause=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     table                                 Required GPComposite. Input Table
+     table                                 Required Table View or Raster Layer. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          Optional GPSQLExpression. Expression. Default value: none
+     where_clause                          Optional SQL Expression. Expression. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -327,16 +327,16 @@ def frequency(table, frequency_fields, summary_fields=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     frequency_fields                      Required GPMultiValue. Frequency Field(s)
+     table                                 Required Table View or Raster Layer. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 Required GPComposite. Input Table
+     frequency_fields                      Required Multiple Value. Frequency Field(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     summary_fields                        Optional GPMultiValue. Summary Field(s). Default value: none
+     summary_fields                        Optional Multiple Value. Summary Field(s). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'frequency_fields': ['frequency_fields', 'required'], 'summary_fields': ['summary_fields', 'optional'], 'table': ['in_table', 'required']}
+     in_db = {'table': ['in_table', 'required'], 'summary_fields': ['summary_fields', 'optional'], 'frequency_fields': ['frequency_fields', 'required']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'Frequency', inputs, in_db, out_db)
 
@@ -348,9 +348,9 @@ def create_thiessen_polygons(features, fields_to_copy='only_fid'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fields_to_copy                        Optional GPString. Output Fields. Default value: only_fid. Value choices: only_fid, all
+     fields_to_copy                        Optional String. Output Fields. Default value: only_fid. Value choices: only_fid, all
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -366,26 +366,26 @@ def spatial_join(target_features, jofeatures, jooperation='join_one_to_one', jot
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jofeatures                            Required GPFeatureLayer. Join Features
+     jofeatures                            Required Feature Layer. Join Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_features                       Required GPFeatureLayer. Target Features
+     target_features                       Required Feature Layer. Target Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jooperation                           Optional GPString. Join Operation. Default value: join_one_to_one. Value choices: join_one_to_one, join_one_to_many
+     jotype                                Optional Boolean. Keep All Target Features. Default value: true. Value choices: keep_all, keep_common
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jotype                                Optional GPBoolean. Keep All Target Features. Default value: true. Value choices: keep_all, keep_common
+     field_mapping                         Optional Field Mappings. Field Map of Join Features. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_mapping                         Optional GPFieldMapping. Field Map of Join Features. Default value: none
+     match_option                          Optional String. Match Option. Default value: intersect. Value choices: intersect, intersect_3d, within_a_distance_geodesic, within_a_distance, within_a_distance_3d, contains, completely_contains, contains_clementini, within, completely_within, within_clementini, are_identical_to, boundary_touches, share_a_line_segment_with, crossed_by_the_outline_of, have_their_center_in, closest_geodesic, closest
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distance_field_name                   Optional GPString. Distance Field Name. Default value: none
+     distance_field_name                   Optional String. Distance Field Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     match_option                          Optional GPString. Match Option. Default value: intersect. Value choices: intersect, intersect_3d, within_a_distance_geodesic, within_a_distance, within_a_distance_3d, contains, completely_contains, contains_clementini, within, completely_within, within_clementini, are_identical_to, boundary_touches, share_a_line_segment_with, crossed_by_the_outline_of, have_their_center_in, closest_geodesic, closest
+     search_radius                         Optional Linear unit. Search Radius. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_radius                         Optional GPLinearUnit. Search Radius. Default value: none
+     jooperation                           Optional String. Join Operation. Default value: join_one_to_one. Value choices: join_one_to_one, join_one_to_many
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'jooperation': ['join_operation', 'optional'], 'jotype': ['join_type', 'optional'], 'field_mapping': ['field_mapping', 'optional'], 'distance_field_name': ['distance_field_name', 'optional'], 'search_radius': ['search_radius', 'optional'], 'jofeatures': ['join_features', 'required'], 'target_features': ['target_features', 'required'], 'match_option': ['match_option', 'optional']}
+     in_db = {'jotype': ['join_type', 'optional'], 'jofeatures': ['join_features', 'required'], 'field_mapping': ['field_mapping', 'optional'], 'match_option': ['match_option', 'optional'], 'target_features': ['target_features', 'required'], 'search_radius': ['search_radius', 'optional'], 'distance_field_name': ['distance_field_name', 'optional'], 'jooperation': ['join_operation', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'SpatialJoin', inputs, in_db, out_db)
 
@@ -397,22 +397,22 @@ def multiple_ring_buffer(input_features, distances, buffer_unit='default', field
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distances                             Required GPMultiValue. Distances
+     distances                             Required Multiple Value. Distances
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_features                        Required GPFeatureLayer. Input Features
+     input_features                        Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dissolve_option                       Optional GPString. Dissolve Option. Default value: all. Value choices: all, none
+     buffer_unit                           Optional String. Buffer Unit. Default value: default. Value choices: default, centimeters, decimaldegrees, feet, inches, kilometers, meters, miles, millimeters, nauticalmiles, points, yards, decimeters
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     buffer_unit                           Optional GPString. Buffer Unit. Default value: default. Value choices: default, centimeters, decimaldegrees, feet, inches, kilometers, meters, miles, millimeters, nauticalmiles, points, yards, decimeters
+     outside_polygons_only                 Optional Boolean. Outside Polygons Only. Default value: false. Value choices: outside_only, full
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_name                            Optional GPString. Field Name. Default value: distance
+     field_name                            Optional String. Field Name. Default value: distance
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     outside_polygons_only                 Optional GPBoolean. Outside Polygons Only. Default value: false. Value choices: outside_only, full
+     dissolve_option                       Optional String. Dissolve Option. Default value: all. Value choices: all, none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'outside_polygons_only': ['Outside_Polygons_Only', 'optional'], 'distances': ['Distances', 'required'], 'dissolve_option': ['Dissolve_Option', 'optional'], 'input_features': ['Input_Features', 'required'], 'buffer_unit': ['Buffer_Unit', 'optional'], 'field_name': ['Field_Name', 'optional']}
+     in_db = {'buffer_unit': ['Buffer_Unit', 'optional'], 'input_features': ['Input_Features', 'required'], 'field_name': ['Field_Name', 'optional'], 'outside_polygons_only': ['Outside_Polygons_Only', 'optional'], 'distances': ['Distances', 'required'], 'dissolve_option': ['Dissolve_Option', 'optional']}
      out_db = {'output_feature_class': ['Output_Feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'MultipleRingBuffer', inputs, in_db, out_db)
 
@@ -424,26 +424,26 @@ def generate_near_table(features, near_features, search_radius=None, location='f
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     near_features                         Required GPMultiValue. Near Features
+     near_features                         Required Multiple Value. Near Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_radius                         Optional GPLinearUnit. Search Radius. Default value: none
+     closest                               Optional Boolean. Find only closest feature. Default value: true. Value choices: closest, all
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     closest_count                         Optional GPLong. Maximum number of closest matches. Default value: 0
+     location                              Optional Boolean. Location. Default value: false. Value choices: location, no_location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     closest                               Optional GPBoolean. Find only closest feature. Default value: true. Value choices: closest, all
+     search_radius                         Optional Linear unit. Search Radius. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     method                                Optional GPString. Method. Default value: planar. Value choices: planar, geodesic
+     method                                Optional String. Method. Default value: planar. Value choices: planar, geodesic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     angle                                 Optional GPBoolean. Angle. Default value: false. Value choices: angle, no_angle
+     closest_count                         Optional Long. Maximum number of closest matches. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location                              Optional GPBoolean. Location. Default value: false. Value choices: location, no_location
+     angle                                 Optional Boolean. Angle. Default value: false. Value choices: angle, no_angle
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'search_radius': ['search_radius', 'optional'], 'near_features': ['near_features', 'required'], 'features': ['in_features', 'required'], 'location': ['location', 'optional'], 'method': ['method', 'optional'], 'closest': ['closest', 'optional'], 'closest_count': ['closest_count', 'optional'], 'angle': ['angle', 'optional']}
+     in_db = {'closest': ['closest', 'optional'], 'near_features': ['near_features', 'required'], 'search_radius': ['search_radius', 'optional'], 'method': ['method', 'optional'], 'location': ['location', 'optional'], 'closest_count': ['closest_count', 'optional'], 'features': ['in_features', 'required'], 'angle': ['angle', 'optional']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'GenerateNearTable', inputs, in_db, out_db)
 
@@ -455,17 +455,17 @@ def union(features, joattributes='all', cluster_tolerance=None, gaps='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPValueTable. Input Features
+     features                              Required Value Table. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
+     gaps                                  Optional Boolean. Gaps Allowed. Default value: true. Value choices: gaps, no_gaps
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     gaps                                  Optional GPBoolean. Gaps Allowed. Default value: true. Value choices: gaps, no_gaps
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     joattributes                          Optional GPString. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
+     joattributes                          Optional String. JoinAttributes. Default value: all. Value choices: no_fid, only_fid, all
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'gaps': ['gaps', 'optional'], 'features': ['in_features', 'required'], 'joattributes': ['join_attributes', 'optional']}
+     in_db = {'gaps': ['gaps', 'optional'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'joattributes': ['join_attributes', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Union', inputs, in_db, out_db)
 
@@ -477,25 +477,25 @@ def tabulate_intersection(zone_features, zone_fields, class_features, class_fiel
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     zone_fields                           Required GPMultiValue. Zone Fields
+     class_features                        Required Feature Layer. Input Class Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     class_features                        Required GPFeatureLayer. Input Class Features
+     zone_fields                           Required Multiple Value. Zone Fields
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     zone_features                         Required GPFeatureLayer. Input Zone Features
+     zone_features                         Required Feature Layer. Input Zone Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_tolerance                          Optional GPLinearUnit. XY Tolerance. Default value: -1 unknown
+     xy_tolerance                          Optional Linear unit. XY Tolerance. Default value: -1 unknown
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_units                             Optional GPString. Output Units. Default value: unknown. Value choices: unknown, inches, feet, yards, miles, nautical_miles, millimeters, centimeters, decimeters, meters, kilometers, decimal_degrees, points, ares, acres, hectares, square_inches, square_feet, square_yards, square_miles, square_millimeters, square_centimeters, square_decimeters, square_meters, square_kilometers
+     sum_fields                            Optional Multiple Value. Sum Fields. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     class_fields                          Optional GPMultiValue. Class Fields. Default value: none
+     out_units                             Optional String. Output Units. Default value: unknown. Value choices: unknown, inches, feet, yards, miles, nautical_miles, millimeters, centimeters, decimeters, meters, kilometers, decimal_degrees, points, ares, acres, hectares, square_inches, square_feet, square_yards, square_miles, square_millimeters, square_centimeters, square_decimeters, square_meters, square_kilometers
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sum_fields                            Optional GPMultiValue. Sum Fields. Default value: none
+     class_fields                          Optional Multiple Value. Class Fields. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'zone_fields': ['zone_fields', 'required'], 'class_fields': ['class_fields', 'optional'], 'out_units': ['out_units', 'optional'], 'class_features': ['in_class_features', 'required'], 'zone_features': ['in_zone_features', 'required'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'sum_fields': ['sum_fields', 'optional']}
+     in_db = {'xy_tolerance': ['xy_tolerance', 'optional'], 'class_features': ['in_class_features', 'required'], 'zone_fields': ['zone_fields', 'required'], 'class_fields': ['class_fields', 'optional'], 'zone_features': ['in_zone_features', 'required'], 'out_units': ['out_units', 'optional'], 'sum_fields': ['sum_fields', 'optional']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'TabulateIntersection', inputs, in_db, out_db)
 
@@ -507,23 +507,23 @@ def polygon_neighbors(features, fields=None, area_overlap='false', both_sides='t
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_area_units                        Optional GPString. Output Area Units. Default value: unknown. Value choices: unknown, square_inches, square_feet, square_yards, acres, square_miles, square_millimeters, square_decimeters, square_centimeters, square_meters, square_kilometers, ares, hectares
+     out_area_units                        Optional String. Output Area Units. Default value: unknown. Value choices: unknown, square_inches, square_feet, square_yards, acres, square_miles, square_millimeters, square_decimeters, square_centimeters, square_meters, square_kilometers, ares, hectares
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: -1 unknown
+     both_sides                            Optional Boolean. Include both sides of neighbor relationship. Default value: true. Value choices: both_sides, no_both_sides
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_overlap                          Optional GPBoolean. Include area overlaps. Default value: false. Value choices: area_overlap, no_area_overlap
+     fields                                Optional Multiple Value. Report By Field(s). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     both_sides                            Optional GPBoolean. Include both sides of neighbor relationship. Default value: true. Value choices: both_sides, no_both_sides
+     area_overlap                          Optional Boolean. Include area overlaps. Default value: false. Value choices: area_overlap, no_area_overlap
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fields                                Optional GPMultiValue. Report By Field(s). Default value: none
+     out_linear_units                      Optional String. Output Linear Units. Default value: unknown. Value choices: unknown, inches, points, feet, yards, miles, nautical_miles, millimeters, centimeters, meters, kilometers, decimeters, decimal_degrees
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_linear_units                      Optional GPString. Output Linear Units. Default value: unknown. Value choices: unknown, inches, points, feet, yards, miles, nautical_miles, millimeters, centimeters, meters, kilometers, decimeters, decimal_degrees
+     cluster_tolerance                     Optional Linear unit. XY Tolerance. Default value: -1 unknown
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'features': ['in_features', 'required'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'out_area_units': ['out_area_units', 'optional'], 'area_overlap': ['area_overlap', 'optional'], 'both_sides': ['both_sides', 'optional'], 'fields': ['in_fields', 'optional'], 'out_linear_units': ['out_linear_units', 'optional']}
+     in_db = {'out_area_units': ['out_area_units', 'optional'], 'both_sides': ['both_sides', 'optional'], 'fields': ['in_fields', 'optional'], 'area_overlap': ['area_overlap', 'optional'], 'out_linear_units': ['out_linear_units', 'optional'], 'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'PolygonNeighbors', inputs, in_db, out_db)
 
@@ -535,17 +535,17 @@ def split_by_attributes(input_table, target_workspace, split_fields):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     split_fields                          Required GPMultiValue. Split Fields
+     split_fields                          Required Multiple Value. Split Fields
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_table                           Required GPTableView. Input Table
+     target_workspace                      Required Workspace. Target Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_workspace                      Required DEWorkspace. Target Workspace
+     input_table                           Required Table View. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'split_fields': ['Split_Fields', 'required'], 'input_table': ['Input_Table', 'required'], 'target_workspace': ['Target_Workspace', 'required']}
+     in_db = {'split_fields': ['Split_Fields', 'required'], 'target_workspace': ['Target_Workspace', 'required'], 'input_table': ['Input_Table', 'required']}
      out_db = {}
      return _execute_tool('analysis', 'SplitByAttributes', inputs, in_db, out_db)
 
@@ -557,22 +557,22 @@ def graphic_buffer(features, buffer_distance_or_field, line_caps='square', line_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              Required GPFeatureLayer. Input Features
+     buffer_distance_or_field              Required Linear unit or Field. Distance [value or field]
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     buffer_distance_or_field              Required GPComposite. Distance [value or field]
+     features                              Required Feature Layer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_caps                             Optional GPString. Caps Type. Default value: square. Value choices: square, butt, round
+     line_caps                             Optional String. Caps Type. Default value: square. Value choices: square, butt, round
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     miter_limit                           Optional GPDouble. Miter Limit. Default value: 10
+     max_deviation                         Optional Linear unit. Maximum Offset Deviation. Default value: 0 unknown
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_deviation                         Optional GPLinearUnit. Maximum Offset Deviation. Default value: 0 unknown
+     line_joins                            Optional String. Join Type. Default value: miter. Value choices: miter, bevel, round
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_joins                            Optional GPString. Join Type. Default value: miter. Value choices: miter, bevel, round
+     miter_limit                           Optional Double. Miter Limit. Default value: 10
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'line_caps': ['line_caps', 'optional'], 'miter_limit': ['miter_limit', 'optional'], 'features': ['in_features', 'required'], 'buffer_distance_or_field': ['buffer_distance_or_field', 'required'], 'max_deviation': ['max_deviation', 'optional'], 'line_joins': ['line_joins', 'optional']}
+     in_db = {'buffer_distance_or_field': ['buffer_distance_or_field', 'required'], 'max_deviation': ['max_deviation', 'optional'], 'line_joins': ['line_joins', 'optional'], 'line_caps': ['line_caps', 'optional'], 'features': ['in_features', 'required'], 'miter_limit': ['miter_limit', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'GraphicBuffer', inputs, in_db, out_db)
 
