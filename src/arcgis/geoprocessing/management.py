@@ -75,7 +75,7 @@ def delete_rows(rows):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rows                                  required.
+     rows                                  Required GPTableView. Input Rows
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -91,9 +91,9 @@ def copy_rows(rows, config_keyword=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rows                                  required.
+     rows                                  Required GPComposite. Input Rows
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -109,19 +109,19 @@ def copy_features(features, config_keyword=None, spatial_grid_1=None, spatial_gr
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPComposite. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_2                        optional. Default value: None. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     spatial_grid_2                        Optional GPDouble. Output Spatial Grid 2. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_1                        optional. Default value: None. Value choices: 
+     spatial_grid_1                        Optional GPDouble. Output Spatial Grid 1. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_3                        optional. Default value: None. Value choices: 
+     spatial_grid_3                        Optional GPDouble. Output Spatial Grid 3. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'spatial_grid_2': ['spatial_grid_2', 'optional'], 'config_keyword': ['config_keyword', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'features': ['in_features', 'required'], 'spatial_grid_3': ['spatial_grid_3', 'optional']}
+     in_db = {'config_keyword': ['config_keyword', 'optional'], 'features': ['in_features', 'required'], 'spatial_grid_2': ['spatial_grid_2', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'spatial_grid_3': ['spatial_grid_3', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'CopyFeatures', inputs, in_db, out_db)
 
@@ -133,19 +133,19 @@ def dissolve(features, dissolve_field=None, statistics_fields=None, multi_part='
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     statistics_fields                     optional. Default value: None. Value choices: 
+     multi_part                            Optional GPBoolean. Create multipart features. Default value: true. Value choices: multi_part, single_part
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dissolve_field                        optional. Default value: None. Value choices: 
+     unsplit_lines                         Optional GPBoolean. Unsplit lines. Default value: false. Value choices: unsplit_lines, dissolve_lines
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     unsplit_lines                         optional. Default value: false. Value choices: UNSPLIT_LINES,DISSOLVE_LINES
+     statistics_fields                     Optional GPValueTable. Statistics Field(s). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     multi_part                            optional. Default value: true. Value choices: MULTI_PART,SINGLE_PART
+     dissolve_field                        Optional GPMultiValue. Dissolve_Field(s). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'statistics_fields': ['statistics_fields', 'optional'], 'dissolve_field': ['dissolve_field', 'optional'], 'unsplit_lines': ['unsplit_lines', 'optional'], 'features': ['in_features', 'required'], 'multi_part': ['multi_part', 'optional']}
+     in_db = {'multi_part': ['multi_part', 'optional'], 'unsplit_lines': ['unsplit_lines', 'optional'], 'statistics_fields': ['statistics_fields', 'optional'], 'features': ['in_features', 'required'], 'dissolve_field': ['dissolve_field', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'Dissolve', inputs, in_db, out_db)
 
@@ -157,37 +157,37 @@ def make_feature_layer(features, where_clause=None, workspace=None, field_info=N
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_info                            optional. Default value: None. Value choices: 
+     field_info                            Optional GPFieldInfo. Field Info. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     workspace                             optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Expression. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     workspace                             Optional GPComposite. Workspace or Feature Dataset. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_info': ['field_info', 'optional'], 'workspace': ['workspace', 'optional'], 'features': ['in_features', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'field_info': ['field_info', 'optional'], 'features': ['in_features', 'required'], 'where_clause': ['where_clause', 'optional'], 'workspace': ['workspace', 'optional']}
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'MakeFeatureLayer', inputs, in_db, out_db)
 
           
-def save_to_layer_file(layer, is_relative_path=None, version='CURRENT'):
+def save_to_layer_file(layer, is_relative_path=None, version='current'):
      """
      Geoprocessing tool that creates a layer file (.lyrx) that references geographic data stored on disk.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     layer                                 required.
+     layer                                 Required GPLayer. Input Layer
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     is_relative_path                      optional. Default value: None. Value choices: RELATIVE,ABSOLUTE
+     is_relative_path                      Optional GPBoolean. Store Relative Path. Default value: none. Value choices: relative, absolute
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version                               optional. Default value: CURRENT. Value choices: CURRENT,10.4,10.3,10.2,10.1,10,9.3,9.2,9.1,9.0,8.3
+     version                               Optional GPString. Layer Version. Default value: current. Value choices: current, 10.4, 10.3, 10.2, 10.1, 10, 9.3, 9.2, 9.1, 9.0, 8.3
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'is_relative_path': ['is_relative_path', 'optional'], 'layer': ['in_layer', 'required'], 'version': ['version', 'optional']}
+     in_db = {'is_relative_path': ['is_relative_path', 'optional'], 'version': ['version', 'optional'], 'layer': ['in_layer', 'required']}
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'SaveToLayerFile', inputs, in_db, out_db)
 
@@ -199,22 +199,22 @@ def add_join(layer_or_view, field, jotable, jofield, jotype='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field                                 required.
+     jofield                               Required Field. Output Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jofield                               required.
+     layer_or_view                         Required GPComposite. Layer Name or Table View
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jotable                               required.
+     jotable                               Required GPComposite. Join Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     layer_or_view                         required.
+     field                                 Required Field. Input Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jotype                                optional. Default value: true. Value choices: KEEP_ALL,KEEP_COMMON
+     jotype                                Optional GPBoolean. Keep All Target Features. Default value: true. Value choices: keep_all, keep_common
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'jotype': ['join_type', 'optional'], 'field': ['in_field', 'required'], 'jofield': ['join_field', 'required'], 'jotable': ['join_table', 'required'], 'layer_or_view': ['in_layer_or_view', 'required']}
+     in_db = {'jotype': ['join_type', 'optional'], 'jofield': ['join_field', 'required'], 'layer_or_view': ['in_layer_or_view', 'required'], 'jotable': ['join_table', 'required'], 'field': ['in_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddJoin', inputs, in_db, out_db)
 
@@ -226,9 +226,9 @@ def remove_join(layer_or_view, joname=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     layer_or_view                         required.
+     layer_or_view                         Required GPComposite. Layer Name or Table View
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     joname                                optional. Default value: None. Value choices: 
+     joname                                Optional GPString. Join. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -244,13 +244,13 @@ def copy(data, data_type=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data                                  required.
+     data                                  Required DEType. Input Data
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data_type                             optional. Default value: None. Value choices: 
+     data_type                             Optional GPString. Data type. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'data_type': ['data_type', 'optional'], 'data': ['in_data', 'required']}
+     in_db = {'data': ['in_data', 'required'], 'data_type': ['data_type', 'optional']}
      out_db = {'data': ['out_data', 'required', None, None]}
      return _execute_tool('management', 'Copy', inputs, in_db, out_db)
 
@@ -262,13 +262,13 @@ def delete(data, data_type=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data                                  required.
+     data                                  Required GPComposite. Input Data Element
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data_type                             optional. Default value: None. Value choices: 
+     data_type                             Optional GPString. Data type. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'data_type': ['data_type', 'optional'], 'data': ['in_data', 'required']}
+     in_db = {'data': ['in_data', 'required'], 'data_type': ['data_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'Delete', inputs, in_db, out_db)
 
@@ -280,13 +280,13 @@ def rename(data, data_type=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data                                  required.
+     data                                  Required DEType. Input Data Element
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data_type                             optional. Default value: None. Value choices: 
+     data_type                             Optional GPString. Data type. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'data_type': ['data_type', 'optional'], 'data': ['in_data', 'required']}
+     in_db = {'data': ['in_data', 'required'], 'data_type': ['data_type', 'optional']}
      out_db = {'data': ['out_data', 'required', None, None]}
      return _execute_tool('management', 'Rename', inputs, in_db, out_db)
 
@@ -298,14 +298,14 @@ def create_folder(out_folder_path, out_name):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_folder_path                       Required DEFolder. Folder Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_folder_path                       required.
+     out_name                              Required GPString. Folder Name
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_name': ['out_name', 'required'], 'out_folder_path': ['out_folder_path', 'required']}
+     in_db = {'out_folder_path': ['out_folder_path', 'required'], 'out_name': ['out_name', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateFolder', inputs, in_db, out_db)
 
@@ -317,16 +317,16 @@ def create_feature_dataset(out_dataset_path, out_name, spatial_reference=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_dataset_path                      required.
+     out_name                              Required GPString. Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_name                              required.
+     out_dataset_path                      Required DEWorkspace. Output Geodatabase
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Coordinate System. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_dataset_path': ['out_dataset_path', 'required'], 'out_name': ['out_name', 'required'], 'spatial_reference': ['spatial_reference', 'optional']}
+     in_db = {'out_name': ['out_name', 'required'], 'out_dataset_path': ['out_dataset_path', 'required'], 'spatial_reference': ['spatial_reference', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateFeatureDataset', inputs, in_db, out_db)
 
@@ -338,57 +338,57 @@ def pivot_table(table, fields, pivot_field, value_field):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     value_field                           required.
+     fields                                Required GPMultiValue. Input Field(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     pivot_field                           required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     value_field                           Required Field. Value Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     fields                                required.
+     pivot_field                           Required Field. Pivot Field
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'value_field': ['value_field', 'required'], 'pivot_field': ['pivot_field', 'required'], 'table': ['in_table', 'required'], 'fields': ['fields', 'required']}
+     in_db = {'fields': ['fields', 'required'], 'table': ['in_table', 'required'], 'value_field': ['value_field', 'required'], 'pivot_field': ['pivot_field', 'required']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'PivotTable', inputs, in_db, out_db)
 
           
-def create_feature_class(out_path, out_name, geometry_type='POLYGON', template=None, has_m='DISABLED', has_z='DISABLED', spatial_reference=None, config_keyword=None, spatial_grid_1='1000', spatial_grid_2='0', spatial_grid_3='0'):
+def create_feature_class(out_path, out_name, geometry_type='polygon', template=None, has_m='disabled', has_z='disabled', spatial_reference=None, config_keyword=None, spatial_grid_1='1000', spatial_grid_2='0', spatial_grid_3='0'):
      """
      Geoprocessing tool that creates a feature class, either in an ArcSDE, file geodatabase, or personal geodatabase, or as a shapefile in a folder.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_path                              Required GPComposite. Feature Class Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_path                              required.
+     out_name                              Required GPString. Feature Class Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_3                        optional. Default value: 0. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geometry_type                         optional. Default value: POLYGON. Value choices: POINT,MULTIPOINT,POLYGON,POLYLINE,MULTIPATCH
+     geometry_type                         Optional GPString. Geometry Type. Default value: polygon. Value choices: point, multipoint, polygon, polyline, multipatch
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     has_z                                 Optional GPString. Has Z. Default value: disabled. Value choices: disabled, same_as_template, enabled
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_1                        optional. Default value: 1000. Value choices: 
+     template                              Optional GPMultiValue. Template Feature Class. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     has_z                                 optional. Default value: DISABLED. Value choices: DISABLED,SAME_AS_TEMPLATE,ENABLED
+     spatial_grid_2                        Optional GPDouble. Output Spatial Grid 2. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_2                        optional. Default value: 0. Value choices: 
+     has_m                                 Optional GPString. Has M. Default value: disabled. Value choices: disabled, same_as_template, enabled
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     spatial_grid_1                        Optional GPDouble. Output Spatial Grid 1. Default value: 1000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     has_m                                 optional. Default value: DISABLED. Value choices: DISABLED,SAME_AS_TEMPLATE,ENABLED
+     spatial_grid_3                        Optional GPDouble. Output Spatial Grid 3. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template                              optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Coordinate System. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'spatial_grid_3': ['spatial_grid_3', 'optional'], 'out_path': ['out_path', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'has_z': ['has_z', 'optional'], 'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'spatial_grid_2': ['spatial_grid_2', 'optional'], 'has_m': ['has_m', 'optional'], 'geometry_type': ['geometry_type', 'optional'], 'template': ['template', 'optional']}
+     in_db = {'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'has_z': ['has_z', 'optional'], 'template': ['template', 'optional'], 'out_path': ['out_path', 'required'], 'spatial_grid_2': ['spatial_grid_2', 'optional'], 'has_m': ['has_m', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'spatial_grid_3': ['spatial_grid_3', 'optional'], 'geometry_type': ['geometry_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateFeatureClass', inputs, in_db, out_db)
 
@@ -400,18 +400,18 @@ def create_table(out_path, out_name, template=None, config_keyword=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_path                              Required DEWorkspace. Table Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_path                              required.
+     out_name                              Required GPString. Table Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template                              optional. Default value: None. Value choices: 
+     template                              Optional GPMultiValue. Template Table Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'out_path': ['out_path', 'required'], 'template': ['template', 'optional']}
+     in_db = {'out_path': ['out_path', 'required'], 'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'template': ['template', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateTable', inputs, in_db, out_db)
 
@@ -423,17 +423,17 @@ def make_table_view(table, where_clause=None, workspace=None, field_info=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     table                                 required.
+     table                                 Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_info                            optional. Default value: None. Value choices: 
+     field_info                            Optional GPFieldInfo. Field Info. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     workspace                             optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Expression. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     workspace                             Optional DEWorkspace. Output Workspace. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_info': ['field_info', 'optional'], 'workspace': ['workspace', 'optional'], 'table': ['in_table', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'field_info': ['field_info', 'optional'], 'table': ['in_table', 'required'], 'where_clause': ['where_clause', 'optional'], 'workspace': ['workspace', 'optional']}
      out_db = {'view': ['out_view', 'required', None, None]}
      return _execute_tool('management', 'MakeTableView', inputs, in_db, out_db)
 
@@ -445,17 +445,17 @@ def add_spatial_index(features, spatial_grid_1='0', spatial_grid_2='0', spatial_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPComposite. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_2                        optional. Default value: 0. Value choices: 
+     spatial_grid_2                        Optional GPDouble. Spatial Grid 2. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_3                        optional. Default value: 0. Value choices: 
+     spatial_grid_1                        Optional GPDouble. Spatial Grid 1. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_grid_1                        optional. Default value: 0. Value choices: 
+     spatial_grid_3                        Optional GPDouble. Spatial Grid 3. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'spatial_grid_2': ['spatial_grid_2', 'optional'], 'spatial_grid_3': ['spatial_grid_3', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'spatial_grid_2': ['spatial_grid_2', 'optional'], 'spatial_grid_1': ['spatial_grid_1', 'optional'], 'spatial_grid_3': ['spatial_grid_3', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AddSpatialIndex', inputs, in_db, out_db)
 
@@ -467,7 +467,7 @@ def remove_spatial_index(features):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPComposite. Input Features
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -476,32 +476,32 @@ def remove_spatial_index(features):
      return _execute_tool('management', 'RemoveSpatialIndex', inputs, in_db, out_db)
 
           
-def create_domain(workspace, domaname, field_type, domadescription=None, domatype='CODED', split_policy='DEFAULT', merge_policy='DEFAULT'):
+def create_domain(workspace, domaname, field_type, domadescription=None, domatype='coded', split_policy='default', merge_policy='default'):
      """
      Geoprocessing tool that creates an attribute domain in the specified workspace.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domaname                              required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     field_type                            required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     field_type                            Required GPString. Field Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domadescription                       optional. Default value: None. Value choices: 
+     split_policy                          Optional GPString. Split Policy. Default value: default. Value choices: default, duplicate, geometry_ratio
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     split_policy                          optional. Default value: DEFAULT. Value choices: DEFAULT,DUPLICATE,GEOMETRY_RATIO
+     domadescription                       Optional GPString. Domain Description. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     merge_policy                          optional. Default value: DEFAULT. Value choices: DEFAULT,SUM_VALUES,AREA_WEIGHTED
+     merge_policy                          Optional GPString. Merge Policy. Default value: default. Value choices: default, sum_values, area_weighted
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domatype                              optional. Default value: CODED. Value choices: CODED,RANGE
+     domatype                              Optional GPString. Domain Type. Default value: coded. Value choices: coded, range
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'domadescription': ['domain_description', 'optional'], 'split_policy': ['split_policy', 'optional'], 'domatype': ['domain_type', 'optional'], 'merge_policy': ['merge_policy', 'optional'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'field_type': ['field_type', 'required']}
+     in_db = {'domadescription': ['domain_description', 'optional'], 'domatype': ['domain_type', 'optional'], 'merge_policy': ['merge_policy', 'optional'], 'split_policy': ['split_policy', 'optional'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'field_type': ['field_type', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateDomain', inputs, in_db, out_db)
 
@@ -513,10 +513,10 @@ def delete_domain(workspace, domaname):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domaname                              required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Workspace
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -532,20 +532,20 @@ def add_coded_value_to_domain(workspace, domaname, code, code_description):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domaname                              required.
+     code                                  Required GPString. Code Value
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     code_description                      required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     code                                  required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     code_description                      Required GPString. Code Description
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'domaname': ['domain_name', 'required'], 'code_description': ['code_description', 'required'], 'code': ['code', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'code': ['code', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'code_description': ['code_description', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddCodedValueToDomain', inputs, in_db, out_db)
 
@@ -557,17 +557,17 @@ def delete_coded_value_from_domain(workspace, domaname, code):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domaname                              required.
+     code                                  Required GPMultiValue. Code Value
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     code                                  required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Workspace
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'domaname': ['domain_name', 'required'], 'code': ['code', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'code': ['code', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required']}
      out_db = {}
      return _execute_tool('management', 'DeleteCodedValueFromDomain', inputs, in_db, out_db)
 
@@ -579,20 +579,20 @@ def set_value_for_range_domain(workspace, domaname, mvalue, max_value):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mvalue                                required.
+     max_value                             Required GPString. Maximum Value
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     domaname                              required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     max_value                             required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     mvalue                                Required GPString. Minimum Value
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'mvalue': ['min_value', 'required'], 'domaname': ['domain_name', 'required'], 'max_value': ['max_value', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'max_value': ['max_value', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'mvalue': ['min_value', 'required']}
      out_db = {}
      return _execute_tool('management', 'SetValueForRangeDomain', inputs, in_db, out_db)
 
@@ -604,19 +604,19 @@ def assign_domain_to_field(table, field_name, domaname, subtype_code=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_name                            required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     domaname                              required.
+     field_name                            Required Field. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_code                          optional. Default value: None. Value choices: 
+     subtype_code                          Optional GPMultiValue. Subtype. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_name': ['field_name', 'required'], 'subtype_code': ['subtype_code', 'optional'], 'domaname': ['domain_name', 'required'], 'table': ['in_table', 'required']}
+     in_db = {'subtype_code': ['subtype_code', 'optional'], 'table': ['in_table', 'required'], 'field_name': ['field_name', 'required'], 'domaname': ['domain_name', 'required']}
      out_db = {}
      return _execute_tool('management', 'AssignDomainToField', inputs, in_db, out_db)
 
@@ -628,48 +628,48 @@ def remove_domain_from_field(table, field_name, subtype_code=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_name                            required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field_name                            Required Field. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_code                          optional. Default value: None. Value choices: 
+     subtype_code                          Optional GPMultiValue. Subtype. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_name': ['field_name', 'required'], 'subtype_code': ['subtype_code', 'optional'], 'table': ['in_table', 'required']}
+     in_db = {'subtype_code': ['subtype_code', 'optional'], 'table': ['in_table', 'required'], 'field_name': ['field_name', 'required']}
      out_db = {}
      return _execute_tool('management', 'RemoveDomainFromField', inputs, in_db, out_db)
 
           
-def table_to_domain(table, code_field, description_field, workspace, domaname, domadescription=None, update_option='APPEND'):
+def table_to_domain(table, code_field, description_field, workspace, domaname, domadescription=None, update_option='append'):
      """
      Geoprocessing tool that creates or updates a coded value domain with values from a table.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     code_field                            required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     description_field                     required.
+     description_field                     Required Field. Description Field 
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     domaname                              required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     code_field                            Required Field. Code Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_option                         optional. Default value: APPEND. Value choices: APPEND,REPLACE
+     update_option                         Optional GPString. Update Option. Default value: append. Value choices: append, replace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     domadescription                       optional. Default value: None. Value choices: 
+     domadescription                       Optional GPString. Domain Description. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'update_option': ['update_option', 'optional'], 'domadescription': ['domain_description', 'optional'], 'table': ['in_table', 'required'], 'workspace': ['in_workspace', 'required'], 'code_field': ['code_field', 'required'], 'description_field': ['description_field', 'required'], 'domaname': ['domain_name', 'required']}
+     in_db = {'update_option': ['update_option', 'optional'], 'domadescription': ['domain_description', 'optional'], 'table': ['in_table', 'required'], 'description_field': ['description_field', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'code_field': ['code_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'TableToDomain', inputs, in_db, out_db)
 
@@ -681,68 +681,68 @@ def domain_to_table(workspace, domaname, code_field, description_field, configur
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     code_field                            required.
+     description_field                     Required GPString. Field Description
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     domaname                              required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     description_field                     required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     code_field                            Required GPString. Code Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     configuration_keyword                 optional. Default value: None. Value choices: 
+     configuration_keyword                 Optional GPString. Configuration Keyword. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'code_field': ['code_field', 'required'], 'domaname': ['domain_name', 'required'], 'configuration_keyword': ['configuration_keyword', 'optional'], 'description_field': ['description_field', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'configuration_keyword': ['configuration_keyword', 'optional'], 'description_field': ['description_field', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required'], 'code_field': ['code_field', 'required']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'DomainToTable', inputs, in_db, out_db)
 
           
-def select_layer_by_attribute(layer_or_view, selection_type='NEW_SELECTION', where_clause=None):
+def select_layer_by_attribute(layer_or_view, selection_type='new_selection', where_clause=None):
      """
      Geoprocessing tool that adds, updates, or removes a selection on a layer or table view based on an attribute query.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     layer_or_view                         required.
+     layer_or_view                         Required GPComposite. Layer Name or Table View
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     selection_type                        optional. Default value: NEW_SELECTION. Value choices: NEW_SELECTION,ADD_TO_SELECTION,REMOVE_FROM_SELECTION,SUBSET_SELECTION,SWITCH_SELECTION,CLEAR_SELECTION
+     selection_type                        Optional GPString. Selection type. Default value: new_selection. Value choices: new_selection, add_to_selection, remove_from_selection, subset_selection, switch_selection, clear_selection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Expression. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'where_clause': ['where_clause', 'optional'], 'selection_type': ['selection_type', 'optional'], 'layer_or_view': ['in_layer_or_view', 'required']}
+     in_db = {'layer_or_view': ['in_layer_or_view', 'required'], 'selection_type': ['selection_type', 'optional'], 'where_clause': ['where_clause', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SelectLayerByAttribute', inputs, in_db, out_db)
 
           
-def select_layer_by_location(layer, overlap_type='INTERSECT', select_features=None, search_distance=None, selection_type='NEW_SELECTION', invert_spatial_relationship='false'):
+def select_layer_by_location(layer, overlap_type='intersect', select_features=None, search_distance=None, selection_type='new_selection', invert_spatial_relationship='false'):
      """
      Geoprocessing tool that selects features in a layer based on a spatial relationship to features in another layer.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     layer                                 required.
+     layer                                 Required GPComposite. Input Feature Layer
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     select_features                       optional. Default value: None. Value choices: 
+     selection_type                        Optional GPString. Selection type. Default value: new_selection. Value choices: new_selection, add_to_selection, remove_from_selection, subset_selection, switch_selection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_distance                       optional. Default value: None. Value choices: 
+     invert_spatial_relationship           Optional GPBoolean. Invert Spatial Relationship. Default value: false. Value choices: invert, not_invert
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     selection_type                        optional. Default value: NEW_SELECTION. Value choices: NEW_SELECTION,ADD_TO_SELECTION,REMOVE_FROM_SELECTION,SUBSET_SELECTION,SWITCH_SELECTION
+     search_distance                       Optional GPLinearUnit. Search Distance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overlap_type                          optional. Default value: INTERSECT. Value choices: INTERSECT,INTERSECT_3D,WITHIN_A_DISTANCE_GEODESIC,WITHIN_A_DISTANCE,WITHIN_A_DISTANCE_3D,CONTAINS,COMPLETELY_CONTAINS,CONTAINS_CLEMENTINI,WITHIN,COMPLETELY_WITHIN,WITHIN_CLEMENTINI,ARE_IDENTICAL_TO,BOUNDARY_TOUCHES,SHARE_A_LINE_SEGMENT_WITH,CROSSED_BY_THE_OUTLINE_OF,HAVE_THEIR_CENTER_IN
+     select_features                       Optional GPFeatureLayer. Selecting Features. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     invert_spatial_relationship           optional. Default value: false. Value choices: INVERT,NOT_INVERT
+     overlap_type                          Optional GPString. Relationship. Default value: intersect. Value choices: intersect, intersect_3d, within_a_distance_geodesic, within_a_distance, within_a_distance_3d, contains, completely_contains, contains_clementini, within, completely_within, within_clementini, are_identical_to, boundary_touches, share_a_line_segment_with, crossed_by_the_outline_of, have_their_center_in
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'select_features': ['select_features', 'optional'], 'search_distance': ['search_distance', 'optional'], 'layer': ['in_layer', 'required'], 'selection_type': ['selection_type', 'optional'], 'invert_spatial_relationship': ['invert_spatial_relationship', 'optional'], 'overlap_type': ['overlap_type', 'optional']}
+     in_db = {'layer': ['in_layer', 'required'], 'invert_spatial_relationship': ['invert_spatial_relationship', 'optional'], 'search_distance': ['search_distance', 'optional'], 'selection_type': ['selection_type', 'optional'], 'select_features': ['select_features', 'optional'], 'overlap_type': ['overlap_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SelectLayerByLocation', inputs, in_db, out_db)
 
@@ -754,7 +754,7 @@ def get_count(rows):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rows                                  required.
+     rows                                  Required GPComposite. Input Rows
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -763,26 +763,26 @@ def get_count(rows):
      return _execute_tool('management', 'GetCount', inputs, in_db, out_db)
 
           
-def create_version(workspace, parent_version, version_name, access_permission='PRIVATE'):
+def create_version(workspace, parent_version, version_name, access_permission='private'):
      """
      Geoprocessing tool to create a new version in a geodatabase.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     parent_version                        required.
+     parent_version                        Required GPString. Parent Version
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     version_name                          required.
+     version_name                          Required GPString. Version Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     access_permission                     optional. Default value: PRIVATE. Value choices: PRIVATE,PUBLIC,PROTECTED
+     access_permission                     Optional GPString. Access Permission. Default value: private. Value choices: private, public, protected
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'access_permission': ['access_permission', 'optional'], 'parent_version': ['parent_version', 'required'], 'version_name': ['version_name', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'parent_version': ['parent_version', 'required'], 'access_permission': ['access_permission', 'optional'], 'version_name': ['version_name', 'required'], 'workspace': ['in_workspace', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateVersion', inputs, in_db, out_db)
 
@@ -794,10 +794,10 @@ def delete_version(workspace, version_name):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version_name                          required.
+     version_name                          Required GPString. Version Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -813,13 +813,13 @@ def register_as_versioned(dataset, edit_to_base='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edit_to_base                          optional. Default value: false. Value choices: EDITS_TO_BASE,NO_EDITS_TO_BASE
+     edit_to_base                          Optional GPBoolean. Register the selected objects with the option to move edits to base. Default value: false. Value choices: edits_to_base, no_edits_to_base
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'edit_to_base': ['edit_to_base', 'optional']}
+     in_db = {'edit_to_base': ['edit_to_base', 'optional'], 'dataset': ['in_dataset', 'required']}
      out_db = {}
      return _execute_tool('management', 'RegisterAsVersioned', inputs, in_db, out_db)
 
@@ -831,40 +831,40 @@ def unregister_as_versioned(dataset, keep_edit='true', compress_default='false')
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     keep_edit                             optional. Default value: true. Value choices: KEEP_EDIT,NO_KEEP_EDIT
+     keep_edit                             Optional GPBoolean. Do not run if there are edits in the delta tables. Default value: true. Value choices: keep_edit, no_keep_edit
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compress_default                      optional. Default value: false. Value choices: COMPRESS_DEFAULT,NO_COMPRESS_DEFAULT
+     compress_default                      Optional GPBoolean. Compress all edits in the Default version into the base table. Default value: false. Value choices: compress_default, no_compress_default
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'keep_edit': ['keep_edit', 'optional'], 'compress_default': ['compress_default', 'optional']}
+     in_db = {'keep_edit': ['keep_edit', 'optional'], 'compress_default': ['compress_default', 'optional'], 'dataset': ['in_dataset', 'required']}
      out_db = {}
      return _execute_tool('management', 'UnregisterAsVersioned', inputs, in_db, out_db)
 
           
-def alter_version(workspace, version, name=None, description=None, access='PRIVATE'):
+def alter_version(workspace, version, name=None, description=None, access='private'):
      """
      Geoprocessing tool that alters the database version's properties of name, description, and access permissions.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version                               required.
+     version                               Required GPString. Input Version
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     access                                optional. Default value: PRIVATE. Value choices: PRIVATE,PUBLIC,PROTECTED
+     description                           Optional GPString. Version Description. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     name                                  optional. Default value: None. Value choices: 
+     access                                Optional GPString. Access Permission. Default value: private. Value choices: private, public, protected
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     description                           optional. Default value: None. Value choices: 
+     name                                  Optional GPString. Version Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'access': ['access', 'optional'], 'version': ['in_version', 'required'], 'name': ['name', 'optional'], 'description': ['description', 'optional'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'description': ['description', 'optional'], 'version': ['in_version', 'required'], 'access': ['access', 'optional'], 'name': ['name', 'optional'], 'workspace': ['in_workspace', 'required']}
      out_db = {}
      return _execute_tool('management', 'AlterVersion', inputs, in_db, out_db)
 
@@ -876,47 +876,47 @@ def table_to_relationship_class(origtable, destination_table, relationship_type,
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     relationship_table                    required.
+     backward_label                        Required GPString. Backward Path Label
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     cardinality                           required.
+     destination_foreign_key               Required GPString. Destination Foreign Key
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     attribute_fields                      required.
+     forward_label                         Required GPString. Forward Path Label
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     message_direction                     required.
+     origforeign_key                       Required GPString. Origin Foreign Key
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     forward_label                         required.
+     destination_table                     Required GPTableView. Destination Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     backward_label                        required.
+     relationship_type                     Required GPString. Relationship Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     destination_foreign_key               required.
+     message_direction                     Required GPString. Message Direction
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     destination_table                     required.
+     cardinality                           Required GPString. Cardinality
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     relationship_type                     required.
+     destination_primary_key               Required GPString. Destination Primary Key
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     origtable                             required.
+     attribute_fields                      Required GPMultiValue. Attribute Fields
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     origprimary_key                       required.
+     origprimary_key                       Required GPString. Origin Primary Key
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     origforeign_key                       required.
+     origtable                             Required GPTableView. Origin Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     destination_primary_key               required.
+     relationship_table                    Required GPTableView. Relationship Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'relationship_table': ['relationship_table', 'required'], 'cardinality': ['cardinality', 'required'], 'attribute_fields': ['attribute_fields', 'required'], 'message_direction': ['message_direction', 'required'], 'forward_label': ['forward_label', 'required'], 'backward_label': ['backward_label', 'required'], 'destination_foreign_key': ['destination_foreign_key', 'required'], 'destination_table': ['destination_table', 'required'], 'relationship_type': ['relationship_type', 'required'], 'origtable': ['origin_table', 'required'], 'origprimary_key': ['origin_primary_key', 'required'], 'origforeign_key': ['origin_foreign_key', 'required'], 'destination_primary_key': ['destination_primary_key', 'required']}
+     in_db = {'backward_label': ['backward_label', 'required'], 'destination_foreign_key': ['destination_foreign_key', 'required'], 'forward_label': ['forward_label', 'required'], 'origforeign_key': ['origin_foreign_key', 'required'], 'destination_table': ['destination_table', 'required'], 'relationship_type': ['relationship_type', 'required'], 'message_direction': ['message_direction', 'required'], 'cardinality': ['cardinality', 'required'], 'destination_primary_key': ['destination_primary_key', 'required'], 'attribute_fields': ['attribute_fields', 'required'], 'origprimary_key': ['origin_primary_key', 'required'], 'origtable': ['origin_table', 'required'], 'relationship_table': ['relationship_table', 'required']}
      out_db = {'relationship_class': ['out_relationship_class', 'required', None, None]}
      return _execute_tool('management', 'TableToRelationshipClass', inputs, in_db, out_db)
 
@@ -928,31 +928,31 @@ def feature_to_point(features, point_location='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     point_location                        optional. Default value: false. Value choices: INSIDE,CENTROID
+     point_location                        Optional GPBoolean. Inside. Default value: false. Value choices: inside, centroid
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'point_location': ['point_location', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'point_location': ['point_location', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToPoint', inputs, in_db, out_db)
 
           
-def feature_vertices_to_points(features, point_location='ALL'):
+def feature_vertices_to_points(features, point_location='all'):
      """
      Geoprocessing tool that creates points from input feature vertices.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     point_location                        optional. Default value: ALL. Value choices: ALL,MID,START,END,BOTH_ENDS,DANGLE
+     point_location                        Optional GPString. Point Type. Default value: all. Value choices: all, mid, start, end, both_ends, dangle
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'point_location': ['point_location', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'point_location': ['point_location', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureVerticesToPoints', inputs, in_db, out_db)
 
@@ -964,15 +964,15 @@ def feature_to_line(features, cluster_tolerance=None, attributes='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPMultiValue. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     optional. Default value: None. Value choices: 
+     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attributes                            optional. Default value: true. Value choices: ATTRIBUTES,NO_ATTRIBUTES
+     attributes                            Optional GPBoolean. Preserve attributes. Default value: true. Value choices: attributes, no_attributes
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'attributes': ['attributes', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'attributes': ['attributes', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToLine', inputs, in_db, out_db)
 
@@ -984,17 +984,17 @@ def feature_to_polygon(features, cluster_tolerance=None, attributes='true', labe
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPMultiValue. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     optional. Default value: None. Value choices: 
+     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attributes                            optional. Default value: true. Value choices: ATTRIBUTES,NO_ATTRIBUTES
+     attributes                            Optional GPBoolean. Preserve attributes. Default value: true. Value choices: attributes, no_attributes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     label_features                        optional. Default value: None. Value choices: 
+     label_features                        Optional GPFeatureLayer. Label Features. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'attributes': ['attributes', 'optional'], 'features': ['in_features', 'required'], 'label_features': ['label_features', 'optional']}
+     in_db = {'cluster_tolerance': ['cluster_tolerance', 'optional'], 'features': ['in_features', 'required'], 'attributes': ['attributes', 'optional'], 'label_features': ['label_features', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToPolygon', inputs, in_db, out_db)
 
@@ -1006,13 +1006,13 @@ def polygon_to_line(features, neighbor_option='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     neighbor_option                       optional. Default value: true. Value choices: IDENTIFY_NEIGHBORS,IGNORE_NEIGHBORS
+     neighbor_option                       Optional GPBoolean. Identify and store polygon neighboring information. Default value: true. Value choices: identify_neighbors, ignore_neighbors
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'neighbor_option': ['neighbor_option', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'neighbor_option': ['neighbor_option', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'PolygonToLine', inputs, in_db, out_db)
 
@@ -1024,10 +1024,10 @@ def define_projection(dataset, coor_system):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset or Feature Class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     coor_system                           required.
+     coor_system                           Required GPCoordinateSystem. Coordinate System
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1043,17 +1043,17 @@ def eliminate(features, selection='true', ex_where_clause=None, ex_features=None
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Layer
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ex_features                           optional. Default value: None. Value choices: 
+     ex_where_clause                       Optional GPSQLExpression. Exclusion Expression. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     selection                             optional. Default value: true. Value choices: LENGTH,AREA
+     ex_features                           Optional GPFeatureLayer. Exclusion Layer. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ex_where_clause                       optional. Default value: None. Value choices: 
+     selection                             Optional GPBoolean. Eliminating polygon by border. Default value: true. Value choices: length, area
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'ex_features': ['ex_features', 'optional'], 'selection': ['selection', 'optional'], 'features': ['in_features', 'required'], 'ex_where_clause': ['ex_where_clause', 'optional']}
+     in_db = {'ex_where_clause': ['ex_where_clause', 'optional'], 'features': ['in_features', 'required'], 'ex_features': ['ex_features', 'optional'], 'selection': ['selection', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'Eliminate', inputs, in_db, out_db)
 
@@ -1065,13 +1065,13 @@ def repair_geometry(features, delete_null='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delete_null                           optional. Default value: true. Value choices: DELETE_NULL,KEEP_NULL
+     delete_null                           Optional GPBoolean. Delete Features with Null Geometry. Default value: true. Value choices: delete_null, keep_null
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'delete_null': ['delete_null', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'delete_null': ['delete_null', 'optional']}
      out_db = {}
      return _execute_tool('management', 'RepairGeometry', inputs, in_db, out_db)
 
@@ -1083,16 +1083,16 @@ def create_topology(dataset, out_name, cluster_tolerance=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     out_name                              Required GPString. Output Topology
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_name                              required.
+     dataset                               Required DEFeatureDataset. Input Feature Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     optional. Default value: None. Value choices: 
+     cluster_tolerance                     Optional GPDouble. Cluster Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'out_name': ['out_name', 'required'], 'cluster_tolerance': ['in_cluster_tolerance', 'optional']}
+     in_db = {'out_name': ['out_name', 'required'], 'cluster_tolerance': ['in_cluster_tolerance', 'optional'], 'dataset': ['in_dataset', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateTopology', inputs, in_db, out_db)
 
@@ -1104,14 +1104,14 @@ def remove_feature_class_from_topology(topology, featureclass):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     topology                              required.
+     featureclass                          Required GPString. Feature Class to Remove
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     featureclass                          required.
+     topology                              Required DETopology. Input Topology
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'topology': ['in_topology', 'required'], 'featureclass': ['in_featureclass', 'required']}
+     in_db = {'featureclass': ['in_featureclass', 'required'], 'topology': ['in_topology', 'required']}
      out_db = {}
      return _execute_tool('management', 'RemoveFeatureClassFromTopology', inputs, in_db, out_db)
 
@@ -1123,23 +1123,23 @@ def add_rule_to_topology(topology, rule_type, featureclass, subtype=None, featur
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rule_type                             required.
+     featureclass                          Required GPFeatureLayer. Input Feature class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     topology                              required.
+     topology                              Required GPTopologyLayer. Input Topology
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     featureclass                          required.
+     rule_type                             Required GPString. Rule Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     featureclass2                         optional. Default value: None. Value choices: 
+     subtype                               Optional GPString. Input Subtype. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype                               optional. Default value: None. Value choices: 
+     featureclass2                         Optional GPFeatureLayer. Input Feature class. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype2                              optional. Default value: None. Value choices: 
+     subtype2                              Optional GPString. Input Subtype. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'subtype': ['subtype', 'optional'], 'featureclass2': ['in_featureclass2', 'optional'], 'topology': ['in_topology', 'required'], 'rule_type': ['rule_type', 'required'], 'subtype2': ['subtype2', 'optional'], 'featureclass': ['in_featureclass', 'required']}
+     in_db = {'featureclass': ['in_featureclass', 'required'], 'featureclass2': ['in_featureclass2', 'optional'], 'rule_type': ['rule_type', 'required'], 'subtype2': ['subtype2', 'optional'], 'subtype': ['subtype', 'optional'], 'topology': ['in_topology', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddRuleToTopology', inputs, in_db, out_db)
 
@@ -1151,9 +1151,9 @@ def validate_topology(topology, visible_extent='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     topology                              required.
+     topology                              Required GPTopologyLayer. Input Topology
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     visible_extent                        optional. Default value: false. Value choices: Visible_Extent,Full_Extent
+     visible_extent                        Optional GPBoolean. Visible Extent. Default value: false. Value choices: visible_extent, full_extent
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1169,10 +1169,10 @@ def set_cluster_tolerance(topology, cluster_tolerance):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     required.
+     cluster_tolerance                     Required GPDouble. Cluster Tolerance
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     topology                              required.
+     topology                              Required GPTopologyLayer. Input Topology
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1188,20 +1188,20 @@ def make_query_table(table, key_field_option, key_field=None, field=None, where_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     key_field_option                      required.
+     table                                 Required GPMultiValue. Input Tables
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     key_field_option                      Required GPString. Key Field Options
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     key_field                             optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Expression. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field                                 optional. Default value: None. Value choices: 
+     key_field                             Optional GPMultiValue. Key Fields. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     field                                 Optional GPValueTable. Fields. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'key_field': ['in_key_field', 'optional'], 'key_field_option': ['in_key_field_option', 'required'], 'field': ['in_field', 'optional'], 'table': ['in_table', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'where_clause': ['where_clause', 'optional'], 'table': ['in_table', 'required'], 'key_field': ['in_key_field', 'optional'], 'key_field_option': ['in_key_field_option', 'required'], 'field': ['in_field', 'optional']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'MakeQueryTable', inputs, in_db, out_db)
 
@@ -1213,21 +1213,21 @@ def make_xy_event_layer(table, x_field, y_field, spatial_reference=None, z_field
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     y_field                               required.
+     table                                 Required GPTableView. XY Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     x_field                               required.
+     y_field                               Required Field. Y Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     x_field                               Required Field. X Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_field                               optional. Default value: None. Value choices: 
+     z_field                               Optional Field. Z Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'y_field': ['in_y_field', 'required'], 'z_field': ['in_z_field', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'x_field': ['in_x_field', 'required'], 'table': ['table', 'required']}
+     in_db = {'z_field': ['in_z_field', 'optional'], 'table': ['table', 'required'], 'y_field': ['in_y_field', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'x_field': ['in_x_field', 'required']}
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'MakeXYEventLayer', inputs, in_db, out_db)
 
@@ -1239,17 +1239,17 @@ def make_raster_layer(raster, where_clause=None, envelope=None, band_index=None)
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPSAGeoData. Input raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     band_index                            optional. Default value: None. Value choices: 
+     band_index                            Optional GPValueTable. Bands. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     envelope                              optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Where clause. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     envelope                              Optional GPExtent. Envelope. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'where_clause': ['where_clause', 'optional'], 'band_index': ['band_index', 'optional'], 'envelope': ['envelope', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'band_index': ['band_index', 'optional'], 'where_clause': ['where_clause', 'optional'], 'envelope': ['envelope', 'optional']}
      out_db = {'rasterlayer': ['out_rasterlayer', 'required', None, None]}
      return _execute_tool('management', 'MakeRasterLayer', inputs, in_db, out_db)
 
@@ -1261,7 +1261,7 @@ def flip(raster):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPComposite. Input Raster
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1277,7 +1277,7 @@ def mirror(raster):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPComposite. Input Raster
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1286,31 +1286,31 @@ def mirror(raster):
      return _execute_tool('management', 'Mirror', inputs, in_db, out_db)
 
           
-def project_raster(raster, out_coor_system, resampling_type='NEAREST', cell_size=None, geographic_transform=None, registration_point=None, coor_system=None):
+def project_raster(raster, out_coor_system, resampling_type='nearest', cell_size=None, geographic_transform=None, registration_point=None, coor_system=None):
      """
      Geoprocessing tool that transforms the raster dataset from one projection to another.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_coor_system                       required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     out_coor_system                       Required GPCoordinateSystem. Output Coordinate System
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     cell_size                             Optional GPCellSizeXY. Output Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coor_system                           optional. Default value: None. Value choices: 
+     coor_system                           Optional GPCoordinateSystem. Input Coordinate System. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geographic_transform                  optional. Default value: None. Value choices: 
+     registration_point                    Optional GPPoint. Registration Point. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC,MAJORITY
+     geographic_transform                  Optional GPMultiValue. Geographic Transformation. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     registration_point                    optional. Default value: None. Value choices: 
+     resampling_type                       Optional GPString. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic, majority
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cell_size': ['cell_size', 'optional'], 'coor_system': ['in_coor_system', 'optional'], 'registration_point': ['Registration_Point', 'optional'], 'out_coor_system': ['out_coor_system', 'required'], 'geographic_transform': ['geographic_transform', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'coor_system': ['in_coor_system', 'optional'], 'registration_point': ['Registration_Point', 'optional'], 'out_coor_system': ['out_coor_system', 'required'], 'geographic_transform': ['geographic_transform', 'optional'], 'cell_size': ['cell_size', 'optional'], 'resampling_type': ['resampling_type', 'optional']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'ProjectRaster', inputs, in_db, out_db)
 
@@ -1322,17 +1322,17 @@ def rescale(raster, x_scale, y_scale):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     y_scale                               required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     x_scale                               required.
+     y_scale                               Required GPDouble. Y Scale Factor
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     x_scale                               Required GPDouble. X Scale Factor
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'y_scale': ['y_scale', 'required'], 'x_scale': ['x_scale', 'required'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'y_scale': ['y_scale', 'required'], 'x_scale': ['x_scale', 'required']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Rescale', inputs, in_db, out_db)
 
@@ -1344,70 +1344,70 @@ def shift(raster, x_value, y_value, snap_raster=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     y_value                               required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     x_value                               required.
+     x_value                               Required GPDouble. Shift X Coordinates by
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     y_value                               Required GPDouble. Shift Y Coordinates by
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     snap_raster                           optional. Default value: None. Value choices: 
+     snap_raster                           Optional GPRasterLayer. Input Snap Raster. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'y_value': ['y_value', 'required'], 'snap_raster': ['in_snap_raster', 'optional'], 'x_value': ['x_value', 'required'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'snap_raster': ['in_snap_raster', 'optional'], 'x_value': ['x_value', 'required'], 'y_value': ['y_value', 'required']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Shift', inputs, in_db, out_db)
 
           
-def warp(raster, source_control_points, target_control_points, transformation_type='POLYORDER1', resampling_type='NEAREST'):
+def warp(raster, source_control_points, target_control_points, transformation_type='polyorder1', resampling_type='nearest'):
      """
      Geoprocessing tool that performs a transformation on the raster based on the source and target control points using a polynomial transformation.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_control_points                 required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     source_control_points                 required.
+     source_control_points                 Required GPMultiValue. Source Control Points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     target_control_points                 Required GPMultiValue. Target Control Points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC,MAJORITY
+     transformation_type                   Optional GPString. Transformation Type. Default value: polyorder1. Value choices: polyorder0, polysimilarity, polyorder1, polyorder2, polyorder3, adjust, spline, projective
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transformation_type                   optional. Default value: POLYORDER1. Value choices: POLYORDER0,POLYSIMILARITY,POLYORDER1,POLYORDER2,POLYORDER3,ADJUST,SPLINE,PROJECTIVE
+     resampling_type                       Optional GPString. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic, majority
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'target_control_points': ['target_control_points', 'required'], 'transformation_type': ['transformation_type', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'source_control_points': ['source_control_points', 'required'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'transformation_type': ['transformation_type', 'optional'], 'source_control_points': ['source_control_points', 'required'], 'target_control_points': ['target_control_points', 'required'], 'resampling_type': ['resampling_type', 'optional']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Warp', inputs, in_db, out_db)
 
           
-def append(inputs, target, schema_type='TEST', field_mapping=None, subtype=None):
+def append(inputs, target, schema_type='test', field_mapping=None, subtype=None):
      """
      Geoprocessing tool that appends multiple input datasets into an existing target dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     inputs                                required.
+     target                                Required GPComposite. Target Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target                                required.
+     inputs                                Required GPMultiValue. Input Datasets
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_mapping                         optional. Default value: None. Value choices: 
+     schema_type                           Optional GPString. Schema Type. Default value: test. Value choices: test, no_test
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype                               optional. Default value: None. Value choices: 
+     field_mapping                         Optional GPFieldMapping. Field Map. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     schema_type                           optional. Default value: TEST. Value choices: TEST,NO_TEST
+     subtype                               Optional GPString. Subtype. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_mapping': ['field_mapping', 'optional'], 'inputs': ['inputs', 'required'], 'subtype': ['subtype', 'optional'], 'schema_type': ['schema_type', 'optional'], 'target': ['target', 'required']}
+     in_db = {'schema_type': ['schema_type', 'optional'], 'field_mapping': ['field_mapping', 'optional'], 'target': ['target', 'required'], 'subtype': ['subtype', 'optional'], 'inputs': ['inputs', 'required']}
      out_db = {}
      return _execute_tool('management', 'Append', inputs, in_db, out_db)
 
@@ -1419,7 +1419,7 @@ def delete_features(features):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1435,31 +1435,31 @@ def add_field(table, field_name, field_type, field_precision=None, field_scale=N
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_name                            required.
+     table                                 Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     field_type                            required.
+     field_name                            Required GPString. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field_type                            Required GPString. Field Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_length                          optional. Default value: None. Value choices: 
+     field_scale                           Optional GPLong. Field Scale. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_domain                          optional. Default value: None. Value choices: 
+     field_is_required                     Optional GPBoolean. Field IsRequired. Default value: false. Value choices: required, non_required
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_scale                           optional. Default value: None. Value choices: 
+     field_length                          Optional GPLong. Field Length. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_precision                       optional. Default value: None. Value choices: 
+     field_alias                           Optional GPString. Field Alias. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_is_required                     optional. Default value: false. Value choices: REQUIRED,NON_REQUIRED
+     field_is_nullable                     Optional GPBoolean. Field IsNullable. Default value: true. Value choices: nullable, non_nullable
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_alias                           optional. Default value: None. Value choices: 
+     field_domain                          Optional GPString. Field Domain. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_is_nullable                     optional. Default value: true. Value choices: NULLABLE,NON_NULLABLE
+     field_precision                       Optional GPLong. Field Precision. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_name': ['field_name', 'required'], 'field_domain': ['field_domain', 'optional'], 'field_scale': ['field_scale', 'optional'], 'table': ['in_table', 'required'], 'field_precision': ['field_precision', 'optional'], 'field_is_required': ['field_is_required', 'optional'], 'field_type': ['field_type', 'required'], 'field_length': ['field_length', 'optional'], 'field_alias': ['field_alias', 'optional'], 'field_is_nullable': ['field_is_nullable', 'optional']}
+     in_db = {'field_scale': ['field_scale', 'optional'], 'field_is_required': ['field_is_required', 'optional'], 'field_length': ['field_length', 'optional'], 'field_alias': ['field_alias', 'optional'], 'field_is_nullable': ['field_is_nullable', 'optional'], 'table': ['in_table', 'required'], 'field_domain': ['field_domain', 'optional'], 'field_name': ['field_name', 'required'], 'field_precision': ['field_precision', 'optional'], 'field_type': ['field_type', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddField', inputs, in_db, out_db)
 
@@ -1471,46 +1471,46 @@ def assign_default_to_field(table, field_name, default_value=None, subtype_code=
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_name                            required.
+     table                                 Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field_name                            Required Field. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clear_value                           optional. Default value: false. Value choices: 
+     subtype_code                          Optional GPMultiValue. Subtype. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_code                          optional. Default value: None. Value choices: 
+     clear_value                           Optional GPBoolean. Clear Value. Default value: false
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     default_value                         optional. Default value: None. Value choices: 
+     default_value                         Optional GPString. Default Value. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_name': ['field_name', 'required'], 'subtype_code': ['subtype_code', 'optional'], 'clear_value': ['clear_value', 'optional'], 'table': ['in_table', 'required'], 'default_value': ['default_value', 'optional']}
+     in_db = {'clear_value': ['clear_value', 'optional'], 'subtype_code': ['subtype_code', 'optional'], 'table': ['in_table', 'required'], 'field_name': ['field_name', 'required'], 'default_value': ['default_value', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AssignDefaultToField', inputs, in_db, out_db)
 
           
-def calculate_field(table, field, expression, expression_type='VB', code_block=None):
+def calculate_field(table, field, expression, expression_type='vb', code_block=None):
      """
      Geoprocessing tool used to perform field calculations.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     expression                            required.
+     table                                 Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     field                                 required.
+     expression                            Required GPSQLExpression. Expression
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field                                 Required Field. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     expression_type                       optional. Default value: VB. Value choices: VB,PYTHON,PYTHON_9.3
+     code_block                            Optional GPString. Code Block. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     code_block                            optional. Default value: None. Value choices: 
+     expression_type                       Optional GPString. Expression Type. Default value: vb. Value choices: vb, python, python_9.3
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'expression': ['expression', 'required'], 'expression_type': ['expression_type', 'optional'], 'field': ['field', 'required'], 'code_block': ['code_block', 'optional'], 'table': ['in_table', 'required']}
+     in_db = {'expression_type': ['expression_type', 'optional'], 'code_block': ['code_block', 'optional'], 'table': ['in_table', 'required'], 'expression': ['expression', 'required'], 'field': ['field', 'required']}
      out_db = {}
      return _execute_tool('management', 'CalculateField', inputs, in_db, out_db)
 
@@ -1522,10 +1522,10 @@ def delete_field(table, drop_field):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     drop_field                            required.
+     drop_field                            Required GPMultiValue. Drop Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     table                                 Required GPComposite. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1541,7 +1541,7 @@ def multipart_to_singlepart(features):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1557,9 +1557,9 @@ def integrate(features, cluster_tolerance=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPValueTable. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cluster_tolerance                     optional. Default value: None. Value choices: 
+     cluster_tolerance                     Optional GPLinearUnit. XY Tolerance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1575,158 +1575,158 @@ def merge(inputs, field_mappings=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     inputs                                required.
+     inputs                                Required GPMultiValue. Input Datasets
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_mappings                        optional. Default value: None. Value choices: 
+     field_mappings                        Optional GPFieldMapping. Field Map. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'inputs': ['inputs', 'required'], 'field_mappings': ['field_mappings', 'optional']}
+     in_db = {'field_mappings': ['field_mappings', 'optional'], 'inputs': ['inputs', 'required']}
      out_db = {'output': ['output', 'required', None, None]}
      return _execute_tool('management', 'Merge', inputs, in_db, out_db)
 
           
-def feature_compare(base_features, test_features, sort_field, compare_type='ALL', ignore_options=None, xy_tolerance=None, m_tolerance='0', z_tolerance='0', attribute_tolerances=None, omit_field=None, continue_compare='false'):
+def feature_compare(base_features, test_features, sort_field, compare_type='all', ignore_options=None, xy_tolerance=None, m_tolerance='0', z_tolerance='0', attribute_tolerances=None, omit_field=None, continue_compare='false'):
      """
      Geoprocessing tool that compares two feature classes or layers and returns the comparison results. Feature Compare can report differences with geometry, tabular values, spatial reference, and field definitions.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     base_features                         required.
+     sort_field                            Required GPValueTable. Sort Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     test_features                         required.
+     test_features                         Required GPFeatureLayer. Input Test Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     sort_field                            required.
+     base_features                         Required GPFeatureLayer. Input Base Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attribute_tolerances                  optional. Default value: None. Value choices: 
+     continue_compare                      Optional GPBoolean. Continue Comparison. Default value: false. Value choices: continue_compare, no_continue_compare
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     omit_field                            optional. Default value: None. Value choices: 
+     z_tolerance                           Optional GPDouble. Z Tolerance. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_tolerance                          optional. Default value: None. Value choices: 
+     m_tolerance                           Optional GPDouble. M Tolerance. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ignore_options                        optional. Default value: None. Value choices: IGNORE_M,IGNORE_Z,IGNORE_POINTID,IGNORE_EXTENSION_PROPERTIES,IGNORE_SUBTYPES,IGNORE_RELATIONSHIPCLASSES,IGNORE_REPRESENTATIONCLASSES,IGNORE_FIELDALIAS
+     ignore_options                        Optional GPMultiValue. Ignore Options. Default value: none. Value choices: ignore_m, ignore_z, ignore_pointid, ignore_extension_properties, ignore_subtypes, ignore_relationshipclasses, ignore_representationclasses, ignore_fieldalias
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     continue_compare                      optional. Default value: false. Value choices: CONTINUE_COMPARE,NO_CONTINUE_COMPARE
+     xy_tolerance                          Optional GPLinearUnit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compare_type                          optional. Default value: ALL. Value choices: ALL,GEOMETRY_ONLY,ATTRIBUTES_ONLY,SCHEMA_ONLY,SPATIAL_REFERENCE_ONLY
+     attribute_tolerances                  Optional GPValueTable. Attribute Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_tolerance                           optional. Default value: 0. Value choices: 
+     omit_field                            Optional GPMultiValue. Omit Fields. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     m_tolerance                           optional. Default value: 0. Value choices: 
+     compare_type                          Optional GPString. Compare Type. Default value: all. Value choices: all, geometry_only, attributes_only, schema_only, spatial_reference_only
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'base_features': ['in_base_features', 'required'], 'omit_field': ['omit_field', 'optional'], 'compare_type': ['compare_type', 'optional'], 'ignore_options': ['ignore_options', 'optional'], 'test_features': ['in_test_features', 'required'], 'm_tolerance': ['m_tolerance', 'optional'], 'z_tolerance': ['z_tolerance', 'optional'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'attribute_tolerances': ['attribute_tolerances', 'optional'], 'sort_field': ['sort_field', 'required'], 'continue_compare': ['continue_compare', 'optional']}
+     in_db = {'sort_field': ['sort_field', 'required'], 'continue_compare': ['continue_compare', 'optional'], 'z_tolerance': ['z_tolerance', 'optional'], 'attribute_tolerances': ['attribute_tolerances', 'optional'], 'test_features': ['in_test_features', 'required'], 'm_tolerance': ['m_tolerance', 'optional'], 'ignore_options': ['ignore_options', 'optional'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'base_features': ['in_base_features', 'required'], 'omit_field': ['omit_field', 'optional'], 'compare_type': ['compare_type', 'optional']}
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'FeatureCompare', inputs, in_db, out_db)
 
           
-def file_compare(base_file, test_file, file_type='ASCII', continue_compare='false'):
+def file_compare(base_file, test_file, file_type='ascii', continue_compare='false'):
      """
      Geoprocessing tool which compares two files and returns the comparison results. File Compare can report differences between two ASCII files or two binary files.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     test_file                             required.
+     test_file                             Required DEFile. Input Test File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     base_file                             required.
+     base_file                             Required DEFile. Input Base File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     file_type                             optional. Default value: ASCII. Value choices: ASCII,BINARY
+     continue_compare                      Optional GPBoolean. Continue Comparison. Default value: false. Value choices: continue_compare, no_continue_compare
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     continue_compare                      optional. Default value: false. Value choices: CONTINUE_COMPARE,NO_CONTINUE_COMPARE
+     file_type                             Optional GPString. File Type. Default value: ascii. Value choices: ascii, binary
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'test_file': ['in_test_file', 'required'], 'file_type': ['file_type', 'optional'], 'base_file': ['in_base_file', 'required'], 'continue_compare': ['continue_compare', 'optional']}
+     in_db = {'continue_compare': ['continue_compare', 'optional'], 'file_type': ['file_type', 'optional'], 'test_file': ['in_test_file', 'required'], 'base_file': ['in_base_file', 'required']}
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'FileCompare', inputs, in_db, out_db)
 
           
-def raster_compare(base_raster, test_raster, compare_type='RASTER_DATASET', ignore_option=None, continue_compare='false', parameter_tolerances=None, attribute_tolerances=None, omit_field=None):
+def raster_compare(base_raster, test_raster, compare_type='raster_dataset', ignore_option=None, continue_compare='false', parameter_tolerances=None, attribute_tolerances=None, omit_field=None):
      """
      Geoprocessing tool that compares the properties of two raster datasets or two mosaic datasets.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     base_raster                           required.
+     base_raster                           Required GPComposite. Input Base Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     test_raster                           required.
+     test_raster                           Required GPComposite. Input Test Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     omit_field                            optional. Default value: None. Value choices: 
+     attribute_tolerances                  Optional GPValueTable. Attribute Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attribute_tolerances                  optional. Default value: None. Value choices: 
+     continue_compare                      Optional GPBoolean. Continue Comparison. Default value: false. Value choices: continue_compare, no_continue_compare
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compare_type                          optional. Default value: RASTER_DATASET. Value choices: RASTER_DATASET,GDB_RASTER_DATASET,GDB_RASTER_CATALOG,MOSAIC_DATASET
+     omit_field                            Optional GPMultiValue. Omit Fields. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ignore_option                         optional. Default value: None. Value choices: 
+     ignore_option                         Optional GPMultiValue. Ignore Options. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     parameter_tolerances                  optional. Default value: None. Value choices: 
+     parameter_tolerances                  Optional GPValueTable. Parameter Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     continue_compare                      optional. Default value: false. Value choices: CONTINUE_COMPARE,NO_CONTINUE_COMPARE
+     compare_type                          Optional GPString. Compare Type. Default value: raster_dataset. Value choices: raster_dataset, gdb_raster_dataset, gdb_raster_catalog, mosaic_dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'attribute_tolerances': ['attribute_tolerances', 'optional'], 'omit_field': ['omit_field', 'optional'], 'compare_type': ['compare_type', 'optional'], 'ignore_option': ['ignore_option', 'optional'], 'base_raster': ['in_base_raster', 'required'], 'test_raster': ['in_test_raster', 'required'], 'parameter_tolerances': ['parameter_tolerances', 'optional'], 'continue_compare': ['continue_compare', 'optional']}
+     in_db = {'attribute_tolerances': ['attribute_tolerances', 'optional'], 'test_raster': ['in_test_raster', 'required'], 'continue_compare': ['continue_compare', 'optional'], 'omit_field': ['omit_field', 'optional'], 'ignore_option': ['ignore_option', 'optional'], 'parameter_tolerances': ['parameter_tolerances', 'optional'], 'base_raster': ['in_base_raster', 'required'], 'compare_type': ['compare_type', 'optional']}
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'RasterCompare', inputs, in_db, out_db)
 
           
-def table_compare(base_table, test_table, sort_field, compare_type='ALL', ignore_options=None, attribute_tolerances=None, omit_field=None, continue_compare='false'):
+def table_compare(base_table, test_table, sort_field, compare_type='all', ignore_options=None, attribute_tolerances=None, omit_field=None, continue_compare='false'):
      """
      Geoprocessing tool compares two tables or table views and returns the comparison results.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     test_table                            required.
+     sort_field                            Required GPValueTable. Sort Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     base_table                            required.
+     base_table                            Required GPComposite. Input Base Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     sort_field                            required.
+     test_table                            Required GPComposite. Input Test Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attribute_tolerances                  optional. Default value: None. Value choices: 
+     continue_compare                      Optional GPBoolean. Continue Comparison. Default value: false. Value choices: continue_compare, no_continue_compare
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     omit_field                            optional. Default value: None. Value choices: 
+     ignore_options                        Optional GPMultiValue. Ignore Options. Default value: none. Value choices: ignore_extension_properties, ignore_subtypes, ignore_relationshipclasses, ignore_fieldalias
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compare_type                          optional. Default value: ALL. Value choices: ALL,ATTRIBUTES_ONLY,SCHEMA_ONLY
+     omit_field                            Optional GPMultiValue. Omit Fields. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ignore_options                        optional. Default value: None. Value choices: IGNORE_EXTENSION_PROPERTIES,IGNORE_SUBTYPES,IGNORE_RELATIONSHIPCLASSES,IGNORE_FIELDALIAS
+     attribute_tolerances                  Optional GPValueTable. Attribute Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     continue_compare                      optional. Default value: false. Value choices: CONTINUE_COMPARE,NO_CONTINUE_COMPARE
+     compare_type                          Optional GPString. Compare Type. Default value: all. Value choices: all, attributes_only, schema_only
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'attribute_tolerances': ['attribute_tolerances', 'optional'], 'omit_field': ['omit_field', 'optional'], 'test_table': ['in_test_table', 'required'], 'compare_type': ['compare_type', 'optional'], 'ignore_options': ['ignore_options', 'optional'], 'base_table': ['in_base_table', 'required'], 'sort_field': ['sort_field', 'required'], 'continue_compare': ['continue_compare', 'optional']}
+     in_db = {'sort_field': ['sort_field', 'required'], 'base_table': ['in_base_table', 'required'], 'test_table': ['in_test_table', 'required'], 'continue_compare': ['continue_compare', 'optional'], 'ignore_options': ['ignore_options', 'optional'], 'omit_field': ['omit_field', 'optional'], 'attribute_tolerances': ['attribute_tolerances', 'optional'], 'compare_type': ['compare_type', 'optional']}
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'TableCompare', inputs, in_db, out_db)
 
           
-def create_file_gdb(out_folder_path, out_name, out_version='CURRENT'):
+def create_file_gdb(out_folder_path, out_name, out_version='current'):
      """
      Geoprocessing tool that creates a file geodatabase.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_folder_path                       Required DEFolder. File GDB Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_folder_path                       required.
+     out_name                              Required GPString. File GDB Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_version                           optional. Default value: CURRENT. Value choices: CURRENT,10.0,9.3,9.2
+     out_version                           Optional GPString. File GDB Version. Default value: current. Value choices: current, 10.0, 9.3, 9.2
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_name': ['out_name', 'required'], 'out_version': ['out_version', 'optional'], 'out_folder_path': ['out_folder_path', 'required']}
+     in_db = {'out_folder_path': ['out_folder_path', 'required'], 'out_name': ['out_name', 'required'], 'out_version': ['out_version', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateFileGDB', inputs, in_db, out_db)
 
@@ -1738,7 +1738,7 @@ def compress(workspace):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1754,17 +1754,17 @@ def add_subtype(table, subtype_code, subtype_description):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_description                   required.
+     subtype_code                          Required GPLong. Subtype Code
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     subtype_code                          required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     subtype_description                   Required GPString. Subtype Name
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'subtype_description': ['subtype_description', 'required'], 'subtype_code': ['subtype_code', 'required'], 'table': ['in_table', 'required']}
+     in_db = {'subtype_code': ['subtype_code', 'required'], 'table': ['in_table', 'required'], 'subtype_description': ['subtype_description', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddSubtype', inputs, in_db, out_db)
 
@@ -1776,10 +1776,10 @@ def remove_subtype(table, subtype_code):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_code                          required.
+     subtype_code                          Required GPMultiValue. Subtype Code
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     table                                 Required GPTableView. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1795,10 +1795,10 @@ def set_default_subtype(table, subtype_code):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     subtype_code                          required.
+     subtype_code                          Required GPLong. Subtype Code
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     table                                 Required GPTableView. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1814,15 +1814,15 @@ def set_subtype_field(table, field=None, clear_value='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     table                                 required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clear_value                           optional. Default value: false. Value choices: 
+     clear_value                           Optional GPBoolean. Clear Value. Default value: false
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field                                 optional. Default value: None. Value choices: 
+     field                                 Optional Field. Field Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'clear_value': ['clear_value', 'optional'], 'field': ['field', 'optional'], 'table': ['in_table', 'required']}
+     in_db = {'clear_value': ['clear_value', 'optional'], 'table': ['in_table', 'required'], 'field': ['field', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SetSubtypeField', inputs, in_db, out_db)
 
@@ -1834,15 +1834,15 @@ def add_colormap(raster, template_raster=None, input_clr_file=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPRasterLayer. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_clr_file                        optional. Default value: None. Value choices: 
+     input_clr_file                        Optional DEFile. Input .clr or .act File. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_raster                       optional. Default value: None. Value choices: 
+     template_raster                       Optional GPRasterLayer. Input Template Raster. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_clr_file': ['input_CLR_file', 'optional'], 'template_raster': ['in_template_raster', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'input_clr_file': ['input_CLR_file', 'optional'], 'template_raster': ['in_template_raster', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AddColormap', inputs, in_db, out_db)
 
@@ -1854,13 +1854,13 @@ def build_raster_attribute_table(raster, overwrite='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPRasterLayer. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overwrite                             optional. Default value: false. Value choices: Overwrite,NONE
+     overwrite                             Optional GPBoolean. Overwrite. Default value: false. Value choices: overwrite, none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'overwrite': ['overwrite', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'overwrite': ['overwrite', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildRasterAttributeTable', inputs, in_db, out_db)
 
@@ -1872,7 +1872,7 @@ def delete_colormap(raster):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPRasterLayer. Input Raster
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1888,7 +1888,7 @@ def delete_raster_attribute_table(raster):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPRasterLayer. Input Raster
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -1897,76 +1897,76 @@ def delete_raster_attribute_table(raster):
      return _execute_tool('management', 'DeleteRasterAttributeTable', inputs, in_db, out_db)
 
           
-def build_pyramids(raster_dataset, pyramid_level=None, skip_first='false', resample_technique='NEAREST', compression_type='DEFAULT', compression_quality='75', skip_existing='false'):
+def build_pyramids(raster_dataset, pyramid_level=None, skip_first='false', resample_technique='nearest', compression_type='default', compression_quality='75', skip_existing='false'):
      """
      Geoprocessing tool that builds or deletes raster pyramids for a raster dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_dataset                        required.
+     raster_dataset                        Required GPComposite. Input Raster Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramid_level                         optional. Default value: None. Value choices: 
+     skip_existing                         Optional GPBoolean. Skip Existing. Default value: false. Value choices: skip_existing, overwrite
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resample_technique                    optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC
+     skip_first                            Optional GPBoolean. Skip first level. Default value: false. Value choices: skip_first, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_existing                         optional. Default value: false. Value choices: SKIP_EXISTING,OVERWRITE
+     compression_type                      Optional GPString. Pyramid compression type. Default value: default. Value choices: default, jpeg, lz77, none, jpeg_ycbcr
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_quality                   optional. Default value: 75. Value choices: 
+     resample_technique                    Optional GPString. Pyramid resampling technique. Default value: nearest. Value choices: nearest, bilinear, cubic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_first                            optional. Default value: false. Value choices: SKIP_FIRST,NONE
+     pyramid_level                         Optional GPLong. Pyramid levels. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_type                      optional. Default value: DEFAULT. Value choices: DEFAULT,JPEG,LZ77,NONE,JPEG_YCbCr
+     compression_quality                   Optional GPLong. Compression quality (1-100). Default value: 75
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'pyramid_level': ['pyramid_level', 'optional'], 'resample_technique': ['resample_technique', 'optional'], 'skip_existing': ['skip_existing', 'optional'], 'raster_dataset': ['in_raster_dataset', 'required'], 'compression_quality': ['compression_quality', 'optional'], 'skip_first': ['SKIP_FIRST', 'optional'], 'compression_type': ['compression_type', 'optional']}
+     in_db = {'skip_existing': ['skip_existing', 'optional'], 'raster_dataset': ['in_raster_dataset', 'required'], 'compression_type': ['compression_type', 'optional'], 'resample_technique': ['resample_technique', 'optional'], 'pyramid_level': ['pyramid_level', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'skip_first': ['SKIP_FIRST', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildPyramids', inputs, in_db, out_db)
 
           
-def calculate_statistics(raster_dataset, x_skip_factor=None, y_skip_factor=None, ignore_values=None, skip_existing='false', area_of_interest='in_memory\{BC80ECFE-15B0-41C3-8FA1-A0A41602275C}'):
+def calculate_statistics(raster_dataset, x_skip_factor=None, y_skip_factor=None, ignore_values=None, skip_existing='false', area_of_interest='in_memory\{bc80ecfe-15b0-41c3-8fa1-a0a41602275c}'):
      """
      Geoprocessing tool that calculates statistics for a raster dataset or mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_dataset                        required.
+     raster_dataset                        Required GPComposite. Input Raster Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     x_skip_factor                         optional. Default value: None. Value choices: 
+     skip_existing                         Optional GPBoolean. Skip Existing. Default value: false. Value choices: skip_existing, overwrite
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ignore_values                         optional. Default value: None. Value choices: 
+     y_skip_factor                         Optional GPLong. Number of Rows to Skip. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_existing                         optional. Default value: false. Value choices: SKIP_EXISTING,OVERWRITE
+     ignore_values                         Optional GPMultiValue. Ignore Values. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: in_memory\{BC80ECFE-15B0-41C3-8FA1-A0A41602275C}. Value choices: 
+     area_of_interest                      Optional GPFeatureRecordSetLayer. Area of Interest. Default value: in_memory\{bc80ecfe-15b0-41c3-8fa1-a0a41602275c}
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     y_skip_factor                         optional. Default value: None. Value choices: 
+     x_skip_factor                         Optional GPLong. Number of Columns to Skip. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'x_skip_factor': ['x_skip_factor', 'optional'], 'skip_existing': ['skip_existing', 'optional'], 'raster_dataset': ['in_raster_dataset', 'required'], 'ignore_values': ['ignore_values', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'y_skip_factor': ['y_skip_factor', 'optional']}
+     in_db = {'skip_existing': ['skip_existing', 'optional'], 'raster_dataset': ['in_raster_dataset', 'required'], 'ignore_values': ['ignore_values', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'y_skip_factor': ['y_skip_factor', 'optional'], 'x_skip_factor': ['x_skip_factor', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CalculateStatistics', inputs, in_db, out_db)
 
           
-def get_raster_properties(raster, property_type='MINIMUM', band_index=None):
+def get_raster_properties(raster, property_type='minimum', band_index=None):
      """
      Geoprocessing tool that returns the properties of a raster dataset, mosaic dataset, or a raster product.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPSAGeoData. Input raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     property_type                         optional. Default value: MINIMUM. Value choices: MAXIMUM,MINIMUM,MEAN,STD,UNIQUEVALUECOUNT,TOP,LEFT,RIGHT,BOTTOM,CELLSIZEX,CELLSIZEY,VALUETYPE,COLUMNCOUNT,ROWCOUNT,BANDCOUNT,ALLNODATA,ANYNODATA,SENSORNAME,PRODUCTNAME,ACQUISITIONDATE,SOURCETYPE,CLOUDCOVER,SUNAZIMUTH,SUNELEVATION,SENSORAZIMUTH,SENSORELEVATION,OFFNADIR,WAVELENGTH
+     property_type                         Optional GPString. Property type. Default value: minimum. Value choices: maximum, minimum, mean, std, uniquevaluecount, top, left, right, bottom, cellsizex, cellsizey, valuetype, columncount, rowcount, bandcount, allnodata, anynodata, sensorname, productname, acquisitiondate, sourcetype, cloudcover, sunazimuth, sunelevation, sensorazimuth, sensorelevation, offnadir, wavelength
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     band_index                            optional. Default value: None. Value choices: 
+     band_index                            Optional GPString. Band Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'property_type': ['property_type', 'optional'], 'band_index': ['band_index', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'property_type': ['property_type', 'optional'], 'band_index': ['band_index', 'optional']}
      out_db = {}
      return _execute_tool('management', 'GetRasterProperties', inputs, in_db, out_db)
 
@@ -1978,165 +1978,165 @@ def copy_raster(raster, config_keyword=None, background_value=None, nodata_value
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transform                             optional. Default value: false. Value choices: Transform,NONE
+     format                                Optional GPString. Format. Default value: none. Value choices: tiff, imagine image, bmp, gif, png, jpeg, jpeg2000, esri grid, esri bil, esri bsq, esri bip, envi, crf, mrf
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rgb_to_colormap                       optional. Default value: false. Value choices: RGBToColormap,NONE
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_type                            optional. Default value: None. Value choices: 1_BIT,2_BIT,4_BIT,8_BIT_UNSIGNED,8_BIT_SIGNED,16_BIT_UNSIGNED,16_BIT_SIGNED,32_BIT_UNSIGNED,32_BIT_SIGNED,32_BIT_FLOAT,64_BIT
+     transform                             Optional GPBoolean. Apply Transformation. Default value: false. Value choices: transform, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     format                                optional. Default value: None. Value choices: TIFF,IMAGINE Image,BMP,GIF,PNG,JPEG,JPEG2000,Esri Grid,Esri BIL,Esri BSQ,Esri BIP,ENVI,CRF,MRF
+     scale_pixel_value                     Optional GPBoolean. Scale Pixel Value. Default value: false. Value choices: scalepixelvalue, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     colormap_to_rgb                       optional. Default value: false. Value choices: ColormapToRGB,NONE
+     background_value                      Optional GPDouble. Ignore Background Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     rgb_to_colormap                       Optional GPBoolean. RGB To Colormap. Default value: false. Value choices: rgbtocolormap, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     background_value                      optional. Default value: None. Value choices: 
+     nodata_value                          Optional GPString. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scale_pixel_value                     optional. Default value: false. Value choices: ScalePixelValue,NONE
+     pixel_type                            Optional GPString. Pixel Type. Default value: none. Value choices: 1_bit, 2_bit, 4_bit, 8_bit_unsigned, 8_bit_signed, 16_bit_unsigned, 16_bit_signed, 32_bit_unsigned, 32_bit_signed, 32_bit_float, 64_bit
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     onebit_to_eightbit                    optional. Default value: false. Value choices: OneBitTo8Bit,NONE
+     onebit_to_eightbit                    Optional GPBoolean. Convert 1 bit data to 8 bit. Default value: false. Value choices: onebitto8bit, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     colormap_to_rgb                       Optional GPBoolean. Colormap to RGB. Default value: false. Value choices: colormaptorgb, none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'transform': ['transform', 'optional'], 'rgb_to_colormap': ['RGB_to_Colormap', 'optional'], 'scale_pixel_value': ['scale_pixel_value', 'optional'], 'pixel_type': ['pixel_type', 'optional'], 'format': ['format', 'optional'], 'background_value': ['background_value', 'optional'], 'config_keyword': ['config_keyword', 'optional'], 'raster': ['in_raster', 'required'], 'colormap_to_rgb': ['colormap_to_RGB', 'optional'], 'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'nodata_value': ['nodata_value', 'optional']}
+     in_db = {'raster': ['in_raster', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'transform': ['transform', 'optional'], 'scale_pixel_value': ['scale_pixel_value', 'optional'], 'background_value': ['background_value', 'optional'], 'format': ['format', 'optional'], 'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'rgb_to_colormap': ['RGB_to_Colormap', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'pixel_type': ['pixel_type', 'optional'], 'colormap_to_rgb': ['colormap_to_RGB', 'optional']}
      out_db = {'rasterdataset': ['out_rasterdataset', 'required', None, None]}
      return _execute_tool('management', 'CopyRaster', inputs, in_db, out_db)
 
           
-def create_random_raster(out_path, out_name, distribution='UNIFORM 0.0 1.0', raster_extent=None, cellsize=None):
+def create_random_raster(out_path, out_name, distribution='uniform 0.0 1.0', raster_extent=None, cellsize=None):
      """
      Geoprocessing tool that creates a random raster dataset based on a user-specified distribution and extent.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_path                              Required GPComposite. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_path                              required.
+     out_name                              Required GPString. Raster Dataset Name with Extension
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_extent                         optional. Default value: None. Value choices: 
+     raster_extent                         Optional GPExtent. Output extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distribution                          optional. Default value: UNIFORM 0.0 1.0. Value choices: 
+     cellsize                              Optional GPDouble. Cellsize. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cellsize                              optional. Default value: None. Value choices: 
+     distribution                          Optional GPString. Distribution. Default value: uniform 0.0 1.0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_name': ['out_name', 'required'], 'out_path': ['out_path', 'required'], 'raster_extent': ['raster_extent', 'optional'], 'distribution': ['distribution', 'optional'], 'cellsize': ['cellsize', 'optional']}
+     in_db = {'out_path': ['out_path', 'required'], 'out_name': ['out_name', 'required'], 'cellsize': ['cellsize', 'optional'], 'distribution': ['distribution', 'optional'], 'raster_extent': ['raster_extent', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateRandomRaster', inputs, in_db, out_db)
 
           
-def create_raster_dataset(out_path, out_name, pixel_type, number_of_bands, cellsize=None, raster_spatial_reference=None, config_keyword=None, pyramids='PYRAMIDS -1 NEAREST DEFAULT 75 NO_SKIP', tile_size='128 128', compression='LZ77', pyramid_origin=None):
+def create_raster_dataset(out_path, out_name, pixel_type, number_of_bands, cellsize=None, raster_spatial_reference=None, config_keyword=None, pyramids='pyramids -1 nearest default 75 no_skip', tile_size='128 128', compression='lz77', pyramid_origin=None):
      """
      Geoprocessing tool that creates a raster dataset as a file or in a geodatabase.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_path                              Required GPComposite. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_path                              required.
+     out_name                              Required GPString. Raster Dataset Name with Extension
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     number_of_bands                       required.
+     number_of_bands                       Required GPLong. Number of Bands
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     pixel_type                            required.
+     pixel_type                            Required GPString. Pixel Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_spatial_reference              optional. Default value: None. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramids                              optional. Default value: PYRAMIDS -1 NEAREST DEFAULT 75 NO_SKIP. Value choices: 
+     cellsize                              Optional GPDouble. Cellsize. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_size                             optional. Default value: 128 128. Value choices: 
+     pyramids                              Optional GPSAGDBEnvPyramid. Create pyramids. Default value: pyramids -1 nearest default 75 no_skip
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cellsize                              optional. Default value: None. Value choices: 
+     compression                           Optional GPSAGDBEnvCompression. Compression. Default value: lz77
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     raster_spatial_reference              Optional GPCoordinateSystem. Spatial Reference for Raster. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression                           optional. Default value: LZ77. Value choices: 
+     tile_size                             Optional GPSAGDBEnvTileSize. Tile size. Default value: 128 128
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramid_origin                        optional. Default value: None. Value choices: 
+     pyramid_origin                        Optional GPPoint. Pyramid Reference Point. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'raster_spatial_reference': ['raster_spatial_reference', 'optional'], 'pyramids': ['pyramids', 'optional'], 'tile_size': ['tile_size', 'optional'], 'cellsize': ['cellsize', 'optional'], 'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'number_of_bands': ['number_of_bands', 'required'], 'compression': ['compression', 'optional'], 'pyramid_origin': ['pyramid_origin', 'optional'], 'out_path': ['out_path', 'required'], 'pixel_type': ['pixel_type', 'required']}
+     in_db = {'out_name': ['out_name', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'cellsize': ['cellsize', 'optional'], 'pyramid_origin': ['pyramid_origin', 'optional'], 'pyramids': ['pyramids', 'optional'], 'out_path': ['out_path', 'required'], 'number_of_bands': ['number_of_bands', 'required'], 'compression': ['compression', 'optional'], 'raster_spatial_reference': ['raster_spatial_reference', 'optional'], 'tile_size': ['tile_size', 'optional'], 'pixel_type': ['pixel_type', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateRasterDataset', inputs, in_db, out_db)
 
           
-def mosaic(inputs, target, mosaic_type='LAST', colormap='FIRST', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None):
+def mosaic(inputs, target, mosaic_type='last', colormap='first', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None):
      """
      Geoprocessing tool that mosaics multiple input rasters into an existing raster dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     inputs                                required.
+     target                                Required DERasterDataset. Target Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target                                required.
+     inputs                                Required GPMultiValue. Input Rasters
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     matching_method                       optional. Default value: NONE. Value choices: NONE,STATISTIC_MATCHING,HISTOGRAM_MATCHING,LINEARCORRELATION_MATCHING
+     onebit_to_eightbit                    Optional GPBoolean. Convert 1 bit data to 8 bit. Default value: false. Value choices: onebitto8bit, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     background_value                      optional. Default value: None. Value choices: 
+     colormap                              Optional GPString. Mosaic Colormap Mode. Default value: first. Value choices: reject, first, last, match
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     colormap                              optional. Default value: FIRST. Value choices: REJECT,FIRST,LAST,MATCH
+     background_value                      Optional GPDouble. Ignore Background Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_type                           optional. Default value: LAST. Value choices: FIRST,LAST,BLEND,MEAN,MINIMUM,MAXIMUM,SUM
+     nodata_value                          Optional GPDouble. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaicking_tolerance                  optional. Default value: 0. Value choices: 
+     mosaic_type                           Optional GPString. Mosaic Operator. Default value: last. Value choices: first, last, blend, mean, minimum, maximum, sum
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     onebit_to_eightbit                    optional. Default value: false. Value choices: OneBitTo8Bit,NONE
+     matching_method                       Optional GPString. Color Matching Method. Default value: none. Value choices: none, statistic_matching, histogram_matching, linearcorrelation_matching
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     mosaicking_tolerance                  Optional GPDouble. Mosaicking Tolerance. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'target': ['target', 'required'], 'matching_method': ['MatchingMethod', 'optional'], 'inputs': ['inputs', 'required'], 'colormap': ['colormap', 'optional'], 'background_value': ['background_value', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'mosaicking_tolerance': ['mosaicking_tolerance', 'optional'], 'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'mosaic_type': ['mosaic_type', 'optional']}
+     in_db = {'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'mosaicking_tolerance': ['mosaicking_tolerance', 'optional'], 'colormap': ['colormap', 'optional'], 'background_value': ['background_value', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'mosaic_type': ['mosaic_type', 'optional'], 'target': ['target', 'required'], 'matching_method': ['MatchingMethod', 'optional'], 'inputs': ['inputs', 'required']}
      out_db = {}
      return _execute_tool('management', 'Mosaic', inputs, in_db, out_db)
 
           
-def workspace_to_raster_dataset(workspace, raster_dataset, include_subdirectories='false', mosaic_type='LAST', colormap='FIRST', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None, colormap_to_rgb='false'):
+def workspace_to_raster_dataset(workspace, raster_dataset, include_subdirectories='false', mosaic_type='last', colormap='first', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None, colormap_to_rgb='false'):
      """
      Geoprocessing tool that mosaics all the raster datasets stored within the specified workspace into one raster dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_dataset                        required.
+     raster_dataset                        Required DERasterDataset. Target Raster Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     matching_method                       optional. Default value: NONE. Value choices: NONE,STATISTIC_MATCHING,HISTOGRAM_MATCHING,LINEARCORRELATION_MATCHING
+     onebit_to_eightbit                    Optional GPBoolean. Convert 1 bit data to 8 bit. Default value: false. Value choices: onebitto8bit, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     onebit_to_eightbit                    optional. Default value: false. Value choices: OneBitTo8Bit,NONE
+     colormap                              Optional GPString. Mosaic Colormap Mode. Default value: first. Value choices: reject, first, last, match
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     background_value                      optional. Default value: None. Value choices: 
+     colormap_to_rgb                       Optional GPBoolean. Colormap to RGB. Default value: false. Value choices: colormaptorgb, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     colormap                              optional. Default value: FIRST. Value choices: REJECT,FIRST,LAST,MATCH
+     background_value                      Optional GPDouble. Ignore Background Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_type                           optional. Default value: LAST. Value choices: FIRST,LAST,BLEND,MEAN,MINIMUM,MAXIMUM,SUM
+     nodata_value                          Optional GPDouble. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     colormap_to_rgb                       optional. Default value: false. Value choices: ColormapToRGB,NONE
+     mosaic_type                           Optional GPString. Mosaic Operator. Default value: last. Value choices: first, last, blend, mean, minimum, maximum, sum
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaicking_tolerance                  optional. Default value: 0. Value choices: 
+     include_subdirectories                Optional GPBoolean. Include Sub-directories. Default value: false. Value choices: include_subdirectories, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     include_subdirectories                optional. Default value: false. Value choices: INCLUDE_SUBDIRECTORIES,NONE
+     matching_method                       Optional GPString. Color Matching Method. Default value: none. Value choices: none, statistic_matching, histogram_matching, linearcorrelation_matching
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     mosaicking_tolerance                  Optional GPDouble. Mosaicking Tolerance. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'matching_method': ['MatchingMethod', 'optional'], 'colormap_to_rgb': ['colormap_to_RGB', 'optional'], 'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'workspace': ['in_workspace', 'required'], 'raster_dataset': ['in_raster_dataset', 'required'], 'colormap': ['colormap', 'optional'], 'background_value': ['background_value', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'mosaicking_tolerance': ['mosaicking_tolerance', 'optional'], 'include_subdirectories': ['include_subdirectories', 'optional'], 'mosaic_type': ['mosaic_type', 'optional']}
+     in_db = {'onebit_to_eightbit': ['onebit_to_eightbit', 'optional'], 'raster_dataset': ['in_raster_dataset', 'required'], 'matching_method': ['MatchingMethod', 'optional'], 'colormap': ['colormap', 'optional'], 'colormap_to_rgb': ['colormap_to_RGB', 'optional'], 'background_value': ['background_value', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'mosaic_type': ['mosaic_type', 'optional'], 'include_subdirectories': ['include_subdirectories', 'optional'], 'workspace': ['in_workspace', 'required'], 'mosaicking_tolerance': ['mosaicking_tolerance', 'optional']}
      out_db = {}
      return _execute_tool('management', 'WorkspaceToRasterDataset', inputs, in_db, out_db)
 
@@ -2148,22 +2148,22 @@ def clip(raster, rectangle, template_dataset=None, nodata_value=None, clipping_g
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rectangle                             required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     rectangle                             Required GPEnvelope. Rectangle
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_dataset                      optional. Default value: None. Value choices: 
+     nodata_value                          Optional GPString. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maintaclipping_extent                 optional. Default value: false. Value choices: MAINTAIN_EXTENT,NO_MAINTAIN_EXTENT
+     template_dataset                      Optional GPComposite. Output Extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clipping_geometry                     optional. Default value: false. Value choices: ClippingGeometry,NONE
+     maintaclipping_extent                 Optional GPBoolean. Maintain Clipping Extent. Default value: false. Value choices: maintain_extent, no_maintain_extent
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     clipping_geometry                     Optional GPBoolean. Use Input Features for Clipping Geometry. Default value: false. Value choices: clippinggeometry, none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'maintaclipping_extent': ['maintain_clipping_extent', 'optional'], 'rectangle': ['rectangle', 'required'], 'template_dataset': ['in_template_dataset', 'optional'], 'raster': ['in_raster', 'required'], 'clipping_geometry': ['clipping_geometry', 'optional'], 'nodata_value': ['nodata_value', 'optional']}
+     in_db = {'raster': ['in_raster', 'required'], 'clipping_geometry': ['clipping_geometry', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'template_dataset': ['in_template_dataset', 'optional'], 'maintaclipping_extent': ['maintain_clipping_extent', 'optional'], 'rectangle': ['rectangle', 'required']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Clip', inputs, in_db, out_db)
 
@@ -2175,7 +2175,7 @@ def composite_bands(rasters):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rasters                               required.
+     rasters                               Required GPMultiValue. Input Rasters
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -2184,22 +2184,22 @@ def composite_bands(rasters):
      return _execute_tool('management', 'CompositeBands', inputs, in_db, out_db)
 
           
-def resample(raster, cell_size=None, resampling_type='NEAREST'):
+def resample(raster, cell_size=None, resampling_type='nearest'):
      """
      Geoprocessing tool that alters the raster dataset by changing the cell size and resampling method.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     cell_size                             Optional GPCellSizeXY. Output Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC,MAJORITY
+     resampling_type                       Optional GPString. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic, majority
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cell_size': ['cell_size', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'cell_size': ['cell_size', 'optional'], 'resampling_type': ['resampling_type', 'optional']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Resample', inputs, in_db, out_db)
 
@@ -2211,7 +2211,7 @@ def export_raster_world_file(raster_dataset):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_dataset                        required.
+     raster_dataset                        Required DERasterDataset. Input Raster Dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -2227,16 +2227,16 @@ def get_cell_value(raster, location_point, band_index=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location_point                        required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     location_point                        Required GPPoint. Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     band_index                            optional. Default value: None. Value choices: 
+     band_index                            Optional GPValueTable. Bands. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'location_point': ['location_point', 'required'], 'band_index': ['band_index', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'location_point': ['location_point', 'required'], 'band_index': ['band_index', 'optional']}
      out_db = {}
      return _execute_tool('management', 'GetCellValue', inputs, in_db, out_db)
 
@@ -2248,11 +2248,11 @@ def make_wcs_layer(wcs_coverage, template=None, band_index=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     wcs_coverage                          required.
+     wcs_coverage                          Required GPComposite. Input WCS Coverage
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     band_index                            optional. Default value: None. Value choices: 
+     band_index                            Optional GPValueTable. Bands. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template                              optional. Default value: None. Value choices: 
+     template                              Optional GPExtent. Template Extent. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -2268,49 +2268,49 @@ def apply_symbology_from_layer(layer, symbology_layer):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     layer                                 required.
+     symbology_layer                       Required GPLayer. Symbology Layer
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     symbology_layer                       required.
+     layer                                 Required GPLayer. Input Layer
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'layer': ['in_layer', 'required'], 'symbology_layer': ['in_symbology_layer', 'required']}
+     in_db = {'symbology_layer': ['in_symbology_layer', 'required'], 'layer': ['in_layer', 'required']}
      out_db = {}
      return _execute_tool('management', 'ApplySymbologyFromLayer', inputs, in_db, out_db)
 
           
-def mosaic_to_new_raster(input_rasters, output_location, raster_dataset_name_with_extension, number_of_bands, coordinate_system_for_the_raster=None, pixel_type='8_BIT_UNSIGNED', cellsize=None, mosaic_method='LAST', mosaic_colormap_mode='FIRST'):
+def mosaic_to_new_raster(input_rasters, output_location, raster_dataset_name_with_extension, number_of_bands, coordinate_system_for_the_raster=None, pixel_type='8_bit_unsigned', cellsize=None, mosaic_method='last', mosaic_colormap_mode='first'):
      """
      Geoprocessing tool that mosaics multiple raster datasets into a new raster dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_location                       required.
+     output_location                       Required GPComposite. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     number_of_bands                       required.
+     raster_dataset_name_with_extension    Required GPString. Raster Dataset Name with Extension
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster_dataset_name_with_extension    required.
+     number_of_bands                       Required GPLong. Number of Bands
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_rasters                         required.
+     input_rasters                         Required GPMultiValue. Input Rasters
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_colormap_mode                  optional. Default value: FIRST. Value choices: REJECT,FIRST,LAST,MATCH
+     coordinate_system_for_the_raster      Optional GPCoordinateSystem. Spatial Reference for Raster. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coordinate_system_for_the_raster      optional. Default value: None. Value choices: 
+     mosaic_method                         Optional GPString. Mosaic Operator. Default value: last. Value choices: first, last, blend, mean, minimum, maximum, sum
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_method                         optional. Default value: LAST. Value choices: FIRST,LAST,BLEND,MEAN,MINIMUM,MAXIMUM,SUM
+     cellsize                              Optional GPDouble. Cellsize. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cellsize                              optional. Default value: None. Value choices: 
+     mosaic_colormap_mode                  Optional GPString. Mosaic Colormap Mode. Default value: first. Value choices: reject, first, last, match
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_type                            optional. Default value: 8_BIT_UNSIGNED. Value choices: 1_BIT,2_BIT,4_BIT,8_BIT_UNSIGNED,8_BIT_SIGNED,16_BIT_UNSIGNED,16_BIT_SIGNED,32_BIT_UNSIGNED,32_BIT_SIGNED,32_BIT_FLOAT,64_BIT
+     pixel_type                            Optional GPString. Pixel Type. Default value: 8_bit_unsigned. Value choices: 1_bit, 2_bit, 4_bit, 8_bit_unsigned, 8_bit_signed, 16_bit_unsigned, 16_bit_signed, 32_bit_unsigned, 32_bit_signed, 32_bit_float, 64_bit
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'output_location': ['output_location', 'required'], 'coordinate_system_for_the_raster': ['coordinate_system_for_the_raster', 'optional'], 'mosaic_method': ['mosaic_method', 'optional'], 'cellsize': ['cellsize', 'optional'], 'input_rasters': ['input_rasters', 'required'], 'number_of_bands': ['number_of_bands', 'required'], 'raster_dataset_name_with_extension': ['raster_dataset_name_with_extension', 'required'], 'mosaic_colormap_mode': ['mosaic_colormap_mode', 'optional'], 'pixel_type': ['pixel_type', 'optional']}
+     in_db = {'coordinate_system_for_the_raster': ['coordinate_system_for_the_raster', 'optional'], 'output_location': ['output_location', 'required'], 'raster_dataset_name_with_extension': ['raster_dataset_name_with_extension', 'required'], 'mosaic_colormap_mode': ['mosaic_colormap_mode', 'optional'], 'input_rasters': ['input_rasters', 'required'], 'cellsize': ['cellsize', 'optional'], 'mosaic_method': ['mosaic_method', 'optional'], 'number_of_bands': ['number_of_bands', 'required'], 'pixel_type': ['pixel_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'MosaicToNewRaster', inputs, in_db, out_db)
 
@@ -2322,10 +2322,10 @@ def dice(features, vertex_limit):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     vertex_limit                          required.
+     vertex_limit                          Required GPLong. Vertex Limit
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -2341,16 +2341,16 @@ def split_line_at_point(features, point_features, search_radius=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     point_features                        required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              required.
+     point_features                        Required GPFeatureLayer. Point Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     search_radius                         optional. Default value: None. Value choices: 
+     search_radius                         Optional GPLinearUnit. Search Radius. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'point_features': ['point_features', 'required'], 'features': ['in_features', 'required'], 'search_radius': ['search_radius', 'optional']}
+     in_db = {'search_radius': ['search_radius', 'optional'], 'features': ['in_features', 'required'], 'point_features': ['point_features', 'required']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'SplitLineatPoint', inputs, in_db, out_db)
 
@@ -2362,89 +2362,89 @@ def unsplit_line(features, dissolve_field=None, statistics_fields=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     statistics_fields                     optional. Default value: None. Value choices: 
+     statistics_fields                     Optional GPValueTable. Statistics Field(s). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dissolve_field                        optional. Default value: None. Value choices: 
+     dissolve_field                        Optional GPMultiValue. Dissolve_Field(s). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'statistics_fields': ['statistics_fields', 'optional'], 'dissolve_field': ['dissolve_field', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'statistics_fields': ['statistics_fields', 'optional'], 'features': ['in_features', 'required'], 'dissolve_field': ['dissolve_field', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'UnsplitLine', inputs, in_db, out_db)
 
           
-def split_raster(raster, out_folder, out_base_name, split_method, format, resampling_type='NEAREST', num_rasters='1 1', tile_size='2048 2048', overlap='0', units='PIXELS', cell_size=None, origin=None, split_polygon_feature_class=None, clip_type=None, template_extent=None, nodata_value=None):
+def split_raster(raster, out_folder, out_base_name, split_method, format, resampling_type='nearest', num_rasters='1 1', tile_size='2048 2048', overlap='0', units='pixels', cell_size=None, origin=None, split_polygon_feature_class=None, clip_type=None, template_extent=None, nodata_value=None):
      """
      Geoprocessing tool that creates a tiled output from an input raster dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_folder                            required.
+     raster                                Required GPRasterLayer. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     format                                required.
+     format                                Required GPString. Output Format
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_base_name                         required.
+     out_base_name                         Required GPString. 
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     split_method                          required.
+     out_folder                            Required DEFolder. Output Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     split_method                          Required GPString. Split Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     origin                                optional. Default value: None. Value choices: 
+     overlap                               Optional GPDouble. Overlap. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     split_polygon_feature_class           optional. Default value: None. Value choices: 
+     origin                                Optional GPPoint. Lower left origin. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     units                                 Optional GPString. Units for Output Raster Size and Overlap. Default value: pixels. Value choices: pixels, meters, feet, degrees, kilometers, miles
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     num_rasters                           optional. Default value: 1 1. Value choices: 
+     clip_type                             Optional GPString. Clip Type. Default value: none. Value choices: none, extent, feature_class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_size                             optional. Default value: 2048 2048. Value choices: 
+     cell_size                             Optional GPPoint. Cellsize. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC
+     nodata_value                          Optional GPString. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clip_type                             optional. Default value: NONE. Value choices: NONE,EXTENT,FEATURE_CLASS
+     num_rasters                           Optional GPPoint. Number of Output Rasters. Default value: 1 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overlap                               optional. Default value: 0. Value choices: 
+     template_extent                       Optional GPExtent. Template Extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_extent                       optional. Default value: None. Value choices: 
+     split_polygon_feature_class           Optional GPFeatureLayer. Split Polygon Feature Class. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     units                                 optional. Default value: PIXELS. Value choices: PIXELS,METERS,FEET,DEGREES,KILOMETERS,MILES
+     tile_size                             Optional GPPoint. Size of Output Rasters. Default value: 2048 2048
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     resampling_type                       Optional GPString. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'origin': ['origin', 'optional'], 'split_polygon_feature_class': ['split_polygon_feature_class', 'optional'], 'template_extent': ['template_extent', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'raster': ['in_raster', 'required'], 'out_folder': ['out_folder', 'required'], 'cell_size': ['cell_size', 'optional'], 'num_rasters': ['num_rasters', 'optional'], 'tile_size': ['tile_size', 'optional'], 'split_method': ['split_method', 'required'], 'clip_type': ['clip_type', 'optional'], 'format': ['format', 'required'], 'overlap': ['overlap', 'optional'], 'out_base_name': ['out_base_name', 'required'], 'units': ['units', 'optional'], 'nodata_value': ['nodata_value', 'optional']}
+     in_db = {'raster': ['in_raster', 'required'], 'out_base_name': ['out_base_name', 'required'], 'overlap': ['overlap', 'optional'], 'split_method': ['split_method', 'required'], 'clip_type': ['clip_type', 'optional'], 'cell_size': ['cell_size', 'optional'], 'origin': ['origin', 'optional'], 'template_extent': ['template_extent', 'optional'], 'tile_size': ['tile_size', 'optional'], 'split_polygon_feature_class': ['split_polygon_feature_class', 'optional'], 'format': ['format', 'required'], 'units': ['units', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'num_rasters': ['num_rasters', 'optional'], 'out_folder': ['out_folder', 'required'], 'resampling_type': ['resampling_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SplitRaster', inputs, in_db, out_db)
 
           
-def eliminate_polygon_part(features, condition='AREA', part_area='0 Unknown', part_area_percent='0', part_option='true'):
+def eliminate_polygon_part(features, condition='area', part_area='0 unknown', part_area_percent='0', part_option='true'):
      """
      Geoprocessing tool that creates a new output feature class containing the features from input polygons with some parts or holes of a specified size deleted.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     part_option                           optional. Default value: true. Value choices: CONTAINED_ONLY,ANY
+     part_area_percent                     Optional GPDouble. Percentage. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     part_area                             optional. Default value: 0 Unknown. Value choices: 
+     part_area                             Optional GPArealUnit. Area. Default value: 0 unknown
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     part_area_percent                     optional. Default value: 0. Value choices: 
+     condition                             Optional GPString. Condition. Default value: area. Value choices: area, percent, area_and_percent, area_or_percent
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     condition                             optional. Default value: AREA. Value choices: AREA,PERCENT,AREA_AND_PERCENT,AREA_OR_PERCENT
+     part_option                           Optional GPBoolean. Eliminate contained parts only. Default value: true. Value choices: contained_only, any
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'part_option': ['part_option', 'optional'], 'part_area': ['part_area', 'optional'], 'part_area_percent': ['part_area_percent', 'optional'], 'features': ['in_features', 'required'], 'condition': ['condition', 'optional']}
+     in_db = {'part_area_percent': ['part_area_percent', 'optional'], 'features': ['in_features', 'required'], 'part_area': ['part_area', 'optional'], 'condition': ['condition', 'optional'], 'part_option': ['part_option', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'EliminatePolygonPart', inputs, in_db, out_db)
 
@@ -2456,17 +2456,17 @@ def points_to_line(input_features, line_field=None, sort_field=None, close_line=
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_features                        required.
+     input_features                        Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     close_line                            optional. Default value: false. Value choices: CLOSE,NO_CLOSE
+     sort_field                            Optional Field. Sort Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sort_field                            optional. Default value: None. Value choices: 
+     line_field                            Optional Field. Line Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_field                            optional. Default value: None. Value choices: 
+     close_line                            Optional GPBoolean. Close Line. Default value: false. Value choices: close, no_close
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_features': ['Input_Features', 'required'], 'sort_field': ['Sort_Field', 'optional'], 'line_field': ['Line_Field', 'optional'], 'close_line': ['Close_Line', 'optional']}
+     in_db = {'sort_field': ['Sort_Field', 'optional'], 'line_field': ['Line_Field', 'optional'], 'input_features': ['Input_Features', 'required'], 'close_line': ['Close_Line', 'optional']}
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'PointsToLine', inputs, in_db, out_db)
 
@@ -2478,18 +2478,18 @@ def change_version(features, version_type, version_name=None, date=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version_type                          required.
+     version_type                          Required GPString. Version Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              required.
+     features                              Required GPComposite. Input Feature Layer or Table View
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version_name                          optional. Default value: None. Value choices: 
+     date                                  Optional GPDate. Date and Time. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     date                                  optional. Default value: None. Value choices: 
+     version_name                          Optional GPString. Version Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'version_type': ['version_type', 'required'], 'version_name': ['version_name', 'optional'], 'date': ['date', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'version_type': ['version_type', 'required'], 'features': ['in_features', 'required'], 'date': ['date', 'optional'], 'version_name': ['version_name', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ChangeVersion', inputs, in_db, out_db)
 
@@ -2501,21 +2501,21 @@ def register_with_geodatabase(dataset, object_id_field=None, shape_field=None, g
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Datasets
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geometry_type                         optional. Default value: None. Value choices: POINT,MULTIPOINT,POLYGON,POLYLINE
+     shape_field                           Optional Field. Shape Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     object_id_field                       Optional Field. Object ID Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     object_id_field                       optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Coordinate System. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     shape_field                           optional. Default value: None. Value choices: 
+     geometry_type                         Optional GPString. Geometry Type. Default value: none. Value choices: point, multipoint, polygon, polyline
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     extent                                optional. Default value: None. Value choices: 
+     extent                                Optional GPEnvelope. Extent. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'geometry_type': ['in_geometry_type', 'optional'], 'spatial_reference': ['in_spatial_reference', 'optional'], 'object_id_field': ['in_object_id_field', 'optional'], 'extent': ['in_extent', 'optional'], 'shape_field': ['in_shape_field', 'optional']}
+     in_db = {'object_id_field': ['in_object_id_field', 'optional'], 'dataset': ['in_dataset', 'required'], 'geometry_type': ['in_geometry_type', 'optional'], 'shape_field': ['in_shape_field', 'optional'], 'extent': ['in_extent', 'optional'], 'spatial_reference': ['in_spatial_reference', 'optional']}
      out_db = {}
      return _execute_tool('management', 'RegisterwithGeodatabase', inputs, in_db, out_db)
 
@@ -2527,18 +2527,18 @@ def delete_identical(dataset, fields, xy_tolerance=None, z_tolerance='0'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     fields                                Required GPMultiValue. Field(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     fields                                required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_tolerance                           optional. Default value: 0. Value choices: 
+     xy_tolerance                          Optional GPLinearUnit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_tolerance                          optional. Default value: None. Value choices: 
+     z_tolerance                           Optional GPDouble. Z Tolerance. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'z_tolerance': ['z_tolerance', 'optional'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'fields': ['fields', 'required']}
+     in_db = {'fields': ['fields', 'required'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'dataset': ['in_dataset', 'required'], 'z_tolerance': ['z_tolerance', 'optional']}
      out_db = {}
      return _execute_tool('management', 'DeleteIdentical', inputs, in_db, out_db)
 
@@ -2550,20 +2550,20 @@ def find_identical(dataset, fields, xy_tolerance=None, z_tolerance='0', output_r
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     fields                                Required GPMultiValue. Field(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     fields                                required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_tolerance                           optional. Default value: 0. Value choices: 
+     xy_tolerance                          Optional GPLinearUnit. XY Tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_record_option                  optional. Default value: false. Value choices: ONLY_DUPLICATES,ALL
+     output_record_option                  Optional GPBoolean. Output only duplicated records. Default value: false. Value choices: only_duplicates, all
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_tolerance                          optional. Default value: None. Value choices: 
+     z_tolerance                           Optional GPDouble. Z Tolerance. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'output_record_option': ['output_record_option', 'optional'], 'z_tolerance': ['z_tolerance', 'optional'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'fields': ['fields', 'required']}
+     in_db = {'fields': ['fields', 'required'], 'xy_tolerance': ['xy_tolerance', 'optional'], 'dataset': ['in_dataset', 'required'], 'output_record_option': ['output_record_option', 'optional'], 'z_tolerance': ['z_tolerance', 'optional']}
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'FindIdentical', inputs, in_db, out_db)
 
@@ -2575,18 +2575,18 @@ def change_privileges(dataset, user, view=None, edit=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPMultiValue. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     user                                  required.
+     user                                  Required GPString. User
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edit                                  optional. Default value: None. Value choices: AS_IS,GRANT,REVOKE
+     view                                  Optional GPString. View (Select). Default value: none. Value choices: as_is, grant, revoke
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     view                                  optional. Default value: None. Value choices: AS_IS,GRANT,REVOKE
+     edit                                  Optional GPString. Edit (Update/Insert/Delete). Default value: none. Value choices: as_is, grant, revoke
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'user': ['user', 'required'], 'edit': ['Edit', 'optional'], 'view': ['View', 'optional']}
+     in_db = {'view': ['View', 'optional'], 'dataset': ['in_dataset', 'required'], 'user': ['user', 'required'], 'edit': ['Edit', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ChangePrivileges', inputs, in_db, out_db)
 
@@ -2598,160 +2598,160 @@ def create_spatial_reference(spatial_reference=None, spatial_reference_template=
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     m_domain                              optional. Default value: None. Value choices: 
+     expand_ratio                          Optional GPDouble. Grow XYDomain By Percentage. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     m_domain                              Optional GPString. M Domain (min max). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_domain                              optional. Default value: None. Value choices: 
+     z_domain                              Optional GPString. Z Domain (min max). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     expand_ratio                          optional. Default value: 0. Value choices: 
+     spatial_reference_template            Optional GPComposite. Spatial Reference Template. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference_template            optional. Default value: None. Value choices: 
+     xy_domain                             Optional GPEnvelope. XY Domain. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_domain                             optional. Default value: None. Value choices: 
+     template                              Optional GPMultiValue. Template XYDomains. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template                              optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'m_domain': ['m_domain', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'z_domain': ['z_domain', 'optional'], 'expand_ratio': ['expand_ratio', 'optional'], 'spatial_reference_template': ['spatial_reference_template', 'optional'], 'xy_domain': ['xy_domain', 'optional'], 'template': ['template', 'optional']}
+     in_db = {'expand_ratio': ['expand_ratio', 'optional'], 'm_domain': ['m_domain', 'optional'], 'z_domain': ['z_domain', 'optional'], 'spatial_reference_template': ['spatial_reference_template', 'optional'], 'xy_domain': ['xy_domain', 'optional'], 'template': ['template', 'optional'], 'spatial_reference': ['spatial_reference', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateSpatialReference', inputs, in_db, out_db)
 
           
-def raster_to_dted(raster, out_folder, dted_level, resampling_type='BILINEAR'):
+def raster_to_dted(raster, out_folder, dted_level, resampling_type='bilinear'):
      """
      Geoprocessing tool that splits a raster dataset into files based on the DTED tiling structure.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_folder                            required.
+     raster                                Required GPRasterLayer. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     dted_level                            required.
+     out_folder                            Required DEFolder. Output Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     dted_level                            Required GPString. DTED Level
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: BILINEAR. Value choices: BILINEAR,NEAREST,CUBIC
+     resampling_type                       Optional GPString. Resampling Technique. Default value: bilinear. Value choices: bilinear, nearest, cubic
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_folder': ['out_folder', 'required'], 'dted_level': ['dted_level', 'required'], 'resampling_type': ['resampling_type', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'resampling_type': ['resampling_type', 'optional'], 'out_folder': ['out_folder', 'required'], 'dted_level': ['dted_level', 'required']}
      out_db = {}
      return _execute_tool('management', 'RasterToDTED', inputs, in_db, out_db)
 
           
-def bearing_distance_to_line(table, x_field, y_field, distance_field, distance_units, bearing_field, bearing_units, line_type='0', id_field=None, spatial_reference='{B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision'):
+def bearing_distance_to_line(table, x_field, y_field, distance_field, distance_units, bearing_field, bearing_units, line_type='0', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic line features constructed based on the values in an x-coordinate field, y-coordinate field, bearing field, and distance field of a table.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distance_units                        required.
+     bearing_units                         Required GPString. Bearing Units
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     bearing_field                         required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     x_field                               required.
+     x_field                               Required Field. X Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     bearing_field                         Required Field. Bearing Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     bearing_units                         required.
+     distance_field                        Required Field. Distance Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     y_field                               required.
+     distance_units                        Required GPString. Distance Units
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     distance_field                        required.
+     y_field                               Required Field. Y Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_type                             optional. Default value: 0. Value choices: GEODESIC,GREAT_CIRCLE,RHUMB_LINE,NORMAL_SECTION
+     id_field                              Optional Field. ID. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: {B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision. Value choices: 
+     line_type                             Optional GPString. Line Type. Default value: 0. Value choices: geodesic, great_circle, rhumb_line, normal_section
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     id_field                              optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: {b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'distance_units': ['distance_units', 'required'], 'line_type': ['line_type', 'optional'], 'bearing_field': ['bearing_field', 'required'], 'x_field': ['x_field', 'required'], 'table': ['in_table', 'required'], 'id_field': ['id_field', 'optional'], 'bearing_units': ['bearing_units', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'y_field': ['y_field', 'required'], 'distance_field': ['distance_field', 'required']}
+     in_db = {'bearing_units': ['bearing_units', 'required'], 'table': ['in_table', 'required'], 'line_type': ['line_type', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'x_field': ['x_field', 'required'], 'bearing_field': ['bearing_field', 'required'], 'distance_field': ['distance_field', 'required'], 'distance_units': ['distance_units', 'required'], 'id_field': ['id_field', 'optional'], 'y_field': ['y_field', 'required']}
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'BearingDistanceToLine', inputs, in_db, out_db)
 
           
-def table_to_ellipse(table, x_field, y_field, major_field, minor_field, distance_units, azimuth_field=None, azimuth_units='9102', id_field=None, spatial_reference='{B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision'):
+def table_to_ellipse(table, x_field, y_field, major_field, minor_field, distance_units, azimuth_field=None, azimuth_units='9102', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic ellipse features constructed based on the values in an x-coordinate field, y-coordinate field, major-axis field, minor-axis field, and azimuth field of a table.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distance_units                        required.
+     distance_units                        Required GPString. Distance Units
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     major_field                           required.
+     major_field                           Required Field. Major Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     x_field                               Required Field. X Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     minor_field                           required.
+     minor_field                           Required Field. Minor Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     y_field                               required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     x_field                               required.
+     y_field                               Required Field. Y Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     id_field                              optional. Default value: None. Value choices: 
+     id_field                              Optional Field. ID. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: {B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision. Value choices: 
+     azimuth_units                         Optional GPString. Azimuth Units. Default value: 9102. Value choices: degrees, mils, rads, grads
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     azimuth_field                         optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: {b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     azimuth_units                         optional. Default value: 9102. Value choices: DEGREES,MILS,RADS,GRADS
+     azimuth_field                         Optional Field. Azimuth Field. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'distance_units': ['distance_units', 'required'], 'azimuth_units': ['azimuth_units', 'optional'], 'azimuth_field': ['azimuth_field', 'optional'], 'major_field': ['major_field', 'required'], 'table': ['in_table', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'id_field': ['id_field', 'optional'], 'minor_field': ['minor_field', 'required'], 'y_field': ['y_field', 'required'], 'x_field': ['x_field', 'required']}
+     in_db = {'id_field': ['id_field', 'optional'], 'azimuth_units': ['azimuth_units', 'optional'], 'distance_units': ['distance_units', 'required'], 'major_field': ['major_field', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'x_field': ['x_field', 'required'], 'minor_field': ['minor_field', 'required'], 'table': ['in_table', 'required'], 'azimuth_field': ['azimuth_field', 'optional'], 'y_field': ['y_field', 'required']}
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'TableToEllipse', inputs, in_db, out_db)
 
           
-def xy_to_line(table, startx_field, starty_field, endx_field, endy_field, line_type='0', id_field=None, spatial_reference='{B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision'):
+def xy_to_line(table, startx_field, starty_field, endx_field, endy_field, line_type='0', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic line features constructed based on the values in a start x-coordinate field, start y-coordinate field, end x-coordinate field, and end y-coordinate field of a table.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     starty_field                          required.
+     endx_field                            Required Field. End X Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     endy_field                            required.
+     startx_field                          Required Field. Start X Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     endx_field                            required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     endy_field                            Required Field. End Y Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     startx_field                          required.
+     starty_field                          Required Field. Start Y Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     line_type                             optional. Default value: 0. Value choices: GEODESIC,GREAT_CIRCLE,RHUMB_LINE,NORMAL_SECTION
+     id_field                              Optional Field. ID. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: {B286C06B-0879-11D2-AACA-00C04FA33C20};IsHighPrecision. Value choices: 
+     line_type                             Optional GPString. Line Type. Default value: 0. Value choices: geodesic, great_circle, rhumb_line, normal_section
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     id_field                              optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: {b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'line_type': ['line_type', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'endx_field': ['endx_field', 'required'], 'table': ['in_table', 'required'], 'startx_field': ['startx_field', 'required'], 'starty_field': ['starty_field', 'required'], 'id_field': ['id_field', 'optional'], 'endy_field': ['endy_field', 'required']}
+     in_db = {'id_field': ['id_field', 'optional'], 'table': ['in_table', 'required'], 'line_type': ['line_type', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'endx_field': ['endx_field', 'required'], 'startx_field': ['startx_field', 'required'], 'endy_field': ['endy_field', 'required'], 'starty_field': ['starty_field', 'required']}
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'XYToLine', inputs, in_db, out_db)
 
@@ -2763,112 +2763,112 @@ def convert_coordinate_notation(table, x_field, y_field, input_coordinate_format
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     x_field                               required.
+     x_field                               Required Field. X Field (Longitude)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     output_coordinate_format              Required GPString. Output Coordinate Format
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     exclude_invalid_records               required.
+     exclude_invalid_records               Required GPBoolean. Exclude records with invalid notation
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     output_coordinate_format              required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     y_field                               required.
+     input_coordinate_format               Required GPString. Input Coordinate Format
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_coordinate_format               required.
+     y_field                               Required Field. Y Field (Latitude)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     id_field                              optional. Default value: None. Value choices: 
+     id_field                              Optional Field. ID. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     coor_system                           Optional GPCoordinateSystem. Input Coordinate System. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coor_system                           optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Output Coordinate System. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'spatial_reference': ['spatial_reference', 'optional'], 'coor_system': ['in_coor_system', 'optional'], 'x_field': ['x_field', 'required'], 'table': ['in_table', 'required'], 'exclude_invalid_records': ['exclude_invalid_records', 'required'], 'id_field': ['id_field', 'optional'], 'output_coordinate_format': ['output_coordinate_format', 'required'], 'y_field': ['y_field', 'required'], 'input_coordinate_format': ['input_coordinate_format', 'required']}
+     in_db = {'id_field': ['id_field', 'optional'], 'coor_system': ['in_coor_system', 'optional'], 'x_field': ['x_field', 'required'], 'output_coordinate_format': ['output_coordinate_format', 'required'], 'exclude_invalid_records': ['exclude_invalid_records', 'required'], 'table': ['in_table', 'required'], 'input_coordinate_format': ['input_coordinate_format', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'y_field': ['y_field', 'required']}
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'ConvertCoordinateNotation', inputs, in_db, out_db)
 
           
-def minimum_bounding_geometry(features, geometry_type='RECTANGLE_BY_AREA', group_option=None, group_field=None, mbg_fields_option='false'):
+def minimum_bounding_geometry(features, geometry_type='rectangle_by_area', group_option=None, group_field=None, mbg_fields_option='false'):
      """
      Geoprocessing tool that creates polygons which represent a specified minimum bounding geometry enclosing each input feature or a group of input features.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     group_field                           optional. Default value: None. Value choices: 
+     group_field                           Optional GPMultiValue. Group Field(s). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geometry_type                         optional. Default value: RECTANGLE_BY_AREA. Value choices: RECTANGLE_BY_AREA,RECTANGLE_BY_WIDTH,CONVEX_HULL,CIRCLE,ENVELOPE
+     group_option                          Optional GPString. Group Option. Default value: none. Value choices: none, all, list
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     group_option                          optional. Default value: NONE. Value choices: NONE,ALL,LIST
+     geometry_type                         Optional GPString. Geometry Type. Default value: rectangle_by_area. Value choices: rectangle_by_area, rectangle_by_width, convex_hull, circle, envelope
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mbg_fields_option                     optional. Default value: false. Value choices: MBG_FIELDS,NO_MBG_FIELDS
+     mbg_fields_option                     Optional GPBoolean. Add geometry characteristics as attributes to output. Default value: false. Value choices: mbg_fields, no_mbg_fields
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'group_field': ['group_field', 'optional'], 'geometry_type': ['geometry_type', 'optional'], 'group_option': ['group_option', 'optional'], 'features': ['in_features', 'required'], 'mbg_fields_option': ['mbg_fields_option', 'optional']}
+     in_db = {'group_field': ['group_field', 'optional'], 'features': ['in_features', 'required'], 'group_option': ['group_option', 'optional'], 'geometry_type': ['geometry_type', 'optional'], 'mbg_fields_option': ['mbg_fields_option', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'MinimumBoundingGeometry', inputs, in_db, out_db)
 
           
-def add_rasters_to_mosaic_dataset(mosaic_dataset, raster_type, input_path, update_cellsize_ranges='true', update_boundary='true', update_overviews='false', maximum_pyramid_levels=None, maximum_cell_size='0', minimum_dimension='1500', spatial_reference=None, filter=None, sub_folder='true', duplicate_items_action='ALLOW_DUPLICATES', build_pyramids='false', calculate_statistics='false', build_thumbnails='false', operation_description=None, force_spatial_reference='false', estimate_statistics='false', aux_inputs=None):
+def add_rasters_to_mosaic_dataset(mosaic_dataset, raster_type, input_path, update_cellsize_ranges='true', update_boundary='true', update_overviews='false', maximum_pyramid_levels=None, maximum_cell_size='0', minimum_dimension='1500', spatial_reference=None, filter=None, sub_folder='true', duplicate_items_action='allow_duplicates', build_pyramids='false', calculate_statistics='false', build_thumbnails='false', operation_description=None, force_spatial_reference='false', estimate_statistics='false', aux_inputs=None):
      """
      Geoprocessing tool that ingests raster datasets from a file, folder, raster catalog, or image service to a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_type                           required.
+     input_path                            Required GPMultiValue. Input Data
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_path                            required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     raster_type                           Required GPRasterBuilder. Raster Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_overviews                      optional. Default value: false. Value choices: UPDATE_OVERVIEWS,NO_OVERVIEWS
+     minimum_dimension                     Optional GPLong. Minimum Pyramid Rows or Columns. Default value: 1500
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sub_folder                            optional. Default value: true. Value choices: SUBFOLDERS,NO_SUBFOLDERS
+     filter                                Optional GPString. Input Data Filter. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     estimate_statistics                   Optional GPBoolean. Estimate Mosaic Dataset Statistics. Default value: false. Value choices: estimate_statistics, no_statistics
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     force_spatial_reference               optional. Default value: false. Value choices: FORCE_SPATIAL_REFERENCE,NO_FORCE_SPATIAL_REFERENCE
+     aux_inputs                            Optional GPValueTable. Auxiliary Inputs. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     calculate_statistics                  optional. Default value: false. Value choices: CALCULATE_STATISTICS,NO_STATISTICS
+     update_overviews                      Optional GPBoolean. Update Overviews. Default value: false. Value choices: update_overviews, no_overviews
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_dimension                     optional. Default value: 1500. Value choices: 
+     update_boundary                       Optional GPBoolean. Update Boundary. Default value: true. Value choices: update_boundary, no_boundary
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     filter                                optional. Default value: None. Value choices: 
+     build_thumbnails                      Optional GPBoolean. Build Thumbnails. Default value: false. Value choices: build_thumbnails, no_thumbnails
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_cellsize_ranges                optional. Default value: true. Value choices: UPDATE_CELL_SIZES,NO_CELL_SIZES
+     duplicate_items_action                Optional GPString. Add New Datasets Only. Default value: allow_duplicates. Value choices: allow_duplicates, exclude_duplicates, overwrite_duplicates
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     estimate_statistics                   optional. Default value: false. Value choices: ESTIMATE_STATISTICS,NO_STATISTICS
+     maximum_pyramid_levels                Optional GPLong. Maximum Pyramid Levels Used. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_pyramids                        optional. Default value: false. Value choices: BUILD_PYRAMIDS,NO_PYRAMIDS
+     build_pyramids                        Optional GPBoolean. Build Raster Pyramids. Default value: false. Value choices: build_pyramids, no_pyramids
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_thumbnails                      optional. Default value: false. Value choices: BUILD_THUMBNAILS,NO_THUMBNAILS
+     operation_description                 Optional GPString. Operation Description. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     aux_inputs                            optional. Default value: None. Value choices: 
+     force_spatial_reference               Optional GPBoolean. Force this Coordinate System for Input Data. Default value: false. Value choices: force_spatial_reference, no_force_spatial_reference
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_pyramid_levels                optional. Default value: None. Value choices: 
+     maximum_cell_size                     Optional GPDouble. Maximum Pyramid Cell Size. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     duplicate_items_action                optional. Default value: ALLOW_DUPLICATES. Value choices: ALLOW_DUPLICATES,EXCLUDE_DUPLICATES,OVERWRITE_DUPLICATES
+     sub_folder                            Optional GPBoolean. Include Sub Folders. Default value: true. Value choices: subfolders, no_subfolders
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     operation_description                 optional. Default value: None. Value choices: 
+     update_cellsize_ranges                Optional GPBoolean. Update Cell Size Ranges. Default value: true. Value choices: update_cell_sizes, no_cell_sizes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_cell_size                     optional. Default value: 0. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Coordinate System for Input Data. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_boundary                       optional. Default value: true. Value choices: UPDATE_BOUNDARY,NO_BOUNDARY
+     calculate_statistics                  Optional GPBoolean. Calculate Statistics. Default value: false. Value choices: calculate_statistics, no_statistics
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'update_overviews': ['update_overviews', 'optional'], 'sub_folder': ['sub_folder', 'optional'], 'input_path': ['input_path', 'required'], 'spatial_reference': ['spatial_reference', 'optional'], 'force_spatial_reference': ['force_spatial_reference', 'optional'], 'calculate_statistics': ['calculate_statistics', 'optional'], 'raster_type': ['raster_type', 'required'], 'minimum_dimension': ['minimum_dimension', 'optional'], 'filter': ['filter', 'optional'], 'maximum_cell_size': ['maximum_cell_size', 'optional'], 'estimate_statistics': ['estimate_statistics', 'optional'], 'build_pyramids': ['build_pyramids', 'optional'], 'build_thumbnails': ['build_thumbnails', 'optional'], 'aux_inputs': ['aux_inputs', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_pyramid_levels': ['maximum_pyramid_levels', 'optional'], 'duplicate_items_action': ['duplicate_items_action', 'optional'], 'operation_description': ['operation_description', 'optional'], 'update_boundary': ['update_boundary', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'minimum_dimension': ['minimum_dimension', 'optional'], 'filter': ['filter', 'optional'], 'estimate_statistics': ['estimate_statistics', 'optional'], 'aux_inputs': ['aux_inputs', 'optional'], 'update_overviews': ['update_overviews', 'optional'], 'update_boundary': ['update_boundary', 'optional'], 'build_thumbnails': ['build_thumbnails', 'optional'], 'duplicate_items_action': ['duplicate_items_action', 'optional'], 'input_path': ['input_path', 'required'], 'maximum_pyramid_levels': ['maximum_pyramid_levels', 'optional'], 'build_pyramids': ['build_pyramids', 'optional'], 'operation_description': ['operation_description', 'optional'], 'force_spatial_reference': ['force_spatial_reference', 'optional'], 'raster_type': ['raster_type', 'required'], 'maximum_cell_size': ['maximum_cell_size', 'optional'], 'sub_folder': ['sub_folder', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional'], 'spatial_reference': ['spatial_reference', 'optional'], 'calculate_statistics': ['calculate_statistics', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AddRastersToMosaicDataset', inputs, in_db, out_db)
 
@@ -2880,63 +2880,63 @@ def build_boundary(mosaic_dataset, where_clause=None, append_to_existing='false'
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     append_to_existing                    optional. Default value: false. Value choices: APPEND,OVERWRITE
+     append_to_existing                    Optional GPBoolean. Append To Existing Boundary. Default value: false. Value choices: append, overwrite
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     simplification_method                 optional. Default value: NONE. Value choices: NONE,CONVEX_HULL,ENVELOPE
+     simplification_method                 Optional GPString. Simplification Method. Default value: none. Value choices: none, convex_hull, envelope
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'append_to_existing': ['append_to_existing', 'optional'], 'simplification_method': ['simplification_method', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'append_to_existing': ['append_to_existing', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'simplification_method': ['simplification_method', 'optional'], 'where_clause': ['where_clause', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildBoundary', inputs, in_db, out_db)
 
           
-def build_footprints(mosaic_dataset, where_clause=None, reset_footprint='RADIOMETRY', mdata_value='1', max_data_value='254', approx_num_vertices='80', shrink_distance='0', maintaedges='false', skip_derived_images='true', update_boundary='true', request_size='2000', mregion_size='100', simplification_method=None, edge_tolerance=None, max_sliver_size='20', mthinness_ratio='0.05'):
+def build_footprints(mosaic_dataset, where_clause=None, reset_footprint='radiometry', mdata_value='1', max_data_value='254', approx_num_vertices='80', shrink_distance='0', maintaedges='false', skip_derived_images='true', update_boundary='true', request_size='2000', mregion_size='100', simplification_method=None, edge_tolerance=None, max_sliver_size='20', mthinness_ratio='0.05'):
      """
      Geoprocessing tool that computes the footprints for the rasters in a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_derived_images                   optional. Default value: true. Value choices: SKIP_DERIVED_IMAGES,NO_SKIP_DERIVED_IMAGES
+     max_data_value                        Optional GPDouble. Maximum Data Value. Default value: 254
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     approx_num_vertices                   optional. Default value: 80. Value choices: 
+     update_boundary                       Optional GPBoolean. Update Boundary. Default value: true. Value choices: update_boundary, no_boundary
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_sliver_size                       optional. Default value: 20. Value choices: 
+     simplification_method                 Optional GPString. Simplification Method. Default value: none. Value choices: none, convex_hull, envelope
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edge_tolerance                        optional. Default value: None. Value choices: 
+     skip_derived_images                   Optional GPBoolean. Skip overviews. Default value: true. Value choices: skip_derived_images, no_skip_derived_images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mdata_value                           optional. Default value: 1. Value choices: 
+     maintaedges                           Optional GPBoolean. Maintain sheet edges. Default value: false. Value choices: maintain_edges, no_maintain_edges
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     simplification_method                 optional. Default value: NONE. Value choices: NONE,CONVEX_HULL,ENVELOPE
+     mdata_value                           Optional GPDouble. Minimum Data Value. Default value: 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_data_value                        optional. Default value: 254. Value choices: 
+     request_size                          Optional GPLong. Request Size. Default value: 2000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mthinness_ratio                       optional. Default value: 0.05. Value choices: 
+     edge_tolerance                        Optional GPDouble. Edge tolerance. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mregion_size                          optional. Default value: 100. Value choices: 
+     mregion_size                          Optional GPLong. Minimum Region Size. Default value: 100
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maintaedges                           optional. Default value: false. Value choices: MAINTAIN_EDGES,NO_MAINTAIN_EDGES
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     reset_footprint                       optional. Default value: RADIOMETRY. Value choices: NONE,GEOMETRY,RADIOMETRY,COPY_TO_SIBLING
+     max_sliver_size                       Optional GPLong. Maximum Sliver Size. Default value: 20
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     shrink_distance                       Optional GPDouble. Shrink distance. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     request_size                          optional. Default value: 2000. Value choices: 
+     mthinness_ratio                       Optional GPDouble. Minimum Thinness Ratio. Default value: 0.05
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     shrink_distance                       optional. Default value: 0. Value choices: 
+     reset_footprint                       Optional GPComposite. Computation Method. Default value: radiometry. Value choices: none, geometry, radiometry, copy_to_sibling
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_boundary                       optional. Default value: true. Value choices: UPDATE_BOUNDARY,NO_BOUNDARY
+     approx_num_vertices                   Optional GPLong. Approximate number of vertices. Default value: 80
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'skip_derived_images': ['skip_derived_images', 'optional'], 'approx_num_vertices': ['approx_num_vertices', 'optional'], 'max_sliver_size': ['max_sliver_size', 'optional'], 'edge_tolerance': ['edge_tolerance', 'optional'], 'mdata_value': ['min_data_value', 'optional'], 'simplification_method': ['simplification_method', 'optional'], 'mregion_size': ['min_region_size', 'optional'], 'max_data_value': ['max_data_value', 'optional'], 'mthinness_ratio': ['min_thinness_ratio', 'optional'], 'shrink_distance': ['shrink_distance', 'optional'], 'maintaedges': ['maintain_edges', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'reset_footprint': ['reset_footprint', 'optional'], 'where_clause': ['where_clause', 'optional'], 'request_size': ['request_size', 'optional'], 'update_boundary': ['update_boundary', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'update_boundary': ['update_boundary', 'optional'], 'simplification_method': ['simplification_method', 'optional'], 'skip_derived_images': ['skip_derived_images', 'optional'], 'maintaedges': ['maintain_edges', 'optional'], 'mdata_value': ['min_data_value', 'optional'], 'request_size': ['request_size', 'optional'], 'max_data_value': ['max_data_value', 'optional'], 'edge_tolerance': ['edge_tolerance', 'optional'], 'mregion_size': ['min_region_size', 'optional'], 'where_clause': ['where_clause', 'optional'], 'max_sliver_size': ['max_sliver_size', 'optional'], 'shrink_distance': ['shrink_distance', 'optional'], 'mthinness_ratio': ['min_thinness_ratio', 'optional'], 'reset_footprint': ['reset_footprint', 'optional'], 'approx_num_vertices': ['approx_num_vertices', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildFootprints', inputs, in_db, out_db)
 
@@ -2948,73 +2948,73 @@ def build_overviews(mosaic_dataset, where_clause=None, define_missing_tiles='tru
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     generate_missing_images               optional. Default value: true. Value choices: GENERATE_MISSING_IMAGES,IGNORE_MISSING_IMAGES
+     define_missing_tiles                  Optional GPBoolean. Define Missing Overview Tiles. Default value: true. Value choices: define_missing_tiles, no_define_missing_tiles
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     define_missing_tiles                  optional. Default value: true. Value choices: DEFINE_MISSING_TILES,NO_DEFINE_MISSING_TILES
+     regenerate_stale_images               Optional GPBoolean. Regenerate Stale Overview Images Only. Default value: true. Value choices: regenerate_stale_images, ignore_stale_images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     regenerate_stale_images               optional. Default value: true. Value choices: REGENERATE_STALE_IMAGES,IGNORE_STALE_IMAGES
+     generate_missing_images               Optional GPBoolean. Generate Missing Overview Images Only. Default value: true. Value choices: generate_missing_images, ignore_missing_images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     generate_overviews                    optional. Default value: true. Value choices: GENERATE_OVERVIEWS,NO_GENERATE_OVERVIEWS
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     generate_overviews                    Optional GPBoolean. Generate Overviews. Default value: true. Value choices: generate_overviews, no_generate_overviews
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'define_missing_tiles': ['define_missing_tiles', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'generate_overviews': ['generate_overviews', 'optional'], 'regenerate_stale_images': ['regenerate_stale_images', 'optional'], 'generate_missing_images': ['generate_missing_images', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'generate_missing_images': ['generate_missing_images', 'optional'], 'define_missing_tiles': ['define_missing_tiles', 'optional'], 'regenerate_stale_images': ['regenerate_stale_images', 'optional'], 'generate_overviews': ['generate_overviews', 'optional'], 'where_clause': ['where_clause', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildOverviews', inputs, in_db, out_db)
 
           
-def build_seamlines(mosaic_dataset, cell_size=None, sort_method='NORTH_WEST', sort_order='true', order_by_attribute=None, order_by_base_value=None, view_point=None, computation_method='RADIOMETRY', blend_width=None, blend_type='BOTH', request_size='1000', request_size_type='PIXELS', blend_width_units='PIXELS', area_of_interest='in_memory\{18B3C9C4-BE24-4D7F-B8A9-FAE3BD65574A}', where_clause=None, update_existing='false', mregion_size='100', mthinness_ratio='0.05', max_sliver_size='20'):
+def build_seamlines(mosaic_dataset, cell_size=None, sort_method='north_west', sort_order='true', order_by_attribute=None, order_by_base_value=None, view_point=None, computation_method='radiometry', blend_width=None, blend_type='both', request_size='1000', request_size_type='pixels', blend_width_units='pixels', area_of_interest='in_memory\{18b3c9c4-be24-4d7f-b8a9-fae3bd65574a}', where_clause=None, update_existing='false', mregion_size='100', mthinness_ratio='0.05', max_sliver_size='20'):
      """
      Geoprocessing tool that generates seamlines for your mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     blend_width                           optional. Default value: None. Value choices: 
+     blend_width_units                     Optional GPString. Blend Width Units. Default value: pixels. Value choices: pixels, ground_units
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_sliver_size                       optional. Default value: 20. Value choices: 
+     mthinness_ratio                       Optional GPDouble. Minimum Thinness Ratio. Default value: 0.05
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     order_by_base_value                   optional. Default value: None. Value choices: 
+     area_of_interest                      Optional GPFeatureRecordSetLayer. Area of Interest. Default value: in_memory\{18b3c9c4-be24-4d7f-b8a9-fae3bd65574a}
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     order_by_attribute                    optional. Default value: None. Value choices: 
+     mregion_size                          Optional GPLong. Minimum Region Size. Default value: 100
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sort_order                            optional. Default value: true. Value choices: ASCENDING,DESCENDING
+     view_point                            Optional GPPoint. View Point. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: in_memory\{18B3C9C4-BE24-4D7F-B8A9-FAE3BD65574A}. Value choices: 
+     order_by_base_value                   Optional GPVariant. Sort Base Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mthinness_ratio                       optional. Default value: 0.05. Value choices: 
+     request_size                          Optional GPLong. Request Size. Default value: 1000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     request_size_type                     optional. Default value: PIXELS. Value choices: PIXELS,PIXELSIZE_FACTOR
+     max_sliver_size                       Optional GPLong. Maximum Sliver Size. Default value: 20
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_existing                       optional. Default value: false. Value choices: UPDATE_EXISTING,IGNORE_EXISTING
+     blend_width                           Optional GPDouble. Blend Width. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     sort_method                           Optional GPString. Sort Method. Default value: north_west. Value choices: north_west, closest_to_viewpoint, by_attribute
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mregion_size                          optional. Default value: 100. Value choices: 
+     order_by_attribute                    Optional Field. Sort Attribute. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     view_point                            optional. Default value: None. Value choices: 
+     cell_size                             Optional GPMultiValue. Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sort_method                           optional. Default value: NORTH_WEST. Value choices: NORTH_WEST,CLOSEST_TO_VIEWPOINT,BY_ATTRIBUTE
+     update_existing                       Optional GPBoolean. Update Existing Seamlines. Default value: false. Value choices: update_existing, ignore_existing
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     blend_width_units                     optional. Default value: PIXELS. Value choices: PIXELS,GROUND_UNITS
+     sort_order                            Optional GPBoolean. Sort Ascending. Default value: true. Value choices: ascending, descending
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     computation_method                    optional. Default value: RADIOMETRY. Value choices: GEOMETRY,RADIOMETRY,COPY_FOOTPRINT,COPY_TO_SIBLING,EDGE_DETECTION,VORONOI,DISPARITY
+     blend_type                            Optional GPString. Blend Type. Default value: both. Value choices: both, inside, outside
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     request_size                          optional. Default value: 1000. Value choices: 
+     computation_method                    Optional GPString. Computation Method. Default value: radiometry. Value choices: geometry, radiometry, copy_footprint, copy_to_sibling, edge_detection, voronoi, disparity
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     blend_type                            optional. Default value: BOTH. Value choices: BOTH,INSIDE,OUTSIDE
+     request_size_type                     Optional GPString. Request Size Type. Default value: pixels. Value choices: pixels, pixelsize_factor
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'blend_width': ['blend_width', 'optional'], 'max_sliver_size': ['max_sliver_size', 'optional'], 'order_by_attribute': ['order_by_attribute', 'optional'], 'order_by_base_value': ['order_by_base_value', 'optional'], 'sort_order': ['sort_order', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'mthinness_ratio': ['min_thinness_ratio', 'optional'], 'computation_method': ['computation_method', 'optional'], 'update_existing': ['update_existing', 'optional'], 'cell_size': ['cell_size', 'optional'], 'mregion_size': ['min_region_size', 'optional'], 'view_point': ['view_point', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'sort_method': ['sort_method', 'optional'], 'blend_width_units': ['blend_width_units', 'optional'], 'request_size_type': ['request_size_type', 'optional'], 'request_size': ['request_size', 'optional'], 'blend_type': ['blend_type', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'blend_width_units': ['blend_width_units', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'mthinness_ratio': ['min_thinness_ratio', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'mregion_size': ['min_region_size', 'optional'], 'view_point': ['view_point', 'optional'], 'order_by_base_value': ['order_by_base_value', 'optional'], 'request_size': ['request_size', 'optional'], 'max_sliver_size': ['max_sliver_size', 'optional'], 'blend_width': ['blend_width', 'optional'], 'sort_method': ['sort_method', 'optional'], 'order_by_attribute': ['order_by_attribute', 'optional'], 'cell_size': ['cell_size', 'optional'], 'update_existing': ['update_existing', 'optional'], 'sort_order': ['sort_order', 'optional'], 'blend_type': ['blend_type', 'optional'], 'computation_method': ['computation_method', 'optional'], 'request_size_type': ['request_size_type', 'optional'], 'where_clause': ['where_clause', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildSeamlines', inputs, in_db, out_db)
 
@@ -3026,53 +3026,53 @@ def calculate_cell_size_ranges(mosaic_dataset, where_clause=None, do_compute_min
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_missing_only                   optional. Default value: false. Value choices: UPDATE_MISSING_ONLY,UPDATE_ALL
+     do_compute_min                        Optional GPBoolean. Compute Minimum Cell Sizes. Default value: true. Value choices: min_cell_sizes, no_min_cell_sizes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size_tolerance_factor            optional. Default value: 0.8. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     do_compute_max                        optional. Default value: true. Value choices: MAX_CELL_SIZES,NO_MAX_CELL_SIZES
+     cell_size_tolerance_factor            Optional GPDouble. Cell Size Tolerance Factor. Default value: 0.8
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_range_factor                      optional. Default value: 10. Value choices: 
+     max_range_factor                      Optional GPDouble. Maximum Cell Size Range Factor. Default value: 10
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     do_compute_min                        optional. Default value: true. Value choices: MIN_CELL_SIZES,NO_MIN_CELL_SIZES
+     do_compute_max                        Optional GPBoolean. Compute Maximum Cell Sizes. Default value: true. Value choices: max_cell_sizes, no_max_cell_sizes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     update_missing_only                   Optional GPBoolean. Update Missing Values Only. Default value: false. Value choices: update_missing_only, update_all
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'update_missing_only': ['update_missing_only', 'optional'], 'cell_size_tolerance_factor': ['cell_size_tolerance_factor', 'optional'], 'do_compute_max': ['do_compute_max', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'max_range_factor': ['max_range_factor', 'optional'], 'do_compute_min': ['do_compute_min', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'update_missing_only': ['update_missing_only', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional'], 'cell_size_tolerance_factor': ['cell_size_tolerance_factor', 'optional'], 'max_range_factor': ['max_range_factor', 'optional'], 'do_compute_min': ['do_compute_min', 'optional'], 'do_compute_max': ['do_compute_max', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CalculateCellSizeRanges', inputs, in_db, out_db)
 
           
-def color_balance_mosaic_dataset(mosaic_dataset, balancing_method='DODGING', color_surface_type='SINGLE_COLOR', target_raster=None, exclude_raster=None, stretch_type=None, gamma='1', block_field=None):
+def color_balance_mosaic_dataset(mosaic_dataset, balancing_method='dodging', color_surface_type='single_color', target_raster=None, exclude_raster=None, stretch_type=None, gamma='1', block_field=None):
      """
      Geoprocessing tool that color balances a mosaic dataset so the tiles appear seamless.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     stretch_type                          optional. Default value: NONE. Value choices: NONE,STANDARD_DEVIATION,MINIMUM_MAXIMUM,ADAPTIVE
+     balancing_method                      Optional GPString. Balance Method. Default value: dodging. Value choices: dodging, histogram, standard_deviation
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     block_field                           optional. Default value: None. Value choices: 
+     stretch_type                          Optional GPString. Stretch Type. Default value: none. Value choices: none, standard_deviation, minimum_maximum, adaptive
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     color_surface_type                    optional. Default value: SINGLE_COLOR. Value choices: SINGLE_COLOR,COLOR_GRID,FIRST_ORDER,SECOND_ORDER,THIRD_ORDER
+     gamma                                 Optional GPDouble. Gamma. Default value: 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_raster                         optional. Default value: None. Value choices: 
+     target_raster                         Optional GPComposite. Target Raster. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     balancing_method                      optional. Default value: DODGING. Value choices: DODGING,HISTOGRAM,STANDARD_DEVIATION
+     exclude_raster                        Optional GPRasterLayer. Exclude Area Raster. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     gamma                                 optional. Default value: 1. Value choices: 
+     block_field                           Optional GPString. Block Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     exclude_raster                        optional. Default value: None. Value choices: 
+     color_surface_type                    Optional GPString. Color Surface Type. Default value: single_color. Value choices: single_color, color_grid, first_order, second_order, third_order
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'exclude_raster': ['exclude_raster', 'optional'], 'block_field': ['block_field', 'optional'], 'color_surface_type': ['color_surface_type', 'optional'], 'target_raster': ['target_raster', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'balancing_method': ['balancing_method', 'optional'], 'gamma': ['gamma', 'optional'], 'stretch_type': ['stretch_type', 'optional']}
+     in_db = {'balancing_method': ['balancing_method', 'optional'], 'stretch_type': ['stretch_type', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'target_raster': ['target_raster', 'optional'], 'exclude_raster': ['exclude_raster', 'optional'], 'block_field': ['block_field', 'optional'], 'color_surface_type': ['color_surface_type', 'optional'], 'gamma': ['gamma', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ColorBalanceMosaicDataset', inputs, in_db, out_db)
 
@@ -3084,12 +3084,12 @@ def compute_dirty_area(mosaic_dataset, timestamp, where_clause=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     timestamp                             Required GPString. Start Date and Time
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     timestamp                             required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3105,25 +3105,25 @@ def create_mosaic_dataset(workspace, mosaicdataset_name, coordinate_system, num_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaicdataset_name                    required.
+     mosaicdataset_name                    Required GPString. Mosaic Dataset Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     coordinate_system                     required.
+     coordinate_system                     Required GPSpatialReference. Coordinate System
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     product_band_definitions              optional. Default value: None. Value choices: 
+     num_bands                             Optional GPLong. Number of Bands. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     num_bands                             optional. Default value: None. Value choices: 
+     product_band_definitions              Optional GPValueTable. Product Band Definitions. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     product_definition                    optional. Default value: NONE. Value choices: NONE,NATURAL_COLOR_RGB,NATURAL_COLOR_RGBI,FALSE_COLOR_IRG,VECTOR_FIELD_UV,VECTOR_FIELD_MAGNITUDE_DIRECTION,DEIMOS2_4BANDS,DMCII_3BANDS,DUBAISAT-2_4BANDS,FORMOSAT-2_4BANDS,GEOEYE-1_4BANDS,GF-1 PMS_4BANDS,GF-1 WFV_4BANDS,GF-2 PMS_4BANDS,GF-4 PMI_4BANDS,HJ 1A/1B CCD_4BANDS,IKONOS_4BANDS,JILIN-1_3BANDS,KOMPSAT-2_4BANDS,KOMPSAT-3_4BANDS,LANDSAT_6BANDS,LANDSAT_MSS_4BANDS,LANDSAT_8BANDS,PLEIADES-1_4BANDS,QUICKBIRD_4BANDS,RAPIDEYE_5BANDS,SENTINEL2_13BANDS,SPOT-5_4BANDS,SPOT-6_4BANDS,SPOT-7_4BANDS,TH-01_4BANDS,WORLDVIEW-2_8BANDS,WORLDVIEW-3_8BANDS,ZY1-02C PMS_3BANDS,ZY3-CRESDA_4BANDS,ZY3-SASMAC_4BANDS,CUSTOM
+     product_definition                    Optional GPString. Product Definition. Default value: none. Value choices: none, natural_color_rgb, natural_color_rgbi, false_color_irg, vector_field_uv, vector_field_magnitude_direction, deimos2_4bands, dmcii_3bands, dubaisat-2_4bands, formosat-2_4bands, geoeye-1_4bands, gf-1 pms_4bands, gf-1 wfv_4bands, gf-2 pms_4bands, gf-4 pmi_4bands, hj 1a/1b ccd_4bands, ikonos_4bands, jilin-1_3bands, kompsat-2_4bands, kompsat-3_4bands, landsat_6bands, landsat_mss_4bands, landsat_8bands, pleiades-1_4bands, quickbird_4bands, rapideye_5bands, sentinel2_13bands, spot-5_4bands, spot-6_4bands, spot-7_4bands, th-01_4bands, worldview-2_8bands, worldview-3_8bands, zy1-02c pms_3bands, zy3-cresda_4bands, zy3-sasmac_4bands, custom
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_type                            optional. Default value: None. Value choices: 1_BIT,2_BIT,4_BIT,8_BIT_UNSIGNED,8_BIT_SIGNED,16_BIT_UNSIGNED,16_BIT_SIGNED,32_BIT_UNSIGNED,32_BIT_SIGNED,32_BIT_FLOAT,64_BIT
+     pixel_type                            Optional GPString. Pixel Type. Default value: none. Value choices: 1_bit, 2_bit, 4_bit, 8_bit_unsigned, 8_bit_signed, 16_bit_unsigned, 16_bit_signed, 32_bit_unsigned, 32_bit_signed, 32_bit_float, 64_bit
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'product_band_definitions': ['product_band_definitions', 'optional'], 'product_definition': ['product_definition', 'optional'], 'workspace': ['in_workspace', 'required'], 'mosaicdataset_name': ['in_mosaicdataset_name', 'required'], 'num_bands': ['num_bands', 'optional'], 'coordinate_system': ['coordinate_system', 'required'], 'pixel_type': ['pixel_type', 'optional']}
+     in_db = {'mosaicdataset_name': ['in_mosaicdataset_name', 'required'], 'workspace': ['in_workspace', 'required'], 'num_bands': ['num_bands', 'optional'], 'product_band_definitions': ['product_band_definitions', 'optional'], 'product_definition': ['product_definition', 'optional'], 'coordinate_system': ['coordinate_system', 'required'], 'pixel_type': ['pixel_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateMosaicDataset', inputs, in_db, out_db)
 
@@ -3135,75 +3135,75 @@ def create_referenced_mosaic_dataset(dataset, coordinate_system=None, number_of_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Raster Catalog or Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coordinate_system                     optional. Default value: None. Value choices: 
+     pixel_size                            Optional GPDouble. Maximum Visible Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_dataset                      optional. Default value: None. Value choices: 
+     build_boundary                        Optional GPBoolean. Build Boundary. Default value: true. Value choices: build_boundary, no_boundary
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     select_using_features                 optional. Default value: true. Value choices: SELECT_USING_FEATURES,NO_SELECT_USING_FEATURES
+     lod_field                             Optional Field. Scale Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     extent                                optional. Default value: None. Value choices: 
+     number_of_bands                       Optional GPLong. Number of Bands. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     lod_field                             optional. Default value: None. Value choices: 
+     extent                                Optional GPEnvelope. Extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_size                            optional. Default value: None. Value choices: 
+     coordinate_system                     Optional GPSpatialReference. Coordinate System. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minps_field                           optional. Default value: None. Value choices: 
+     template_dataset                      Optional GPComposite. Extent from Dataset. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maxps_field                           optional. Default value: None. Value choices: 
+     maxps_field                           Optional Field. Maximum Cell Size Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     number_of_bands                       optional. Default value: None. Value choices: 
+     minps_field                           Optional Field. Minimum Cell Size Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_boundary                        optional. Default value: true. Value choices: BUILD_BOUNDARY,NO_BOUNDARY
+     select_using_features                 Optional GPBoolean. Using Input Geometry for Selection. Default value: true. Value choices: select_using_features, no_select_using_features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_type                            optional. Default value: None. Value choices: 1_BIT,2_BIT,4_BIT,8_BIT_UNSIGNED,8_BIT_SIGNED,16_BIT_UNSIGNED,16_BIT_SIGNED,32_BIT_UNSIGNED,32_BIT_SIGNED,32_BIT_FLOAT,64_BIT
+     pixel_type                            Optional GPString. Pixel Type. Default value: none. Value choices: 1_bit, 2_bit, 4_bit, 8_bit_unsigned, 8_bit_signed, 16_bit_unsigned, 16_bit_signed, 32_bit_unsigned, 32_bit_signed, 32_bit_float, 64_bit
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'lod_field': ['lod_field', 'optional'], 'coordinate_system': ['coordinate_system', 'optional'], 'template_dataset': ['in_template_dataset', 'optional'], 'select_using_features': ['select_using_features', 'optional'], 'extent': ['extent', 'optional'], 'dataset': ['in_dataset', 'required'], 'pixel_size': ['pixelSize', 'optional'], 'minps_field': ['minPS_field', 'optional'], 'maxps_field': ['maxPS_field', 'optional'], 'number_of_bands': ['number_of_bands', 'optional'], 'where_clause': ['where_clause', 'optional'], 'build_boundary': ['build_boundary', 'optional'], 'pixel_type': ['pixel_type', 'optional']}
+     in_db = {'dataset': ['in_dataset', 'required'], 'pixel_size': ['pixelSize', 'optional'], 'build_boundary': ['build_boundary', 'optional'], 'lod_field': ['lod_field', 'optional'], 'number_of_bands': ['number_of_bands', 'optional'], 'extent': ['extent', 'optional'], 'coordinate_system': ['coordinate_system', 'optional'], 'template_dataset': ['in_template_dataset', 'optional'], 'maxps_field': ['maxPS_field', 'optional'], 'minps_field': ['minPS_field', 'optional'], 'where_clause': ['where_clause', 'optional'], 'select_using_features': ['select_using_features', 'optional'], 'pixel_type': ['pixel_type', 'optional']}
      out_db = {'mosaic_dataset': ['out_mosaic_dataset', 'required', None, None]}
      return _execute_tool('management', 'CreateReferencedMosaicDataset', inputs, in_db, out_db)
 
           
-def define_overviews(mosaic_dataset, overview_image_folder=None, template_dataset=None, extent=None, pixel_size=None, number_of_levels=None, tile_rows='5120', tile_cols='5120', overview_factor='3', force_overview_tiles='false', resampling_method='BILINEAR', compression_method='JPEG', compression_quality='80'):
+def define_overviews(mosaic_dataset, overview_image_folder=None, template_dataset=None, extent=None, pixel_size=None, number_of_levels=None, tile_rows='5120', tile_cols='5120', overview_factor='3', force_overview_tiles='false', resampling_method='bilinear', compression_method='jpeg', compression_quality='80'):
      """
      Geoprocessing tool that defines the tiling schema and properties of the preprocessed raster datasets that will cover part or all of a mosaic dataset at varying resolutions.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_method                     optional. Default value: BILINEAR. Value choices: NEAREST,BILINEAR,CUBIC
+     compression_quality                   Optional GPLong. Compression Quality. Default value: 80
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overview_image_folder                 optional. Default value: None. Value choices: 
+     pixel_size                            Optional GPDouble. Pixel Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_cols                             optional. Default value: 5120. Value choices: 
+     overview_image_folder                 Optional DEWorkspace. Output Location. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overview_factor                       optional. Default value: 3. Value choices: 
+     overview_factor                       Optional GPLong. Overview Sampling Factor. Default value: 3
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_dataset                      optional. Default value: None. Value choices: 
+     extent                                Optional GPEnvelope. Extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_quality                   optional. Default value: 80. Value choices: 
+     template_dataset                      Optional GPComposite. Extent from Dataset. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     extent                                optional. Default value: None. Value choices: 
+     tile_cols                             Optional GPLong. Number Of Columns. Default value: 5120
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_rows                             optional. Default value: 5120. Value choices: 
+     number_of_levels                      Optional GPLong. Number Of Levels. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_method                    optional. Default value: JPEG. Value choices: 
+     tile_rows                             Optional GPLong. Number Of Rows. Default value: 5120
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pixel_size                            optional. Default value: None. Value choices: 
+     resampling_method                     Optional GPString. Resampling Method. Default value: bilinear. Value choices: nearest, bilinear, cubic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     number_of_levels                      optional. Default value: None. Value choices: 
+     compression_method                    Optional GPString. Compression Method. Default value: jpeg
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     force_overview_tiles                  optional. Default value: false. Value choices: FORCE_OVERVIEW_TILES,NO_FORCE_OVERVIEW_TILES
+     force_overview_tiles                  Optional GPBoolean. Force Overview Tiles. Default value: false. Value choices: force_overview_tiles, no_force_overview_tiles
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'resampling_method': ['resampling_method', 'optional'], 'overview_image_folder': ['overview_image_folder', 'optional'], 'tile_cols': ['tile_cols', 'optional'], 'overview_factor': ['overview_factor', 'optional'], 'template_dataset': ['in_template_dataset', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'extent': ['extent', 'optional'], 'tile_rows': ['tile_rows', 'optional'], 'compression_method': ['compression_method', 'optional'], 'pixel_size': ['pixel_size', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'number_of_levels': ['number_of_levels', 'optional'], 'force_overview_tiles': ['force_overview_tiles', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'pixel_size': ['pixel_size', 'optional'], 'overview_image_folder': ['overview_image_folder', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'overview_factor': ['overview_factor', 'optional'], 'extent': ['extent', 'optional'], 'template_dataset': ['in_template_dataset', 'optional'], 'tile_cols': ['tile_cols', 'optional'], 'number_of_levels': ['number_of_levels', 'optional'], 'tile_rows': ['tile_rows', 'optional'], 'resampling_method': ['resampling_method', 'optional'], 'compression_method': ['compression_method', 'optional'], 'force_overview_tiles': ['force_overview_tiles', 'optional']}
      out_db = {}
      return _execute_tool('management', 'DefineOverviews', inputs, in_db, out_db)
 
@@ -3215,37 +3215,37 @@ def generate_exclude_area(raster, pixel_type, generate_method, max_red='255', ma
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     generate_method                       required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     pixel_type                            required.
+     generate_method                       Required GPString. Generate Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     pixel_type                            Required GPString. Pixel Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_yellow                            optional. Default value: 255. Value choices: 
+     max_black                             Optional GPDouble. Maximum Black. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_cyan                              optional. Default value: 255. Value choices: 
+     max_yellow                            Optional GPDouble. Maximum Yellow. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     percentage_low                        optional. Default value: 0. Value choices: 
+     max_cyan                              Optional GPDouble. Maximum Cyan. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_green                             optional. Default value: 255. Value choices: 
+     max_magenta                           Optional GPDouble. Maximum Magenta. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     percentage_high                       optional. Default value: 100. Value choices: 
+     max_red                               Optional GPDouble. Maximum Red. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_blue                              optional. Default value: 255. Value choices: 
+     max_green                             Optional GPDouble. Maximum Green. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_red                               optional. Default value: 255. Value choices: 
+     percentage_high                       Optional GPDouble. High Percentage. Default value: 100
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_magenta                           optional. Default value: 255. Value choices: 
+     percentage_low                        Optional GPDouble. Low Percentage. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_black                             optional. Default value: 0. Value choices: 
+     max_blue                              Optional GPDouble. Maximum Blue. Default value: 255
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_white                             optional. Default value: 255. Value choices: 
+     max_white                             Optional GPDouble. Maximum White. Default value: 255
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'percentage_low': ['percentage_low', 'optional'], 'max_cyan': ['max_cyan', 'optional'], 'max_green': ['max_green', 'optional'], 'max_blue': ['max_blue', 'optional'], 'max_magenta': ['max_magenta', 'optional'], 'generate_method': ['generate_method', 'required'], 'raster': ['in_raster', 'required'], 'max_yellow': ['max_yellow', 'optional'], 'percentage_high': ['percentage_high', 'optional'], 'max_red': ['max_red', 'optional'], 'max_black': ['max_black', 'optional'], 'max_white': ['max_white', 'optional'], 'pixel_type': ['pixel_type', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'max_yellow': ['max_yellow', 'optional'], 'max_cyan': ['max_cyan', 'optional'], 'max_red': ['max_red', 'optional'], 'percentage_high': ['percentage_high', 'optional'], 'max_white': ['max_white', 'optional'], 'max_blue': ['max_blue', 'optional'], 'max_black': ['max_black', 'optional'], 'max_magenta': ['max_magenta', 'optional'], 'max_green': ['max_green', 'optional'], 'pixel_type': ['pixel_type', 'required'], 'percentage_low': ['percentage_low', 'optional'], 'generate_method': ['generate_method', 'required']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'GenerateExcludeArea', inputs, in_db, out_db)
 
@@ -3257,23 +3257,23 @@ def import_mosaic_dataset_geometry(mosaic_dataset, target_featureclass_type, tar
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_jofield                        required.
+     input_featureclass                    Required GPComposite. Input Feature Class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_featureclass                    required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_jofield                         required.
+     target_featureclass_type              Required GPString. Target Feature Class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     target_jofield                        Required Field. Target Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_featureclass_type              required.
+     input_jofield                         Required Field. Input Join Field
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'target_jofield': ['target_join_field', 'required'], 'input_featureclass': ['input_featureclass', 'required'], 'input_jofield': ['input_join_field', 'required'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'target_featureclass_type': ['target_featureclass_type', 'required']}
+     in_db = {'input_featureclass': ['input_featureclass', 'required'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'target_featureclass_type': ['target_featureclass_type', 'required'], 'target_jofield': ['target_join_field', 'required'], 'input_jofield': ['input_join_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'ImportMosaicDatasetGeometry', inputs, in_db, out_db)
 
@@ -3285,25 +3285,25 @@ def remove_rasters_from_mosaic_dataset(mosaic_dataset, where_clause=None, update
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delete_item_cache                     optional. Default value: true. Value choices: DELETE_ITEM_CACHE,NO_DELETE_ITEM_CACHE
+     delete_overview_images                Optional GPBoolean. Delete Overview Images. Default value: true. Value choices: delete_overview_images, no_delete_overview_images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     remove_items                          optional. Default value: true. Value choices: REMOVE_MOSAICDATASET_ITEMS,NO_REMOVE_MOSAICDATASET_ITEMS
+     delete_item_cache                     Optional GPBoolean. Delete Item Cache. Default value: true. Value choices: delete_item_cache, no_delete_item_cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delete_overview_images                optional. Default value: true. Value choices: DELETE_OVERVIEW_IMAGES,NO_DELETE_OVERVIEW_IMAGES
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_cellsize_ranges                optional. Default value: true. Value choices: UPDATE_CELL_SIZES,NO_CELL_SIZES
+     mark_overviews_items                  Optional GPBoolean. Mark Affected Overviews. Default value: true. Value choices: mark_overview_items, no_mark_overview_items
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     update_boundary                       Optional GPBoolean. Update Boundary. Default value: true. Value choices: update_boundary, no_boundary
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mark_overviews_items                  optional. Default value: true. Value choices: MARK_OVERVIEW_ITEMS,NO_MARK_OVERVIEW_ITEMS
+     update_cellsize_ranges                Optional GPBoolean. Update Cell Size Ranges. Default value: true. Value choices: update_cell_sizes, no_cell_sizes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_boundary                       optional. Default value: true. Value choices: UPDATE_BOUNDARY,NO_BOUNDARY
+     remove_items                          Optional GPBoolean. Remove Mosaic Dataset Items. Default value: true. Value choices: remove_mosaicdataset_items, no_remove_mosaicdataset_items
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'delete_item_cache': ['delete_item_cache', 'optional'], 'remove_items': ['remove_items', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'delete_overview_images': ['delete_overview_images', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional'], 'where_clause': ['where_clause', 'optional'], 'mark_overviews_items': ['mark_overviews_items', 'optional'], 'update_boundary': ['update_boundary', 'optional']}
+     in_db = {'delete_overview_images': ['delete_overview_images', 'optional'], 'delete_item_cache': ['delete_item_cache', 'optional'], 'where_clause': ['where_clause', 'optional'], 'mark_overviews_items': ['mark_overviews_items', 'optional'], 'update_boundary': ['update_boundary', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'remove_items': ['remove_items', 'optional']}
      out_db = {}
      return _execute_tool('management', 'RemoveRastersFromMosaicDataset', inputs, in_db, out_db)
 
@@ -3315,47 +3315,47 @@ def synchronize_mosaic_dataset(mosaic_dataset, where_clause=None, new_items='fal
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_overviews                      optional. Default value: false. Value choices: UPDATE_OVERVIEWS,NO_OVERVIEWS
+     rebuild_raster                        Optional GPBoolean. Rebuild Raster From Data Source. Default value: true. Value choices: rebuild_raster, no_raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fields_to_update                      optional. Default value: None. Value choices: 
+     new_items                             Optional GPBoolean. Update With New Items. Default value: false. Value choices: update_with_new_items, no_new_items
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_pyramids                        optional. Default value: false. Value choices: BUILD_PYRAMIDS,NO_PYRAMIDS
+     broken_items                          Optional GPBoolean. Remove Items With Broken Data Source. Default value: false. Value choices: remove_broken_items, ignore_broken_items
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_item_cache                      optional. Default value: false. Value choices: BUILD_ITEM_CACHE,NO_ITEM_CACHE
+     refresh_aggregate_info                Optional GPBoolean. Refresh Aggregate Information. Default value: false. Value choices: refresh_info, no_refresh_info
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rebuild_raster                        optional. Default value: true. Value choices: REBUILD_RASTER,NO_RASTER
+     build_item_cache                      Optional GPBoolean. Build Item Cache. Default value: false. Value choices: build_item_cache, no_item_cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     calculate_statistics                  optional. Default value: false. Value choices: CALCULATE_STATISTICS,NO_STATISTICS
+     update_boundary                       Optional GPBoolean. Update Boundary. Default value: true. Value choices: update_boundary, no_boundary
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_existing_items                   optional. Default value: true. Value choices: SKIP_EXISTING_ITEMS,OVERWRITE_EXISTING_ITEMS
+     skip_existing_items                   Optional GPBoolean. Skip Existing Items. Default value: true. Value choices: skip_existing_items, overwrite_existing_items
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_boundary                       optional. Default value: true. Value choices: UPDATE_BOUNDARY,NO_BOUNDARY
+     build_thumbnails                      Optional GPBoolean. Build Thumbnails. Default value: false. Value choices: build_thumbnails, no_thumbnails
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_cellsize_ranges                optional. Default value: true. Value choices: UPDATE_CELL_SIZES,NO_CELL_SIZES
+     update_cellsize_ranges                Optional GPBoolean. Update Cell Size Ranges. Default value: true. Value choices: update_cell_sizes, no_cell_sizes
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     broken_items                          optional. Default value: false. Value choices: REMOVE_BROKEN_ITEMS,IGNORE_BROKEN_ITEMS
+     fields_to_update                      Optional GPMultiValue. Fields To Update. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     estimate_statistics                   optional. Default value: false. Value choices: ESTIMATE_STATISTICS,NO_STATISTICS
+     existing_items                        Optional GPBoolean. Update Existing Items. Default value: true. Value choices: update_existing_items, ignore_existing_items
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     refresh_aggregate_info                optional. Default value: false. Value choices: REFRESH_INFO,NO_REFRESH_INFO
+     build_pyramids                        Optional GPBoolean. Build Raster Pyramids. Default value: false. Value choices: build_pyramids, no_pyramids
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     build_thumbnails                      optional. Default value: false. Value choices: BUILD_THUMBNAILS,NO_THUMBNAILS
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     existing_items                        optional. Default value: true. Value choices: UPDATE_EXISTING_ITEMS,IGNORE_EXISTING_ITEMS
+     estimate_statistics                   Optional GPBoolean. Estimate Mosaic Dataset Statistics. Default value: false. Value choices: estimate_statistics, no_statistics
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     new_items                             optional. Default value: false. Value choices: UPDATE_WITH_NEW_ITEMS,NO_NEW_ITEMS
+     update_fields                         Optional GPBoolean. Update Fields. Default value: true. Value choices: update_fields, no_fields
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     update_fields                         optional. Default value: true. Value choices: UPDATE_FIELDS,NO_FIELDS
+     sync_only_stale                       Optional GPBoolean. Synchronize Stale Items Only. Default value: true. Value choices: sync_stale, sync_all
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sync_only_stale                       optional. Default value: true. Value choices: SYNC_STALE,SYNC_ALL
+     update_overviews                      Optional GPBoolean. Update Overviews. Default value: false. Value choices: update_overviews, no_overviews
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     calculate_statistics                  Optional GPBoolean. Calculate Statistics. Default value: false. Value choices: calculate_statistics, no_statistics
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'update_overviews': ['update_overviews', 'optional'], 'fields_to_update': ['fields_to_update', 'optional'], 'build_pyramids': ['build_pyramids', 'optional'], 'build_item_cache': ['build_item_cache', 'optional'], 'rebuild_raster': ['rebuild_raster', 'optional'], 'calculate_statistics': ['calculate_statistics', 'optional'], 'update_fields': ['update_fields', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional'], 'broken_items': ['broken_items', 'optional'], 'new_items': ['new_items', 'optional'], 'estimate_statistics': ['estimate_statistics', 'optional'], 'refresh_aggregate_info': ['refresh_aggregate_info', 'optional'], 'build_thumbnails': ['build_thumbnails', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'existing_items': ['existing_items', 'optional'], 'where_clause': ['where_clause', 'optional'], 'skip_existing_items': ['skip_existing_items', 'optional'], 'sync_only_stale': ['sync_only_stale', 'optional'], 'update_boundary': ['update_boundary', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'rebuild_raster': ['rebuild_raster', 'optional'], 'new_items': ['new_items', 'optional'], 'broken_items': ['broken_items', 'optional'], 'refresh_aggregate_info': ['refresh_aggregate_info', 'optional'], 'build_item_cache': ['build_item_cache', 'optional'], 'update_boundary': ['update_boundary', 'optional'], 'skip_existing_items': ['skip_existing_items', 'optional'], 'build_thumbnails': ['build_thumbnails', 'optional'], 'update_cellsize_ranges': ['update_cellsize_ranges', 'optional'], 'fields_to_update': ['fields_to_update', 'optional'], 'existing_items': ['existing_items', 'optional'], 'build_pyramids': ['build_pyramids', 'optional'], 'where_clause': ['where_clause', 'optional'], 'estimate_statistics': ['estimate_statistics', 'optional'], 'update_fields': ['update_fields', 'optional'], 'sync_only_stale': ['sync_only_stale', 'optional'], 'update_overviews': ['update_overviews', 'optional'], 'calculate_statistics': ['calculate_statistics', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SynchronizeMosaicDataset', inputs, in_db, out_db)
 
@@ -3367,48 +3367,48 @@ def calculate_end_time(table, start_field, end_field, fields=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     end_field                             required.
+     end_field                             Required Field. End Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     start_field                           required.
+     start_field                           Required Field. Start Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fields                                optional. Default value: None. Value choices: 
+     fields                                Optional GPMultiValue. ID Fields. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'end_field': ['end_field', 'required'], 'start_field': ['start_field', 'required'], 'table': ['in_table', 'required'], 'fields': ['fields', 'optional']}
+     in_db = {'end_field': ['end_field', 'required'], 'fields': ['fields', 'optional'], 'start_field': ['start_field', 'required'], 'table': ['in_table', 'required']}
      out_db = {}
      return _execute_tool('management', 'CalculateEndTime', inputs, in_db, out_db)
 
           
-def convert_time_field(table, input_time_field, input_time_format, output_time_field, output_time_type='DATE', output_time_format=None):
+def convert_time_field(table, input_time_field, input_time_format, output_time_field, output_time_type='date', output_time_format=None):
      """
      Geoprocessing tool to convert timestamps stored in a text or numeric field to a date field.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_time_field                      required.
+     input_time_format                     Required GPString. Input Time Format
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_time_format                     required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     output_time_field                     Required GPString. Output Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     output_time_field                     required.
+     input_time_field                      Required Field. Input Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_time_type                      optional. Default value: DATE. Value choices: DATE,TEXT,LONG,SHORT,DOUBLE,FLOAT
+     output_time_type                      Optional GPString. Output Time Type. Default value: date. Value choices: date, text, long, short, double, float
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_time_format                    optional. Default value: None. Value choices: 
+     output_time_format                    Optional GPString. Output Time Format. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'output_time_type': ['output_time_type', 'optional'], 'table': ['in_table', 'required'], 'output_time_format': ['output_time_format', 'optional'], 'input_time_field': ['input_time_field', 'required'], 'input_time_format': ['input_time_format', 'required'], 'output_time_field': ['output_time_field', 'required']}
+     in_db = {'input_time_format': ['input_time_format', 'required'], 'output_time_format': ['output_time_format', 'optional'], 'output_time_type': ['output_time_type', 'optional'], 'table': ['in_table', 'required'], 'output_time_field': ['output_time_field', 'required'], 'input_time_field': ['input_time_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'ConvertTimeField', inputs, in_db, out_db)
 
@@ -3420,27 +3420,27 @@ def convert_time_zone(table, input_time_field, input_time_zone, output_time_fiel
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_time_field                      required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     output_time_zone                      required.
+     output_time_zone                      Required GPString. Output Time Zone
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_time_zone                       required.
+     output_time_field                     Required GPString. Output Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     input_time_zone                       Required GPString. Input Time Zone
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     output_time_field                     required.
+     input_time_field                      Required Field. Input Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_dst                            optional. Default value: true. Value choices: OUTPUT_ADJUSTED_FOR_DST,OUTPUT_NOT_ADJUSTED_FOR_DST
+     output_dst                            Optional GPBoolean. Output time field values will be adjusted for Daylight Saving Time. Default value: true. Value choices: output_adjusted_for_dst, output_not_adjusted_for_dst
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_dst                             optional. Default value: true. Value choices: INPUT_ADJUSTED_FOR_DST,INPUT_NOT_ADJUSTED_FOR_DST
+     input_dst                             Optional GPBoolean. Input time field values are adjusted for Daylight Saving Time. Default value: true. Value choices: input_adjusted_for_dst, input_not_adjusted_for_dst
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_dst': ['input_dst', 'optional'], 'table': ['in_table', 'required'], 'output_dst': ['output_dst', 'optional'], 'input_time_field': ['input_time_field', 'required'], 'output_time_zone': ['output_time_zone', 'required'], 'input_time_zone': ['input_time_zone', 'required'], 'output_time_field': ['output_time_field', 'required']}
+     in_db = {'input_dst': ['input_dst', 'optional'], 'input_time_zone': ['input_time_zone', 'required'], 'output_dst': ['output_dst', 'optional'], 'table': ['in_table', 'required'], 'output_time_zone': ['output_time_zone', 'required'], 'output_time_field': ['output_time_field', 'required'], 'input_time_field': ['input_time_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'ConvertTimeZone', inputs, in_db, out_db)
 
@@ -3452,68 +3452,68 @@ def transpose_fields(table, field, transposed_field_name, value_field_name, attr
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transposed_field_name                 required.
+     table                                 Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     value_field_name                      required.
+     transposed_field_name                 Required GPString. Transposed Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     field                                 required.
+     value_field_name                      Required GPString. Value Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field                                 Required GPValueTable. Fields To Transpose
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     attribute_fields                      optional. Default value: None. Value choices: 
+     attribute_fields                      Optional GPMultiValue. Attribute Fields. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'transposed_field_name': ['in_transposed_field_name', 'required'], 'value_field_name': ['in_value_field_name', 'required'], 'attribute_fields': ['attribute_fields', 'optional'], 'field': ['in_field', 'required'], 'table': ['in_table', 'required']}
+     in_db = {'attribute_fields': ['attribute_fields', 'optional'], 'table': ['in_table', 'required'], 'transposed_field_name': ['in_transposed_field_name', 'required'], 'value_field_name': ['in_value_field_name', 'required'], 'field': ['in_field', 'required']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'TransposeFields', inputs, in_db, out_db)
 
           
-def warp_from_file(raster, link_file, transformation_type='POLYORDER1', resampling_type='NEAREST'):
+def warp_from_file(raster, link_file, transformation_type='polyorder1', resampling_type='nearest'):
      """
      Geoprocessing tool that performs a transformation on the raster based on a link file, using a polynomial transformation.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     link_file                             required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     link_file                             Required DETextFile. Link File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC,MAJORITY
+     transformation_type                   Optional GPString. Transformation Type. Default value: polyorder1. Value choices: polyorder0, polysimilarity, polyorder1, polyorder2, polyorder3, adjust, spline, projective
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transformation_type                   optional. Default value: POLYORDER1. Value choices: POLYORDER0,POLYSIMILARITY,POLYORDER1,POLYORDER2,POLYORDER3,ADJUST,SPLINE,PROJECTIVE
+     resampling_type                       Optional GPString. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic, majority
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'link_file': ['link_file', 'required'], 'transformation_type': ['transformation_type', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'link_file': ['link_file', 'required'], 'resampling_type': ['resampling_type', 'optional'], 'transformation_type': ['transformation_type', 'optional']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'WarpFromFile', inputs, in_db, out_db)
 
           
-def import_xml_workspace_document(target_geodatabase, file, import_type='DATA', config_keyword=None):
+def import_xml_workspace_document(target_geodatabase, file, import_type='data', config_keyword=None):
      """
      Geoprocessing tool that imports the contents of an XML workspace document into an existing geodatabase.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     file                                  required.
+     target_geodatabase                    Required DEWorkspace. Target Geodatabase
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_geodatabase                    required.
+     file                                  Required DEFile. Import File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     config_keyword                        optional. Default value: None. Value choices: 
+     config_keyword                        Optional GPString. Configuration Keyword. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     import_type                           optional. Default value: DATA. Value choices: DATA,SCHEMA_ONLY
+     import_type                           Optional GPString. Import Options. Default value: data. Value choices: data, schema_only
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'file': ['in_file', 'required'], 'target_geodatabase': ['target_geodatabase', 'required'], 'config_keyword': ['config_keyword', 'optional'], 'import_type': ['import_type', 'optional']}
+     in_db = {'target_geodatabase': ['target_geodatabase', 'required'], 'import_type': ['import_type', 'optional'], 'file': ['in_file', 'required'], 'config_keyword': ['config_keyword', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ImportXMLWorkspaceDocument', inputs, in_db, out_db)
 
@@ -3525,17 +3525,17 @@ def alter_mosaic_dataset_schema(mosaic_dataset, side_tables=None, raster_type_na
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     side_tables                           optional. Default value: None. Value choices: ANALYSIS,BOUNDARY,CACHE,COLOR_CORRECTION,DEFINITION,LEVELS,LOG,OVERVIEW,SEAMLINE,STEREO,VIEW
+     raster_type_names                     Optional GPMultiValue. Raster Types. Default value: none. Value choices: ads, cadrg/ecrg, cib, deimos-2, dmcii, dted, dubaisat-2, formosat-2, frame camera, gf-1 pms, gf-1 wfv, gf-2 pms, gf-4 pmi, grib, geoeye-1, hdf, hj 1a/1b ccd, hre, ikonos, jilin-1, kompsat-2, kompsat-3, las, landsat 1-5 mss, landsat 4-5 tm, landsat 7 etm+, landsat 8, ncdrd, nitf, netcdf, pleiades-1, quickbird, radarsat-2, rapideye, raster process definition, spot 5, spot 6, spot 7, scanned aerial imagery, sentinel-2, th-01, uav/uas, worldview-1, worldview-2, worldview-3, zy1-02c hrc, zy1-02c pms, zy3-cresda, zy3-sasmac
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     editor_tracking                       optional. Default value: false. Value choices: EDITOR_TRACKING,NO_EDITOR_TRACKING
+     side_tables                           Optional GPMultiValue. Operations. Default value: none. Value choices: analysis, boundary, cache, color_correction, definition, levels, log, overview, seamline, stereo, view
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_type_names                     optional. Default value: None. Value choices: ADS,CADRG/ECRG,CIB,DEIMOS-2,DMCii,DTED,DubaiSat-2,FORMOSAT-2,Frame Camera,GF-1 PMS,GF-1 WFV,GF-2 PMS,GF-4 PMI,GRIB,GeoEye-1,HDF,HJ 1A/1B CCD,HRE,IKONOS,Jilin-1,KOMPSAT-2,KOMPSAT-3,LAS,Landsat 1-5 MSS,Landsat 4-5 TM,Landsat 7 ETM+,Landsat 8,NCDRD,NITF,NetCDF,Pleiades-1,QuickBird,RADARSAT-2,RapidEye,Raster Process Definition,SPOT 5,SPOT 6,SPOT 7,Scanned Aerial Imagery,Sentinel-2,TH-01,UAV/UAS,WorldView-1,WorldView-2,WorldView-3,ZY1-02C HRC,ZY1-02C PMS,ZY3-CRESDA,ZY3-SASMAC
+     editor_tracking                       Optional GPBoolean. Enable Editor Tracking. Default value: false. Value choices: editor_tracking, no_editor_tracking
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'side_tables': ['side_tables', 'optional'], 'editor_tracking': ['editor_tracking', 'optional'], 'raster_type_names': ['raster_type_names', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required']}
+     in_db = {'raster_type_names': ['raster_type_names', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'side_tables': ['side_tables', 'optional'], 'editor_tracking': ['editor_tracking', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AlterMosaicDatasetSchema', inputs, in_db, out_db)
 
@@ -3547,11 +3547,11 @@ def analyze_mosaic_dataset(mosaic_dataset, where_clause=None, checker_keywords=N
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     checker_keywords                      optional. Default value: None. Value choices: FOOTPRINT,FUNCTION,RASTER,PATHS,SOURCE_VALIDITY,STALE,PYRAMIDS,STATISTICS,PERFORMANCE,INFORMATION
+     checker_keywords                      Optional GPMultiValue. Checks Performed. Default value: none. Value choices: footprint, function, raster, paths, source_validity, stale, pyramids, statistics, performance, information
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3567,7 +3567,7 @@ def compact(workspace):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input File or Personal Geodatabase
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3583,7 +3583,7 @@ def clear_workspace_cache(data=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data                                  optional. Default value: None. Value choices: 
+     data                                  Optional GPComposite. Input Workspace. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3599,22 +3599,22 @@ def analyze_datasets(input_database, include_system, datasets=None, analyze_base
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     include_system                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_database                        required.
+     include_system                        Required GPBoolean. Include System Tables
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     datasets                              optional. Default value: None. Value choices: 
+     analyze_archive                       Optional GPBoolean. Analyze Archive Tables for Selected Dataset(s). Default value: true. Value choices: analyze_archive, no_analyze_archive
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     analyze_delta                         optional. Default value: true. Value choices: ANALYZE_DELTA,NO_ANALYZE_DELTA
+     analyze_delta                         Optional GPBoolean. Analyze Delta Tables for Selected Dataset(s). Default value: true. Value choices: analyze_delta, no_analyze_delta
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     analyze_base                          optional. Default value: true. Value choices: ANALYZE_BASE,NO_ANALYZE_BASE
+     datasets                              Optional GPMultiValue. Datasets to Analyze. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     analyze_archive                       optional. Default value: true. Value choices: ANALYZE_ARCHIVE,NO_ANALYZE_ARCHIVE
+     analyze_base                          Optional GPBoolean. Analyze Base Tables for Selected Dataset(s). Default value: true. Value choices: analyze_base, no_analyze_base
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'include_system': ['include_system', 'required'], 'datasets': ['in_datasets', 'optional'], 'analyze_delta': ['analyze_delta', 'optional'], 'analyze_base': ['analyze_base', 'optional'], 'input_database': ['input_database', 'required'], 'analyze_archive': ['analyze_archive', 'optional']}
+     in_db = {'analyze_archive': ['analyze_archive', 'optional'], 'input_database': ['input_database', 'required'], 'analyze_delta': ['analyze_delta', 'optional'], 'datasets': ['in_datasets', 'optional'], 'analyze_base': ['analyze_base', 'optional'], 'include_system': ['include_system', 'required']}
      out_db = {}
      return _execute_tool('management', 'AnalyzeDatasets', inputs, in_db, out_db)
 
@@ -3626,18 +3626,18 @@ def rebuild_indexes(input_database, include_system, datasets=None, delta_only='t
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     include_system                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_database                        required.
+     include_system                        Required GPBoolean. Include System Tables
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     datasets                              optional. Default value: None. Value choices: 
+     delta_only                            Optional GPBoolean. Rebuild Delta Tables Only. Default value: true. Value choices: only_deltas, all
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delta_only                            optional. Default value: true. Value choices: ONLY_DELTAS,ALL
+     datasets                              Optional GPMultiValue. Datasets to Rebuild Indexes For. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'include_system': ['include_system', 'required'], 'input_database': ['input_database', 'required'], 'datasets': ['in_datasets', 'optional'], 'delta_only': ['delta_only', 'optional']}
+     in_db = {'datasets': ['in_datasets', 'optional'], 'delta_only': ['delta_only', 'optional'], 'input_database': ['input_database', 'required'], 'include_system': ['include_system', 'required']}
      out_db = {}
      return _execute_tool('management', 'RebuildIndexes', inputs, in_db, out_db)
 
@@ -3649,7 +3649,7 @@ def check_geometry(features):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPMultiValue. Input Features
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3658,37 +3658,37 @@ def check_geometry(features):
      return _execute_tool('management', 'CheckGeometry', inputs, in_db, out_db)
 
           
-def reconcile_versions(input_database, reconcile_mode, target_version=None, edit_versions=None, acquire_locks='true', abort_if_conflicts='false', conflict_definition='BY_OBJECT', conflict_resolution='FAVOR_TARGET_VERSION', with_post='false', with_delete='false'):
+def reconcile_versions(input_database, reconcile_mode, target_version=None, edit_versions=None, acquire_locks='true', abort_if_conflicts='false', conflict_definition='by_object', conflict_resolution='favor_target_version', with_post='false', with_delete='false'):
      """
      Geoprocessing tool that reconciles a version or multiple versions against a target version.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     reconcile_mode                        Required GPString. Reconcile Mode
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     reconcile_mode                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     abort_if_conflicts                    optional. Default value: false. Value choices: ABORT_CONFLICTS,NO_ABORT
+     with_post                             Optional GPBoolean. Post Versions After Reconcile. Default value: false. Value choices: post, no_post
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_version                        optional. Default value: None. Value choices: 
+     acquire_locks                         Optional GPBoolean. Acquire Locks. Default value: true. Value choices: lock_acquired, no_lock_acquired
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     acquire_locks                         optional. Default value: true. Value choices: LOCK_ACQUIRED,NO_LOCK_ACQUIRED
+     with_delete                           Optional GPBoolean. Delete Versions After Post. Default value: false. Value choices: delete_version, keep_version
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     with_post                             optional. Default value: false. Value choices: POST,NO_POST
+     target_version                        Optional GPString. Target Version. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     conflict_resolution                   optional. Default value: FAVOR_TARGET_VERSION. Value choices: FAVOR_TARGET_VERSION,FAVOR_EDIT_VERSION
+     abort_if_conflicts                    Optional GPBoolean. Abort if Conflicts Detected. Default value: false. Value choices: abort_conflicts, no_abort
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     conflict_definition                   optional. Default value: BY_OBJECT. Value choices: BY_OBJECT,BY_ATTRIBUTE
+     conflict_resolution                   Optional GPString. Conflict Resolution. Default value: favor_target_version. Value choices: favor_target_version, favor_edit_version
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edit_versions                         optional. Default value: None. Value choices: 
+     edit_versions                         Optional GPMultiValue. Edit Versions. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     with_delete                           optional. Default value: false. Value choices: DELETE_VERSION,KEEP_VERSION
+     conflict_definition                   Optional GPString. Conflict Definition. Default value: by_object. Value choices: by_object, by_attribute
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'abort_if_conflicts': ['abort_if_conflicts', 'optional'], 'target_version': ['target_version', 'optional'], 'acquire_locks': ['acquire_locks', 'optional'], 'with_post': ['with_post', 'optional'], 'conflict_resolution': ['conflict_resolution', 'optional'], 'input_database': ['input_database', 'required'], 'conflict_definition': ['conflict_definition', 'optional'], 'edit_versions': ['edit_versions', 'optional'], 'with_delete': ['with_delete', 'optional'], 'reconcile_mode': ['reconcile_mode', 'required']}
+     in_db = {'with_post': ['with_post', 'optional'], 'acquire_locks': ['acquire_locks', 'optional'], 'with_delete': ['with_delete', 'optional'], 'abort_if_conflicts': ['abort_if_conflicts', 'optional'], 'target_version': ['target_version', 'optional'], 'conflict_resolution': ['conflict_resolution', 'optional'], 'input_database': ['input_database', 'required'], 'reconcile_mode': ['reconcile_mode', 'required'], 'edit_versions': ['edit_versions', 'optional'], 'conflict_definition': ['conflict_definition', 'optional']}
      out_db = {'log': ['out_log', 'optional', None, None]}
      return _execute_tool('management', 'ReconcileVersions', inputs, in_db, out_db)
 
@@ -3700,25 +3700,25 @@ def add_attachments(dataset, jofield, match_table, match_jofield, match_path_fie
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     jofield                               Required Field. Input Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     match_jofield                         required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     match_table                           required.
+     match_path_field                      Required Field. Match Path Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jofield                               required.
+     match_table                           Required GPTableView. Match Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     match_path_field                      required.
+     match_jofield                         Required Field. Match Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     working_folder                        optional. Default value: None. Value choices: 
+     working_folder                        Optional DEFolder. Working Folder. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'match_jofield': ['in_match_join_field', 'required'], 'match_table': ['in_match_table', 'required'], 'working_folder': ['in_working_folder', 'optional'], 'jofield': ['in_join_field', 'required'], 'match_path_field': ['in_match_path_field', 'required']}
+     in_db = {'working_folder': ['in_working_folder', 'optional'], 'dataset': ['in_dataset', 'required'], 'match_path_field': ['in_match_path_field', 'required'], 'jofield': ['in_join_field', 'required'], 'match_jofield': ['in_match_join_field', 'required'], 'match_table': ['in_match_table', 'required']}
      out_db = {}
      return _execute_tool('management', 'AddAttachments', inputs, in_db, out_db)
 
@@ -3730,7 +3730,7 @@ def disable_attachments(dataset):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPTableView. Input Dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3746,7 +3746,7 @@ def enable_attachments(dataset):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPTableView. Input Dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -3762,118 +3762,118 @@ def remove_attachments(dataset, jofield, match_table, match_jofield, match_name_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     jofield                               Required Field. Input Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     match_jofield                         required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     match_table                           required.
+     match_table                           Required GPTableView. Match Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jofield                               required.
+     match_jofield                         Required Field. Match Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     match_name_field                      optional. Default value: None. Value choices: 
+     match_name_field                      Optional Field. Match Name Field. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'match_jofield': ['in_match_join_field', 'required'], 'match_name_field': ['in_match_name_field', 'optional'], 'match_table': ['in_match_table', 'required'], 'jofield': ['in_join_field', 'required']}
+     in_db = {'jofield': ['in_join_field', 'required'], 'dataset': ['in_dataset', 'required'], 'match_table': ['in_match_table', 'required'], 'match_name_field': ['in_match_name_field', 'optional'], 'match_jofield': ['in_match_join_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'RemoveAttachments', inputs, in_db, out_db)
 
           
-def set_mosaic_dataset_properties(mosaic_dataset, rows_maximum_imagesize='4100', columns_maximum_imagesize='15000', allowed_compressions='None;LZ77;JPEG;LERC', default_compression_type=None, jpeg_quality='75', lerc_tolerance='0', resampling_type='BILINEAR', clip_to_footprints='false', footprints_may_contanodata='true', clip_to_boundary='true', color_correction='false', allowed_mensuration_capabilities=None, default_mensuration_capabilities='None', allowed_mosaic_methods='Center;NorthWest;LockRaster;ByAttribute;Nadir;Viewpoint;Seamline;None', default_mosaic_method='Center', order_field=None, order_base=None, sorting_order='true', mosaic_operator='FIRST', blend_width='10', view_point_x='600', view_point_y='300', max_num_per_mosaic='20', cell_size_tolerance='0.8', cell_size=None, metadata_level='FULL', transmission_fields=None, use_time='false', start_time_field=None, end_time_field=None, time_format=None, geographic_transform=None, max_num_of_download_items='20', max_num_of_records_returned='1000', data_source_type='GENERIC', minimum_pixel_contribution='1', processing_templates=None, default_processing_template='None', time_interval=None, time_interval_units=None):
+def set_mosaic_dataset_properties(mosaic_dataset, rows_maximum_imagesize='4100', columns_maximum_imagesize='15000', allowed_compressions='none;lz77;jpeg;lerc', default_compression_type=None, jpeg_quality='75', lerc_tolerance='0', resampling_type='bilinear', clip_to_footprints='false', footprints_may_contanodata='true', clip_to_boundary='true', color_correction='false', allowed_mensuration_capabilities=None, default_mensuration_capabilities='none', allowed_mosaic_methods='center;northwest;lockraster;byattribute;nadir;viewpoint;seamline;none', default_mosaic_method='center', order_field=None, order_base=None, sorting_order='true', mosaic_operator='first', blend_width='10', view_point_x='600', view_point_y='300', max_num_per_mosaic='20', cell_size_tolerance='0.8', cell_size=None, metadata_level='full', transmission_fields=None, use_time='false', start_time_field=None, end_time_field=None, time_format=None, geographic_transform=None, max_num_of_download_items='20', max_num_of_records_returned='1000', data_source_type='generic', minimum_pixel_contribution='1', processing_templates=None, default_processing_template='none', time_interval=None, time_interval_units=None):
      """
      Geoprocessing tool that sets the default properties of a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     blend_width                           optional. Default value: 10. Value choices: 
+     max_num_per_mosaic                    Optional GPLong. Max Number Per Mosaic. Default value: 20
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     default_mensuration_capabilities      optional. Default value: None. Value choices: None,Basic,Base-Top Height,Base-Top Shadow Height,Top-Top Shadow Height,3D
+     columns_maximum_imagesize             Optional GPLong. Columns of Maximum Image Size of Requests. Default value: 15000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geographic_transform                  optional. Default value: None. Value choices: 
+     default_mosaic_method                 Optional GPString. Default Mosaic Methods. Default value: center. Value choices: none, center, northwest, lockraster, byattribute, nadir, viewpoint, seamline
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     start_time_field                      optional. Default value: None. Value choices: 
+     clip_to_footprints                    Optional GPBoolean. Clip To Footprints. Default value: false. Value choices: clip, not_clip
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sorting_order                         optional. Default value: true. Value choices: ASCENDING,DESCENDING
+     view_point_y                          Optional GPDouble. View Point Spacing Y. Default value: 300
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size_tolerance                   optional. Default value: 0.8. Value choices: 
+     lerc_tolerance                        Optional GPDouble. LERC Tolerance. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     end_time_field                        optional. Default value: None. Value choices: 
+     default_processing_template           Optional GPString. Default Processing Template. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data_source_type                      optional. Default value: GENERIC. Value choices: GENERIC,THEMATIC,PROCESSED,ELEVATION,SCIENTIFIC,VECTOR_UV,VECTOR_MAGDIR
+     footprints_may_contanodata            Optional GPBoolean. Footprints May Contain NoData. Default value: true. Value choices: footprints_may_contain_nodata, footprints_do_not_contain_nodata
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_pixel_contribution            optional. Default value: 1. Value choices: 
+     view_point_x                          Optional GPDouble. View Point Spacing X. Default value: 600
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     resampling_type                       optional. Default value: BILINEAR. Value choices: NEAREST,BILINEAR,CUBIC,MAJORITY
+     time_interval                         Optional GPDouble. Time Interval. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     allowed_compressions                  optional. Default value: None;LZ77;JPEG;LERC. Value choices: None,JPEG,LZ77,LERC
+     max_num_of_download_items             Optional GPLong. Max Number of Download Items. Default value: 20
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     view_point_y                          optional. Default value: 300. Value choices: 
+     transmission_fields                   Optional GPMultiValue. Allowed Transmission Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     end_time_field                        Optional GPString. End Time Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     time_interval_units                   optional. Default value: None. Value choices: None,Milliseconds,Seconds,Minutes,Hours,Days,Weeks,Months,Years,Decades,Centuries
+     color_correction                      Optional GPBoolean. Color Correction. Default value: false. Value choices: apply, not_apply
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clip_to_boundary                      optional. Default value: true. Value choices: CLIP,NOT_CLIP
+     order_base                            Optional GPString. Order Base. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jpeg_quality                          optional. Default value: 75. Value choices: 
+     default_mensuration_capabilities      Optional GPString. Default Mensuration. Default value: none. Value choices: none, basic, base-top height, base-top shadow height, top-top shadow height, 3d
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     processing_templates                  optional. Default value: None. Value choices: 
+     minimum_pixel_contribution            Optional GPLong. Minimum Pixel Contribution. Default value: 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     use_time                              optional. Default value: false. Value choices: ENABLED,DISABLED
+     cell_size_tolerance                   Optional GPDouble. Cell Size Tolerance Factor. Default value: 0.8
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clip_to_footprints                    optional. Default value: false. Value choices: CLIP,NOT_CLIP
+     jpeg_quality                          Optional GPLong. JPEG Quality. Default value: 75
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     default_compression_type              optional. Default value: NONE. Value choices: None,JPEG,LZ77,LERC
+     metadata_level                        Optional GPString. Metadata Level. Default value: full. Value choices: none, basic, full
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     order_base                            optional. Default value: None. Value choices: 
+     geographic_transform                  Optional GPMultiValue. Geographic Transformation. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     color_correction                      optional. Default value: false. Value choices: APPLY,NOT_APPLY
+     use_time                              Optional GPBoolean. Use Time. Default value: false. Value choices: enabled, disabled
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_num_of_download_items             optional. Default value: 20. Value choices: 
+     data_source_type                      Optional GPString. Data Source Type. Default value: generic. Value choices: generic, thematic, processed, elevation, scientific, vector_uv, vector_magdir
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     allowed_mensuration_capabilities      optional. Default value: None. Value choices: 
+     time_format                           Optional GPString. Time Format. Default value: none. Value choices: yyyy, yyyymm, yyyy/mm, yyyy-mm, yyyymmdd, yyyy/mm/dd, yyyy-mm-dd, yyyymmddhhmmss, yyyy/mm/dd hh:mm:ss, yyyy-mm-dd hh:mm:ss, yyyymmddhhmmss.s, yyyy/mm/dd hh:mm:ss.s, yyyy-mm-dd hh:mm:ss.s
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transmission_fields                   optional. Default value: None. Value choices: 
+     clip_to_boundary                      Optional GPBoolean. Clip To Boundary. Default value: true. Value choices: clip, not_clip
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     allowed_mosaic_methods                optional. Default value: Center;NorthWest;LockRaster;ByAttribute;Nadir;Viewpoint;Seamline;None. Value choices: None,Center,NorthWest,LockRaster,ByAttribute,Nadir,Viewpoint,Seamline
+     allowed_compressions                  Optional GPMultiValue. Allowed Transmission Compression. Default value: none;lz77;jpeg;lerc. Value choices: none, jpeg, lz77, lerc
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_num_of_records_returned           optional. Default value: 1000. Value choices: 
+     allowed_mensuration_capabilities      Optional GPMultiValue. Allowed Mensuration Capabilities. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     time_format                           optional. Default value: None. Value choices: YYYY,YYYYMM,YYYY/MM,YYYY-MM,YYYYMMDD,YYYY/MM/DD,YYYY-MM-DD,YYYYMMDDhhmmss,YYYY/MM/DD hh:mm:ss,YYYY-MM-DD hh:mm:ss,YYYYMMDDhhmmss.s,YYYY/MM/DD hh:mm:ss.s,YYYY-MM-DD hh:mm:ss.s
+     rows_maximum_imagesize                Optional GPLong. Rows of Maximum Image Size of Requests. Default value: 4100
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     metadata_level                        optional. Default value: FULL. Value choices: NONE,BASIC,FULL
+     default_compression_type              Optional GPString. Default Compression Type. Default value: none. Value choices: none, jpeg, lz77, lerc
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     rows_maximum_imagesize                optional. Default value: 4100. Value choices: 
+     processing_templates                  Optional GPMultiValue. Processing Templates. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_num_per_mosaic                    optional. Default value: 20. Value choices: 
+     allowed_mosaic_methods                Optional GPMultiValue. Allowed Mosaic Methods. Default value: center;northwest;lockraster;byattribute;nadir;viewpoint;seamline;none. Value choices: none, center, northwest, lockraster, byattribute, nadir, viewpoint, seamline
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     footprints_may_contanodata            optional. Default value: true. Value choices: FOOTPRINTS_MAY_CONTAIN_NODATA,FOOTPRINTS_DO_NOT_CONTAIN_NODATA
+     order_field                           Optional GPString. Order Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     view_point_x                          optional. Default value: 600. Value choices: 
+     cell_size                             Optional GPCellSizeXY. Output Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     columns_maximum_imagesize             optional. Default value: 15000. Value choices: 
+     time_interval_units                   Optional GPString. Time Interval Units. Default value: none. Value choices: none, milliseconds, seconds, minutes, hours, days, weeks, months, years, decades, centuries
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_operator                       optional. Default value: FIRST. Value choices: FIRST,LAST,MIN,MAX,MEAN,BLEND,SUM
+     blend_width                           Optional GPLong. Blend Width. Default value: 10
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     lerc_tolerance                        optional. Default value: 0. Value choices: 
+     mosaic_operator                       Optional GPString. Mosaic Operator. Default value: first. Value choices: first, last, min, max, mean, blend, sum
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     order_field                           optional. Default value: None. Value choices: 
+     start_time_field                      Optional GPString. Start Time Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     default_processing_template           optional. Default value: None. Value choices: 
+     max_num_of_records_returned           Optional GPLong. Max Number of Records Returned. Default value: 1000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     time_interval                         optional. Default value: None. Value choices: 
+     sorting_order                         Optional GPBoolean. Sorting Order Ascending. Default value: true. Value choices: ascending, descending
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     default_mosaic_method                 optional. Default value: Center. Value choices: None,Center,NorthWest,LockRaster,ByAttribute,Nadir,Viewpoint,Seamline
+     resampling_type                       Optional GPString. Resampling Technique. Default value: bilinear. Value choices: nearest, bilinear, cubic, majority
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'blend_width': ['blend_width', 'optional'], 'default_mensuration_capabilities': ['default_mensuration_capabilities', 'optional'], 'geographic_transform': ['geographic_transform', 'optional'], 'max_num_per_mosaic': ['max_num_per_mosaic', 'optional'], 'sorting_order': ['sorting_order', 'optional'], 'cell_size_tolerance': ['cell_size_tolerance', 'optional'], 'start_time_field': ['start_time_field', 'optional'], 'data_source_type': ['data_source_type', 'optional'], 'minimum_pixel_contribution': ['minimum_pixel_contribution', 'optional'], 'resampling_type': ['resampling_type', 'optional'], 'allowed_compressions': ['allowed_compressions', 'optional'], 'view_point_y': ['view_point_y', 'optional'], 'cell_size': ['cell_size', 'optional'], 'time_format': ['time_format', 'optional'], 'clip_to_boundary': ['clip_to_boundary', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'processing_templates': ['processing_templates', 'optional'], 'use_time': ['use_time', 'optional'], 'clip_to_footprints': ['clip_to_footprints', 'optional'], 'default_compression_type': ['default_compression_type', 'optional'], 'order_base': ['order_base', 'optional'], 'color_correction': ['color_correction', 'optional'], 'time_interval_units': ['time_interval_units', 'optional'], 'max_num_of_download_items': ['max_num_of_download_items', 'optional'], 'allowed_mensuration_capabilities': ['allowed_mensuration_capabilities', 'optional'], 'transmission_fields': ['transmission_fields', 'optional'], 'allowed_mosaic_methods': ['allowed_mosaic_methods', 'optional'], 'max_num_of_records_returned': ['max_num_of_records_returned', 'optional'], 'end_time_field': ['end_time_field', 'optional'], 'metadata_level': ['metadata_level', 'optional'], 'rows_maximum_imagesize': ['rows_maximum_imagesize', 'optional'], 'jpeg_quality': ['JPEG_quality', 'optional'], 'footprints_may_contanodata': ['footprints_may_contain_nodata', 'optional'], 'order_field': ['order_field', 'optional'], 'columns_maximum_imagesize': ['columns_maximum_imagesize', 'optional'], 'mosaic_operator': ['mosaic_operator', 'optional'], 'lerc_tolerance': ['LERC_Tolerance', 'optional'], 'view_point_x': ['view_point_x', 'optional'], 'default_processing_template': ['default_processing_template', 'optional'], 'time_interval': ['time_interval', 'optional'], 'default_mosaic_method': ['default_mosaic_method', 'optional']}
+     in_db = {'max_num_per_mosaic': ['max_num_per_mosaic', 'optional'], 'columns_maximum_imagesize': ['columns_maximum_imagesize', 'optional'], 'default_mosaic_method': ['default_mosaic_method', 'optional'], 'clip_to_footprints': ['clip_to_footprints', 'optional'], 'view_point_y': ['view_point_y', 'optional'], 'lerc_tolerance': ['LERC_Tolerance', 'optional'], 'default_processing_template': ['default_processing_template', 'optional'], 'footprints_may_contanodata': ['footprints_may_contain_nodata', 'optional'], 'minimum_pixel_contribution': ['minimum_pixel_contribution', 'optional'], 'view_point_x': ['view_point_x', 'optional'], 'time_interval': ['time_interval', 'optional'], 'max_num_of_download_items': ['max_num_of_download_items', 'optional'], 'transmission_fields': ['transmission_fields', 'optional'], 'end_time_field': ['end_time_field', 'optional'], 'color_correction': ['color_correction', 'optional'], 'order_base': ['order_base', 'optional'], 'default_mensuration_capabilities': ['default_mensuration_capabilities', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'cell_size_tolerance': ['cell_size_tolerance', 'optional'], 'jpeg_quality': ['JPEG_quality', 'optional'], 'metadata_level': ['metadata_level', 'optional'], 'geographic_transform': ['geographic_transform', 'optional'], 'use_time': ['use_time', 'optional'], 'data_source_type': ['data_source_type', 'optional'], 'time_format': ['time_format', 'optional'], 'clip_to_boundary': ['clip_to_boundary', 'optional'], 'allowed_compressions': ['allowed_compressions', 'optional'], 'allowed_mensuration_capabilities': ['allowed_mensuration_capabilities', 'optional'], 'rows_maximum_imagesize': ['rows_maximum_imagesize', 'optional'], 'default_compression_type': ['default_compression_type', 'optional'], 'processing_templates': ['processing_templates', 'optional'], 'allowed_mosaic_methods': ['allowed_mosaic_methods', 'optional'], 'order_field': ['order_field', 'optional'], 'cell_size': ['cell_size', 'optional'], 'time_interval_units': ['time_interval_units', 'optional'], 'blend_width': ['blend_width', 'optional'], 'mosaic_operator': ['mosaic_operator', 'optional'], 'start_time_field': ['start_time_field', 'optional'], 'max_num_of_records_returned': ['max_num_of_records_returned', 'optional'], 'sorting_order': ['sorting_order', 'optional'], 'resampling_type': ['resampling_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SetMosaicDatasetProperties', inputs, in_db, out_db)
 
@@ -3885,56 +3885,56 @@ def set_raster_properties(raster, data_type=None, statistics=None, stats_file=No
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster                                required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     stats_file                            optional. Default value: None. Value choices: 
+     nodata                                Optional GPValueTable. Bands for NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     data_type                             optional. Default value: None. Value choices: GENERIC,ELEVATION,THEMATIC,PROCESSED,SCIENTIFIC,VECTOR_UV,VECTOR_MAGDIR
+     key_properties                        Optional GPValueTable. Key Properties. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata                                optional. Default value: None. Value choices: 
+     statistics                            Optional GPValueTable. Statistics Per Band. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     statistics                            optional. Default value: None. Value choices: 
+     stats_file                            Optional DEFile. Import Statistics From File. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     key_properties                        optional. Default value: None. Value choices: 
+     data_type                             Optional GPString. Data Source Type. Default value: none. Value choices: generic, elevation, thematic, processed, scientific, vector_uv, vector_magdir
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'nodata': ['nodata', 'optional'], 'data_type': ['data_type', 'optional'], 'statistics': ['statistics', 'optional'], 'stats_file': ['stats_file', 'optional'], 'key_properties': ['key_properties', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'nodata': ['nodata', 'optional'], 'stats_file': ['stats_file', 'optional'], 'key_properties': ['key_properties', 'optional'], 'data_type': ['data_type', 'optional'], 'statistics': ['statistics', 'optional']}
      out_db = {}
      return _execute_tool('management', 'SetRasterProperties', inputs, in_db, out_db)
 
           
-def download_rasters(image_service, out_folder, where_clause=None, selection_feature=None, clipping='false', convert_rasters='false', format='TIFF', compression_method=None, compression_quality=None, maintain_folder='false'):
+def download_rasters(image_service, out_folder, where_clause=None, selection_feature=None, clipping='false', convert_rasters='false', format='tiff', compression_method=None, compression_quality=None, maintain_folder='false'):
      """
      Geoprocessing tool that downloads source files of the selected rasters from an image service to a designated location.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_folder                            required.
+     image_service                         Required GPComposite. Input Image Service
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     image_service                         required.
+     out_folder                            Required DEFolder. Output Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clipping                              optional. Default value: false. Value choices: CLIPPING,NO_CLIPPING
+     clipping                              Optional GPBoolean. Clipping Using Selection Feature. Default value: false. Value choices: clipping, no_clipping
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maintain_folder                       optional. Default value: false. Value choices: MAINTAIN_FOLDER,NO_MAINTAIN_FOLDER
+     compression_quality                   Optional GPLong. Compression Quality. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     selection_feature                     optional. Default value: None. Value choices: 
+     maintain_folder                       Optional GPBoolean. Maintain Folder Structure. Default value: false. Value choices: maintain_folder, no_maintain_folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     format                                optional. Default value: TIFF. Value choices: TIFF,BIL,BSQ,BIP,BMP,ENVI,IMAGINE Image,JPEG,GIF,JP2,PNG
+     selection_feature                     Optional GPExtent. Selection Feature. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     convert_rasters                       optional. Default value: false. Value choices: ALWAYS_CONVERT,CONVERT_AS_REQUIRED
+     where_clause                          Optional GPSQLExpression. Expression. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_quality                   optional. Default value: None. Value choices: 
+     compression_method                    Optional GPString. Compression Method. Default value: none. Value choices: none, jpeg, lzw, packbits, rle, ccitt_group3, ccitt_group4, ccitt_1d
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_method                    optional. Default value: NONE. Value choices: NONE,JPEG,LZW,PACKBITS,RLE,CCITT_GROUP3,CCITT_GROUP4,CCITT_1D
+     convert_rasters                       Optional GPBoolean. Convert Rasters. Default value: false. Value choices: always_convert, convert_as_required
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     format                                Optional GPString. Output Format. Default value: tiff. Value choices: tiff, bil, bsq, bip, bmp, envi, imagine image, jpeg, gif, jp2, png
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_folder': ['out_folder', 'required'], 'clipping': ['clipping', 'optional'], 'image_service': ['in_image_service', 'required'], 'maintain_folder': ['MAINTAIN_FOLDER', 'optional'], 'selection_feature': ['selection_feature', 'optional'], 'format': ['format', 'optional'], 'convert_rasters': ['convert_rasters', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'compression_method': ['compression_method', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'compression_quality': ['compression_quality', 'optional'], 'clipping': ['clipping', 'optional'], 'image_service': ['in_image_service', 'required'], 'maintain_folder': ['MAINTAIN_FOLDER', 'optional'], 'selection_feature': ['selection_feature', 'optional'], 'where_clause': ['where_clause', 'optional'], 'compression_method': ['compression_method', 'optional'], 'convert_rasters': ['convert_rasters', 'optional'], 'out_folder': ['out_folder', 'required'], 'format': ['format', 'optional']}
      out_db = {}
      return _execute_tool('management', 'DownloadRasters', inputs, in_db, out_db)
 
@@ -3946,33 +3946,33 @@ def create_enterprise_geodatabase(database_platform, instance_name, authorizatio
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     database_platform                     required.
+     instance_name                         Required GPString. Instance
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     instance_name                         required.
+     authorization_file                    Required DEFile. Authorization File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     authorization_file                    required.
+     database_platform                     Required GPString. Database Platform
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     gdb_admname                           optional. Default value: sde. Value choices: 
+     database_name                         Optional GPString. Database. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sde_schema                            optional. Default value: true. Value choices: SDE_SCHEMA,DBO_SCHEMA
+     tablespace_name                       Optional GPString. Tablespace Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     database_admpassword                  optional. Default value: None. Value choices: 
+     database_admin                        Optional GPString. Database Administrator. Default value: sa
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     database_name                         optional. Default value: None. Value choices: 
+     gdb_admname                           Optional GPString. Geodatabase Administrator. Default value: sde
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tablespace_name                       optional. Default value: None. Value choices: 
+     gdb_admpassword                       Optional GPEncryptedString. Geodatabase Administrator Password. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     database_admin                        optional. Default value: sa. Value choices: 
+     account_authentication                Optional GPBoolean. Operating System Authentication. Default value: false. Value choices: operating_system_auth, database_auth
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     account_authentication                optional. Default value: false. Value choices: OPERATING_SYSTEM_AUTH,DATABASE_AUTH
+     database_admpassword                  Optional GPEncryptedString. Database Administrator Password. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     gdb_admpassword                       optional. Default value: None. Value choices: 
+     sde_schema                            Optional GPBoolean. Sde Owned Schema. Default value: true. Value choices: sde_schema, dbo_schema
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'authorization_file': ['authorization_file', 'required'], 'gdb_admname': ['gdb_admin_name', 'optional'], 'sde_schema': ['sde_schema', 'optional'], 'instance_name': ['instance_name', 'required'], 'database_name': ['database_name', 'optional'], 'tablespace_name': ['tablespace_name', 'optional'], 'database_admin': ['database_admin', 'optional'], 'account_authentication': ['account_authentication', 'optional'], 'database_platform': ['database_platform', 'required'], 'gdb_admpassword': ['gdb_admin_password', 'optional'], 'database_admpassword': ['database_admin_password', 'optional']}
+     in_db = {'instance_name': ['instance_name', 'required'], 'tablespace_name': ['tablespace_name', 'optional'], 'database_admin': ['database_admin', 'optional'], 'sde_schema': ['sde_schema', 'optional'], 'gdb_admpassword': ['gdb_admin_password', 'optional'], 'authorization_file': ['authorization_file', 'required'], 'gdb_admname': ['gdb_admin_name', 'optional'], 'account_authentication': ['account_authentication', 'optional'], 'database_name': ['database_name', 'optional'], 'database_platform': ['database_platform', 'required'], 'database_admpassword': ['database_admin_password', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateEnterpriseGeodatabase', inputs, in_db, out_db)
 
@@ -3984,14 +3984,14 @@ def enable_enterprise_geodatabase(input_database, authorization_file):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     authorization_file                    Required DEFile. Authorization File
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     authorization_file                    required.
+     input_database                        Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_database': ['input_database', 'required'], 'authorization_file': ['authorization_file', 'required']}
+     in_db = {'authorization_file': ['authorization_file', 'required'], 'input_database': ['input_database', 'required']}
      out_db = {}
      return _execute_tool('management', 'EnableEnterpriseGeodatabase', inputs, in_db, out_db)
 
@@ -4003,56 +4003,56 @@ def feature_envelope_to_polygon(features, single_envelope='false'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     features                              required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     single_envelope                       optional. Default value: false. Value choices: MULTIPART,SINGLEPART
+     single_envelope                       Optional GPBoolean. Create multipart features. Default value: false. Value choices: multipart, singlepart
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'single_envelope': ['single_envelope', 'optional'], 'features': ['in_features', 'required']}
+     in_db = {'features': ['in_features', 'required'], 'single_envelope': ['single_envelope', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureEnvelopeToPolygon', inputs, in_db, out_db)
 
           
-def create_database_connection(out_folder_path, out_name, database_platform, instance, account_authentication='true', username=None, password=None, save_user_pass='true', database=None, schema=None, version_type='TRANSACTIONAL', version=None, date=None):
+def create_database_connection(out_folder_path, out_name, database_platform, instance, account_authentication='true', username=None, password=None, save_user_pass='true', database=None, schema=None, version_type='transactional', version=None, date=None):
      """
      Geoprocessing tool for creating connection files to databases or enterprise, workgroup, or desktop geodatabases.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_folder_path                       Required DEFolder. Connection File Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     instance                              required.
+     out_name                              Required GPString. Connection File Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     database_platform                     required.
+     instance                              Required GPString. Instance
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_folder_path                       required.
+     database_platform                     Required GPString. Database Platform
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     schema                                optional. Default value: None. Value choices: 
+     save_user_pass                        Optional GPBoolean. Save username and password. Default value: true. Value choices: save_username, do_not_save_username
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     database                              optional. Default value: None. Value choices: 
+     version                               Optional GPString. The following version will be used. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     username                              optional. Default value: None. Value choices: 
+     password                              Optional GPEncryptedString. Password. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     save_user_pass                        optional. Default value: true. Value choices: SAVE_USERNAME,DO_NOT_SAVE_USERNAME
+     version_type                          Optional GPString. Version Type. Default value: transactional. Value choices: transactional, historical, point_in_time
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     date                                  optional. Default value: None. Value choices: 
+     database                              Optional GPString. Database. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     account_authentication                optional. Default value: true. Value choices: DATABASE_AUTH,OPERATING_SYSTEM_AUTH
+     username                              Optional GPString. Username. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version                               optional. Default value: None. Value choices: 
+     account_authentication                Optional GPBoolean. Database Authentication. Default value: true. Value choices: database_auth, operating_system_auth
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     version_type                          optional. Default value: TRANSACTIONAL. Value choices: TRANSACTIONAL,HISTORICAL,POINT_IN_TIME
+     schema                                Optional GPString. Schema (Oracle user schema geodatabases only). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     password                              optional. Default value: None. Value choices: 
+     date                                  Optional GPDate. Date and Time. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'database': ['database', 'optional'], 'version_type': ['version_type', 'optional'], 'account_authentication': ['account_authentication', 'optional'], 'database_platform': ['database_platform', 'required'], 'password': ['password', 'optional'], 'out_name': ['out_name', 'required'], 'date': ['date', 'optional'], 'username': ['username', 'optional'], 'instance': ['instance', 'required'], 'schema': ['schema', 'optional'], 'version': ['version', 'optional'], 'out_folder_path': ['out_folder_path', 'required'], 'save_user_pass': ['save_user_pass', 'optional']}
+     in_db = {'out_name': ['out_name', 'required'], 'version': ['version', 'optional'], 'password': ['password', 'optional'], 'instance': ['instance', 'required'], 'date': ['date', 'optional'], 'save_user_pass': ['save_user_pass', 'optional'], 'out_folder_path': ['out_folder_path', 'required'], 'database': ['database', 'optional'], 'schema': ['schema', 'optional'], 'version_type': ['version_type', 'optional'], 'username': ['username', 'optional'], 'account_authentication': ['account_authentication', 'optional'], 'database_platform': ['database_platform', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseConnection', inputs, in_db, out_db)
 
@@ -4064,15 +4064,15 @@ def delete_mosaic_dataset(mosaic_dataset, delete_overview_images='true', delete_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delete_overview_images                optional. Default value: true. Value choices: DELETE_OVERVIEW_IMAGES,NO_DELETE_OVERVIEW_IMAGES
+     delete_overview_images                Optional GPBoolean. Delete Overview Images. Default value: true. Value choices: delete_overview_images, no_delete_overview_images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     delete_item_cache                     optional. Default value: true. Value choices: DELETE_ITEM_CACHE,NO_DELETE_ITEM_CACHE
+     delete_item_cache                     Optional GPBoolean. Delete Item Cache. Default value: true. Value choices: delete_item_cache, no_delete_item_cache
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'delete_overview_images': ['delete_overview_images', 'optional'], 'delete_item_cache': ['delete_item_cache', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'delete_item_cache': ['delete_item_cache', 'optional'], 'delete_overview_images': ['delete_overview_images', 'optional']}
      out_db = {}
      return _execute_tool('management', 'DeleteMosaicDataset', inputs, in_db, out_db)
 
@@ -4084,21 +4084,21 @@ def generate_attachment_match_table(dataset, folder, key_field, file_filter=None
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     folder                                Required DEFolder. Input Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     key_field                             required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     folder                                required.
+     key_field                             Required Field. Key Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     file_filter                           optional. Default value: None. Value choices: 
+     use_relative_paths                    Optional GPBoolean. Store Relative Path. Default value: true. Value choices: relative, absolute
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     use_relative_paths                    optional. Default value: true. Value choices: RELATIVE,ABSOLUTE
+     file_filter                           Optional GPString. Input Data Filter. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'key_field': ['in_key_field', 'required'], 'folder': ['in_folder', 'required'], 'file_filter': ['in_file_filter', 'optional'], 'use_relative_paths': ['in_use_relative_paths', 'optional']}
+     in_db = {'folder': ['in_folder', 'required'], 'dataset': ['in_dataset', 'required'], 'key_field': ['in_key_field', 'required'], 'file_filter': ['in_file_filter', 'optional'], 'use_relative_paths': ['in_use_relative_paths', 'optional']}
      out_db = {'match_table': ['out_match_table', 'required', None, None]}
      return _execute_tool('management', 'GenerateAttachmentMatchTable', inputs, in_db, out_db)
 
@@ -4110,17 +4110,17 @@ def create_database_view(input_database, view_name, view_definition):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     view_name                             required.
+     view_name                             Required GPString. Output View Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_database                        required.
+     view_definition                       Required GPString. View Definition
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     view_definition                       required.
+     input_database                        Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'view_name': ['view_name', 'required'], 'input_database': ['input_database', 'required'], 'view_definition': ['view_definition', 'required']}
+     in_db = {'view_name': ['view_name', 'required'], 'view_definition': ['view_definition', 'required'], 'input_database': ['input_database', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseView', inputs, in_db, out_db)
 
@@ -4132,20 +4132,20 @@ def sort_coded_value_domain(workspace, domaname, sort_by, sort_order):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     sort_order                            required.
+     sort_by                               Required GPString. Sort By
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     domaname                              required.
+     sort_order                            Required GPString. Sort Order
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     sort_by                               required.
+     domaname                              Required GPString. Domain Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     workspace                             required.
+     workspace                             Required DEWorkspace. Input Workspace
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'sort_order': ['sort_order', 'required'], 'domaname': ['domain_name', 'required'], 'sort_by': ['sort_by', 'required'], 'workspace': ['in_workspace', 'required']}
+     in_db = {'sort_by': ['sort_by', 'required'], 'sort_order': ['sort_order', 'required'], 'domaname': ['domain_name', 'required'], 'workspace': ['in_workspace', 'required']}
      out_db = {}
      return _execute_tool('management', 'SortCodedValueDomain', inputs, in_db, out_db)
 
@@ -4157,47 +4157,47 @@ def disable_editor_tracking(dataset, creator='true', creation_date='true', last_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required DEDatasetType. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     creation_date                         optional. Default value: true. Value choices: DISABLE_CREATION_DATE,NO_DISABLE_CREATION_DATE
+     last_edit_date                        Optional GPBoolean. Disable Last Edit Date Tracking. Default value: true. Value choices: disable_last_edit_date, no_disable_last_edit_date
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     last_editor                           optional. Default value: true. Value choices: DISABLE_LAST_EDITOR,NO_DISABLE_LAST_EDITOR
+     creator                               Optional GPBoolean. Disable Creator Tracking. Default value: true. Value choices: disable_creator, no_disable_creator
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     last_edit_date                        optional. Default value: true. Value choices: DISABLE_LAST_EDIT_DATE,NO_DISABLE_LAST_EDIT_DATE
+     creation_date                         Optional GPBoolean. Disable Creation Date Tracking. Default value: true. Value choices: disable_creation_date, no_disable_creation_date
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     creator                               optional. Default value: true. Value choices: DISABLE_CREATOR,NO_DISABLE_CREATOR
+     last_editor                           Optional GPBoolean. Disable Last Editor Tracking. Default value: true. Value choices: disable_last_editor, no_disable_last_editor
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'creation_date': ['creation_date', 'optional'], 'last_edit_date': ['last_edit_date', 'optional'], 'last_editor': ['last_editor', 'optional'], 'creator': ['creator', 'optional']}
+     in_db = {'last_edit_date': ['last_edit_date', 'optional'], 'creator': ['creator', 'optional'], 'dataset': ['in_dataset', 'required'], 'creation_date': ['creation_date', 'optional'], 'last_editor': ['last_editor', 'optional']}
      out_db = {}
      return _execute_tool('management', 'DisableEditorTracking', inputs, in_db, out_db)
 
           
-def enable_editor_tracking(dataset, creator_field=None, creation_date_field=None, last_editor_field=None, last_edit_date_field=None, add_fields=None, record_dates_in='UTC'):
+def enable_editor_tracking(dataset, creator_field=None, creation_date_field=None, last_editor_field=None, last_edit_date_field=None, add_fields=None, record_dates_in='utc'):
      """
      Geoprocessing tool to enable  editor tracking for a feature class, table, mosaic dataset, or raster catalog.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required DEDatasetType. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     creator_field                         optional. Default value: None. Value choices: 
+     last_editor_field                     Optional GPString. Last Editor Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     last_editor_field                     optional. Default value: None. Value choices: 
+     record_dates_in                       Optional GPString. Record Dates in. Default value: utc. Value choices: utc, database_time
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     last_edit_date_field                  optional. Default value: None. Value choices: 
+     add_fields                            Optional GPBoolean. Add fields if they don't exist. Default value: none. Value choices: add_fields, no_add_fields
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     record_dates_in                       optional. Default value: UTC. Value choices: UTC,DATABASE_TIME
+     last_edit_date_field                  Optional GPString. Last Edit Date Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     add_fields                            optional. Default value: None. Value choices: ADD_FIELDS,NO_ADD_FIELDS
+     creation_date_field                   Optional GPString. Creation Date Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     creation_date_field                   optional. Default value: None. Value choices: 
+     creator_field                         Optional GPString. Creator Field. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'creator_field': ['creator_field', 'optional'], 'last_edit_date_field': ['last_edit_date_field', 'optional'], 'add_fields': ['add_fields', 'optional'], 'record_dates_in': ['record_dates_in', 'optional'], 'creation_date_field': ['creation_date_field', 'optional'], 'last_editor_field': ['last_editor_field', 'optional']}
+     in_db = {'last_editor_field': ['last_editor_field', 'optional'], 'dataset': ['in_dataset', 'required'], 'add_fields': ['add_fields', 'optional'], 'last_edit_date_field': ['last_edit_date_field', 'optional'], 'creation_date_field': ['creation_date_field', 'optional'], 'creator_field': ['creator_field', 'optional'], 'record_dates_in': ['record_dates_in', 'optional']}
      out_db = {}
      return _execute_tool('management', 'EnableEditorTracking', inputs, in_db, out_db)
 
@@ -4209,7 +4209,7 @@ def truncate_table(table):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     table                                 required.
+     table                                 Required GPTableView. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4225,7 +4225,7 @@ def upgrade_dataset(dataset):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Dataset to upgrade
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4234,24 +4234,24 @@ def upgrade_dataset(dataset):
      return _execute_tool('management', 'UpgradeDataset', inputs, in_db, out_db)
 
           
-def export_mosaic_dataset_paths(mosaic_dataset, where_clause=None, export_mode='ALL', types_of_paths=None):
+def export_mosaic_dataset_paths(mosaic_dataset, where_clause=None, export_mode='all', types_of_paths=None):
      """
      Geoprocessing tool that creates a table listing the paths to the mosaic dataset items.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPMosaicLayer. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     export_mode                           optional. Default value: ALL. Value choices: ALL,BROKEN
+     types_of_paths                        Optional GPMultiValue. Types of paths to export. Default value: none. Value choices: raster, item_cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     types_of_paths                        optional. Default value: None. Value choices: RASTER,ITEM_CACHE
+     export_mode                           Optional GPString. Export Mode. Default value: all. Value choices: all, broken
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'export_mode': ['export_mode', 'optional'], 'types_of_paths': ['types_of_paths', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'types_of_paths': ['types_of_paths', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'export_mode': ['export_mode', 'optional'], 'where_clause': ['where_clause', 'optional']}
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'ExportMosaicDatasetPaths', inputs, in_db, out_db)
 
@@ -4263,16 +4263,16 @@ def repair_mosaic_dataset_paths(mosaic_dataset, paths_list, where_clause=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     paths_list                            required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     paths_list                            Required GPValueTable. Paths List
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'paths_list': ['paths_list', 'required'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional'], 'paths_list': ['paths_list', 'required']}
      out_db = {}
      return _execute_tool('management', 'RepairMosaicDatasetPaths', inputs, in_db, out_db)
 
@@ -4284,22 +4284,22 @@ def create_database_user(input_database, user_name, user_authentication_type='fa
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     user_name                             Required GPString. Database User
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     user_name                             required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     role                                  optional. Default value: None. Value choices: 
+     role                                  Optional GPString. Role. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tablespace_name                       optional. Default value: None. Value choices: 
+     user_password                         Optional GPEncryptedString. Database User Password. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     user_password                         optional. Default value: None. Value choices: 
+     user_authentication_type              Optional GPBoolean. Create Operating System Authenticated User. Default value: false. Value choices: operating_system_user, database_user
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     user_authentication_type              optional. Default value: false. Value choices: OPERATING_SYSTEM_USER,DATABASE_USER
+     tablespace_name                       Optional GPString. Tablespace Name. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'tablespace_name': ['tablespace_name', 'optional'], 'user_password': ['user_password', 'optional'], 'role': ['role', 'optional'], 'user_name': ['user_name', 'required'], 'input_database': ['input_database', 'required'], 'user_authentication_type': ['user_authentication_type', 'optional']}
+     in_db = {'tablespace_name': ['tablespace_name', 'optional'], 'role': ['role', 'optional'], 'input_database': ['input_database', 'required'], 'user_password': ['user_password', 'optional'], 'user_authentication_type': ['user_authentication_type', 'optional'], 'user_name': ['user_name', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseUser', inputs, in_db, out_db)
 
@@ -4311,110 +4311,110 @@ def join_field(data, field, jotable, jofield, fields=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field                                 required.
+     jofield                               Required Field. Output Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jofield                               required.
+     jotable                               Required GPComposite. Join Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     jotable                               required.
+     data                                  Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     data                                  required.
+     field                                 Required Field. Input Join Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fields                                optional. Default value: None. Value choices: 
+     fields                                Optional GPMultiValue. Join Fields. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'fields': ['fields', 'optional'], 'field': ['in_field', 'required'], 'jofield': ['join_field', 'required'], 'jotable': ['join_table', 'required'], 'data': ['in_data', 'required']}
+     in_db = {'jofield': ['join_field', 'required'], 'jotable': ['join_table', 'required'], 'data': ['in_data', 'required'], 'fields': ['fields', 'optional'], 'field': ['in_field', 'required']}
      out_db = {}
      return _execute_tool('management', 'JoinField', inputs, in_db, out_db)
 
           
-def edit_raster_function(mosaic_dataset, edit_mosaic_dataset_item='false', edit_options='INSERT', function_chadefinition=None, location_function_name=None):
+def edit_raster_function(mosaic_dataset, edit_mosaic_dataset_item='false', edit_options='insert', function_chadefinition=None, location_function_name=None):
      """
      Geoprocessing tool that adds, replaces, or removes a raster function template in a mosaic dataset, items in a mosaic dataset, or a raster layer that contains a raster function.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edit_options                          optional. Default value: INSERT. Value choices: INSERT,REPLACE,REMOVE
+     location_function_name                Optional GPString. Function Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location_function_name                optional. Default value: None. Value choices: 
+     function_chadefinition                Optional DEFile. Raster Function Template. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     function_chadefinition                optional. Default value: None. Value choices: 
+     edit_options                          Optional GPString. Edit Options. Default value: insert. Value choices: insert, replace, remove
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     edit_mosaic_dataset_item              optional. Default value: false. Value choices: EDIT_MOSAIC_DATASET_ITEM,EDIT_MOSAIC_DATASET
+     edit_mosaic_dataset_item              Optional GPBoolean. Mosaic Dataset Items. Default value: false. Value choices: edit_mosaic_dataset_item, edit_mosaic_dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'edit_options': ['edit_options', 'optional'], 'location_function_name': ['location_function_name', 'optional'], 'function_chadefinition': ['function_chain_definition', 'optional'], 'edit_mosaic_dataset_item': ['edit_mosaic_dataset_item', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'location_function_name': ['location_function_name', 'optional'], 'function_chadefinition': ['function_chain_definition', 'optional'], 'edit_options': ['edit_options', 'optional'], 'edit_mosaic_dataset_item': ['edit_mosaic_dataset_item', 'optional']}
      out_db = {}
      return _execute_tool('management', 'EditRasterFunction', inputs, in_db, out_db)
 
           
-def build_mosaic_dataset_item_cache(mosaic_dataset, where_clause=None, define_cache='true', generate_cache='true', item_cache_folder=None, compression_method='LOSSLESS', compression_quality='80', max_allowed_rows='200000', max_allowed_columns='200000', request_size_type='PIXEL_SIZE_FACTOR', request_size='1'):
+def build_mosaic_dataset_item_cache(mosaic_dataset, where_clause=None, define_cache='true', generate_cache='true', item_cache_folder=None, compression_method='lossless', compression_quality='80', max_allowed_rows='200000', max_allowed_columns='200000', request_size_type='pixel_size_factor', request_size='1'):
      """
      Geoprocessing tool that inserts the Cached Raster function into the function chain for items within a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     request_size                          optional. Default value: 1. Value choices: 
+     define_cache                          Optional GPBoolean. Define Cache. Default value: true. Value choices: define_cache, no_define_cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     generate_cache                        optional. Default value: true. Value choices: GENERATE_CACHE,NO_GENERATE_CACHE
+     compression_method                    Optional GPString. Compression Method. Default value: lossless. Value choices: none, lossless, lossy
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_method                    optional. Default value: LOSSLESS. Value choices: NONE,LOSSLESS,LOSSY
+     compression_quality                   Optional GPLong. Compression Quality. Default value: 80
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     request_size_type                     optional. Default value: PIXEL_SIZE_FACTOR. Value choices: PIXEL_SIZE,PIXEL_SIZE_FACTOR
+     generate_cache                        Optional GPBoolean. Generate Cache. Default value: true. Value choices: generate_cache, no_generate_cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     item_cache_folder                     optional. Default value: None. Value choices: 
+     max_allowed_columns                   Optional GPLong. Maximum Allowed Columns. Default value: 200000
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_allowed_columns                   optional. Default value: 200000. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     define_cache                          optional. Default value: true. Value choices: DEFINE_CACHE,NO_DEFINE_CACHE
+     item_cache_folder                     Optional DEWorkspace. Cache Path. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_allowed_rows                      optional. Default value: 200000. Value choices: 
+     request_size_type                     Optional GPString. Request Size Type. Default value: pixel_size_factor. Value choices: pixel_size, pixel_size_factor
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_quality                   optional. Default value: 80. Value choices: 
+     request_size                          Optional GPDouble. Request Size. Default value: 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     max_allowed_rows                      Optional GPLong. Maximum Allowed Rows. Default value: 200000
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'request_size': ['request_size', 'optional'], 'generate_cache': ['generate_cache', 'optional'], 'compression_method': ['compression_method', 'optional'], 'request_size_type': ['request_size_type', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'item_cache_folder': ['item_cache_folder', 'optional'], 'max_allowed_columns': ['max_allowed_columns', 'optional'], 'define_cache': ['define_cache', 'optional'], 'max_allowed_rows': ['max_allowed_rows', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'define_cache': ['define_cache', 'optional'], 'compression_method': ['compression_method', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'generate_cache': ['generate_cache', 'optional'], 'max_allowed_columns': ['max_allowed_columns', 'optional'], 'where_clause': ['where_clause', 'optional'], 'item_cache_folder': ['item_cache_folder', 'optional'], 'request_size_type': ['request_size_type', 'optional'], 'request_size': ['request_size', 'optional'], 'compression_quality': ['compression_quality', 'optional'], 'max_allowed_rows': ['max_allowed_rows', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildMosaicDatasetItemCache', inputs, in_db, out_db)
 
           
-def batch_build_pyramids(input_raster_datasets, pyramid_levels='-1', skip_first_level='false', pyramid_resampling_technique='NEAREST', pyramid_compression_type='DEFAULT', compression_quality='75', skip_existing=None):
+def batch_build_pyramids(input_raster_datasets, pyramid_levels='-1', skip_first_level='false', pyramid_resampling_technique='nearest', pyramid_compression_type='default', compression_quality='75', skip_existing=None):
      """
      
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_raster_datasets                 required.
+     input_raster_datasets                 Required GPMultiValue. Input Raster Datasets
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_existing                         optional. Default value: None. Value choices: OVERWRITE,SKIP_EXISTING
+     skip_existing                         Optional GPBoolean. Skip Existing. Default value: none. Value choices: overwrite, skip_existing
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramid_resampling_technique          optional. Default value: NEAREST. Value choices: NEAREST,BILINEAR,CUBIC
+     pyramid_resampling_technique          Optional GPString. Pyramid resampling technique. Default value: nearest. Value choices: nearest, bilinear, cubic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_first_level                      optional. Default value: false. Value choices: SKIP_FIRST,NONE
+     pyramid_compression_type              Optional GPString. Pyramid compression type. Default value: default. Value choices: default, jpeg, lz77, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     compression_quality                   optional. Default value: 75. Value choices: 
+     skip_first_level                      Optional GPBoolean. Skip first level. Default value: false. Value choices: skip_first, none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramid_levels                        optional. Default value: -1. Value choices: 
+     compression_quality                   Optional GPLong. Compression quality. Default value: 75
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pyramid_compression_type              optional. Default value: DEFAULT. Value choices: DEFAULT,JPEG,LZ77,NONE
+     pyramid_levels                        Optional GPLong. Pyramid levels. Default value: -1
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'skip_existing': ['Skip_Existing', 'optional'], 'pyramid_resampling_technique': ['Pyramid_resampling_technique', 'optional'], 'skip_first_level': ['Skip_first_level', 'optional'], 'input_raster_datasets': ['Input_Raster_Datasets', 'required'], 'compression_quality': ['Compression_quality', 'optional'], 'pyramid_levels': ['Pyramid_levels', 'optional'], 'pyramid_compression_type': ['Pyramid_compression_type', 'optional']}
+     in_db = {'skip_existing': ['Skip_Existing', 'optional'], 'pyramid_resampling_technique': ['Pyramid_resampling_technique', 'optional'], 'pyramid_compression_type': ['Pyramid_compression_type', 'optional'], 'input_raster_datasets': ['Input_Raster_Datasets', 'required'], 'skip_first_level': ['Skip_first_level', 'optional'], 'compression_quality': ['Compression_quality', 'optional'], 'pyramid_levels': ['Pyramid_levels', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BatchBuildPyramids', inputs, in_db, out_db)
 
@@ -4426,40 +4426,40 @@ def batch_calculate_statistics(input_raster_datasets, number_of_columns_to_skip=
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_raster_datasets                 required.
+     input_raster_datasets                 Required GPMultiValue. Input Raster Datasets
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ignore_values                         optional. Default value: None. Value choices: 
+     skip_existing                         Optional GPBoolean. Skip Existing. Default value: none. Value choices: overwrite, skip_existing
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     skip_existing                         optional. Default value: None. Value choices: OVERWRITE,SKIP_EXISTING
+     number_of_rows_to_skip                Optional GPLong. Number of rows to skip. Default value: 1
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     number_of_rows_to_skip                optional. Default value: 1. Value choices: 
+     ignore_values                         Optional GPMultiValue. Ignore values. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     number_of_columns_to_skip             optional. Default value: 1. Value choices: 
+     number_of_columns_to_skip             Optional GPLong. Number of columns to skip. Default value: 1
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'ignore_values': ['Ignore_values', 'optional'], 'skip_existing': ['Skip_Existing', 'optional'], 'number_of_rows_to_skip': ['Number_of_rows_to_skip', 'optional'], 'number_of_columns_to_skip': ['Number_of_columns_to_skip', 'optional'], 'input_raster_datasets': ['Input_Raster_Datasets', 'required']}
+     in_db = {'skip_existing': ['Skip_Existing', 'optional'], 'number_of_rows_to_skip': ['Number_of_rows_to_skip', 'optional'], 'ignore_values': ['Ignore_values', 'optional'], 'input_raster_datasets': ['Input_Raster_Datasets', 'required'], 'number_of_columns_to_skip': ['Number_of_columns_to_skip', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BatchCalculateStatistics', inputs, in_db, out_db)
 
           
-def sort(dataset, sort_field, spatial_sort_method='UR'):
+def sort(dataset, sort_field, spatial_sort_method='ur'):
      """
      Geoprocessing tool that reorders records in a feature class or table based on field values.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     sort_field                            Required GPValueTable. Field(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     sort_field                            required.
+     dataset                               Required GPTableView. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_sort_method                   optional. Default value: UR. Value choices: UL,UR,LL,LR,PEANO
+     spatial_sort_method                   Optional GPString. Spatial Sort Method. Default value: ur. Value choices: ul, ur, ll, lr, peano
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'spatial_sort_method': ['spatial_sort_method', 'optional'], 'sort_field': ['sort_field', 'required']}
+     in_db = {'sort_field': ['sort_field', 'required'], 'spatial_sort_method': ['spatial_sort_method', 'optional'], 'dataset': ['in_dataset', 'required']}
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'Sort', inputs, in_db, out_db)
 
@@ -4471,207 +4471,207 @@ def match_photos_to_rows_by_time(input_folder, input_table, time_field, add_phot
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     time_field                            required.
+     time_field                            Required Field. Time Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_table                           required.
+     input_table                           Required GPTableView. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_folder                          required.
+     input_folder                          Required DEFolder. Input Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clock_offset                          optional. Default value: 0. Value choices: 
+     time_tolerance                        Optional GPDouble. Time Tolerance. Default value: 0
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     time_tolerance                        optional. Default value: 0. Value choices: 
+     add_photos_as_attachments             Optional GPBoolean. Add Photos As Attachments. Default value: false. Value choices: add_attachments, no_attachments
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     add_photos_as_attachments             optional. Default value: false. Value choices: ADD_ATTACHMENTS,NO_ATTACHMENTS
+     clock_offset                          Optional GPDouble. Clock Offset. Default value: 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'time_tolerance': ['Time_Tolerance', 'optional'], 'input_folder': ['Input_Folder', 'required'], 'clock_offset': ['Clock_Offset', 'optional'], 'time_field': ['Time_Field', 'required'], 'input_table': ['Input_Table', 'required'], 'add_photos_as_attachments': ['Add_Photos_As_Attachments', 'optional']}
+     in_db = {'time_tolerance': ['Time_Tolerance', 'optional'], 'add_photos_as_attachments': ['Add_Photos_As_Attachments', 'optional'], 'input_folder': ['Input_Folder', 'required'], 'time_field': ['Time_Field', 'required'], 'input_table': ['Input_Table', 'required'], 'clock_offset': ['Clock_Offset', 'optional']}
      out_db = {'unmatched_photos_table': ['Unmatched_Photos_Table', 'optional', None, None], 'output_table': ['Output_Table', 'required', None, None]}
      return _execute_tool('management', 'MatchPhotosToRowsByTime', inputs, in_db, out_db)
 
           
-def register_raster(raster, register_mode, reference_raster=None, input_link_file=None, transformation_type='POLYORDER1', maximum_rms_value=None):
+def register_raster(raster, register_mode, reference_raster=None, input_link_file=None, transformation_type='polyorder1', maximum_rms_value=None):
      """
      Geoprocessing tool that registers an image to a reference image.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     register_mode                         required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     register_mode                         Required GPString. Register Mode
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     reference_raster                      optional. Default value: None. Value choices: 
+     transformation_type                   Optional GPString. Transformation Type. Default value: polyorder1. Value choices: polyorder0, polysimilarity, polyorder1, polyorder2, polyorder3, projective, spline, adjust
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_link_file                       optional. Default value: None. Value choices: 
+     maximum_rms_value                     Optional GPDouble. Maximum RMS. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_rms_value                     optional. Default value: None. Value choices: 
+     input_link_file                       Optional DETextFile. Input Link File. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transformation_type                   optional. Default value: POLYORDER1. Value choices: POLYORDER0,POLYSIMILARITY,POLYORDER1,POLYORDER2,POLYORDER3,PROJECTIVE,SPLINE,ADJUST
+     reference_raster                      Optional GPComposite. Reference Raster. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'reference_raster': ['reference_raster', 'optional'], 'register_mode': ['register_mode', 'required'], 'maximum_rms_value': ['maximum_rms_value', 'optional'], 'transformation_type': ['transformation_type', 'optional'], 'input_link_file': ['input_link_file', 'optional'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'transformation_type': ['transformation_type', 'optional'], 'reference_raster': ['reference_raster', 'optional'], 'register_mode': ['register_mode', 'required'], 'maximum_rms_value': ['maximum_rms_value', 'optional'], 'input_link_file': ['input_link_file', 'optional']}
      out_db = {'output_cpt_link_file': ['output_cpt_link_file', 'optional', None, None]}
      return _execute_tool('management', 'RegisterRaster', inputs, in_db, out_db)
 
           
-def create_role(input_database, role, grant_revoke='GRANT', user_name=None):
+def create_role(input_database, role, grant_revoke='grant', user_name=None):
      """
      Geoprocessing tool to create a database role in an Oracle, PostgreSQL, or Microsoft SQL Server database and add users to or remove them from the role.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     role                                  required.
+     role                                  Required GPString. Role
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     user_name                             optional. Default value: None. Value choices: 
+     grant_revoke                          Optional GPString. Grant To or Revoke From User(s). Default value: grant. Value choices: grant, revoke
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     grant_revoke                          optional. Default value: GRANT. Value choices: GRANT,REVOKE
+     user_name                             Optional GPString. User Name(s). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'role': ['role', 'required'], 'user_name': ['user_name', 'optional'], 'input_database': ['input_database', 'required'], 'grant_revoke': ['grant_revoke', 'optional']}
+     in_db = {'role': ['role', 'required'], 'user_name': ['user_name', 'optional'], 'grant_revoke': ['grant_revoke', 'optional'], 'input_database': ['input_database', 'required']}
      out_db = {}
      return _execute_tool('management', 'CreateRole', inputs, in_db, out_db)
 
           
-def export_tile_cache(cache_source, target_cache_folder, target_cache_name, export_cache_type='TILE_CACHE', storage_format_type='COMPACT', scales=None, area_of_interest='in_memory\{5C2A1BE5-7672-4AB1-8E1E-8C853CB4DE67}'):
+def export_tile_cache(cache_source, target_cache_folder, target_cache_name, export_cache_type='tile_cache', storage_format_type='compact', scales=None, area_of_interest='in_memory\{5c2a1be5-7672-4ab1-8e1e-8c853cb4de67}'):
      """
      Geoprocessing tool that exports tiles from an existing tile cache.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cache_source                          required.
+     cache_source                          Required GPComposite. Input Tile Cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_cache_name                     required.
+     target_cache_name                     Required GPString. Output Tile Cache Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     target_cache_folder                   required.
+     target_cache_folder                   Required DEFolder. Output Tile Cache Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: in_memory\{5C2A1BE5-7672-4AB1-8E1E-8C853CB4DE67}. Value choices: 
+     area_of_interest                      Optional GPFeatureRecordSetLayer. Area of Interest. Default value: in_memory\{5c2a1be5-7672-4ab1-8e1e-8c853cb4de67}
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     storage_format_type                   optional. Default value: COMPACT. Value choices: COMPACT,EXPLODED
+     export_cache_type                     Optional GPString. Export Cache As. Default value: tile_cache. Value choices: tile_cache, tile_package
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     export_cache_type                     optional. Default value: TILE_CACHE. Value choices: TILE_CACHE,TILE_PACKAGE
+     storage_format_type                   Optional GPString. Storage Format. Default value: compact. Value choices: compact, exploded
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scales                                optional. Default value: None. Value choices: 
+     scales                                Optional GPMultiValue. Scales [Pixel Size] (Estimated Disk Space). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cache_source': ['in_cache_source', 'required'], 'target_cache_name': ['in_target_cache_name', 'required'], 'storage_format_type': ['storage_format_type', 'optional'], 'target_cache_folder': ['in_target_cache_folder', 'required'], 'area_of_interest': ['area_of_interest', 'optional'], 'export_cache_type': ['export_cache_type', 'optional'], 'scales': ['scales', 'optional']}
+     in_db = {'cache_source': ['in_cache_source', 'required'], 'target_cache_name': ['in_target_cache_name', 'required'], 'export_cache_type': ['export_cache_type', 'optional'], 'scales': ['scales', 'optional'], 'storage_format_type': ['storage_format_type', 'optional'], 'target_cache_folder': ['in_target_cache_folder', 'required'], 'area_of_interest': ['area_of_interest', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ExportTileCache', inputs, in_db, out_db)
 
           
-def generate_tile_cache_tiling_scheme(dataset, tiling_scheme_generation_method, number_of_scales, predefined_tiling_scheme=None, scales=None, scales_type='false', tile_origin='0 0', dpi='96', tile_size='256 x 256', tile_format='MIXED', tile_compression_quality='75', storage_format='COMPACT', lerc_error=None):
+def generate_tile_cache_tiling_scheme(dataset, tiling_scheme_generation_method, number_of_scales, predefined_tiling_scheme=None, scales=None, scales_type='false', tile_origin='0 0', dpi='96', tile_size='256 x 256', tile_format='mixed', tile_compression_quality='75', storage_format='compact', lerc_error=None):
      """
      Geoprocessing tool that generates an XML tiling scheme file used to create tile cache.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Data Source
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     number_of_scales                      required.
+     tiling_scheme_generation_method       Required GPString. Generation Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     tiling_scheme_generation_method       required.
+     number_of_scales                      Required GPLong. Number of Scales
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_origin                           optional. Default value: 0 0. Value choices: 
+     scales_type                           Optional GPBoolean. Cell Size. Default value: false. Value choices: cell_size, scale
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     predefined_tiling_scheme              optional. Default value: None. Value choices: 
+     predefined_tiling_scheme              Optional DEFile. Predefined Tiling Scheme. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_size                             optional. Default value: 256 x 256. Value choices: 128 x 128,256 x 256,512 x 512,1024 x 1024
+     scales                                Optional GPValueTable. Scales. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scales_type                           optional. Default value: false. Value choices: CELL_SIZE,SCALE
+     lerc_error                            Optional GPDouble. LERC Error. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_compression_quality              optional. Default value: 75. Value choices: 
+     storage_format                        Optional GPString. Storage Format. Default value: compact. Value choices: compact, exploded
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     storage_format                        optional. Default value: COMPACT. Value choices: COMPACT,EXPLODED
+     tile_format                           Optional GPString. Tile Format. Default value: mixed. Value choices: png, png8, png24, png32, jpeg, mixed, lerc
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     lerc_error                            optional. Default value: None. Value choices: 
+     tile_compression_quality              Optional GPLong. Tile Compression Quality. Default value: 75
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dpi                                   optional. Default value: 96. Value choices: 
+     dpi                                   Optional GPLong. Dots (Pixels) Per Inch. Default value: 96
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tile_format                           optional. Default value: MIXED. Value choices: PNG,PNG8,PNG24,PNG32,JPEG,MIXED,LERC
+     tile_size                             Optional GPString. Tile Size (in pixels). Default value: 256 x 256. Value choices: 128 x 128, 256 x 256, 512 x 512, 1024 x 1024
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scales                                optional. Default value: None. Value choices: 
+     tile_origin                           Optional GPPoint. Tile Origin in map units. Default value: 0 0
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'scales': ['scales', 'optional'], 'tile_origin': ['tile_origin', 'optional'], 'tiling_scheme_generation_method': ['tiling_scheme_generation_method', 'required'], 'lerc_error': ['lerc_error', 'optional'], 'tile_format': ['tile_format', 'optional'], 'dataset': ['in_dataset', 'required'], 'predefined_tiling_scheme': ['predefined_tiling_scheme', 'optional'], 'number_of_scales': ['number_of_scales', 'required'], 'scales_type': ['scales_type', 'optional'], 'tile_compression_quality': ['tile_compression_quality', 'optional'], 'tile_size': ['tile_size', 'optional'], 'dpi': ['dpi', 'optional'], 'storage_format': ['storage_format', 'optional']}
+     in_db = {'dataset': ['in_dataset', 'required'], 'predefined_tiling_scheme': ['predefined_tiling_scheme', 'optional'], 'lerc_error': ['lerc_error', 'optional'], 'dpi': ['dpi', 'optional'], 'tile_size': ['tile_size', 'optional'], 'tile_origin': ['tile_origin', 'optional'], 'scales_type': ['scales_type', 'optional'], 'tile_compression_quality': ['tile_compression_quality', 'optional'], 'scales': ['scales', 'optional'], 'storage_format': ['storage_format', 'optional'], 'tile_format': ['tile_format', 'optional'], 'number_of_scales': ['number_of_scales', 'required'], 'tiling_scheme_generation_method': ['tiling_scheme_generation_method', 'required']}
      out_db = {'tiling_scheme': ['out_tiling_scheme', 'required', None, None]}
      return _execute_tool('management', 'GenerateTileCacheTilingScheme', inputs, in_db, out_db)
 
           
-def import_tile_cache(cache_target, cache_source, scales=None, area_of_interest='in_memory\{D6AB050F-D3FD-409C-B375-61816774DB6C}', overwrite='false'):
+def import_tile_cache(cache_target, cache_source, scales=None, area_of_interest='in_memory\{d6ab050f-d3fd-409c-b375-61816774db6c}', overwrite='false'):
      """
      Geoprocessing tool that imports tiles from an existing tile cache.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cache_target                          required.
+     cache_source                          Required GPComposite. Source Tile Cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     cache_source                          required.
+     cache_target                          Required GPRasterLayer. Target Tile Cache
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     overwrite                             optional. Default value: false. Value choices: OVERWRITE,MERGE
+     overwrite                             Optional GPBoolean. Overwrite Tiles. Default value: false. Value choices: overwrite, merge
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: in_memory\{D6AB050F-D3FD-409C-B375-61816774DB6C}. Value choices: 
+     scales                                Optional GPMultiValue. Scales [Pixel Size] (Estimated Disk Space). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scales                                optional. Default value: None. Value choices: 
+     area_of_interest                      Optional GPFeatureRecordSetLayer. Area of Interest. Default value: in_memory\{d6ab050f-d3fd-409c-b375-61816774db6c}
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cache_target': ['in_cache_target', 'required'], 'scales': ['scales', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'overwrite': ['overwrite', 'optional'], 'cache_source': ['in_cache_source', 'required']}
+     in_db = {'cache_source': ['in_cache_source', 'required'], 'cache_target': ['in_cache_target', 'required'], 'overwrite': ['overwrite', 'optional'], 'scales': ['scales', 'optional'], 'area_of_interest': ['area_of_interest', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ImportTileCache', inputs, in_db, out_db)
 
           
-def manage_tile_cache(cache_location, manage_mode, cache_name=None, datasource=None, tiling_scheme='ARCGISONLINE_SCHEME', import_tiling_scheme=None, scales=None, area_of_interest='in_memory\{1084126B-ABAA-4CB2-B931-966A25BAD608}', max_cell_size=None, mcached_scale=None, max_cached_scale=None):
+def manage_tile_cache(cache_location, manage_mode, cache_name=None, datasource=None, tiling_scheme='arcgisonline_scheme', import_tiling_scheme=None, scales=None, area_of_interest='in_memory\{1084126b-abaa-4cb2-b931-966a25bad608}', max_cell_size=None, mcached_scale=None, max_cached_scale=None):
      """
      Geoprocessing tool that creates a tile cache or updates tiles in an existing tile cache.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     manage_mode                           required.
+     manage_mode                           Required GPString. Manage Mode
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     cache_location                        required.
+     cache_location                        Required GPComposite. Cache Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_cached_scale                      optional. Default value: None. Value choices: 
+     datasource                            Optional GPComposite. Input Data Source. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tiling_scheme                         optional. Default value: ARCGISONLINE_SCHEME. Value choices: ARCGISONLINE_SCHEME,ARCGISONLINE+_SCHEME,ARCGISONLINE_ELEVATION_SCHEME,ARCGISONLINE_ELEVATION+_SCHEME,IMPORT_SCHEME
+     tiling_scheme                         Optional GPString. Input Tiling Scheme. Default value: arcgisonline_scheme. Value choices: arcgisonline_scheme, arcgisonline+_scheme, arcgisonline_elevation_scheme, arcgisonline_elevation+_scheme, import_scheme
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mcached_scale                         optional. Default value: None. Value choices: 
+     max_cached_scale                      Optional GPDouble. Maximum Cached Scale. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_cell_size                         optional. Default value: None. Value choices: 
+     cache_name                            Optional GPString. Cache Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cache_name                            optional. Default value: None. Value choices: 
+     import_tiling_scheme                  Optional GPComposite. Import Tiling Scheme. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     import_tiling_scheme                  optional. Default value: None. Value choices: 
+     max_cell_size                         Optional GPDouble. Maximum Source Cell Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: in_memory\{1084126B-ABAA-4CB2-B931-966A25BAD608}. Value choices: 
+     area_of_interest                      Optional GPFeatureRecordSetLayer. Area of Interest. Default value: in_memory\{1084126b-abaa-4cb2-b931-966a25bad608}
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     datasource                            optional. Default value: None. Value choices: 
+     mcached_scale                         Optional GPDouble. Minimum Cached Scale. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     scales                                optional. Default value: None. Value choices: 
+     scales                                Optional GPMultiValue. Scales [Pixel Size] (Estimated Disk Space). Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'manage_mode': ['manage_mode', 'required'], 'max_cached_scale': ['max_cached_scale', 'optional'], 'tiling_scheme': ['tiling_scheme', 'optional'], 'mcached_scale': ['min_cached_scale', 'optional'], 'max_cell_size': ['max_cell_size', 'optional'], 'cache_name': ['in_cache_name', 'optional'], 'import_tiling_scheme': ['import_tiling_scheme', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'datasource': ['in_datasource', 'optional'], 'cache_location': ['in_cache_location', 'required'], 'scales': ['scales', 'optional']}
+     in_db = {'datasource': ['in_datasource', 'optional'], 'tiling_scheme': ['tiling_scheme', 'optional'], 'area_of_interest': ['area_of_interest', 'optional'], 'cache_location': ['in_cache_location', 'required'], 'max_cached_scale': ['max_cached_scale', 'optional'], 'cache_name': ['in_cache_name', 'optional'], 'import_tiling_scheme': ['import_tiling_scheme', 'optional'], 'max_cell_size': ['max_cell_size', 'optional'], 'manage_mode': ['manage_mode', 'required'], 'mcached_scale': ['min_cached_scale', 'optional'], 'scales': ['scales', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ManageTileCache', inputs, in_db, out_db)
 
@@ -4683,9 +4683,9 @@ def disable_archiving(dataset, preserve_history='true'):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     preserve_history                      optional. Default value: true. Value choices: PRESERVE,DELETE
+     preserve_history                      Optional GPBoolean. Preserve History Table. Default value: true. Value choices: preserve, delete
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4701,7 +4701,7 @@ def enable_archiving(dataset):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4717,17 +4717,17 @@ def merge_mosaic_dataset_items(mosaic_dataset, where_clause=None, block_field=No
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     block_field                           optional. Default value: None. Value choices: 
+     block_field                           Optional Field. Block Field. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_rows_per_merged_items             optional. Default value: 1000. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     max_rows_per_merged_items             Optional GPLong. Maximum Allowed Rows Per Merged Item. Default value: 1000
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'max_rows_per_merged_items': ['max_rows_per_merged_items', 'optional'], 'block_field': ['block_field', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'block_field': ['block_field', 'optional'], 'where_clause': ['where_clause', 'optional'], 'max_rows_per_merged_items': ['max_rows_per_merged_items', 'optional']}
      out_db = {}
      return _execute_tool('management', 'MergeMosaicDatasetItems', inputs, in_db, out_db)
 
@@ -4739,9 +4739,9 @@ def split_mosaic_dataset_items(mosaic_dataset, where_clause=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4757,16 +4757,16 @@ def compute_pansharpen_weights(raster, panchromatic_image, band_indexes=None):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     panchromatic_image                    required.
+     raster                                Required GPComposite. Input Raster
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     raster                                required.
+     panchromatic_image                    Required GPRasterLayer. Panchromatic Image
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     band_indexes                          optional. Default value: None. Value choices: 
+     band_indexes                          Optional GPString. Band Indexes. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'band_indexes': ['band_indexes', 'optional'], 'panchromatic_image': ['in_panchromatic_image', 'required'], 'raster': ['in_raster', 'required']}
+     in_db = {'raster': ['in_raster', 'required'], 'band_indexes': ['band_indexes', 'optional'], 'panchromatic_image': ['in_panchromatic_image', 'required']}
      out_db = {}
      return _execute_tool('management', 'ComputePansharpenWeights', inputs, in_db, out_db)
 
@@ -4778,24 +4778,24 @@ def project(dataset, out_coor_system, transform_method=None, coor_system=None, p
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dataset                               required.
+     dataset                               Required GPComposite. Input Dataset or Feature Class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_coor_system                       required.
+     out_coor_system                       Required GPCoordinateSystem. Output Coordinate System
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coor_system                           optional. Default value: None. Value choices: 
+     vertical                              Optional GPBoolean. Vertical. Default value: false. Value choices: vertical, no_vertical
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     max_deviation                         optional. Default value: None. Value choices: 
+     max_deviation                         Optional GPLinearUnit. Maximum Offset Deviation. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     preserve_shape                        optional. Default value: false. Value choices: PRESERVE_SHAPE,NO_PRESERVE_SHAPE
+     preserve_shape                        Optional GPBoolean. Preserve Shape. Default value: false. Value choices: preserve_shape, no_preserve_shape
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transform_method                      optional. Default value: None. Value choices: 
+     coor_system                           Optional GPCoordinateSystem. Input Coordinate System. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     vertical                              optional. Default value: false. Value choices: VERTICAL,NO_VERTICAL
+     transform_method                      Optional GPMultiValue. Geographic Transformation. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dataset': ['in_dataset', 'required'], 'coor_system': ['in_coor_system', 'optional'], 'vertical': ['vertical', 'optional'], 'out_coor_system': ['out_coor_system', 'required'], 'max_deviation': ['max_deviation', 'optional'], 'preserve_shape': ['preserve_shape', 'optional'], 'transform_method': ['transform_method', 'optional']}
+     in_db = {'vertical': ['vertical', 'optional'], 'preserve_shape': ['preserve_shape', 'optional'], 'dataset': ['in_dataset', 'required'], 'coor_system': ['in_coor_system', 'optional'], 'out_coor_system': ['out_coor_system', 'required'], 'max_deviation': ['max_deviation', 'optional'], 'transform_method': ['transform_method', 'optional']}
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'Project', inputs, in_db, out_db)
 
@@ -4807,20 +4807,20 @@ def batch_project(input_feature_class_or_dataset, output_workspace, output_coord
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_workspace                      required.
+     input_feature_class_or_dataset        Required GPMultiValue. Input Feature Class or Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     input_feature_class_or_dataset        required.
+     output_workspace                      Required GPComposite. Output Workspace
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     transformation                        optional. Default value: None. Value choices: 
+     transformation                        Optional GPString. Transformation. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_dataset                      optional. Default value: None. Value choices: 
+     template_dataset                      Optional DEGeoDatasetType. Template dataset. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     output_coordinate_system              optional. Default value: None. Value choices: 
+     output_coordinate_system              Optional GPCoordinateSystem. Output Coordinate System. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'template_dataset': ['Template_dataset', 'optional'], 'transformation': ['Transformation', 'optional'], 'output_workspace': ['Output_Workspace', 'required'], 'output_coordinate_system': ['Output_Coordinate_System', 'optional'], 'input_feature_class_or_dataset': ['Input_Feature_Class_or_Dataset', 'required']}
+     in_db = {'transformation': ['Transformation', 'optional'], 'input_feature_class_or_dataset': ['Input_Feature_Class_or_Dataset', 'required'], 'output_coordinate_system': ['Output_Coordinate_System', 'optional'], 'output_workspace': ['Output_Workspace', 'required'], 'template_dataset': ['Template_dataset', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BatchProject', inputs, in_db, out_db)
 
@@ -4832,20 +4832,20 @@ def add_geometry_attributes(input_features, geometry_properties, length_unit=Non
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_features                        required.
+     geometry_properties                   Required GPMultiValue. Geometry Properties
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     geometry_properties                   required.
+     input_features                        Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     coordinate_system                     optional. Default value: None. Value choices: 
+     length_unit                           Optional GPString. Length Unit. Default value: none. Value choices: feet_us, meters, kilometers, miles_us, nautical_miles, yards
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     length_unit                           optional. Default value: None. Value choices: FEET_US,METERS,KILOMETERS,MILES_US,NAUTICAL_MILES,YARDS
+     area_unit                             Optional GPString. Area Unit. Default value: none. Value choices: acres, hectares, square_miles_us, square_kilometers, square_meters, square_feet_us, square_yards, square_nautical_miles
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_unit                             optional. Default value: None. Value choices: ACRES,HECTARES,SQUARE_MILES_US,SQUARE_KILOMETERS,SQUARE_METERS,SQUARE_FEET_US,SQUARE_YARDS,SQUARE_NAUTICAL_MILES
+     coordinate_system                     Optional GPCoordinateSystem. Coordinate System. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_features': ['Input_Features', 'required'], 'coordinate_system': ['Coordinate_System', 'optional'], 'length_unit': ['Length_Unit', 'optional'], 'geometry_properties': ['Geometry_Properties', 'required'], 'area_unit': ['Area_Unit', 'optional']}
+     in_db = {'length_unit': ['Length_Unit', 'optional'], 'area_unit': ['Area_Unit', 'optional'], 'geometry_properties': ['Geometry_Properties', 'required'], 'input_features': ['Input_Features', 'required'], 'coordinate_system': ['Coordinate_System', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AddGeometryAttributes', inputs, in_db, out_db)
 
@@ -4857,7 +4857,7 @@ def migrate_relationship_class(relationship_class):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     relationship_class                    required.
+     relationship_class                    Required DERelationshipClass. Input Relationship Class
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4866,55 +4866,55 @@ def migrate_relationship_class(relationship_class):
      return _execute_tool('management', 'MigrateRelationshipClass', inputs, in_db, out_db)
 
           
-def export_mosaic_dataset_geometry(mosaic_dataset, where_clause=None, geometry_type='FOOTPRINT'):
+def export_mosaic_dataset_geometry(mosaic_dataset, where_clause=None, geometry_type='footprint'):
      """
      Geoprocessing tool that exports feature classes for the footprint, boundary, or seamline of a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geometry_type                         optional. Default value: FOOTPRINT. Value choices: FOOTPRINT,BOUNDARY,SEAMLINE,LEVEL
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     geometry_type                         Optional GPString. Geometry Type. Default value: footprint. Value choices: footprint, boundary, seamline, level
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'geometry_type': ['geometry_type', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'where_clause': ['where_clause', 'optional'], 'geometry_type': ['geometry_type', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'ExportMosaicDatasetGeometry', inputs, in_db, out_db)
 
           
-def export_mosaic_dataset_items(mosaic_dataset, out_folder, out_base_name=None, where_clause=None, format='TIFF', nodata_value=None, clip_type=None, template_dataset=None, cell_size=None):
+def export_mosaic_dataset_items(mosaic_dataset, out_folder, out_base_name=None, where_clause=None, format='tiff', nodata_value=None, clip_type=None, template_dataset=None, cell_size=None):
      """
      Geoprocessing tool that creates a copy of your processed images within a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_folder                            required.
+     mosaic_dataset                        Required GPComposite. Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     out_folder                            Required DEFolder. Output Folder
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             optional. Default value: None. Value choices: 
+     out_base_name                         Optional GPString. . Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template_dataset                      optional. Default value: None. Value choices: 
+     where_clause                          Optional GPSQLExpression. Query Definition. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_base_name                         optional. Default value: None. Value choices: 
+     clip_type                             Optional GPString. Clip Type. Default value: none. Value choices: none, extent, feature_class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clip_type                             optional. Default value: NONE. Value choices: NONE,EXTENT,FEATURE_CLASS
+     cell_size                             Optional GPPoint. Cellsize. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     format                                optional. Default value: TIFF. Value choices: TIFF,BMP,ENVI,Esri BIL,Esri BIP,Esri BSQ,GIF,GRID,IMAGINE IMAGE,JP2,JPEG,PNG
+     nodata_value                          Optional GPString. NoData Value. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     nodata_value                          optional. Default value: None. Value choices: 
+     template_dataset                      Optional GPExtent. Clipping Template. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     where_clause                          optional. Default value: None. Value choices: 
+     format                                Optional GPString. Output Format. Default value: tiff. Value choices: tiff, bmp, envi, esri bil, esri bip, esri bsq, gif, grid, imagine image, jp2, jpeg, png
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_folder': ['out_folder', 'required'], 'cell_size': ['cell_size', 'optional'], 'template_dataset': ['template_dataset', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'clip_type': ['clip_type', 'optional'], 'format': ['format', 'optional'], 'out_base_name': ['out_base_name', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'where_clause': ['where_clause', 'optional']}
+     in_db = {'template_dataset': ['template_dataset', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'out_base_name': ['out_base_name', 'optional'], 'format': ['format', 'optional'], 'clip_type': ['clip_type', 'optional'], 'cell_size': ['cell_size', 'optional'], 'nodata_value': ['nodata_value', 'optional'], 'out_folder': ['out_folder', 'required'], 'where_clause': ['where_clause', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ExportMosaicDatasetItems', inputs, in_db, out_db)
 
@@ -4926,14 +4926,14 @@ def remove_field_conflict_filter(table, fields):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     table                                 required.
+     fields                                Required GPMultiValue. Field Name(s)
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     fields                                required.
+     table                                 Required GPTableView. Input Table
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'table': ['table', 'required'], 'fields': ['fields', 'required']}
+     in_db = {'fields': ['fields', 'required'], 'table': ['table', 'required']}
      out_db = {}
      return _execute_tool('management', 'RemoveFieldConflictFilter', inputs, in_db, out_db)
 
@@ -4945,7 +4945,7 @@ def export_geodatabase_configuration_keywords(input_database):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4961,10 +4961,10 @@ def import_geodatabase_configuration_keywords(input_database, file):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     file                                  required.
+     file                                  Required DEFile. Input File
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -4973,54 +4973,54 @@ def import_geodatabase_configuration_keywords(input_database, file):
      return _execute_tool('management', 'ImportGeodatabaseConfigurationKeywords', inputs, in_db, out_db)
 
           
-def alter_field(table, field, new_field_name=None, new_field_alias=None, field_type='LONG', field_length=None, field_is_nullable='true', clear_field_alias='false'):
+def alter_field(table, field, new_field_name=None, new_field_alias=None, field_type='long', field_length=None, field_is_nullable='true', clear_field_alias='false'):
      """
      Geoprocessing tool  to alter the field properties of geodatabase tables and feature classes.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field                                 required.
+     table                                 Required GPComposite. Input Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     table                                 required.
+     field                                 Required Field. Field Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_length                          optional. Default value: None. Value choices: 
+     new_field_name                        Optional GPString. New Field Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     clear_field_alias                     optional. Default value: false. Value choices: 
+     field_length                          Optional GPLong. New Field Length. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     new_field_alias                       optional. Default value: None. Value choices: 
+     field_is_nullable                     Optional GPBoolean. New Field IsNullable. Default value: true. Value choices: nullable, non_nullable
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     new_field_name                        optional. Default value: None. Value choices: 
+     new_field_alias                       Optional GPString. New Field Alias. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_type                            optional. Default value: LONG. Value choices: TEXT,FLOAT,DOUBLE,SHORT,LONG,DATE,BLOB,RASTER,GUID
+     clear_field_alias                     Optional GPBoolean. Clear Alias. Default value: false
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     field_is_nullable                     optional. Default value: true. Value choices: NULLABLE,NON_NULLABLE
+     field_type                            Optional GPString. New Field Type. Default value: long. Value choices: text, float, double, short, long, date, blob, raster, guid
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'field_length': ['field_length', 'optional'], 'clear_field_alias': ['clear_field_alias', 'optional'], 'new_field_alias': ['new_field_alias', 'optional'], 'table': ['in_table', 'required'], 'field': ['field', 'required'], 'new_field_name': ['new_field_name', 'optional'], 'field_type': ['field_type', 'optional'], 'field_is_nullable': ['field_is_nullable', 'optional']}
+     in_db = {'new_field_name': ['new_field_name', 'optional'], 'field_length': ['field_length', 'optional'], 'field_is_nullable': ['field_is_nullable', 'optional'], 'field': ['field', 'required'], 'table': ['in_table', 'required'], 'new_field_alias': ['new_field_alias', 'optional'], 'clear_field_alias': ['clear_field_alias', 'optional'], 'field_type': ['field_type', 'optional']}
      out_db = {}
      return _execute_tool('management', 'AlterField', inputs, in_db, out_db)
 
           
-def geodetic_densify(features, geodetic_type, distance='50 Kilometers'):
+def geodetic_densify(features, geodetic_type, distance='50 kilometers'):
      """
      Geoprocessing tool that replaces segments with densified approximation of geodetic curves.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geodetic_type                         required.
+     features                              Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     features                              required.
+     geodetic_type                         Required GPString. Geodetic Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distance                              optional. Default value: 50 Kilometers. Value choices: 
+     distance                              Optional GPLinearUnit. Distance. Default value: 50 kilometers
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'distance': ['distance', 'optional'], 'geodetic_type': ['geodetic_type', 'required'], 'features': ['in_features', 'required']}
+     in_db = {'distance': ['distance', 'optional'], 'features': ['in_features', 'required'], 'geodetic_type': ['geodetic_type', 'required']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'GeodeticDensify', inputs, in_db, out_db)
 
@@ -5032,18 +5032,18 @@ def configure_geodatabase_log_file_tables(input_database, log_file_type, log_fil
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     log_file_type                         required.
+     log_file_type                         Required GPString. Log File Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     log_file_pool_size                    optional. Default value: None. Value choices: 
+     log_file_pool_size                    Optional GPLong. Number of session based log file tables to be owned in a pool by the administrator. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     use_tempdb                            optional. Default value: false. Value choices: USE_TEMBDB,NOT_USE_TEMBDB
+     use_tempdb                            Optional GPBoolean. Create session based log files tables owned by each user in the TempDB database (SQL Server only). Default value: false. Value choices: use_tembdb, not_use_tembdb
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'log_file_pool_size': ['log_file_pool_size', 'optional'], 'use_tempdb': ['use_tempdb', 'optional'], 'input_database': ['input_database', 'required'], 'log_file_type': ['log_file_type', 'required']}
+     in_db = {'log_file_pool_size': ['log_file_pool_size', 'optional'], 'input_database': ['input_database', 'required'], 'use_tempdb': ['use_tempdb', 'optional'], 'log_file_type': ['log_file_type', 'required']}
      out_db = {}
      return _execute_tool('management', 'ConfigureGeodatabaseLogFileTables', inputs, in_db, out_db)
 
@@ -5055,7 +5055,7 @@ def delete_schema_geodatabase(input_database):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -5071,11 +5071,11 @@ def diagnose_version_tables(input_database, target_version=None, input_tables=No
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_tables                          optional. Default value: None. Value choices: 
+     input_tables                          Optional GPMultiValue. Input Tables. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_version                        optional. Default value: None. Value choices: 
+     target_version                        Optional GPString. Target version. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -5091,11 +5091,11 @@ def repair_version_tables(input_database, target_version=None, input_tables=None
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_database                        required.
+     input_database                        Required DEWorkspace. Input Database Connection
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_tables                          optional. Default value: None. Value choices: 
+     input_tables                          Optional GPMultiValue. Input Tables. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     target_version                        optional. Default value: None. Value choices: 
+     target_version                        Optional GPString. Target Version. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -5111,7 +5111,7 @@ def analyze_tools_for_pro(input):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input                                 required.
+     input                                 Required GPComposite. Input
      ===================================   ======================================================================================================
      """
      inputs = locals()
@@ -5127,17 +5127,17 @@ def export_topology_errors(topology, out_path, out_basename):
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_path                              required.
+     out_path                              Required GPComposite. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     topology                              required.
+     out_basename                          Required GPString. Base Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_basename                          required.
+     topology                              Required GPTopologyLayer. Input Topology
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_path': ['out_path', 'required'], 'topology': ['in_topology', 'required'], 'out_basename': ['out_basename', 'required']}
+     in_db = {'out_path': ['out_path', 'required'], 'out_basename': ['out_basename', 'required'], 'topology': ['in_topology', 'required']}
      out_db = {}
      return _execute_tool('management', 'ExportTopologyErrors', inputs, in_db, out_db)
 
@@ -5149,109 +5149,109 @@ def generate_raster_from_raster_function(raster_function, raster_function_argume
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_function                       required.
+     raster_function                       Required GPComposite. Input Raster Function
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     format                                optional. Default value: None. Value choices: TIFF,IMAGINE Image,Esri Grid,CRF,MRF
+     raster_function_arguments             Optional GPValueTable. Raster Function Arguments. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_function_arguments             optional. Default value: None. Value choices: 
+     raster_properties                     Optional GPValueTable. Raster Properties. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     raster_properties                     optional. Default value: None. Value choices: 
+     format                                Optional GPString. Format. Default value: none. Value choices: tiff, imagine image, esri grid, crf, mrf
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'format': ['format', 'optional'], 'raster_function': ['raster_function', 'required'], 'raster_function_arguments': ['raster_function_arguments', 'optional'], 'raster_properties': ['raster_properties', 'optional']}
+     in_db = {'raster_function_arguments': ['raster_function_arguments', 'optional'], 'raster_properties': ['raster_properties', 'optional'], 'raster_function': ['raster_function', 'required'], 'format': ['format', 'optional']}
      out_db = {'raster_dataset': ['out_raster_dataset', 'required', None, None]}
      return _execute_tool('management', 'GenerateRasterFromRasterFunction', inputs, in_db, out_db)
 
           
-def generate_tessellation(extent, shape_type='HEXAGON', size=None, spatial_reference=None):
+def generate_tessellation(extent, shape_type='hexagon', size=None, spatial_reference=None):
      """
      Geoprocessing tool that generates a feature class of a  tessellated grid of regular polygons to cover a given extent. The shapes can either be triangles, squares, or hexagons.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     extent                                required.
+     extent                                Required GPExtent. Extent
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     shape_type                            optional. Default value: HEXAGON. Value choices: SQUARE,TRIANGLE,HEXAGON
+     size                                  Optional GPArealUnit. Size. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     spatial_reference                     optional. Default value: None. Value choices: 
+     spatial_reference                     Optional GPSpatialReference. Spatial Reference. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     size                                  optional. Default value: None. Value choices: 
+     shape_type                            Optional GPString. Shape Type. Default value: hexagon. Value choices: square, triangle, hexagon
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'shape_type': ['Shape_Type', 'optional'], 'spatial_reference': ['Spatial_Reference', 'optional'], 'extent': ['Extent', 'required'], 'size': ['Size', 'optional']}
+     in_db = {'spatial_reference': ['Spatial_Reference', 'optional'], 'size': ['Size', 'optional'], 'extent': ['Extent', 'required'], 'shape_type': ['Shape_Type', 'optional']}
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'GenerateTessellation', inputs, in_db, out_db)
 
           
-def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows, number_columns, corner_coord=None, labels='true', template=None, geometry_type='POLYLINE'):
+def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows, number_columns, corner_coord=None, labels='true', template=None, geometry_type='polyline'):
      """
      Geoprocessing tool that creates a fishnet of rectangular cells.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     y_axis_coord                          required.
+     origcoord                             Required GPPoint. Fishnet Origin Coordinate 
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     cell_height                           required.
+     number_rows                           Required GPLong. Number of Rows
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     cell_width                            required.
+     cell_height                           Required GPDouble. Cell Size Height
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     origcoord                             required.
+     y_axis_coord                          Required GPPoint. Y-Axis Coordinate 
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     number_columns                        required.
+     number_columns                        Required GPLong. Number of Columns
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     number_rows                           required.
+     cell_width                            Required GPDouble. Cell Size Width
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     geometry_type                         optional. Default value: POLYLINE. Value choices: POLYLINE,POLYGON
+     corner_coord                          Optional GPPoint. Opposite corner of Fishnet. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     labels                                optional. Default value: true. Value choices: LABELS,NO_LABELS
+     labels                                Optional GPBoolean. Create Label Points. Default value: true. Value choices: labels, no_labels
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     corner_coord                          optional. Default value: None. Value choices: 
+     geometry_type                         Optional GPString. Geometry Type. Default value: polyline. Value choices: polyline, polygon
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     template                              optional. Default value: None. Value choices: 
+     template                              Optional GPExtent. Template Extent. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'y_axis_coord': ['y_axis_coord', 'required'], 'cell_height': ['cell_height', 'required'], 'cell_width': ['cell_width', 'required'], 'labels': ['labels', 'optional'], 'origcoord': ['origin_coord', 'required'], 'geometry_type': ['geometry_type', 'optional'], 'number_columns': ['number_columns', 'required'], 'number_rows': ['number_rows', 'required'], 'corner_coord': ['corner_coord', 'optional'], 'template': ['template', 'optional']}
+     in_db = {'origcoord': ['origin_coord', 'required'], 'number_rows': ['number_rows', 'required'], 'corner_coord': ['corner_coord', 'optional'], 'geometry_type': ['geometry_type', 'optional'], 'cell_height': ['cell_height', 'required'], 'y_axis_coord': ['y_axis_coord', 'required'], 'number_columns': ['number_columns', 'required'], 'labels': ['labels', 'optional'], 'cell_width': ['cell_width', 'required'], 'template': ['template', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'CreateFishnet', inputs, in_db, out_db)
 
           
-def create_random_points(out_path, out_name, constraining_feature_class=None, constraining_extent=None, number_of_points_or_field='100', minimum_allowed_distance='0 Unknown', create_multipoint_output='false', multipoint_size='10'):
+def create_random_points(out_path, out_name, constraining_feature_class=None, constraining_extent=None, number_of_points_or_field='100', minimum_allowed_distance='0 unknown', create_multipoint_output='false', multipoint_size='10'):
      """
      Geoprocessing tool that creates a specified number of random points in an extent window, inside polygon features, on point features, or along line features.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              required.
+     out_path                              Required GPComposite. Output Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_path                              required.
+     out_name                              Required GPString. Output Point Feature Class
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     number_of_points_or_field             optional. Default value: 100. Value choices: 
+     constraining_feature_class            Optional GPFeatureLayer. Constraining Feature Class. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     constraining_extent                   optional. Default value: None. Value choices: 
+     constraining_extent                   Optional GPComposite. Constraining Extent. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     constraining_feature_class            optional. Default value: None. Value choices: 
+     multipoint_size                       Optional GPLong. Maximum Number of Points per Multipoint. Default value: 10
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_allowed_distance              optional. Default value: 0 Unknown. Value choices: 
+     number_of_points_or_field             Optional GPComposite. Number of Points [value or field]. Default value: 100
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     create_multipoint_output              optional. Default value: false. Value choices: MULTIPOINT,POINT
+     create_multipoint_output              Optional GPBoolean. Create Multipoint Output. Default value: false. Value choices: multipoint, point
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     multipoint_size                       optional. Default value: 10. Value choices: 
+     minimum_allowed_distance              Optional GPComposite. Minimum Allowed Distance [value or field]. Default value: 0 unknown
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_path': ['out_path', 'required'], 'constraining_extent': ['constraining_extent', 'optional'], 'constraining_feature_class': ['constraining_feature_class', 'optional'], 'out_name': ['out_name', 'required'], 'minimum_allowed_distance': ['minimum_allowed_distance', 'optional'], 'create_multipoint_output': ['create_multipoint_output', 'optional'], 'number_of_points_or_field': ['number_of_points_or_field', 'optional'], 'multipoint_size': ['multipoint_size', 'optional']}
+     in_db = {'out_name': ['out_name', 'required'], 'constraining_feature_class': ['constraining_feature_class', 'optional'], 'constraining_extent': ['constraining_extent', 'optional'], 'multipoint_size': ['multipoint_size', 'optional'], 'number_of_points_or_field': ['number_of_points_or_field', 'optional'], 'out_path': ['out_path', 'required'], 'create_multipoint_output': ['create_multipoint_output', 'optional'], 'minimum_allowed_distance': ['minimum_allowed_distance', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateRandomPoints', inputs, in_db, out_db)
 
@@ -5263,20 +5263,20 @@ def generate_points_along_lines(input_features, point_placement, distance=None, 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_features                        required.
+     input_features                        Required GPFeatureLayer. Input Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     point_placement                       required.
+     point_placement                       Required GPString. Point Placement
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     percentage                            optional. Default value: None. Value choices: 
+     include_end_points                    Optional GPBoolean. Include End Points. Default value: none. Value choices: end_points, no_end_points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     include_end_points                    optional. Default value: None. Value choices: END_POINTS,NO_END_POINTS
+     percentage                            Optional GPDouble. Percentage. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distance                              optional. Default value: None. Value choices: 
+     distance                              Optional GPLinearUnit. Distance. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_features': ['Input_Features', 'required'], 'include_end_points': ['Include_End_Points', 'optional'], 'distance': ['Distance', 'optional'], 'point_placement': ['Point_Placement', 'required'], 'percentage': ['Percentage', 'optional']}
+     in_db = {'include_end_points': ['Include_End_Points', 'optional'], 'percentage': ['Percentage', 'optional'], 'input_features': ['Input_Features', 'required'], 'point_placement': ['Point_Placement', 'required'], 'distance': ['Distance', 'optional']}
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'GeneratePointsAlongLines', inputs, in_db, out_db)
 
@@ -5288,24 +5288,24 @@ def append_control_points(master_control_points, input_control_points, z_field=N
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_control_points                  required.
+     input_control_points                  Required GPComposite. Input Control Points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     master_control_points                 required.
+     master_control_points                 Required GPComposite. Target Control Points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dem                                   optional. Default value: None. Value choices: 
+     z_field                               Optional Field. Z Value Field Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_accuracy                            optional. Default value: None. Value choices: 
+     tag_field                             Optional Field. Tag Field Name. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     z_field                               optional. Default value: None. Value choices: 
+     z_accuracy                            Optional GPDouble. Z Accuracy. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     tag_field                             optional. Default value: None. Value choices: 
+     xy_accuracy                           Optional GPDouble. XY Accuracy. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     xy_accuracy                           optional. Default value: None. Value choices: 
+     dem                                   Optional GPComposite. Input DEM. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'dem': ['in_dem', 'optional'], 'z_accuracy': ['in_z_accuracy', 'optional'], 'z_field': ['in_z_field', 'optional'], 'xy_accuracy': ['in_xy_accuracy', 'optional'], 'input_control_points': ['in_input_control_points', 'required'], 'tag_field': ['in_tag_field', 'optional'], 'master_control_points': ['in_master_control_points', 'required']}
+     in_db = {'tag_field': ['in_tag_field', 'optional'], 'z_accuracy': ['in_z_accuracy', 'optional'], 'z_field': ['in_z_field', 'optional'], 'input_control_points': ['in_input_control_points', 'required'], 'xy_accuracy': ['in_xy_accuracy', 'optional'], 'dem': ['in_dem', 'optional'], 'master_control_points': ['in_master_control_points', 'required']}
      out_db = {}
      return _execute_tool('management', 'AppendControlPoints', inputs, in_db, out_db)
 
@@ -5317,147 +5317,147 @@ def apply_block_adjustment(mosaic_dataset, adjustment_operation, input_solution_
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     adjustment_operation                  required.
+     adjustment_operation                  Required GPString. Adjustment Operation
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     input_solution_table                  optional. Default value: None. Value choices: 
+     zoffset                               Optional GPDouble. Z offset. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     control_point_table                   optional. Default value: None. Value choices: 
+     adjust_footprints                     Optional GPBoolean. Adjust Footprints. Default value: false. Value choices: adjust_footprints, no_adjust_footprints
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     pan_to_ms_scaling_factor              optional. Default value: None. Value choices: 
+     control_point_table                   Optional GPTableView. Control Point Table. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     zoffset                               optional. Default value: None. Value choices: 
+     pan_to_ms_scaling_factor              Optional GPDouble. Pan-To-MS Scaling Factor. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     dem                                   optional. Default value: None. Value choices: 
+     input_solution_table                  Optional GPTableView. Input Solution Table. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     adjust_footprints                     optional. Default value: false. Value choices: ADJUST_FOOTPRINTS,NO_ADJUST_FOOTPRINTS
+     dem                                   Optional GPComposite. Input DEM. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'input_solution_table': ['input_solution_table', 'optional'], 'control_point_table': ['control_point_table', 'optional'], 'pan_to_ms_scaling_factor': ['pan_to_ms_scaling_factor', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'dem': ['DEM', 'optional'], 'zoffset': ['zoffset', 'optional'], 'adjust_footprints': ['adjust_footprints', 'optional'], 'adjustment_operation': ['adjustment_operation', 'required']}
+     in_db = {'zoffset': ['zoffset', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'adjust_footprints': ['adjust_footprints', 'optional'], 'input_solution_table': ['input_solution_table', 'optional'], 'pan_to_ms_scaling_factor': ['pan_to_ms_scaling_factor', 'optional'], 'control_point_table': ['control_point_table', 'optional'], 'dem': ['DEM', 'optional'], 'adjustment_operation': ['adjustment_operation', 'required']}
      out_db = {}
      return _execute_tool('management', 'ApplyBlockAdjustment', inputs, in_db, out_db)
 
           
-def compute_block_adjustment(mosaic_dataset, control_points, transformation_type, maximum_residual_value='5', adjustment_options=None, location_accuracy='MEDIUM'):
+def compute_block_adjustment(mosaic_dataset, control_points, transformation_type, maximum_residual_value='5', adjustment_options=None, location_accuracy='medium'):
      """
      Geoprocessing tool that computes the adjustments to the mosaic dataset items.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     control_points                        required.
+     control_points                        Required GPFeatureLayer. Input Control Points
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     transformation_type                   required.
+     transformation_type                   Required GPString. Transformation Type
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_residual_value                optional. Default value: 5. Value choices: 
+     adjustment_options                    Optional GPValueTable. Adjustment Options. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     adjustment_options                    optional. Default value: None. Value choices: 
+     location_accuracy                     Optional GPString. Image Location Accuracy. Default value: medium. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location_accuracy                     optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     maximum_residual_value                Optional GPDouble. Maximum Residual. Default value: 5
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'adjustment_options': ['adjustment_options', 'optional'], 'location_accuracy': ['location_accuracy', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'transformation_type': ['transformation_type', 'required'], 'maximum_residual_value': ['maximum_residual_value', 'optional'], 'control_points': ['in_control_points', 'required']}
-     out_db = {'solution_point_table': ['out_solution_point_table', 'optional', None, None], 'quality_table': ['out_quality_table', 'optional', None, None], 'solution_table': ['out_solution_table', 'required', None, None]}
+     in_db = {'transformation_type': ['transformation_type', 'required'], 'control_points': ['in_control_points', 'required'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'adjustment_options': ['adjustment_options', 'optional'], 'location_accuracy': ['location_accuracy', 'optional'], 'maximum_residual_value': ['maximum_residual_value', 'optional']}
+     out_db = {'solution_table': ['out_solution_table', 'required', None, None], 'quality_table': ['out_quality_table', 'optional', None, None], 'solution_point_table': ['out_solution_point_table', 'optional', None, None]}
      return _execute_tool('management', 'ComputeBlockAdjustment', inputs, in_db, out_db)
 
           
-def compute_camera_model(mosaic_dataset, gps_accuracy='HIGH', estimate='true', refine='true', apply_adjustment='true', maximum_residual='5', initial_tiepoint_resolution='8', maximum_overlap=None, minimum_coverage='0.2', remove='false', control_points=None, options=None):
+def compute_camera_model(mosaic_dataset, gps_accuracy='high', estimate='true', refine='true', apply_adjustment='true', maximum_residual='5', initial_tiepoint_resolution='8', maximum_overlap=None, minimum_coverage='0.2', remove='false', control_points=None, options=None):
      """
      Geoprocessing tool that automatically constructs and refines a camera model for aerial images and, in particular, UAV and UAS images, where the exterior and interior camera models are coarse or undefined.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_coverage                      optional. Default value: 0.2. Value choices: 
+     control_points                        Optional DEFeatureClass. Input Tie Point Table. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     refine                                optional. Default value: true. Value choices: REFINE,NO_REFINE
+     maximum_overlap                       Optional GPDouble. Maximum Area Overlap. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     options                               optional. Default value: None. Value choices: 
+     refine                                Optional GPBoolean. Refine Camera Model. Default value: true. Value choices: refine, no_refine
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     gps_accuracy                          optional. Default value: HIGH. Value choices: HIGH,MEDIUM,LOW,VERY_LOW
+     maximum_residual                      Optional GPDouble. Maximum Residual. Default value: 5
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     initial_tiepoint_resolution           optional. Default value: 8. Value choices: 
+     remove                                Optional GPBoolean. Remove Off-Strip Images. Default value: false. Value choices: remove, no_remove
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_residual                      optional. Default value: 5. Value choices: 
+     gps_accuracy                          Optional GPString. GPS Location Accuracy. Default value: high. Value choices: high, medium, low, very_low
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     estimate                              optional. Default value: true. Value choices: ESTIMATE,NO_ESTIMATE
+     options                               Optional GPValueTable. Additional Options. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_overlap                       optional. Default value: None. Value choices: 
+     minimum_coverage                      Optional GPDouble. Minimum Control Point Coverage. Default value: 0.2
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     apply_adjustment                      optional. Default value: true. Value choices: APPLY,NO_APPLY
+     initial_tiepoint_resolution           Optional GPDouble. Initial Tie Point Resolution. Default value: 8
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     control_points                        optional. Default value: None. Value choices: 
+     estimate                              Optional GPBoolean. Estimate Camera Model. Default value: true. Value choices: estimate, no_estimate
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     remove                                optional. Default value: false. Value choices: REMOVE,NO_REMOVE
+     apply_adjustment                      Optional GPBoolean. Apply Adjustment. Default value: true. Value choices: apply, no_apply
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'refine': ['refine', 'optional'], 'gps_accuracy': ['gps_accuracy', 'optional'], 'minimum_coverage': ['minimum_coverage', 'optional'], 'maximum_overlap': ['maximum_overlap', 'optional'], 'maximum_residual': ['maximum_residual', 'optional'], 'options': ['options', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'initial_tiepoint_resolution': ['initial_tiepoint_resolution', 'optional'], 'estimate': ['estimate', 'optional'], 'control_points': ['in_control_points', 'optional'], 'apply_adjustment': ['apply_adjustment', 'optional'], 'remove': ['remove', 'optional']}
-     out_db = {'solution_point_table': ['out_solution_point_table', 'optional', None, None], 'control_points': ['out_control_points', 'optional', None, None], 'solution_table': ['out_solution_table', 'optional', None, None], 'dsm': ['out_dsm', 'optional', None, None], 'flight_path': ['out_flight_path', 'optional', None, None]}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_overlap': ['maximum_overlap', 'optional'], 'refine': ['refine', 'optional'], 'gps_accuracy': ['gps_accuracy', 'optional'], 'minimum_coverage': ['minimum_coverage', 'optional'], 'initial_tiepoint_resolution': ['initial_tiepoint_resolution', 'optional'], 'estimate': ['estimate', 'optional'], 'apply_adjustment': ['apply_adjustment', 'optional'], 'control_points': ['in_control_points', 'optional'], 'options': ['options', 'optional'], 'maximum_residual': ['maximum_residual', 'optional'], 'remove': ['remove', 'optional']}
+     out_db = {'control_points': ['out_control_points', 'optional', None, None], 'dsm': ['out_dsm', 'optional', None, None], 'flight_path': ['out_flight_path', 'optional', None, None], 'solution_point_table': ['out_solution_point_table', 'optional', None, None], 'solution_table': ['out_solution_table', 'optional', None, None]}
      return _execute_tool('management', 'ComputeCameraModel', inputs, in_db, out_db)
 
           
-def compute_control_points(mosaic_dataset, reference_images, similarity='HIGH', density='MEDIUM', distribution='RANDOM', area_of_interest=None, location_accuracy='MEDIUM'):
+def compute_control_points(mosaic_dataset, reference_images, similarity='high', density='medium', distribution='random', area_of_interest=None, location_accuracy='medium'):
      """
      Geoprocessing tool that computes control points for your mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     reference_images                      required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     reference_images                      Required GPComposite. Input Reference Images
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     similarity                            optional. Default value: HIGH. Value choices: LOW,MEDIUM,HIGH
+     density                               Optional GPString. Point Density. Default value: medium. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     area_of_interest                      optional. Default value: None. Value choices: 
+     similarity                            Optional GPString. Similarity. Default value: high. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distribution                          optional. Default value: RANDOM. Value choices: RANDOM,REGULAR
+     area_of_interest                      Optional GPFeatureLayer. Area of Interest. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location_accuracy                     optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     distribution                          Optional GPString. Point Distribution. Default value: random. Value choices: random, regular
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     density                               optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     location_accuracy                     Optional GPString. Image Location Accuracy. Default value: medium. Value choices: low, medium, high
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'location_accuracy': ['location_accuracy', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'density': ['density', 'optional'], 'reference_images': ['in_reference_images', 'required'], 'area_of_interest': ['area_of_interest', 'optional'], 'similarity': ['similarity', 'optional'], 'distribution': ['distribution', 'optional']}
-     out_db = {'image_feature_points': ['out_image_feature_points', 'optional', None, None], 'control_points': ['out_control_points', 'required', None, None]}
+     in_db = {'location_accuracy': ['location_accuracy', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'area_of_interest': ['area_of_interest', 'optional'], 'density': ['density', 'optional'], 'similarity': ['similarity', 'optional'], 'distribution': ['distribution', 'optional'], 'reference_images': ['in_reference_images', 'required']}
+     out_db = {'control_points': ['out_control_points', 'required', None, None], 'image_feature_points': ['out_image_feature_points', 'optional', None, None]}
      return _execute_tool('management', 'ComputeControlPoints', inputs, in_db, out_db)
 
           
-def compute_tie_points(mosaic_dataset, similarity='MEDIUM', mask_dataset=None, density='MEDIUM', distribution='RANDOM', location_accuracy='MEDIUM'):
+def compute_tie_points(mosaic_dataset, similarity='medium', mask_dataset=None, density='medium', distribution='random', location_accuracy='medium'):
      """
      Geoprocessing tool that computes the tie points for the  items within a mosaic dataset.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     similarity                            optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     mask_dataset                          Optional GPFeatureLayer. Input Mask. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     density                               optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     density                               Optional GPString. Point Density. Default value: medium. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     distribution                          optional. Default value: RANDOM. Value choices: RANDOM,REGULAR
+     similarity                            Optional GPString. Similarity. Default value: medium. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     location_accuracy                     optional. Default value: MEDIUM. Value choices: LOW,MEDIUM,HIGH
+     location_accuracy                     Optional GPString. Image Location Accuracy. Default value: medium. Value choices: low, medium, high
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mask_dataset                          optional. Default value: None. Value choices: 
+     distribution                          Optional GPString. Point Distribution. Default value: random. Value choices: random, regular
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'mask_dataset': ['in_mask_dataset', 'optional'], 'location_accuracy': ['location_accuracy', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'density': ['density', 'optional'], 'similarity': ['similarity', 'optional'], 'distribution': ['distribution', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'location_accuracy': ['location_accuracy', 'optional'], 'mask_dataset': ['in_mask_dataset', 'optional'], 'density': ['density', 'optional'], 'similarity': ['similarity', 'optional'], 'distribution': ['distribution', 'optional']}
      out_db = {'control_points': ['out_control_points', 'required', None, None], 'image_features': ['out_image_features', 'optional', None, None]}
      return _execute_tool('management', 'ComputeTiePoints', inputs, in_db, out_db)
 
@@ -5469,21 +5469,21 @@ def build_stereo_model(mosaic_dataset, minimum_angle='10', maximum_angle='70', m
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_overlap                       optional. Default value: 0.5. Value choices: 
+     maximum_diff_op                       Optional GPDouble. Maximum Omega/Phi Difference (in degree). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_angle                         optional. Default value: 70. Value choices: 
+     maximum_diff_gsd                      Optional GPDouble. Maximum GSD Difference. Default value: 2
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_diff_gsd                      optional. Default value: 2. Value choices: 
+     minimum_angle                         Optional GPDouble. Minimum Intersection Angle (in degree). Default value: 10
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_angle                         optional. Default value: 10. Value choices: 
+     minimum_overlap                       Optional GPDouble. Minimum Area Overlap. Default value: 0.5
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_diff_op                       optional. Default value: None. Value choices: 
+     maximum_angle                         Optional GPDouble. Maximum Intersection Angle (in degree). Default value: 70
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_diff_op': ['maximum_diff_OP', 'optional'], 'minimum_overlap': ['minimum_overlap', 'optional'], 'maximum_angle': ['maximum_angle', 'optional'], 'maximum_diff_gsd': ['maximum_diff_GSD', 'optional'], 'minimum_angle': ['minimum_angle', 'optional']}
+     in_db = {'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_diff_gsd': ['maximum_diff_GSD', 'optional'], 'minimum_overlap': ['minimum_overlap', 'optional'], 'minimum_angle': ['minimum_angle', 'optional'], 'maximum_diff_op': ['maximum_diff_OP', 'optional'], 'maximum_angle': ['maximum_angle', 'optional']}
      out_db = {}
      return _execute_tool('management', 'BuildStereoModel', inputs, in_db, out_db)
 
@@ -5495,57 +5495,57 @@ def generate_point_cloud(mosaic_dataset, matching_method, object_size='50', grou
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     matching_method                       required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     mosaic_dataset                        required.
+     matching_method                       Required GPString. Matching Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     object_size                           optional. Default value: 50. Value choices: 
+     minimum_area                          Optional GPDouble. Overlap Area Threshold. Default value: 0.6
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     ground_spacing                        optional. Default value: None. Value choices: 
+     ground_spacing                        Optional GPDouble. DSM Ground Spacing (in meter). Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_diff_op                       optional. Default value: 8. Value choices: 
+     maximum_diff_gsd                      Optional GPDouble. GSD Difference Threshold. Default value: 2
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_diff_gsd                      optional. Default value: 2. Value choices: 
+     object_size                           Optional GPDouble. Maximum Object Size (in meter). Default value: 50
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_adjustment_quality            optional. Default value: 0.2. Value choices: 
+     maximum_diff_op                       Optional GPDouble. Omega/Phi Difference Threshold. Default value: 8
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_pairs                         optional. Default value: 2. Value choices: 
+     minimum_pairs                         Optional GPDouble. Number of Image Pairs. Default value: 2
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     minimum_area                          optional. Default value: 0.6. Value choices: 
+     minimum_adjustment_quality            Optional GPDouble. Adjustment Quality Threshold. Default value: 0.2
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'object_size': ['object_size', 'optional'], 'matching_method': ['matching_method', 'required'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'ground_spacing': ['ground_spacing', 'optional'], 'maximum_diff_op': ['maximum_diff_OP', 'optional'], 'maximum_diff_gsd': ['maximum_diff_gsd', 'optional'], 'minimum_adjustment_quality': ['minimum_adjustment_quality', 'optional'], 'minimum_pairs': ['minimum_pairs', 'optional'], 'minimum_area': ['minimum_area', 'optional']}
+     in_db = {'minimum_area': ['minimum_area', 'optional'], 'ground_spacing': ['ground_spacing', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_diff_gsd': ['maximum_diff_gsd', 'optional'], 'object_size': ['object_size', 'optional'], 'maximum_diff_op': ['maximum_diff_OP', 'optional'], 'minimum_pairs': ['minimum_pairs', 'optional'], 'minimum_adjustment_quality': ['minimum_adjustment_quality', 'optional'], 'matching_method': ['matching_method', 'required']}
      out_db = {'folder': ['out_folder', 'required', None, None], 'base_name': ['out_base_name', 'required', None, None]}
      return _execute_tool('management', 'GeneratePointCloud', inputs, in_db, out_db)
 
           
-def interpolate_from_point_cloud(container, cell_size, interpolation_method, smooth_method, surface_type='DTM', fill_dem=None):
+def interpolate_from_point_cloud(container, cell_size, interpolation_method, smooth_method, surface_type='dtm', fill_dem=None):
      """
      Geoprocessing tool that interpolates a digital surface model (DSM) or digital elevation model (DEM) from a point cloud.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     cell_size                             required.
+     container                             Required GPComposite. Input LAS Folder or Point Table
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     smooth_method                         required.
+     interpolation_method                  Required GPString. Interpolation Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     interpolation_method                  required.
+     smooth_method                         Required GPString. Smoothing Method
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     container                             required.
+     cell_size                             Required GPDouble. Cellsize
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     fill_dem                              optional. Default value: None. Value choices: 
+     surface_type                          Optional GPString. Surface Type. Default value: dtm. Value choices: dtm, dsm
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     surface_type                          optional. Default value: DTM. Value choices: DTM,DSM
+     fill_dem                              Optional GPComposite. Input Fill DEM. Default value: none
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'cell_size': ['cell_size', 'required'], 'smooth_method': ['smooth_method', 'required'], 'interpolation_method': ['interpolation_method', 'required'], 'fill_dem': ['fill_dem', 'optional'], 'container': ['in_container', 'required'], 'surface_type': ['surface_type', 'optional']}
+     in_db = {'surface_type': ['surface_type', 'optional'], 'fill_dem': ['fill_dem', 'optional'], 'cell_size': ['cell_size', 'required'], 'container': ['in_container', 'required'], 'interpolation_method': ['interpolation_method', 'required'], 'smooth_method': ['smooth_method', 'required']}
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'InterpolateFromPointCloud', inputs, in_db, out_db)
 
@@ -5557,15 +5557,15 @@ def compute_mosaic_candidates(mosaic_dataset, maximum_overlap='0.6', maximum_are
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     mosaic_dataset                        required.
+     mosaic_dataset                        Required GPComposite. Input Mosaic Dataset
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_area_loss                     optional. Default value: 0.05. Value choices: 
+     maximum_area_loss                     Optional GPDouble. Maximum Area Loss Allowed. Default value: 0.05
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     maximum_overlap                       optional. Default value: 0.6. Value choices: 
+     maximum_overlap                       Optional GPDouble. Maximum Area Overlap. Default value: 0.6
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'maximum_area_loss': ['maximum_area_loss', 'optional'], 'maximum_overlap': ['maximum_overlap', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required']}
+     in_db = {'maximum_area_loss': ['maximum_area_loss', 'optional'], 'mosaic_dataset': ['in_mosaic_dataset', 'required'], 'maximum_overlap': ['maximum_overlap', 'optional']}
      out_db = {}
      return _execute_tool('management', 'ComputeMosaicCandidates', inputs, in_db, out_db)
 
