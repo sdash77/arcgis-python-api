@@ -1562,6 +1562,9 @@ class UserManager(object):
         """
         if query is None:
             users = self._portal.get_org_users(max_users)
+            for u in users:
+                if not 'roleId' in u:
+                    u['roleId'] = u.pop('role')
             return [User(self._gis, u['username'], u) for u in users]
         else:
             userlist = []
@@ -4012,6 +4015,8 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self.username)
+        if not 'roleId' in userdict:
+            userdict['roleId'] = userdict['role']
         self._hydrated = True
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
