@@ -47,24 +47,21 @@ def add_dispatcher(project, feature=None, contact_number=None, name=None, user_i
     """
     Adds a new dispatcher to the project
     """
+    project._update_cached_objects()
     dispatcher = workforce.Dispatcher(project,
                                       feature,
                                       contact_number,
                                       name,
                                       user_id
                                       )
-    use_global_ids = True
-    validate(dispatcher._validate_for_add)
-    if dispatcher.global_id is None:
-        use_global_ids = False
-
-    return add_features(project.dispatchers_layer, [dispatcher.feature], use_global_ids)[0]
+    return add_dispatchers(project, [dispatcher])[0]
 
 
 def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_id=None):
     """
         Updates a dispatcher and submits changes to the server
     """
+    project._update_cached_objects()
     if contact_number:
         dispatcher.contact_number = contact_number
     if name:
@@ -85,6 +82,7 @@ def add_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the dispatchers.
     """
+    project._update_cached_objects()
     if dispatchers:
         use_global_ids = True
         for dispatcher in dispatchers:
@@ -108,6 +106,7 @@ def update_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the dispatchers.
     """
+    project._update_cached_objects()
     if dispatchers:
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_update)
@@ -123,6 +122,7 @@ def delete_dispatchers(project, dispatchers):
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
         :raises ServerError: Indicates that the server rejected the removal.
     """
+    project._update_cached_objects()
     if dispatchers:
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_remove)

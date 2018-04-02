@@ -129,7 +129,7 @@ class Test_WebMap_AGO(unittest.TestCase):
     def test_WebMap_obj_from_item(self):
         try:
             #search for a web map and test instantiating a WebMap object
-            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demograhic_map", "Web Map")
+            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demographic_map", "Web Map")
             if search_result:
                 wm_item = search_result
             else:
@@ -199,6 +199,46 @@ class Test_WebMap_AGO(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_layer_simple_FL_existing_wm(self):
+        """
+        Compose a new web map with one operational layer.
+        :return:
+        """
+        try:
+            # get existing web map with 2 layers.
+            search_result = PortalUtils.search_portal_item(self.gis, "dinotests_sample_demographic_map2", "Web Map")
+            if search_result:
+                wm_item = search_result
+            else:
+                self.skipTest('Unable to find required webmap item')
+
+            wm_obj = WebMap(wm_item)
+
+            # region: Bug: Call add layers without inspecting list of layers
+
+            # use a hosted feature service layer for operational layer
+            from arcgis.features import FeatureLayer
+            fl = FeatureLayer(
+                url='https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities/FeatureServer/0',
+                gis=self.gis)
+
+            #add operational layer
+            wm_obj.add_layer(fl)
+            self.assertEqual(3, len(wm_obj.layers), "Error adding layer to existing web map")
+            #endregion
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_add_multilayer_FLC_Item(self):
         """
         Compose a new web map and add an Item with multiple feature layers
@@ -258,6 +298,57 @@ class Test_WebMap_AGO(unittest.TestCase):
                                   'tags':"dev"})
             self.assertIsInstance(wmitem, arcgis.gis.Item)
             self.assertIsNotNone(wmitem.extent, "Extent came out empty")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_update_webmap_empty_item_properties(self):
+        """
+        Update an existing web map with empty item properties dictionary.
+        :return:
+        """
+        try:
+            wm_obj = WebMap()
+
+            # flc_item = self.gis.content.get('99fd67933e754a1181cc755146be21ca')
+            flc_item = self.gis.content.get('36ed2b2b92bc4131af4a08634bbfa115')
+
+            # add item
+            wm_obj.add_layer(flc_item)
+            self.assertTrue(hasattr(wm_obj.definition, 'operationalLayers'),
+                            'Adding a layer does not create operationalLayers')
+            self.assertEqual(len(flc_item.layers), len(wm_obj.definition.operationalLayers))
+            self.assertEqual(len(flc_item.layers), len(wm_obj.layers))
+
+            # save web map
+            wmitem = wm_obj.save({'title': self.test_case_name,
+                                  'snippet': "automation",
+                                  'tags': "dev"})
+            self.assertIsInstance(wmitem, arcgis.gis.Item)
+
+            # update the web map by removing one of the layers.
+            wm_obj2 = WebMap(wmitem)
+
+            original_layers = wm_obj2.layers
+            self.assertEqual(len(flc_item.layers), len(original_layers), "Saved Web map does not have 3 layers")
+
+            wm_obj2.remove_layer(wm_obj2.layers[0])
+            wm_obj2.update()
+
+            wm_obj3 = WebMap(wmitem)
+            updated_layers = wm_obj3.layers
+            self.assertEqual(len(flc_item.layers)-1, len(updated_layers), "Web map was not correctly updated")
+
+            # all is well, delete the web map now
+            wmitem.delete()
 
         except AssertionError as assertErrorException:
             test_skip = True

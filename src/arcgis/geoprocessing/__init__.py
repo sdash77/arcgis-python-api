@@ -7,3 +7,8 @@ The module also provides simple types that can be used as parameters for these t
 from arcgis.geoprocessing._types import LinearUnit, DataFile, RasterData
 from arcgis.geoprocessing._tool import import_toolbox
 
+try:
+    from arcgis.geoprocessing import analysis
+    from arcgis.geoprocessing import management
+except:
+    print('error')

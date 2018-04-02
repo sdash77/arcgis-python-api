@@ -102,7 +102,8 @@ class GIS(object):
                         authentication
     ----------------    ---------------------------------------------------------------
     cert_file           Optional string. The file path to a user's certificate file for PKI
-                        authentication
+                        authentication. If a PFX or P12 certificate is used, a password is required.
+                        If a PEM file is used, the key_file is required.
     ----------------    ---------------------------------------------------------------
     verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
                         being accessed via the IP or hostname instead of the name on the
@@ -168,12 +169,18 @@ class GIS(object):
         gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1",
                   password="password1", verify_cert=False)
 
+    .. code-block:: python
+
+        # Usage Example 5: Anonymous ArcGIS Online Login with Proxy
+
+        gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
 
     .. code-block:: python
-        USAGE EXAMPLE 5: Anonymous ArcGIS Online Login with Proxy
 
-    gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
+        # Usage Example 6: PKI Login to ArcGIS Enterprise, using PKCS12 user certificate
 
+        gis = GIS(url="https://pkienterprise.esri.com/portal",
+                  cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
 
     """
     _server_list = None
@@ -251,12 +258,15 @@ class GIS(object):
             from getpass import getpass
             password = getpass('Enter password: ')
         # Assumes PFX is being passed in cert_file parameter and no key_file is specified
-        if (cert_file is not None) and (key_file is None) and\
-                (cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12")):
-            if password is None:
-                from getpass import getpass
-                password = getpass('Enter PFX password: ')
-            key_file, cert_file = self._pfx_to_pem(cert_file, password)
+        if (cert_file is not None) and (key_file is None):
+            if (cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12")):
+                if password is None:
+                    from getpass import getpass
+                    password = getpass('Enter PFX password: ')
+                key_file, cert_file = self._pfx_to_pem(cert_file, password)
+            else:
+                raise Exception("key_file parameter is required along with cert_file when using PKI authentication.")
+
 
         self._url = url
         self._username = username
@@ -581,27 +591,24 @@ class GIS(object):
     @_lazy_property
     def users(self):
         """
-        The resource manager for GIS users.
+        The resource manager for GIS users. See :class:`~arcgis.gis.UserManager`.
         """
         return UserManager(self)
 
     @_lazy_property
     def groups(self):
         """
-        The resource manager for GIS groups.
+        The resource manager for GIS groups. See :class:`~arcgis.gis.GroupManager`.
         """
         return GroupManager(self)
 
     @_lazy_property
     def content(self):
         """
-        The resource manager for GIS content.
+        The resource manager for GIS content. See :class:`~arcgis.gis.ContentManager`.
         """
         return ContentManager(self)
 
-    # @_lazy_property
-    # def ux(self):
-    #     return UX(self)
 
     @_lazy_property
     def _datastores(self):
@@ -632,7 +639,8 @@ class GIS(object):
         return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
-        """Updates the GIS's properties from those in properties_dict.
+        """Updates the GIS's properties from those in properties_dict. This method can be useful
+        for updating the utility services used by the GIS.
 
 
         ===============     ====================================================================
@@ -642,9 +650,31 @@ class GIS(object):
                             values that are to be updated.
         ===============     ====================================================================
 
-
         :return:
-           The item if successfully added, None if unsuccessful.
+           True if successfully updated, False if unsuccessful.
+
+
+        .. note::
+            For examples of the property names and key/values to use when updating utility services,
+            refer to the Portal parameters section at https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm
+
+        .. code-block:: python
+
+            # Usage Example: Update the geocode service
+
+            gis = GIS(profile='xyz')
+            upd = {'geocodeService': [{
+              "singleLineFieldName": "Single Line Input",
+              "name": "AtlantaLocator",
+              "url": "https://some.server.com/server/rest/services/GeoAnalytics/AtlantaLocator/GeocodeServer",
+              "itemId": "abc6e1fc691542938917893c8944606d",
+              "placeholder": "",
+              "placefinding": "true",
+              "batch": "true",
+              "zoomScale": 10000}]}
+
+            gis.update_properties(upd)
+
         """
         postdata = self._portal._postdata()
         postdata.update(properties_dict)
@@ -1532,6 +1562,9 @@ class UserManager(object):
         """
         if query is None:
             users = self._portal.get_org_users(max_users)
+            for u in users:
+                if not 'roleId' in u:
+                    u['roleId'] = u.pop('role')
             return [User(self._gis, u['username'], u) for u in users]
         else:
             userlist = []
@@ -2209,7 +2242,6 @@ class ContentManager(object):
             return Item(self._gis, itemid)
         else:
             return None
-
     #----------------------------------------------------------------------
     def analyze(self,
                 url=None,
@@ -3071,7 +3103,7 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
-    def replace_service(self, replace_item, new_item, replaced_service_name):
+    def replace_service(self, replace_item, new_item, replaced_service_name=None):
         """
         The replace_service operation allows you to replace vector tile
         layers. The replace_service operation on vector tile layers allows
@@ -3097,24 +3129,24 @@ class ContentManager(object):
         ----------------------  ----------------------------------------------------------------------
         new_item                Required Item or Item's Id as string. The replacement service.
         ----------------------  ----------------------------------------------------------------------
-        replaced_service_name   Required string. The name of the replacement service.
+        replaced_service_name   Optional string. The name of the replacement service.
         ======================  ======================================================================
 
         :returns: boolean
         """
         user = self._gis.users.me
-        isinstance(user, User)
-        isinstance(self._portal, portalpy.Portal)
         url = "%s/content/%s/replaceService" % (self._portal.resturl, user.username)
         params = {
             'toReplaceItemId' : replace_item,
-            'replacementItemId' : new_item,
-            'replacedServiceName' : replaced_service_name
+            'replacementItemId' : new_item
         }
+        if not replaced_service_name is None:
+            params['replacedServiceName'] = replaced_service_name
         res = self._gis._con.post(path=url, postdata=params)
         if 'success' in res:
             return res['success']
         return False
+
 
 class ResourceManager(object):
     """
@@ -3983,6 +4015,8 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self.username)
+        if not 'roleId' in userdict:
+            userdict['roleId'] = userdict['role']
         self._hydrated = True
         super(User, self).update(userdict)
         self.__dict__.update(userdict)
@@ -5494,6 +5528,46 @@ class Item(dict):
             self._hydrate() # refresh
             return resp
 
+    @property
+    def shared_with(self):
+        """
+        Reveals the privacy or sharing status of the current item. An item can be private or shared with one or more of
+        the following: A specified list of groups, to all members in the organization or to everyone (including
+        anonymous users). If the return is False for `org`, `everyone` and contains an empty list of `groups`, then the
+        item is private and visible only to the owner.
+
+        :return:
+            Dictionary of the following kind
+            {
+            'groups': [],  # one or more Group objects
+            'everyone': True | False,
+            'org': True | False
+            }
+        """
+        if not self._hydrated:
+            self._hydrate()  # hydrated properties needed below
+
+        # Call with owner info
+        resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+
+        # Get the sharing info
+        sharing_info = resp['sharing']
+        ret_dict = {'everyone': False,
+                    'org': False,
+                    'groups': []}
+
+        if sharing_info['access'] == 'public':
+            ret_dict['everyone'] = True
+            ret_dict['org'] = True
+
+        if sharing_info['access'] == 'org':
+            ret_dict['org'] = True
+
+        if len(sharing_info['groups']) > 0:
+            ret_dict['groups'] = [Group(self._gis, g) for g in sharing_info['groups']]
+
+        return ret_dict
+
     def share(self, everyone=False, org=False, groups=None, allow_members_to_edit=False):
         """
         Shares an item with the specified list of groups.
@@ -5743,11 +5817,13 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
-        """ Returns items, urls, etc that this item is dependent on.  """
+        """ Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
+        is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
-        """ Returns items, urls, etc that are dependent to this item. """
+        """ Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
+        is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
@@ -6056,6 +6132,7 @@ class Item(dict):
 
             elif fileType == 'scenePackage':
                 name = re.sub(r'[\W_]+', '_', self['title'])
+                buildInitialCache = True
                 publish_parameters = {'name': name, 'maxRecordCount':2000}
                 output_type = 'sceneService'
             elif fileType == 'featureService':
@@ -6149,6 +6226,8 @@ class Item(dict):
                 ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
+        elif not buildInitialCache and output_type is not None and output_type.lower() in ['sceneservice']:
+            return Item(self._gis, ret[0]['serviceItemId'])
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
@@ -6516,7 +6595,183 @@ class Item(dict):
         except:
             return []
         return ps
+    #----------------------------------------------------------------------
+    def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
+        """
+        Copy allows for the creation of an item that is derived from the current item.
 
+        For layers, `copy` will create a new item that uses the URL as a reference.
+        For non-layer based items, these will be copied and the exact same data will be
+        provided.
+
+
+        If title, tags, snippet of description is not provided the values from `item` will be used.
+
+        Copy use example:
+
+            + Vector tile service sprite customization
+            + Limiting feature service exposure
+            + Sharing content by reference with groups
+            + Creating backup items.
+
+        **Usage Example**
+
+        >>> item.copy()
+        <Item title:"gisslideshow - Copy 94452b" type:Microsoft Powerpoint owner:geoguy>
+        >>> item.copy(title="GIS_Tutorial")
+        <Item title:"GIS_Tutorial" type:Microsoft Powerpoint owner:geoguy>
+        >>> item.copy()
+        <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
+
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        title                      Optional string. The name of the new item.
+        -----------------------    -------------------------------------------------------------
+        tags                       Optional list of string. Descriptive words that help in the
+                                   searching and locating of the published information.
+        -----------------------    -------------------------------------------------------------
+        snippet                    Optional string. A brief summary of the information being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        description                Optional string. A long description of the Item being
+                                   published.
+        -----------------------    -------------------------------------------------------------
+        layers                     Optional list of integers.  If you have a layer with multiple
+                                   and you only want specific layers, an index can be provided
+                                   those layers.  If nothing is provided, all layers will be
+                                   visible.
+
+                                   Example: layers=[0,3]
+                                   Example 2: layers=[9]
+        =======================    =============================================================
+
+        :returns: Item
+
+        """
+        TEXT_BASED_ITEM_TYPES = ['Web Map', 'Web Scene','360 VR Experience',
+                                 'Operation View', 'Workforce Project',
+                                 'Insights Model', 'Insights Page', 'Dashboard',
+                                 'Feature Collection', 'Insights Workbook',
+                                 'Feature Collection Template', 'Hub Initiative',
+                                 'Hub Site Application', 'Hub Page',
+                                 'Web Mapping Application', 'Mobile Application',
+                                 'Symbol Set', 'Color Set', 'Content Category Set',
+                                 'Windows Viewer Configuration']
+        FILE_BASED_ITEM_TYPES = ['CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
+                                 'Code Attachment', 'Operations Dashboard Add In',
+                                 'Native Application', 'Native Application Template', 'KML',
+                                 'Native Application Installer', 'Form', 'AppBuilder Widget Package',
+                                 'File Geodatabase','CSV', 'Image',  'Locator Package',
+                                 'Map Document', 'Shapefile', 'Microsoft Word', 'PDF',
+                                 'CAD Drawing', 'Service Definition', 'Image',
+                                 'Visio Document', 'iWork Keynote', 'iWork Pages',
+                                 'iWork Numbers', 'Report Template', 'Statistical Data Collection',
+                                 'SQLite Geodatabase', 'Mobile Basemap Package', 'Project Package',
+                                 'Task File', 'ArcPad Package', 'Explorer Map', 'Globe Document',
+                                 'Scene Document', 'Published Map', 'Map Template', 'Windows Mobile Package',
+                                 'Layout', 'Project Template', 'Layer', 'Explorer Package',
+                                 'Image Collection', 'Desktop Style', 'Geoprocessing Sample',
+                                 'Locator Package', 'Rule Package', 'Raster function template',
+                                 'ArcGIS Pro Configuration', 'Workflow Manager Package',
+                                 'Desktop Application', 'Desktop Application Template',
+                                 'Code Sample', 'Desktop Add In', 'Explorer Add In', 'ArcGIS Pro Add In',
+                                 'Microsoft Powerpoint', 'Microsoft Excel', 'Layer Package',
+                                 'Mobile Map Package', 'Geoprocessing Package', 'Scene Package',
+                                 'Tile Package', 'Vector Tile Package']
+        SERVICE_BASED_ITEM_TYPES = ["Vector Tile Service","Scene Service", 'WMS', 'WFS', 'WMTS',
+                                    'Geodata Service', 'Globe Service', 'Scene Service',
+                                    'Relational Database Connection',
+                                    'AppBuilder Extension', 'Document Link',
+                                    'Geometry Service', 'Geocoding Service',
+                                    'Network Analysis Service', 'Geoprocessing Service',
+                                    'Workflow Manager Service', "Image Service",
+                                    "Map Service", "Feature Service"]
+        item = self
+        from datetime import timezone
+        from uuid import uuid4
+        now = datetime.now(timezone.utc)
+        if title is None:
+            title = item.title + " - Copy %s" % uuid4().hex[:6]
+        if tags is None:
+            tags = item.tags
+        if snippet is None:
+            snippet = item.snippet
+        if description is None:
+            description = item.description
+
+        if item.type in SERVICE_BASED_ITEM_TYPES or \
+           item.type == 'KML' and item.url is not None:
+            params = {
+                'f' : 'json',
+                'item' : item.title.replace(" ", "_") + "-_copy_%s" % int(now.timestamp() * 1000),
+                'type' :item.type,
+                'url' : item.url
+            }
+
+            params['title'] = title
+            params['tags'] = ",".join(tags)
+            params['snippet'] = snippet
+            params['description'] = description
+            if not layers is None:
+                text = {
+                    "layers": []
+                }
+                lyrs = item.layers
+                for idx, lyr in enumerate(lyrs):
+                    if idx in layers:
+                        text['layers'].append({
+                            "layerDefinition": {
+                                "defaultVisibility": True
+                                },
+                            "id": idx
+                        })
+                params['text'] = text
+            url = "%s/content/users/%s/addItem" % (self._gis._portal.resturl,
+                                                   self._gis.users.me.username)
+            res = self._gis._con.post(url,
+                                      params)
+            if 'id' in res:
+                itemid = res['id']
+            else:
+                return None
+
+            if itemid is not None:
+                return Item(self._gis, itemid)
+            else:
+                return None
+        elif item.type in FILE_BASED_ITEM_TYPES:
+            fp = self.get_data()
+            sfp = os.path.split(fp)
+            fname, ext = os.path.splitext(sfp[1])
+            nfp = os.path.join(sfp[0],
+                               "%s_%s.%s" % (fname, uuid4().hex[:5], ext))
+            os.rename(fp, nfp)
+            ip = {
+                'type' : item.type,
+                'tags' : ",".join(item.tags),
+                'snippet' : snippet,
+                'description' : description,
+                'title' : title
+            }
+            item = self._gis.content.add(item_properties=ip, data=nfp)
+            os.remove(nfp)
+            return item
+        elif item.type in TEXT_BASED_ITEM_TYPES:
+            data = self.get_data()
+            ip = {
+                'type' : item.type,
+                'tags' : ",".join(item.tags),
+                'snippet' : snippet,
+                'description' : description,
+                'text' : data,
+                'title' : title
+            }
+            return self._gis.content.add(item_properties=ip)
+        else:
+            raise ValueError("Item of type: %s is not supported by copy" % (item.type))
+        return
 
 def rot13(s, b64=False, of=False):
     if s is None:
@@ -6697,6 +6952,7 @@ class Layer(_GISResource):
     def __init__(self, url, gis=None):
         super(Layer, self).__init__(url, gis)
         self.filter = None
+        """optional attribute query string to select features to process by geoanalytics or spatial analysis tools"""
 
     @classmethod
     def fromitem(cls, item, index=0):

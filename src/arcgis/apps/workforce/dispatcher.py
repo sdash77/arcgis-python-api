@@ -111,7 +111,7 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        where = "dispatcherId = {}".format(self.object_id)
+        where = "{} = {}".format(self.project._assignment_schema.dispatcher_id,self.object_id)
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
             errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))
@@ -138,7 +138,7 @@ class Dispatcher(FeatureModel):
             message = "The Dispatcher must have an accessible named user_id"
             errors.append(ValidationError(message, self))
 
-        dispatchers = workforce._store.query_dispatchers(self.project, "userId='{}'".format(self.user_id))
+        dispatchers = [d for d in self.project._cached_dispatchers.values() if d.user_id == self.user_id]
         duplicate_dispatchers = [d for d in dispatchers if d.object_id != self.object_id]
         if duplicate_dispatchers:
             message = "There cannot be multiple Dispatchers with the same user_id"

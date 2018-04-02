@@ -697,62 +697,77 @@ class FeatureLayer(Layer):
                use_globalids=False,
                update_geometry=True,
                append_fields=None,
-               rollback=False):
+               rollback=False,
+               skip_inserts=None,
+               upsert_matching_field=None
+               ):
         """
         Only available in AGOL
 
         Update an existing hosted feature layer using append.
 
-        ===================     ====================================================================
-        **Argument**            **Description**
-        -------------------     --------------------------------------------------------------------
-        source_table_name       optional string. Required only when the source data contains more
-                                than one tables, e.g., for filegdb.
-                                Example: source_tabl_name=  "Building"
-        -------------------     --------------------------------------------------------------------
-        item_id                 optional string. The ID for the Portal item that contains the source file.
-                                Used in conjunction with editsUploadFormat.
-        -------------------     --------------------------------------------------------------------
-        field_mappings          optional list. Used to map source data to a destination layer.
-                                Syntax: fieldMappings=[{"name" : <"targerName">,
-                                                        "sourceName" : < "sourceName">}, ...]
-                                Examples: fieldMappings=[{"name" : "CountyID",
-                                                          "sourceName" : "GEOID10"}]
-        -------------------     --------------------------------------------------------------------
-        edits                   optional string. Only feature collection json is supported. Append
-                                supports all format through the upload_id or item_id.
-        -------------------     --------------------------------------------------------------------
-        source_info             optional dictionary. This is only needed when appending data from
-                                excel or csv. The appendSourceInfo can be the publishing parameter
-                                returned from analyze the csv or excel file.
-        -------------------     --------------------------------------------------------------------
-        upsert                  optional boolean. Optional parameter specifying whether the edits
-                                needs to be applied as updates if the feature already exists.
-                                Default is false.
-        -------------------     --------------------------------------------------------------------
-        skip_updates            Optional boolean. Parameter is used only when upsert is true.
-        -------------------     --------------------------------------------------------------------
-        use_globalids           Optional boolean. Specifying whether upsert needs to use GlobalId
-                                when matching features.
-        -------------------     --------------------------------------------------------------------
-        update_geometry         optional boolean. The parameter is used only when upsert is true.
-                                Skip updating the geometry and update only the attributes for
-                                existing features if they match source features by objectId or
-                                globalId.(as specified by useGlobalIds parameter).
-        -------------------     --------------------------------------------------------------------
-        append_fields           Optional list. The list of destination fields to append to. This is
-                                supported when upsert=true or false.
-                                Values:  ["fieldName1", "fieldName2",....]
-        -------------------     --------------------------------------------------------------------
-        upload_format           required string. The source append data format. The default is
-                                featureCollection format.
-                                Values: sqlite | shapefile | filegdb | featureCollection |
-                                geojson | csv | excel
+        ========================   ====================================================================
+        **Argument**               **Description**
+        ------------------------   --------------------------------------------------------------------
+        source_table_name          optional string. Required only when the source data contains more
+                                   than one tables, e.g., for filegdb.
+                                   Example: source_tabl_name=  "Building"
+        ------------------------   --------------------------------------------------------------------
+        item_id                    optional string. The ID for the Portal item that contains the source
+                                   file.
+                                   Used in conjunction with editsUploadFormat.
+        ------------------------   --------------------------------------------------------------------
+        field_mappings             optional list. Used to map source data to a destination layer.
+                                   Syntax: fieldMappings=[{"name" : <"targerName">,
+                                                           "sourceName" : < "sourceName">}, ...]
+                                   Examples: fieldMappings=[{"name" : "CountyID",
+                                                             "sourceName" : "GEOID10"}]
+        ------------------------   --------------------------------------------------------------------
+        edits                      optional string. Only feature collection json is supported. Append
+                                   supports all format through the upload_id or item_id.
+        ------------------------   --------------------------------------------------------------------
+        source_info                optional dictionary. This is only needed when appending data from
+                                   excel or csv. The appendSourceInfo can be the publishing parameter
+                                   returned from analyze the csv or excel file.
+        ------------------------   --------------------------------------------------------------------
+        upsert                     optional boolean. Optional parameter specifying whether the edits
+                                   needs to be applied as updates if the feature already exists.
+                                   Default is false.
+        ------------------------   --------------------------------------------------------------------
+        skip_updates               Optional boolean. Parameter is used only when upsert is true.
+        ------------------------   --------------------------------------------------------------------
+        use_globalids              Optional boolean. Specifying whether upsert needs to use GlobalId
+                                   when matching features.
+        ------------------------   --------------------------------------------------------------------
+        update_geometry            Optional boolean. The parameter is used only when upsert is true.
+                                   Skip updating the geometry and update only the attributes for
+                                   existing features if they match source features by objectId or
+                                   globalId.(as specified by useGlobalIds parameter).
+        ------------------------   --------------------------------------------------------------------
+        append_fields              Optional list. The list of destination fields to append to. This is
+                                   supported when upsert=true or false.
+                                   Values:  ["fieldName1", "fieldName2",....]
+        ------------------------   --------------------------------------------------------------------
+        upload_format              required string. The source append data format. The default is
+                                   featureCollection format.
+                                   Values: sqlite | shapefile | filegdb | featureCollection |
+                                   geojson | csv | excel
+        ------------------------   --------------------------------------------------------------------
+        rollback                   Optional boolean. Optional parameter specifying whether the upsert
+                                   edits needs to be rolled back in case of failure. Default is false.
+        ------------------------   --------------------------------------------------------------------
+        skip_inserts               Used only when upsert is true. Used to skip inserts if the value is
+                                   true. The default value is false.
+        ------------------------   --------------------------------------------------------------------
+        upsert_matching_field      Optional string. The layer field to be used when matching features
+                                   with upsert. ObjectId, GlobalId, and any other field that has a
+                                   unique index can be used with upsert.
+                                   This parameter overrides use_globalids; e.g., specifying
+                                   upsert_matching_field will be used even if you specify
+                                   use_globalids = True.
+                                   Example: upsert_matching_field="MyfieldWithUniqueIndex"
+        ========================   ====================================================================
 
-        -------------------     --------------------------------------------------------------------
-        rollback                Optional boolean. Optional parameter specifying whether the upsert
-                                edits needs to be rolled back in case of failure. Default is false.
-        ===================     ====================================================================
 
         :return: boolean
 
@@ -783,6 +798,10 @@ class FeatureLayer(Layer):
             'appendUploadFormat' : upload_format,
             'rollbackOnFailure' : rollback
         }
+        if not upsert_matching_field is None:
+            params['upsertMatchingField'] =  upsert_matching_field
+        if not skip_inserts is None:
+            params['skipInserts'] =  skip_inserts
         upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(',')
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -995,29 +1014,42 @@ class FeatureLayer(Layer):
         calculate. System fields include ObjectId and GlobalId.
         See Calculate a field for more information on supported expressions
 
-        Inputs:
-           where - A where clause can be used to limit the updated records.
-                   Any legal SQL where clause operating on the fields in
-                   the layer is allowed.
-           calcExpression - The array of field/value info objects that
-                            contain the field or fields to update and their
-                            scalar values or SQL expression.  Allowed types
-                            are dictionary and list.  List must be a list
-                            of dictionary objects.
-                            Calculation Format is as follows:
-                               {"field" : "<field name>",
-                               "value" : "<value>"}
-           sqlFormat - The SQL format for the calcExpression. It can be
-                       either standard SQL92 (standard) or native SQL
-                       (native). The default is standard.
-                       Values: standard, native
-        Output:
-           JSON as string
-        Usage:
-        >>>print(fl.calculate(where="OBJECTID < 2",
-                              calcExpression={"field": "ZONE",
-                                              "value" : "R1"}))
-        {'updatedFeatureCount': 1, 'success': True}
+           =====================   ===========================================
+           **Inputs**              **Description**
+           ---------------------   -------------------------------------------
+           where                   A where clause can be used to limit the updated records.
+                                   Any legal SQL where clause operating on the fields in
+                                   the layer is allowed.
+           ---------------------   -------------------------------------------
+           calc_expression         The array of field/value info objects that
+                                   contain the field or fields to update and their
+                                   scalar values or SQL expression.  Allowed types
+                                   are dictionary and list.  List must be a list
+                                   of dictionary objects.
+                                   Calculation Format is as follows:
+                                   {"field" : "<field name>",  "value" : "<value>"}
+           ---------------------   -------------------------------------------
+           sql_format              The SQL format for the calcExpression. It can be
+                                   either standard SQL92 (standard) or native SQL
+                                   (native). The default is standard.
+                                   Values: standard, native
+           =====================   ===========================================
+
+        .. code-block:: python
+
+            # Usage Example 1:
+
+            print(fl.calculate(where="OBJECTID < 2",
+                               calc_expression={"field": "ZONE", "value" : "R1"}))
+
+        .. code-block:: python
+
+            # Usage Example 2:
+
+            print(fl.calculate(where="OBJECTID < 2001",
+                               calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
+
+        Output: dictionary with format {'updatedFeatureCount': 1, 'success': True}
         """
         url = self._url + "/calculate"
         params = {

@@ -4,6 +4,7 @@ import arcgis
 from arcgis.features import FeatureLayer
 from arcgis.gis import Group
 from arcgis._impl.common._utils import _lazy_property
+import json
 
 from ._schemas import *
 from .managers import *
@@ -87,20 +88,43 @@ class Project:
             if folder['id'] == self._item_data['folderId']:
                 self.gis.content.delete_folder(folder['title'], owner=owner)
 
-    def update(self, title=None):
+    def _update_data(self):
+        self._item.update({
+            "text": json.dumps(self._item_data)
+        })
+
+    def update(self, summary=None):
         """
         Updates the project on the server
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        title                  Optional :class:`String`. The name of the project.
+        summary                  Optional :class:`String`. The summary of the project.
         ==================     ====================================================================
         """
         item_properties = {}
-        if title:
-            item_properties['title'] = title
+        if summary:
+            item_properties['snippet'] = summary
         self._item.update(item_properties)
+
+    @property
+    def _tracking_enabled(self):
+        return self._item_data["tracks"]["enabled"]
+
+    @_tracking_enabled.setter
+    def _tracking_enabled(self, value):
+        self._item_data["tracks"]["enabled"] = value
+        self._update_data()
+
+    @property
+    def _tracking_interval(self):
+        return self._item_data["tracks"]["updateInterval"]
+
+    @_tracking_interval.setter
+    def _tracking_interval(self, value):
+        self._item_data["tracks"]["updateInterval"] = value
+        self._update_data()
 
     @property
     def id(self):
@@ -109,12 +133,17 @@ class Project:
 
     @property
     def title(self):
-        """The title of the project"""
+        """Gets the title of the project"""
         return self._item['title']
 
-    @title.setter
-    def title(self, value):
-        self._item['title'] = value
+    @property
+    def summary(self):
+        """The title of the project"""
+        return self._item['snippet']
+
+    @summary.setter
+    def summary(self, value):
+        self._item['snippet'] = value
 
     @property
     def owner_user_id(self):
