@@ -1562,7 +1562,7 @@ class UserManager(object):
         """
         if query is None:
             users = self._portal.get_org_users(max_users)
-            return [User(self._gis, u['username'], u) for u in users]
+            return [User(self._gis, u['username']) for u in users]#, u
         else:
             userlist = []
 
