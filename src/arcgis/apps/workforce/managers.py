@@ -594,6 +594,24 @@ class TrackManager:
         """
         return update_tracks(self.project, tracks)
 
+    @property
+    def enabled(self):
+        """Gets/sets if tracking is enabled for the project"""
+        return self.project._tracking_enabled
+
+    @enabled.setter
+    def enabled(self, value):
+        self.project._tracking_enabled = value
+
+    @property
+    def interval(self):
+        """Gets/sets the tracking interval for the project (in seconds)"""
+        return self.project._tracking_interval
+
+    @interval.setter
+    def interval(self, value):
+        self.project._tracking_interval = value
+
 
 class WorkerManager:
     """
