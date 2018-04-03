@@ -5841,6 +5841,9 @@ class Item(dict):
         Retrieves the items related to this item. Relationships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
 
+        .. note::
+            With WebMaps items, relationships are only available on local enterprises.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------

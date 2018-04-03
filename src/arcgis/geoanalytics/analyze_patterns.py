@@ -91,7 +91,7 @@ def build_multivariable_grid(input_layers,
                                 + Hexagon.
                                 + Square (default)
     -----------------------   -------------------------------------------------------------------
-    output_name               Optional string. output name of the service
+    output_name               Optional string. output name of the layer
     -----------------------   -------------------------------------------------------------------
     gis                       Optional GIS.  The enterprise site that you want to connect to.
     =======================   ===================================================================
