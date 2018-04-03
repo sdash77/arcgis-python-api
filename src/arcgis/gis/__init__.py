@@ -5826,9 +5826,13 @@ class Item(dict):
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
-    _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
-                                     'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                     'Service2Service', 'Survey2Service', 'Map2Area', 'Area2Package'])
+    _RELATIONSHIP_TYPES = frozenset(['Area2CustomPackage', 'Service2Layer', 'Map2Area',
+                                     'Area2Package', 'Service2Route', 'Survey2Data',
+                                     'Survey2Service', 'Service2Style', 'Style2Style',
+                                     'Listed2Provisioned', 'Item2Report', 'Item2Attachment',
+                                     'Map2AppConfig', 'Map2Service', 'WMA2Code',
+                                     'Map2FeatureCollection', 'MobileApp2Code',
+                                     'Service2Data', 'Service2Service'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
