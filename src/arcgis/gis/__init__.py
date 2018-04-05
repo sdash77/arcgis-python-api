@@ -3103,24 +3103,37 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
+
     def replace_service(self, replace_item, new_item, replaced_service_name=None):
         """
-        The replace_service operation allows you to replace vector tile
-        layers. The replace_service operation on vector tile layers allows
-        you to perform quality control on a staging tile layer and to then
-        replace the production tile layer with minimal downtime. This
-        operation has the option to keep a backup of the production tile
-        layer.
+        The replace_service operation allows you to replace your production vector tile layers with staging ones. This
+        operation allows you to perform quality control on a staging tile layer and to then replace the production tile
+        layer with the staging with minimal downtime. This operation has the option to keep a backup of the production
+        tile layer.
+
+        *Note*: If you are looking to clone services, use the `clone_items()` method instead.
+        *Note*: This functionality is only available for Vector Tile Services.
 
         Workflow for replace_service:
 
-        1. The staging service is published to the same system as the production service. Both services are active at the same time. The staging service is shared with a smaller set of users. Staging service is QA'd and made ready for production.
-        2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will not be replaced or updated. Please use the portal home page to update item properties.
-        3. When the replace_service operation is used, the service running on the hosting server will be replaced (for example, its cache).
-        4. It is the responsibility of the user to ensure both services are functionally equivalent for clients consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed with the anticipated layers and fields for its client application.
-        5. If you want to retain the replaced production service, for example, to keep an archive of the evolution of the service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided, the production service being replaced will be archived with a time stamp when replace service was executed on it. You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
+        1. Publish the staging service to the same system as the production service. Both services are active at
+        the same time. Share the staging service with a smaller set of users and QA the staging service.
 
+        2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will be preserved.
+        If you need to update them use the `Item.update()` method.
 
+        3. Call the replace_service operation. The service running on the hosting server gets replaced
+        (for example, its cache).
+
+        *Note:
+        It is the responsibility of the user to ensure both services are functionally equivalent for clients
+        consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed
+        with the anticipated layers and fields for its client application.
+
+        If you want to retain the replaced production service, for example, to keep an archive of the evolution of the
+        service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided,
+        the production service being replaced will be archived with a time stamp when replace service was executed.
+        You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
 
         ======================  ======================================================================
         **Argument**            **Description**
@@ -3135,12 +3148,20 @@ class ContentManager(object):
         :returns: boolean
         """
         user = self._gis.users.me
-        url = "%s/content/%s/replaceService" % (self._portal.resturl, user.username)
+        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user.username)
+
+        if isinstance(replace_item, Item):
+            replace_item = replace_item.itemid
+
+        if isinstance(new_item, Item):
+            new_item = new_item.itemid
+
         params = {
-            'toReplaceItemId' : replace_item,
-            'replacementItemId' : new_item
+            'toReplaceItemId': replace_item,
+            'replacementItemId': new_item,
+            'f': 'json'
         }
-        if not replaced_service_name is None:
+        if replaced_service_name is not None:
             params['replacedServiceName'] = replaced_service_name
         res = self._gis._con.post(path=url, postdata=params)
         if 'success' in res:
