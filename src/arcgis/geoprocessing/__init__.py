@@ -11,4 +11,4 @@ try:
     from arcgis.geoprocessing import analysis
     from arcgis.geoprocessing import management
 except:
-    print('error')
+    ...
