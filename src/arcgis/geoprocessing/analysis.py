@@ -96,7 +96,7 @@ def buffer(features, buffer_distance_or_field, line_side='full', line_end_type='
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Buffer', inputs, in_db, out_db)
 
-          
+
 def clip(features, clip_features, cluster_tolerance=None):
      """
      Geoprocessing tool that extracts input features that overlay the clip features.
@@ -117,7 +117,7 @@ def clip(features, clip_features, cluster_tolerance=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Clip', inputs, in_db, out_db)
 
-          
+
 def erase(features, erase_features, cluster_tolerance=None):
      """
      Geoprocessing tool creates a feature class by overlaying the Input Features with the polygons of the Erase Features.
@@ -138,7 +138,7 @@ def erase(features, erase_features, cluster_tolerance=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Erase', inputs, in_db, out_db)
 
-          
+
 def identity(features, identity_features, joattributes='all', cluster_tolerance=None, relationship='false'):
      """
      Geoprocessing tool computes a geometric intersection of the input features and identity features.
@@ -163,7 +163,7 @@ def identity(features, identity_features, joattributes='all', cluster_tolerance=
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Identity', inputs, in_db, out_db)
 
-          
+
 def intersect(features, joattributes='all', cluster_tolerance='-1 unknown', output_type='input'):
      """
      Geoprocessing tool that computes a geometric intersection of the input features. Features or portions of features which overlap in all layers and/or feature classes will be written to the output feature class.
@@ -185,7 +185,7 @@ def intersect(features, joattributes='all', cluster_tolerance='-1 unknown', outp
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Intersect', inputs, in_db, out_db)
 
-          
+
 def update(features, update_features, keep_borders='true', cluster_tolerance=None):
      """
      Geoprocessing tool that computes a geometric intersection of the Input Features and Update Features.
@@ -208,7 +208,7 @@ def update(features, update_features, keep_borders='true', cluster_tolerance=Non
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Update', inputs, in_db, out_db)
 
-          
+
 def split(features, split_features, split_field, out_workspace, cluster_tolerance=None):
      """
      Geoprocessing tool that uses overlaying split features to cut features into multiple smaller sections.
@@ -235,7 +235,7 @@ def split(features, split_features, split_field, out_workspace, cluster_toleranc
      out_db = {}
      return _execute_tool('analysis', 'Split', inputs, in_db, out_db)
 
-          
+
 def near(features, near_features, search_radius=None, location='false', angle='false', method='planar'):
      """
      Geoprocessing tool that calculates distance and additional proximity information between features.
@@ -262,7 +262,7 @@ def near(features, near_features, search_radius=None, location='false', angle='f
      out_db = {}
      return _execute_tool('analysis', 'Near', inputs, in_db, out_db)
 
-          
+
 def point_distance(features, near_features, search_radius=None):
      """
      Geoprocessing tool that determines the distances from input point features to all points in the near features.
@@ -283,7 +283,7 @@ def point_distance(features, near_features, search_radius=None):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'PointDistance', inputs, in_db, out_db)
 
-          
+
 def select(features, where_clause=None):
      """
      Geoprocessing tool that uses a select expression to extract features from one feature class and output them to a new feature class.
@@ -301,7 +301,7 @@ def select(features, where_clause=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Select', inputs, in_db, out_db)
 
-          
+
 def table_select(table, where_clause=None):
      """
      Geoprocessing tool that selects table records matching a Structured Query Language (SQL) expression and writes them to an output table.
@@ -319,7 +319,7 @@ def table_select(table, where_clause=None):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'TableSelect', inputs, in_db, out_db)
 
-          
+
 def frequency(table, frequency_fields, summary_fields=None):
      """
      Geoprocessing tool to read a table and create a new table containing the unique occurrences of field values and the frequency of their occurrence.
@@ -340,7 +340,7 @@ def frequency(table, frequency_fields, summary_fields=None):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'Frequency', inputs, in_db, out_db)
 
-          
+
 def create_thiessen_polygons(features, fields_to_copy='only_fid'):
      """
      Geoprocessing tool to create Thiessen polygons from point features.
@@ -358,20 +358,20 @@ def create_thiessen_polygons(features, fields_to_copy='only_fid'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'CreateThiessenPolygons', inputs, in_db, out_db)
 
-          
-def spatial_join(target_features, jofeatures, jooperation='join_one_to_one', jotype='true', field_mapping=None, match_option='intersect', search_radius=None, distance_field_name=None):
+
+def spatial_join(target_features, join_features, join_operation='join_one_to_one', join_type='true', field_mapping=None, match_option='intersect', search_radius=None, distance_field_name=None):
      """
      Geoprocessing tool used to join the attributes of two feature classes based on the spatial relationships between the features in the two feature classes and to write the join an output.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jofeatures                            Required Feature Layer. Join Features
+     join_features                            Required Feature Layer. Join Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
      target_features                       Required Feature Layer. Target Features
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jotype                                Optional Boolean. Keep All Target Features. Default value: true. Value choices: keep_all, keep_common
+     join_type                                Optional Boolean. Keep All Target Features. Default value: true. Value choices: keep_all, keep_common
      -----------------------------------   ------------------------------------------------------------------------------------------------------
      field_mapping                         Optional Field Mappings. Field Map of Join Features. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
@@ -381,15 +381,22 @@ def spatial_join(target_features, jofeatures, jooperation='join_one_to_one', jot
      -----------------------------------   ------------------------------------------------------------------------------------------------------
      search_radius                         Optional Linear unit. Search Radius. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     jooperation                           Optional String. Join Operation. Default value: join_one_to_one. Value choices: join_one_to_one, join_one_to_many
+     join_operation                           Optional String. Join Operation. Default value: join_one_to_one. Value choices: join_one_to_one, join_one_to_many
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'jotype': ['join_type', 'optional'], 'jofeatures': ['join_features', 'required'], 'field_mapping': ['field_mapping', 'optional'], 'match_option': ['match_option', 'optional'], 'target_features': ['target_features', 'required'], 'search_radius': ['search_radius', 'optional'], 'distance_field_name': ['distance_field_name', 'optional'], 'jooperation': ['join_operation', 'optional']}
+     in_db = {'join_type': ['join_type', 'optional'],
+              'join_features': ['join_features', 'required'],
+              'field_mapping': ['field_mapping', 'optional'],
+              'match_option': ['match_option', 'optional'],
+              'target_features': ['target_features', 'required'],
+              'search_radius': ['search_radius', 'optional'],
+              'distance_field_name': ['distance_field_name', 'optional'],
+              'join_operation': ['join_operation', 'optional']}
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'SpatialJoin', inputs, in_db, out_db)
 
-          
+
 def multiple_ring_buffer(input_features, distances, buffer_unit='default', field_name='distance', dissolve_option='all', outside_polygons_only='false'):
      """
      Geoprocessing tool that creates multiple buffers at specified distances around the input features.
@@ -416,7 +423,7 @@ def multiple_ring_buffer(input_features, distances, buffer_unit='default', field
      out_db = {'output_feature_class': ['Output_Feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'MultipleRingBuffer', inputs, in_db, out_db)
 
-          
+
 def generate_near_table(features, near_features, search_radius=None, location='false', angle='false', closest='true', closest_count='0', method='planar'):
      """
      Geoprocessing tool to calculate distance and other proximity information between features.
@@ -447,7 +454,7 @@ def generate_near_table(features, near_features, search_radius=None, location='f
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'GenerateNearTable', inputs, in_db, out_db)
 
-          
+
 def union(features, joattributes='all', cluster_tolerance=None, gaps='true'):
      """
      Geoprocessing tool computes a geometric union of the input features.
@@ -469,7 +476,7 @@ def union(features, joattributes='all', cluster_tolerance=None, gaps='true'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'Union', inputs, in_db, out_db)
 
-          
+
 def tabulate_intersection(zone_features, zone_fields, class_features, class_fields=None, sum_fields=None, xy_tolerance='-1 unknown', out_units='unknown'):
      """
      Geoprocessing tool that cross-tabulates the intersection between two feature classes to determine how much of one feature class' features are inside the other's.
@@ -499,7 +506,7 @@ def tabulate_intersection(zone_features, zone_fields, class_features, class_fiel
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'TabulateIntersection', inputs, in_db, out_db)
 
-          
+
 def polygon_neighbors(features, fields=None, area_overlap='false', both_sides='true', cluster_tolerance='-1 unknown', out_linear_units='unknown', out_area_units='unknown'):
      """
      Geoprocessing tool that creates a table with statistics based on polygon contiguity (overlaps, coincident edges, or nodes).
@@ -527,10 +534,10 @@ def polygon_neighbors(features, fields=None, area_overlap='false', both_sides='t
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('analysis', 'PolygonNeighbors', inputs, in_db, out_db)
 
-          
+
 def split_by_attributes(input_table, target_workspace, split_fields):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -549,7 +556,7 @@ def split_by_attributes(input_table, target_workspace, split_fields):
      out_db = {}
      return _execute_tool('analysis', 'SplitByAttributes', inputs, in_db, out_db)
 
-          
+
 def graphic_buffer(features, buffer_distance_or_field, line_caps='square', line_joins='miter', miter_limit='10', max_deviation='0 unknown'):
      """
      Geoprocessing tool that creates buffer polygons around input features to a specified distance and provides control over the generation of the buffer features ends (caps) and corners (joins).
@@ -576,4 +583,3 @@ def graphic_buffer(features, buffer_distance_or_field, line_caps='square', line_
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('analysis', 'GraphicBuffer', inputs, in_db, out_db)
 
-          
