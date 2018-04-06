@@ -99,3 +99,12 @@ return_m = False
 
 #: If True, messages from geoprocessing tools will be printed to stdout
 verbose = False
+
+
+try:
+    from arcpy import env
+    workspace = env.workspace
+    overwrite_output = env.overwriteOutput
+    scratchgdb = env.scratchGDB
+except:
+    ...

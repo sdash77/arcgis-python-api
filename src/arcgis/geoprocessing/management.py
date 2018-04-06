@@ -6,9 +6,23 @@ import string
 import arcpy
 from collections import namedtuple
 from arcgis.features import SpatialDataFrame
+from arcgis.geometry import SpatialReference
 import pandas as pd
 
+def _set_env_values():
+     import arcgis
+     from arcpy import env
+     from arcgis.env import scratchgdb, workspace, overwrite_output
+     if overwrite_output is None:
+          arcgis.env.overwrite_output = env.overwriteOutput
+     else:
+          env.overwriteOutput = overwrite_output
+     if workspace:
+          env.workspace = workspace
+     arcgis.env.scratchgdb = env.scratchGDB
+
 def _execute_tool(module, tool, inputs, in_db, out_db):
+     _set_env_values()
      module = getattr(arcpy,module)
      func = getattr(module, tool)
      args = {}
@@ -27,6 +41,8 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                tbl = os.path.join(arcpy.env.scratchFolder, t)
                v.to_csv(t)
                inputs[k] = t
+          elif isinstance(inputs[k], SpatialReference):
+               inputs[k] = inputs[k].as_arcpy
           if v[1] == 'required' and k in inputs:
                args[v[0]] = inputs[k]
           elif v[1] == 'required' and not (k in inputs):
@@ -83,7 +99,7 @@ def delete_rows(rows):
      out_db = {}
      return _execute_tool('management', 'DeleteRows', inputs, in_db, out_db)
 
-          
+
 def copy_rows(rows, config_keyword=None):
      """
      Geoprocessing tool that duplicates the contents of a table, table view, feature layer, or feature class to another table.
@@ -101,7 +117,7 @@ def copy_rows(rows, config_keyword=None):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'CopyRows', inputs, in_db, out_db)
 
-          
+
 def copy_features(features, config_keyword=None, spatial_grid_1=None, spatial_grid_2=None, spatial_grid_3=None):
      """
      Geoprocessing tool to copy features to a new feature class.
@@ -125,7 +141,7 @@ def copy_features(features, config_keyword=None, spatial_grid_1=None, spatial_gr
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'CopyFeatures', inputs, in_db, out_db)
 
-          
+
 def dissolve(features, dissolve_field=None, statistics_fields=None, multi_part='true', unsplit_lines='false'):
      """
      Geoprocessing tool used to aggregate features based on specified attributes.
@@ -149,7 +165,7 @@ def dissolve(features, dissolve_field=None, statistics_fields=None, multi_part='
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'Dissolve', inputs, in_db, out_db)
 
-          
+
 def make_feature_layer(features, where_clause=None, workspace=None, field_info=None):
      """
      Geoprocessing tool to create a feature layer from an input feature class or layer.
@@ -171,7 +187,7 @@ def make_feature_layer(features, where_clause=None, workspace=None, field_info=N
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'MakeFeatureLayer', inputs, in_db, out_db)
 
-          
+
 def save_to_layer_file(layer, is_relative_path=None, version='current'):
      """
      Geoprocessing tool that creates a layer file (.lyrx) that references geographic data stored on disk.
@@ -191,7 +207,7 @@ def save_to_layer_file(layer, is_relative_path=None, version='current'):
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'SaveToLayerFile', inputs, in_db, out_db)
 
-          
+
 def add_join(layer_or_view, field, jotable, jofield, jotype='true'):
      """
      Geoprocessing tool that  joins a layer to another layer or table (where layer is a feature layer, table view, or raster layer with raster attribute table) based on a common field.
@@ -218,7 +234,7 @@ def add_join(layer_or_view, field, jotable, jofield, jotype='true'):
      out_db = {}
      return _execute_tool('management', 'AddJoin', inputs, in_db, out_db)
 
-          
+
 def remove_join(layer_or_view, joname=None):
      """
      Geoprocessing tool that removes a join from a feature layer or table view.
@@ -236,7 +252,7 @@ def remove_join(layer_or_view, joname=None):
      out_db = {}
      return _execute_tool('management', 'RemoveJoin', inputs, in_db, out_db)
 
-          
+
 def copy(data, data_type=None):
      """
      Geoprocessing tool that duplicates all types of geodata as well as most other dataset types.
@@ -254,7 +270,7 @@ def copy(data, data_type=None):
      out_db = {'data': ['out_data', 'required', None, None]}
      return _execute_tool('management', 'Copy', inputs, in_db, out_db)
 
-          
+
 def delete(data, data_type=None):
      """
      Geoprocessing tool that permanently removes the specified item from disk.
@@ -272,7 +288,7 @@ def delete(data, data_type=None):
      out_db = {}
      return _execute_tool('management', 'Delete', inputs, in_db, out_db)
 
-          
+
 def rename(data, data_type=None):
      """
      Geoprocessing tool that changes the name of a dataset.
@@ -290,7 +306,7 @@ def rename(data, data_type=None):
      out_db = {'data': ['out_data', 'required', None, None]}
      return _execute_tool('management', 'Rename', inputs, in_db, out_db)
 
-          
+
 def create_folder(out_folder_path, out_name):
      """
      Geoprocessing tool that creates a folder.
@@ -309,7 +325,7 @@ def create_folder(out_folder_path, out_name):
      out_db = {}
      return _execute_tool('management', 'CreateFolder', inputs, in_db, out_db)
 
-          
+
 def create_feature_dataset(out_dataset_path, out_name, spatial_reference=None):
      """
      Geoprocessing tool that creates a feature dataset in a geodatabase.
@@ -330,7 +346,7 @@ def create_feature_dataset(out_dataset_path, out_name, spatial_reference=None):
      out_db = {}
      return _execute_tool('management', 'CreateFeatureDataset', inputs, in_db, out_db)
 
-          
+
 def pivot_table(table, fields, pivot_field, value_field):
      """
      Geoprocessing tool that uses a pivot and value field to streamline the input table.
@@ -355,7 +371,7 @@ def pivot_table(table, fields, pivot_field, value_field):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'PivotTable', inputs, in_db, out_db)
 
-          
+
 def create_feature_class(out_path, out_name, geometry_type='polygon', template=None, has_m='disabled', has_z='disabled', spatial_reference=None, config_keyword=None, spatial_grid_1='1000', spatial_grid_2='0', spatial_grid_3='0'):
      """
      Geoprocessing tool that creates a feature class, either in an ArcSDE, file geodatabase, or personal geodatabase, or as a shapefile in a folder.
@@ -392,7 +408,7 @@ def create_feature_class(out_path, out_name, geometry_type='polygon', template=N
      out_db = {}
      return _execute_tool('management', 'CreateFeatureClass', inputs, in_db, out_db)
 
-          
+
 def create_table(out_path, out_name, template=None, config_keyword=None):
      """
      Geoprocessing tool that creates a geodatabase table, an INFO table, or dBASE table.
@@ -415,7 +431,7 @@ def create_table(out_path, out_name, template=None, config_keyword=None):
      out_db = {}
      return _execute_tool('management', 'CreateTable', inputs, in_db, out_db)
 
-          
+
 def make_table_view(table, where_clause=None, workspace=None, field_info=None):
      """
      Geoprocessing tool to create a table view from an input table or feature class.
@@ -437,7 +453,7 @@ def make_table_view(table, where_clause=None, workspace=None, field_info=None):
      out_db = {'view': ['out_view', 'required', None, None]}
      return _execute_tool('management', 'MakeTableView', inputs, in_db, out_db)
 
-          
+
 def add_spatial_index(features, spatial_grid_1='0', spatial_grid_2='0', spatial_grid_3='0'):
      """
      Geoprocessing tool that adds a spatial index to a feature class
@@ -459,7 +475,7 @@ def add_spatial_index(features, spatial_grid_1='0', spatial_grid_2='0', spatial_
      out_db = {}
      return _execute_tool('management', 'AddSpatialIndex', inputs, in_db, out_db)
 
-          
+
 def remove_spatial_index(features):
      """
      Geoprocessing tool that deletes the spatial index from a shapefile, file geodatabase feature class, or enterprise geodatabase feature class.
@@ -475,7 +491,7 @@ def remove_spatial_index(features):
      out_db = {}
      return _execute_tool('management', 'RemoveSpatialIndex', inputs, in_db, out_db)
 
-          
+
 def create_domain(workspace, domaname, field_type, domadescription=None, domatype='coded', split_policy='default', merge_policy='default'):
      """
      Geoprocessing tool that creates an attribute domain in the specified workspace.
@@ -505,7 +521,7 @@ def create_domain(workspace, domaname, field_type, domadescription=None, domatyp
      out_db = {}
      return _execute_tool('management', 'CreateDomain', inputs, in_db, out_db)
 
-          
+
 def delete_domain(workspace, domaname):
      """
      Geoprocessing tool to delete a domain from a workspace.
@@ -524,7 +540,7 @@ def delete_domain(workspace, domaname):
      out_db = {}
      return _execute_tool('management', 'DeleteDomain', inputs, in_db, out_db)
 
-          
+
 def add_coded_value_to_domain(workspace, domaname, code, code_description):
      """
      Geoprocessing tool that adds a value to a domain's coded value list.
@@ -549,7 +565,7 @@ def add_coded_value_to_domain(workspace, domaname, code, code_description):
      out_db = {}
      return _execute_tool('management', 'AddCodedValueToDomain', inputs, in_db, out_db)
 
-          
+
 def delete_coded_value_from_domain(workspace, domaname, code):
      """
      Geoprocessing tool that removes a value from a coded value domain.
@@ -571,7 +587,7 @@ def delete_coded_value_from_domain(workspace, domaname, code):
      out_db = {}
      return _execute_tool('management', 'DeleteCodedValueFromDomain', inputs, in_db, out_db)
 
-          
+
 def set_value_for_range_domain(workspace, domaname, mvalue, max_value):
      """
      Geoprocessing tool that sets the minimun and maximum values for an existing Range domain.
@@ -596,7 +612,7 @@ def set_value_for_range_domain(workspace, domaname, mvalue, max_value):
      out_db = {}
      return _execute_tool('management', 'SetValueForRangeDomain', inputs, in_db, out_db)
 
-          
+
 def assign_domain_to_field(table, field_name, domaname, subtype_code=None):
      """
      Geoprocessing tool that sets the domain for a particular field and, optionally, for a subtype.
@@ -620,7 +636,7 @@ def assign_domain_to_field(table, field_name, domaname, subtype_code=None):
      out_db = {}
      return _execute_tool('management', 'AssignDomainToField', inputs, in_db, out_db)
 
-          
+
 def remove_domain_from_field(table, field_name, subtype_code=None):
      """
      Geoprocessing tool that removes an attribute domain association from a feature class or table field.
@@ -641,7 +657,7 @@ def remove_domain_from_field(table, field_name, subtype_code=None):
      out_db = {}
      return _execute_tool('management', 'RemoveDomainFromField', inputs, in_db, out_db)
 
-          
+
 def table_to_domain(table, code_field, description_field, workspace, domaname, domadescription=None, update_option='append'):
      """
      Geoprocessing tool that creates or updates a coded value domain with values from a table.
@@ -658,7 +674,7 @@ def table_to_domain(table, code_field, description_field, workspace, domaname, d
      code_field                            Required Field. Code Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     description_field                     Required Field. Description Field 
+     description_field                     Required Field. Description Field
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
      workspace                             Required Workspace. Input Workspace
@@ -673,7 +689,7 @@ def table_to_domain(table, code_field, description_field, workspace, domaname, d
      out_db = {}
      return _execute_tool('management', 'TableToDomain', inputs, in_db, out_db)
 
-          
+
 def domain_to_table(workspace, domaname, code_field, description_field, configuration_keyword=None):
      """
      Geoprocessing tool that creates a table from an attribute domain.
@@ -700,7 +716,7 @@ def domain_to_table(workspace, domaname, code_field, description_field, configur
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'DomainToTable', inputs, in_db, out_db)
 
-          
+
 def select_layer_by_attribute(layer_or_view, selection_type='new_selection', where_clause=None):
      """
      Geoprocessing tool that adds, updates, or removes a selection on a layer or table view based on an attribute query.
@@ -720,7 +736,7 @@ def select_layer_by_attribute(layer_or_view, selection_type='new_selection', whe
      out_db = {}
      return _execute_tool('management', 'SelectLayerByAttribute', inputs, in_db, out_db)
 
-          
+
 def select_layer_by_location(layer, overlap_type='intersect', select_features=None, search_distance=None, selection_type='new_selection', invert_spatial_relationship='false'):
      """
      Geoprocessing tool that selects features in a layer based on a spatial relationship to features in another layer.
@@ -746,7 +762,7 @@ def select_layer_by_location(layer, overlap_type='intersect', select_features=No
      out_db = {}
      return _execute_tool('management', 'SelectLayerByLocation', inputs, in_db, out_db)
 
-          
+
 def get_count(rows):
      """
      Geoprocessing tool that reports the number of rows of the input data.
@@ -760,9 +776,9 @@ def get_count(rows):
      inputs = locals()
      in_db = {'rows': ['in_rows', 'required']}
      out_db = {}
-     return _execute_tool('management', 'GetCount', inputs, in_db, out_db)
+     return int(_execute_tool('management', 'GetCount', inputs, in_db, out_db))
 
-          
+
 def create_version(workspace, parent_version, version_name, access_permission='private'):
      """
      Geoprocessing tool to create a new version in a geodatabase.
@@ -786,7 +802,7 @@ def create_version(workspace, parent_version, version_name, access_permission='p
      out_db = {}
      return _execute_tool('management', 'CreateVersion', inputs, in_db, out_db)
 
-          
+
 def delete_version(workspace, version_name):
      """
      Geoprocessing tool to delete a specific version from a geodatabase
@@ -805,7 +821,7 @@ def delete_version(workspace, version_name):
      out_db = {}
      return _execute_tool('management', 'DeleteVersion', inputs, in_db, out_db)
 
-          
+
 def register_as_versioned(dataset, edit_to_base='false'):
      """
      Geoprocessing tool to register enterprise, workgroup, or desktop geodatabase data as versioned.
@@ -823,7 +839,7 @@ def register_as_versioned(dataset, edit_to_base='false'):
      out_db = {}
      return _execute_tool('management', 'RegisterAsVersioned', inputs, in_db, out_db)
 
-          
+
 def unregister_as_versioned(dataset, keep_edit='true', compress_default='false'):
      """
      Geoprocessing tool to unregister an enterprise, workgroup, or desktop geodatabase dataset as versioned.
@@ -843,7 +859,7 @@ def unregister_as_versioned(dataset, keep_edit='true', compress_default='false')
      out_db = {}
      return _execute_tool('management', 'UnregisterAsVersioned', inputs, in_db, out_db)
 
-          
+
 def alter_version(workspace, version, name=None, description=None, access='private'):
      """
      Geoprocessing tool that alters the database version's properties of name, description, and access permissions.
@@ -868,7 +884,7 @@ def alter_version(workspace, version, name=None, description=None, access='priva
      out_db = {}
      return _execute_tool('management', 'AlterVersion', inputs, in_db, out_db)
 
-          
+
 def table_to_relationship_class(origtable, destination_table, relationship_type, forward_label, backward_label, message_direction, cardinality, relationship_table, attribute_fields, origprimary_key, origforeign_key, destination_primary_key, destination_foreign_key):
      """
      Geoprocessing tool that creates an attributed relationship class from the Origin, Destination, and Relationship Tables.
@@ -920,7 +936,7 @@ def table_to_relationship_class(origtable, destination_table, relationship_type,
      out_db = {'relationship_class': ['out_relationship_class', 'required', None, None]}
      return _execute_tool('management', 'TableToRelationshipClass', inputs, in_db, out_db)
 
-          
+
 def feature_to_point(features, point_location='false'):
      """
      Geoprocessing tool that creates a representative point for each input feature.
@@ -938,7 +954,7 @@ def feature_to_point(features, point_location='false'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToPoint', inputs, in_db, out_db)
 
-          
+
 def feature_vertices_to_points(features, point_location='all'):
      """
      Geoprocessing tool that creates points from input feature vertices.
@@ -956,7 +972,7 @@ def feature_vertices_to_points(features, point_location='all'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureVerticesToPoints', inputs, in_db, out_db)
 
-          
+
 def feature_to_line(features, cluster_tolerance=None, attributes='true'):
      """
      Geoprocessing tool that creates line features by converting polygon boundaries to lines, or splitting line or polygon features at their intersections.
@@ -976,7 +992,7 @@ def feature_to_line(features, cluster_tolerance=None, attributes='true'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToLine', inputs, in_db, out_db)
 
-          
+
 def feature_to_polygon(features, cluster_tolerance=None, attributes='true', label_features=None):
      """
      Geoprocessing tool that creates polygons from areas enclosed by line or polygon features.
@@ -998,7 +1014,7 @@ def feature_to_polygon(features, cluster_tolerance=None, attributes='true', labe
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureToPolygon', inputs, in_db, out_db)
 
-          
+
 def polygon_to_line(features, neighbor_option='true'):
      """
      Geoprocessing tool that creates a feature class containing lines converted from polygon boundaries with or without considering neighboring polygons.
@@ -1016,7 +1032,7 @@ def polygon_to_line(features, neighbor_option='true'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'PolygonToLine', inputs, in_db, out_db)
 
-          
+
 def define_projection(dataset, coor_system):
      """
      Geoprocessing tool to record the coordinate system information for the specific input dataset or feature class.
@@ -1035,7 +1051,7 @@ def define_projection(dataset, coor_system):
      out_db = {}
      return _execute_tool('management', 'DefineProjection', inputs, in_db, out_db)
 
-          
+
 def eliminate(features, selection='true', ex_where_clause=None, ex_features=None):
      """
      Geoprocessing tool to merge selected polygons with neighboring polygons.
@@ -1057,7 +1073,7 @@ def eliminate(features, selection='true', ex_where_clause=None, ex_features=None
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'Eliminate', inputs, in_db, out_db)
 
-          
+
 def repair_geometry(features, delete_null='true'):
      """
      Geoprocessing tool that inspects the features for geometry problems, fixes the problems that are found, and then  prints a list of the problems that were fixed.
@@ -1075,7 +1091,7 @@ def repair_geometry(features, delete_null='true'):
      out_db = {}
      return _execute_tool('management', 'RepairGeometry', inputs, in_db, out_db)
 
-          
+
 def create_topology(dataset, out_name, cluster_tolerance=None):
      """
      Geoprocessing tool to create a topology.
@@ -1096,7 +1112,7 @@ def create_topology(dataset, out_name, cluster_tolerance=None):
      out_db = {}
      return _execute_tool('management', 'CreateTopology', inputs, in_db, out_db)
 
-          
+
 def remove_feature_class_from_topology(topology, featureclass):
      """
      Geoprocessing tool to remove a feature class from participating in a topology.
@@ -1115,7 +1131,7 @@ def remove_feature_class_from_topology(topology, featureclass):
      out_db = {}
      return _execute_tool('management', 'RemoveFeatureClassFromTopology', inputs, in_db, out_db)
 
-          
+
 def add_rule_to_topology(topology, rule_type, featureclass, subtype=None, featureclass2=None, subtype2=None):
      """
      Geoprocessing tool to add a rule to a topology.
@@ -1143,7 +1159,7 @@ def add_rule_to_topology(topology, rule_type, featureclass, subtype=None, featur
      out_db = {}
      return _execute_tool('management', 'AddRuleToTopology', inputs, in_db, out_db)
 
-          
+
 def validate_topology(topology, visible_extent='false'):
      """
      Geoprocessing tool that validates a topology.
@@ -1161,7 +1177,7 @@ def validate_topology(topology, visible_extent='false'):
      out_db = {}
      return _execute_tool('management', 'ValidateTopology', inputs, in_db, out_db)
 
-          
+
 def set_cluster_tolerance(topology, cluster_tolerance):
      """
      Geoprocessing tool to set  the cluster tolerance value of a topology.
@@ -1180,7 +1196,7 @@ def set_cluster_tolerance(topology, cluster_tolerance):
      out_db = {}
      return _execute_tool('management', 'SetClusterTolerance', inputs, in_db, out_db)
 
-          
+
 def make_query_table(table, key_field_option, key_field=None, field=None, where_clause=None):
      """
      Geoprocessing tool that applies an SQL query to a database and the results are represented in either a layer or a table view.
@@ -1205,7 +1221,7 @@ def make_query_table(table, key_field_option, key_field=None, field=None, where_
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'MakeQueryTable', inputs, in_db, out_db)
 
-          
+
 def make_xy_event_layer(table, x_field, y_field, spatial_reference=None, z_field=None):
      """
      Geoprocessing tool that creates a new point feature layer based on x- and y-coordinates defined in a source table.
@@ -1231,7 +1247,7 @@ def make_xy_event_layer(table, x_field, y_field, spatial_reference=None, z_field
      out_db = {'layer': ['out_layer', 'required', None, None]}
      return _execute_tool('management', 'MakeXYEventLayer', inputs, in_db, out_db)
 
-          
+
 def make_raster_layer(raster, where_clause=None, envelope=None, band_index=None):
      """
      Geoprocessing tool that makes a temporary raster layer from a raster dataset that will be available to select as a variable while working in the same application's session.
@@ -1253,7 +1269,7 @@ def make_raster_layer(raster, where_clause=None, envelope=None, band_index=None)
      out_db = {'rasterlayer': ['out_rasterlayer', 'required', None, None]}
      return _execute_tool('management', 'MakeRasterLayer', inputs, in_db, out_db)
 
-          
+
 def flip(raster):
      """
      Geoprocessing tool that reorients the raster by turning it over, from top to bottom, along the horizontal axis through the center of the raster.
@@ -1269,7 +1285,7 @@ def flip(raster):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Flip', inputs, in_db, out_db)
 
-          
+
 def mirror(raster):
      """
      Geoprocessing tool that reorients the raster by flipping it, from left to right, along the vertical axis through the center of the raster
@@ -1285,7 +1301,7 @@ def mirror(raster):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Mirror', inputs, in_db, out_db)
 
-          
+
 def project_raster(raster, out_coor_system, resampling_type='nearest', cell_size=None, geographic_transform=None, registration_point=None, coor_system=None):
      """
      Geoprocessing tool that transforms the raster dataset from one projection to another.
@@ -1314,7 +1330,7 @@ def project_raster(raster, out_coor_system, resampling_type='nearest', cell_size
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'ProjectRaster', inputs, in_db, out_db)
 
-          
+
 def rescale(raster, x_scale, y_scale):
      """
      Geoprocessing tool that resizes a raster by the specified x and y scale factors.
@@ -1336,7 +1352,7 @@ def rescale(raster, x_scale, y_scale):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Rescale', inputs, in_db, out_db)
 
-          
+
 def shift(raster, x_value, y_value, snap_raster=None):
      """
      Geoprocessing tool that moves (slides) the raster to a new geographic location, based on x and y shift values.
@@ -1360,7 +1376,7 @@ def shift(raster, x_value, y_value, snap_raster=None):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Shift', inputs, in_db, out_db)
 
-          
+
 def warp(raster, source_control_points, target_control_points, transformation_type='polyorder1', resampling_type='nearest'):
      """
      Geoprocessing tool that performs a transformation on the raster based on the source and target control points using a polynomial transformation.
@@ -1386,7 +1402,7 @@ def warp(raster, source_control_points, target_control_points, transformation_ty
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Warp', inputs, in_db, out_db)
 
-          
+
 def append(inputs, target, schema_type='test', field_mapping=None, subtype=None):
      """
      Geoprocessing tool that appends multiple input datasets into an existing target dataset.
@@ -1411,7 +1427,7 @@ def append(inputs, target, schema_type='test', field_mapping=None, subtype=None)
      out_db = {}
      return _execute_tool('management', 'Append', inputs, in_db, out_db)
 
-          
+
 def delete_features(features):
      """
      Geoprocessing tool used to remove features from a feature class or layer.
@@ -1427,7 +1443,7 @@ def delete_features(features):
      out_db = {}
      return _execute_tool('management', 'DeleteFeatures', inputs, in_db, out_db)
 
-          
+
 def add_field(table, field_name, field_type, field_precision=None, field_scale=None, field_length=None, field_alias=None, field_is_nullable='true', field_is_required='false', field_domain=None):
      """
      Geoprocessing tool to add a new field.
@@ -1463,7 +1479,7 @@ def add_field(table, field_name, field_type, field_precision=None, field_scale=N
      out_db = {}
      return _execute_tool('management', 'AddField', inputs, in_db, out_db)
 
-          
+
 def assign_default_to_field(table, field_name, default_value=None, subtype_code=None, clear_value='false'):
      """
      Geoprocessing tool used to create a default value for a specified field.
@@ -1488,7 +1504,7 @@ def assign_default_to_field(table, field_name, default_value=None, subtype_code=
      out_db = {}
      return _execute_tool('management', 'AssignDefaultToField', inputs, in_db, out_db)
 
-          
+
 def calculate_field(table, field, expression, expression_type='vb', code_block=None):
      """
      Geoprocessing tool used to perform field calculations.
@@ -1514,7 +1530,7 @@ def calculate_field(table, field, expression, expression_type='vb', code_block=N
      out_db = {}
      return _execute_tool('management', 'CalculateField', inputs, in_db, out_db)
 
-          
+
 def delete_field(table, drop_field):
      """
      Geoprocessing tool used to remove fields from a dataset
@@ -1533,7 +1549,7 @@ def delete_field(table, drop_field):
      out_db = {}
      return _execute_tool('management', 'DeleteField', inputs, in_db, out_db)
 
-          
+
 def multipart_to_singlepart(features):
      """
      Geoprocessing tool that creates singlepart features from multipart features.
@@ -1549,7 +1565,7 @@ def multipart_to_singlepart(features):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'MultipartToSinglepart', inputs, in_db, out_db)
 
-          
+
 def integrate(features, cluster_tolerance=None):
      """
      Geoprocessing tool that updates one or more  feature classes by inserting common coordinate vertices for features that fall within the given x,y tolerance and by adding vertices where feature segments intersect.
@@ -1567,7 +1583,7 @@ def integrate(features, cluster_tolerance=None):
      out_db = {}
      return _execute_tool('management', 'Integrate', inputs, in_db, out_db)
 
-          
+
 def merge(inputs, field_mappings=None):
      """
      Geoprocessing tool that combines multiple input datasets of the same data type into a single, new output dataset.
@@ -1585,7 +1601,7 @@ def merge(inputs, field_mappings=None):
      out_db = {'output': ['output', 'required', None, None]}
      return _execute_tool('management', 'Merge', inputs, in_db, out_db)
 
-          
+
 def feature_compare(base_features, test_features, sort_field, compare_type='all', ignore_options=None, xy_tolerance=None, m_tolerance='0', z_tolerance='0', attribute_tolerances=None, omit_field=None, continue_compare='false'):
      """
      Geoprocessing tool that compares two feature classes or layers and returns the comparison results. Feature Compare can report differences with geometry, tabular values, spatial reference, and field definitions.
@@ -1623,7 +1639,7 @@ def feature_compare(base_features, test_features, sort_field, compare_type='all'
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'FeatureCompare', inputs, in_db, out_db)
 
-          
+
 def file_compare(base_file, test_file, file_type='ascii', continue_compare='false'):
      """
      Geoprocessing tool which compares two files and returns the comparison results. File Compare can report differences between two ASCII files or two binary files.
@@ -1646,7 +1662,7 @@ def file_compare(base_file, test_file, file_type='ascii', continue_compare='fals
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'FileCompare', inputs, in_db, out_db)
 
-          
+
 def raster_compare(base_raster, test_raster, compare_type='raster_dataset', ignore_option=None, continue_compare='false', parameter_tolerances=None, attribute_tolerances=None, omit_field=None):
      """
      Geoprocessing tool that compares the properties of two raster datasets or two mosaic datasets.
@@ -1677,7 +1693,7 @@ def raster_compare(base_raster, test_raster, compare_type='raster_dataset', igno
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'RasterCompare', inputs, in_db, out_db)
 
-          
+
 def table_compare(base_table, test_table, sort_field, compare_type='all', ignore_options=None, attribute_tolerances=None, omit_field=None, continue_compare='false'):
      """
      Geoprocessing tool compares two tables or table views and returns the comparison results.
@@ -1709,28 +1725,28 @@ def table_compare(base_table, test_table, sort_field, compare_type='all', ignore
      out_db = {'compare_file': ['out_compare_file', 'optional', None, None]}
      return _execute_tool('management', 'TableCompare', inputs, in_db, out_db)
 
-          
-def create_file_gdb(out_folder_path, out_name, out_version='current'):
+
+def create_file_gdb(folder_path, name, version='current'):
      """
      Geoprocessing tool that creates a file geodatabase.
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_name                              Required String. File GDB Name
+     name                                  Required String. File GDB Name
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_folder_path                       Required Folder. File GDB Location
+     folder_path                           Required Folder. File GDB Location
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     out_version                           Optional String. File GDB Version. Default value: current. Value choices: current, 10.0, 9.3, 9.2
+     version                               Optional String. File GDB Version. Default value: current. Value choices: current, 10.0, 9.3, 9.2
      ===================================   ======================================================================================================
      """
      inputs = locals()
-     in_db = {'out_name': ['out_name', 'required'], 'out_folder_path': ['out_folder_path', 'required'], 'out_version': ['out_version', 'optional']}
+     in_db = {'name': ['out_name', 'required'], 'folder_path': ['out_folder_path', 'required'], 'version': ['out_version', 'optional']}
      out_db = {}
      return _execute_tool('management', 'CreateFileGDB', inputs, in_db, out_db)
 
-          
+
 def compress(workspace):
      """
      Geoprocessing tool to compress an enterprise geodatabase
@@ -1746,7 +1762,7 @@ def compress(workspace):
      out_db = {}
      return _execute_tool('management', 'Compress', inputs, in_db, out_db)
 
-          
+
 def add_subtype(table, subtype_code, subtype_description):
      """
      Geoprocessing tool that adds a new subtype to the subtypes in the input table
@@ -1768,7 +1784,7 @@ def add_subtype(table, subtype_code, subtype_description):
      out_db = {}
      return _execute_tool('management', 'AddSubtype', inputs, in_db, out_db)
 
-          
+
 def remove_subtype(table, subtype_code):
      """
      Geoprocessing tool that removes a subtype from the input table using its code.
@@ -1787,7 +1803,7 @@ def remove_subtype(table, subtype_code):
      out_db = {}
      return _execute_tool('management', 'RemoveSubtype', inputs, in_db, out_db)
 
-          
+
 def set_default_subtype(table, subtype_code):
      """
      Geoprocessing tool that sets the default subtype value for the input table's subtype.
@@ -1806,7 +1822,7 @@ def set_default_subtype(table, subtype_code):
      out_db = {}
      return _execute_tool('management', 'SetDefaultSubtype', inputs, in_db, out_db)
 
-          
+
 def set_subtype_field(table, field=None, clear_value='false'):
      """
      Geoprocessing tool that defines the field in the input table or feature class that stores the subtype codes.
@@ -1826,7 +1842,7 @@ def set_subtype_field(table, field=None, clear_value='false'):
      out_db = {}
      return _execute_tool('management', 'SetSubtypeField', inputs, in_db, out_db)
 
-          
+
 def add_colormap(raster, template_raster=None, input_clr_file=None):
      """
      Geoprocessing tool that adds a color map to a raster dataset, if it does not already exist or replaces a color map with the one specified.
@@ -1846,7 +1862,7 @@ def add_colormap(raster, template_raster=None, input_clr_file=None):
      out_db = {}
      return _execute_tool('management', 'AddColormap', inputs, in_db, out_db)
 
-          
+
 def build_raster_attribute_table(raster, overwrite='false'):
      """
      Geoprocessing tool that adds a raster attribute table to a raster dataset or updates an existing one.
@@ -1864,7 +1880,7 @@ def build_raster_attribute_table(raster, overwrite='false'):
      out_db = {}
      return _execute_tool('management', 'BuildRasterAttributeTable', inputs, in_db, out_db)
 
-          
+
 def delete_colormap(raster):
      """
      Geoprocessing tool that removes the color map associated with a raster dataset.
@@ -1880,7 +1896,7 @@ def delete_colormap(raster):
      out_db = {}
      return _execute_tool('management', 'DeleteColormap', inputs, in_db, out_db)
 
-          
+
 def delete_raster_attribute_table(raster):
      """
      Geoprocessing tool that removes the raster attribute table associated with a raster dataset.
@@ -1896,7 +1912,7 @@ def delete_raster_attribute_table(raster):
      out_db = {}
      return _execute_tool('management', 'DeleteRasterAttributeTable', inputs, in_db, out_db)
 
-          
+
 def build_pyramids(raster_dataset, pyramid_level=None, skip_first='false', resample_technique='nearest', compression_type='default', compression_quality='75', skip_existing='false'):
      """
      Geoprocessing tool that builds or deletes raster pyramids for a raster dataset.
@@ -1924,7 +1940,7 @@ def build_pyramids(raster_dataset, pyramid_level=None, skip_first='false', resam
      out_db = {}
      return _execute_tool('management', 'BuildPyramids', inputs, in_db, out_db)
 
-          
+
 def calculate_statistics(raster_dataset, x_skip_factor=None, y_skip_factor=None, ignore_values=None, skip_existing='false', area_of_interest='in_memory\{bc80ecfe-15b0-41c3-8fa1-a0a41602275c}'):
      """
      Geoprocessing tool that calculates statistics for a raster dataset or mosaic dataset.
@@ -1950,7 +1966,7 @@ def calculate_statistics(raster_dataset, x_skip_factor=None, y_skip_factor=None,
      out_db = {}
      return _execute_tool('management', 'CalculateStatistics', inputs, in_db, out_db)
 
-          
+
 def get_raster_properties(raster, property_type='minimum', band_index=None):
      """
      Geoprocessing tool that returns the properties of a raster dataset, mosaic dataset, or a raster product.
@@ -1970,7 +1986,7 @@ def get_raster_properties(raster, property_type='minimum', band_index=None):
      out_db = {}
      return _execute_tool('management', 'GetRasterProperties', inputs, in_db, out_db)
 
-          
+
 def copy_raster(raster, config_keyword=None, background_value=None, nodata_value=None, onebit_to_eightbit='false', colormap_to_rgb='false', pixel_type=None, scale_pixel_value='false', rgb_to_colormap='false', format=None, transform='false'):
      """
      Geoprocessing tool that makes a copy of a raster dataset.
@@ -2006,7 +2022,7 @@ def copy_raster(raster, config_keyword=None, background_value=None, nodata_value
      out_db = {'rasterdataset': ['out_rasterdataset', 'required', None, None]}
      return _execute_tool('management', 'CopyRaster', inputs, in_db, out_db)
 
-          
+
 def create_random_raster(out_path, out_name, distribution='uniform 0.0 1.0', raster_extent=None, cellsize=None):
      """
      Geoprocessing tool that creates a random raster dataset based on a user-specified distribution and extent.
@@ -2031,7 +2047,7 @@ def create_random_raster(out_path, out_name, distribution='uniform 0.0 1.0', ras
      out_db = {}
      return _execute_tool('management', 'CreateRandomRaster', inputs, in_db, out_db)
 
-          
+
 def create_raster_dataset(out_path, out_name, pixel_type, number_of_bands, cellsize=None, raster_spatial_reference=None, config_keyword=None, pyramids='pyramids -1 nearest default 75 no_skip', tile_size='128 128', compression='lz77', pyramid_origin=None):
      """
      Geoprocessing tool that creates a raster dataset as a file or in a geodatabase.
@@ -2070,7 +2086,7 @@ def create_raster_dataset(out_path, out_name, pixel_type, number_of_bands, cells
      out_db = {}
      return _execute_tool('management', 'CreateRasterDataset', inputs, in_db, out_db)
 
-          
+
 def mosaic(inputs, target, mosaic_type='last', colormap='first', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None):
      """
      Geoprocessing tool that mosaics multiple input rasters into an existing raster dataset.
@@ -2103,7 +2119,7 @@ def mosaic(inputs, target, mosaic_type='last', colormap='first', background_valu
      out_db = {}
      return _execute_tool('management', 'Mosaic', inputs, in_db, out_db)
 
-          
+
 def workspace_to_raster_dataset(workspace, raster_dataset, include_subdirectories='false', mosaic_type='last', colormap='first', background_value=None, nodata_value=None, onebit_to_eightbit='false', mosaicking_tolerance='0', matching_method=None, colormap_to_rgb='false'):
      """
      Geoprocessing tool that mosaics all the raster datasets stored within the specified workspace into one raster dataset.
@@ -2140,7 +2156,7 @@ def workspace_to_raster_dataset(workspace, raster_dataset, include_subdirectorie
      out_db = {}
      return _execute_tool('management', 'WorkspaceToRasterDataset', inputs, in_db, out_db)
 
-          
+
 def clip(raster, rectangle, template_dataset=None, nodata_value=None, clipping_geometry='false', maintaclipping_extent='false'):
      """
      Geoprocessing tool that creates a spatial subset of a raster dataset.
@@ -2167,7 +2183,7 @@ def clip(raster, rectangle, template_dataset=None, nodata_value=None, clipping_g
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Clip', inputs, in_db, out_db)
 
-          
+
 def composite_bands(rasters):
      """
      Geoprocessing tool that creates a single raster dataset from multiple bands and can also create a subset of the bands.
@@ -2183,7 +2199,7 @@ def composite_bands(rasters):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'CompositeBands', inputs, in_db, out_db)
 
-          
+
 def resample(raster, cell_size=None, resampling_type='nearest'):
      """
      Geoprocessing tool that alters the raster dataset by changing the cell size and resampling method.
@@ -2203,7 +2219,7 @@ def resample(raster, cell_size=None, resampling_type='nearest'):
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'Resample', inputs, in_db, out_db)
 
-          
+
 def export_raster_world_file(raster_dataset):
      """
      Geoprocessing tool that creates a world file based on the geographic information of a raster dataset.
@@ -2219,7 +2235,7 @@ def export_raster_world_file(raster_dataset):
      out_db = {}
      return _execute_tool('management', 'ExportRasterWorldFile', inputs, in_db, out_db)
 
-          
+
 def get_cell_value(raster, location_point, band_index=None):
      """
      Geoprocessing tool that retrieves the pixel value at a specific x,y coordinate.
@@ -2240,7 +2256,7 @@ def get_cell_value(raster, location_point, band_index=None):
      out_db = {}
      return _execute_tool('management', 'GetCellValue', inputs, in_db, out_db)
 
-          
+
 def make_wcs_layer(wcs_coverage, template=None, band_index=None):
      """
      Geoprocessing tool that creates a temporary raster layer from a WCS service.
@@ -2260,7 +2276,7 @@ def make_wcs_layer(wcs_coverage, template=None, band_index=None):
      out_db = {'wcs_layer': ['out_wcs_layer', 'required', None, None]}
      return _execute_tool('management', 'MakeWCSLayer', inputs, in_db, out_db)
 
-          
+
 def apply_symbology_from_layer(layer, symbology_layer):
      """
      Geoprocessing tool that applies the symbology from a specified layer to the Input Layer.
@@ -2279,7 +2295,7 @@ def apply_symbology_from_layer(layer, symbology_layer):
      out_db = {}
      return _execute_tool('management', 'ApplySymbologyFromLayer', inputs, in_db, out_db)
 
-          
+
 def mosaic_to_new_raster(input_rasters, output_location, raster_dataset_name_with_extension, number_of_bands, coordinate_system_for_the_raster=None, pixel_type='8_bit_unsigned', cellsize=None, mosaic_method='last', mosaic_colormap_mode='first'):
      """
      Geoprocessing tool that mosaics multiple raster datasets into a new raster dataset.
@@ -2314,7 +2330,7 @@ def mosaic_to_new_raster(input_rasters, output_location, raster_dataset_name_wit
      out_db = {}
      return _execute_tool('management', 'MosaicToNewRaster', inputs, in_db, out_db)
 
-          
+
 def dice(features, vertex_limit):
      """
      Geoprocessing tool that subdivides a feature into smaller features based on a specified vertex limit.
@@ -2333,7 +2349,7 @@ def dice(features, vertex_limit):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'Dice', inputs, in_db, out_db)
 
-          
+
 def split_line_at_point(features, point_features, search_radius=None):
      """
      Geoprocessing tool to split line features based on intersection or proximity to point features.
@@ -2354,7 +2370,7 @@ def split_line_at_point(features, point_features, search_radius=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'SplitLineatPoint', inputs, in_db, out_db)
 
-          
+
 def unsplit_line(features, dissolve_field=None, statistics_fields=None):
      """
      Geoprocessing tool that aggregates line features based on specified attributes.
@@ -2374,7 +2390,7 @@ def unsplit_line(features, dissolve_field=None, statistics_fields=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'UnsplitLine', inputs, in_db, out_db)
 
-          
+
 def split_raster(raster, out_folder, out_base_name, split_method, format, resampling_type='nearest', num_rasters='1 1', tile_size='2048 2048', overlap='0', units='pixels', cell_size=None, origin=None, split_polygon_feature_class=None, clip_type=None, template_extent=None, nodata_value=None):
      """
      Geoprocessing tool that creates a tiled output from an input raster dataset.
@@ -2394,7 +2410,7 @@ def split_raster(raster, out_folder, out_base_name, split_method, format, resamp
      format                                Required String. Output Format
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     out_base_name                         Required String. 
+     out_base_name                         Required String.
      -----------------------------------   ------------------------------------------------------------------------------------------------------
      resampling_type                       Optional String. Resampling Technique. Default value: nearest. Value choices: nearest, bilinear, cubic
      -----------------------------------   ------------------------------------------------------------------------------------------------------
@@ -2424,7 +2440,7 @@ def split_raster(raster, out_folder, out_base_name, split_method, format, resamp
      out_db = {}
      return _execute_tool('management', 'SplitRaster', inputs, in_db, out_db)
 
-          
+
 def eliminate_polygon_part(features, condition='area', part_area='0 unknown', part_area_percent='0', part_option='true'):
      """
      Geoprocessing tool that creates a new output feature class containing the features from input polygons with some parts or holes of a specified size deleted.
@@ -2448,7 +2464,7 @@ def eliminate_polygon_part(features, condition='area', part_area='0 unknown', pa
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'EliminatePolygonPart', inputs, in_db, out_db)
 
-          
+
 def points_to_line(input_features, line_field=None, sort_field=None, close_line='false'):
      """
      Geoprocessing tool used to create line features from points.
@@ -2470,7 +2486,7 @@ def points_to_line(input_features, line_field=None, sort_field=None, close_line=
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'PointsToLine', inputs, in_db, out_db)
 
-          
+
 def change_version(features, version_type, version_name=None, date=None):
      """
      Geoprocessing tool used to change the enterprise geodatabase version you are connected to. Only works when working with feature layers or table views.
@@ -2493,7 +2509,7 @@ def change_version(features, version_type, version_name=None, date=None):
      out_db = {}
      return _execute_tool('management', 'ChangeVersion', inputs, in_db, out_db)
 
-          
+
 def register_with_geodatabase(dataset, object_id_field=None, shape_field=None, geometry_type=None, spatial_reference=None, extent=None):
      """
      Geoprocessing tool that registers feature classes, tables, views, and raster layers that were created outside of the geodatabase with the geodatabase in order for them to participate in geodatabase functionality.
@@ -2519,7 +2535,7 @@ def register_with_geodatabase(dataset, object_id_field=None, shape_field=None, g
      out_db = {}
      return _execute_tool('management', 'RegisterwithGeodatabase', inputs, in_db, out_db)
 
-          
+
 def delete_identical(dataset, fields, xy_tolerance=None, z_tolerance='0'):
      """
      Geoprocessing tool to delete records in a feature class or table which have identical values in a list of fields.
@@ -2542,7 +2558,7 @@ def delete_identical(dataset, fields, xy_tolerance=None, z_tolerance='0'):
      out_db = {}
      return _execute_tool('management', 'DeleteIdentical', inputs, in_db, out_db)
 
-          
+
 def find_identical(dataset, fields, xy_tolerance=None, z_tolerance='0', output_record_option='false'):
      """
      Geoprocessing tool that reports any records in a feature class or table that have identical values in a list of fields, and generates a table listing these identical records.
@@ -2567,7 +2583,7 @@ def find_identical(dataset, fields, xy_tolerance=None, z_tolerance='0', output_r
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'FindIdentical', inputs, in_db, out_db)
 
-          
+
 def change_privileges(dataset, user, view=None, edit=None):
      """
      Geoprocessing tool to change  privileges on a dataset.
@@ -2590,7 +2606,7 @@ def change_privileges(dataset, user, view=None, edit=None):
      out_db = {}
      return _execute_tool('management', 'ChangePrivileges', inputs, in_db, out_db)
 
-          
+
 def create_spatial_reference(spatial_reference=None, spatial_reference_template=None, xy_domain=None, z_domain=None, m_domain=None, template=None, expand_ratio='0'):
      """
      Geoprocessing tool to create a spatial reference for use in ModelBuilder and scripting.
@@ -2618,7 +2634,7 @@ def create_spatial_reference(spatial_reference=None, spatial_reference_template=
      out_db = {}
      return _execute_tool('management', 'CreateSpatialReference', inputs, in_db, out_db)
 
-          
+
 def raster_to_dted(raster, out_folder, dted_level, resampling_type='bilinear'):
      """
      Geoprocessing tool that splits a raster dataset into files based on the DTED tiling structure.
@@ -2642,7 +2658,7 @@ def raster_to_dted(raster, out_folder, dted_level, resampling_type='bilinear'):
      out_db = {}
      return _execute_tool('management', 'RasterToDTED', inputs, in_db, out_db)
 
-          
+
 def bearing_distance_to_line(table, x_field, y_field, distance_field, distance_units, bearing_field, bearing_units, line_type='0', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic line features constructed based on the values in an x-coordinate field, y-coordinate field, bearing field, and distance field of a table.
@@ -2682,7 +2698,7 @@ def bearing_distance_to_line(table, x_field, y_field, distance_field, distance_u
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'BearingDistanceToLine', inputs, in_db, out_db)
 
-          
+
 def table_to_ellipse(table, x_field, y_field, major_field, minor_field, distance_units, azimuth_field=None, azimuth_units='9102', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic ellipse features constructed based on the values in an x-coordinate field, y-coordinate field, major-axis field, minor-axis field, and azimuth field of a table.
@@ -2721,7 +2737,7 @@ def table_to_ellipse(table, x_field, y_field, major_field, minor_field, distance
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'TableToEllipse', inputs, in_db, out_db)
 
-          
+
 def xy_to_line(table, startx_field, starty_field, endx_field, endy_field, line_type='0', id_field=None, spatial_reference='{b286c06b-0879-11d2-aaca-00c04fa33c20};ishighprecision'):
      """
      Geoprocessing tool that creates a new feature class containing geodetic line features constructed based on the values in a start x-coordinate field, start y-coordinate field, end x-coordinate field, and end y-coordinate field of a table.
@@ -2755,7 +2771,7 @@ def xy_to_line(table, startx_field, starty_field, endx_field, endy_field, line_t
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'XYToLine', inputs, in_db, out_db)
 
-          
+
 def convert_coordinate_notation(table, x_field, y_field, input_coordinate_format, output_coordinate_format, exclude_invalid_records, id_field=None, spatial_reference=None, coor_system=None):
      """
      Geoprocessing tool that converts coordinate notations from one format to another.
@@ -2792,7 +2808,7 @@ def convert_coordinate_notation(table, x_field, y_field, input_coordinate_format
      out_db = {'featureclass': ['out_featureclass', 'required', None, None]}
      return _execute_tool('management', 'ConvertCoordinateNotation', inputs, in_db, out_db)
 
-          
+
 def minimum_bounding_geometry(features, geometry_type='rectangle_by_area', group_option=None, group_field=None, mbg_fields_option='false'):
      """
      Geoprocessing tool that creates polygons which represent a specified minimum bounding geometry enclosing each input feature or a group of input features.
@@ -2816,7 +2832,7 @@ def minimum_bounding_geometry(features, geometry_type='rectangle_by_area', group
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'MinimumBoundingGeometry', inputs, in_db, out_db)
 
-          
+
 def add_rasters_to_mosaic_dataset(mosaic_dataset, raster_type, input_path, update_cellsize_ranges='true', update_boundary='true', update_overviews='false', maximum_pyramid_levels=None, maximum_cell_size='0', minimum_dimension='1500', spatial_reference=None, filter=None, sub_folder='true', duplicate_items_action='allow_duplicates', build_pyramids='false', calculate_statistics='false', build_thumbnails='false', operation_description=None, force_spatial_reference='false', estimate_statistics='false', aux_inputs=None):
      """
      Geoprocessing tool that ingests raster datasets from a file, folder, raster catalog, or image service to a mosaic dataset.
@@ -2872,7 +2888,7 @@ def add_rasters_to_mosaic_dataset(mosaic_dataset, raster_type, input_path, updat
      out_db = {}
      return _execute_tool('management', 'AddRastersToMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def build_boundary(mosaic_dataset, where_clause=None, append_to_existing='false', simplification_method=None):
      """
      Geoprocessing tool that updates the extent of the boundary of  a mosaic dataset.
@@ -2894,7 +2910,7 @@ def build_boundary(mosaic_dataset, where_clause=None, append_to_existing='false'
      out_db = {}
      return _execute_tool('management', 'BuildBoundary', inputs, in_db, out_db)
 
-          
+
 def build_footprints(mosaic_dataset, where_clause=None, reset_footprint='radiometry', mdata_value='1', max_data_value='254', approx_num_vertices='80', shrink_distance='0', maintaedges='false', skip_derived_images='true', update_boundary='true', request_size='2000', mregion_size='100', simplification_method=None, edge_tolerance=None, max_sliver_size='20', mthinness_ratio='0.05'):
      """
      Geoprocessing tool that computes the footprints for the rasters in a mosaic dataset.
@@ -2940,7 +2956,7 @@ def build_footprints(mosaic_dataset, where_clause=None, reset_footprint='radiome
      out_db = {}
      return _execute_tool('management', 'BuildFootprints', inputs, in_db, out_db)
 
-          
+
 def build_overviews(mosaic_dataset, where_clause=None, define_missing_tiles='true', generate_overviews='true', generate_missing_images='true', regenerate_stale_images='true'):
      """
      Geoprocessing tool that defines and generates overviews for a mosaic dataset.
@@ -2966,7 +2982,7 @@ def build_overviews(mosaic_dataset, where_clause=None, define_missing_tiles='tru
      out_db = {}
      return _execute_tool('management', 'BuildOverviews', inputs, in_db, out_db)
 
-          
+
 def build_seamlines(mosaic_dataset, cell_size=None, sort_method='north_west', sort_order='true', order_by_attribute=None, order_by_base_value=None, view_point=None, computation_method='radiometry', blend_width=None, blend_type='both', request_size='1000', request_size_type='pixels', blend_width_units='pixels', area_of_interest='in_memory\{18b3c9c4-be24-4d7f-b8a9-fae3bd65574a}', where_clause=None, update_existing='false', mregion_size='100', mthinness_ratio='0.05', max_sliver_size='20'):
      """
      Geoprocessing tool that generates seamlines for your mosaic dataset.
@@ -3018,7 +3034,7 @@ def build_seamlines(mosaic_dataset, cell_size=None, sort_method='north_west', so
      out_db = {}
      return _execute_tool('management', 'BuildSeamlines', inputs, in_db, out_db)
 
-          
+
 def calculate_cell_size_ranges(mosaic_dataset, where_clause=None, do_compute_min='true', do_compute_max='true', max_range_factor='10', cell_size_tolerance_factor='0.8', update_missing_only='false'):
      """
      Geoprocessing tool that computes the minimum and maximum cell sizes for the rasters in a mosaic dataset.
@@ -3046,7 +3062,7 @@ def calculate_cell_size_ranges(mosaic_dataset, where_clause=None, do_compute_min
      out_db = {}
      return _execute_tool('management', 'CalculateCellSizeRanges', inputs, in_db, out_db)
 
-          
+
 def color_balance_mosaic_dataset(mosaic_dataset, balancing_method='dodging', color_surface_type='single_color', target_raster=None, exclude_raster=None, stretch_type=None, gamma='1', block_field=None):
      """
      Geoprocessing tool that color balances a mosaic dataset so the tiles appear seamless.
@@ -3076,7 +3092,7 @@ def color_balance_mosaic_dataset(mosaic_dataset, balancing_method='dodging', col
      out_db = {}
      return _execute_tool('management', 'ColorBalanceMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def compute_dirty_area(mosaic_dataset, timestamp, where_clause=None):
      """
      Geoprocessing tool that identifies an area within a mosaic dataset that has changed since a specified point in time.
@@ -3097,7 +3113,7 @@ def compute_dirty_area(mosaic_dataset, timestamp, where_clause=None):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'ComputeDirtyArea', inputs, in_db, out_db)
 
-          
+
 def create_mosaic_dataset(workspace, mosaicdataset_name, coordinate_system, num_bands=None, pixel_type=None, product_definition=None, product_band_definitions=None):
      """
      Geoprocessing tool that makes an empty mosaic dataset in a geodatabase.
@@ -3127,7 +3143,7 @@ def create_mosaic_dataset(workspace, mosaicdataset_name, coordinate_system, num_
      out_db = {}
      return _execute_tool('management', 'CreateMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def create_referenced_mosaic_dataset(dataset, coordinate_system=None, number_of_bands=None, pixel_type=None, where_clause=None, template_dataset=None, extent=None, select_using_features='true', lod_field=None, minps_field=None, maxps_field=None, pixel_size=None, build_boundary='true'):
      """
      Geoprocessing tool that creates a new mosaic dataset from a selection set of a raster catalog, or a mosaic dataset.
@@ -3167,7 +3183,7 @@ def create_referenced_mosaic_dataset(dataset, coordinate_system=None, number_of_
      out_db = {'mosaic_dataset': ['out_mosaic_dataset', 'required', None, None]}
      return _execute_tool('management', 'CreateReferencedMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def define_overviews(mosaic_dataset, overview_image_folder=None, template_dataset=None, extent=None, pixel_size=None, number_of_levels=None, tile_rows='5120', tile_cols='5120', overview_factor='3', force_overview_tiles='false', resampling_method='bilinear', compression_method='jpeg', compression_quality='80'):
      """
      Geoprocessing tool that defines the tiling schema and properties of the preprocessed raster datasets that will cover part or all of a mosaic dataset at varying resolutions.
@@ -3207,7 +3223,7 @@ def define_overviews(mosaic_dataset, overview_image_folder=None, template_datase
      out_db = {}
      return _execute_tool('management', 'DefineOverviews', inputs, in_db, out_db)
 
-          
+
 def generate_exclude_area(raster, pixel_type, generate_method, max_red='255', max_green='255', max_blue='255', max_white='255', max_black='0', max_magenta='255', max_cyan='255', max_yellow='255', percentage_low='0', percentage_high='100'):
      """
      Geoprocessing tool that generates exclude areas to use within the Color Balance Mosaic Dataset tool.
@@ -3249,7 +3265,7 @@ def generate_exclude_area(raster, pixel_type, generate_method, max_red='255', ma
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'GenerateExcludeArea', inputs, in_db, out_db)
 
-          
+
 def import_mosaic_dataset_geometry(mosaic_dataset, target_featureclass_type, target_jofield, input_featureclass, input_jofield):
      """
      Geoprocessing tool that imports geometry to a mosaic dataset.
@@ -3277,7 +3293,7 @@ def import_mosaic_dataset_geometry(mosaic_dataset, target_featureclass_type, tar
      out_db = {}
      return _execute_tool('management', 'ImportMosaicDatasetGeometry', inputs, in_db, out_db)
 
-          
+
 def remove_rasters_from_mosaic_dataset(mosaic_dataset, where_clause=None, update_boundary='true', mark_overviews_items='true', delete_overview_images='true', delete_item_cache='true', remove_items='true', update_cellsize_ranges='true'):
      """
      Geoprocessing tool that removes rasters from a mosaic dataset.
@@ -3307,7 +3323,7 @@ def remove_rasters_from_mosaic_dataset(mosaic_dataset, where_clause=None, update
      out_db = {}
      return _execute_tool('management', 'RemoveRastersFromMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def synchronize_mosaic_dataset(mosaic_dataset, where_clause=None, new_items='false', sync_only_stale='true', update_cellsize_ranges='true', update_boundary='true', update_overviews='false', build_pyramids='false', calculate_statistics='false', build_thumbnails='false', build_item_cache='false', rebuild_raster='true', update_fields='true', fields_to_update=None, existing_items='true', broken_items='false', skip_existing_items='true', refresh_aggregate_info='false', estimate_statistics='false'):
      """
      Geoprocessing tool that rebuilds the raster item and updates affected fields in the mosaic dataset using the raster type and options that were used when it was originally added.
@@ -3359,7 +3375,7 @@ def synchronize_mosaic_dataset(mosaic_dataset, where_clause=None, new_items='fal
      out_db = {}
      return _execute_tool('management', 'SynchronizeMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def calculate_end_time(table, start_field, end_field, fields=None):
      """
      Geoprocessing tool that populates the values for a specified end time  field with values calculated using the specified start time field.
@@ -3383,7 +3399,7 @@ def calculate_end_time(table, start_field, end_field, fields=None):
      out_db = {}
      return _execute_tool('management', 'CalculateEndTime', inputs, in_db, out_db)
 
-          
+
 def convert_time_field(table, input_time_field, input_time_format, output_time_field, output_time_type='date', output_time_format=None):
      """
      Geoprocessing tool to convert timestamps stored in a text or numeric field to a date field.
@@ -3412,7 +3428,7 @@ def convert_time_field(table, input_time_field, input_time_format, output_time_f
      out_db = {}
      return _execute_tool('management', 'ConvertTimeField', inputs, in_db, out_db)
 
-          
+
 def convert_time_zone(table, input_time_field, input_time_zone, output_time_field, output_time_zone, input_dst='true', output_dst='true'):
      """
      Geoprocessing tool to convert time values from one time zone to another.
@@ -3444,7 +3460,7 @@ def convert_time_zone(table, input_time_field, input_time_zone, output_time_fiel
      out_db = {}
      return _execute_tool('management', 'ConvertTimeZone', inputs, in_db, out_db)
 
-          
+
 def transpose_fields(table, field, transposed_field_name, value_field_name, attribute_fields=None):
      """
      Geoprocessing tool to transpose data values stored in columns  of a table or feature class into rows.
@@ -3471,7 +3487,7 @@ def transpose_fields(table, field, transposed_field_name, value_field_name, attr
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'TransposeFields', inputs, in_db, out_db)
 
-          
+
 def warp_from_file(raster, link_file, transformation_type='polyorder1', resampling_type='nearest'):
      """
      Geoprocessing tool that performs a transformation on the raster based on a link file, using a polynomial transformation.
@@ -3494,7 +3510,7 @@ def warp_from_file(raster, link_file, transformation_type='polyorder1', resampli
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'WarpFromFile', inputs, in_db, out_db)
 
-          
+
 def import_xml_workspace_document(target_geodatabase, file, import_type='data', config_keyword=None):
      """
      Geoprocessing tool that imports the contents of an XML workspace document into an existing geodatabase.
@@ -3517,7 +3533,7 @@ def import_xml_workspace_document(target_geodatabase, file, import_type='data', 
      out_db = {}
      return _execute_tool('management', 'ImportXMLWorkspaceDocument', inputs, in_db, out_db)
 
-          
+
 def alter_mosaic_dataset_schema(mosaic_dataset, side_tables=None, raster_type_names=None, editor_tracking='false'):
      """
      Geoprocessing tool to define the editing operations nonowners have when editing a mosaic dataset in an enterprise geodatabase.
@@ -3539,7 +3555,7 @@ def alter_mosaic_dataset_schema(mosaic_dataset, side_tables=None, raster_type_na
      out_db = {}
      return _execute_tool('management', 'AlterMosaicDatasetSchema', inputs, in_db, out_db)
 
-          
+
 def analyze_mosaic_dataset(mosaic_dataset, where_clause=None, checker_keywords=None):
      """
      Geoprocessing tool that checks a mosaic dataset for errors, and possible improvements.
@@ -3559,7 +3575,7 @@ def analyze_mosaic_dataset(mosaic_dataset, where_clause=None, checker_keywords=N
      out_db = {}
      return _execute_tool('management', 'AnalyzeMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def compact(workspace):
      """
      Geoprocessing tool for compacting a geodatabase.
@@ -3575,7 +3591,7 @@ def compact(workspace):
      out_db = {}
      return _execute_tool('management', 'Compact', inputs, in_db, out_db)
 
-          
+
 def clear_workspace_cache(data=None):
      """
      Geoprocessing tool clears any enterprise geodatabase workspaces from the enterprise geodatabase workspace cache.
@@ -3591,7 +3607,7 @@ def clear_workspace_cache(data=None):
      out_db = {}
      return _execute_tool('management', 'ClearWorkspaceCache', inputs, in_db, out_db)
 
-          
+
 def analyze_datasets(input_database, include_system, datasets=None, analyze_base='true', analyze_delta='true', analyze_archive='true'):
      """
      Geoprocessing tool to  update  database statistics of base tables, delta tables, and archive tables, along with the statistics on those tables' indexes.
@@ -3618,7 +3634,7 @@ def analyze_datasets(input_database, include_system, datasets=None, analyze_base
      out_db = {}
      return _execute_tool('management', 'AnalyzeDatasets', inputs, in_db, out_db)
 
-          
+
 def rebuild_indexes(input_database, include_system, datasets=None, delta_only='true'):
      """
      Geoprocessing tool to update indexes of datasets stored in a database or geodatabase in DB2, Oracle, PostgreSQL, or SQL Server. In geodatabases, indexes  can also be rebuilt on  states and state_lineage geodatabase system tables and the delta tables of versioned datasets.
@@ -3641,7 +3657,7 @@ def rebuild_indexes(input_database, include_system, datasets=None, delta_only='t
      out_db = {}
      return _execute_tool('management', 'RebuildIndexes', inputs, in_db, out_db)
 
-          
+
 def check_geometry(features):
      """
      Geoprocessing tool to generate a report of geometry problems in a feature class.
@@ -3657,7 +3673,7 @@ def check_geometry(features):
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'CheckGeometry', inputs, in_db, out_db)
 
-          
+
 def reconcile_versions(input_database, reconcile_mode, target_version=None, edit_versions=None, acquire_locks='true', abort_if_conflicts='false', conflict_definition='by_object', conflict_resolution='favor_target_version', with_post='false', with_delete='false'):
      """
      Geoprocessing tool that reconciles a version or multiple versions against a target version.
@@ -3692,7 +3708,7 @@ def reconcile_versions(input_database, reconcile_mode, target_version=None, edit
      out_db = {'log': ['out_log', 'optional', None, None]}
      return _execute_tool('management', 'ReconcileVersions', inputs, in_db, out_db)
 
-          
+
 def add_attachments(dataset, jofield, match_table, match_jofield, match_path_field, working_folder=None):
      """
      Geoprocessing tool that adds file attachments to the records of a geodatabase feature class or table.
@@ -3722,7 +3738,7 @@ def add_attachments(dataset, jofield, match_table, match_jofield, match_path_fie
      out_db = {}
      return _execute_tool('management', 'AddAttachments', inputs, in_db, out_db)
 
-          
+
 def disable_attachments(dataset):
      """
      Geoprocessing tool that disables attachments on a geodatabase feature class or table.
@@ -3738,7 +3754,7 @@ def disable_attachments(dataset):
      out_db = {}
      return _execute_tool('management', 'DisableAttachments', inputs, in_db, out_db)
 
-          
+
 def enable_attachments(dataset):
      """
      Geoprocessing tool that enables attachments on a geodatabase feature class or table.
@@ -3754,7 +3770,7 @@ def enable_attachments(dataset):
      out_db = {}
      return _execute_tool('management', 'EnableAttachments', inputs, in_db, out_db)
 
-          
+
 def remove_attachments(dataset, jofield, match_table, match_jofield, match_name_field=None):
      """
      Geoprocessing tool that removes attachments from geodatabase feature class or table records.
@@ -3781,7 +3797,7 @@ def remove_attachments(dataset, jofield, match_table, match_jofield, match_name_
      out_db = {}
      return _execute_tool('management', 'RemoveAttachments', inputs, in_db, out_db)
 
-          
+
 def set_mosaic_dataset_properties(mosaic_dataset, rows_maximum_imagesize='4100', columns_maximum_imagesize='15000', allowed_compressions='none;lz77;jpeg;lerc', default_compression_type=None, jpeg_quality='75', lerc_tolerance='0', resampling_type='bilinear', clip_to_footprints='false', footprints_may_contanodata='true', clip_to_boundary='true', color_correction='false', allowed_mensuration_capabilities=None, default_mensuration_capabilities='none', allowed_mosaic_methods='center;northwest;lockraster;byattribute;nadir;viewpoint;seamline;none', default_mosaic_method='center', order_field=None, order_base=None, sorting_order='true', mosaic_operator='first', blend_width='10', view_point_x='600', view_point_y='300', max_num_per_mosaic='20', cell_size_tolerance='0.8', cell_size=None, metadata_level='full', transmission_fields=None, use_time='false', start_time_field=None, end_time_field=None, time_format=None, geographic_transform=None, max_num_of_download_items='20', max_num_of_records_returned='1000', data_source_type='generic', minimum_pixel_contribution='1', processing_templates=None, default_processing_template='none', time_interval=None, time_interval_units=None):
      """
      Geoprocessing tool that sets the default properties of a mosaic dataset.
@@ -3877,7 +3893,7 @@ def set_mosaic_dataset_properties(mosaic_dataset, rows_maximum_imagesize='4100',
      out_db = {}
      return _execute_tool('management', 'SetMosaicDatasetProperties', inputs, in_db, out_db)
 
-          
+
 def set_raster_properties(raster, data_type=None, statistics=None, stats_file=None, nodata=None, key_properties=None):
      """
      Geoprocessing tool that sets properties on a raster dataset or mosaic dataset.
@@ -3903,7 +3919,7 @@ def set_raster_properties(raster, data_type=None, statistics=None, stats_file=No
      out_db = {}
      return _execute_tool('management', 'SetRasterProperties', inputs, in_db, out_db)
 
-          
+
 def download_rasters(image_service, out_folder, where_clause=None, selection_feature=None, clipping='false', convert_rasters='false', format='tiff', compression_method=None, compression_quality=None, maintain_folder='false'):
      """
      Geoprocessing tool that downloads source files of the selected rasters from an image service to a designated location.
@@ -3938,7 +3954,7 @@ def download_rasters(image_service, out_folder, where_clause=None, selection_fea
      out_db = {}
      return _execute_tool('management', 'DownloadRasters', inputs, in_db, out_db)
 
-          
+
 def create_enterprise_geodatabase(database_platform, instance_name, authorization_file, database_name=None, account_authentication='false', database_admin='sa', database_admpassword=None, sde_schema='true', gdb_admname='sde', gdb_admpassword=None, tablespace_name=None):
      """
      Geoprocessing tool that creates a database, geodatabase, and geodatabase administrator user in a Microsoft SQL Server  or PostgreSQL DBMS and creates a geodatabase, tablespace, and geodatabase administrator user in an Oracle DBMS.
@@ -3976,7 +3992,7 @@ def create_enterprise_geodatabase(database_platform, instance_name, authorizatio
      out_db = {}
      return _execute_tool('management', 'CreateEnterpriseGeodatabase', inputs, in_db, out_db)
 
-          
+
 def enable_enterprise_geodatabase(input_database, authorization_file):
      """
      Geoprocessing tool that creates geodatabase system tables, stored procedures, functions, and types in an existing database.
@@ -3995,7 +4011,7 @@ def enable_enterprise_geodatabase(input_database, authorization_file):
      out_db = {}
      return _execute_tool('management', 'EnableEnterpriseGeodatabase', inputs, in_db, out_db)
 
-          
+
 def feature_envelope_to_polygon(features, single_envelope='false'):
      """
      Geoprocessing tool that creates polygon features representing the envelopes of input features.
@@ -4013,7 +4029,7 @@ def feature_envelope_to_polygon(features, single_envelope='false'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'FeatureEnvelopeToPolygon', inputs, in_db, out_db)
 
-          
+
 def create_database_connection(out_folder_path, out_name, database_platform, instance, account_authentication='true', username=None, password=None, save_user_pass='true', database=None, schema=None, version_type='transactional', version=None, date=None):
      """
      Geoprocessing tool for creating connection files to databases or enterprise, workgroup, or desktop geodatabases.
@@ -4056,7 +4072,7 @@ def create_database_connection(out_folder_path, out_name, database_platform, ins
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseConnection', inputs, in_db, out_db)
 
-          
+
 def delete_mosaic_dataset(mosaic_dataset, delete_overview_images='true', delete_item_cache='true'):
      """
      Geoprocessing tool that deletes a mosaic dataset, overviews, and item cache.
@@ -4076,7 +4092,7 @@ def delete_mosaic_dataset(mosaic_dataset, delete_overview_images='true', delete_
      out_db = {}
      return _execute_tool('management', 'DeleteMosaicDataset', inputs, in_db, out_db)
 
-          
+
 def generate_attachment_match_table(dataset, folder, key_field, file_filter=None, use_relative_paths='true'):
      """
      Geoprocessing tool that creates a Match Table to be used with the Add Attachments and Remove Attachment tools.
@@ -4102,7 +4118,7 @@ def generate_attachment_match_table(dataset, folder, key_field, file_filter=None
      out_db = {'match_table': ['out_match_table', 'required', None, None]}
      return _execute_tool('management', 'GenerateAttachmentMatchTable', inputs, in_db, out_db)
 
-          
+
 def create_database_view(input_database, view_name, view_definition):
      """
      Geoprocessing tool for creating a view in a database or enterprise geodatabase based on an SQL expression.
@@ -4124,7 +4140,7 @@ def create_database_view(input_database, view_name, view_definition):
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseView', inputs, in_db, out_db)
 
-          
+
 def sort_coded_value_domain(workspace, domaname, sort_by, sort_order):
      """
      Geoprocessing tool that sorts the code or description of a coded value domain in either ascending or descending order.
@@ -4149,7 +4165,7 @@ def sort_coded_value_domain(workspace, domaname, sort_by, sort_order):
      out_db = {}
      return _execute_tool('management', 'SortCodedValueDomain', inputs, in_db, out_db)
 
-          
+
 def disable_editor_tracking(dataset, creator='true', creation_date='true', last_editor='true', last_edit_date='true'):
      """
      Geoprocessing tool to disable editor tracking on a feature class, table, mosaic dataset, or raster catalog.
@@ -4173,7 +4189,7 @@ def disable_editor_tracking(dataset, creator='true', creation_date='true', last_
      out_db = {}
      return _execute_tool('management', 'DisableEditorTracking', inputs, in_db, out_db)
 
-          
+
 def enable_editor_tracking(dataset, creator_field=None, creation_date_field=None, last_editor_field=None, last_edit_date_field=None, add_fields=None, record_dates_in='utc'):
      """
      Geoprocessing tool to enable  editor tracking for a feature class, table, mosaic dataset, or raster catalog.
@@ -4201,7 +4217,7 @@ def enable_editor_tracking(dataset, creator_field=None, creation_date_field=None
      out_db = {}
      return _execute_tool('management', 'EnableEditorTracking', inputs, in_db, out_db)
 
-          
+
 def truncate_table(table):
      """
      Geoprocessing tool for truncating a table or feature class.
@@ -4217,7 +4233,7 @@ def truncate_table(table):
      out_db = {}
      return _execute_tool('management', 'TruncateTable', inputs, in_db, out_db)
 
-          
+
 def upgrade_dataset(dataset):
      """
      Geoprocessing tool that will upgrade mosaic datasets, network datasets, and parcel fabrics to the current ArcGIS release.
@@ -4233,7 +4249,7 @@ def upgrade_dataset(dataset):
      out_db = {}
      return _execute_tool('management', 'UpgradeDataset', inputs, in_db, out_db)
 
-          
+
 def export_mosaic_dataset_paths(mosaic_dataset, where_clause=None, export_mode='all', types_of_paths=None):
      """
      Geoprocessing tool that creates a table listing the paths to the mosaic dataset items.
@@ -4255,7 +4271,7 @@ def export_mosaic_dataset_paths(mosaic_dataset, where_clause=None, export_mode='
      out_db = {'table': ['out_table', 'required', None, None]}
      return _execute_tool('management', 'ExportMosaicDatasetPaths', inputs, in_db, out_db)
 
-          
+
 def repair_mosaic_dataset_paths(mosaic_dataset, paths_list, where_clause=None):
      """
      Geoprocessing tool that repairs broken file paths within a mosaic dataset.
@@ -4276,7 +4292,7 @@ def repair_mosaic_dataset_paths(mosaic_dataset, paths_list, where_clause=None):
      out_db = {}
      return _execute_tool('management', 'RepairMosaicDatasetPaths', inputs, in_db, out_db)
 
-          
+
 def create_database_user(input_database, user_name, user_authentication_type='false', user_password=None, role=None, tablespace_name=None):
      """
      Geoprocessing tool to create a database user in an Oracle, PostgreSQL, or Microsoft SQL Server database.
@@ -4303,7 +4319,7 @@ def create_database_user(input_database, user_name, user_authentication_type='fa
      out_db = {}
      return _execute_tool('management', 'CreateDatabaseUser', inputs, in_db, out_db)
 
-          
+
 def join_field(data, field, jotable, jofield, fields=None):
      """
      Geoprocessing tool that permanently joins the contents of a table to another table based on a common attribute field.
@@ -4330,7 +4346,7 @@ def join_field(data, field, jotable, jofield, fields=None):
      out_db = {}
      return _execute_tool('management', 'JoinField', inputs, in_db, out_db)
 
-          
+
 def edit_raster_function(mosaic_dataset, edit_mosaic_dataset_item='false', edit_options='insert', function_chadefinition=None, location_function_name=None):
      """
      Geoprocessing tool that adds, replaces, or removes a raster function template in a mosaic dataset, items in a mosaic dataset, or a raster layer that contains a raster function.
@@ -4354,7 +4370,7 @@ def edit_raster_function(mosaic_dataset, edit_mosaic_dataset_item='false', edit_
      out_db = {}
      return _execute_tool('management', 'EditRasterFunction', inputs, in_db, out_db)
 
-          
+
 def build_mosaic_dataset_item_cache(mosaic_dataset, where_clause=None, define_cache='true', generate_cache='true', item_cache_folder=None, compression_method='lossless', compression_quality='80', max_allowed_rows='200000', max_allowed_columns='200000', request_size_type='pixel_size_factor', request_size='1'):
      """
      Geoprocessing tool that inserts the Cached Raster function into the function chain for items within a mosaic dataset.
@@ -4390,10 +4406,10 @@ def build_mosaic_dataset_item_cache(mosaic_dataset, where_clause=None, define_ca
      out_db = {}
      return _execute_tool('management', 'BuildMosaicDatasetItemCache', inputs, in_db, out_db)
 
-          
+
 def batch_build_pyramids(input_raster_datasets, pyramid_levels='-1', skip_first_level='false', pyramid_resampling_technique='nearest', pyramid_compression_type='default', compression_quality='75', skip_existing=None):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -4418,10 +4434,10 @@ def batch_build_pyramids(input_raster_datasets, pyramid_levels='-1', skip_first_
      out_db = {}
      return _execute_tool('management', 'BatchBuildPyramids', inputs, in_db, out_db)
 
-          
+
 def batch_calculate_statistics(input_raster_datasets, number_of_columns_to_skip='1', number_of_rows_to_skip='1', ignore_values=None, skip_existing=None):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -4442,7 +4458,7 @@ def batch_calculate_statistics(input_raster_datasets, number_of_columns_to_skip=
      out_db = {}
      return _execute_tool('management', 'BatchCalculateStatistics', inputs, in_db, out_db)
 
-          
+
 def sort(dataset, sort_field, spatial_sort_method='ur'):
      """
      Geoprocessing tool that reorders records in a feature class or table based on field values.
@@ -4463,10 +4479,10 @@ def sort(dataset, sort_field, spatial_sort_method='ur'):
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'Sort', inputs, in_db, out_db)
 
-          
+
 def match_photos_to_rows_by_time(input_folder, input_table, time_field, add_photos_as_attachments='false', time_tolerance='0', clock_offset='0'):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -4491,7 +4507,7 @@ def match_photos_to_rows_by_time(input_folder, input_table, time_field, add_phot
      out_db = {'output_table': ['Output_Table', 'required', None, None], 'unmatched_photos_table': ['Unmatched_Photos_Table', 'optional', None, None]}
      return _execute_tool('management', 'MatchPhotosToRowsByTime', inputs, in_db, out_db)
 
-          
+
 def register_raster(raster, register_mode, reference_raster=None, input_link_file=None, transformation_type='polyorder1', maximum_rms_value=None):
      """
      Geoprocessing tool that registers an image to a reference image.
@@ -4518,7 +4534,7 @@ def register_raster(raster, register_mode, reference_raster=None, input_link_fil
      out_db = {'output_cpt_link_file': ['output_cpt_link_file', 'optional', None, None]}
      return _execute_tool('management', 'RegisterRaster', inputs, in_db, out_db)
 
-          
+
 def create_role(input_database, role, grant_revoke='grant', user_name=None):
      """
      Geoprocessing tool to create a database role in an Oracle, PostgreSQL, or Microsoft SQL Server database and add users to or remove them from the role.
@@ -4541,7 +4557,7 @@ def create_role(input_database, role, grant_revoke='grant', user_name=None):
      out_db = {}
      return _execute_tool('management', 'CreateRole', inputs, in_db, out_db)
 
-          
+
 def export_tile_cache(cache_source, target_cache_folder, target_cache_name, export_cache_type='tile_cache', storage_format_type='compact', scales=None, area_of_interest='in_memory\{5c2a1be5-7672-4ab1-8e1e-8c853cb4de67}'):
      """
      Geoprocessing tool that exports tiles from an existing tile cache.
@@ -4571,7 +4587,7 @@ def export_tile_cache(cache_source, target_cache_folder, target_cache_name, expo
      out_db = {}
      return _execute_tool('management', 'ExportTileCache', inputs, in_db, out_db)
 
-          
+
 def generate_tile_cache_tiling_scheme(dataset, tiling_scheme_generation_method, number_of_scales, predefined_tiling_scheme=None, scales=None, scales_type='false', tile_origin='0 0', dpi='96', tile_size='256 x 256', tile_format='mixed', tile_compression_quality='75', storage_format='compact', lerc_error=None):
      """
      Geoprocessing tool that generates an XML tiling scheme file used to create tile cache.
@@ -4613,7 +4629,7 @@ def generate_tile_cache_tiling_scheme(dataset, tiling_scheme_generation_method, 
      out_db = {'tiling_scheme': ['out_tiling_scheme', 'required', None, None]}
      return _execute_tool('management', 'GenerateTileCacheTilingScheme', inputs, in_db, out_db)
 
-          
+
 def import_tile_cache(cache_target, cache_source, scales=None, area_of_interest='in_memory\{d6ab050f-d3fd-409c-b375-61816774db6c}', overwrite='false'):
      """
      Geoprocessing tool that imports tiles from an existing tile cache.
@@ -4638,7 +4654,7 @@ def import_tile_cache(cache_target, cache_source, scales=None, area_of_interest=
      out_db = {}
      return _execute_tool('management', 'ImportTileCache', inputs, in_db, out_db)
 
-          
+
 def manage_tile_cache(cache_location, manage_mode, cache_name=None, datasource=None, tiling_scheme='arcgisonline_scheme', import_tiling_scheme=None, scales=None, area_of_interest='in_memory\{1084126b-abaa-4cb2-b931-966a25bad608}', max_cell_size=None, mcached_scale=None, max_cached_scale=None):
      """
      Geoprocessing tool that creates a tile cache or updates tiles in an existing tile cache.
@@ -4675,7 +4691,7 @@ def manage_tile_cache(cache_location, manage_mode, cache_name=None, datasource=N
      out_db = {}
      return _execute_tool('management', 'ManageTileCache', inputs, in_db, out_db)
 
-          
+
 def disable_archiving(dataset, preserve_history='true'):
      """
      Geoprocessing tool that disables archiving on a geodatabase feature class, table, or feature dataset.
@@ -4693,7 +4709,7 @@ def disable_archiving(dataset, preserve_history='true'):
      out_db = {}
      return _execute_tool('management', 'DisableArchiving', inputs, in_db, out_db)
 
-          
+
 def enable_archiving(dataset):
      """
      Geoprocessing tool that enables archiving on a table, feature class, or feature dataset.
@@ -4709,7 +4725,7 @@ def enable_archiving(dataset):
      out_db = {}
      return _execute_tool('management', 'EnableArchiving', inputs, in_db, out_db)
 
-          
+
 def merge_mosaic_dataset_items(mosaic_dataset, where_clause=None, block_field=None, max_rows_per_merged_items='1000'):
      """
      Geoprocessing tool that merges together two or more mosaic dataset items.
@@ -4731,7 +4747,7 @@ def merge_mosaic_dataset_items(mosaic_dataset, where_clause=None, block_field=No
      out_db = {}
      return _execute_tool('management', 'MergeMosaicDatasetItems', inputs, in_db, out_db)
 
-          
+
 def split_mosaic_dataset_items(mosaic_dataset, where_clause=None):
      """
      Geoprocessing tool that splits mosaic dataset items.
@@ -4749,10 +4765,10 @@ def split_mosaic_dataset_items(mosaic_dataset, where_clause=None):
      out_db = {}
      return _execute_tool('management', 'SplitMosaicDatasetItems', inputs, in_db, out_db)
 
-          
+
 def compute_pansharpen_weights(raster, panchromatic_image, band_indexes=None):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -4770,7 +4786,7 @@ def compute_pansharpen_weights(raster, panchromatic_image, band_indexes=None):
      out_db = {}
      return _execute_tool('management', 'ComputePansharpenWeights', inputs, in_db, out_db)
 
-          
+
 def project(dataset, out_coor_system, transform_method=None, coor_system=None, preserve_shape='false', max_deviation=None, vertical='false'):
      """
      Geoprocessing tool that projects spatial data from one coordinate system to another.
@@ -4799,7 +4815,7 @@ def project(dataset, out_coor_system, transform_method=None, coor_system=None, p
      out_db = {'dataset': ['out_dataset', 'required', None, None]}
      return _execute_tool('management', 'Project', inputs, in_db, out_db)
 
-          
+
 def batch_project(input_feature_class_or_dataset, output_workspace, output_coordinate_system=None, template_dataset=None, transformation=None):
      """
      Geoprocessing tool to change the coordinate system of a set of input feature classes or feature datasets.
@@ -4824,10 +4840,10 @@ def batch_project(input_feature_class_or_dataset, output_workspace, output_coord
      out_db = {}
      return _execute_tool('management', 'BatchProject', inputs, in_db, out_db)
 
-          
+
 def add_geometry_attributes(input_features, geometry_properties, length_unit=None, area_unit=None, coordinate_system=None):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -4849,7 +4865,7 @@ def add_geometry_attributes(input_features, geometry_properties, length_unit=Non
      out_db = {}
      return _execute_tool('management', 'AddGeometryAttributes', inputs, in_db, out_db)
 
-          
+
 def migrate_relationship_class(relationship_class):
      """
      Geoprocessing tool that migrates an ObjectID-based relationship class to a GlobalID-based relationship class
@@ -4865,7 +4881,7 @@ def migrate_relationship_class(relationship_class):
      out_db = {}
      return _execute_tool('management', 'MigrateRelationshipClass', inputs, in_db, out_db)
 
-          
+
 def export_mosaic_dataset_geometry(mosaic_dataset, where_clause=None, geometry_type='footprint'):
      """
      Geoprocessing tool that exports feature classes for the footprint, boundary, or seamline of a mosaic dataset.
@@ -4885,7 +4901,7 @@ def export_mosaic_dataset_geometry(mosaic_dataset, where_clause=None, geometry_t
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'ExportMosaicDatasetGeometry', inputs, in_db, out_db)
 
-          
+
 def export_mosaic_dataset_items(mosaic_dataset, out_folder, out_base_name=None, where_clause=None, format='tiff', nodata_value=None, clip_type=None, template_dataset=None, cell_size=None):
      """
      Geoprocessing tool that creates a copy of your processed images within a mosaic dataset.
@@ -4918,7 +4934,7 @@ def export_mosaic_dataset_items(mosaic_dataset, out_folder, out_base_name=None, 
      out_db = {}
      return _execute_tool('management', 'ExportMosaicDatasetItems', inputs, in_db, out_db)
 
-          
+
 def remove_field_conflict_filter(table, fields):
      """
      Geoprocessing tool for removing a field conflict filter to a geodatabase table or feature class.
@@ -4937,7 +4953,7 @@ def remove_field_conflict_filter(table, fields):
      out_db = {}
      return _execute_tool('management', 'RemoveFieldConflictFilter', inputs, in_db, out_db)
 
-          
+
 def export_geodatabase_configuration_keywords(input_database):
      """
      Geoprocessing tool that exports the configuration keywords, parameters, and values from the specified enterprise geodatabase to an editable file.
@@ -4953,7 +4969,7 @@ def export_geodatabase_configuration_keywords(input_database):
      out_db = {'file': ['out_file', 'required', None, None]}
      return _execute_tool('management', 'ExportGeodatabaseConfigurationKeywords', inputs, in_db, out_db)
 
-          
+
 def import_geodatabase_configuration_keywords(input_database, file):
      """
      Geoprocessing tool that allows you to define data storage parameters for an enterprise geodatabase by importing a file containing storage keywords and parameters.
@@ -4972,7 +4988,7 @@ def import_geodatabase_configuration_keywords(input_database, file):
      out_db = {}
      return _execute_tool('management', 'ImportGeodatabaseConfigurationKeywords', inputs, in_db, out_db)
 
-          
+
 def alter_field(table, field, new_field_name=None, new_field_alias=None, field_type='long', field_length=None, field_is_nullable='true', clear_field_alias='false'):
      """
      Geoprocessing tool  to alter the field properties of geodatabase tables and feature classes.
@@ -5003,7 +5019,7 @@ def alter_field(table, field, new_field_name=None, new_field_alias=None, field_t
      out_db = {}
      return _execute_tool('management', 'AlterField', inputs, in_db, out_db)
 
-          
+
 def geodetic_densify(features, geodetic_type, distance='50 kilometers'):
      """
      Geoprocessing tool that replaces segments with densified approximation of geodetic curves.
@@ -5024,7 +5040,7 @@ def geodetic_densify(features, geodetic_type, distance='50 kilometers'):
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'GeodeticDensify', inputs, in_db, out_db)
 
-          
+
 def configure_geodatabase_log_file_tables(input_database, log_file_type, log_file_pool_size=None, use_tempdb='false'):
      """
      Geoprocessing tool that allows you to alter the type of log file tables used by an enterprise geodatabase to maintain lists of records cached by ArcGIS.
@@ -5047,7 +5063,7 @@ def configure_geodatabase_log_file_tables(input_database, log_file_type, log_fil
      out_db = {}
      return _execute_tool('management', 'ConfigureGeodatabaseLogFileTables', inputs, in_db, out_db)
 
-          
+
 def delete_schema_geodatabase(input_database):
      """
      Geoprocessing tool that deletes a user-schema geodatabase from a geodatabase in Oracle.
@@ -5063,7 +5079,7 @@ def delete_schema_geodatabase(input_database):
      out_db = {}
      return _execute_tool('management', 'DeleteSchemaGeodatabase', inputs, in_db, out_db)
 
-          
+
 def diagnose_version_tables(input_database, target_version=None, input_tables=None):
      """
      Geoprocessing tool to identify inconsistencies in the delta (A and D) tables of a versioned geodatabase.
@@ -5083,7 +5099,7 @@ def diagnose_version_tables(input_database, target_version=None, input_tables=No
      out_db = {'log': ['out_log', 'required', None, None]}
      return _execute_tool('management', 'DiagnoseVersionTables', inputs, in_db, out_db)
 
-          
+
 def repair_version_tables(input_database, target_version=None, input_tables=None):
      """
      Geoprocessing tool to repair inconsistencies in the delta (A and D) tables of a versioned geodatabase.
@@ -5103,7 +5119,7 @@ def repair_version_tables(input_database, target_version=None, input_tables=None
      out_db = {'log': ['out_log', 'required', None, None]}
      return _execute_tool('management', 'RepairVersionTables', inputs, in_db, out_db)
 
-          
+
 def analyze_tools_for_pro(input):
      """
      Geoprocessing tool that analyzes Python scripts and custom geoprocessing tools for functionality that is not supported in ArcGIS Pro.
@@ -5119,7 +5135,7 @@ def analyze_tools_for_pro(input):
      out_db = {'report': ['report', 'optional', None, None]}
      return _execute_tool('management', 'AnalyzeToolsForPro', inputs, in_db, out_db)
 
-          
+
 def export_topology_errors(topology, out_path, out_basename):
      """
      Geoprocessing tool to export errors and exceptions from a topology.
@@ -5141,7 +5157,7 @@ def export_topology_errors(topology, out_path, out_basename):
      out_db = {}
      return _execute_tool('management', 'ExportTopologyErrors', inputs, in_db, out_db)
 
-          
+
 def generate_raster_from_raster_function(raster_function, raster_function_arguments=None, raster_properties=None, format=None):
      """
      Geoprocessing tool that uses raster functions to process raster datasets and write an output.
@@ -5163,7 +5179,7 @@ def generate_raster_from_raster_function(raster_function, raster_function_argume
      out_db = {'raster_dataset': ['out_raster_dataset', 'required', None, None]}
      return _execute_tool('management', 'GenerateRasterFromRasterFunction', inputs, in_db, out_db)
 
-          
+
 def generate_tessellation(extent, shape_type='hexagon', size=None, spatial_reference=None):
      """
      Geoprocessing tool that generates a feature class of a  tessellated grid of regular polygons to cover a given extent. The shapes can either be triangles, squares, or hexagons.
@@ -5185,7 +5201,7 @@ def generate_tessellation(extent, shape_type='hexagon', size=None, spatial_refer
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'GenerateTessellation', inputs, in_db, out_db)
 
-          
+
 def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows, number_columns, corner_coord=None, labels='true', template=None, geometry_type='polyline'):
      """
      Geoprocessing tool that creates a fishnet of rectangular cells.
@@ -5193,7 +5209,7 @@ def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows
      ===================================   ======================================================================================================
      **Argument**                          **Description**
      -----------------------------------   ------------------------------------------------------------------------------------------------------
-     origcoord                             Required Point. Fishnet Origin Coordinate 
+     origcoord                             Required Point. Fishnet Origin Coordinate
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
      number_rows                           Required Long. Number of Rows
@@ -5208,7 +5224,7 @@ def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows
      cell_width                            Required Double. Cell Size Width
      -----------------------------------   ------------------------------------------------------------------------------------------------------
 
-     y_axis_coord                          Required Point. Y-Axis Coordinate 
+     y_axis_coord                          Required Point. Y-Axis Coordinate
      -----------------------------------   ------------------------------------------------------------------------------------------------------
      corner_coord                          Optional Point. Opposite corner of Fishnet. Default value: none
      -----------------------------------   ------------------------------------------------------------------------------------------------------
@@ -5224,7 +5240,7 @@ def create_fishnet(origcoord, y_axis_coord, cell_width, cell_height, number_rows
      out_db = {'feature_class': ['out_feature_class', 'required', None, None]}
      return _execute_tool('management', 'CreateFishnet', inputs, in_db, out_db)
 
-          
+
 def create_random_points(out_path, out_name, constraining_feature_class=None, constraining_extent=None, number_of_points_or_field='100', minimum_allowed_distance='0 unknown', create_multipoint_output='false', multipoint_size='10'):
      """
      Geoprocessing tool that creates a specified number of random points in an extent window, inside polygon features, on point features, or along line features.
@@ -5255,10 +5271,10 @@ def create_random_points(out_path, out_name, constraining_feature_class=None, co
      out_db = {}
      return _execute_tool('management', 'CreateRandomPoints', inputs, in_db, out_db)
 
-          
+
 def generate_points_along_lines(input_features, point_placement, distance=None, percentage=None, include_end_points=None):
      """
-     
+
 
      ===================================   ======================================================================================================
      **Argument**                          **Description**
@@ -5280,7 +5296,7 @@ def generate_points_along_lines(input_features, point_placement, distance=None, 
      out_db = {'output_feature_class': ['Output_Feature_Class', 'required', None, None]}
      return _execute_tool('management', 'GeneratePointsAlongLines', inputs, in_db, out_db)
 
-          
+
 def append_control_points(master_control_points, input_control_points, z_field=None, tag_field=None, dem=None, xy_accuracy=None, z_accuracy=None):
      """
      Geoprocessing tool that combines tie points and control points.
@@ -5309,7 +5325,7 @@ def append_control_points(master_control_points, input_control_points, z_field=N
      out_db = {}
      return _execute_tool('management', 'AppendControlPoints', inputs, in_db, out_db)
 
-          
+
 def apply_block_adjustment(mosaic_dataset, adjustment_operation, input_solution_table=None, pan_to_ms_scaling_factor=None, dem=None, zoffset=None, control_point_table=None, adjust_footprints='false'):
      """
      Geoprocessing tool that applies the geographic adjustments to the mosaic dataset items.
@@ -5340,7 +5356,7 @@ def apply_block_adjustment(mosaic_dataset, adjustment_operation, input_solution_
      out_db = {}
      return _execute_tool('management', 'ApplyBlockAdjustment', inputs, in_db, out_db)
 
-          
+
 def compute_block_adjustment(mosaic_dataset, control_points, transformation_type, maximum_residual_value='5', adjustment_options=None, location_accuracy='medium'):
      """
      Geoprocessing tool that computes the adjustments to the mosaic dataset items.
@@ -5368,7 +5384,7 @@ def compute_block_adjustment(mosaic_dataset, control_points, transformation_type
      out_db = {'quality_table': ['out_quality_table', 'optional', None, None], 'solution_table': ['out_solution_table', 'required', None, None], 'solution_point_table': ['out_solution_point_table', 'optional', None, None]}
      return _execute_tool('management', 'ComputeBlockAdjustment', inputs, in_db, out_db)
 
-          
+
 def compute_camera_model(mosaic_dataset, gps_accuracy='high', estimate='true', refine='true', apply_adjustment='true', maximum_residual='5', initial_tiepoint_resolution='8', maximum_overlap=None, minimum_coverage='0.2', remove='false', control_points=None, options=None):
      """
      Geoprocessing tool that automatically constructs and refines a camera model for aerial images and, in particular, UAV and UAS images, where the exterior and interior camera models are coarse or undefined.
@@ -5406,7 +5422,7 @@ def compute_camera_model(mosaic_dataset, gps_accuracy='high', estimate='true', r
      out_db = {'flight_path': ['out_flight_path', 'optional', None, None], 'control_points': ['out_control_points', 'optional', None, None], 'solution_table': ['out_solution_table', 'optional', None, None], 'solution_point_table': ['out_solution_point_table', 'optional', None, None], 'dsm': ['out_dsm', 'optional', None, None]}
      return _execute_tool('management', 'ComputeCameraModel', inputs, in_db, out_db)
 
-          
+
 def compute_control_points(mosaic_dataset, reference_images, similarity='high', density='medium', distribution='random', area_of_interest=None, location_accuracy='medium'):
      """
      Geoprocessing tool that computes control points for your mosaic dataset.
@@ -5435,7 +5451,7 @@ def compute_control_points(mosaic_dataset, reference_images, similarity='high', 
      out_db = {'image_feature_points': ['out_image_feature_points', 'optional', None, None], 'control_points': ['out_control_points', 'required', None, None]}
      return _execute_tool('management', 'ComputeControlPoints', inputs, in_db, out_db)
 
-          
+
 def compute_tie_points(mosaic_dataset, similarity='medium', mask_dataset=None, density='medium', distribution='random', location_accuracy='medium'):
      """
      Geoprocessing tool that computes the tie points for the  items within a mosaic dataset.
@@ -5461,7 +5477,7 @@ def compute_tie_points(mosaic_dataset, similarity='medium', mask_dataset=None, d
      out_db = {'image_features': ['out_image_features', 'optional', None, None], 'control_points': ['out_control_points', 'required', None, None]}
      return _execute_tool('management', 'ComputeTiePoints', inputs, in_db, out_db)
 
-          
+
 def build_stereo_model(mosaic_dataset, minimum_angle='10', maximum_angle='70', minimum_overlap='0.5', maximum_diff_op=None, maximum_diff_gsd='2'):
      """
      Geoprocessing tool that generates a stereo model on imagery in a  mosaic dataset.
@@ -5487,7 +5503,7 @@ def build_stereo_model(mosaic_dataset, minimum_angle='10', maximum_angle='70', m
      out_db = {}
      return _execute_tool('management', 'BuildStereoModel', inputs, in_db, out_db)
 
-          
+
 def generate_point_cloud(mosaic_dataset, matching_method, object_size='50', ground_spacing=None, minimum_pairs='2', minimum_area='0.6', minimum_adjustment_quality='0.2', maximum_diff_gsd='2', maximum_diff_op='8'):
      """
      Geoprocessing tool that generates a 3D point cloud from stereo images.
@@ -5520,7 +5536,7 @@ def generate_point_cloud(mosaic_dataset, matching_method, object_size='50', grou
      out_db = {'folder': ['out_folder', 'required', None, None], 'base_name': ['out_base_name', 'required', None, None]}
      return _execute_tool('management', 'GeneratePointCloud', inputs, in_db, out_db)
 
-          
+
 def interpolate_from_point_cloud(container, cell_size, interpolation_method, smooth_method, surface_type='dtm', fill_dem=None):
      """
      Geoprocessing tool that interpolates a digital surface model (DSM) or digital elevation model (DEM) from a point cloud.
@@ -5549,7 +5565,7 @@ def interpolate_from_point_cloud(container, cell_size, interpolation_method, smo
      out_db = {'raster': ['out_raster', 'required', None, None]}
      return _execute_tool('management', 'InterpolateFromPointCloud', inputs, in_db, out_db)
 
-          
+
 def compute_mosaic_candidates(mosaic_dataset, maximum_overlap='0.6', maximum_area_loss='0.05'):
      """
      Geoprocessing tool that finds the image candidates in a mosaic dataset that best represents the mosaic area, and will be used to generate an orthomosaic.
@@ -5569,4 +5585,3 @@ def compute_mosaic_candidates(mosaic_dataset, maximum_overlap='0.6', maximum_are
      out_db = {}
      return _execute_tool('management', 'ComputeMosaicCandidates', inputs, in_db, out_db)
 
-          

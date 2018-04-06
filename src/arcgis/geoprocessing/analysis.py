@@ -8,7 +8,20 @@ from collections import namedtuple
 from arcgis.features import SpatialDataFrame
 import pandas as pd
 
+def _set_env_values():
+     import arcgis
+     from arcpy import env
+     from arcgis.env import scratchgdb, workspace, overwrite_output
+     if overwrite_output is None:
+          arcgis.env.overwrite_output = env.overwriteOutput
+     else:
+          env.overwriteOutput = overwrite_output
+     if workspace:
+          env.workspace = workspace
+     arcgis.env.scratchgdb = env.scratchGDB
+
 def _execute_tool(module, tool, inputs, in_db, out_db):
+     _set_env_values()
      module = getattr(arcpy,module)
      func = getattr(module, tool)
      args = {}
