@@ -189,7 +189,10 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
             import arcgis
             arcgis.env.verbose = True
             oma_mgr = wm.offline_areas
-            oma_item = wm.offline_areas.create(bookmark1, self.test_case_name, 'automated test', 'python api', 'dino_test')
+            item_properties = {'title': self.test_case_name,
+                               'snippet': 'automated test',
+                               'tags':'python api'}
+            oma_item = wm.offline_areas.create(bookmark1, item_properties=item_properties, folder='dino_test')
             arcgis.env.verbose = False
 
             # assert oma_item
@@ -272,6 +275,54 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_create_offline_areas_min_max_scale(self):
+        """
+        Create offline areas
+        :return:
+        """
+        try:
+            # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
+            wmitem = self.gis.content.get('3e7159ee4c6c4e6faf2ca2bd066ee972')
+            wm = WebMap(wmitem)
+
+            bookmark1 = wm.definition.bookmarks[-1]['name']
+
+            import arcgis
+            arcgis.env.verbose = True
+            oma_mgr = wm.offline_areas
+            item_properties = {'title': self.test_case_name,
+                               'snippet': 'automated test',
+                               'tags': 'python api'}
+            oma_item = wm.offline_areas.create(bookmark1, item_properties=item_properties, folder='dino_test',
+                                               min_scale=147914000, max_scale=73957000)
+            arcgis.env.verbose = False
+
+            # assert oma_item
+            self.assertIsInstance(oma_item, arcgis.gis.Item, "Cannot create offline map area item")
+
+            # assert offline packages for oma_item
+            offline_packages = oma_item.related_items('Area2Package', 'forward')
+            for offline_pkg in offline_packages:
+                print(offline_pkg.homepage)
+            self.assertGreater(len(offline_packages), 0, "Zero packages were created")
+
+            # delete all items created
+            for i in offline_packages:
+                i.delete()
+            oma_item.delete()
+            print("Deleted OMA item and all offline packages created during this test case")
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 
 #TestModule
 def tearDownModule():
