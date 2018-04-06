@@ -1408,8 +1408,7 @@ class UserManager(object):
                     'role': role,
                     'level': level
                     } ] },
-                'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
-                'html' : email_text
+                'message' : email_text
             }
             if idp_username is not None:
                 if provider is None:
@@ -1450,6 +1449,71 @@ class UserManager(object):
                 if not ret:
                     _log.error('Unable to update the thumbnail for  ' + username)
             return user
+
+    #----------------------------------------------------------------------
+    def invite(self,
+               email, role='org_user',
+               level=2, provider=None,
+               must_approve=False, expiration='1 Day',
+               validate_email=True):
+        """
+        Invites a user to an organization by email
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        email             Required string. The user's email that will be invited to the organization.
+        ----------------  -------------------------------------------------------------------------------
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_publisher, org_admin, org_viewer.
+        ----------------  -------------------------------------------------------------------------------
+        level             Optional string. The account level. The default is 2.
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        must_approve      Optional boolean. After a user accepts the invite, if True, and administrator
+                          must approve of the individual joining the organization. The default is False.
+        ----------------  -------------------------------------------------------------------------------
+        expiration        Optional string.  The default is '1 Day'. This is the time the emailed user has
+                          to accept the invitiation request until it expires.
+                          The values are: 1 Day (default), 3 Days, 1 Week, or 2 Weeks.
+        ----------------  -------------------------------------------------------------------------------
+        validate_email    Optional boolean. If True (default) the Enterprise will ensure that the email
+                          is properly formatted. If false, no check will occur
+        ================  ===============================================================================
+
+        :returns: boolean
+
+        """
+        time_lookup = {
+            '1 Day'.upper() : 1440,
+            '3 Days'.upper() : 4320,
+            '1 Week'.upper() : 10080,
+            '2 Weeks'.upper() : 20160
+        }
+        if expiration.upper() in time_lookup:
+            expiration = time_lookup[expiration.upper()]
+        elif not isinstance(expiration, int):
+            raise ValueError("Invalid expiration.")
+
+        url = self._portal.url + "/portals/self/inviteByEmail"
+        msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (self._gis.properties['name'])
+        params = {
+            "f" : "json",
+            "message" : msg,
+            "role" : role,
+            "level" : level,
+            "targetUserProvider" : provider or "arcgis",
+            "mustApprove" : must_approve,
+            "expiration" : expiration,
+            "validateEmail" : validate_email
+        }
+        res = self._portal.con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
 
     def signup(self, username, password, fullname, email):
         """
@@ -3696,7 +3760,7 @@ class Group(dict):
 
     def invite_users(self, usernames, role='group_member', expiration=10080):
         """
-        Invites users to this group. The user executing this command must be the group owner.
+        Invites existing users to this group. The user executing this command must be the group owner.
 
         .. note::
             A user who is invited to this group will see a list of invitations
@@ -3718,6 +3782,48 @@ class Group(dict):
            A boolean indicating success (True) or failure (False).
         """
         return self._portal.invite_group_users(usernames, self.groupid, role, expiration)
+
+    #----------------------------------------------------------------------
+    def invite_by_email(self, email, message, role='member', expiration='1 Day'):
+        """
+        Invites a user by email to the existing group.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        email             Required string. The user to send join email to.
+        ----------------  --------------------------------------------------------
+        message           Required string. The message to send to the user.
+        ----------------  --------------------------------------------------------
+        role              Optional string. Either member (the default) or admin.
+        ----------------  --------------------------------------------------------
+        expiration        Optional string.  The is the time out of the invite.
+                          The values are: 1 Day (default), 3 Days, 1 Week, or
+                          2 Weeks.
+        ================  ========================================================
+
+        :returns: boolean
+        """
+        time_lookup = {
+            '1 Day'.upper() : 1440,
+            '3 Days'.upper() : 4320,
+            '1 Week'.upper() : 10080,
+            '2 Weeks'.upper() : 20160
+        }
+        role_lookup = {
+            'member' : 'group_member',
+            'admin' : 'group_admin'
+        }
+        url = 'community/groups/' + self.groupid + '/inviteByEmail'
+        params = {
+            "f" : "json",
+            "emails" : email,
+            "message" : message,
+            "role" : role_lookup[role.lower()],
+            'expiration' : time_lookup[expiration.upper()]
+        }
+        return self._portal.con.post(url, params)
+
 
     def reassign_to(self, target_owner):
         """
@@ -5847,9 +5953,13 @@ class Item(dict):
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
-    _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
-                                     'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                     'Service2Service', 'Survey2Service', 'Map2Area', 'Area2Package'])
+    _RELATIONSHIP_TYPES = frozenset(['Area2CustomPackage', 'Service2Layer', 'Map2Area',
+                                     'Area2Package', 'Service2Route', 'Survey2Data',
+                                     'Survey2Service', 'Service2Style', 'Style2Style',
+                                     'Listed2Provisioned', 'Item2Report', 'Item2Attachment',
+                                     'Map2AppConfig', 'Map2Service', 'WMA2Code',
+                                     'Map2FeatureCollection', 'MobileApp2Code',
+                                     'Service2Data', 'Service2Service'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
@@ -5857,6 +5967,9 @@ class Item(dict):
         """
         Retrieves the items related to this item. Relationships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
+
+        .. note::
+            With WebMaps items, relationships are only available on local enterprises.
 
         ===============     ====================================================================
         **Argument**        **Description**
