@@ -105,6 +105,7 @@ try:
     import os
     import tempfile
     from sys import platform
+    import arcpy
     from arcpy import env
     try:
         workspace = env.workspace
@@ -115,7 +116,9 @@ try:
     except:
         ...
     try:
-        if platform.find("linux") > -1:
+        print('in platform %s' % platform)
+        if platform.find("linux") > -1 or \
+           arcpy.sys.platform.lower() == 'linux':
             scratchfolder = tempfile.gettempdir()
             if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
                 scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
@@ -131,6 +134,7 @@ try:
                 scratchgdb = '%s/scratch.gdb' % scratchfolder
 
         elif platform == "win32":
+
             if arcpy.env.scratchFolder is None:
                 arcpy.env.scratchFolder = tempfile.gettempdir()
             scratchfolder = arcpy.env.scratchFolder
