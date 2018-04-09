@@ -389,6 +389,7 @@ def to_featureclass(df, out_name, out_location=None,
     """
     fc = None
     if HASARCPY:
+        import arcgis
         cols = []
         dt_idx = []
         invalid_rows = []
@@ -407,11 +408,11 @@ def to_featureclass(df, out_name, out_location=None,
                 raise ValueError("The sde connection file does not exist")
         else:
             if out_name.lower().endswith('.shp'):
-                out_location = tempfile.gettempdir()
+                out_location = arcgis.env.scratchfolder
             elif HASARCPY:
-                out_location = arcpy.env.scratchGDB
+                out_location = arcgis.env.scratchgdb
             else:
-                out_location = tempfile.gettempdir()
+                out_location = arcgis.env.scratchfolder
                 out_name = out_name + ".shp"
         fc = os.path.join(out_location, out_name)
         df = df.copy() # create a copy so we don't modify the source data.
