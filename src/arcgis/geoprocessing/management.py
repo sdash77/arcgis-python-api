@@ -42,7 +42,8 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                v.to_csv(t)
                inputs[k] = t
           elif isinstance(inputs[k], FeatureLayer):
-               inputs[k] = inputs[k].query().df
+               inputs[k] = inputs[k].query().df.to_featureclass(out_location=arcpy.env.scratchGDB,
+                                                                out_name=random.choice(string.ascii_letters) + uuid.uuid4().hex[:5])
           elif isinstance(inputs[k], SpatialReference):
                inputs[k] = inputs[k].as_arcpy
           if v[1] == 'required' and k in inputs:

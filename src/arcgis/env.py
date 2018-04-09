@@ -102,9 +102,40 @@ verbose = False
 
 
 try:
+    import os
+    import tempfile
+    from sys import platform
     from arcpy import env
-    workspace = env.workspace
-    overwrite_output = env.overwriteOutput
-    scratchgdb = env.scratchGDB
+    try:
+        workspace = env.workspace
+    except:
+        ...
+    try:
+        overwrite_output = env.overwriteOutput
+    except:
+        ...
+    try:
+        if platform.find("linux") > -1:
+            scratchfolder = tempfile.gettempdir()
+            if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
+                scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
+                                                            'scratch.gdb')[0]
+            else:
+                scratchgdb = '%s/scratch.gdb' % scratchfolder
+        elif platform == "darwin":
+            scratchfolder = tempfile.gettempdir()
+            if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
+                scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
+                                                            'scratch.gdb')[0]
+            else:
+                scratchgdb = '%s/scratch.gdb' % scratchfolder
+
+        elif platform == "win32":
+            if arcpy.env.scratchFolder is None:
+                arcpy.env.scratchFolder = tempfile.gettempdir()
+            scratchfolder = arcpy.env.scratchFolder
+            scratchgdb = arcpy.env.scratchGDB
+    except:
+        ...
 except:
     ...

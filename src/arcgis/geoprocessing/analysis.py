@@ -6,6 +6,7 @@ import string
 import arcpy
 from collections import namedtuple
 from arcgis.features import SpatialDataFrame, FeatureLayer
+from arcgis.geometry import SpatialReference
 import pandas as pd
 
 def _set_env_values():
@@ -21,6 +22,7 @@ def _set_env_values():
      arcgis.env.scratchgdb = env.scratchGDB
 
 def _execute_tool(module, tool, inputs, in_db, out_db):
+     import arcgis
      _set_env_values()
      module = getattr(arcpy,module)
      func = getattr(module, tool)
@@ -32,7 +34,7 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
      rkeys = []
      for k,v in in_db.items():
           if isinstance(inputs[k], SpatialDataFrame):
-               fc = inputs[k].to_featureclass(out_location=arcpy.env.scratchGDB,
+               fc = inputs[k].to_featureclass(out_location=arcgis.env.scratchgdb,
                                               out_name=random.choice(string.ascii_letters) + uuid.uuid4().hex[:5])
                inputs[k] = fc
           elif isinstance(inputs[k], pd.DataFrame):
@@ -41,7 +43,8 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                v.to_csv(t)
                inputs[k] = t
           elif isinstance(inputs[k], FeatureLayer):
-               inputs[k] = inputs[k].query().df
+               inputs[k] = inputs[k].query().df.to_featureclass(out_location=arcgis.env.scratchgdb,
+                                                                out_name=random.choice(string.ascii_letters) + uuid.uuid4().hex[:5])
           elif isinstance(inputs[k], SpatialReference):
                inputs[k] = inputs[k].as_arcpy
           if v[1] == 'required' and k in inputs:
@@ -52,7 +55,7 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                args[v[0]] = inputs[k]
      for k,v in out_db.items():
           if v[1] == 'required' and v[0].find('feature_class') > -1:
-               fc = os.path.join(arcpy.env.scratchGDB,
+               fc = os.path.join(arcgis.env.scratchgdb,
                                  random.choice(string.ascii_letters) + uuid.uuid4().hex[:5])
                args[v[0]] = fc
 
