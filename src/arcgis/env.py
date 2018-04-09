@@ -122,7 +122,7 @@ except:
     ...
 try:
     import arcpy
-    from arcpy import env
+    #from arcpy import env
     print('in platform %s' % platform)
     if platform.find("linux") > -1 or \
        arcpy.sys.platform.lower() == 'linux':
