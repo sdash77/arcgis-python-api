@@ -111,35 +111,40 @@ try:
         workspace = env.workspace
     except:
         ...
-    try:
-        overwrite_output = env.overwriteOutput
-    except:
-        ...
-    try:
-        print('in platform %s' % platform)
-        if platform.find("linux") > -1 or \
-           arcpy.sys.platform.lower() == 'linux':
-            scratchfolder = tempfile.gettempdir()
-            if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
-                scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
-                                                            'scratch.gdb')[0]
-            else:
-                scratchgdb = '%s/scratch.gdb' % scratchfolder
-        elif platform == "darwin":
-            scratchfolder = tempfile.gettempdir()
-            if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
-                scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
-                                                            'scratch.gdb')[0]
-            else:
-                scratchgdb = '%s/scratch.gdb' % scratchfolder
+except:
+    ...
 
-        elif platform == "win32":
+try:
+    import arcpy
+    from arcpy import env
+    overwrite_output = env.overwriteOutput
+except:
+    ...
+try:
+    import arcpy
+    from arcpy import env
+    print('in platform %s' % platform)
+    if platform.find("linux") > -1 or \
+       arcpy.sys.platform.lower() == 'linux':
+        scratchfolder = tempfile.gettempdir()
+        if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
+            scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
+                                                        'scratch.gdb')[0]
+        else:
+            scratchgdb = '%s/scratch.gdb' % scratchfolder
+    elif platform == "darwin":
+        scratchfolder = tempfile.gettempdir()
+        if os.path.isdir('%s/scratch.gdb' % scratchfolder) == False:
+            scratchgdb = arcpy.CreateFileGDB_management(scratchfolder,
+                                                        'scratch.gdb')[0]
+        else:
+            scratchgdb = '%s/scratch.gdb' % scratchfolder
 
-            if arcpy.env.scratchFolder is None:
-                arcpy.env.scratchFolder = tempfile.gettempdir()
-            scratchfolder = arcpy.env.scratchFolder
-            scratchgdb = arcpy.env.scratchGDB
-    except:
-        ...
+    elif platform == "win32":
+
+        if arcpy.env.scratchFolder is None:
+            arcpy.env.scratchFolder = tempfile.gettempdir()
+        scratchfolder = arcpy.env.scratchFolder
+        scratchgdb = arcpy.env.scratchGDB
 except:
     ...
