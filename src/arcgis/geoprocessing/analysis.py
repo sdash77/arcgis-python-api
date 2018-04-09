@@ -5,7 +5,7 @@ import random
 import string
 import arcpy
 from collections import namedtuple
-from arcgis.features import SpatialDataFrame
+from arcgis.features import SpatialDataFrame, FeatureLayer
 import pandas as pd
 
 def _set_env_values():
@@ -40,6 +40,10 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                tbl = os.path.join(arcpy.env.scratchFolder, t)
                v.to_csv(t)
                inputs[k] = t
+          elif isinstance(inputs[k], FeatureLayer):
+               inputs[k] = inputs[k].query().df
+          elif isinstance(inputs[k], SpatialReference):
+               inputs[k] = inputs[k].as_arcpy
           if v[1] == 'required' and k in inputs:
                args[v[0]] = inputs[k]
           elif v[1] == 'required' and not (k in inputs):
