@@ -39,7 +39,7 @@ def _execute_tool(module, tool, inputs, in_db, out_db):
                inputs[k] = fc
           elif isinstance(inputs[k], pd.DataFrame):
                t = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5] + '.csv'
-               tbl = os.path.join(arcpy.env.scratchFolder, t)
+               tbl = os.path.join(arcgis.env.scratchfolder, t)
                v.to_csv(t)
                inputs[k] = t
           elif isinstance(inputs[k], FeatureLayer):
