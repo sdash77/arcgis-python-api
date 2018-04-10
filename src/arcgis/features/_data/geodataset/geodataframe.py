@@ -70,6 +70,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         without any engine.
 
         **Scenerios**
+
         =================   ======================================================
         **Engine Type**     **Functionality**
         -----------------   ------------------------------------------------------
