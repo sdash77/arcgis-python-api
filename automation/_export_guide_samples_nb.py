@@ -8,21 +8,22 @@ geosaurus/build/notebook_to_dev_site, there is a README.md in that dir that
 explains everything
 """
 # Script using nbconvert and nbformat to convert notebooks to html
-import os, sys
+import os
+import sys
+import fnmatch
 import logging
 log = logging.getLogger()
 
 from traitlets.config import Config
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
-import fnmatch
-import argparse
 
 unsafe_dirs = ['apidoc','labs','talks','data']
 DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" #What the dev site uses
 
 def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
-        replace_img_path=False, img_prefix=DEFAULT_IMG_PREFIX):
+                     replace_img_path=False, img_prefix=DEFAULT_IMG_PREFIX,
+                     log_func=log.info):
     f"""
     export Jupyter Notebooks in basic HTML. Will not execute the notebook.
     {info_text}
@@ -32,19 +33,19 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
     :param img_prefix:
     :return:
     """
-    log.info(f"Converting notebooks at {root_path} to html, placing output "\
+    log_func(f"Converting notebooks at {root_path} to html, placing output "\
              f"in {output_root_path}")
 
     #check if you are renaming files or folders in 'unsafe_dirs'
     if True in list(map(lambda arg: arg in root_path, unsafe_dirs)):
-        log.warn("ATTEMPTING TO CONVERT NOTEBOOKS IN DESIGNATED 'unsafe_dirs'"\
+        log_func("ATTEMPTING TO CONVERT NOTEBOOKS IN DESIGNATED 'unsafe_dirs'"\
                  f". Skipping these notebooks. unsafe_dirs = {unsafe_dirs}")
         return
     #endregion
 
     #loop through all files in the root_path
     for directory, subdir_list, file_list in os.walk(root_path):
-        log.info(directory)
+        log_func(directory)
 
         #loop through all .ipynb files
         for curr_file in fnmatch.filter(file_list, "*.ipynb"):
@@ -79,8 +80,9 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
             #region replace all rel path img srcs with the dev-site format
             if replace_img_path:
                 for img in soup.findAll('img'):
-                    if "http" not in img["src"]:
-                    #Will match with all relative paths in the notebook
+                    if ("http" not in img["src"]) and \
+                       ("data:" not in img["src"]):
+                        #Will match with all relative paths in the notebook
                         filename = img["src"].split("/")[-1]
                         img["src"] = img_prefix + filename
                 log_str += " | modified img "
@@ -105,7 +107,7 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
             #endregion
 
             #Print that log string that's been accumulating info so far
-            log.info(log_str)
+            log_func(log_str)
 
 def _get_button_html(directory, curr_file):
     """Gets the html str of the 'try it live' button.
@@ -121,7 +123,7 @@ def _get_button_html(directory, curr_file):
             '#Download-and-run-the-sample-notebooks">' + \
         'Download the samples</a>'
     button_html = button_html + " " + \
-        '<a class="btn" href="//notebooks.esri.com/notebooks/samples/'\
+        '<a class="btn" href="https://notebooks.esri.com/notebooks/samples/'\
         "" + curr_folder + r'/' + curr_file + ""\
         '" target="_blank"> Try it live </a>'
     button_html = button_html + "</div>"

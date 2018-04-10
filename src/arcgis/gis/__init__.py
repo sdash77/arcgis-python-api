@@ -11,6 +11,7 @@ import base64
 import json
 import locale
 import logging
+import sys
 import os
 import re
 import tempfile
@@ -222,10 +223,18 @@ class GIS(object):
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
 
-            # Update config to >v1.3 format if it's old
-            if self._config_is_in_old_format(config):
-                self._update_config_to_new_format(config)
-
+            # Check if config file is in the old format
+            if not self._config_is_in_new_format(config):
+                answer = input("Warning: profiles in {} appear to be in the "\
+                    "<v1.3 format, and must be deleted before continuing. "\
+                    "Delete? [y/n]".format(cfg_file_path))
+                if "y" in answer.lower():
+                    os.remove(cfg_file_path)
+                    config = configparser.ConfigParser()
+                else:
+                    raise RuntimeError("{} not deleted, exiting"\
+                        "".format(cfg_file_path))
+ 
             # Add any __init__() args to config/keyring store
             if profile not in config.keys():
                 _log.info("Adding new profile {} to config...".format(profile))
@@ -266,7 +275,6 @@ class GIS(object):
                 key_file, cert_file = self._pfx_to_pem(cert_file, password)
             else:
                 raise Exception("key_file parameter is required along with cert_file when using PKI authentication.")
-
 
         self._url = url
         self._username = username
@@ -423,46 +431,14 @@ class GIS(object):
         c.close()
         return key_file.name, cert_file.name
 
-    def _config_is_in_old_format(self, config):
-        """ Any version <= 1.3 of the API used a different config file
+    def _config_is_in_new_format(self, config):
+        """ Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
-        a profile was modified. Thus, if 'date_modified' is not found in any
-        profile, it is the old format
+        a profile was modified. Thus, if 'date_modified' is found in at least
+        one profile, it is in the new format 
         """
-        for profile in config.keys():
-            if config[profile].name == "DEFAULT":
-                #ignore the default profile (it's not user defined)
-                continue
-            if "date_modified" not in config[profile]:
-                return True
-        return False
-
-    def _update_config_to_new_format(self, config):
-        """ The new config file does not store the password at all, instead
-        storing it through the keyring module (see below functions). The new
-        config file also has a 'date_modified' field, and does not store the
-        other fields in a rot13 character shifted fashion anymore.
-
-        This function goes through all profiles in the .arcgisprofile file
-        and makes it compatible with the new format. Note: this function just
-        updates 'config' obj passed in; changes are written to file elsewhere
-        """
-        _log.info("Doing one time update of .arcgisprofile to new format...")
-        attributes_to_rewrite_to_config = [ 'url', 'username', 'key_file',
-                                            'cert_file', 'client_id' ]
-        attributes_to_write_to_keyring = [ 'password' ]
-
-        for profile in config.keys():
-            for attr_key in config[profile].keys():
-                unscrambled_attr_value = rot13(config[profile][attr_key],
-                                               of=True)
-                if attr_key in attributes_to_rewrite_to_config:
-                    config[profile][attr_key] =  unscrambled_attr_value
-                if attr_key in attributes_to_write_to_keyring:
-                    self._securely_store_password(profile,
-                                                  unscrambled_attr_value)
-                    config.remove_option(profile, attr_key)
-                self._add_timestamp_to_profile_data_in_config(config, profile)
+        return any([profile_data for profile_data in config.values() \
+                    if "date_modified" in profile_data])
 
     def _update_profile_data_in_config(self, config, profile, url = None,
                                        username = None, key_file = None,
@@ -519,8 +495,7 @@ class GIS(object):
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
             password = keyring.get_password(
-                "arcgis_python_api_profile_passwords",
-                                         profile)
+                "arcgis_python_api_profile_passwords", profile)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -544,8 +519,7 @@ class GIS(object):
         import keyring
         if self._current_keyring_is_recommended():
             return keyring.delete_password(
-                "arcgis_python_api_profile_passwords",
-                                         profile)
+                "arcgis_python_api_profile_passwords", profile)
         else:
             _log.warn(self._get_keyring_failure_message())
             return False

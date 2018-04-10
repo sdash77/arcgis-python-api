@@ -372,12 +372,11 @@ def _determine_current_os():
     architecture = "64" if is_64_bit else "32"
     return "{target_os}-{architecture}".format(target_os = target_os,
                                                architecture = architecture)
-
 if __name__ == "__main__":
     try:
         _main()
-        log.info("Program successfully completed! Any generated conda "\
-                 "packages in {}. Exiting....".format(BUILD_OUTPUT_DIR))
+        log.info("Program successfully completed! Any generated packages in "\
+                 "{}. Exiting....".format(BUILD_OUTPUT_DIR))
     except Exception as e:
         log.exception(e)
         log.info("Program did not succesfully complete (unhandled exception)")

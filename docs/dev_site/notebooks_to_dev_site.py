@@ -2,19 +2,19 @@ import sys
 import os
 import argparse
 import logging
+log = logging.getLogger()
 
-#import geosaurus/automation/stage_notebooks_for_dev_web_repo, set log level
-automation_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
-    '..', '..', 'automation'))
-sys.path.append(automation_dir)
-import stage_notebooks_for_dev_web_repo
-stage_notebooks_for_dev_web_repo.log_level_for_export = logging.INFO
-from stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
+#import geosaurus/automation/stage_notebooks_for_dev_web_repo
+geosaurus_root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
+    '..', '..'))
+sys.path.append(geosaurus_root_dir)
+from automation import stage_notebooks_for_dev_web_repo
 
 def _main():
     args = _parse_args()
     stage_notebooks_for_dev_web_repo(notebooks_root_dir = args.notebooks_repo,
-                                     output_dir = args.developers_repo)
+                                     output_dir = args.developers_repo,
+                                     log_func = log.info)
 
 def _parse_args():
     parser = argparse.ArgumentParser()

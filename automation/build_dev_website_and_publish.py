@@ -5,7 +5,7 @@ import tempfile
 import logging
 log = logging.getLogger()
 
-from __init__ import *
+from automation._common import *
 
 def build_dev_website_and_publish(dev_website_repo, html_output_dir,
                                   *args, **kwargs):
@@ -25,7 +25,9 @@ def build_dev_website_and_publish(dev_website_repo, html_output_dir,
                         files_to_ignore=["log.log", ".gitignore"]) 
     # Do a full build in that repository
     _apply_redirect_workaround(dev_website_repo)
-    run_shell_command(f"cd {dev_website_repo} && npm run-script build")
+    run_shell_command(f"cd {dev_website_repo} && "
+                       "npm install && "
+                       "npm run-script build")
     # Replace everything in html_output_dir with the newly built site
     _delete_contents_of_dir(html_output_dir)
     _copy_contents(src_dir=dev_repo_build_dir,
@@ -51,7 +53,8 @@ def _delete_contents_of_dir(dir_):
     assert not os.listdir(dir_)
 
 def _copy_contents(src_dir, dst_dir):
-    """Recursive copy of src_dir to an empty dst_dir"""
+    """Recursive copy of src_dir to an empty dst_dir. Doesn't need to
+    follow the same dir format like recursive_file_copy"""
     for file_ in os.listdir(src_dir):
         src_file_path = os.path.join(src_dir, file_)
         dst_file_path = os.path.join(dst_dir, file_)
