@@ -3,14 +3,13 @@ import os
 import shutil
 import logging
 log = logging.getLogger()
-log_level_for_export = logging.WARNING
 
-from __init__ import *
-
-from _export_guide_samples_nb import export_notebooks
+from automation._common import *
+from automation._export_guide_samples_nb import export_notebooks
 
 def stage_notebooks_for_dev_web_repo(notebooks_root_dir,
                  output_dir=os.path.join(STAGING_DIR, "arcgis-for-developers"),
+                 log_func = log.debug, #what export_notebooks uses to log
                  *args, **kwargs):
     """Converts notebooks, outputs them to the staging folder.
     Takes all images and outputs them to staging folder.
@@ -19,11 +18,11 @@ def stage_notebooks_for_dev_web_repo(notebooks_root_dir,
     arcgis-for-developers repo with all new changes from notebooks
     """
     _make_dirs([output_dir])
-    _convert_notebooks_to_html(notebooks_root_dir, output_dir)
+    _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func)
     _copy_imgs(notebooks_root_dir, output_dir)
     _copy_remaining_files(notebooks_root_dir, output_dir)
 
-def _convert_notebooks_to_html(notebooks_root_dir, output_dir):
+def _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func):
     """Converts all .ipynb files to html, outputs to STAGING"""
     log.info(f"Converting notebooks to HTML, putting in {output_dir}")
     guide_notebook_dir = os.path.join(notebooks_root_dir, "guide")
@@ -35,14 +34,15 @@ def _convert_notebooks_to_html(notebooks_root_dir, output_dir):
                                   "src", "python", "sample-notebooks")
     _make_dirs([guide_html_dir, samples_html_dir])
 
-    with set_stdout_log_to(log_level_for_export):
-        export_notebooks(guide_notebook_dir, guide_html_dir,
-                         embed_try_it_live = False,
-                         replace_img_path = True)
-        export_notebooks(samples_notebook_dir, samples_html_dir,
-                         embed_try_it_live = True,
-                         replace_img_path = True)
- 
+    export_notebooks(guide_notebook_dir, guide_html_dir,
+                     embed_try_it_live = False,
+                     replace_img_path = True,
+                     log_func = log_func)
+    export_notebooks(samples_notebook_dir, samples_html_dir,
+                     embed_try_it_live = True,
+                     replace_img_path = True,
+                     log_func = log_func)
+
 def _make_dirs(list_of_dirs):
     for dir_ in list_of_dirs:
         if not os.path.isdir(dir_):
@@ -62,8 +62,8 @@ def _copy_imgs(notebooks_root_dir, output_dir):
         shutil.copytree(img_src_dir, img_html_dir)
 
 def _copy_remaining_files(notebooks_root_dir, output_dir):
-    """Copy any remaining files needed that aren't notebooks/img (index.md, 
-    etc.) as well as html files you want to override converted notebooks with.
+    """Copy any remaining files needed that aren't notebooks/img, which are
+    html files from dev-site-overrides want to override converted notebooks
     """
     dev_site_subdir = os.path.join(notebooks_root_dir,
                                    "static", "dev-site-overrides")

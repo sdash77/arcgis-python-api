@@ -22,7 +22,7 @@ import logging
 log = logging.getLogger()
 here = path.abspath(path.dirname(__file__))
 
-#Conda uses this setup file, but we want to supress some functionality
+# Conda uses this setup file, but we want to supress some functionality
 if "--conda-install-mode" in sys.argv:
     sys.argv.remove("--conda-install-mode")
     conda_install_mode = True
@@ -30,19 +30,19 @@ else:
     conda_install_mode = False
 
 if conda_install_mode:
-    #conda handles its own depedencies, so don't specify any pip-depedencies
-    depedencies = []
+    # conda handles its own depedencies, so don't specify any pip-depedencies
+    dependencies = []
 else:
-    depedencies = [
+    dependencies = [
         'six',
         'ipywidgets >=5.2.2,<7',
-        'widgetsnbextension >=1.2.6,<3', 
+        'widgetsnbextension >=1.2.6,<3',
         'pandas >=0.22',
-        'numpy',
+        'numpy >=1.13',
         'pyshp',
         'matplotlib',
         'keyring',
-        'winkerberos;platform_system=="Windows"']
+        'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():
     """This function will run after 'pip install' finishes. It has 2 parts:
@@ -63,7 +63,7 @@ def _post_install():
         import notebook.nbextensions as nbext
         import arcgis
         activate_map_widget = True
-    except ImportError as e:
+    except Exception:
         log.exception("arcgis/notebook packages don't appear to be installed: "\
                       "map widget not activated, may not work. The rest of "\
                       "install is unaffected by this. Exception caught: ")
@@ -78,7 +78,7 @@ def _post_install():
                                               sys_prefix = True, logger = log))
             log.warn(nbext.enable_nbextension_python("widgetsnbextension",
                                               sys_prefix = True, logger = log))
-        except Exception as e:
+        except Exception:
             log.exception("Activating map widget failed: Continuing install..")
 
     # 2) If the OS is Mac OSX, run the OpenSSL workaround
@@ -92,12 +92,11 @@ def _post_install():
                                           stderr=STDOUT)
                 log.warn("OpenSSL workaround for OSX completed succesfully. "\
                          "See https://bugs.python.org/issue28150 for info. "\
-                         "".format(cmd_output.decode("utf-8")))
-            except Exception as e:
-                log.warn("OpenSSL workaround for OSX did not complete "\
+                         "Output: {}".format(cmd_output.decode("utf-8")))
+            except Exception:
+                log.exception("OpenSSL workaround for OSX did not complete "\
                          "successfully. This may or may not allow secure SSL "
-                         "to work. See https://bugs.python.org/issue28150. "\
-                         "Output: {}".format(e.output))
+                         "to work. See https://bugs.python.org/issue28150. ")
 
 # Each of these classes represent the different modes that pip install
 # can go into, and what logic can be run after pip install finishes
@@ -123,29 +122,29 @@ class egg_info(_egg_info):
 # with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #     long_description = f.read()
 
-setup(
-    name='arcgis',
+kwargs = {
+    "name":'arcgis',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.4.0',
+    "version":'1.4.0',
 
-    description='ArcGIS API for Python',
-    long_description='ArcGIS API for Python is a Python library for working with maps and geospatial data, powered by web GIS. It provides simple and efficient tools for sophisticated vector and raster analysis, geocoding, map making, routing and directions, as well as for organizing and managing a GIS with users, groups and information items. In addition to working with your own data, the library enables access to ready to use maps and curated geographic data from Esri and other authoritative sources. It also integrates well with the scientific Python ecosystem and includes rich support for Pandas and Jupyter notebook.',
+    "description":'ArcGIS API for Python',
+    "long_description":'ArcGIS API for Python is a Python library for working with maps and geospatial data, powered by web GIS. It provides simple and efficient tools for sophisticated vector and raster analysis, geocoding, map making, routing and directions, as well as for organizing and managing a GIS with users, groups and information items. In addition to working with your own data, the library enables access to ready to use maps and curated geographic data from Esri and other authoritative sources. It also integrates well with the scientific Python ecosystem and includes rich support for Pandas and Jupyter notebook.',
 
     # The project's main homepage.
-    url='https://developers.arcgis.com/python/',
+    "url":'https://developers.arcgis.com/python/',
 
     # Author details
-    author='Esri',
-    author_email='python@esri.com',
+    "author":'Esri',
+    "author_email":'python@esri.com',
 
     # Choose your license
-    license='Esri Master License Agreement (MLA) - http://www.esri.com/LEGAL/pdfs/mla_e204_e300/english.pdf',
+    "license":'Esri Master License Agreement (MLA) - http://www.esri.com/LEGAL/pdfs/mla_e204_e300/english.pdf',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers=[
+    "classifiers":[
         # How mature is this project? Common values are
         'Development Status :: 5 - Production/Stable',
 
@@ -178,7 +177,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='gis arcgis geographic spatial spatial-data '\
+    "keywords":'gis arcgis geographic spatial spatial-data '\
              'spatial-data-analysis spatial-analysis data-science maps '\
              'mapping web-mapping python native-development',
 
@@ -188,8 +187,8 @@ setup(
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
-    packages=find_packages(),
-    package_data={'arcgis': ['widgets/*.js',
+    "packages":find_packages(),
+    "package_data":{'arcgis': ['widgets/*.js',
                              'widgets/*.css',
                              'widgets/icons/*.png',
                              'widgets/requirejs/*.js']},
@@ -197,13 +196,20 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires = depedencies,
-    setup_requires = depedencies,
+    # `setup_dependencies` are all dependencies that need to be in the env
+    # BEFORE setup() is called. `install_dependencies` are dependencies
+    # that can be put in the env AFTER setup() is finished. See bottom of this
+    # file, any unhandled exception will clear `setup_requires` and try again
+    # It was thought `setup_requires` needed `notebook` and other deps to
+    # activate the map widget, but it caused build errors on windows with
+    # required VS C++ distrib (even for --no-deps). See geosaurus/issues/964
+    "install_requires": dependencies,
+    "setup_requires": dependencies,
 
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    cmdclass={
+    "cmdclass":{
             'develop': develop,
             'install': install,
             'egg_info': egg_info}
@@ -238,4 +244,12 @@ setup(
     #         'sample=sample:main',
     #     ],
     # },
-)
+}
+
+try:
+    setup(**kwargs)
+except Exception:
+    log.exception("Exception encountered when attempting to install: Setting "\
+        "`setup_requires` arg to `[]` and trying again. Exception:\n-----\n")
+    kwargs["setup_requires"] = []
+    setup(**kwargs)

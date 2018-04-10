@@ -1,0 +1,3 @@
+from automation._classes.HtmlFileTestSuite import HtmlFileTestSuite
+from automation._classes.HtmlImgLinkParser import HtmlImgLinkParser
+from automation._classes.TestHtmlMatch import TestHtmlMatch

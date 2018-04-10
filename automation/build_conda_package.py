@@ -6,7 +6,7 @@ import re
 import logging
 log = logging.getLogger()
 
-from __init__ import *
+from automation._common import *
 #import python package from the BUILD_DIR dir
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build

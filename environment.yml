@@ -12,5 +12,6 @@ dependencies:
 - keyrings.alt
 - nbconvert
 - beautifulsoup4
+- requests
 - pip:
-  - xmlrunner
+  - unittest-xml-reporting

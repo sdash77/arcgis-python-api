@@ -3,7 +3,7 @@ import re
 import logging
 log = logging.getLogger()
 
-from __init__ import *
+from automation._common import *
 
 FTP_SITE = "zion"
 NUM_BUILDS_TO_KEEP = 100

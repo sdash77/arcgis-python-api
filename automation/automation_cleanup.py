@@ -2,7 +2,7 @@ import os
 import logging
 log = logging.getLogger()
 
-from __init__ import * 
+from automation._common import * 
 
 def automation_cleanup(*args, **kwargs):
     log.info("Automated process is about to exit.")
