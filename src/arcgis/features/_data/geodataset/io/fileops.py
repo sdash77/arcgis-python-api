@@ -36,6 +36,29 @@ except:
 
 _log=logging.getLogger(__name__)
 
+def _from_xy(df, x_column, y_column, sr=None):
+    """
+
+    """
+    from arcgis.geometry import SpatialReference, Geometry
+    from arcgis.features import SpatialDataFrame
+    def assemble_points(x, y, sr):
+        return Geometry({'x' : x, 'y' : y,
+                         "spatialReference" : sr})
+    if sr is None:
+        sr = SpatialReference({'wkid' : 4326})
+    if not isinstance(sr, SpatialReference):
+        if isinstance(sr, dict):
+            sr = SpatialReference(sr)
+        elif isinstance(sr, int):
+            sr = SpatialReference({'wkid' : sr})
+        elif isinstance(sr, str):
+            sr = SpatialReference({'wkt' : sr})
+    df['SHAPE'] = df.apply(lambda row: assemble_points(row[x_column],
+                                                     row[y_column],
+                                                     sr), axis=1)
+    return SpatialDataFrame(data=df, sr=sr)
+
 def _pyshp_to_shapefile(df, out_path, out_name):
     """
     Saves a SpatialDataFrame to a Shapefile using pyshp
@@ -389,6 +412,7 @@ def to_featureclass(df, out_name, out_location=None,
     """
     fc = None
     if HASARCPY:
+        import arcgis
         cols = []
         dt_idx = []
         invalid_rows = []

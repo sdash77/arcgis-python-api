@@ -234,7 +234,7 @@ class GIS(object):
                 else:
                     raise RuntimeError("{} not deleted, exiting"\
                         "".format(cfg_file_path))
- 
+
             # Add any __init__() args to config/keyring store
             if profile not in config.keys():
                 _log.info("Adding new profile {} to config...".format(profile))
@@ -440,7 +440,7 @@ class GIS(object):
         """ Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
-        one profile, it is in the new format 
+        one profile, it is in the new format
         """
         return any([profile_data for profile_data in config.values() \
                     if "date_modified" in profile_data])
@@ -4853,11 +4853,16 @@ class Item(dict):
         self._hydrated = False
         self.resources = ResourceManager(self, self._gis)
 
+
         if itemdict:
             if 'size' in itemdict and itemdict['size'] == -1:
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
+
+        try:
+            self._depend = ItemDependency(item=self)
+        except: pass
 
         if self._has_layers():
             self.layers = None
@@ -6885,6 +6890,192 @@ class Item(dict):
         else:
             raise ValueError("Item of type: %s is not supported by copy" % (item.type))
         return
+    #----------------------------------------------------------------------
+    @property
+    def _dependencies(self):
+        """returns a class to management Item dependencies"""
+        if self._depend is None:
+            self._depend = ItemDependency(self)
+        return self._depend
+########################################################################
+class ItemDependency(object):
+    """
+    Manage, monitor, and control Item dependencies.
+
+    Depencies allows users to better understand the inter-dependency between their spatial assets.
+    This capability provides the users with the following:
+
+    - Users will be warned during item deletion if the deletion is going to break item/layer references in a web map or web application.
+    - Users will be able to explore the dependents and dependencies of a specific item.
+    - Portal administrators will be able to efficiently update the URLs of their hosted/federated services in an single edit operation.
+
+    When an item is updated, its dependencies are updated as well and always kept in sync.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Required Item. Item object to examine dependencies on.
+    ===============     ====================================================================
+
+    """
+    _url = None
+    _gis = None
+    _con = None
+    _item = None
+    _portal = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, item):
+        """Constructor"""
+        self._item = item
+        self._gis = item._gis
+        self._con = self._gis._con
+        self._portal = self._gis._portal
+        self._url = '%scontent/items/%s/dependencies' % (self._portal.resturl,
+                                                         item.itemid)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<Dependencies for %s>" % self._item.itemid
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<Dependencies for %s>" % self._item.itemid
+    #----------------------------------------------------------------------
+    def __len__(self):
+        return len(dict(self.properties)['items'])
+    #----------------------------------------------------------------------
+    def _init(self):
+        params = {'f' : 'json',
+                  'num' : 100,
+                  'start' : 0}
+        res = self._con.get(self._url, params)
+        items = res['list']
+        start = 0
+        num = 100
+        while res['nextStart'] > -1:
+
+            start += num
+            params = {'f' : 'json',
+                      'num' : 100,
+                      'start' : res['nextStart']}
+            res = self._con.get(self._url, params)
+            if 'list' in res:
+                items += res['list']
+        self._properties = PropertyMap({'items' : items})
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the dependencies properties"""
+        if self._properties is None:
+            self._init()
+        return self._properties
+    #----------------------------------------------------------------------
+    def add(self, depend_type, depend_value):
+        """
+        Assigns a dependency to the current item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        depend_type         Required String. This is the type of dependency that is registered
+                            for the item. The allowed values are: table, url, or itemid.
+        ---------------     --------------------------------------------------------------------
+        depend_value        Required string. This is the associated value for the type above.
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        dtlu = {
+            'table' : 'table',
+            'url' : 'url',
+            'itemid' : 'id'
+        }
+        params = {
+            'f' : 'json',
+            "type" : dtlu[depend_type],
+            "id" : depend_value
+        }
+        url = "%s/addDependency" % self._url
+        res = self._con.post(url, params)
+        if 'error' in res:
+            return res
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    def remove(self, depend_type, depend_value):
+        """
+        Deletes a dependency to the current item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        depend_type         Required String. This is the type of dependency that is registered
+                            for the item. The allowed values are: table, url, or itemid.
+        ---------------     --------------------------------------------------------------------
+        depend_value        Required string. This is the associated value for the type above.
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        dtlu = {
+            'table' : 'table',
+            'url' : 'url',
+            'itemid' : 'id',
+            'id' : 'id'
+        }
+        params = {
+            'f' : 'json',
+            "type" : dtlu[depend_type],
+            "id" : depend_value
+
+        }
+        url = "%s/removeDependency" % self._url
+        res = self._con.post(url, params)
+        if 'error' in res:
+            return res
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    def remove_all(self):
+        """
+        Revokes all dependencies for the current item
+
+        :returns: boolean
+
+        """
+        for i in dict(self.properties)['items']:
+            if 'url' in i:
+                self.remove(i['dependencyType'], i['id'])
+            elif 'id' in i:
+                self.remove(i['dependencyType'], i['id'])
+            elif 'table' in i:
+                self.remove(i['dependencyType'], i['id'])
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    @property
+    def to_dependencies(self):
+        """
+        Returns a list of items that are dependent on the current Item
+        """
+        url = "%s/listDependentsTo" % self._url
+        params = {'f' : 'json',
+                  'num' : 100,
+                  'start' : 0}
+        res = self._con.get(url, params)
+
+        items = res['list']
+        num = 100
+        while res['nextStart'] > -1:
+            params = {'f' : 'json',
+                      'num' : 100,
+                      'start' : res['nextStart']}
+            res = self._con.get(url, params)
+            if 'list' in res:
+                items += res['list']
+        return items
+
 
 def rot13(s, b64=False, of=False):
     if s is None:
