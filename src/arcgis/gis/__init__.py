@@ -296,9 +296,6 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
-            if not (utoken is None):
-                self._portal.con._token = utoken
-                self._portal.con._auth = "BUILTIN"
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -327,7 +324,15 @@ class GIS(object):
                                       proxy_host=self._proxy_host)
                 self._portal = pp
         except: pass
-        self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
+
+        force_refresh = False
+        if not (utoken is None):
+            self._portal.con._token = utoken
+            self._portal.con._auth = "BUILTIN"
+            force_refresh = True
+
+        # If a token was injected, then force refresh to get updated properties
+        self._lazy_properties = PropertyMap(self._portal.get_properties(force=force_refresh))
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
