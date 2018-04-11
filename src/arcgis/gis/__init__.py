@@ -4121,7 +4121,8 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self.username)
-        if not 'roleId' in userdict:
+        if not 'roleId' in userdict and \
+           'role' in userdict:
             userdict['roleId'] = userdict['role']
         self._hydrated = True
         super(User, self).update(userdict)

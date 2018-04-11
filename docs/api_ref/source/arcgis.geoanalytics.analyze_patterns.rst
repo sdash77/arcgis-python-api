@@ -3,10 +3,6 @@ arcgis.geoanalytics.analyze_patterns module
 
 .. automodule:: arcgis.geoanalytics.analyze_patterns
 
-build_multivariable_grid
---------------
-.. automethod:: arcgis.geoanalytics.analyze_patterns.build_multivariable_grid
-
 calculate_density
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.calculate_density
