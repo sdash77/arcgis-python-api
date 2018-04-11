@@ -80,4 +80,8 @@ class Attachment(Model):
         """
         if not out_folder:
             out_folder = os.getcwd()
-        return self.project.assignments_layer.attachments.download(self.assignment.id, self.id, out_folder)
+        paths = self.project.assignments_layer.attachments.download(self.assignment.id, self.id, out_folder)
+        if len(paths) == 1:
+            return paths[0]
+        else:
+            return paths
