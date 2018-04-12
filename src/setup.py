@@ -37,8 +37,8 @@ else:
         'six',
         'ipywidgets >=5.2.2,<7',
         'widgetsnbextension >=1.2.6,<3',
-        'pandas >=0.22',
-        'numpy >=1.13',
+        'pandas',
+        'numpy',
         'pyshp',
         'matplotlib',
         'keyring',
@@ -111,7 +111,7 @@ class install(_install):
     def run(self):
         self.execute(_post_install, (), msg="Running post-install...")
         super().run()
-        
+
 class egg_info(_egg_info):
     """Post-installation logic to run for 'egg_info' mode"""
     def run(self):
@@ -165,7 +165,7 @@ kwargs = {
 
         # OS
         'Operating System :: OS Independent',
-  
+
         # Pick your license as you wish (should match "license" above)
         'License :: Other/Proprietary License',
 
