@@ -689,7 +689,7 @@ class OfflineMapAreaManager(object):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
-        self.web_map = WebMap(self._item)
+        self._web_map = WebMap(self._item)
 
         # Get GP server url from helper services advertised by the GIS.
         try:
@@ -865,8 +865,17 @@ class OfflineMapAreaManager(object):
         lods = []
         if min_scale or max_scale:
             # find tile and vector tile layers in map
-            cached_layers = [l for l in self.web_map.layers if l.layerType in ['VectorTileLayer',
+            cached_layers = [l for l in self._web_map.layers if l.layerType in ['VectorTileLayer',
                                                                                'ArcGISTiledMapServiceLayer']]
+
+            # find tile and vector tile layers in basemap set of layers
+            if hasattr(self._web_map, 'basemap'):
+                if hasattr(self._web_map.basemap, 'baseMapLayers'):
+                    cached_layers_bm = [l for l in self._web_map.basemap.baseMapLayers if l.layerType in
+                                        ['VectorTileLayer', 'ArcGISTiledMapServiceLayer']]
+
+                    # combine both the layer lists together
+                    cached_layers.extend(cached_layers_bm)
 
             for cached_layer in cached_layers:
                 if cached_layer.layerType == 'VectorTileLayer':
