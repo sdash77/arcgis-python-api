@@ -2184,6 +2184,10 @@ class ContentManager(object):
         -----------------  ---------------------------------------------------------------------
         type               Optional string. Indicates type of item, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------
+        dataUrl            Optional string. The Url of the data stored on cloud storage. If given, filename is required.
+        -----------------  ---------------------------------------------------------------------
+        filename           Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
+        -----------------  ---------------------------------------------------------------------
         typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
