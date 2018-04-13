@@ -133,6 +133,8 @@ class GIS(object):
     ----------------    ---------------------------------------------------------------
     proxy_host          Optional string. The host name of the proxy server used to allow HTTP/S
                         access in the network where the script is run.
+
+                        ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -306,6 +308,20 @@ class GIS(object):
                 raise
         try:
             if url.lower().find("arcgis.com") > -1 and \
+               self._portal.is_logged_in and \
+               self._portal.con._auth.lower() == 'oauth':
+                from six.moves.urllib_parse import urlparse
+                props = self._portal.get_properties(force=False)
+                url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                      props['urlKey'],
+                                      props['customBaseUrl'])
+                self._url = url
+                self._portal.resturl = self._portal.resturl.replace(self._portal.url,
+                                                                    url)
+                self._portal.url = url
+                self._portal.con.baseurl = self._portal.resturl
+                self._portal.con._token = None
+            elif url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
@@ -2183,6 +2199,10 @@ class ContentManager(object):
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
         type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        dataUrl            Optional string. The Url of the data stored on cloud storage. If given, filename is required.
+        -----------------  ---------------------------------------------------------------------
+        filename           Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
         -----------------  ---------------------------------------------------------------------
         typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------

@@ -49,7 +49,7 @@ def _is_valid(value):
             return True
         elif 'x' in value and \
              (value['x'] is None or \
-             value['x'] == "NaN"):
+              value['x'] == "NaN"):
             return True
         return False
     elif isinstance(value, Envelope):
@@ -59,7 +59,7 @@ def _is_valid(value):
                                                                    'xmax', 'ymax')):
             return True
         elif hasattr(value, "xmin") and \
-           (value.xmin is None or value.xmin == "NaN"):
+             (value.xmin is None or value.xmin == "NaN"):
             return True
         else:
             return False
@@ -328,20 +328,13 @@ class Geometry(BaseGeometry):
                 return {'type': 'Point', 'coordinates': (self.x,
                                                          self.y)}
             elif isinstance(self, Polygon):
-                def split_part(a_part):
-                    part_list = []
-                    for item in a_part:
-                        if item is None:
-                            if part_list:
-                                yield part_list
-                            part_list = []
-                        else:
-                            part_list.append((item[0], item[1]))
-                    if part_list:
-                        yield part_list
-                part_json = [list(split_part(part))
-                             for part in self['rings']]
-                return {'type': 'MultiPolygon', 'coordinates': part_json}
+                col = []
+                for part in self['rings']:
+                    col.append([tuple(pt) for pt in part])
+                return {
+                    'coordinates' : [col],
+                    'type' : 'MultiPolygon'
+                }
             elif isinstance(self, Polyline):
                 return {'type': 'MultiLineString', 'coordinates': [[((pt[0], pt[1]) if pt else None)
                                                                     for pt in part]
@@ -397,6 +390,8 @@ class Geometry(BaseGeometry):
     def geoextent(self):
         """
         Returns the current feature's extent
+
+        :return: tuple
         """
         import numpy as np
         if hasattr(self, 'type'):
@@ -498,7 +493,7 @@ class Geometry(BaseGeometry):
                 if 'spatialReference' in self:
                     sr = arcpy.SpatialReference(self['spatialReference']['wkid'])
                     return arcpy.Extent(XMax=self['xmax'],
-                                 YMax=self['ymax'],
+                                        YMax=self['ymax'],
                                  YMin=self['ymin'],
                                  XMin=self['xmin']).projectAs(sr)
                 return arcpy.Extent(XMax=self['xmax'],
@@ -519,7 +514,11 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def JSON(self):
-        """"""
+        """
+        Returns an Esri JSON representation of the geometry as a string.
+
+        :return: string
+        """
         if HASARCPY and \
            isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
@@ -538,6 +537,10 @@ class Geometry(BaseGeometry):
         Returns the well-known text (WKT) representation for OGC geometry.
         It provides a portable representation of a geometry value as a text
         string.
+        Any true curves in the geometry will be densified into approximate
+        curves in the WKT string.
+
+        :return: string
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "WKT", None)
@@ -556,6 +559,8 @@ class Geometry(BaseGeometry):
         Returns the well-known binary (WKB) representation for OGC geometry.
         It provides a portable representation of a geometry value as a
         contiguous stream of bytes.
+
+        :return: bytes
         """
         if HASARCPY:
             try:
@@ -573,6 +578,8 @@ class Geometry(BaseGeometry):
     def area(self):
         """
         The area of a polygon feature. Empty for all other feature types.
+
+        :return: float
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "area", None)
@@ -611,9 +618,9 @@ class Geometry(BaseGeometry):
             else:
                 return tuple(Geometry(
                     arcpy.PointGeometry(
-                    getattr(self.as_arcpy, "centroid", None),
+                        getattr(self.as_arcpy, "centroid", None),
                     self.spatial_reference)
-                                ))
+                ))
         elif HASSHAPELY:
             c = tuple(list(self.as_shapely.centroid.coords)[0])
             return c
@@ -622,12 +629,15 @@ class Geometry(BaseGeometry):
     @property
     def extent(self):
         """
-        The extent of the geometry.
+        The extent of the geometry as a tuple containing xmin, ymin, xmax, ymax
+
+        :return: tuple
         """
         ptX = []
         ptY = []
         if HASARCPY:
-            return getattr(self.as_arcpy, "extent", None)
+            ext = getattr(self.as_arcpy, "extent", None)
+            return ext.XMin, ext.YMin, ext.XMax, ext.YMax
         elif HASSHAPELY:
             return self.as_shapely.bounds
         elif isinstance(self, Polygon):
@@ -655,6 +665,8 @@ class Geometry(BaseGeometry):
     def first_point(self):
         """
         The first coordinate point of the geometry.
+
+        :return: arcgis.gis.Geometry
         """
         if HASARCPY:
             return Geometry(json.loads(arcpy.PointGeometry(getattr(
@@ -694,6 +706,8 @@ class Geometry(BaseGeometry):
         """
         A space-delimited string of the coordinate pairs of the convex hull
         rectangle.
+
+        :return: string
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "hullRectangle", None)
@@ -705,6 +719,8 @@ class Geometry(BaseGeometry):
     def is_multipart(self):
         """
         True, if the number of parts for this geometry is more than one.
+
+        :return: boolean
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
@@ -725,7 +741,7 @@ class Geometry(BaseGeometry):
         """
         if HASARCPY:
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "labelPoint", None),
-                                       self.spatial_reference))
+                                                self.spatial_reference))
         else:
             return self.centroid
         return
@@ -739,7 +755,7 @@ class Geometry(BaseGeometry):
         """
         if HASARCPY:
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "lastPoint", None),
-                                       self.spatial_reference))
+                                                self.spatial_reference))
         elif isinstance(self, Point):
             return self
         elif isinstance(self, Polygon):
@@ -764,6 +780,8 @@ class Geometry(BaseGeometry):
     def length(self):
         """
         The length of the linear feature. Zero for point and multipoint feature types.
+
+        :return: float
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "length", None)
@@ -777,6 +795,8 @@ class Geometry(BaseGeometry):
         """
         The 3D length of the linear feature. Zero for point and multipoint
         feature types.
+
+        :return: float
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "length3D", None)
@@ -790,6 +810,8 @@ class Geometry(BaseGeometry):
     def part_count(self):
         """
         The number of geometry parts for the feature.
+
+        :return: integer
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "partCount", None)
@@ -807,6 +829,8 @@ class Geometry(BaseGeometry):
     def point_count(self):
         """
         The total number of points for the feature.
+
+        :return: Integer
         """
         if HASARCPY:
             return getattr(self.as_arcpy, "pointCount", None)
@@ -824,6 +848,8 @@ class Geometry(BaseGeometry):
     def spatial_reference(self):
         """
         The spatial reference of the geometry.
+
+        :return: arcgis.geometery.SpatialReference
         """
         if HASARCPY:
             return SpatialReference(self['spatialReference']).as_arcpy
@@ -866,13 +892,19 @@ class Geometry(BaseGeometry):
         Returns a tuple of angle and distance to another point using a
         measurement type.
 
-        Paramters:
-         :second_geometry: - a second geometry
-         :method: - PLANAR measurements reflect the projection of geographic
-          data onto the 2D surface (in other words, they will not take into
-          account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-          LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
-          an alternative, if desired.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required Geometry.  A arcgis.Geometry object.
+        ---------------     --------------------------------------------------------------------
+        method              Optional String. PLANAR measurements reflect the projection of geographic
+                            data onto the 2D surface (in other words, they will not take into
+                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
+                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            an alternative, if desired.
+        ===============     ====================================================================
+
+        :returns: a tuple of angle and distance to another point using a measurement type.
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -885,6 +917,7 @@ class Geometry(BaseGeometry):
         """
         Constructs the boundary of the geometry.
 
+        :returns: arcgis.geometry.Polyline
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.boundary())
@@ -896,9 +929,15 @@ class Geometry(BaseGeometry):
         """
         Constructs a polygon at a specified distance from the geometry.
 
-        Parameters:
-         :distance: - length in current projection.  Only polygon accept
-          negative values.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        distance            Required float. The buffer distance. The buffer distance is in the
+                            same units as the geometry that is being buffered.
+                            A negative distance can only be specified against a polygon geometry.
+        ===============     ====================================================================
+
+        :returns: arcgis.geometry.Polygon
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.buffer(distance))
@@ -911,10 +950,26 @@ class Geometry(BaseGeometry):
         """
         Constructs the intersection of the geometry and the specified extent.
 
-        Parameters:
-         :envelope: - arcpy.Extent object
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
+                            represents the lower left bound and upper right bound of the extent.
+        ===============     ====================================================================
+
+        :returns: output geometry clipped to extent
+
         """
-        if HASARCPY:
+        if HASARCPY and \
+           isinstance(envelope, (list,tuple)) and \
+           len(envelope) == 4:
+            envelope = arcpy.Extent(XMin=envelope[0],
+                                    YMin=envelope[1],
+                                    XMax=envelope[2],
+                                    YMax=envelope[3])
+            return Geometry(self.as_arcpy.clip(envelope))
+        elif HASARCPY and \
+             isinstance(envelope, arcpy.Extent):
             return Geometry(self.as_arcpy.clip(envelope))
         return None
     #----------------------------------------------------------------------
@@ -922,16 +977,25 @@ class Geometry(BaseGeometry):
         """
         Indicates if the base geometry contains the comparison geometry.
 
-        Paramters:
-         :second_geometry: - a second geometry
-        Returns:
-         Boolean
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ---------------     --------------------------------------------------------------------
+        relation            Optional string. The spatial relationship type.
+
+                            + BOUNDARY - Relationship has no restrictions for interiors or boundaries.
+                            + CLEMENTINI - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
+                            + PROPER - Boundaries of geometries must not intersect.
+        ===============     ====================================================================
+
+        :returns: boolean
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return self.as_arcpy.contains(second_geometry=second_geometry,
-                                   relation=relation)
+                                          relation=relation)
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
@@ -982,9 +1046,14 @@ class Geometry(BaseGeometry):
         Indicates if the two geometries intersect in a geometry of a lesser
         shape type.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
 
-        Paramters:
-         :second_geometry: - a second geometry
+        :returns: boolean
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -999,8 +1068,14 @@ class Geometry(BaseGeometry):
         Splits this geometry into a part left of the cutting polyline, and
         a part right of it.
 
-        Parameters:
-         :cutter: - The cutting polyline geometry.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        cutter              Required Polyline. The cuttin polyline geometry
+        ===============     ====================================================================
+
+        :returns: a list of two geometries
+
         """
         if isinstance(cutter, Polyline) and HASARCPY:
             if isinstance(cutter, Geometry):
@@ -1012,24 +1087,32 @@ class Geometry(BaseGeometry):
         """
         Creates a new geometry with added vertices
 
-        Parameters:
-         :method: - The type of densification, DISTANCE, ANGLE, or GEODESIC
-         :distance: - The maximum distance between vertices. The actual
-          distance between vertices will usually be less than the maximum
-          distance as new vertices will be evenly distributed along the
-          original segment. If using a type of DISTANCE or ANGLE, the
-          distance is measured in the units of the geometry's spatial
-          reference. If using a type of GEODESIC, the distance is measured
-          in meters.
-         :deviation: - Densify uses straight lines to approximate curves.
-          You use deviation to control the accuracy of this approximation.
-          The deviation is the maximum distance between the new segment and
-          the original curve. The smaller its value, the more segments will
-          be required to approximate the curve.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
+        ---------------     --------------------------------------------------------------------
+        distance            Required float. The maximum distance between vertices. The actual
+                            distance between vertices will usually be less than the maximum
+                            distance as new vertices will be evenly distributed along the
+                            original segment. If using a type of DISTANCE or ANGLE, the
+                            distance is measured in the units of the geometry's spatial
+                            reference. If using a type of GEODESIC, the distance is measured
+                            in meters.
+        ---------------     --------------------------------------------------------------------
+        deviation           Required float. Densify uses straight lines to approximate curves.
+                            You use deviation to control the accuracy of this approximation.
+                            The deviation is the maximum distance between the new segment and
+                            the original curve. The smaller its value, the more segments will
+                            be required to approximate the curve.
+        ===============     ====================================================================
+
+        :returns: arcgis.geometry.Geometry
+
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.densify(method=method,
-                                         distance=distance,
+                                                  distance=distance,
                                          deviation=deviation))
         return None
     #----------------------------------------------------------------------
@@ -1040,8 +1123,14 @@ class Geometry(BaseGeometry):
         following illustration shows the results when the red polygon is the
         source geometry.
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :returns: arcgis.geometry.Geometry
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1058,8 +1147,14 @@ class Geometry(BaseGeometry):
         Indicates if the base and comparison geometries share no points in
         common.
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :returns: boolean
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1077,8 +1172,14 @@ class Geometry(BaseGeometry):
         geometries intersect, the minimum distance is 0.
         Both geometries must have the same projection.
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :returns: float
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1095,8 +1196,16 @@ class Geometry(BaseGeometry):
         Indicates if the base and comparison geometries are of the same
         shape type and define the same set of points in the plane. This is
         a 2D comparison only; M and Z values are ignored.
-        Paramters:
-         :second_geometry: - a second geometry
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :returns: boolean
+
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1113,8 +1222,14 @@ class Geometry(BaseGeometry):
         Creates a new simplified geometry using a specified maximum offset
         tolerance.
 
-        Parameters:
-         :max_offset: - The maximum offset tolerance.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        max_offset          Required float. The maximum offset tolerance.
+        ===============     ====================================================================
+
+        :returns: arcgis.geometry.Geometry
+
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.generalize(distance=max_offset))
@@ -1128,16 +1243,22 @@ class Geometry(BaseGeometry):
         """
         Returns the area of the feature using a measurement type.
 
-        Parameters:
-         :method: - PLANAR measurements reflect the projection of
-          geographic data onto the 2D surface (in other words, they will not
-          take into account the curvature of the earth). GEODESIC,
-          GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
-          may be chosen as an alternative, if desired.
-         :units: - Areal unit of measure keywords: ACRES | ARES | HECTARES
-          | SQUARECENTIMETERS | SQUAREDECIMETERS | SQUAREINCHES | SQUAREFEET
-          | SQUAREKILOMETERS | SQUAREMETERS | SQUAREMILES |
-          SQUAREMILLIMETERS | SQUAREYARDS
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        method              Required String. LANAR measurements reflect the projection of
+                            geographic data onto the 2D surface (in other words, they will not
+                            take into account the curvature of the earth). GEODESIC,
+                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            may be chosen as an alternative, if desired.
+        ---------------     --------------------------------------------------------------------
+        units               Optional String. Areal unit of measure keywords: ACRES | ARES | HECTARES
+                            | SQUARECENTIMETERS | SQUAREDECIMETERS | SQUAREINCHES | SQUAREFEET
+                            | SQUAREKILOMETERS | SQUAREMETERS | SQUAREMILES |
+                            SQUAREMILLIMETERS | SQUAREYARDS
+        ===============     ====================================================================
+
+        :returns: float
 
         """
         if HASARCPY:
@@ -1149,20 +1270,26 @@ class Geometry(BaseGeometry):
         """
         Returns the length of the feature using a measurement type.
 
-        Parameters:
-         :method: - PLANAR measurements reflect the projection of
-          geographic data onto the 2D surface (in other words, they will not
-          take into account the curvature of the earth). GEODESIC,
-          GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
-          may be chosen as an alternative, if desired.
-         :units: - Linear unit of measure keywords: CENTIMETERS |
-          DECIMETERS | FEET | INCHES | KILOMETERS | METERS | MILES |
-          MILLIMETERS | NAUTICALMILES | YARDS
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        method              Required String. PLANAR measurements reflect the projection of
+                            geographic data onto the 2D surface (in other words, they will not
+                            take into account the curvature of the earth). GEODESIC,
+                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            may be chosen as an alternative, if desired.
+        ---------------     --------------------------------------------------------------------
+        units               Required String. Linear unit of measure keywords: CENTIMETERS |
+                            DECIMETERS | FEET | INCHES | KILOMETERS | METERS | MILES |
+                            MILLIMETERS | NAUTICALMILES | YARDS
+        ===============     ====================================================================
+
+        :returns: float
 
         """
         if HASARCPY:
             return self.as_arcpy.getLength(method=method,
-                                         units=units)
+                                           units=units)
         return None
     #----------------------------------------------------------------------
     def get_part(self, index=None):
@@ -1170,8 +1297,14 @@ class Geometry(BaseGeometry):
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
 
-        Parameters:
-         :index: - The index position of the geometry.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        index               Required Integer. The index position of the geometry.
+        ===============     ====================================================================
+
+        :return: arcgis.geometry.Geometry
+
         """
         if HASARCPY:
             return self.as_arcpy.getPart(index)
@@ -1185,13 +1318,21 @@ class Geometry(BaseGeometry):
         same shape type is a geometry containing only the regions of overlap
         between the original geometries.
 
-        Paramters:
-         :second_geometry: - a second geometry
-         :dimension: - The topological dimension (shape type) of the
-          resulting geometry.
-            1  -A zero-dimensional geometry (point or multipoint).
-            2  -A one-dimensional geometry (polyline).
-            4  -A two-dimensional geometry (polygon).
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ---------------     --------------------------------------------------------------------
+        dimension           Required Integer. The topological dimension (shape type) of the
+                            resulting geometry.
+
+                            + 1  -A zero-dimensional geometry (point or multipoint).
+                            + 2  -A one-dimensional geometry (polyline).
+                            + 4  -A two-dimensional geometry (polygon).
+
+        ===============     ====================================================================
+
+        :returns: boolean
 
         """
         if HASARCPY:
@@ -1210,10 +1351,17 @@ class Geometry(BaseGeometry):
         """
         Returns a measure from the start point of this line to the in_point.
 
-        Paramters:
-         :second_geometry: - a second geometry
-         :as_percentage: - If False, the measure will be returned as a
-          distance; if True, the measure will be returned as a percentage.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ---------------     --------------------------------------------------------------------
+        as_percentage       Optional Boolean. If False, the measure will be returned as a
+                            distance; if True, the measure will be returned as a percentage.
+        ===============     ====================================================================
+
+        :return: float
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1228,9 +1376,14 @@ class Geometry(BaseGeometry):
         shape type as one of the input geometries and is not equivalent to
         either of the input geometries.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
 
-        Paramters:
-         :second_geometry: - a second geometry
+        :return: boolean
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1247,18 +1400,27 @@ class Geometry(BaseGeometry):
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
 
-        Parameters:
-         :angle: - The angle in degrees to the returned point.
-         :distance: - The distance in meters to the returned point.
-         :method: - PLANAR measurements reflect the projection of geographic
-          data onto the 2D surface (in other words, they will not take into
-          account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-          LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
-          an alternative, if desired.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        angle               Required Float. The angle in degrees to the returned point.
+        ---------------     --------------------------------------------------------------------
+        distance            Required Float. The distance in meters to the returned point.
+        ---------------     --------------------------------------------------------------------
+        method              Optional String. PLANAR measurements reflect the projection of geographic
+                            data onto the 2D surface (in other words, they will not take into
+                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
+                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            an alternative, if desired.
+        ===============     ====================================================================
+
+        :return: arcgis.geometry.Geometry
+
+
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.pointFromAngleAndDistance(angle=angle,
-                                                    distance=distance,
+                                                                    distance=distance,
                                                     method=method))
         return None
     #----------------------------------------------------------------------
@@ -1267,23 +1429,38 @@ class Geometry(BaseGeometry):
         Returns a point on a line at a specified distance from the beginning
         of the line.
 
-        Parameters:
-         :value: - The distance along the line.
-         :use_percentage: - The distance may be specified as a fixed unit
-          of measure or a ratio of the length of the line. If True, value
-          is used as a percentage; if False, value is used as a distance.
-          For percentages, the value should be expressed as a double from
-          0.0 (0%) to 1.0 (100%).
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required Float. The distance along the line.
+        ---------------     --------------------------------------------------------------------
+        use_percentage      Optional Boolean. The distance may be specified as a fixed unit
+                            of measure or a ratio of the length of the line. If True, value
+                            is used as a percentage; if False, value is used as a distance.
+                            For percentages, the value should be expressed as a double from
+                            0.0 (0%) to 1.0 (100%).
+        ===============     ====================================================================
+
+        :return: arcgis.gis.Geometry
+
         """
         if HASARCPY:
             return Geometry(self.as_arcpy.positionAlongLine(value=value,
-                                                  use_percentage=use_percentage))
+                                                            use_percentage=use_percentage))
         return None
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
 
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        spatial_reference        Required SpatialReference. The new spatial reference. This can be a
+                                 SpatialReference object or the coordinate system name.
+        --------------------     --------------------------------------------------------------------
+        transformation_name      Required String. The geotransformation name.
+        ====================     ====================================================================
 
         Parameter:
          :spatial_reference: - The new spatial reference. This can be a
@@ -1308,17 +1485,24 @@ class Geometry(BaseGeometry):
         return None
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
-                              use_percentage=False):
+                                 use_percentage=False):
         """
         Finds the point on the polyline nearest to the in_point and the
         distance between those points. Also returns information about the
         side of the line the in_point is on as well as the distance along
         the line where the nearest point occurs.
 
-        Paramters:
-         :second_geometry: - a second geometry
-         :as_percentage: - if False, the measure will be returned as
-          distance, True, measure will be a percentage
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ---------------     --------------------------------------------------------------------
+        as_percentage       Optional boolean - if False, the measure will be returned as
+                            distance, True, measure will be a percentage
+        ===============     ====================================================================
+
+        :return: tuple
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1328,12 +1512,26 @@ class Geometry(BaseGeometry):
         return None
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
-                         end_measure, use_percentage=False):
+                           end_measure, use_percentage=False):
         """
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
         two points on the polyline instead of a single point.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        start_measure       Required Float. The starting distance from the beginning of the line.
+        ---------------     --------------------------------------------------------------------
+        end_measure         Required Float. The ending distance from the beginning of the line.
+        ---------------     --------------------------------------------------------------------
+        use_percentage      Optional Boolean. The start and end measures may be specified as
+                            fixed units or as a ratio.
+                            If True, start_measure and end_measure are used as a percentage; if
+                            False, start_measure and end_measure are used as a distance. For
+                            percentages, the measures should be expressed as a double from 0.0
+                            (0 percent) to 1.0 (100 percent).
+        ===============     ====================================================================
         Parameters:
          :start_measure: - The starting distance from the beginning of the
           line.
@@ -1356,8 +1554,14 @@ class Geometry(BaseGeometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :return: arcgis.gis.Geometry
+
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1367,10 +1571,18 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
         """
-        Returns a new point based on in_point snapped to this geometry.
+        Constructs the geometry that is the union of two geometries minus the
+        instersection of those geometries.
 
-        Paramters:
-         :second_geometry: - a second geometry
+        The two input geometries must be the same shape type.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :return: arcgis.gis.Geometry
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1388,8 +1600,13 @@ class Geometry(BaseGeometry):
         Indicates if the boundaries of the geometries intersect.
 
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :return: boolean
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1407,8 +1624,13 @@ class Geometry(BaseGeometry):
         geometries.
 
 
-        Paramters:
-         :second_geometry: - a second geometry
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ===============     ====================================================================
+
+        :return: arcgis.gis.Geometry
         """
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
@@ -1424,12 +1646,21 @@ class Geometry(BaseGeometry):
     def within(self, second_geometry, relation=None):
         """
         Indicates if the base geometry is within the comparison geometry.
-        Paramters:
-         :second_geometry: - a second geometry
-         :relation: - The spatial relationship type.
-          BOUNDARY  - Relationship has no restrictions for interiors or boundaries.
-          CLEMENTINI  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
-          PROPER  - Boundaries of geometries must not intersect.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        ---------------     --------------------------------------------------------------------
+        relation            Optional String. The spatial relationship type.
+
+                            - BOUNDARY  - Relationship has no restrictions for interiors or boundaries.
+                            - CLEMENTINI  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
+                            - PROPER  - Boundaries of geometries must not intersect.
+
+        ===============     ====================================================================
+
+        :return: boolean
 
         """
         if HASARCPY:
@@ -1601,7 +1832,7 @@ class Point(Geometry):
         if sr == None:
             sr = {'wkid' : 4326}
         coordkey = ([d for d in data if d.lower() == 'coordinates']
-                     or ['coordinates']).pop()
+                    or ['coordinates']).pop()
         coordinates = data[coordkey]
 
         return cls({
@@ -1670,7 +1901,7 @@ class MultiPoint(Geometry):
         if sr is None:
             sr = {'wkid' : 4326}
         coordkey = ([d for d in data if d.lower() == 'coordinates']
-                     or ['coordinates']).pop()
+                    or ['coordinates']).pop()
         coordinates = data[coordkey]
         return cls({'points' : [p for p in coordinates],
                     'spatialReference' : sr})
@@ -1715,8 +1946,8 @@ class Polyline(Geometry):
     @property
     def __geo_interface__(self):
         return {'type': 'MultiLineString', 'coordinates': [[((pt[0], pt[1]) if pt else None)
-                                                                for pt in part]
-                                                                    for part in self['paths']]}
+                                                            for pt in part]
+                                                           for part in self['paths']]}
     #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
@@ -1731,7 +1962,7 @@ class Polyline(Geometry):
         if sr is None:
             sr = {'wkid' : 4326}
         coordkey = ([d for d in data if d.lower() == 'coordinates']
-                     or ['coordinates']).pop()
+                    or ['coordinates']).pop()
         if data['type'].lower() == 'linestring':
             coordinates = [data[coordkey]]
         else:
@@ -1797,10 +2028,10 @@ class Polygon(Geometry):
         if sr is None:
             sr = {'wkid' : 4326}
         coordkey = ([d for d in data if d.lower() == 'coordinates']
-                     or ['coordinates']).pop()
+                    or ['coordinates']).pop()
         coordinates = data[coordkey]
         typekey = ([d for d in data if d.lower() == 'type']
-                     or ['type']).pop()
+                   or ['type']).pop()
         if data[typekey].lower() == "polygon":
             coordinates = [coordinates]
         part_list = []
@@ -1814,5 +2045,5 @@ class Polygon(Geometry):
             if part_item:
                 part_list.append(part_item)
         return cls({'rings' : part_list,
-                'spatialReference' : sr
+                    'spatialReference' : sr
                 })
