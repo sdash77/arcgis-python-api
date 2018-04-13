@@ -11,6 +11,7 @@ import base64
 import json
 import locale
 import logging
+import sys
 import os
 import re
 import tempfile
@@ -132,6 +133,8 @@ class GIS(object):
     ----------------    ---------------------------------------------------------------
     proxy_host          Optional string. The host name of the proxy server used to allow HTTP/S
                         access in the network where the script is run.
+
+                        ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -222,9 +225,17 @@ class GIS(object):
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
 
-            # Update config to >v1.3 format if it's old
-            if self._config_is_in_old_format(config):
-                self._update_config_to_new_format(config)
+            # Check if config file is in the old format
+            if not self._config_is_in_new_format(config):
+                answer = input("Warning: profiles in {} appear to be in the "\
+                    "<v1.3 format, and must be deleted before continuing. "\
+                    "Delete? [y/n]".format(cfg_file_path))
+                if "y" in answer.lower():
+                    os.remove(cfg_file_path)
+                    config = configparser.ConfigParser()
+                else:
+                    raise RuntimeError("{} not deleted, exiting"\
+                        "".format(cfg_file_path))
 
             # Add any __init__() args to config/keyring store
             if profile not in config.keys():
@@ -267,7 +278,6 @@ class GIS(object):
             else:
                 raise Exception("key_file parameter is required along with cert_file when using PKI authentication.")
 
-
         self._url = url
         self._username = username
         self._password = password
@@ -288,9 +298,6 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id)
-            if not (utoken is None):
-                self._portal.con._token = utoken
-                self._portal.con._auth = "BUILTIN"
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -301,6 +308,20 @@ class GIS(object):
                 raise
         try:
             if url.lower().find("arcgis.com") > -1 and \
+               self._portal.is_logged_in and \
+               self._portal.con._auth.lower() == 'oauth':
+                from six.moves.urllib_parse import urlparse
+                props = self._portal.get_properties(force=False)
+                url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                      props['urlKey'],
+                                      props['customBaseUrl'])
+                self._url = url
+                self._portal.resturl = self._portal.resturl.replace(self._portal.url,
+                                                                    url)
+                self._portal.url = url
+                self._portal.con.baseurl = self._portal.resturl
+                self._portal.con._token = None
+            elif url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
@@ -319,7 +340,15 @@ class GIS(object):
                                       proxy_host=self._proxy_host)
                 self._portal = pp
         except: pass
-        self._lazy_properties = PropertyMap(self._portal.get_properties(force=False))
+
+        force_refresh = False
+        if not (utoken is None):
+            self._portal.con._token = utoken
+            self._portal.con._auth = "BUILTIN"
+            force_refresh = True
+
+        # If a token was injected, then force refresh to get updated properties
+        self._lazy_properties = PropertyMap(self._portal.get_properties(force=force_refresh))
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
@@ -423,46 +452,14 @@ class GIS(object):
         c.close()
         return key_file.name, cert_file.name
 
-    def _config_is_in_old_format(self, config):
-        """ Any version <= 1.3 of the API used a different config file
+    def _config_is_in_new_format(self, config):
+        """ Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
-        a profile was modified. Thus, if 'date_modified' is not found in any
-        profile, it is the old format
+        a profile was modified. Thus, if 'date_modified' is found in at least
+        one profile, it is in the new format
         """
-        for profile in config.keys():
-            if config[profile].name == "DEFAULT":
-                #ignore the default profile (it's not user defined)
-                continue
-            if "date_modified" not in config[profile]:
-                return True
-        return False
-
-    def _update_config_to_new_format(self, config):
-        """ The new config file does not store the password at all, instead
-        storing it through the keyring module (see below functions). The new
-        config file also has a 'date_modified' field, and does not store the
-        other fields in a rot13 character shifted fashion anymore.
-
-        This function goes through all profiles in the .arcgisprofile file
-        and makes it compatible with the new format. Note: this function just
-        updates 'config' obj passed in; changes are written to file elsewhere
-        """
-        _log.info("Doing one time update of .arcgisprofile to new format...")
-        attributes_to_rewrite_to_config = [ 'url', 'username', 'key_file',
-                                            'cert_file', 'client_id' ]
-        attributes_to_write_to_keyring = [ 'password' ]
-
-        for profile in config.keys():
-            for attr_key in config[profile].keys():
-                unscrambled_attr_value = rot13(config[profile][attr_key],
-                                               of=True)
-                if attr_key in attributes_to_rewrite_to_config:
-                    config[profile][attr_key] =  unscrambled_attr_value
-                if attr_key in attributes_to_write_to_keyring:
-                    self._securely_store_password(profile,
-                                                  unscrambled_attr_value)
-                    config.remove_option(profile, attr_key)
-                self._add_timestamp_to_profile_data_in_config(config, profile)
+        return any([profile_data for profile_data in config.values() \
+                    if "date_modified" in profile_data])
 
     def _update_profile_data_in_config(self, config, profile, url = None,
                                        username = None, key_file = None,
@@ -519,8 +516,7 @@ class GIS(object):
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
             password = keyring.get_password(
-                "arcgis_python_api_profile_passwords",
-                                         profile)
+                "arcgis_python_api_profile_passwords", profile)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -544,8 +540,7 @@ class GIS(object):
         import keyring
         if self._current_keyring_is_recommended():
             return keyring.delete_password(
-                "arcgis_python_api_profile_passwords",
-                                         profile)
+                "arcgis_python_api_profile_passwords", profile)
         else:
             _log.warn(self._get_keyring_failure_message())
             return False
@@ -1408,8 +1403,7 @@ class UserManager(object):
                     'role': role,
                     'level': level
                     } ] },
-                'subject' : 'An invitation to join an ArcGIS Online organization, ' + self._gis.properties.name,
-                'html' : email_text
+                'message' : email_text
             }
             if idp_username is not None:
                 if provider is None:
@@ -1450,6 +1444,71 @@ class UserManager(object):
                 if not ret:
                     _log.error('Unable to update the thumbnail for  ' + username)
             return user
+
+    #----------------------------------------------------------------------
+    def invite(self,
+               email, role='org_user',
+               level=2, provider=None,
+               must_approve=False, expiration='1 Day',
+               validate_email=True):
+        """
+        Invites a user to an organization by email
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        email             Required string. The user's email that will be invited to the organization.
+        ----------------  -------------------------------------------------------------------------------
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_publisher, org_admin, org_viewer.
+        ----------------  -------------------------------------------------------------------------------
+        level             Optional string. The account level. The default is 2.
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        must_approve      Optional boolean. After a user accepts the invite, if True, and administrator
+                          must approve of the individual joining the organization. The default is False.
+        ----------------  -------------------------------------------------------------------------------
+        expiration        Optional string.  The default is '1 Day'. This is the time the emailed user has
+                          to accept the invitiation request until it expires.
+                          The values are: 1 Day (default), 3 Days, 1 Week, or 2 Weeks.
+        ----------------  -------------------------------------------------------------------------------
+        validate_email    Optional boolean. If True (default) the Enterprise will ensure that the email
+                          is properly formatted. If false, no check will occur
+        ================  ===============================================================================
+
+        :returns: boolean
+
+        """
+        time_lookup = {
+            '1 Day'.upper() : 1440,
+            '3 Days'.upper() : 4320,
+            '1 Week'.upper() : 10080,
+            '2 Weeks'.upper() : 20160
+        }
+        if expiration.upper() in time_lookup:
+            expiration = time_lookup[expiration.upper()]
+        elif not isinstance(expiration, int):
+            raise ValueError("Invalid expiration.")
+
+        url = self._portal.url + "/portals/self/inviteByEmail"
+        msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (self._gis.properties['name'])
+        params = {
+            "f" : "json",
+            "message" : msg,
+            "role" : role,
+            "level" : level,
+            "targetUserProvider" : provider or "arcgis",
+            "mustApprove" : must_approve,
+            "expiration" : expiration,
+            "validateEmail" : validate_email
+        }
+        res = self._portal.con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
 
     def signup(self, username, password, fullname, email):
         """
@@ -2140,6 +2199,10 @@ class ContentManager(object):
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
         type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        dataUrl            Optional string. The Url of the data stored on cloud storage. If given, filename is required.
+        -----------------  ---------------------------------------------------------------------
+        filename           Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
         -----------------  ---------------------------------------------------------------------
         typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------
@@ -3103,24 +3166,37 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
+
     def replace_service(self, replace_item, new_item, replaced_service_name=None):
         """
-        The replace_service operation allows you to replace vector tile
-        layers. The replace_service operation on vector tile layers allows
-        you to perform quality control on a staging tile layer and to then
-        replace the production tile layer with minimal downtime. This
-        operation has the option to keep a backup of the production tile
-        layer.
+        The replace_service operation allows you to replace your production vector tile layers with staging ones. This
+        operation allows you to perform quality control on a staging tile layer and to then replace the production tile
+        layer with the staging with minimal downtime. This operation has the option to keep a backup of the production
+        tile layer.
+
+        *Note*: If you are looking to clone services, use the `clone_items()` method instead.
+        *Note*: This functionality is only available for Vector Tile Services.
 
         Workflow for replace_service:
 
-        1. The staging service is published to the same system as the production service. Both services are active at the same time. The staging service is shared with a smaller set of users. Staging service is QA'd and made ready for production.
-        2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will not be replaced or updated. Please use the portal home page to update item properties.
-        3. When the replace_service operation is used, the service running on the hosting server will be replaced (for example, its cache).
-        4. It is the responsibility of the user to ensure both services are functionally equivalent for clients consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed with the anticipated layers and fields for its client application.
-        5. If you want to retain the replaced production service, for example, to keep an archive of the evolution of the service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided, the production service being replaced will be archived with a time stamp when replace service was executed on it. You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
+        1. Publish the staging service to the same system as the production service. Both services are active at
+        the same time. Share the staging service with a smaller set of users and QA the staging service.
 
+        2. The item properties (ex: thumbnail, iteminfo, metadata) of the production item will be preserved.
+        If you need to update them use the `Item.update()` method.
 
+        3. Call the replace_service operation. The service running on the hosting server gets replaced
+        (for example, its cache).
+
+        *Note:
+        It is the responsibility of the user to ensure both services are functionally equivalent for clients
+        consuming them. For example, when replacing a hosted feature service, ensure the new service is constructed
+        with the anticipated layers and fields for its client application.
+
+        If you want to retain the replaced production service, for example, to keep an archive of the evolution of the
+        service you can do so by omitting a value for "Replaced Service Name" . If replaced service name is not provided,
+        the production service being replaced will be archived with a time stamp when replace service was executed.
+        You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
 
         ======================  ======================================================================
         **Argument**            **Description**
@@ -3135,12 +3211,20 @@ class ContentManager(object):
         :returns: boolean
         """
         user = self._gis.users.me
-        url = "%s/content/%s/replaceService" % (self._portal.resturl, user.username)
+        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user.username)
+
+        if isinstance(replace_item, Item):
+            replace_item = replace_item.itemid
+
+        if isinstance(new_item, Item):
+            new_item = new_item.itemid
+
         params = {
-            'toReplaceItemId' : replace_item,
-            'replacementItemId' : new_item
+            'toReplaceItemId': replace_item,
+            'replacementItemId': new_item,
+            'f': 'json'
         }
-        if not replaced_service_name is None:
+        if replaced_service_name is not None:
             params['replacedServiceName'] = replaced_service_name
         res = self._gis._con.post(path=url, postdata=params)
         if 'success' in res:
@@ -3675,7 +3759,7 @@ class Group(dict):
 
     def invite_users(self, usernames, role='group_member', expiration=10080):
         """
-        Invites users to this group. The user executing this command must be the group owner.
+        Invites existing users to this group. The user executing this command must be the group owner.
 
         .. note::
             A user who is invited to this group will see a list of invitations
@@ -3697,6 +3781,48 @@ class Group(dict):
            A boolean indicating success (True) or failure (False).
         """
         return self._portal.invite_group_users(usernames, self.groupid, role, expiration)
+
+    #----------------------------------------------------------------------
+    def invite_by_email(self, email, message, role='member', expiration='1 Day'):
+        """
+        Invites a user by email to the existing group.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        email             Required string. The user to send join email to.
+        ----------------  --------------------------------------------------------
+        message           Required string. The message to send to the user.
+        ----------------  --------------------------------------------------------
+        role              Optional string. Either member (the default) or admin.
+        ----------------  --------------------------------------------------------
+        expiration        Optional string.  The is the time out of the invite.
+                          The values are: 1 Day (default), 3 Days, 1 Week, or
+                          2 Weeks.
+        ================  ========================================================
+
+        :returns: boolean
+        """
+        time_lookup = {
+            '1 Day'.upper() : 1440,
+            '3 Days'.upper() : 4320,
+            '1 Week'.upper() : 10080,
+            '2 Weeks'.upper() : 20160
+        }
+        role_lookup = {
+            'member' : 'group_member',
+            'admin' : 'group_admin'
+        }
+        url = 'community/groups/' + self.groupid + '/inviteByEmail'
+        params = {
+            "f" : "json",
+            "emails" : email,
+            "message" : message,
+            "role" : role_lookup[role.lower()],
+            'expiration' : time_lookup[expiration.upper()]
+        }
+        return self._portal.con.post(url, params)
+
 
     def reassign_to(self, target_owner):
         """
@@ -4015,7 +4141,8 @@ class User(dict):
 
     def _hydrate(self):
         userdict = self._portal.get_user(self.username)
-        if not 'roleId' in userdict:
+        if not 'roleId' in userdict and \
+           'role' in userdict:
             userdict['roleId'] = userdict['role']
         self._hydrated = True
         super(User, self).update(userdict)
@@ -4747,11 +4874,16 @@ class Item(dict):
         self._hydrated = False
         self.resources = ResourceManager(self, self._gis)
 
+
         if itemdict:
             if 'size' in itemdict and itemdict['size'] == -1:
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
+
+        try:
+            self._depend = ItemDependency(item=self)
+        except: pass
 
         if self._has_layers():
             self.layers = None
@@ -5826,9 +5958,13 @@ class Item(dict):
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
-    _RELATIONSHIP_TYPES = frozenset(['Map2Service', 'WMA2Code',
-                                     'Map2FeatureCollection', 'MobileApp2Code', 'Service2Data',
-                                     'Service2Service', 'Survey2Service', 'Map2Area', 'Area2Package'])
+    _RELATIONSHIP_TYPES = frozenset(['Area2CustomPackage', 'Service2Layer', 'Map2Area',
+                                     'Area2Package', 'Service2Route', 'Survey2Data',
+                                     'Survey2Service', 'Service2Style', 'Style2Style',
+                                     'Listed2Provisioned', 'Item2Report', 'Item2Attachment',
+                                     'Map2AppConfig', 'Map2Service', 'WMA2Code',
+                                     'Map2FeatureCollection', 'MobileApp2Code',
+                                     'Service2Data', 'Service2Service'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
@@ -5836,6 +5972,9 @@ class Item(dict):
         """
         Retrieves the items related to this item. Relationships can be added and deleted using
         item.add_relationship() and item.delete_relationship(), respectively.
+
+        .. note::
+            With WebMaps items, relationships are only available on local enterprises.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -6772,6 +6911,192 @@ class Item(dict):
         else:
             raise ValueError("Item of type: %s is not supported by copy" % (item.type))
         return
+    #----------------------------------------------------------------------
+    @property
+    def _dependencies(self):
+        """returns a class to management Item dependencies"""
+        if self._depend is None:
+            self._depend = ItemDependency(self)
+        return self._depend
+########################################################################
+class ItemDependency(object):
+    """
+    Manage, monitor, and control Item dependencies.
+
+    Depencies allows users to better understand the inter-dependency between their spatial assets.
+    This capability provides the users with the following:
+
+    - Users will be warned during item deletion if the deletion is going to break item/layer references in a web map or web application.
+    - Users will be able to explore the dependents and dependencies of a specific item.
+    - Portal administrators will be able to efficiently update the URLs of their hosted/federated services in an single edit operation.
+
+    When an item is updated, its dependencies are updated as well and always kept in sync.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Required Item. Item object to examine dependencies on.
+    ===============     ====================================================================
+
+    """
+    _url = None
+    _gis = None
+    _con = None
+    _item = None
+    _portal = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, item):
+        """Constructor"""
+        self._item = item
+        self._gis = item._gis
+        self._con = self._gis._con
+        self._portal = self._gis._portal
+        self._url = '%scontent/items/%s/dependencies' % (self._portal.resturl,
+                                                         item.itemid)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<Dependencies for %s>" % self._item.itemid
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<Dependencies for %s>" % self._item.itemid
+    #----------------------------------------------------------------------
+    def __len__(self):
+        return len(dict(self.properties)['items'])
+    #----------------------------------------------------------------------
+    def _init(self):
+        params = {'f' : 'json',
+                  'num' : 100,
+                  'start' : 0}
+        res = self._con.get(self._url, params)
+        items = res['list']
+        start = 0
+        num = 100
+        while res['nextStart'] > -1:
+
+            start += num
+            params = {'f' : 'json',
+                      'num' : 100,
+                      'start' : res['nextStart']}
+            res = self._con.get(self._url, params)
+            if 'list' in res:
+                items += res['list']
+        self._properties = PropertyMap({'items' : items})
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the dependencies properties"""
+        if self._properties is None:
+            self._init()
+        return self._properties
+    #----------------------------------------------------------------------
+    def add(self, depend_type, depend_value):
+        """
+        Assigns a dependency to the current item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        depend_type         Required String. This is the type of dependency that is registered
+                            for the item. The allowed values are: table, url, or itemid.
+        ---------------     --------------------------------------------------------------------
+        depend_value        Required string. This is the associated value for the type above.
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        dtlu = {
+            'table' : 'table',
+            'url' : 'url',
+            'itemid' : 'id'
+        }
+        params = {
+            'f' : 'json',
+            "type" : dtlu[depend_type],
+            "id" : depend_value
+        }
+        url = "%s/addDependency" % self._url
+        res = self._con.post(url, params)
+        if 'error' in res:
+            return res
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    def remove(self, depend_type, depend_value):
+        """
+        Deletes a dependency to the current item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        depend_type         Required String. This is the type of dependency that is registered
+                            for the item. The allowed values are: table, url, or itemid.
+        ---------------     --------------------------------------------------------------------
+        depend_value        Required string. This is the associated value for the type above.
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        dtlu = {
+            'table' : 'table',
+            'url' : 'url',
+            'itemid' : 'id',
+            'id' : 'id'
+        }
+        params = {
+            'f' : 'json',
+            "type" : dtlu[depend_type],
+            "id" : depend_value
+
+        }
+        url = "%s/removeDependency" % self._url
+        res = self._con.post(url, params)
+        if 'error' in res:
+            return res
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    def remove_all(self):
+        """
+        Revokes all dependencies for the current item
+
+        :returns: boolean
+
+        """
+        for i in dict(self.properties)['items']:
+            if 'url' in i:
+                self.remove(i['dependencyType'], i['id'])
+            elif 'id' in i:
+                self.remove(i['dependencyType'], i['id'])
+            elif 'table' in i:
+                self.remove(i['dependencyType'], i['id'])
+        self._properties = None
+        return True
+    #----------------------------------------------------------------------
+    @property
+    def to_dependencies(self):
+        """
+        Returns a list of items that are dependent on the current Item
+        """
+        url = "%s/listDependentsTo" % self._url
+        params = {'f' : 'json',
+                  'num' : 100,
+                  'start' : 0}
+        res = self._con.get(url, params)
+
+        items = res['list']
+        num = 100
+        while res['nextStart'] > -1:
+            params = {'f' : 'json',
+                      'num' : 100,
+                      'start' : res['nextStart']}
+            res = self._con.get(url, params)
+            if 'list' in res:
+                items += res['list']
+        return items
+
 
 def rot13(s, b64=False, of=False):
     if s is None:

@@ -4,8 +4,7 @@ import shutil
 import logging
 log = logging.getLogger()
 
-from __init__ import * 
-
+from automation._common import *
 def automation_setup(*args, **kwargs):
     """Clears results Installs correct packages, builds geosaurus source"""
     log.info("Starting setup...")

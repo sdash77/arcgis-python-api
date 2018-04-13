@@ -14,7 +14,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-
+from arcgis.geoprocessing import DataFile
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service
 
 _log = _logging.getLogger(__name__)
@@ -22,6 +22,136 @@ _log = _logging.getLogger(__name__)
 # url = "https://dev003153.esri.com/gax/rest/services/System/GeoAnalyticsTools/GPServer"
 
 _use_async = True
+
+def build_multivariable_grid(input_layers,
+                           variable_calculations,
+                           bin_size,
+                           bin_unit="Meters",
+                           bin_type="Square",
+                           output_name=None,
+                           gis=None):
+    """
+    The Build Multi-Variable Grid task works with one or more layers of point, line, or polygon
+    features. The task generates a grid of square or hexagonal bins and compiles information about
+    each input layer into each bin. For each input layer, this information can include the following
+    variables:
+
+        + Distance to Nearest - The distance from each bin to the nearest feature.
+        + Attribute of Nearest - An attribute value of the feature nearest to each bin.
+        + Attribute Summary of Related - A statistical summary of all features within
+          search distance of each bin.
+
+    Only variables you specify in variable_calculations will be included in the result layer. These
+    variables can help you understand the proximity of your data throughout the extent of your
+    analysis. The results can help you answer questions such as the following:
+
+        + Given multiple layers of public transportation infrastructure, where in the city is least
+          accessible by public transportation?
+        + Given layers of lakes and rivers, what is the name of the water body closest to each
+          location in the US?
+        + Given a layer of household income, where in the US is the variation of income in the
+          surrounding 50 miles the largest?
+
+    The result of Build Multi-Variable Grid can also be used in prediction and classification
+    workflows. The task allows you to calculate and compile information from many different data
+    sources into a single, spatially continuous layer in one step, reducing the amount of effort
+    required to build prediction and classification models.
+
+
+    =======================   ===================================================================
+    **Arguments**             **Description**
+    -----------------------   -------------------------------------------------------------------
+    input_layers              Required list of FeatureLayers. A list of input layers that will be
+                              used in analysis. Each input layer follows the same formatting as
+                              described in the Feature Input topic. This can be one of the
+                              following:
+
+                                 - A URL to a feature service layer with an optional filter to
+                                   select specific features
+                                 - A URL to a big data catalog service layer with an optional
+                                   filter to select specific features
+                                 - A feature collection
+
+    -----------------------   -------------------------------------------------------------------
+    variable_calculations     Required list of dictionaries. A JSON array containing objects that
+                              describe the input layers and the attributes that will be
+                              calculated for each layer.
+    -----------------------   -------------------------------------------------------------------
+    bin_size                  Required float. The distance for the bins of type binType in the
+                              output polygon layer. Enrichment attributes will be calculated at
+                              the center of each bin. When generating bins, for Square, the
+                              number and units specified determine the height and length of the
+                              square. For Hexagon, the number and units specified determine the
+                              distance between parallel sides.
+    -----------------------   -------------------------------------------------------------------
+    bin_unit                  Optional string. The distance unit for the bins that will be used
+                              to calculate enrichment attributes.
+
+                              Values: Meters (default), Kilometers, Feet, Miles, NauticalMiles,
+                              or Yards
+    -----------------------   -------------------------------------------------------------------
+    bin_type                  Optional string. The type of bin that will be generated. Bin
+                              options are the following:
+
+                                + Hexagon.
+                                + Square (default)
+    -----------------------   -------------------------------------------------------------------
+    output_name               Optional string. output name of the layer
+    -----------------------   -------------------------------------------------------------------
+    gis                       Optional GIS.  The enterprise site that you want to connect to.
+    =======================   ===================================================================
+
+    :returns: Feature Layer
+
+    """
+    kwargs=locals()
+
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
+    for key, value in kwargs.items():
+        if key == 'variable_calculations':
+            import json
+            params[key] = json.dumps(value)
+        elif value is not None:
+            params[key]=value
+
+    if output_name is None:
+        output_service_name='Build Multi Variable Grid_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
+    else:
+        output_service_name=output_name.replace(' ', '_')
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ')
+
+    params['output_name']=_json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db={
+        "input_layers": (_FeatureSet, "inputLayers"),
+        "variable_calculations" : (str, "variableCalculations"),
+        "bin_type": (str, "binType"),
+        "bin_size": (float, "binSize"),
+        "bin_unit": (str, "binSizeUnit"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+    }
+    return_values=[
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+
+    try:
+        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
 
 def aggregate_points(point_layer,
                      bin_type = None,

@@ -70,6 +70,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         without any engine.
 
         **Scenerios**
+
         =================   ======================================================
         **Engine Type**     **Functionality**
         -----------------   ------------------------------------------------------
@@ -189,7 +190,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             geoms.append(Point({"x" : x, "y" : y, "spatialReference" : {"wkid" : 4326}}))
         sdf = arcgis.features.SpatialDataFrame(data=df, geometry=geoms)
 
-        Example: Creating SpatailDataFrame Using List Comprehension
+        Example: Creating SpatialDataFrame Using List Comprehension
 
         coords = [[1,2], [3,4]]
         sdf = SpatialDataFrame(df,
@@ -1225,6 +1226,30 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 raise Exception('Could not plot the Spatial DataFrame.')
         else:
             return super(SpatialDataFrame, self).plot(*args, **kwargs)
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_xy(df, x_column, y_column, sr=4326):
+        """
+        Converts a Pandas DataFrame into a Spatial DataFrame by providing the X/Y columns.
+
+        ====================  =========================================================
+        **Argument**          **Description**
+        --------------------  ---------------------------------------------------------
+        df                    Required Pandas DataFrame. Source dataset
+        --------------------  ---------------------------------------------------------
+        x_column              Required string.  The name of the X-coordinate series
+        --------------------  ---------------------------------------------------------
+        y_column              Required string.  The name of the Y-coordinate series
+        --------------------  ---------------------------------------------------------
+        sr                    Optional int.  The wkid number of the spatial reference.
+        ====================  =========================================================
+
+        :returns: SpatialDataFrame
+
+        """
+        from .io.fileops import _from_xy
+        return _from_xy(df=df, x_column=x_column,
+                        y_column=y_column, sr=sr)
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None):

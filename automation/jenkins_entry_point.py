@@ -6,59 +6,40 @@ import argparse
 import logging
 log = logging.getLogger()
 
-from __init__ import *
-#import geosaurus_root/src seperate module
-sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR, "src"))
-from arcgis import __version__ as _geosaurus_version
-
-from automation_setup import automation_setup
-from build_conda_package import build_conda_package
-from build_pip_package import build_pip_package
-from build_documentation import build_documentation
-from run_unit_tests import run_unit_tests
-from publish_to_ftp_site import publish_to_ftp_site
-from build_dev_website_and_publish import build_dev_website_and_publish
-from stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
-from automation_cleanup import automation_cleanup
+#Import everything in this module
+from _common import *
+sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR))
+from automation import *
 
 #The core logic of what functions are run in what order for each job
-_regex_and_funcs = [(MASTER_REGEX, [automation_setup, 
-                                    build_conda_package,
+_regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
                                     build_pip_package,
                                     publish_to_ftp_site,
-                                    build_documentation,
-                                    automation_cleanup]),
+                                    build_documentation]),
 
-              (LINUX_SLAVE_REGEX,  [automation_setup,
-                                    build_conda_package,
-                                    publish_to_ftp_site,
-                                    automation_cleanup]),
+              (LINUX_SLAVE_REGEX,  [build_conda_package,
+                                    publish_to_ftp_site]),
               
-              (PULL_REQUEST_REGEX, [automation_setup,
-                                    build_documentation,
-                                    automation_cleanup]),
+              (PULL_REQUEST_REGEX, [build_documentation]),
               
-                   (PUBLISH_REGEX, [automation_setup,
-                                    build_conda_package,
-                                    publish_to_ftp_site,
-                                    automation_cleanup]),
+                   (PUBLISH_REGEX, [build_conda_package,
+                                    publish_to_ftp_site]),
 
-                 (UNIT_TEST_REGEX, [automation_setup,
-                                    run_unit_tests,
-                                    automation_cleanup]),
+                 (UNIT_TEST_REGEX, [run_source_code_tests]),
                  
-                 (DEV_SITE_REGEX, [automation_setup,
-                                   stage_notebooks_for_dev_web_repo,
+                 (DEV_SITE_REGEX, [stage_notebooks_for_dev_web_repo,
                                    build_dev_website_and_publish,
-                                   automation_cleanup])]
+                                   run_dev_website_tests])]
 
 def _main():
     args = _parse_args()
-    args = _append_build_tag_to_args(args)
     kwargs = vars(args) #Converts to dict of keyword arguments
     funcs = _get_funcs_for_auto_type(args.automation_type)
+    
+    automation_setup(**kwargs)
     for func in funcs:
         func(**kwargs)
+    automation_cleanup(**kwargs)
 
 def _parse_args():
     parser = argparse.ArgumentParser(description = "Call the correct funcs "\
@@ -80,20 +61,9 @@ def _parse_args():
         help="for -a dev_site, the root dir of arcgis-for-developers repo")
     parser.add_argument("--html-output-dir", "-o", type=str, required=False,
         help="For -a dev_site, the dir where outputted html files get put") 
+    parser.add_argument("--dev-website-server", "-s", type=str, required=False,
+        help="For -a dev_site, the dev site server to run tests against")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
-
-def _append_build_tag_to_args(args):
-    """Assembles build tag, adds to it args, returns args"""
-    if re.match(MASTER_REGEX, args.automation_type):
-        args.build_tag = "geosaurus_{}_master_j{}".format(_geosaurus_version,
-                                                          args.build_number)
-    elif re.match(PULL_REQUEST_REGEX, args.automation_type):
-        args.build_tag = "geosaurus_{}_dev_j{}".format(_geosaurus_version,
-                                                       args.build_number)
-    else:
-        args.build_tag = "unspecified_{}_j{}".format(args.automation_type, 
-                                                     args.build_number)
-    return args
 
 def _get_funcs_for_auto_type(automation_type):
     for regex_, funcs in _regex_and_funcs:

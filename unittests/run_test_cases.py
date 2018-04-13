@@ -54,8 +54,6 @@ except AssertionError as e:
     print("ERROR: the arcgis package being tested should be {}".format(expected_file_path))
     print("Instead, it is {}. Not running tests...".format(arcgis.__file__))
 
-print("Running tests against this arcgis src at {}".format(arcgis.__file__))
-
 def module(pathName):
     """
     Return the module pointed to by *pathName*.
@@ -123,6 +121,7 @@ def _trigger_xml_runner():
     print("{} is now exiting...".format(sys.argv[0]))
 
 def run_test_cases(args):
+    print("Running tests against this arcgis src at {}".format(arcgis.__file__))
     try:
         _setup_testing(args)
     except Exception as e:

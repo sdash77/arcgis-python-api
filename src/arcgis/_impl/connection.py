@@ -196,7 +196,7 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
                                             timeout=timeout)
 ########################################################################
 def jsonize_dict(val):
-    if isinstance(val, dict):
+    if isinstance(val, (dict, list)):
         return json.dumps(val)
     else:
         return val

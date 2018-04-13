@@ -5,9 +5,9 @@ mapping and visualization in the GIS. This module also includes mapping layers l
 MapImageLayer and VectorTileLayer
 """
 
-from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer
+from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer, OfflineMapAreaManager
 from ._utils import export_map, get_layout_templates
 from .symbol import create_symbol, display_colormaps, show_styles
 from .renderer import generate_renderer
 __all__ = ['WebMap', 'WebScene', 'MapImageLayer', 'MapImageLayerManager', 'VectorTileLayer',
-           'export_map', 'get_layout_templates']
+           'export_map', 'get_layout_templates', 'OfflineMapAreaManager']

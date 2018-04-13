@@ -3,7 +3,7 @@ channels:
 - defaults
 dependencies:
 - ipywidgets >=5.2.2,<7
-- pandas >=0.22
+- pandas
 - pip
 - python=3.6
 - setuptools
@@ -12,5 +12,6 @@ dependencies:
 - keyrings.alt
 - nbconvert
 - beautifulsoup4
+- requests
 - pip:
-  - xmlrunner
+  - unittest-xml-reporting

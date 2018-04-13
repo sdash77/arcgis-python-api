@@ -339,7 +339,7 @@ class _DeepCloner():
             self._graph[item.id] = item_definition
 
             map_json = None
-            with open(item_definition.data, 'r') as file:
+            with open(item_definition.data, 'r', encoding="utf8") as file:
                 map_json = json.loads(file.read())
 
             data_connections = []
@@ -2275,7 +2275,7 @@ class _FormDefinition(_ItemDefinition):
             # Loop through the files and update references to the feature service and item id
             for path in os.listdir(zip_dir):
                 if os.path.splitext(path)[1].lower() == '.info':
-                    with open(os.path.join(zip_dir, path), 'r') as file:
+                    with open(os.path.join(zip_dir, path), 'r', encoding="utf8") as file:
                         data = json.loads(file.read())
 
                     original_url = data['serviceInfo']['url']
@@ -2286,11 +2286,11 @@ class _FormDefinition(_ItemDefinition):
                             feature_service_url = value['url']
                             break
 
-                    with open(os.path.join(zip_dir, path), 'w') as file:
+                    with open(os.path.join(zip_dir, path), 'w', encoding="utf8") as file:
                         file.write(json.dumps(data))
 
                 elif os.path.splitext(path)[1].lower() == '.xml' or path.lower() == 'webform.json':
-                    with open(os.path.join(zip_dir, path), 'r') as file:
+                    with open(os.path.join(zip_dir, path), 'r', encoding="utf8") as file:
                         data = file.read()
 
                     data = data.replace(original_item['id'], new_item['id'])
@@ -2301,7 +2301,7 @@ class _FormDefinition(_ItemDefinition):
                         url = '{0}sharing/rest/content/items/{1}'.format(org_url, value)
                         data = re.sub('(?<=")([^<]+?{0})(?=")'.format(key), url, data, 0, re.IGNORECASE)
 
-                    with open(os.path.join(zip_dir, path), 'w') as file:
+                    with open(os.path.join(zip_dir, path), 'w', encoding="utf8") as file:
                         file.write(data)
 
                 elif os.path.splitext(path)[1].lower() == '.iteminfo':
@@ -2319,7 +2319,7 @@ class _FormDefinition(_ItemDefinition):
                         xlsx.extractall(xlsx_dir)
                         xlsx.close()
 
-                        with open(os.path.join(xlsx_dir, 'xl/sharedStrings.xml'), 'r') as file:
+                        with open(os.path.join(xlsx_dir, 'xl/sharedStrings.xml'), 'r', encoding="utf8") as file:
                             data = file.read()
 
                         for key, value in clone_mapping['Services'].items():
@@ -2329,7 +2329,7 @@ class _FormDefinition(_ItemDefinition):
                             url = '{0}sharing/rest/content/items/{1}'.format(org_url, value)
                             data = re.sub('(?<=>)([^<]+?{0})(?=<)'.format(key), url, data, 0, re.IGNORECASE)
 
-                        with open(os.path.join(xlsx_dir, 'xl/sharedStrings.xml'), 'w') as file:
+                        with open(os.path.join(xlsx_dir, 'xl/sharedStrings.xml'), 'w', encoding="utf8") as file:
                             file.write(data)
 
                         xlsx = zipfile.ZipFile(os.path.join(zip_dir, path), 'w', zipfile.ZIP_DEFLATED)
@@ -2483,7 +2483,7 @@ class _ProMapDefinition(_ItemDefinition):
                 mapx = self.data
 
                 map_json = None
-                with open(mapx, 'r') as file:
+                with open(mapx, 'r', encoding="utf8") as file:
                     map_json = json.loads(file.read())
 
                 data_connections = []
@@ -2516,7 +2516,7 @@ class _ProMapDefinition(_ItemDefinition):
                 new_mapx_dir = os.path.join(os.path.dirname(mapx), 'new_mapx')
                 os.makedirs(new_mapx_dir)
                 new_mapx = os.path.join(new_mapx_dir, os.path.basename(mapx))
-                with open(new_mapx, 'w') as file:
+                with open(new_mapx, 'w', encoding="utf8") as file:
                     file.write(json.dumps(map_json))
                 self._data = new_mapx
 

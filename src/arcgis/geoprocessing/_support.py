@@ -206,7 +206,10 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             gp_params[gp_param_name] = param_value
             if py_type == FeatureSet:
                 if webtool:
-                    gp_params[gp_param_name] = _layer_input(param_value)
+                    if isinstance(param_value, (tuple, list)):
+                        gp_params[gp_param_name] = [_layer_input(p) for p in param_value]
+                    else:
+                        gp_params[gp_param_name] = _layer_input(param_value)
 
                 else:
                     if type(param_value) == FeatureSet:

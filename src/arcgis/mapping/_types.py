@@ -495,7 +495,8 @@ class WebMap(collections.OrderedDict):
         ---------------     --------------------------------------------------------------------
         owner               Optional string. Defaults to the logged in user.
         ---------------     --------------------------------------------------------------------
-        folder              Optional string. Name of the folder where placing item.
+        folder              Optional string. Name of the folder into which the web map should be
+                            saved.
         ===============     ====================================================================
 
         *Key:Value Dictionary Options for Argument item_properties*
@@ -680,13 +681,15 @@ class WebMap(collections.OrderedDict):
 
 class OfflineMapAreaManager(object):
     """
-    Helper class to manage offline map areas attached to a web map item. Users do not instantiate this class directly,
-    instead, access the methods exposed by accessing the `offline_areas` property on the WebMap object.
+    Helper class to manage offline map areas attached to a web map item. Users should not instantiate this class
+    directly, instead, should access the methods exposed by accessing the `offline_areas` property on the `WebMap`
+    object.
     """
     def __init__(self, item, gis):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
+        self._web_map = WebMap(self._item)
 
         # Get GP server url from helper services advertised by the GIS.
         try:
@@ -694,7 +697,7 @@ class OfflineMapAreaManager(object):
         except Exception:
             warn("GIS does not support creating packages for offline usage")
 
-    def create(self, area, title=None, snippet=None, tags=None, folder_name=None):
+    def create(self, area, item_properties=None, folder=None, min_scale=None, max_scale=None, layers_to_ignore=None):
         """
         Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
         different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
@@ -718,15 +721,62 @@ class OfflineMapAreaManager(object):
                                'xmax', 'ymax' and spatial reference. If spatial reference is not
                                specified, it is assumed to be 'wkid' : 4326.
         ------------------     --------------------------------------------------------------------
-        title                  Optional string. Specify a title for the output map area item.
+        item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------
-        snippet                Optional string. Specify a description for the output map area item.
+        folder                 Optional string. Specify a folder name if you want the offline map
+                               area item and the packages to be created inside a folder.
         ------------------     --------------------------------------------------------------------
-        tags                   Optional string or list of strings. Specify tags for output map area item.
+        min_scale              Optional number. Specify the minimum scale to cache tile and vector
+                               tile layers. When zoomed out beyond this scale, cached layers would
+                               not display.
         ------------------     --------------------------------------------------------------------
-        folder_name            Optional string. Specify a folder name if you want the offline map area
-                               item and the packages to be created inside a folder.
+        max_scale              Optional number. Specify the maximum scale to cache tile and vector
+                               tile layers. When zoomed in beyond this scale, cached layers would
+                               not display.
+        ------------------     --------------------------------------------------------------------
+        layers_to_ignore       Optional List of layer objects to exclude when creating offline
+                               packages. You can get the list of layers in a web map by calling
+                               the `layers` property on the `WebMap` object.
         ==================     ====================================================================
+
+        *Hint: Your min_scale is always bigger in value than your max_scale*
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of
+                           strings. Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters)
+                           of the what the item is.
+        =================  =====================================================================
+
+        :return:
+            Item object for the offline map area item that was created.
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Creating offline map areas
+
+            wm = WebMap(wm_item)
+
+            # create offline areas ignoring a layer and for certain min, max scales for other layers
+            item_prop = {'title': 'Clear lake hyperspectral field campaign',
+                        'snippet': 'Offline package for field data collection using spectro-radiometer',
+                        'tags': ['python api', 'in-situ data', 'field data collection']}
+
+            aviris_layer = wm.layers[-1]
+
+            north_bed = wm.definition.bookmarks[-1]['name']
+            wm.offline_areas.create(extent=north_bed, item_properties=item_prop,
+                                  folder='clear_lake', min_scale=9000, max_scale=4500,
+                                   layers_to_ignore=[aviris_layer])
 
         .. note::
             This method executes silently. To view informative status messages, set the verbosity environment variable
@@ -739,8 +789,7 @@ class OfflineMapAreaManager(object):
                from arcgis import env
                env.verbose = True
 
-        :return:
-            Item object for the offline map area item created.
+
         """
         # region find if bookmarks or extent is specified
         _bookmark = None
@@ -753,7 +802,7 @@ class OfflineMapAreaManager(object):
                        'ymin': area[0][1],
                        'xmax': area[1][0],
                        'ymax': area[1][1],
-                       'spatialReference':{'wkid': 4326}}
+                       'spatialReference': {'wkid': 4326}}
 
         elif isinstance(area, dict) and 'xmin' in area:  # geocoded extent provided
             _extent = area
@@ -762,10 +811,10 @@ class OfflineMapAreaManager(object):
         # endregion
 
         # region build input parameters - for CreateMapArea tool
-        if folder_name:
+        if folder:
             user_folders = self._gis.users.me.folders
             if user_folders:
-                matching_folder_ids = [f['id'] for f in user_folders if f['title'] == folder_name]
+                matching_folder_ids = [f['id'] for f in user_folders if f['title'] == folder]
                 if matching_folder_ids:
                     folder_id = matching_folder_ids[0]
                 else:  # said folder not found in user account
@@ -775,11 +824,19 @@ class OfflineMapAreaManager(object):
         else:
             folder_id = None
 
-        if tags:
-            if type(tags) is list:
-                tags = ",".join('tags')
+        if 'tags' in item_properties:
+            if type(item_properties['tags']) is list:
+                tags = ",".join(item_properties['tags'])
+            else:
+                tags = item_properties['tags']
+        else:
+            tags = None
 
-        output_name = {'title': title, 'snippet': snippet, 'tags': tags, 'folderId': folder_id}
+        output_name = {'title': item_properties['title'] if 'title' in item_properties else None,
+                       'snippet': item_properties['snippet'] if 'snippet' in item_properties else None,
+                       'description': item_properties['description'] if 'description' in item_properties else None,
+                       'tags': tags,
+                       'folderId': folder_id}
         # endregion
 
         # region call CreateMapArea tool
@@ -788,8 +845,73 @@ class OfflineMapAreaManager(object):
         oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
         # endregion
 
+        # region build input parameters - for setupMapArea tool
+        # map layers to ignore parameter
+        map_layers_to_ignore = []
+        if isinstance(layers_to_ignore, list):
+            for layer in layers_to_ignore:
+                if isinstance(layer, PropertyMap):
+                    if hasattr(layer, 'url'):
+                        map_layers_to_ignore.append(layer.url)
+                elif isinstance(layer, str):
+                    map_layers_to_ignore.append(layer)
+        elif isinstance(layers_to_ignore, PropertyMap):
+            if hasattr(layers_to_ignore, 'url'):
+                map_layers_to_ignore.append(layers_to_ignore.url)
+        elif isinstance(layers_to_ignore, str):
+            map_layers_to_ignore.append(layers_to_ignore)
+
+        # LOD parameter
+        lods = []
+        if min_scale or max_scale:
+            # find tile and vector tile layers in map
+            cached_layers = [l for l in self._web_map.layers if l.layerType in ['VectorTileLayer',
+                                                                               'ArcGISTiledMapServiceLayer']]
+
+            # find tile and vector tile layers in basemap set of layers
+            if hasattr(self._web_map, 'basemap'):
+                if hasattr(self._web_map.basemap, 'baseMapLayers'):
+                    cached_layers_bm = [l for l in self._web_map.basemap.baseMapLayers if l.layerType in
+                                        ['VectorTileLayer', 'ArcGISTiledMapServiceLayer']]
+
+                    # combine both the layer lists together
+                    cached_layers.extend(cached_layers_bm)
+
+            for cached_layer in cached_layers:
+                if cached_layer.layerType == 'VectorTileLayer':
+                    if hasattr(cached_layer, 'url'):
+                        layer0_obj = VectorTileLayer(cached_layer.url)
+                    elif hasattr(cached_layer, 'itemId'):
+                        layer0_obj = VectorTileLayer.fromitem(self._gis.content.get(cached_layer.itemId))
+                else:
+                    layer0_obj = MapImageLayer(cached_layer.url)
+
+                # region snap logic
+                # Objective is to find the LoD that is close to the min scale specified. When scale falls between two
+                # levels in the tiling scheme, we will pick the larger limit for min_scale and smaller limit for
+                # max_scale.
+
+                # Start by sorting the tileInfo dictionary. Then use Python's bisect_left to find the conservative tile
+                # LOD that is closest to min scale. Do similar for max_scale.
+
+                sorted_lods = sorted(layer0_obj.properties.tileInfo.lods, key=lambda x:x['scale'])
+                keys = [l['scale'] for l in sorted_lods]
+
+                from bisect import bisect_left
+                min_lod_info = sorted_lods[bisect_left(keys, min_scale)]
+                max_lod_info = sorted_lods[bisect_left(keys, max_scale) - 1 if bisect_left(keys, max_scale) > 0 else 0]
+
+                lod_span = [str(i) for i in range(min_lod_info['level'], max_lod_info['level'] + 1)]
+                lod_span_str = ",".join(lod_span)
+                # endregion
+
+                lods.append({'url': layer0_obj.url,
+                            'levels': lod_span_str})
+            # endregion
+        # endregion
+
         # region call the SetupMapArea tool
-        setup_oma_result = pkg_tb.setup_map_area(oma_result)
+        setup_oma_result = pkg_tb.setup_map_area(oma_result, map_layers_to_ignore, lods)
         # print(setup_oma_result)
         _log.info(str(setup_oma_result))
         # endregion
@@ -816,6 +938,9 @@ class OfflineMapAreaManager(object):
                                          `list()` method.
         ============================     ====================================================================
 
+        :return:
+            Dictionary containing update status.
+
         .. note::
             This method executes silently. To view informative status messages, set the verbosity environment variable
             as shown below:
@@ -826,9 +951,6 @@ class OfflineMapAreaManager(object):
 
                from arcgis import env
                env.verbose = True
-
-        :return:
-            Dictionary containing update status.
         """
         # find if 1 or a list of area items is provided
         if isinstance(offline_map_area_items, Item):
@@ -889,6 +1011,7 @@ class OfflineMapAreaManager(object):
                     print(pkg.homepage)  # get the homepage url for each package item.
 
         :return:
+            List of Map Area items related to the current WebMap object
         """
 
         _offline_areas = self._item.related_items('Map2Area', 'forward')

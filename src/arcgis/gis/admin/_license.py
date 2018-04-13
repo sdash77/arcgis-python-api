@@ -245,6 +245,8 @@ class License(object):
            boolean
         """
         item_id = self.properties['listing']['itemId']
+        if isinstance(entitlements, str):
+            entitlements = entitlements.split(',')
         params = {
             "f" : "json",
             "userEntitlements" : {"users":[username],

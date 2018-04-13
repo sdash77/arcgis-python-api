@@ -3,8 +3,7 @@ import subprocess
 import logging
 log = logging.getLogger()
 
-from __init__ import *
-
+from automation._common import *
 DOCS_DIR = os.path.abspath(os.path.join(GEOSAURUS_ROOT_DIR, 
                                         "docs", "api_ref"))
 
