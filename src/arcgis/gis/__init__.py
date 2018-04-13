@@ -133,6 +133,8 @@ class GIS(object):
     ----------------    ---------------------------------------------------------------
     proxy_host          Optional string. The host name of the proxy server used to allow HTTP/S
                         access in the network where the script is run.
+
+                        ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
