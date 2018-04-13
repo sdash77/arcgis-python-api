@@ -953,13 +953,23 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        envelope            required arcpy.Extent object.
+        envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
+                            represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
         :returns: output geometry clipped to extent
 
         """
-        if HASARCPY:
+        if HASARCPY and \
+           isinstance(envelope, (list,tuple)) and \
+           len(envelope) == 4:
+            envelope = arcpy.Extent(XMin=envelope[0],
+                                    YMin=envelope[1],
+                                    XMax=envelope[2],
+                                    YMax=envelope[3])
+            return Geometry(self.as_arcpy.clip(envelope))
+        elif HASARCPY and \
+             isinstance(envelope, arcpy.Extent):
             return Geometry(self.as_arcpy.clip(envelope))
         return None
     #----------------------------------------------------------------------
