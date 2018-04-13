@@ -620,7 +620,8 @@ class Geometry(BaseGeometry):
         ptX = []
         ptY = []
         if HASARCPY:
-            return getattr(self.as_arcpy, "extent", None)
+            ext = getattr(self.as_arcpy, "extent", None)
+            return ext.XMin, ext.YMin, ext.XMax, ext.YMax
         elif HASSHAPELY:
             return self.as_shapely.bounds
         elif isinstance(self, Polygon):
