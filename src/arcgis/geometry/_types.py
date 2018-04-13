@@ -328,20 +328,13 @@ class Geometry(BaseGeometry):
                 return {'type': 'Point', 'coordinates': (self.x,
                                                          self.y)}
             elif isinstance(self, Polygon):
-                def split_part(a_part):
-                    part_list = []
-                    for item in a_part:
-                        if item is None:
-                            if part_list:
-                                yield part_list
-                            part_list = []
-                        else:
-                            part_list.append((item[0], item[1]))
-                    if part_list:
-                        yield part_list
-                part_json = [list(split_part(part))
-                             for part in self['rings']]
-                return {'type': 'MultiPolygon', 'coordinates': part_json}
+                col = []
+                for part in self['rings']:
+                    col.append([tuple(pt) for pt in part])
+                return {
+                    'coordinates' : [col],
+                    'type' : 'MultiPolygon'
+                }
             elif isinstance(self, Polyline):
                 return {'type': 'MultiLineString', 'coordinates': [[((pt[0], pt[1]) if pt else None)
                                                                     for pt in part]
