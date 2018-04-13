@@ -308,6 +308,20 @@ class GIS(object):
                 raise
         try:
             if url.lower().find("arcgis.com") > -1 and \
+               self._portal.is_logged_in and \
+               self._portal.con._auth.lower() == 'oauth':
+                from six.moves.urllib_parse import urlparse
+                props = self._portal.get_properties(force=False)
+                url = "%s://%s.%s" % (urlparse(self._url).scheme,
+                                      props['urlKey'],
+                                      props['customBaseUrl'])
+                self._url = url
+                self._portal.resturl = self._portal.resturl.replace(self._portal.url,
+                                                                    url)
+                self._portal.url = url
+                self._portal.con.baseurl = self._portal.resturl
+                self._portal.con._token = None
+            elif url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
