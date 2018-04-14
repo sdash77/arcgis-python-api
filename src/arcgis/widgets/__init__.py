@@ -393,11 +393,7 @@ class MapView(widgets.DOMWidget):
         """
 
         if not layers:
-            # self.mode = "###remove_layers"
-            # self._js_layer_list = ''
-            # for l in self._webmap.layers:
-            #     self._webmap.remove_layer(l)
-            # return True
+            # empty layer list, then remove all layers
             if self.layers:
                 while len(self.layers) > 0:
                     self.remove_layers(layers=self.layers)
@@ -405,32 +401,41 @@ class MapView(widgets.DOMWidget):
             else:
                 return True
 
+        if 'layers' in layers:  # if you passed in an item
+            self.remove_layers(layers=layers.layers)
+
         elif isinstance(layers, list):
             # removal is async. Hence, loop until there is no layer left.
             for layer in layers:
-                #find index - common across all internal lists
+                # find index - common across all internal lists
                 index_to_remove = self._widget_layer_list.index(layer)
 
-                #region remove from widget
-                js_layers_parsed = json.loads(self._js_layer_list)
-                js_layer_to_remove = js_layers_parsed[index_to_remove]
+                # region remove from widget
+                try:
+                    js_layers_parsed = json.loads(self._js_layer_list)
+                    js_layer_to_remove = js_layers_parsed[index_to_remove]
 
-                self._layerId_to_remove = js_layer_to_remove['id']
+                    self._layerId_to_remove = js_layer_to_remove['id']
 
-                js_layers_parsed.remove(js_layer_to_remove)
+                    js_layers_parsed.remove(js_layer_to_remove)
 
-                # remove the layer from synced trait
-                self._js_layer_list = json.dumps(js_layers_parsed)
-                #endregion
+                    # remove the layer from synced trait
+                    self._js_layer_list = json.dumps(js_layers_parsed)
+                except:
+                    # layer to remove does not exist in JS list or, JS list is empty (can happen in case of duplicate
+                    # layers, or unreachable services).
+                    pass
 
-                #region remove from webmap
+                # endregion
+
+                # region remove from webmap
                 webmap_layer_to_remove = self._webmap.layers[index_to_remove]
                 self._webmap.remove_layer(webmap_layer_to_remove)
-                #endregion
+                # endregion
 
-                #region remove from widget layer list
+                # region remove from widget layer list
                 self._widget_layer_list.remove(layer)
-                #endregion
+                # endregion
             return True
 
         else:
