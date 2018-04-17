@@ -15,10 +15,15 @@ class Info(BaseServer):
     def __init__(self, url, gis,
                  initialize=False):
         """Constructor
-            Inputs:
-               url - admin url
-               gis - GIS or Server object
-               initialize - loads the object's properties on runtime
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Required string. The administration URL for the ArcGIS Server.
+        ---------------     --------------------------------------------------------------------
+        gis                 Required Server object. Connection object.
+        ---------------     --------------------------------------------------------------------
+        initialize          Optional boolean. If true, information loaded at object
+        ===============     ====================================================================
         """
         super(Info, self).__init__(gis=gis,
                                    url=url)

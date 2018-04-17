@@ -52,11 +52,18 @@ class Mode(BaseServer):
         as the default behavior. Moving to EDITABLE mode will not restart
         services.
 
-        Parameters:
-         :siteMode: The mode you will set your site to.
-          Values: READ_ONLY or EDITABLE.
-         :runAsync: Determines if this operation must run asynchronously.
-          Values: true or false
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        siteMode:           Required string. The mode you will set your site to. Values:
+                            READ_ONLY or EDITABLE.
+        ---------------     --------------------------------------------------------------------
+        runAsync            Optional boolean. Determines if this operation must run asynchronously.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         params = {"siteMode" : siteMode,
                   "runAsync" : runAsync,
