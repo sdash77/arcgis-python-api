@@ -328,7 +328,7 @@ class FeatureLayer(Layer):
         gdb_version                         Optional string. The geodatabase version to query. This parameter
                                             applies only if the isDataVersioned property of the layer is true.
                                             If this is not specified, the query will apply to the published
-                                            map’s version.
+                                            map's version.
         -------------------------------     --------------------------------------------------------------------
         return_geometry                     Optional boolean. If true, geometry is returned with the query.
                                             Default is true.
