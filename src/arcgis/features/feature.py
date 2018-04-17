@@ -969,16 +969,21 @@ class FeatureSet(object):
     def save(self, save_location, out_name, encoding=None):
         """
         Saves a featureset object to a feature class
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        save_location       Required string. Path to export the FeatureSet to.
-        ---------------     --------------------------------------------------------------------
-        out_name            Required string. Name of the saved table.
-        ---------------     --------------------------------------------------------------------
-        encoding            Optional string. character encoding is used to represent a repertoire
-                            of characters by some kind of encoding system. The default is None.
-        ===============     ====================================================================
+
+
+
+
+        =================    ====================================================================
+        **Argument**         **Description**
+        -----------------    --------------------------------------------------------------------
+        save_location        Required string. Path to export the FeatureSet to.
+        -----------------    --------------------------------------------------------------------
+        out_name             Required string. Name of the saved table.
+        -----------------    --------------------------------------------------------------------
+        encoding             Optional string. character encoding is used to represent a
+                             repertoire of characters by some kind of encoding system. The
+                             default is None.
+        =================    ====================================================================
 
 
         :return: string
