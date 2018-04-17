@@ -1047,8 +1047,9 @@ class DatastoreManager(object):
             "f" : "json",
             "item" : item
         }
-        if self._validate_item(item=params['item']) == False:
-            raise Exception("Could not register the folder.")
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -1096,8 +1097,9 @@ class DatastoreManager(object):
                 }
             })
         }
-        if self._validate_item(item=params['item']) == False:
-            raise Exception("Could not register the path.")
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
         res = self._portal.con.post(path, params, verify_cert=False)
 
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -1160,8 +1162,9 @@ class DatastoreManager(object):
             "f" : "json",
             "item" : item
         }
-        if self._validate_item(params['item']) == False:
-            raise Exception("Invalid item.")
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -1194,8 +1197,9 @@ class DatastoreManager(object):
         }
 
         params['item'] = item
-        if self._validate_item(params['item']) == False:
-            raise Exception("Invalid item.")
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
         path = self._admin_url + "/data/registerItem"
         res = self._portal.con.post(path, params, verify_cert=False)
         if res['status'] == 'success' or res['status'] == 'exists':
@@ -1283,6 +1287,7 @@ class DatastoreManager(object):
 
     def _validate_item(self, item):
         """validates a BDS connection"""
+        msg = ""
         url = self._admin_url + "/data/validateDataItem"
         params = {
             'f' : 'json',
@@ -1290,9 +1295,9 @@ class DatastoreManager(object):
         }
         res = self._portal.con.post(url, params, verify_cert=False)
         try:
-            return res['status'] == 'success'
+            return res['status'] == 'success', ""
         except:
-            return False
+            return False, res
 
     def validate(self):
         """
