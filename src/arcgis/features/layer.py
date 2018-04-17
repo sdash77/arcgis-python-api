@@ -1369,57 +1369,63 @@ class FeatureLayerCollection(_GISResource):
                               return_z=False,
                               return_m=False):
         """
-           The Query operation is performed on a feature service layer
-           resource. The result of this operation are feature sets grouped
-           by source layer/table object IDs. Each feature set contains
-           Feature objects including the values for the fields requested by
-           the user. For related layers, if you request geometry
-           information, the geometry of each feature is also returned in
-           the feature set. For related tables, the feature set does not
-           include geometries.
-           Inputs:
-              objectIds - the object IDs of the table/layer to be queried
-              relationshipId - The ID of the relationship to be queried.
-              outFields - the list of fields from the related table/layer
-                          to be included in the returned feature set. This
-                          list is a comma delimited list of field names. If
-                          you specify the shape field in the list of return
-                          fields, it is ignored. To request geometry, set
-                          returnGeometry to true.
-                          You can also specify the wildcard "*" as the
-                          value of this parameter. In this case, the result
-                          s will include all the field values.
-              definitionExpression - The definition expression to be
-                                     applied to the related table/layer.
-                                     From the list of objectIds, only those
-                                     records that conform to this
-                                     expression are queried for related
-                                     records.
-              returnGeometry - If true, the feature set includes the
-                               geometry associated with each feature. The
-                               default is true.
-              maxAllowableOffset - This option can be used to specify the
-                                   maxAllowableOffset to be used for
-                                   generalizing geometries returned by the
-                                   query operation. The maxAllowableOffset
-                                   is in the units of the outSR. If outSR
-                                   is not specified, then
-                                   maxAllowableOffset is assumed to be in
-                                   the unit of the spatial reference of the
-                                   map.
-              geometryPrecision - This option can be used to specify the
-                                  number of decimal places in the response
-                                  geometries.
-              outWKID - The spatial reference of the returned geometry.
-              gdbVersion - The geodatabase version to query. This parameter
-                           applies only if the isDataVersioned property of
-                           the layer queried is true.
-              returnZ - If true, Z values are included in the results if
-                        the features have Z values. Otherwise, Z values are
-                        not returned. The default is false.
-              returnM - If true, M values are included in the results if
-                        the features have M values. Otherwise, M values are
-                        not returned. The default is false.
+        The Query operation is performed on a feature service layer
+        resource. The result of this operation are feature sets grouped
+        by source layer/table object IDs. Each feature set contains
+        Feature objects including the values for the fields requested by
+        the user. For related layers, if you request geometry
+        information, the geometry of each feature is also returned in
+        the feature set. For related tables, the feature set does not
+        include geometries.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        object_ids                 Optional string. the object IDs of the table/layer to be queried.
+        ----------------------     --------------------------------------------------------------------
+        relationship_id            Optional string. The ID of the relationship to be queried.
+        ----------------------     --------------------------------------------------------------------
+        out_fields                 Optional string.the list of fields from the related table/layer
+                                   to be included in the returned feature set. This list is a comma
+                                   delimited list of field names. If you specify the shape field in the
+                                   list of return fields, it is ignored. To request geometry, set
+                                   return_geometry to true. You can also specify the wildcard "*" as the
+                                   value of this parameter. In this case, the results will include all
+                                   the field values.
+        ----------------------     --------------------------------------------------------------------
+        definition_expression      Optional string. The definition expression to be applied to the
+                                   related table/layer. From the list of objectIds, only those records
+                                   that conform to this expression are queried for related records.
+        ----------------------     --------------------------------------------------------------------
+        return_geometry            Optional boolean. If true, the feature set includes the geometry
+                                   associated with each feature. The default is true.
+        ----------------------     --------------------------------------------------------------------
+        max_allowable_offset       Optional float. This option can be used to specify the
+                                   max_allowable_offset to be used for generalizing geometries returned
+                                   by the query operation. The max_allowable_offset is in the units of
+                                   the outSR. If outSR is not specified, then max_allowable_offset is
+                                   assumed to be in the unit of the spatial reference of the map.
+        ----------------------     --------------------------------------------------------------------
+        geometry_precision         Optional integer. This option can be used to specify the number of
+                                   decimal places in the response geometries.
+        ----------------------     --------------------------------------------------------------------
+        out_wkid                   Optional integer. The spatial reference of the returned geometry.
+        ----------------------     --------------------------------------------------------------------
+        gdb_version                Optional string. The geodatabase version to query. This parameter
+                                   applies only if the isDataVersioned property of the layer queried is
+                                   true.
+        ----------------------     --------------------------------------------------------------------
+        return_z                   Optional boolean. If true, Z values are included in the results if
+                                   the features have Z values. Otherwise, Z values are not returned.
+                                   The default is false.
+        ----------------------     --------------------------------------------------------------------
+        return_m                   Optional boolean. If true, M values are included in the results if
+                                   the features have M values. Otherwise, M values are not returned.
+                                   The default is false.
+        ======================     ====================================================================
+
+
+        :return: dict
         """
         params = {
             "f": "json",
@@ -1462,10 +1468,18 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def _unregister_replica(self, replica_id):
         """
-           removes a replica from a feature service
-           Inputs:
-             replica_id - The replicaID returned by the feature service
-                          when the replica was created.
+        Removes a replica from a feature service
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          Optional string. The replica_id returned by the feature service when
+                            the replica was created.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         params = {
             "f": "json",
@@ -1477,11 +1491,18 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def _replica_info(self, replica_id):
         """
-           The replica info resources lists replica metadata for a specific
-           replica.
-           Inputs:
-              replica_id - The replicaID returned by the feature service
-                           when the replica was created.
+        The replica info resources lists replica metadata for a specific replica.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          Optional string. The replica_id returned by the feature service when
+                            the replica was created.
+        ===============     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f": "json"
@@ -1691,8 +1712,6 @@ class FeatureLayerCollection(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    #TODO: FIX PARAMETERS
-    #TODO: FIGURE OUT LAST PART WITH syncLayers
     def _synchronize_replica(self,
                              replica_id,
                              transport_type="esriTransportTypeUrl",
@@ -1912,9 +1931,17 @@ class FeatureLayerCollection(_GISResource):
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
-        Parameters:
-         :path: path of the file to upload
-         :description: optional descriptive text for the upload item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        path                Optional string. Filepath of the file to upload.
+        ---------------     --------------------------------------------------------------------
+        description         Optional string. Descriptive text for the uploaded item.
+        ===============     ====================================================================
+
+        :returns: boolean
+
         """
         if (os.path.getsize(path) >> 20) <= 9:
             url = self._url + "/uploads/upload"
