@@ -23,14 +23,18 @@ DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" #What the dev site uses
 
 def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                      replace_img_path=False, img_prefix=DEFAULT_IMG_PREFIX,
+                     replace_full_urls=True,
                      log_func=log.info):
     f"""
     export Jupyter Notebooks in basic HTML. Will not execute the notebook.
     {info_text}
     :param root_path: notebooks root dir (normally arcgis-python-api repo)
     :param output_root_path: html output root (normally arcgis-for-dev repo)
-    :param replace_img_path:
-    :param img_prefix:
+    :param replace_img_path: if True, replaces /foo/bar/image.png with 
+    {img_prefix}image.png
+    :param img_prefix: the image prefix to use
+    :param replace_full_urls: if True, 
+    replaces http://developers.arcgis.com/foo/bar to /foo/bar
     :return:
     """
     log_func(f"Converting notebooks at {root_path} to html, placing output "\
@@ -83,10 +87,25 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                     if ("http" not in img["src"]) and \
                        ("data:" not in img["src"]):
                         #Will match with all relative paths in the notebook
+                        old_img_src = img["src"]
                         filename = img["src"].split("/")[-1]
-                        img["src"] = img_prefix + filename
+                        new_img_src = img_prefix + filename
+                        img["src"] = new_img_src
+                        log_func("IMG replaced {} with {}".format(old_img_src,
+                                                                  new_img_src))
                 log_str += " | modified img "
             #end region
+
+            #region replace developers.arcgis.com/foo/bar... urls to /foo/bar
+            if replace_full_urls:
+                for link in soup.findAll('a', href=True):
+                    if "developers.arcgis.com" in link["href"]:
+                        full_url = link["href"]
+                        rel_url = full_url.split("developers.arcgis.com")[-1]
+                        link["href"] = rel_url
+                        log_func("HREF Replaced {} with {}".format(full_url,
+                                                                   rel_url))
+           #endregion
 
             #region inject try-it-live link
             if embed_try_it_live:

@@ -1262,6 +1262,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 layers_definition = self.layers_definition
                 relationships = {}
                 time_infos = {}
+                original_drawing_infos = {}
+                original_templates = {}
+                original_types = {}
+
                 for layer in layers_definition['layers'] + layers_definition['tables']:
                     # Need to remove relationships first and add them back individually
                     # after all layers and tables have been added to the definition
@@ -1324,8 +1328,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 admin_layer_info['viewLayerDefinition'] = view_layer_definition
                                 break
 
-                    # Remove any unsupported capabilities from layer for Portal
+                        if self.target.properties.isPortal:
+                            # Store the original drawingInfo to be updated later
+                            if 'drawingInfo' in layer and layer['drawingInfo'] is not None:
+                                original_drawing_infos[layer['id']] = layer['drawingInfo']
+
+                            # Store the original templates to be updated later
+                            if 'templates' in layer and layer['templates'] is not None:
+                                original_templates[layer['id']] = layer['templates']
+
+                            # Store the original types to be updated later
+                            if 'types' in layer and layer['types'] is not None:
+                                original_types[layer['id']] = layer['types']
+
                     if self.target.properties.isPortal:
+                        # Remove any unsupported capabilities from layer for Portal
                         capabilities = _deep_get(layer, 'capabilities')
                         if capabilities is not None:
                             layer['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
@@ -1434,8 +1451,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 _update_feature_attributes(template['prototype'], field_mapping)
                                 update_definition['types'] = types
 
-                    # Update field visibility for views
+                    
                     if self.is_view:
+                        # Update field visibility for views
                         if 'viewDefinitionQuery' in layer and layer['viewDefinitionQuery']:
                             update_definition['viewDefinitionQuery'] = layer['viewDefinitionQuery']
                             if layer_id in layer_field_mapping:
@@ -1456,6 +1474,37 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             field_visibility.append({'name' : field_name, 'visible' : visible})
                         if need_update:
                             update_definition['fields'] = field_visibility
+
+                        # Reapply the renderer and feature templates for views created in Portal
+                        if self.target.properties.isPortal:
+                            field_mapping = None
+                            if layer_id in layer_field_mapping:
+                                field_mapping = layer_field_mapping[layer_id]
+
+                            if layer_id in original_drawing_infos:
+                                drawing_info = original_drawing_infos[layer_id]
+                                if field_mapping is not None:
+                                    layer_definition = {'drawingInfo' : drawing_info}
+                                    _update_layer_definition_fields(layer_definition, field_mapping)
+                                update_definition['drawingInfo'] = drawing_info
+
+                            if layer_id in original_templates:
+                                templates = original_templates[layer_id]
+                                if field_mapping is not None:
+                                    for template in templates:
+                                        if 'prototype' in template and template['prototype'] is not None:
+                                            _update_feature_attributes(template['prototype'], field_mapping)
+                                update_definition['templates'] = templates
+
+                            if layer_id in original_types:
+                                types = original_types[layer_id]
+                                if field_mapping is not None:
+                                    for layer_type in types:
+                                        if 'templates' in layer_type and layer_type['templates'] is not None:
+                                            for template in layer_type['templates']:
+                                                if 'prototype' in template and template['prototype'] is not None:
+                                                    _update_feature_attributes(template['prototype'], field_mapping)
+                                update_definition['types'] = types
 
                     # Add time settings back to the layer
                     if layer_id in time_infos:
@@ -1551,7 +1600,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Update the layer id
                 for layer in layers:
-                    layer['id'] = layer_id_mapping[layer['id']]
+                    if layer['id'] in layer_id_mapping:
+                        layer['id'] = layer_id_mapping[layer['id']]
 
                 # Set the data to the text properties of the item
                 if data:
@@ -2958,55 +3008,14 @@ def _update_feature_attributes(feature, field_mapping):
 
 
 def _update_layer_fields(layer, field_mapping):
-    """Perform a find and replace for field names in a layer definition.
+    """Perform a find and replace for field names in a layer.
     Keyword arguments:
     layer - The layer to search and replace fields names
     field_mapping -  A dictionary containing the pairs of original field names and new field names"""
 
     if 'layerDefinition' in layer and layer['layerDefinition'] is not None:
         layer_definition = layer['layerDefinition']
-
-        if 'definitionExpression' in layer_definition and layer_definition['definitionExpression'] is not None:
-            layer_definition['definitionExpression'] = _find_and_replace_fields(layer_definition['definitionExpression'], field_mapping)
-
-        if 'drawingInfo' in layer_definition and layer_definition['drawingInfo'] is not None:
-            if 'renderer' in layer_definition['drawingInfo'] and layer_definition['drawingInfo']['renderer'] is not None:
-                renderer = layer_definition['drawingInfo']['renderer']
-                if renderer['type'] == 'uniqueValue':
-                    i = 0
-                    while 'field{0}'.format(i) in renderer:
-                        if renderer['field{0}'.format(i)] in field_mapping:
-                            renderer['field{0}'.format(i)] = field_mapping[renderer['field{0}'.format(i)]]
-                        i += 1
-                elif renderer['type'] == 'classBreaks':
-                    if 'field' in renderer:
-                        if renderer['field'] in field_mapping:
-                            renderer['field'] = field_mapping[renderer['field']]
-
-                value_expression = _deep_get(renderer, "valueExpression")
-                if value_expression is not None:
-                    renderer['valueExpression'] = _find_and_replace_fields_arcade(str(value_expression), field_mapping)
-
-            labeling_infos = _deep_get(layer_definition['drawingInfo'], 'labelingInfo')
-            if labeling_infos is not None:
-                for label_info in labeling_infos:
-                    label_expression = _deep_get(label_info, 'labelExpression')
-                    if label_expression is not None:
-                        results = re.findall("\[(.*?)\]", label_expression)
-                        for result in results:
-                            if result in field_mapping:
-                                label_info['labelExpression'] = str(label_expression).replace("[{0}]".format(result), "[{0}]".format(field_mapping[result]))
-
-                    value = _deep_get(label_info, 'labelExpressionInfo', 'value')
-                    if value is not None:
-                        results = re.findall("{(.*?)}", value)
-                        for result in results:
-                            if result in field_mapping:
-                                label_info['labelExpressionInfo']['value'] = str(value).replace("{{{0}}}".format(result), "{{{0}}}".format(field_mapping[result]))
-
-                    expression = _deep_get(label_info, 'labelExpressionInfo', 'expression')
-                    if expression is not None:
-                        label_info['labelExpressionInfo']['expression'] = _find_and_replace_fields_arcade(str(expression), field_mapping)
+        _update_layer_definition_fields(layer_definition, field_mapping)
 
     if 'popupInfo' in layer and layer['popupInfo'] is not None:
         if 'title' in layer['popupInfo'] and layer['popupInfo']['title'] is not None:
@@ -3065,6 +3074,55 @@ def _update_layer_fields(layer, field_mapping):
                                 param['fieldName'] = field_mapping[param['fieldName']]
         if 'parameterizedExpression' in layer['definitionEditor'] and layer['definitionEditor']['parameterizedExpression'] is not None:
             layer['definitionEditor']['parameterizedExpression'] = _find_and_replace_fields(layer['definitionEditor']['parameterizedExpression'], field_mapping)
+
+
+def _update_layer_definition_fields(layer_definition, field_mapping):
+    """Perform a find and replace for field names in a layer definition.
+    Keyword arguments:
+    layer_definition - The layer_definition to search and replace fields names
+    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+
+    if 'definitionExpression' in layer_definition and layer_definition['definitionExpression'] is not None:
+        layer_definition['definitionExpression'] = _find_and_replace_fields(layer_definition['definitionExpression'], field_mapping)
+
+    if 'drawingInfo' in layer_definition and layer_definition['drawingInfo'] is not None:
+        if 'renderer' in layer_definition['drawingInfo'] and layer_definition['drawingInfo']['renderer'] is not None:
+            renderer = layer_definition['drawingInfo']['renderer']
+            if renderer['type'] == 'uniqueValue':
+                i = 0
+                while 'field{0}'.format(i) in renderer:
+                    if renderer['field{0}'.format(i)] in field_mapping:
+                        renderer['field{0}'.format(i)] = field_mapping[renderer['field{0}'.format(i)]]
+                    i += 1
+            elif renderer['type'] == 'classBreaks':
+                if 'field' in renderer:
+                    if renderer['field'] in field_mapping:
+                        renderer['field'] = field_mapping[renderer['field']]
+
+            value_expression = _deep_get(renderer, "valueExpression")
+            if value_expression is not None:
+                renderer['valueExpression'] = _find_and_replace_fields_arcade(str(value_expression), field_mapping)
+
+        labeling_infos = _deep_get(layer_definition['drawingInfo'], 'labelingInfo')
+        if labeling_infos is not None:
+            for label_info in labeling_infos:
+                label_expression = _deep_get(label_info, 'labelExpression')
+                if label_expression is not None:
+                    results = re.findall("\[(.*?)\]", label_expression)
+                    for result in results:
+                        if result in field_mapping:
+                            label_info['labelExpression'] = str(label_expression).replace("[{0}]".format(result), "[{0}]".format(field_mapping[result]))
+
+                value = _deep_get(label_info, 'labelExpressionInfo', 'value')
+                if value is not None:
+                    results = re.findall("{(.*?)}", value)
+                    for result in results:
+                        if result in field_mapping:
+                            label_info['labelExpressionInfo']['value'] = str(value).replace("{{{0}}}".format(result), "{{{0}}}".format(field_mapping[result]))
+
+                expression = _deep_get(label_info, 'labelExpressionInfo', 'expression')
+                if expression is not None:
+                    label_info['labelExpressionInfo']['expression'] = _find_and_replace_fields_arcade(str(expression), field_mapping)
 
 
 def _update_layer_related_fields(layer, relationship_field_mapping):
