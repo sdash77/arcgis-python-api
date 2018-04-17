@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Name:        Workforce WorkerManager class tests
+# Name:        Workforce Workers tests
 # Purpose:     Sanity tests for ArcGIS Python API
 #-------------------------------------------------------------------------------
 import unittest
@@ -38,7 +38,7 @@ except ImportError:
 #endregion PreCondition Check
 
 #TestModule
-@unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in GIS module")
+@unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in Workforce Workers")
 def setUpModule():
     """
     Run checks for host system
@@ -48,50 +48,23 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
-class Test_Workforce_Worker_Manager(unittest.TestCase):
+class Test_Workforce_Workers(unittest.TestCase):
     """
     Test to verify that workers can be queried, added, updated, and deleted from a project
     """
-    # portal_url = ""
-    # portal_username = ""
-    # portal_password = ""
-
-    def add_assignment(self):
-        assignment = Assignment(self.project)
-        assignment.assignment_type = self.project.assignment_types.get(name="Inspection")
-        assignment.status = "UNASSIGNED"
-        assignment.geometry = {"x": 123, "y": 456}
-        assignment.location = "there"
-        assignment.description = "Do some work"
-        assignment.dispatcher = self.project.dispatchers.get(user_id='ar_workforce_python_api')
-        self.project.assignments.batch_add([assignment])
-
-    def add_assignment_types(self):
-        # Add an assignment type
-        self.project.assignment_types.add(name="Removal")
-        self.project.assignment_types.add(name="Inspection")
-
-    def add_dispatcher(self):
-        self.project.dispatchers.add(user_id='ar_workforce_python_api2',
-                                     contact_number='123-456-7890',
-                                     name='ar_workforce_python_api2')
 
     def add_worker(self):
-        self.project.workers.add(user_id='ar_workforce_python_api2', contact_number='123-456-7890', name='ar_workforce_python_api2')
+        self.project.workers.add(user_id='ar_workforce_python_api2',
+                                 contact_number='123-456-7890',
+                                 name='ar_workforce_python_api2',
+                                 notes='some notes',
+                                 title='Inspector')
 
     def reset_project(self):
-        self.project.assignments.batch_delete(self.project.assignments.search())
-        self.project.assignment_types.batch_delete(self.project.assignment_types.search())
-        self.project.tracks.batch_delete(self.project.tracks.search())
         self.project.workers.batch_delete(self.project.workers.search())
-        self.project.dispatchers.batch_delete(self.project.dispatchers.search(where="{} <> '{}'".format(self.project._dispatcher_schema.user_id, 'ar_workforce_python_api')))
 
     def setup_project(self):
-        self.add_assignment_types()
         self.add_worker()
-        self.add_dispatcher()
-        self.add_assignment()
-
 
     @classmethod
     def setUpClass(cls):
@@ -105,12 +78,9 @@ class Test_Workforce_Worker_Manager(unittest.TestCase):
         cls.portal_url = _conf_reader['workforce_ago']['url']
         cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
         cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "4b50c61e471f40628ab9dd32b19e0b75"
+        cls.project_id = "16acf0688699498c888475833e7bc3cb"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         cls.project = Project(cls.gis.content.get(cls.project_id))
-        # delete assignments and assignment types
-        cls.worker_manager = cls.project.workers
-
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
@@ -139,12 +109,16 @@ class Test_Workforce_Worker_Manager(unittest.TestCase):
 
     def test_search_worker(self):
         try:
-            worker = self.worker_manager.search()[0]
+            worker = self.project.workers.search()[0]
             self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
             self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
             self.assertEqual(worker.status, "not_working", "Incorrect status")
+            self.assertEqual(worker.notes, "some notes", "Incorrect note")
+            self.assertEqual(worker.title, "Inspector", "Incorrect title")
 
+            workers = self.project.workers.search("1=0")
+            self.assertEqual(len(workers), 0, "Incorrect number of workers")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -159,27 +133,43 @@ class Test_Workforce_Worker_Manager(unittest.TestCase):
     def test_update_worker(self):
         try:
             # batch update
-            worker = self.worker_manager.search()[0]
+            worker = self.project.workers.search()[0]
             self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
             self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
             self.assertEqual(worker.status, "not_working", "Incorrect status")
-            worker.name = "tester1"
-            worker.status = "working"
-            self.worker_manager.batch_update([worker])
-            worker = self.worker_manager.search()[0]
+            worker.update(status="working")
+            worker = self.project.workers.search()[0]
             self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
-            self.assertEqual(worker.name, "tester1", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
-            self.assertEqual(worker.status, "working", "Incorrect status")
-            # single update
-            worker.update(name="tester2")
-            worker = self.worker_manager.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
-            self.assertEqual(worker.name, "tester2", "Incorrect name")
+            self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
             self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
             self.assertEqual(worker.status, "working", "Incorrect status")
 
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_batch_update_worker(self):
+        try:
+            # batch update
+            worker = self.project.workers.search()[0]
+            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
+            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(worker.status, "not_working", "Incorrect status")
+            worker.status = "working"
+            self.project.workers.batch_update([worker])
+            worker = self.project.workers.search()[0]
+            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
+            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(worker.status, "working", "Incorrect status")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -193,15 +183,10 @@ class Test_Workforce_Worker_Manager(unittest.TestCase):
 
     def test_delete_worker(self):
         try:
-            worker = self.worker_manager.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
-            self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
-            self.assertEqual(worker.status, "not_working", "Incorrect status")
-            self.worker_manager.batch_delete([worker])
-            workers = self.worker_manager.search()
+            worker = self.project.workers.search()[0]
+            worker.delete()
+            workers = self.project.workers.search()
             self.assertEqual(len(workers), 0, "Incorrect number of workers")
-
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -212,6 +197,72 @@ class Test_Workforce_Worker_Manager(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    def test_batch_delete_worker(self):
+        try:
+            worker = self.project.workers.search()[0]
+            self.project.workers.batch_delete([worker])
+            workers = self.project.workers.search()
+            self.assertEqual(len(workers), 0, "Incorrect number of workers")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_add_worker(self):
+        try:
+            self.project.workers.add(user_id='ar_OpsDashAUITest',
+                                     contact_number='123-456-7890',
+                                     name='ar_OpsDashAUITest',
+                                     notes='some notes',
+                                     title='Inspector')
+            worker = self.project.workers.search()[-1]
+            self.assertEqual(worker.user_id, "ar_OpsDashAUITest", "Incorrect user id")
+            self.assertEqual(worker.name, "ar_OpsDashAUITest", "Incorrect name")
+            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(worker.status, "not_working", "Incorrect status")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_batch_add_worker(self):
+        try:
+            worker = Worker(self.project,
+                            user_id='ar_OpsDashAUITest',
+                            contact_number='123-456-7890',
+                            name='ar_OpsDashAUITest',
+                            notes='some notes',
+                            title='Inspector')
+            self.project.workers.batch_add([worker])
+            worker = self.project.workers.search()[-1]
+            self.assertEqual(worker.user_id, "ar_OpsDashAUITest", "Incorrect user id")
+            self.assertEqual(worker.name, "ar_OpsDashAUITest", "Incorrect name")
+            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(worker.status, "not_working", "Incorrect status")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 
 #TestModule
 def tearDownModule():
