@@ -77,8 +77,15 @@ class Uploads(BaseServer):
         """
         Deletes the uploaded item and its configuration.
 
-        Parameters:
-         :item_id: unique ID of the item
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. unique ID of the item
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         url = self._url + "/%s/delete" % item_id
         params = {
@@ -117,9 +124,18 @@ class Uploads(BaseServer):
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
-        Parameters:
-         :path: path of the file to upload
-         :description: optional descriptive text for the upload item
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        path                Required string. The file location to upload
+        ---------------     --------------------------------------------------------------------
+        description         Optional string. Description of the upload.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
+
         """
         url = self._url + "/upload"
         params = {
@@ -157,10 +173,19 @@ class Uploads(BaseServer):
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
-        Parameters:
-         :item_id: item to upload to
-         :part_number: An integer value associated with the part.
-         :part: The file for the part being uploaded.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. Item ID to upload to.
+        ---------------     --------------------------------------------------------------------
+        part_number         Required int. An integer value associated with the part.
+        ---------------     --------------------------------------------------------------------
+        part                Required string. File path to the part to upload.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         url = self._url + "{iid}/uploadPart".format(iid=item_id)
         params = {
@@ -178,6 +203,20 @@ class Uploads(BaseServer):
         Use this operation to complete the upload of all the parts that
         make an item. The parts parameter indicates to the server all the
         parts that make up the item.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. Item ID to commit.
+        ---------------     --------------------------------------------------------------------
+        parts               Optional list. An optional comma-separated ordered list of all the
+                            parts that make the item. If this parameter is not provided, the
+                            default order of the parts is used.
+        ===============     ====================================================================
+
+
+        :return: Boolean
+
 
         Parameters:
          :item_id: item ID to commit

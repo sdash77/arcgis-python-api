@@ -125,12 +125,19 @@ class FeatureLayer(Layer):
         return self._con.post(path=url, postdata=params)
 
     def _add_attachment(self, oid, file_path):
-        """ Adds an attachment to a feature service
-            Input:
-              oid - string - OBJECTID value to add attachment to
-              file_path - string - path to file
-            Output:
-              JSON Repsonse
+        """
+        Adds an attachment to a feature service
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        file_path             Required string. Location of the file to attach.
+        =================     ====================================================================
+
+        :returns: dictionary
+
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {'f': 'json'}
@@ -161,12 +168,18 @@ class FeatureLayer(Layer):
             return res
     # ----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
-        """ removes an attachment from a feature service feature
-            Input:
-              oid - integer or string - id of feature
-              attachment_id - integer - id of attachment to erase
-            Output:
-               JSON response
+        """
+        Removes an attachment from a feature service feature
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        attachment_id         Required integer. Id of the attachment to erase.
+        =================     ====================================================================
+
+        :returns: dictionary
         """
         params = {
             "f": "json",
@@ -181,13 +194,21 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _update_attachment(self, oid, attachment_id, file_path):
-        """ updates an existing attachment with a new file
-            Inputs:
-               oid - string/integer - Unique record ID
-               attachment_id - integer - Unique attachment identifier
-               file_path - string - path to new attachment
-            Output:
-               JSON response
+        """
+        Updates an existing attachment with a new file
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        oid                   Required string/integer. OBJECTID value to add attachment to.
+        -----------------     --------------------------------------------------------------------
+        attachment_id         Required integer. Id of the attachment to erase.
+        -----------------     --------------------------------------------------------------------
+        file_path             Required string. Path to new attachment
+        =================     ====================================================================
+
+        :returns: dictionary
+
         """
         params = {
             "f": "json",
@@ -248,138 +269,195 @@ class FeatureLayer(Layer):
               quantization_parameters=None,
               return_centroid=False,
               return_all_records=True,
+              result_type=None,
+              historic_moment=None,
+              sql_format=None,
+              return_true_curves=False,
+              return_exceeded_limit_features=None,
               **kwargs):
-        """ queries a feature layer based on a sql statement
-            Inputs:
-                where - the selection sql statement
-                out_fields - the attribute fields to return
-                object_ids -  The object IDs of this layer or table to be
-                            queried.
-                distance - The buffer distance for the input geometries.
-                          The distance unit is specified by units. For
-                          example, if the distance is 100, the query
-                          geometry is a point, units is set to meters, and
-                          all points within 100 meters of the point are
-                          returned.
-                units - The unit for calculating the buffer distance. If
-                        unit is not specified, the unit is derived from the
-                        geometry spatial reference. If the geometry spatial
-                        reference is not specified, the unit is derived
-                        from the feature service data spatial reference.
-                        This parameter only applies if
-                        supportsQueryWithDistance is true.
-                        Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
-                        esriSRUnit_Foot | esriSRUnit_Kilometer |
-                        esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
+        """
+        Queries a feature layer based on a sql statement
 
-                time_filter  - optional list of [<startTime>, <endTime>] using
-                        datetime.date, datetime.datetime or timestamp in
-                        milliseconds
-                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
-                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional string. The attribute fields to return. The default is "*".
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional list. The object IDs of this layer or table to be queried.
+        -------------------------------     --------------------------------------------------------------------
+        distance                            Optional integer. The buffer distance for the input geometries.
+                                            The distance unit is specified by units. For example, if the
+                                            distance is 100, the query geometry is a point, units is set to
+                                            meters, and all points within 100 meters of the point are returned.
+        -------------------------------     --------------------------------------------------------------------
+        units                               Optional string. The unit for calculating the buffer distance. If
+                                            unit is not specified, the unit is derived from the geometry spatial
+                                            reference. If the geometry spatial reference is not specified, the
+                                            unit is derived from the feature service data spatial reference.
+                                            This parameter only applies if supportsQueryWithDistance is true.
+                                            Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
+                                                    esriSRUnit_Foot | esriSRUnit_Kilometer |
+                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
+                                            datetime.date, datetime.datetime or timestamp in milliseconds.
+                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                                    datetime.date, datetime.datetime or timestamp in
+                                                    milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        max_allowable_offset                Optional float. This option can be used to specify the
+                                            max_allowable_offset to be used for generalizing geometries returned
+                                            by the query operation.
+                                            The max_allowable_offset is in the units of out_sr. If out_sr is not
+                                            specified, max_allowable_offset is assumed to be in the unit of the
+                                            spatial reference of the layer.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer. The WKID for the spatial reference of the returned
+                                            geometry.
+        -------------------------------     --------------------------------------------------------------------
+        geometry_precision                  Optional Integer. This option can be used to specify the number of
+                                            decimal places in the response geometries returned by the query
+                                            operation.
+                                            This applies to X and Y values only (not m or z-values).
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the isDataVersioned property of the layer is true.
+                                            If this is not specified, the query will apply to the published
+                                            map's version.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If true, geometry is returned with the query.
+                                            Default is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
+                                            fields specified in out_fields. This parameter applies only if the
+                                            supportsAdvancedQueries property of the layer is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+                                            includes an array of object IDs. Otherwise, the response is a
+                                            feature set.
+        -------------------------------     --------------------------------------------------------------------
+        return_count_only                   Optional boolean. If true, the response only includes the count
+                                            (number of features/records) that would be returned by a query.
+                                            Otherwise, the response is a feature set. The default is false. This
+                                            option supersedes the returnIdsOnly parameter. If
+                                            returnCountOnly = true, the response will return both the count and
+                                            the extent.
+        -------------------------------     --------------------------------------------------------------------
+        return_extent_only                  Optional boolean. If true, the response only includes the extent of
+                                            the features that would be returned by the query. If
+                                            returnCountOnly=true, the response will return both the count and
+                                            the extent.
+                                            The default is false. This parameter applies only if the
+                                            supportsReturningQueryExtent property of the layer is true.
+        -------------------------------     --------------------------------------------------------------------
+        order_by_fields                     Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
+                                            be grouped for calculating the statistics.
+                                            example: STATE_NAME, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional string. The definitions for one or more field-based
+                                            statistics to be calculated.
 
-                geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                                  spatial relationship with another geometry
-                max_allowable_offset - This option can be used to specify the
-                                       maxAllowableOffset to be used for
-                                       generalizing geometries returned by
-                                       the query operation.
-                                       The maxAllowableOffset is in the units
-                                       of outSR. If outSR is not specified,
-                                       maxAllowableOffset is assumed to be in
-                                       the unit of the spatial reference of
-                                       the map.
-                out_sr - The spatial reference of the returned geometry.
-                geometry_precision -  This option can be used to specify the
-                                      number of decimal places in the
-                                      response geometries returned by the
-                                      Query operation.
-                gdb_version - Geodatabase version to query
-                return_geometry - If true, geometry is returned with the query. Default is true.
-                return_distinct_values -  If true, it returns distinct values
-                                          based on the fields specified in
-                                          outFields. This parameter applies
-                                          only if the
-                                          supportsAdvancedQueries property of
-                                          the layer is true.
-                return_ids_only -  If true, the response only includes an
-                                   array of object IDs. Otherwise, the
-                                   response is a feature set. The default is
-                                   false.
-                return_count_only -  If true, the response only includes the
-                                     count (number of features/records) that
-                                     would be returned by a query. Otherwise,
-                                     the response is a feature set. The
-                                     default is false. This option supersedes
-                                     the returnIdsOnly parameter. If
-                                     returnCountOnly = true, the response will
-                                     return both the count and the extent.
-                return_extent_only -  If true, the response only includes the
-                                      extent of the features that would be
-                                      returned by the query. If
-                                      returnCountOnly=true, the response will
-                                      return both the count and the extent.
-                                      The default is false. This parameter
-                                      applies only if the
-                                      supportsReturningQueryExtent property
-                                      of the layer is true.
-                order_by_fields - One or more field names on which the
-                                  features/records need to be ordered. Use
-                                  ASC or DESC for ascending or descending,
-                                  respectively, following every field to
-                                  control the ordering.
-                group_by_fields_for_statistics - One or more field names on
-                                                 which the values need to be
-                                                 grouped for calculating the
-                                                 statistics.
-                out_statistics - The definitions for one or more field-based
-                                 statistics to be calculated.
-                return_z -  If true, Z values are included in the results if
-                            the features have Z values. Otherwise, Z values
-                            are not returned. The default is false.
-                return_m - If true, M values are included in the results if
-                           the features have M values. Otherwise, M values
-                           are not returned. The default is false.
-                multipatch_option - This option dictates how the geometry of
-                                    a multipatch feature will be returned.
-                result_offset -  This option can be used for fetching query
-                                 results by skipping the specified number of
-                                 records and starting from the next record
-                                 (that is, resultOffset + 1th). This option is
-                                 ignored if return_all_records is True (i.e. by default).
-                result_record_count - This option can be used for fetching
-                                      query results up to the
-                                      result_record_count specified. When
-                                      result_offset is specified but this
-                                      parameter is not, the map service
-                                      defaults it to max_record_count. The
-                                      maximum value for this parameter is the
-                                      value of the layer's max_record_count
-                                      property. This option is ignored if
-                                      return_all_records is True (i.e. by default).
-                quantization_parameters - Used to project the geometry onto
-                                          a virtual grid, likely
-                                          representing pixels on the screen.
-                return_centroid - Used to return the geometry centroid
-                                  associated with each feature returned. If
-                                  true, the result includes the geometry
-                                  centroid. The default is false.
-                return_all_records - When True, the query operation will call
-                                     the service until all records that satisfy
-                                     the where_clause are returned. Note: result_offset
-                                     and result_record_count will be ignored
-                                     if return_all_records is True. Also, if
-                                     return_count_only, return_ids_only, or
-                                     return_extent_only are True, this parameter
-                                     will be ignored.
-               kwargs - optional parameters that can be passed to the Query
-                        function.  This will allow users to pass additional
-                        parameters not explicitly implemented on the function. A
-                        complete list of functions available is documented on the
-                        Query REST API.
-            Output:
-               A FeatureSet containing the features matching the query
-               unless another return type is specified, such as count
+                                            Syntax:
+
+                                            [
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field1",
+                                                  "outStatisticFieldName": "Out_Field_Name1"
+                                                },
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field2",
+                                                  "outStatisticFieldName": "Out_Field_Name2"
+                                                }
+                                            ]
+        -------------------------------     --------------------------------------------------------------------
+        return_z                            Optional boolean. If true, Z values are included in the results if
+                                            the features have Z values. Otherwise, Z values are not returned.
+                                            The default is False.
+        -------------------------------     --------------------------------------------------------------------
+        return_m                            Optional boolean. If true, M values are included in the results if
+                                            the features have M values. Otherwise, M values are not returned.
+                                            The default is false.
+        -------------------------------     --------------------------------------------------------------------
+        multipatch_option                   Optional x/y footprint. This option dictates how the geometry of
+                                            a multipatch feature will be returned.
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th). This option is ignored
+                                            if return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property. This option is ignored if
+                                            return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
+                                            likely representing pixels on the screen.
+        -------------------------------     --------------------------------------------------------------------
+        return_centroid                     Optional boolean. Used to return the geometry centroid associated
+                                            with each feature returned. If true, the result includes the geometry
+                                            centroid. The default is false.
+        -------------------------------     --------------------------------------------------------------------
+        return_all_records                  Optional boolean. When True, the query operation will call the
+                                            service until all records that satisfy the where_clause are
+                                            returned. Note: result_offset and result_record_count will be
+                                            ignored if return_all_records is True. Also, if return_count_only,
+                                            return_ids_only, or return_extent_only are True, this parameter
+                                            will be ignored.
+        -------------------------------     --------------------------------------------------------------------
+        result_type                         Optional string. The result_type parameter can be used to control
+                                            the number of features returned by the query operation.
+                                            Values: None | standard | tile
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            supportsQueryWithHistoricMoment property is set to true. This
+                                            property is provided in the layer resource.
+
+                                            If historic_moment is not specified, the query will apply to the
+                                            current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        return_true_curves                  Optional boolean. When set to true, returns true curves in output
+                                            geometries. When set to false, curves are converted to densified
+                                            polylines or polygons.
+        -------------------------------     --------------------------------------------------------------------
+        return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
+                                            set to true, features are returned even when the results include
+                                            'exceededTransferLimit': True.
+
+                                            When set to false and querying with resultType = tile features are
+                                            not returned when the results include 'exceededTransferLimit': True.
+                                            This allows a client to find the resolution in which the transfer
+                                            limit is no longer exceeded without making multiple calls.
+        -------------------------------     --------------------------------------------------------------------
+        kwargs                              Optional dict. Optional parameters that can be passed to the Query
+                                            function.  This will allow users to pass additional parameters not
+                                            explicitly implemented on the function. A complete list of functions
+                                            available is documented on the Query REST API.
+        ===============================     ====================================================================
+
+        :returns: A FeatureSet containing the features matching the query unless another return type is specified, such as count
          """
         if self._dynamic_layer is None:
             url = self._url + "/query"
@@ -389,6 +467,16 @@ class FeatureLayer(Layer):
         params = {"f": "json"}
         if self._dynamic_layer is not None:
             params['layer'] = self._dynamic_layer
+        if result_type is not None:
+            params['resultType'] = result_type
+        if historic_moment is not None:
+            params['historicMoment'] = historic_moment
+        if sql_format is not None:
+            params['sqlFormat'] = sql_format
+        if return_true_curves is not None:
+            params['returnTrueCurves'] = return_true_curves
+        if return_exceeded_limit_features is not None:
+            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
         params['where'] = where
         params['returnGeometry'] = return_geometry
         params['returnDistinctValues'] = return_distinct_values
@@ -536,21 +624,28 @@ class FeatureLayer(Layer):
         and field names used in the SQL expression or WHERE clause are
         validated to ensure they are valid tables and fields.
 
-        :Parameters:
-         :sql: the SQL expression of WHERE clause to validate
-           Example: "Population > 300000"
-         :sql_type:  Three SQL types are supported in validate_sql
-          - where (default) - Represents the custom WHERE clause the user
-            can compose when querying a layer or using calculate.
-          - expression - Represents an SQL-92 expression. Currently,
-            expression is used as a default value expression when adding a
-            new field or using the calculate API.
-          - statement - Represents the full SQL-92 statement that can be
-            passed directly to the database. No current ArcGIS REST API
-            resource or operation supports using the full SQL-92 SELECT
-            statement directly. It has been added to the validateSQL for
-            completeness.
-            Values: where | expression | statement
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        sql                                 Required String. The SQL expression of WHERE clause to validate.
+                                            Example: "Population > 300000"
+        -------------------------------     --------------------------------------------------------------------
+        sql_type                            Optional String. Three SQL types are supported in validate_sql
+                                                - where (default) - Represents the custom WHERE clause the user
+                                                  can compose when querying a layer or using calculate.
+                                                - expression - Represents an SQL-92 expression. Currently,
+                                                  expression is used as a default value expression when adding a
+                                                  new field or using the calculate API.
+                                                - statement - Represents the full SQL-92 statement that can be
+                                                  passed directly to the database. No current ArcGIS REST API
+                                                  resource or operation supports using the full SQL-92 SELECT
+                                                  statement directly. It has been added to the validateSQL for
+                                                  completeness.
+                                                  Values: where | expression | statement
+        ===============================     ====================================================================
+
+        :returns: dict
         """
         params = {
             "f" : "json"
@@ -582,57 +677,65 @@ class FeatureLayer(Layer):
                               return_z=False,
                               return_m=False):
         """
-           The Query operation is performed on a feature service layer
-           resource. The result of this operation are feature sets grouped
-           by source layer/table object IDs. Each feature set contains
-           Feature objects including the values for the fields requested by
-           the user. For related layers, if you request geometry
-           information, the geometry of each feature is also returned in
-           the feature set. For related tables, the feature set does not
-           include geometries.
-           Inputs:
-              objectIds - the object IDs of the table/layer to be queried
-              relationshipId - The ID of the relationship to be queried.
-              outFields - the list of fields from the related table/layer
-                          to be included in the returned feature set. This
-                          list is a comma delimited list of field names. If
-                          you specify the shape field in the list of return
-                          fields, it is ignored. To request geometry, set
-                          returnGeometry to true.
-                          You can also specify the wildcard "*" as the
-                          value of this parameter. In this case, the result
-                          s will include all the field values.
-              definitionExpression - The definition expression to be
-                                     applied to the related table/layer.
-                                     From the list of objectIds, only those
-                                     records that conform to this
-                                     expression are queried for related
-                                     records.
-              returnGeometry - If true, the feature set includes the
-                               geometry associated with each feature. The
-                               default is true.
-              maxAllowableOffset - This option can be used to specify the
-                                   maxAllowableOffset to be used for
-                                   generalizing geometries returned by the
-                                   query operation. The maxAllowableOffset
-                                   is in the units of the outSR. If outSR
-                                   is not specified, then
-                                   maxAllowableOffset is assumed to be in
-                                   the unit of the spatial reference of the
-                                   map.
-              geometryPrecision - This option can be used to specify the
-                                  number of decimal places in the response
-                                  geometries.
-              outWKID - The spatial reference of the returned geometry.
-              gdbVersion - The geodatabase version to query. This parameter
-                           applies only if the isDataVersioned property of
-                           the layer queried is true.
-              returnZ - If true, Z values are included in the results if
-                        the features have Z values. Otherwise, Z values are
-                        not returned. The default is false.
-              returnM - If true, M values are included in the results if
-                        the features have M values. Otherwise, M values are
-                        not returned. The default is false.
+        The Query operation is performed on a feature service layer
+        resource. The result of this operation are feature sets grouped
+        by source layer/table object IDs. Each feature set contains
+        Feature objects including the values for the fields requested by
+        the user. For related layers, if you request geometry
+        information, the geometry of each feature is also returned in
+        the feature set. For related tables, the feature set does not
+        include geometries.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        object_ids                 Required string. The object IDs of the table/layer to be queried
+        ----------------------     --------------------------------------------------------------------
+        relationship_id            Required string. The ID of the relationship to be queried.
+        ----------------------     --------------------------------------------------------------------
+        out_fields                 Required string. the list of fields from the related table/layer
+                                   to be included in the returned feature set. This list is a comma
+                                   delimited list of field names. If you specify the shape field in the
+                                   list of return fields, it is ignored. To request geometry, set
+                                   return_geometry to true. You can also specify the wildcard "*" as
+                                   the value of this parameter. In this case, the results will include
+                                   all the field values.
+        ----------------------     --------------------------------------------------------------------
+        definition_expression      Optional string. The definition expression to be applied to the
+                                   related table/layer. From the list of objectIds, only those records
+                                   that conform to this expression are queried for related records.
+        ----------------------     --------------------------------------------------------------------
+        return_geometry            Optional boolean. If true, the feature set includes the geometry
+                                   associated with each feature. The default is true.
+        ----------------------     --------------------------------------------------------------------
+        max_allowable_offset       Optional float. This option can be used to specify the
+                                   max_allowable_offset to be used for generalizing geometries returned
+                                   by the query operation. The max_allowable_offset is in the units of
+                                   the outSR. If out_wkid is not specified, then max_allowable_offset
+                                   is assumed to be in the unit of the spatial reference of the map.
+        ----------------------     --------------------------------------------------------------------
+        geometry_precision         Optional integer. This option can be used to specify the number of
+                                   decimal places in the response geometries.
+        ----------------------     --------------------------------------------------------------------
+        out_wkid                   Optional Integer. The spatial reference of the returned geometry.
+        ----------------------     --------------------------------------------------------------------
+        gdb_version                Optional string. The geodatabase version to query. This parameter
+                                   applies only if the isDataVersioned property of the layer queried is
+                                   true.
+        ----------------------     --------------------------------------------------------------------
+        return_z                   Optional boolean. If true, Z values are included in the results if
+                                   the features have Z values. Otherwise, Z values are not returned.
+                                   The default is false.
+        ----------------------     --------------------------------------------------------------------
+        return_m                   Optional boolean. If true, M values are included in the results if
+                                   the features have M values. Otherwise, M values are not returned.
+                                   The default is false.
+        ======================     ====================================================================
+
+
+        :return: dict
+
+
         """
         params = {
             "f": "json",
@@ -669,11 +772,17 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
-           The htmlPopup resource provides details about the HTML pop-up
-           authored by the user using ArcGIS for Desktop.
-           Input:
-              oid - object id of the feature where the HTML pop-up
-           Output:
+        The htmlPopup resource provides details about the HTML pop-up
+        authored by the user using ArcGIS for Desktop.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        oid                 Optional string. Object id of the feature to get the HTML popup.
+        ===============     ====================================================================
+
+
+        :return: string
 
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
@@ -831,26 +940,35 @@ class FeatureLayer(Layer):
                         gdb_version=None,
                         rollback_on_failure=True):
         """
-           This operation deletes features in a feature layer or table
-           Inputs:
-              deletes - string of OIDs to remove from service
-              where -  A where clause for the query filter.
-                       Any legal SQL where clause operating on the fields in
-                       the layer is allowed. Features conforming to the specified
-                       where clause will be deleted.
-              geometry_filter - spatial filter from arcgis.geometry.filters module to filter results by a
-                                spatial relationship with another geometry
-              gdb_version - Geodatabase version to apply the edits.
-              rollback_on_failure - Optional parameter to specify if the
-                                  edits should be applied only if all
-                                  submitted edits succeed. If false, the
-                                  server will apply the edits that succeed
-                                  even if some of the submitted edits fail.
-                                  If true, the server will apply the edits
-                                  only if all edits succeed. The default
-                                  value is true.
-           Output:
-              dictionary of messages
+        This operation deletes features in a feature layer or table
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        deletes                  Optional string. A comma seperated string of OIDs to remove from the
+                                 service.
+        --------------------     --------------------------------------------------------------------
+        where                    Optional string.  A where clause for the query filter. Any legal SQL
+                                 where clause operating on the fields in the layer is allowed.
+                                 Features conforming to the specified where clause will be deleted.
+        --------------------     --------------------------------------------------------------------
+        geometry_filter          Optional SpatialFilter. A spatial filter from
+                                 arcgis.geometry.filters module to filter results by a spatial
+                                 relationship with another geometry.
+        --------------------     --------------------------------------------------------------------
+        gdb_version              Optional string. A Geodatabase version to apply the edits.
+        --------------------     --------------------------------------------------------------------
+        rollback_on_failure      Optional boolean. Optional parameter to specify if the edits should
+                                 be applied only if all submitted edits succeed. If false, the server
+                                 will apply the edits that succeed even if some of the submitted
+                                 edits fail. If true, the server will apply the edits only if all
+                                 edits succeed. The default value is true.
+        ====================     ====================================================================
+
+
+        :return: dict
+
+
         """
         delete_url = self._url + "/deleteFeatures"
         params = {
@@ -1251,57 +1369,63 @@ class FeatureLayerCollection(_GISResource):
                               return_z=False,
                               return_m=False):
         """
-           The Query operation is performed on a feature service layer
-           resource. The result of this operation are feature sets grouped
-           by source layer/table object IDs. Each feature set contains
-           Feature objects including the values for the fields requested by
-           the user. For related layers, if you request geometry
-           information, the geometry of each feature is also returned in
-           the feature set. For related tables, the feature set does not
-           include geometries.
-           Inputs:
-              objectIds - the object IDs of the table/layer to be queried
-              relationshipId - The ID of the relationship to be queried.
-              outFields - the list of fields from the related table/layer
-                          to be included in the returned feature set. This
-                          list is a comma delimited list of field names. If
-                          you specify the shape field in the list of return
-                          fields, it is ignored. To request geometry, set
-                          returnGeometry to true.
-                          You can also specify the wildcard "*" as the
-                          value of this parameter. In this case, the result
-                          s will include all the field values.
-              definitionExpression - The definition expression to be
-                                     applied to the related table/layer.
-                                     From the list of objectIds, only those
-                                     records that conform to this
-                                     expression are queried for related
-                                     records.
-              returnGeometry - If true, the feature set includes the
-                               geometry associated with each feature. The
-                               default is true.
-              maxAllowableOffset - This option can be used to specify the
-                                   maxAllowableOffset to be used for
-                                   generalizing geometries returned by the
-                                   query operation. The maxAllowableOffset
-                                   is in the units of the outSR. If outSR
-                                   is not specified, then
-                                   maxAllowableOffset is assumed to be in
-                                   the unit of the spatial reference of the
-                                   map.
-              geometryPrecision - This option can be used to specify the
-                                  number of decimal places in the response
-                                  geometries.
-              outWKID - The spatial reference of the returned geometry.
-              gdbVersion - The geodatabase version to query. This parameter
-                           applies only if the isDataVersioned property of
-                           the layer queried is true.
-              returnZ - If true, Z values are included in the results if
-                        the features have Z values. Otherwise, Z values are
-                        not returned. The default is false.
-              returnM - If true, M values are included in the results if
-                        the features have M values. Otherwise, M values are
-                        not returned. The default is false.
+        The Query operation is performed on a feature service layer
+        resource. The result of this operation are feature sets grouped
+        by source layer/table object IDs. Each feature set contains
+        Feature objects including the values for the fields requested by
+        the user. For related layers, if you request geometry
+        information, the geometry of each feature is also returned in
+        the feature set. For related tables, the feature set does not
+        include geometries.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        object_ids                 Optional string. the object IDs of the table/layer to be queried.
+        ----------------------     --------------------------------------------------------------------
+        relationship_id            Optional string. The ID of the relationship to be queried.
+        ----------------------     --------------------------------------------------------------------
+        out_fields                 Optional string.the list of fields from the related table/layer
+                                   to be included in the returned feature set. This list is a comma
+                                   delimited list of field names. If you specify the shape field in the
+                                   list of return fields, it is ignored. To request geometry, set
+                                   return_geometry to true. You can also specify the wildcard "*" as the
+                                   value of this parameter. In this case, the results will include all
+                                   the field values.
+        ----------------------     --------------------------------------------------------------------
+        definition_expression      Optional string. The definition expression to be applied to the
+                                   related table/layer. From the list of objectIds, only those records
+                                   that conform to this expression are queried for related records.
+        ----------------------     --------------------------------------------------------------------
+        return_geometry            Optional boolean. If true, the feature set includes the geometry
+                                   associated with each feature. The default is true.
+        ----------------------     --------------------------------------------------------------------
+        max_allowable_offset       Optional float. This option can be used to specify the
+                                   max_allowable_offset to be used for generalizing geometries returned
+                                   by the query operation. The max_allowable_offset is in the units of
+                                   the outSR. If outSR is not specified, then max_allowable_offset is
+                                   assumed to be in the unit of the spatial reference of the map.
+        ----------------------     --------------------------------------------------------------------
+        geometry_precision         Optional integer. This option can be used to specify the number of
+                                   decimal places in the response geometries.
+        ----------------------     --------------------------------------------------------------------
+        out_wkid                   Optional integer. The spatial reference of the returned geometry.
+        ----------------------     --------------------------------------------------------------------
+        gdb_version                Optional string. The geodatabase version to query. This parameter
+                                   applies only if the isDataVersioned property of the layer queried is
+                                   true.
+        ----------------------     --------------------------------------------------------------------
+        return_z                   Optional boolean. If true, Z values are included in the results if
+                                   the features have Z values. Otherwise, Z values are not returned.
+                                   The default is false.
+        ----------------------     --------------------------------------------------------------------
+        return_m                   Optional boolean. If true, M values are included in the results if
+                                   the features have M values. Otherwise, M values are not returned.
+                                   The default is false.
+        ======================     ====================================================================
+
+
+        :return: dict
         """
         params = {
             "f": "json",
@@ -1344,10 +1468,18 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def _unregister_replica(self, replica_id):
         """
-           removes a replica from a feature service
-           Inputs:
-             replica_id - The replicaID returned by the feature service
-                          when the replica was created.
+        Removes a replica from a feature service
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          Optional string. The replica_id returned by the feature service when
+                            the replica was created.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         params = {
             "f": "json",
@@ -1359,11 +1491,18 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def _replica_info(self, replica_id):
         """
-           The replica info resources lists replica metadata for a specific
-           replica.
-           Inputs:
-              replica_id - The replicaID returned by the feature service
-                           when the replica was created.
+        The replica info resources lists replica metadata for a specific replica.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          Optional string. The replica_id returned by the feature service when
+                            the replica was created.
+        ===============     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f": "json"
@@ -1573,8 +1712,6 @@ class FeatureLayerCollection(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    #TODO: FIX PARAMETERS
-    #TODO: FIGURE OUT LAST PART WITH syncLayers
     def _synchronize_replica(self,
                              replica_id,
                              transport_type="esriTransportTypeUrl",
@@ -1794,9 +1931,17 @@ class FeatureLayerCollection(_GISResource):
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
-        Parameters:
-         :path: path of the file to upload
-         :description: optional descriptive text for the upload item
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        path                Optional string. Filepath of the file to upload.
+        ---------------     --------------------------------------------------------------------
+        description         Optional string. Descriptive text for the uploaded item.
+        ===============     ====================================================================
+
+        :returns: boolean
+
         """
         if (os.path.getsize(path) >> 20) <= 9:
             url = self._url + "/uploads/upload"
