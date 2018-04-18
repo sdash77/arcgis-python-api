@@ -32,28 +32,35 @@ class Federation(BasePortalAdmin):
         """
         This operation enables ArcGIS Servers to be federated with Portal
         for ArcGIS.
-        Parameters:
-         :url: The URL of the GIS server used by external users when
-          accessing the ArcGIS Server site. If the site includes the Web
-          Adaptor, the URL includes the Web Adaptor address, for example,
-          https://webadaptor.domain.com/arcgis. If you've added ArcGIS
-          Server to your organization's reverse proxy server, the URL is
-          the reverse proxy server address (for example,
-          https://reverseproxy.domain.com/myorg). Note that the federation
-          operation will perform a validation check to determine if the
-          provided URL is accessible from the server site. If the resulting
-          validation check fails, a warning will be generated in the Portal
-          for ArcGIS logs. However, federation will not fail if the URL is
-          not validated, as the URL may not be accessible from the server
-          site, such as is the case when the server site is behind a
-          firewall.
-         :admin_url: The URL used for accessing ArcGIS Server when
-          performing administrative operations on the internal network, for
-          example, https://gisserver.domain.com:6443/arcgis.
-         :username: The username of the primary site administrator account
-         :password: password of the username above.
-        Output:
-         server response with server ID
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        url:                            Required string. The URL of the GIS server used by external users
+                                        when accessing the ArcGIS Server site. If the site includes the Web
+                                        Adaptor, the URL includes the Web Adaptor address, for example,
+                                        https://webadaptor.domain.com/arcgis. If you've added ArcGIS
+                                        Server to your organization's reverse proxy server, the URL is
+                                        the reverse proxy server address (for example,
+                                        https://reverseproxy.domain.com/myorg). Note that the federation
+                                        operation will perform a validation check to determine if the
+                                        provided URL is accessible from the server site. If the resulting
+                                        validation check fails, a warning will be generated in the Portal
+                                        for ArcGIS logs. However, federation will not fail if the URL is
+                                        not validated, as the URL may not be accessible from the server
+                                        site, such as is the case when the server site is behind a
+                                        firewall.
+        ---------------------------     --------------------------------------------------------------------
+        admin_url                       Required string. The URL used for accessing ArcGIS Server when
+                                        performing administrative operations on the internal network, for
+                                        example, https://gisserver.domain.com:6443/arcgis.
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The username of the primary site administrator account
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. password of the username above.
+        ===========================     ====================================================================
+
+        :returns: dict, server response with server ID
         """
         url = "%s/servers/federate" % self._url
         params = {
@@ -82,8 +89,16 @@ class Federation(BasePortalAdmin):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
-        Parameters:
-         :server_id: unique ID of the server
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        server_id                       Required string. The unique ID of the server
+        ===========================     ====================================================================
+
+        :returns: boolean
+
+
+
         """
         url = "%s/servers/%s/unfederate" % (self._url, server_id)
         params = {"f" : "json"}
@@ -99,6 +114,25 @@ class Federation(BasePortalAdmin):
         server status from an ArcGIS Server. To set a hosting server, an
         enterprise geodatabase must be registered as a managed database
         with the ArcGIS Server.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        server_id                       Required string. The unique ID of the server
+        ---------------------------     --------------------------------------------------------------------
+        role                            Required string. Whether the server is a hosting server for the
+                                        portal, a federated server, or a server with restricted access to
+                                        publishing. The allowed values are:
+                                        FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
+                                        or HOSTING_SERVER.
+        ---------------------------     --------------------------------------------------------------------
+        function                        Optional string. This is the purpose of the ArcGIS Server.
+                                        Values are: GeoAnalytics, RasterAnalytics, ImageHosting, or None
+        ===========================     ====================================================================
+
+        :returns: boolean
+
+
 
         Parameters:
          :server_id: unique id of the server
@@ -135,8 +169,15 @@ class Federation(BasePortalAdmin):
         """
         This operation provides status information about a specific ArcGIS
         Server federated with Portal for ArcGIS.
-        Parameters:
-         :server_id: unique id of the server
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        server_id                       Required string. The unique ID of the server
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {"f" : "json"}
         url = "%s/servers/%s/validate" % (self._url, server_id)
