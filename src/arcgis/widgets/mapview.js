@@ -174,7 +174,7 @@ require.config({
 require.undef('mapview');
 
 define('mapview', [
-     "jupyter-js-widgets",
+     "@jupyter-widgets/base",
      "esri/basemaps",
      "esri/map",
      "esri/config",
