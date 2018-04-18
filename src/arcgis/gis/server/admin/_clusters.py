@@ -15,11 +15,16 @@ class Clusters(BaseServer):
     site. The Create Cluster operation lets you define a new cluster
     configuration.
 
-    Inputs:
-       url - server cluster url
-       gis - SiteConnection class
-       initialize - boolean, false means so not load data, true means load
-                    the class' information as creation.
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Required Server object. Connection object.
+    ---------------     --------------------------------------------------------------------
+    initialize          Optional boolean. If true, information loaded at object
+    ===============     ====================================================================
+
     """
     _con = None
     _json_dict = None
@@ -55,17 +60,24 @@ class Clusters(BaseServer):
         machines (to increase the compute power) or remove them (to reduce
         the compute power) dynamically.
 
-        Inputs:
-           clusterName - The name of the cluster. This must be a unique
-                         name within a site
-           machineNames - An optional comma-separated list of server
-                          machines to be added to this cluster.
-           port - A TCP port number that will be used by all the
-                  server machines to communicate with each other
-                  when using the TCP clustering protocol. This is
-                  the default clustering protocol. If this
-                  parameter is missing, a suitable default will
-                  be used.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        cluster_name        Require string. The name of the cluster. This must be a unique name
+                            within a site
+        ---------------     --------------------------------------------------------------------
+        machine_names       Optional string. An optional comma-separated list of server machines
+                            to be added to this cluster.
+        ---------------     --------------------------------------------------------------------
+        port                Optional string. A TCP port number that will be used by all the
+                            server machines to communicate with each other when using the TCP
+                            clustering protocol. This is the default clustering protocol. If
+                            this parameter is missing, a suitable default will be used.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         url = self._url + "/create"
         params = {
@@ -103,6 +115,18 @@ class Cluster(BaseServer):
     server machines can be added to increase computing power without
     affecting the already running GIS services. You can also remove
     machines from a cluster and re-assign them to another cluster.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Required Server object. Connection object.
+    ---------------     --------------------------------------------------------------------
+    initialize          Optional boolean. If true, information loaded at object
+    ===============     ====================================================================
+
+
     """
     _con = None
     _json_dict = None
@@ -222,9 +246,15 @@ class Cluster(BaseServer):
         server machine is added to the cluster, it pulls all the GIS
         services that were deployed to cluster and prepares to run them.
 
-        Inputs:
-           names - A comma-separated list of machine names. The machines
-            must be registered prior to completing this operation.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        names               Required string. A comma-separated list of machine names. The
+                            machines must be registered prior to completing this operation.
+        ===============     ====================================================================
+
+        :return: dict
+
         """
         url = self._url + "/machines/add"
         params = {
@@ -240,9 +270,14 @@ class Cluster(BaseServer):
         Removes server machines from the cluster. The server machines are
         returned back to the pool of registered server machines.
 
-        Inputs:
-           names - A comma-separated list of machine names. The machines
-            must be registered prior to completing this operation.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        names               Required string. A comma-separated list of machine names. The
+                            machines must be registered prior to completing this operation.
+        ===============     ====================================================================
+
+        :return: dict
         """
         url = self._url + "/machines/remove"
         params = {
@@ -260,8 +295,16 @@ class Cluster(BaseServer):
         Updates the Cluster Protocol. This will cause the cluster to be
         restarted with updated protocol configuration.
 
-        Paramters:
-         cpo: ClusterProtocal object or dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        cpo                 Required ClusterProtocal object (CPO). The CPO is a configuration
+                            object used to assist users in configuring protocols on ArcGIS Server.
+        ===============     ====================================================================
+
+        :return: dict
+
+
         """
         if isinstance(cpo, ClusterProtocol):
             value = str(cpo.value['tcpClusterPort'])

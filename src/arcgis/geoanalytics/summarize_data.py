@@ -212,7 +212,7 @@ def aggregate_points(point_layer,
     ------------------------------------     --------------------------------------------------------------------
     time_step_reference                      Time Step Reference (datetime). Optional parameter.
     ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Summary Statistics (str). Optional parameter.
+    summary_fields                           Summary Statistics (str/list). Optional parameter.
 
                                              The summary_fields string must enclose a Python list. Each list item must be a Python dictionary
                                              with two keys. See the Key:Value definitions below.
@@ -260,7 +260,7 @@ def aggregate_points(point_layer,
                               bin_size=0.5,
                               bin_type='Hexagon',
                               bin_size_unit='Miles',
-                              summary_fields='[{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]'
+                              summary_fields=[{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]
                               )
     """
     kwargs = locals()
@@ -284,7 +284,9 @@ def aggregate_points(point_layer,
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-
+    if isinstance(summary_fields, list):
+        import json
+        summary_fields = json.dumps(summary_fields)
     _set_context(params)
 
     param_db = {
@@ -551,7 +553,7 @@ def reconstruct_tracks(input_layer,
 
    buffer_field: Buffer Distance Field (str). Optional parameter.
 
-   summary_fields: Summary Statistics (str). Optional parameter.
+   summary_fields: Summary Statistics (str/list). Optional parameter.
 
    time_split: Duration Split Threshold (int). Optional parameter.
 
@@ -596,6 +598,10 @@ Returns:
         "itemProperties": {"itemId" : output_service.itemid}})
 
     _set_context(params)
+
+    if isinstance(summary_fields, list):
+        import json
+        summary_fields = json.dumps(summary_fields)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -655,7 +661,7 @@ def summarize_attributes(input_layer,
 
    fields: Summary Fields (str). Required parameter.
 
-   summary_fields: Summary Statistics (str). Optional parameter.
+   summary_fields: Summary Statistics (str/list). Optional parameter.
 
    output_name: Output Features Name (str). Required parameter.
 
@@ -691,6 +697,10 @@ Returns:
         "itemProperties": {"itemId" : output_service.itemid}})
 
     _set_context(params)
+
+    if isinstance(summary_fields, list):
+        import json
+        summary_fields = json.dumps(summary_fields)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),

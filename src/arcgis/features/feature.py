@@ -33,9 +33,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def __init__(self, geometry=None, attributes=None):
         """Constructor"""
-        self._dict = {
-
-        }
+        self._dict = {}
         if geometry is not None:
             self._dict["geometry"] = geometry
         if attributes is not None:
@@ -43,7 +41,21 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     def set_value(self, field_name, value):
-        """ sets an attribute value for a given field name """
+        """
+        Sets an attribute value for a given field name
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        field_name          Required String. The name of the field to update.
+        ---------------     --------------------------------------------------------------------
+        value               Required object. The value to update the field with.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
+        """
         if field_name in self.fields:
             if value is not None:
                 self._dict['attributes'][field_name] = value
@@ -78,7 +90,19 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     def get_value(self, field_name):
-        """ returns a value for a given field name """
+        """
+        returns a value for a given field name
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        field_name          Required String. The name of the field to get the value for.
+        ===============     ====================================================================
+
+
+        :return: object
+
+        """
         if field_name in self.fields:
             return self._dict['attributes'][field_name]
         elif field_name is not None and field_name.upper() in ['SHAPE', 'SHAPE@', "GEOMETRY"]:
@@ -95,7 +119,7 @@ class Feature(object):
     @property
     def as_row(self):
         """ converts a feature to a list for insertion into an insert cursor
-            Output:
+            :return:
                [row items], [field names]
                returns a list of fields and the row object
         """
@@ -398,11 +422,16 @@ class FeatureSet(object):
     @staticmethod
     def _fc_to_features(dataset):
         """
-           converts a dataset to a list of feature objects, if ArcPy is available
-           Input:
-              dataset - path to table or feature class
-           Output:
-              list of feature objects
+        Converts a dataset to a list of feature objects, if ArcPy is available
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        dataset             Required string. Path to the featureclass.
+        ===============     ====================================================================
+
+
+        :return: list of feature objects
         """
         try:
             import arcpy
@@ -940,17 +969,25 @@ class FeatureSet(object):
     def save(self, save_location, out_name, encoding=None):
         """
         Saves a featureset object to a feature class
-        Input:
-           saveLocation - output location of the data
-           outName - name of the table the data will be saved to
-                Types:
-                    *.csv - CSV file returned
-                    *.json - text file with json
-                    * If no extension, a shapefile if the path is a
-                        folder, a featureclass if the path is a GDB
-            encoding - character encoding is used to represent a repertoire
-                       of characters by some kind of encoding system. The
-                       default is None.
+
+
+
+
+        =================    ====================================================================
+        **Argument**         **Description**
+        -----------------    --------------------------------------------------------------------
+        save_location        Required string. Path to export the FeatureSet to.
+        -----------------    --------------------------------------------------------------------
+        out_name             Required string. Name of the saved table.
+        -----------------    --------------------------------------------------------------------
+        encoding             Optional string. character encoding is used to represent a
+                             repertoire of characters by some kind of encoding system. The
+                             default is None.
+        =================    ====================================================================
+
+
+        :return: string
+
         """
         _, file_extension = os.path.splitext(out_name)
         if file_extension.lower() not in ['.csv', '.json'] and \

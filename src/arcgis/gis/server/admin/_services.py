@@ -35,9 +35,14 @@ class ServiceManager(BaseServer):
                  initialize=False,
                  sm=None):
         """Constructor
-            Inputs:
-               url - admin url
-               gis - GIS or Server object
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Required string. The administration url endpoint.
+        ---------------     --------------------------------------------------------------------
+        gis                 Required GIS or Server object. This handles the credential management.
+        ===============     ====================================================================
         """
         if sm is not None:
             self._sm = sm
@@ -110,10 +115,18 @@ class ServiceManager(BaseServer):
         """
         returns a list of services in the specified folder
 
-        Parameters:
-        :param folder: name of the folder to list services from
-        :param refresh: Bool, default is False. If True, the list of services will be
-        requested to the server, else the list will be returned from cache.
+         ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Required string. The name of the folder to list services from.
+        ---------------     --------------------------------------------------------------------
+        refresh             Optional boolean. Default is False. If True, the list of services will be
+                            requested to the server, else the list will be returned from cache.
+        ===============     ====================================================================
+
+
+        :return: list
+
         """
         if folder is None:
             folder = '/'
@@ -221,21 +234,40 @@ class ServiceManager(BaseServer):
                    folder=None):
         """
         publishes a service definition file to arcgis server
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        sd_file             Required string. File path to the .sd file
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. This parameter allows for the override of the
+                            folder option set in the SD file.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         return self._sm.publish_sd(sd_file, folder)
     #----------------------------------------------------------------------
     def _find_services(self, service_type="*"):
         """
             returns a list of a particular service type on AGS
-            Input:
-              service_type - Type of service to find.  The allowed types
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service_type        Required string. Type of service to find.  The allowed types
                              are: ("GPSERVER", "GLOBESERVER", "MAPSERVER",
                              "GEOMETRYSERVER", "IMAGESERVER",
                              "SEARCHSERVER", "GEODATASERVER",
                              "GEOCODESERVER", "*").  The default is *
                              meaning find all service names.
-            Output:
-              returns a list of service names as <folder>/<name>.<type>
+        ===============     ====================================================================
+
+
+        :return: list of service name as folder/name.type
+
         """
         allowed_service_types = ("GPSERVER", "GLOBESERVER", "MAPSERVER",
                                  "GEOMETRYSERVER", "IMAGESERVER",
@@ -278,8 +310,15 @@ class ServiceManager(BaseServer):
         permissions of the root folder when it is created, but you can
         change those permissions at a later time.
 
-        Parameters:
-         :folder: name of folder to exmine
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Required string. name of folder to examine.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         params = {'f': 'json'}
         if folder:
@@ -297,19 +336,29 @@ class ServiceManager(BaseServer):
         Use canCreateService to determine whether a specific service can be
         created on the ArcGIS Server site.
 
-        Parameters:
-         :folder_name: This is an optional parameter to indicate the folder
-          where canCreateService will check for the service.
-         :service_type: The type of service that can be created. This is an
-          optional parameter, though either theserviceType or service
-          parameter must be used.
-         :service: The service configuration in JSON format. For more
-          information about the service configuration options, see
-          createService. This is an optional parameter, though either the
-          service_type or service parameter must be used.
-         :options: This is an optional parameter that provides additional
-          information about the service, such as whether it is a hosted
-          service.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service             Required dict. The service configuration in JSON format. For more
+                            information about the service configuration options, see
+                            createService. This is an optional parameter, though either the
+                            service_type or service parameter must be used.
+        ---------------     --------------------------------------------------------------------
+        options             optional dict. This is an optional parameter that provides additional
+                            information about the service, such as whether it is a hosted
+                            service.
+        ---------------     --------------------------------------------------------------------
+        folder_name         Optional string. This is an optional parameter to indicate the folder
+                            where can_create_service will check for the service.
+        ---------------     --------------------------------------------------------------------
+        service_type        Optional string. The type of service that can be created. This is an
+                            optional parameter, though either the service type or service
+                            parameter must be used.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         url = self._url + "/canCreateService"
         params = {"f" : "json",
@@ -329,11 +378,20 @@ class ServiceManager(BaseServer):
            Assigns a new permission to a role (principal). The permission
            on a parent resource is automatically inherited by all child
            resources
-           Input:
-              principal - name of role to assign/disassign accesss
-              is_allowed -  boolean which allows access
-           Output:
-              JSON message as dictionary
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        principal           Required string. Name of role to assign/disassign accesss.
+        ---------------     --------------------------------------------------------------------
+        is_allowed          Optional boolean. True means grant access, False means revoke.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Name of folder to assign permissions to.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         if folder is not None:
             u_url = self._url + "/%s/%s" % (folder, "/permissions/add")
@@ -351,11 +409,17 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def _folder_permissions(self, folder_name):
         """
-           Lists principals which have permissions for the folder.
-           Input:
-              folder_name - name of the folder to list permissions for
-           Output:
-              JSON Message as Dictionary
+        Lists principals which have permissions for the folder.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder_name              Optional string. Name of folder to examine permissions.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         u_url = self._url + "/%s/permissions" % folder_name
         params = {
@@ -365,12 +429,17 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def _clean_permissions(self, principal):
         """
-           Cleans all permissions that have been assigned to a role
-           (principal). This is typically used when a role is deleted.
-           Input:
-              principal - name of the role to clean
-           Output:
-              JSON Message as Dictionary
+        Cleans all permissions that have been assigned to a role
+        (principal). This is typically used when a role is deleted.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        principal           Required string. Name of role to dis-assign all accesss.
+        ===============     ====================================================================
+
+
+        :return: boolean
         """
         u_url = self._url + "/permissions/clean"
         params = {
@@ -384,12 +453,17 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def create_folder(self, folder_name, description=""):
         """
-           Creates a unique folder name on AGS
-           Inputs:
-              folder_name - name of folder on AGS
-              description - describes the folder
-           Output:
-              JSON message as dictionary
+        Creates a unique folder name on AGS
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder_name         Required string. Name of the new folder.
+        ---------------     --------------------------------------------------------------------
+        description         Optional string. Description of what the folder is.
+        ===============     ====================================================================
+
+        :return: boolean
         """
         params = {
             "f" : "json",
@@ -405,11 +479,15 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def delete_folder(self, folder_name):
         """
-           deletes a folder on AGS
-           Inputs:
-              folder_name - name of folder to remove
-           Output:
-              boolean
+        Removes a folder on ArcGIS Server
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder_name         Required string. Name of the folder.
+        ===============     ====================================================================
+
+        :return: boolean
         """
         params = {
             "f" : "json"
@@ -426,14 +504,20 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def _delete_service(self, name, service_type, folder=None):
         """
-           deletes a service from AGS
-           Inputs:
-              name - name of the service
-              service_type - type of the service
-              folder - name of the folder the service resides, leave None
-                       for root.
-           Output:
-              boolean
+        Deletes a service from ArcGIS Server
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. Name of the service
+        ---------------     --------------------------------------------------------------------
+        service_type        Required string. Name of the service type.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Location of the service on ArcGIS Server.
+        ===============     ====================================================================
+
+        :return: boolean
+
         """
         if folder is None:
             u_url = self._url + "/%s.%s/delete" % (name,
@@ -452,9 +536,15 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def _service_report(self, folder=None):
         """
-           provides a report on all items in a given folder
-           Inputs:
-              folder - folder to report on given services. None means root
+        Provides a report on all items in a given folder.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Location of the service on ArcGIS Server.
+        ===============     ====================================================================
+
+        :return: boolean
         """
         items = ["description", "status",
                  "instances", "iteminfo",
@@ -531,8 +621,14 @@ class ServiceManager(BaseServer):
         Unregisters all the extensions from a previously registered server
         object extension (.SOE) file.
 
-        Parameters:
-         :extension_filename: name of the previously registered .SOE file
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        extension_filename         Required string. Name of the previously registered .SOE file.
+        ======================     ====================================================================
+
+        :return: boolean
+
         """
         params = {
             "f" : "json",
@@ -553,8 +649,15 @@ class ServiceManager(BaseServer):
         Use this operation to update your implementations or extension
         configuration properties.
 
-        Parameters:
-         :item_id: id of the uploaded .SOE file
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. Id of the uploaded .SOE file
+        ===============     ====================================================================
+
+        :return: boolean
+
+
         """
         params = {'f':'json',
                   'id': item_id}
@@ -568,15 +671,23 @@ class ServiceManager(BaseServer):
     def _rename_service(self, name, service_type,
                         new_name, folder=None):
         """
-           Renames a published AGS Service
-           Inputs:
-              name - old service name
-              service_type - type of service
-              new_name - new service name
-              folder - location of where the service lives, none means
-                       root folder.
-           Output:
-              JSON message as dictionary
+        Renames a published AGS Service
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string.  Old service name.
+        ---------------     --------------------------------------------------------------------
+        service_type        Required string. The type of service.
+        ---------------     --------------------------------------------------------------------
+        new_name            Required string. The new service name.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Location of where the service lives, none means
+                            root folder.
+        ===============     ====================================================================
+
+        :return: boolean
+
         """
         params = {
             "f" : "json",
@@ -614,6 +725,15 @@ class ServiceManager(BaseServer):
          - Extension Properties-Represent the extensions that are enabled
           on the service. The Extension Types section in the Help describes
           the supported out-of-the-box extensions for each service type.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service             Required dict. The service is the properties to create a service.
+        ===============     ====================================================================
+
+        :return: dict
+
         Output:
          dictionary status message
         """
@@ -630,23 +750,31 @@ class ServiceManager(BaseServer):
     #----------------------------------------------------------------------
     def _stop_services(self, services):
         """
-        Stops serveral services on a single server
-        Inputs:
-           services - is a list of dictionary objects. Each dictionary
-                      object is defined as:
-                        folder_name - The name of the folder containing the
-                        service, for example, "Planning". If the service
-                        resides in the root folder, leave the folder
-                        property blank ("folder_name": "").
-                        serviceName - The name of the service, for example,
-                        "FireHydrants".
-                        type - The service type, for example, "MapServer".
-                     Example:
-                        [{
-                          "folder_name" : "",
-                          "serviceName" : "SampleWorldCities",
-                          "type" : "MapServer"
-                        }]
+        Stops serveral services on a single server.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        services            Required list.  A list of dictionary objects. Each dictionary object
+                            is defined as:
+                              folder_name - The name of the folder containing the
+                                service, for example, "Planning". If the service
+                                resides in the root folder, leave the folder
+                                property blank ("folder_name": "").
+                              serviceName - The name of the service, for example,
+                                "FireHydrants".
+                              type - The service type, for example, "MapServer".
+                                Example:
+                                [{
+                                  "folder_name" : "",
+                                  "serviceName" : "SampleWorldCities",
+                                  "type" : "MapServer"
+                                }]
+        ===============     ====================================================================
+
+        :return: boolean
+
+
         """
         url = self._url + "/stopServices"
         if isinstance(services, dict):
@@ -670,22 +798,29 @@ class ServiceManager(BaseServer):
     def _start_services(self, services):
         """
         starts serveral services on a single server
-        Inputs:
-           services - is a list of dictionary objects. Each dictionary
-                      object is defined as:
-                        folder_name - The name of the folder containing the
-                        service, for example, "Planning". If the service
-                        resides in the root folder, leave the folder
-                        property blank ("folder_name": "").
-                        serviceName - The name of the service, for example,
-                        "FireHydrants".
-                        type - The service type, for example, "MapServer".
-                     Example:
-                        [{
-                          "folderName" : "",
-                          "serviceName" : "SampleWorldCities",
-                          "type" : "MapServer"
-                        }]
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        services            Required list.  A list of dictionary objects. Each dictionary object
+                            is defined as:
+                              folder_name - The name of the folder containing the
+                                service, for example, "Planning". If the service
+                                resides in the root folder, leave the folder
+                                property blank ("folder_name": "").
+                              serviceName - The name of the service, for example,
+                                "FireHydrants".
+                              type - The service type, for example, "MapServer".
+                                Example:
+                                [{
+                                  "folder_name" : "",
+                                  "serviceName" : "SampleWorldCities",
+                                  "type" : "MapServer"
+                                }]
+        ===============     ====================================================================
+
+        :return: boolean
+
         """
         url = self._url + "/startServices"
         if isinstance(services, dict):
@@ -715,10 +850,17 @@ class ServiceManager(BaseServer):
         setting this property to true, you also need to enable the virtual
         directory security in the security configuration.
 
-        Inputs:
-           description - a description of the folder
-           web_encrypted - boolean to indicate if the services are
-            accessible over SSL only.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        description         Required string. A description of the folder.
+        ---------------     --------------------------------------------------------------------
+        web_encrypted       Optional boolean. The boolean to indicate if the services are
+                            accessible over SSL only.
+        ===============     ====================================================================
+
+        :return: boolean
+
         """
         url = self._url + "/editFolder"
         params = {
@@ -740,12 +882,20 @@ class ServiceManager(BaseServer):
         and service_type with folder_name=None. To test if a service exists
         in a folder, supply all three parameters.
 
-        Inputs:
-           folder_name - a folder name
-           name - a service name
-           service_type - a service type. Allowed values:
-                GeometryServer | ImageServer | MapServer | GeocodeServer |
-                GeoDataServer | GPServer | GlobeServer | SearchServer
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder_name         Required string. The folder name to check for.
+        ---------------     --------------------------------------------------------------------
+        name                Optional string. The service name to check for.
+        ---------------     --------------------------------------------------------------------
+        service_type        Optional string. A service type. Allowed values:
+                             GeometryServer | ImageServer | MapServer | GeocodeServer |
+                             GeoDataServer | GPServer | GlobeServer | SearchServer
+        ===============     ====================================================================
+
+        :return: boolean
+
         """
         if folder_name and \
            name is None and \
@@ -817,12 +967,21 @@ class Service(BaseServer):
                  gis,
                  initialize=False,
                  **kwargs):
-        """Constructor
-            Inputs:
-               url - admin url
-               gis - GIS or Server object
-               initialize - fills all the properties at object creation is
-                            true
+        """
+        Constructor
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Required string. The administration URL.
+        ---------------     --------------------------------------------------------------------
+        gis                 Required GIS. GIS or Server object
+        ---------------     --------------------------------------------------------------------
+        initialize          Optional boolean. fills all the properties at object creation is
+                            true.
+        ===============     ====================================================================
+
+
         """
         super(Service, self).__init__(gis=gis,
                                       url=url)
@@ -857,10 +1016,7 @@ class Service(BaseServer):
                 for ext in v:
                     self._extensions.append(Extension.fromJSON(ext))
                     del ext
-            #elif k in attributes:
-            #    setattr(self, "_"+ k, json_dict[k])
-            #else:
-            #    setattr(self, k, v)
+
             del k
             del v
     #----------------------------------------------------------------------
@@ -891,6 +1047,16 @@ class Service(BaseServer):
                           extension_objects=None):
         """
         enables/disables a service extension type based on the name
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        extension_objects      Required list. A list of new extensions.
+        ==================     ====================================================================
+
+
+        :return: boolean
+
         """
         if extension_objects is None:
             extension_objects = []
@@ -917,16 +1083,23 @@ class Service(BaseServer):
         will cause a conflict with permissions on a child resource, this
         operation takes the same parameters as the Add Permission operation.
 
-        Parameters:
-         :principal: name of the role for whom the permission is being
-          assigned
-         :permission: The permission JSON object. The format is described
-          below.
-          Format:
-           {
-           "isAllowed": <true|false>,
-           "constraint": ""
-           }
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        principal           Required string. Name of the role for whom the permission is being
+                            assigned.
+        ---------------     --------------------------------------------------------------------
+        permission          Required dict. The permission dict. The format is described below.
+                            Format:
+                                {
+                                "isAllowed": <true|false>,
+                                "constraint": ""
+                                }
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         params = {
             "f" : "json",
@@ -964,9 +1137,21 @@ class Service(BaseServer):
         self.stop()
         self.start()
         return True
-
+    #----------------------------------------------------------------------
     def rename(self, new_name):
-        """Renames this service to the new name"""
+        """
+        Renames this service to the new name
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        new_name            Required string. New name of the current service.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
+        """
         params = {
             "f": "json",
             "serviceName": self.properties.serviceName,
@@ -1038,8 +1223,15 @@ class Service(BaseServer):
         This operation registers all the server object extensions defined
         in the .SOE file.
 
-        Parameters:
-         :item_id: The item_id of the uploaded .SOE file.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. unique ID of the item
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         params = {
             "id" : item_id,
@@ -1063,11 +1255,19 @@ class Service(BaseServer):
     def _upload_item_info(self, folder, path):
         """
         Allows for the upload of new itemInfo files such as metadata.xml
-        Inputs:
-           folder - folder on ArcGIS Server
-           filePath - full path of the file to upload
-        Output:
-           json as dictionary
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Required string. Folder on ArcGIS Server.
+        ---------------     --------------------------------------------------------------------
+        path                Required string. Full path of the file to upload.
+        ===============     ====================================================================
+
+
+        :return: dict
+
+
         """
         files = {}
         url = self._url + "/iteminfo/upload"
@@ -1087,10 +1287,15 @@ class Service(BaseServer):
         iteminfo property.  This will return the default template then pass
         this object back into the editItemInfo() as a dictionary.
 
-        Inputs:
-           json_dict - iteminfo dictionary.
-        Output:
-           json as dictionary
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        json_dict           Required dict.  Item information dictionary.
+        ===============     ====================================================================
+
+
+        :return: dict
+
         """
         url = self._url + "/iteminfo/edit"
         params = {
@@ -1107,9 +1312,15 @@ class Service(BaseServer):
         This resource will tell you underlying databases and their location
         along with other supplementary files that make up the service.
 
-        Inputs:
-           file_type - this can be json or xml.  json return the
-            manifest.json file.  xml returns the manifest.xml file.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file_type           Required string.  This value can be json or xml.  json return the
+                            manifest.json file.  xml returns the manifest.xml file.
+        ===============     ====================================================================
+
+
+        :return: string
 
 
         """
@@ -1125,14 +1336,20 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     def _add_permission(self, principal, is_allowed=True):
         """
-           Assigns a new permission to a role (principal). The permission
-           on a parent resource is automatically inherited by all child
-           resources.
-           Inputs:
-              principal - role to be assigned
-              is_allowed - access of resource by boolean
-           Output:
-              JSON message as dictionary
+        Assigns a new permission to a role (principal). The permission
+        on a parent resource is automatically inherited by all child resources.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        principal           Required string. The role to be assigned.
+        ---------------     --------------------------------------------------------------------
+        is_allowed          Optional boolean. Access of resource by boolean.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
         """
         u_url = self._url + "/permissions/add"
         params = {
@@ -1151,6 +1368,17 @@ class Service(BaseServer):
         representation of the service, which includes the updates to the
         service properties. Editing a service causes the service to be
         restarted with updated properties.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service             Required dict. The service JSON as a dictionary.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
+
         """
         url = self._url + "/edit"
         params = {
