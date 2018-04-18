@@ -1232,17 +1232,17 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         Converts a Pandas DataFrame into a Spatial DataFrame by providing the X/Y columns.
 
-        ====================  =========================================================
-        **Argument**          **Description**
-        --------------------  ---------------------------------------------------------
-        df                    Required Pandas DataFrame. Source dataset
-        --------------------  ---------------------------------------------------------
-        x_column              Required string.  The name of the X-coordinate series
-        --------------------  ---------------------------------------------------------
-        y_column              Required string.  The name of the Y-coordinate series
-        --------------------  ---------------------------------------------------------
-        sr                    Optional int.  The wkid number of the spatial reference.
-        ====================  =========================================================
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        df                      Required Pandas DataFrame. Source dataset
+        --------------------    ---------------------------------------------------------
+        x_column                Required string.  The name of the X-coordinate series
+        --------------------    ---------------------------------------------------------
+        y_column                Required string.  The name of the Y-coordinate series
+        --------------------    ---------------------------------------------------------
+        sr                      Optional int.  The wkid number of the spatial reference.
+        ====================    =========================================================
 
         :returns: SpatialDataFrame
 
@@ -1255,18 +1255,26 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     def from_df(df, address_column="address", geocoder=None):
         """
         Returns a SpatialDataFrame from a dataframe with an address column.
-        Inputs:
-         df: Pandas dataframe with an address column
-        Optional Parameters:
-         address_column: string, default "address". This is the name of a
-               column in the specified dataframe that contains
-               addresses (as strings). The addresses are batch geocoded using
-               the GIS's first configured geocoder and their locations used as
-               the geometry of the spatial dataframe. Ignored if the
-               'geometry' parameter is also specified.
 
-        geocoder:  the geocoder to be used. If not specified,
-                        the active GIS's first geocoder is used.
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        df                      Required Pandas DataFrame. Source dataset
+        --------------------    ---------------------------------------------------------
+        address_column          Optional String. The default is "address". This is the
+                                name of a column in the specified dataframe that contains
+                                addresses (as strings). The addresses are batch geocoded
+                                using the GIS's first configured geocoder and their
+                                locations used as the geometry of the spatial dataframe.
+                                Ignored if the 'geometry' parameter is also specified.
+        --------------------    ---------------------------------------------------------
+        geocoder                Optional Geocoder. The geocoder to be used. If not
+                                specified, the active GIS's first geocoder is used.
+        ====================    =========================================================
+
+        :returns: SpatialDataFrame
+
+
 
         NOTE: Credits will be consumed for batch_geocoding, from
         the GIS to which the geocoder belongs.
@@ -1319,12 +1327,20 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     def from_featureclass(filename, **kwargs):
         """
         Returns a SpatialDataFrame from a feature class.
-        Inputs:
-         filename: full path to the feature class
-        Optional Parameters:
-         sql_clause: sql clause to parse data down
-         where_clause: where statement
-         sr: spatial reference object
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        filename                Required string. The full path to the feature class
+        --------------------    ---------------------------------------------------------
+        sql_clause              Optional string. The sql clause to parse data down
+        --------------------    ---------------------------------------------------------
+        where_clause            Optional string. A where statement
+        --------------------    ---------------------------------------------------------
+        sr                      Optional SpatialReference. A spatial reference object
+        ====================    =========================================================
+
+        :returns: SpatialDataFrame
 
         """
         from .io import from_featureclass
@@ -1360,14 +1376,21 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                         overwrite=True, skip_invalid=True):
         """converts a SpatialDataFrame to a feature class
 
-        Parameters:
-         :out_location: save location workspace
-         :out_name: name of the feature class to save as
-         :overwrite: boolean. True means to erase and replace value, false
-          means to append
-         :skip_invalids: if True, any bad rows will be ignored.
-        Output:
-         tuple of feature class path and list of bad rows by index number.
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        out_location            Required string. A save location workspace
+        --------------------    ---------------------------------------------------------
+        out_name                Required string. The name of the feature class to save as
+        --------------------    ---------------------------------------------------------
+        overwrite               Optional boolean. True means to erase and replace value,
+                                false means to append
+        --------------------    ---------------------------------------------------------
+        skip_invalids           Optional boolean. If True, any bad rows will be ignored.
+        ====================    =========================================================
+
+        :returns: string
+
         """
         from .io import to_featureclass
         return to_featureclass(df=self,
