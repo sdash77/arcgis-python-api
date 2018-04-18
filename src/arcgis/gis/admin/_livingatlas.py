@@ -216,6 +216,37 @@ class LivingAtlas(BasePortalAdmin):
             return True
         return False
     #----------------------------------------------------------------------
+    def update_premium_account(self, username, password):
+        """
+        Updates the Username/Password for the Living Atlas Premium User.
+        The account must be an ArcGIS Online account.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        username            Required string. The user who will be used for
+                            to access the subscriber Living Atlas content.
+        ---------------     ----------------------------------------------------
+        password            Required string. The credentials for the user above.
+        ===============     ====================================================
+
+        :return: boolean
+
+        """
+        url = "%s/update" % self._url
+        params = {
+            "f" : "json",
+            "groupId" : self.groups[0].id,
+            "type" : 'Premium',
+            "username" : username,
+            "password" : password
+        }
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return True
+        return False
+
+    #----------------------------------------------------------------------
     @property
     def groups(self):
         """returns a list of all living atlas groups"""
