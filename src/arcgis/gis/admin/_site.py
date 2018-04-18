@@ -53,19 +53,35 @@ class Site(BasePortalAdmin):
         the end of this operation, the web server that hosts the API is
         restarted.
 
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        url                             Required string. The portal administration url
+                                        Ex: https://mysite.com/<web adaptor>/portaladmin
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The initial admin account name
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password for initial admin account
+        ---------------------------     --------------------------------------------------------------------
+        full_name                       Required string. The full name of the admin account
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required string. The account email address
+        ---------------------------     --------------------------------------------------------------------
+        content_store                   Required string. JSON string including the path to the location of
+                                        the site's content.
+        ---------------------------     --------------------------------------------------------------------
+        description                     Optional string. The optional description for the account
+        ---------------------------     --------------------------------------------------------------------
+        question_idx                    Optional integer. The index of the secret question to retrieve a
+                                        forgotten password
+        ---------------------------     --------------------------------------------------------------------
+        question_ans                    Optional string. The answer to the secret question
+        ===========================     ====================================================================
+
+        :returns: dict
+
+
         Parameters:
-         :url: the portal administration url
-               Ex: https://mysite.com/<web adaptor>/portaladmin
-         :username: initial admin account name
-         :password: password for initial admin account
-         :full_name: full name of the admin account
-         :email: account email address
-         :content_store: JSON string including the path to the location of
-          the site's content.
-         :description: optional descript for the account
-         :question_idx: index of the secret question to retrieve a
-          forgotten password
-         :question_ans: answer to the secret question
         """
         url = "%s/createNewSite" % url
         params = {"f": "json",
@@ -91,9 +107,15 @@ class Site(BasePortalAdmin):
           Configuration store connection file - a JSON file that contains
            the database connection information
 
-        Parameters:
-         :location: path to the folder accessible to the portal where the
-          exported site configuration will be written.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. The path to the folder accessible to the portal
+                                        where the exported site configuration will be written.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/exportSite" % self._url
         params = {'f' : 'json',
@@ -113,8 +135,13 @@ class Site(BasePortalAdmin):
         file includes. The importSite operation also updates the portal
         content index.
 
-        Parameters:
-         :location: A file path to an exported configuration.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. A file path to an exported configuration.
+        ===========================     ====================================================================
+
+        :returns: dict
 
         """
         url = "%s/importSite" % self._url
@@ -153,13 +180,20 @@ class Site(BasePortalAdmin):
         machine. After the operation is complete, the web server that hosts
         the API will be restarted.
 
-        Parameters:
-         :admin_url: The admin URL of the existing portal site to which a
-          machine will be joined
-         :username: username for the initial administrator account of the
-          existing portal site.
-         :password:  password for the initial administrator account of the
-          existing portal site.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        admin_url                       Required string. The admin URL of the existing portal site to which
+                                        a machine will be joined
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The username for the initial administrator account
+                                        of the existing portal site.
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password for the initial administrator account
+                                        of the existing portal site.
+        ===========================     ====================================================================
+
+        :returns: dict
 
         """
         url = "%s/joinSite" % self._url

@@ -62,10 +62,17 @@ class CreditManager(object):
         Allows organization administrators to allocate credits for
         organizational users in ArcGIS Online
 
-        Parameters:
-        :param username: name of the user to assign credits to
-        :param credits: number of credits to assign to a user. If None is
-        provided, it sets user to unlimited credits.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string.The name of the user to assign credits to.
+        ---------------------------     --------------------------------------------------------------------
+        credits                         Optional float. The number of credits to assign to a user. If None
+                                        is provided, it sets user to unlimited credits.
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         if credits:
             params = {
@@ -85,8 +92,13 @@ class CreditManager(object):
         Allows organization administrators to remove credit allocation for
         organizational users in ArcGIS Online
 
-        Parameters:
-        :param username: name whose credit allocation to be removed
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string.The name of the user to remove all credit from.
+        ===========================     ====================================================================
+
+        :returns: boolean
 
         """
         params = {"usernames" : [username],

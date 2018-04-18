@@ -217,12 +217,6 @@ class Uploads(BaseServer):
 
         :return: Boolean
 
-
-        Parameters:
-         :item_id: item ID to commit
-         :parts: An optional comma-separated ordered list of all the parts
-          that make the item. If this parameter is not provided, the
-          default order of the parts is used.
         """
         params = {'f': 'json'}
         url = self._url + '/{iid}/commit'.format(iid=item_id)
