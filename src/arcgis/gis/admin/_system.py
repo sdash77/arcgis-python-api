@@ -224,12 +224,19 @@ class System(BasePortalAdmin):
         running this operation. You can check the status of your indexes
         using the status resource.
 
-        Parameters:
-         :mode:  mode in which the indexer should run.
-          Values: USER_MODE | GROUP_MODE | SEARCH_MODE | FULL
-         :includes: An optional comma separated list of elements to include
-          in the index. This is useful if you want to only index certain
-          items or user accounts.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        mode                            Optional string. The mode in which the indexer should run.
+                                        Values USER_MODE | GROUP_MODE | SEARCH_MODE | FULL
+        ---------------------------     --------------------------------------------------------------------
+        includes                        Optional string. An optional comma separated list of elements to
+                                        include in the index. This is useful if you want to only index
+                                        certain items or user accounts.
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         url = "%s/indexer/reindex" % self._url
         if mode.lower() == 'full':
@@ -382,10 +389,15 @@ class WebAdaptors(BasePortalAdmin):
         Gets/Sets the common properties and configuration of the ArcGIS Web
         Adaptor configured with the portal.
 
-        Parameters:
-         :shared_key: This property represents credentials that are shared
-          with the Web Adaptor. The Web Adaptor uses these credentials to
-          communicate with the portal
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        shared_key                      Required string. This property represents credentials that are shared
+                                        with the Web Adaptor. The Web Adaptor uses these credentials to
+                                        communicate with the portal
+        ===========================     ====================================================================
+
+
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):
@@ -560,8 +572,17 @@ class Licenses(BasePortalAdmin):
         are effective immediately and no entitlements are added to the
         queue. In this case, the operation returns an empty result.
 
-        Parameters:
-         :app: application lookup
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        app                             Required string. The application lookup.
+                                        Allowed values: appstudioweb,arcgisprodesktop,busanalystonline_2,
+                                        drone2map,geoplanner,arcgisInsights,LRReporter,
+                                        navigator, or RoadwayReporter
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         allowed = ["appstudioweb", "arcgisprodesktop",
                    "busanalystonline_2", "drone2map",
@@ -580,6 +601,18 @@ class Licenses(BasePortalAdmin):
     def remove_entitlement(self, app="arcgisprodesktop"):
         """
         deletes an entitlement from a site
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        app                             Required string. The application lookup.
+                                        Allowed values: appstudioweb,arcgisprodesktop,busanalystonline_2,
+                                        drone2map,geoplanner,arcgisInsights,LRReporter,
+                                        navigator, or RoadwayReporter
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         allowed = ["appstudioweb", "arcgisprodesktop",
                    "busanalystonline_2", "drone2map",
@@ -612,9 +645,16 @@ class Licenses(BasePortalAdmin):
         configuring the backup license manager, Portal for ArcGIS is
         restarted automatically. When the restart completes, the portal is
         configured with the backup license server you specified.
-        Parameter:
-         :info: JSON representation of the license server connection
-          information.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        info                            Required string. The JSON representation of the license server
+                                        connection information.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f" : "json",
@@ -642,11 +682,16 @@ class Licenses(BasePortalAdmin):
         Each time this operation is invoked, it overwrites all existing
         entitlements, even the ones that are in the queue.
 
-        Parmeters:
-         :file: entitlement file
-         :application: application identifier to be imported
-        Returns:
-         JSON response
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        file                            Required string. The entitlement file to load into Enterprise.
+        ---------------------------     --------------------------------------------------------------------
+        application                     Required string. The application identifier to be imported
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/importEntitlements" % self._url
         params = {

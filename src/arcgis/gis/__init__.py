@@ -1515,6 +1515,40 @@ class UserManager(object):
             return res['success']
         return False
 
+    #----------------------------------------------------------------------
+    def reassign_user(self, user_from, user_to):
+        """
+        Reassigns all of the current user's items and groups to the target_user.
+
+        Items are transferred to the target user into a folder named
+        <user>_<folder> where user corresponds to the user whose items were
+        moved and folder corresponds to the folder that was moved.
+
+        .. note::
+            This method must be executed as an administrator.  This method also
+            can not be undone.  The changes are immediately made and permanent.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        user_from         required string/User. The user who will have items/groups
+                          transferred
+        ----------------  --------------------------------------------------------
+        user_to           required string/User. The user who will own items/groups after this.
+        ================  ========================================================
+
+        :return: boolean
+
+        """
+
+        if isinstance(user_from, User):
+            user_from = user_from.username
+        if isinstance(user_to, User):
+            user_to = user_to.username
+        return self._portal.reassign_user(username=user_from,
+                                   target_username=user_to)
+
+
     def signup(self, username, password, fullname, email):
         """
         Signs up a user to an instance of Portal for ArcGIS.
