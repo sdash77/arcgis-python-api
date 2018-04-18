@@ -54,24 +54,35 @@ class CollaborationManager(object):
         host can be specified; otherwise, the contact information for the
         administrator user performing the operation will be used.
 
-        :Inputs:
-         :name: name of the collaboration
-         :description: A description of the collaboration that all
-          participants will see.
-         :workspace_name: The name of the initial workspace.
-         :workspace_description: The description of the initial workspace.
-         :portal_group_id: ID of group in the portal that will be linked
-          with the workspace.
-         :host_contact_first_name: The first name of the contact person for
-          the collaboration host portal.
-         :host_contact_last_name: The last name of the contact person for
-          the collaboration host portal.
-         :host_contact_email_address: The email address of the contact
-          person for the collaboration host portal.
-         :access_mode:The organization's access mode to the workspace.
-           Values: send | receive | sendAndReceive
-        Output:
-              the data item is registered successfully, None otherwise
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        name                            Required string. Name of the collaboration
+        ---------------------------     --------------------------------------------------------------------
+        description                     Required string. Description of the collaboration
+        ---------------------------     --------------------------------------------------------------------
+        workspace_name                  Required string. The name of the initial workspace.
+        ---------------------------     --------------------------------------------------------------------
+        workspace_description           Required string. The description of the initial workspace.
+        ---------------------------     --------------------------------------------------------------------
+        portal_group_id                 Required string. ID of group in the portal that will be linked with
+                                        the workspace.
+        ---------------------------     --------------------------------------------------------------------
+        host_contact_first_name         Required string. The first name of the contact person for the
+                                        collaboration host portal.
+        ---------------------------     --------------------------------------------------------------------
+        host_contact_last_name          Required string. The last name of the contact person for the
+                                        collaboration host portal.
+        ---------------------------     --------------------------------------------------------------------
+        host_contact_email_address      Required string. The email address of the contact person for the
+                                        collaboration host portal.
+        ---------------------------     --------------------------------------------------------------------
+        access_mode                     Required string. The organization's access mode to the workspace.
+                                        Values: send | receive | sendAndReceive (default)
+        ===========================     ====================================================================
+
+
+        :return: the data item is registered successfully, None otherwise
 
         """
         if access_mode not in ['send', 'receive', 'sendAndReceive']:
@@ -119,30 +130,41 @@ class CollaborationManager(object):
         it to the host. Once the host processes the response, content can
         be shared between the host and guest(s).
 
-        Inputs:
-         :first_name:The first name of the contact person for the guest
-          portal.
-         :last_name:last name of the contact person
-         :email: email of the contact person
-         :invitation_file: A multipart form parameter—file upload. Use
-          either this parameter or invitation_JSON.
-         :invitation_JSON: the same contents as the invitationFile
-          parameter but passed as a string. Use either this parameter or
-          invitationFile.
-         :webauth_username: If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication user name.
-         :webauth_password: If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication password.
-         :webauth_cert_file:If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication certificate file.
-         :webauth_cert_password:If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication certificate password.
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        first_name                      Required string. The first name of the contact person for the guest
+                                        portal.
+        ---------------------------     --------------------------------------------------------------------
+        last_name                       Required string. The last name of the contact person.
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required string. The email of the contact person.
+        ---------------------------     --------------------------------------------------------------------
+        invitation_file                 Optional string. The invite file to upload to portal. Use either
+                                        this parameter or invitation_JSON.
+        ---------------------------     --------------------------------------------------------------------
+        invitation_JSON                 Optional string. The same contents as the invitation_file parameter
+                                        but passed as a string. Use either this parameter or invitation_file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_username                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication user name.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_password                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication password.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_file               Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_password           Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate password.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "%s/acceptCollaborationInvitation" % self._basepath
         params = {
@@ -209,30 +231,41 @@ class CollaborationManager(object):
         Validation checks include checking that the invitation is for the
         intended recipient.
 
-        Inputs:
-         :first_name:The first name of the contact person for the guest
-          portal.
-         :last_name:last name of the contact person
-         :email: email of the contact person
-         :invitation_file: A multipart form parameter—file upload. Use
-          either this parameter or invitation_JSON.
-         :invitation_JSON: the same contents as the invitationFile
-          parameter but passed as a string. Use either this parameter or
-          invitationFile.
-         :webauth_username: If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication user name.
-         :webauth_password: If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication password.
-         :webauth_cert_file:If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication certificate file.
-         :webauth_cert_password:If the collaboration host requires web-tier
-          authentication, optionally use this parameter to provide the
-          host's web-tier authentication certificate password.
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        first_name                      Required string. The first name of the contact person for the guest
+                                        portal.
+        ---------------------------     --------------------------------------------------------------------
+        last_name                       Required string. The last name of the contact person.
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required string. The email of the contact person.
+        ---------------------------     --------------------------------------------------------------------
+        invitation_file                 Optional string. The invite file to upload to portal. Use either
+                                        this parameter or invitation_JSON.
+        ---------------------------     --------------------------------------------------------------------
+        invitation_JSON                 Optional string. The same contents as the invitation_file parameter
+                                        but passed as a string. Use either this parameter or invitation_file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_username                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication user name.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_password                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication password.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_file               Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_password           Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate password.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "%s/validateCollaborationInvitation" % self._basepath
         params = {
@@ -272,13 +305,26 @@ class CollaborationManager(object):
         This method will create a new group and a new workspace in both the host and guest GIS for this collaboration.
         Invitation and response files created during the collaborations will be downloaded to the current working
         directory.
-        
-        Use the other methods if you need fine-grained control over how the collaboration is set up.
-        :param guest_gis: GIS object of the guest org or Enterprise 
-        :param collaboration_name: A generic name for the collaboration. This name is used with prefixes such as 
-        wksp_<your_collab_name>, grp_<your_collab_name> to create the collaboration workspace and groups.
-        :param collaboration_description: A generic description for the collaboration.
-        :return: returns True / False
+
+        **Use the other methods if you need fine-grained control over how the collaboration is set up.**
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        guest_gis                       Required GIS. GIS object of the guest org or Enterprise.
+        ---------------------------     --------------------------------------------------------------------
+        collaboration_name              Required string. A generic name for the collaboration. This name is
+                                        used with prefixes such as wksp_<your_collab_name>,
+                                        grp_<your_collab_name> to create the collaboration workspace and
+                                        groups.
+        ---------------------------     --------------------------------------------------------------------
+        collaboration_description       Optional string. A generic description for the collaboration.
+        ===========================     ====================================================================
+
+        :returns: boolean
+
+
+
         """
 
         # create a group in the host
@@ -408,14 +454,19 @@ class Collaboration(dict):
         portal-to-portal collaboration. Only collaboration hosts can create
         new workspaces.
 
-        Inputs:
-         :name: The name of the new workspace.
-         :description: The description of the new workspace.
-         :config: The configuration details of the new workspace.
-         :portal_group_id: The ID of the portal group linked with the
-          workspace.
-        Output:
-         dictionary with status and ID or workspace and collaboration
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        name                            Required string. The name of the workspace.
+        ---------------------------     --------------------------------------------------------------------
+        description                     Required string. Brief description of the workspace.
+        ---------------------------     --------------------------------------------------------------------
+        portal_group_id                 Required string. The ID of the portal group linked with the
+                                        workspace.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f": "json",
@@ -499,9 +550,16 @@ class Collaboration(dict):
         immediately disables further replication of data to and from the
         portal and the collaboration participants.
 
-        Inputs:
-         : workspace_id: uid of the workspace to remove from the
-          collaboration.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Optional string. UID of the workspace to remove from the
+                                        collaboration.
+        ===========================     ====================================================================
+
+        :returns: dict
+
+
 
         """
         params = {"f" : "json"}
@@ -542,15 +600,19 @@ class Collaboration(dict):
         It is important that the contents of this response file are not
         intercepted and tampered with by any unknown entity.
 
-        inputs:
-         :out_folder: location to save the file to
-        Output:
-         file path
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        out_folder                      Required string. Save location of the file.
+        ===========================     ====================================================================
+
+        :returns: string
+
         """
         params = {"f" : "json"}
         data_path = "%s/exportInvitationResponse" % self._basepath
         return self._portal.con.post(data_path, params, out_folder=out_folder, verify_cert=False)
-        # return self._portal.con.get(data_path, params, out_folder=out_folder)
+
     #----------------------------------------------------------------------
     def import_invitation_response(self,
                                    response_file,
@@ -566,20 +628,30 @@ class Collaboration(dict):
         guest is established. Sharing of content between participants can
         proceed from this point.
 
-        Inputs:
-         :response_file: A multipart form parameter—file upload.
-         :webauth_username: If the collaboration guest requires web-tier
-          authentication, optionally use this parameter to provide the
-          guest's web-tier authentication user name.
-         :webauth_password: password for the webauth_username
-         :webauth_cert_file: If the collaboration guest requires web-tier
-          authentication, optionally use this parameter to provide the
-          guest's web-tier authentication certificate file.
-         :webauth_cert_password: If the collaboration guest requires
-          web-tier authentication, optionally use this parameter to provide
-          the guest's web-tier authentication certificate password.
-        Output:
-         JSON dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        response_file                   Required string. File path to the response file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_username                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication user name.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_password                Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication password.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_file               Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate file.
+        ---------------------------     --------------------------------------------------------------------
+        webauth_cert_password           Optional string. If the collaboration host requires web-tier
+                                        authentication, optionally use this parameter to provide the host's
+                                        web-tier authentication certificate password.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {"f" : "json"}
         data_path = "%s/importInvitationResponse" % self._basepath
@@ -634,24 +706,35 @@ class Collaboration(dict):
         portal using the import_invitation_response operation. This will
         establish trust between your portal and that of your participant.
 
-        Inputs:
-         :config_json: A JSON object containing a map of access modes for
-          the participant in each of the collaboration workspaces.
-          Defined as: send | receive | sendAndReceive
-          :Example:
-          config_json = [
-                {"workspace_id" : "send"},
-                {"workspace_id2" : "receive"},
-                {"workspace_id3" : "sendAndReceive"}
-          ]
-         :expiration: The time in UTC when the invitation to collaborate
-          should expire.
-         :guest_portal_url: The URL of the participating org or Enterprise that you want
-          to invite to the collaboration.
-         :guest_gis: GIS object to the guest collaboration site (optional)
-         :save_path: Path to download the invitation file to.
-        Output:
-         contents of a file that contains the invitation information
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        config_json                     Required dict. A dict containing a map of access modes for the
+                                        participant in each of the collaboration workspaces.
+                                        Defined as: send | receive | sendAndReceive
+
+                                        :Example:
+
+                                        config_json = [
+                                          {"workspace_id" : "send"},
+                                          {"workspace_id2" : "receive"},
+                                          {"workspace_id3" : "sendAndReceive"}
+                                        ]
+        ---------------------------     --------------------------------------------------------------------
+        expiration                      Optional integer. The time in UTC when the invitation to collaborate
+                                        should expire.
+        ---------------------------     --------------------------------------------------------------------
+        guest_portal_url                Optional string. The URL of the participating org or Enterprise that
+                                        you want to invite to the collaboration.
+        ---------------------------     --------------------------------------------------------------------
+        guest_gis                       Optional GIS. GIS object to the guest collaboration site.
+        ---------------------------     --------------------------------------------------------------------
+        save_path                       Optional string. Path to download the invitation file to.
+        ===========================     ====================================================================
+
+        :returns: contents of a file that contains the invitation information
+
+
         """
         if guest_gis is None and \
            guest_portal_url is None:
@@ -698,8 +781,17 @@ class Collaboration(dict):
         """
         This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
          to the portal group is shared to other participants in the collaboration.
-        :param portal_group: arcgis.gis.Group object or group id string
-        :return:
+
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        portal_group                    Required Group of string. Group ID or object to add to the workspace.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
         """
         group_id = None
         if isinstance(portal_group, Group):
@@ -742,10 +834,15 @@ class Collaboration(dict):
         invitation is extended an additional 72 hours from the current
         time.
 
-        Inputs:
-         :invitation_id: ID of the invitation to refresh
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        invitation_id                   Required string. ID of the invitation to refresh
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
         """
         params = {"f" : "json"}
         data_path = "%s/invitations/%s/refresh" % (self._basepath, invitation_id)
@@ -773,6 +870,16 @@ class Collaboration(dict):
         """
         The remove operation allows a collaboration host to remove a
         participant from a portal-to-portal collaboration.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        portal_id                       Required string. ID of the portal to remove.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
         """
         params = {'f' : 'json'}
         data_path = "%s/participants/%s/remove" % (self._basepath, portal_id)
@@ -785,10 +892,15 @@ class Collaboration(dict):
         collaboration workspace and a portal group. Replication of content
         discontinues when the link is removed.
 
-        Input:
-         :workspace_id: workspace in.
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
         """
         params = {'f' : 'json'}
         data_path = "%s/workspaces/%s/removePortalGroupLink" % (self._basepath, workspace_id)
@@ -803,12 +915,18 @@ class Collaboration(dict):
         properties. The updates are propagated to guests when the next
         scheduled refresh of content occurs.
 
-        Inputs:
-         :name: name of the collaboration
-         :description: description of the collaboration
-         :config: configuration properties of the collaboration
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        name                            Optional string. Name of the collaboration
+        ---------------------------     --------------------------------------------------------------------
+        description                     Optional string. The description of the collaboration
+        ---------------------------     --------------------------------------------------------------------
+        config                          Optional dict. The configuration properties of the collaboration
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "%s/updateInfo" % self._basepath
         params = {"f" : "json"}
@@ -828,13 +946,20 @@ class Collaboration(dict):
         The updateInfo operation updates certain collaboration workspace
         properties.
 
-        Inputs:
-         :workspace_id: UID of the workspace
-         :name: name of new workspace
-         :description: description of new workspace
-         :config: configuration details of the new workspace
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. UID of the workspace
+        ---------------------------     --------------------------------------------------------------------
+        name                            Optional string. The name of the workspace
+        ---------------------------     --------------------------------------------------------------------
+        description                     Optional string. A brief set of texts that explains the workspace
+        ---------------------------     --------------------------------------------------------------------
+        config                          Optional dict. The configuration details of the new workspace
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "%s/workspaces/%s/updateInfo" % (self._basepath, workspace_id)
         params = {"f" : 'json'}
@@ -854,12 +979,16 @@ class Collaboration(dict):
         The update_access_modes operation updates the access mode for a
         specific participant in a portal-to-portal collaboration.
 
-        Inputs:
-         :portal_id: ID of the portal
-         :workspace_access_json: JSON describing the participant's access
-          mode.
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        portal_id                       Required string. UID of the Portal
+        ---------------------------     --------------------------------------------------------------------
+        workspace_access_json           Required dict/string. JSON describing the participant's access mode.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "/participants/%s/updateParticipantAccessModes" % portal_id
         params = {'f': 'json'}
@@ -877,17 +1006,23 @@ class Collaboration(dict):
         Content shared to the portal group is shared to other participants
         in the collaboration.
 
-        Inputs:
-         :workspace_id: workspace ID to update the group link
-         :portal_id: the ID of the portal group link with the workspace
-         :enable_realtime_sync: Determines whether the content shared with
-          the group is shared to other collaboration participants in real
-          time, updating whenever changes are made, or whether the content
-          is shared based on a schedule set by the collaboration host.
-          Values: true or false.
-         :interval_hours: sets the sharing schedule for the group
-        Output:
-         dictionary with success status as boolean
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. UID of the workspace
+        ---------------------------     --------------------------------------------------------------------
+        portal_id                       Required string. UID of the Portal
+        ---------------------------     --------------------------------------------------------------------
+        enable_realtime_sync            Optional boolean. Determines whether the content shared with the
+                                        group is shared to other collaboration participants in real time,
+                                        updating whenever changes are made, or whether the content is
+                                        shared based on a schedule set by the collaboration host.
+        ---------------------------     --------------------------------------------------------------------
+        interval_hours                  Optional integer. sets the sharing schedule for the group
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         data_path = "/workspaces/%s/updatePortalGroupLink" % workspace_id
         params = {
@@ -907,10 +1042,14 @@ class Collaboration(dict):
         validate_invitation_response operation to check for the existence
         of the collaboration and validity of the invitation response file.
 
-        Inputs:
-         :response_file: file upload
-        Output:
-         dictionary
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        response_file                   Required string. Path to the collaboration response file.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         files = {'invitationResponseFile' : response_file}
         params = {'f':'json'}
