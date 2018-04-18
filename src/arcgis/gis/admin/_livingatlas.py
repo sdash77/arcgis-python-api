@@ -170,6 +170,52 @@ class LivingAtlas(BasePortalAdmin):
             params['groupId'] = group.id
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
+    def upgrade(self):
+        """
+        Upgrades the Living Atlas Group to the latest version
+
+        :return: Boolean
+        """
+        url = "%s/upgrade"
+        params = {'f': 'json'}
+        try:
+            for g in self.groups:
+                params['groupId'] = g.id
+                self._con.post(url, params)
+            return True
+        except:
+            return False
+    #----------------------------------------------------------------------
+    def update_subscriber_account(self, username, password):
+        """
+        Updates the Username/Password for the Living Atlas Subscriber User.
+        The account must be an ArcGIS Online account.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        username            Required string. The user who will be used for
+                            to access the subscriber Living Atlas content.
+        ---------------     ----------------------------------------------------
+        password            Required string. The credentials for the user above.
+        ===============     ====================================================
+
+        :return: boolean
+
+        """
+        url = "%s/update" % self._url
+        params = {
+            "f" : "json",
+            "groupId" : self.groups[0].id,
+            "type" : 'Subscriber',
+            "username" : username,
+            "password" : password
+        }
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return True
+        return False
+    #----------------------------------------------------------------------
     @property
     def groups(self):
         """returns a list of all living atlas groups"""
