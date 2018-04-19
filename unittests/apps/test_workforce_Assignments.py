@@ -72,7 +72,7 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             description="Do some work",
             dispatcher=self.dispatcher,
             worker=self.worker,
-            assigned_date=datetime.datetime.now()
+            assigned_date=datetime.datetime(2018, 4, 16)
         )
 
     def add_completed_assignment(self):
@@ -212,7 +212,7 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             assignment.update(description="Updated",
                               status="assigned",
                               worker=self.worker,
-                              assigned_date=datetime.datetime.now())
+                              assigned_date=datetime.datetime(2018, 4, 17))
             assignment = self.project.assignments.search()[0]
             self.assertEqual(assignment.description, "Updated", "Incorrect description")
             self.assertEqual(assignment.status, "assigned", "Incorrect status")
@@ -237,7 +237,7 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
                 self.assertEqual(assignment.worker, None)
                 assignment.worker = self.worker
                 assignment.status = "assigned"
-                assignment.assigned_date = datetime.datetime.now()
+                assignment.assigned_date = datetime.datetime(2018, 4, 17)
             self.project.assignments.batch_update(assignments)
             assignments = self.project.assignments.search()
             for assignment in assignments:
@@ -466,7 +466,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
 
     def test_add_assignment2(self):
         try:
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime(2018, 4, 16)
             assignment = self.project.assignments.add(
                 geometry={"x": 123, "y": 456},
                 status="assigned",
@@ -508,7 +508,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
 
     def test_batch_add_assignments(self):
         try:
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime(2018, 4, 16)
             assignment = Assignment(
                 self.project,
                 geometry={"x": 123, "y": 456},
