@@ -204,17 +204,21 @@ class LivingAtlas(BasePortalAdmin):
 
         """
         url = "%s/update" % self._url
-        params = {
-            "f" : "json",
-            "groupId" : self.groups[0].id,
-            "type" : 'Subscriber',
-            "username" : username,
-            "password" : password
-        }
-        res = self._con.post(url, params)
-        if 'success' in res:
-            return True
-        return False
+        r = []
+        for g in self.groups:
+            params = {
+                "f" : "json",
+                "groupId" : g.id,
+                "type" : 'Premium',
+                "username" : username,
+                "password" : password
+            }
+            res = self._con.post(url, params)
+            if 'success' in res:
+                r.append(True)
+            else:
+                r.append(False)
+        return all(r)
     #----------------------------------------------------------------------
     def update_premium_account(self, username, password):
         """
@@ -234,17 +238,21 @@ class LivingAtlas(BasePortalAdmin):
 
         """
         url = "%s/update" % self._url
-        params = {
-            "f" : "json",
-            "groupId" : self.groups[0].id,
-            "type" : 'Premium',
-            "username" : username,
-            "password" : password
-        }
-        res = self._con.post(url, params)
-        if 'success' in res:
-            return True
-        return False
+        r = []
+        for g in self.groups:
+            params = {
+                "f" : "json",
+                "groupId" : g.id,
+                "type" : 'Premium',
+                "username" : username,
+                "password" : password
+            }
+            res = self._con.post(url, params)
+            if 'success' in res:
+                r.append(True)
+            else:
+                r.append(False)
+        return all(r)
 
     #----------------------------------------------------------------------
     @property
