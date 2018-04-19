@@ -35,8 +35,8 @@ if conda_install_mode:
 else:
     dependencies = [
         'six',
-        'ipywidgets >=5.2.2,<7',
-        'widgetsnbextension >=1.2.6,<3',
+        'ipywidgets >=7',
+        'widgetsnbextension >=3',
         'pandas',
         'numpy',
         'pyshp',
