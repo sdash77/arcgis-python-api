@@ -525,7 +525,7 @@ class ServerConnection(object):
                 with open(f_n_path, 'wb') as writer:
                     for data in self._chunk(response=resp, size=4096):
                         if six.PY3 == True:
-                            writer.write(data.decode('utf-8'))
+                            writer.write(data)
                         else:
                             writer.write(data)
                         del data

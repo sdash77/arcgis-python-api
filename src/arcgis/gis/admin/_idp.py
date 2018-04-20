@@ -247,7 +247,7 @@ class IdentityProviderManager(object):
             self._unregister()
         elif len(dict(self.properties)) > 0:
             self._update(**value)
-
+    #----------------------------------------------------------------------
     def _add(self, **kwargs):
         """
         registers the inital idp configuration

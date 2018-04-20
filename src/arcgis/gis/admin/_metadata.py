@@ -30,10 +30,15 @@ class MetadataManager(object):
         This operation turns on metadata for items and allows the
         administrator to set the default metadata scheme.
 
-        Parameters:
-         :param metadata_format: the default metadata format
-        Output:
-         boolean stating if the operation was a success
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        metadata_format                 Required string. Sets the default metadata format. The allowed
+                                        values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         lookup = {
             "fgdc" : "fgdc",
@@ -55,8 +60,7 @@ class MetadataManager(object):
         """
         This operation turns off metadata for items.
 
-        Output:
-         boolean stating if the operation was a success
+        :returns: boolean
         """
 
         params = {
@@ -70,10 +74,15 @@ class MetadataManager(object):
         This operation allows administrators to update the current metdata
         properties.
 
-        Parameters:
-         :param metadata_format: the default metadata format
-        Output:
-         boolean stating if the operation was a success
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        metadata_format                 Required string. Sets the default metadata format. The allowed
+                                        values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         lookup = {
             "fgdc" : "fgdc",

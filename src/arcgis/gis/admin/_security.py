@@ -145,8 +145,14 @@ class Security(BasePortalAdmin):
         portal. Use the set on token_config operation to change the
         configuration properties of the token service.
 
-        Parameters:
-         :value: shared key value
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        value                           Required string. A shared key value
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         import six
         params = {
@@ -266,9 +272,16 @@ class Security(BasePortalAdmin):
 
         See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Update_Identity_Store/02r300000249000000/
 
-        Parameters:
-         :user_config: user store configuration
-         :group_config: group store configuration
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        user_config                     Optional dict. The user store configuration
+        ---------------------------     --------------------------------------------------------------------
+        group_config                    Optional dict. The group store configuration
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/config/updateIdentityStore" % self._url
         if user_config is None:
@@ -296,9 +309,16 @@ class Security(BasePortalAdmin):
         This operation can be used to test the connection to a user or
         group store.
 
-        Parameters:
-         :user_config: user store configuration
-         :group_config: group store configuration
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        user_config                     Optional dict. The user store configuration
+        ---------------------------     --------------------------------------------------------------------
+        group_config                    Optional dict. The group store configuration
+        ===========================     ====================================================================
+
+        :returns: dict
+
 
         """
         if user_config is None and \
@@ -371,9 +391,16 @@ class OAuth(BasePortalAdmin):
         client ID to another value as specified by the application
         developer.
 
-        Parameters:
-         :current_id:The current client ID of an existing application.
-         :new_id: The new client ID to assign to the application.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        current_id                      Required string. The current client ID of an existing application.
+        ---------------------------     --------------------------------------------------------------------
+        new_id                          Required string. The new client ID to assign to the application.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {"f" : "json",
                   "currentAppID" : current_id,
@@ -445,25 +472,32 @@ class SSLCertificates(BasePortalAdmin):
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
 
-        Parameters:
-         :alias:The name of the certificate. This is a required
-          parameter. The certificate must be already present in the
-          portal.
-         :protocols: The SSL protocols the portal will use. Valid
-          options are TLSv1, TLSv1.1, and TLSv1.2; values must be comma
-          separated. By default, these options are all enabled.
-         :cipher_suites: The cipher suites the portal will use. Valid
-          options are:
-           - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-           - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-           - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
-           - TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
-           - TLS_RSA_WITH_AES_128_GCM_SHA256
-           - TLS_RSA_WITH_AES_128_CBC_SHA256
-           - TLS_RSA_WITH_AES_128_CBC_SHA
-           - TLS_RSA_WITH_3DES_EDE_CBC_SHA
-         By default, all of the above options are enabled. Values must
-         be comma separated.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        alias                           Required string. The name of the certificate. This is a required
+                                        parameter. The certificate must be already present in the portal.
+        ---------------------------     --------------------------------------------------------------------
+        protocols                       Required string. The SSL protocols the portal will use. Valid
+                                        options are TLSv1, TLSv1.1, and TLSv1.2; values must be comma
+                                        separated. By default, these options are all enabled.
+        ---------------------------     --------------------------------------------------------------------
+        cipher_suites                   Required string. The cipher suites the portal will use. Valid
+                                        options are:
+                                            - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+                                            - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+                                            - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+                                            - TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+                                            - TLS_RSA_WITH_AES_128_GCM_SHA256
+                                            - TLS_RSA_WITH_AES_128_CBC_SHA256
+                                            - TLS_RSA_WITH_AES_128_CBC_SHA
+                                            - TLS_RSA_WITH_3DES_EDE_CBC_SHA
+                                        By default, all of the above options are enabled. Values must be
+                                        comma separated.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/update" % self._url
         params = {
@@ -494,29 +528,45 @@ class SSLCertificates(BasePortalAdmin):
         certificate. The portal will generate a certificate for you and
         store it in its keystore.
 
-        Parameters:
-         :alias: The name of the certificate. This is a required
-          parameter.
-         :common_name: The common name used to identify the server for
-          which the certificate is to be generated. This is a required
-          parameter.
-         :organization: The name of the organization. This is a
-          required parameter.
-         :key_algorithm: The algorithm used to generate the key pairs.
-          The default is RSA.
-         :validity: The expiration time for the certificate in days.
-          The default is 90.
-         :key_size: The size of the key. The default is 2048.
-         :signature_algorithm: The algorithm used to sign the
-          self-signed certificates. The default is derived from the
-          key_algorithm parameter.
-         :unit: The department within which this server resides.
-         :city: name of the city
-         :state: name of the state
-         :country_code: two letter abbrevation of the country
-         :alt_name:	The common name used to identify the server for
-          which the certificate is to be generated. This is a required
-          parameter.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        alias                           Required string. The name of the certificate. This is a required
+                                        parameter.
+        ---------------------------     --------------------------------------------------------------------
+        common_name                     Required string. The common name used to identify the server for
+                                        which the certificate is to be generated. This is a required
+                                        parameter.
+        ---------------------------     --------------------------------------------------------------------
+        organization                    Required string. The name of the organization. This is a required
+                                        parameter.
+        ---------------------------     --------------------------------------------------------------------
+        key_algorithm                   Optional string. The algorithm used to generate the key pairs. The
+                                        default is RSA.
+        ---------------------------     --------------------------------------------------------------------
+        validity                        Optional integer. The expiration time for the certificate in days.
+                                        The default is 90.
+        ---------------------------     --------------------------------------------------------------------
+        key_size                        Optional integer. The size of the key. The default is 2048.
+        ---------------------------     --------------------------------------------------------------------
+        signature_algorithm             Optional string. The algorithm used to sign the self-signed
+                                        certificates. The default is derived from the key_algorithm parameter.
+        ---------------------------     --------------------------------------------------------------------
+        unit                            Optional string. The department within which this server resides.
+        ---------------------------     --------------------------------------------------------------------
+        city                            Optional string. The name of the city
+        ---------------------------     --------------------------------------------------------------------
+        state                           Optional string. The name of the state
+        ---------------------------     --------------------------------------------------------------------
+        country_code                    Optional string. The two letter abbrevation of the country
+        ---------------------------     --------------------------------------------------------------------
+        alt_name                        Optional string. The common name used to identify the server for
+                                        which the certificate is to be generated. This is a required
+                                        parameter.
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         import json
         params = {
@@ -556,9 +606,16 @@ class SSLCertificates(BasePortalAdmin):
         available in the keystore, you can use this operation if you
         have a custom CA or specific intermediate certificates.
 
-        Parameters:
-         :certificate: path to the file path
-         :alias: name of the certificate
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        certificate                     Required string. The file location of the certificate file
+        ---------------------------     --------------------------------------------------------------------
+        alias                           Required string. The name of the certificate
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
 
         from six.moves.urllib.error import HTTPError
@@ -597,10 +654,18 @@ class SSLCertificates(BasePortalAdmin):
         or Intermediate certificate using the Import Root or
         Intermediate Certificate operation.
 
-        Parameters:
-         :alias: name of the certificate
-         :password: password for the certificate file
-         :certificate: certificate file
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        alias                           Required string. The name of the certificate
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password for the certificate
+        ---------------------------     --------------------------------------------------------------------
+        certificate                     Required string. The file location of the certificate file
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         params = {
             "f" : "json",
@@ -635,11 +700,14 @@ class SSLCertificates(BasePortalAdmin):
         """
         gets a single SSLCertificate object by the alias name
 
-        Parameters:
-        :param alias_name: common name of the certificate
-        Output:
-        returns a single SSLCertificate object if it exists, else
-        it returns None
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        alias_name                      Required string. The common name of the certificate.
+        ===========================     ====================================================================
+
+        :returns: SSLCertificate
+
         """
         for cert in self.list():
             if cert.properties['Alias name'].lower() == alias_name.lower():
@@ -672,18 +740,23 @@ class SSLCertificate(BasePortalAdmin):
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
-    def generate_csr(self, signing_request):
+    def generate_csr(self):
         """
         This operation generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
         digitally signed version of your certificate.
+
+        :returns: string
+
         """
         params = {
-            "f" : "json",
-            "certificateSigningRequest" : signing_request
+            "f" : "json"
         }
-        url = "%s/generateCsr" % self._url
-        return self._con.post(path=url, postdata=params)
+        url = "%s/generateCSR" % self._url
+        res = self._con.post(path=url, postdata=params)
+        if "certificateSigningRequest" in res:
+            return res["certificateSigningRequest"]
+        return res
     #----------------------------------------------------------------------
     def export(self, out_path=None):
         """
@@ -691,8 +764,14 @@ class SSLCertificate(BasePortalAdmin):
         the server is an X.509 certificate. The downloaded certificate can
         be imported into a client that is making HTTP requests.
 
-        Parameters:
-         :out_path: folder save location
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        out_path                        Required string. Save location of the certificate
+        ===========================     ====================================================================
+
+        :returns: string
+
         """
         if out_path is None:
             import tempfile
@@ -724,8 +803,14 @@ class SSLCertificate(BasePortalAdmin):
         imports a certificate authority (CA) signed SSL certificate into
         the key store.
 
-        Parameters:
-         :file_path: location of the certificate on disk
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        file_path                       Required string. The location of the certificate
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/importSignedCertificate" % self._url
         params = {'f' : "json"}
@@ -767,9 +852,16 @@ class EnterpriseGroups(BasePortalAdmin):
         This operation searches groups in the configured enterprise group
         store. You can narrow down the search using the filter parameter.
 
-        Parameters:
-         :query: optional parameter to narrow group search
-         :max_count: max number of records to return
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional string. Where clause into parse down results
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional integer. The maximum number of records to return
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f" : "json",
@@ -790,8 +882,15 @@ class EnterpriseGroups(BasePortalAdmin):
         Identity Store operation, this operation allows an administrator to
         force a refresh.
 
-        Parameters:
-         :groups: comma seperated list of group names to be refreshed
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        groups                          Required string. The comma seperated list of group names to be
+                                        refreshed
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/refreshMembership" % self._url
         params = {
@@ -806,10 +905,18 @@ class EnterpriseGroups(BasePortalAdmin):
         enterprise group within the enterprise user/group store. You can
         use the filter parameter to narrow down the user search.
 
-        Parameters:
-         :name: name of the enterprise group
-         :query: optional filter to narror down the search
-         :max_count: maximum number of users
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        name                            Optional string. The name of the enterprise group
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional string. Where clause into parse down results
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional integer. The maximum number of records to return
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/getUsersWithinEnterpriseGroup" % self._url
         params = {
@@ -826,10 +933,18 @@ class EnterpriseGroups(BasePortalAdmin):
         This operation lists the groups assigned to a user account in the
         configured enterprise group store.
 
-        Parameters:
-         :username: name of the user account
-         :query: wildcard string used to filter the search
-         :max_count: number of groups to return
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Optional string. The name of the user account
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional string. Where clause into parse down results
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional integer. The maximum number of records to return
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/getEnterpriseGroupsForUser" % self._url
         params = {
@@ -883,23 +998,38 @@ class EnterpriseUsers(BasePortalAdmin):
         accounts within the portal. The provider parameter is used to
         indicate the type of user account.
 
-        Parameters:
-         :username: name of the user account
-         :password: password of the user account
-         :first_name: first name for the account
-         :last_name: last name for the account
-         :email: email for the account
-         :role: The role for the user account. The default value is
-          org_user.
-          Values: org_user | org_publisher | org_admin
-         :level: account level to assign the user.
-          Values: 1 or 2
-         :provider: The provider for the account. The default value is
-          arcgis. Values: arcgis | enterprise
-         :idp_username: The name of the user as stored by the enterprise
-          user store. This parameter is only required if the provider
-          parameter is enterprise.
-         :description: optional description string
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The name of the user account
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password of the user account
+        ---------------------------     --------------------------------------------------------------------
+        first_name                      Required string. The first name for the account
+        ---------------------------     --------------------------------------------------------------------
+        last_name                       Required string. The last name for the account
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required string. The email for the account
+        ---------------------------     --------------------------------------------------------------------
+        role                            Optional string. The role for the user account. The default value is
+                                        org_user.
+                                        Values org_user | org_publisher | org_admin
+        ---------------------------     --------------------------------------------------------------------
+        level                           Optional integer. The account level to assign the user.
+                                        Values 1 or 2
+        ---------------------------     --------------------------------------------------------------------
+        provider                        Optional string. The provider for the account. The default value is
+                                        arcgis. Values arcgis | enterprise
+        ---------------------------     --------------------------------------------------------------------
+        idp_username                    Optional string. The name of the user as stored by the enterprise
+                                        user store. This parameter is only required if the provider
+                                        parameter is enterprise.
+        ---------------------------     --------------------------------------------------------------------
+        description                     Optional string. A user description
+        ===========================     ====================================================================
+
+        :returns: boolean
+
         """
         url = "%s/createUser" % self._url
         params = {
@@ -928,10 +1058,16 @@ class EnterpriseUsers(BasePortalAdmin):
         specify the enterprise username. If the user does not exist, an
         error is returned.
 
-        Parameters:
-         :username: Username of the enterprise account. For Windows Active
-          Directory users, this can be either domain\\username or just
-          username. For LDAP users, the format is always username.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. Username of the enterprise account. For Windows
+                                        Active Directory users, this can be either domain\\username or just
+                                        username. For LDAP users, the format is always username.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/getEnterpriseUsers" % self._url
         params = {
@@ -948,9 +1084,18 @@ class EnterpriseUsers(BasePortalAdmin):
         from accounts used with web-tier authentication to SAML
         authentication.
 
-        Parameters:
-         :username: username of the enterprise account
-         :idp_username: username used by the SAML identity provider
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. Username of the enterprise account. For Windows
+                                        Active Directory users, this can be either domain\\username or just
+                                        username. For LDAP users, the format is always username.
+        ---------------------------     --------------------------------------------------------------------
+        idp_username                    Required string. The username used by the SAML identity provider
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/updateEnterpriseUser" % self._url
         params = {
@@ -968,9 +1113,16 @@ class EnterpriseUsers(BasePortalAdmin):
         This operation searches users in the configured enterprise user
         store. You can narrow down the search using the filter parameter.
 
-        Parameters:
-         :query: search criteria
-         :max_count: maximum number of records returned
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        query                           Optional string. Where clause into parse down results
+        ---------------------------     --------------------------------------------------------------------
+        max_count                       Optional integer. The maximum number of records to return
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         url = "%s/searchEnterpriseUsers" % self._url
         params = {
@@ -991,8 +1143,14 @@ class EnterpriseUsers(BasePortalAdmin):
         through the Update Identity Store operation), this operation allows
         an administrator to force a refresh.
 
-        Parameters:
-         :users: comma seperated list of users.
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        users                           Required string. A comma seperated list of users.
+        ===========================     ====================================================================
+
+        :returns: dict
+
         """
         params = {
             "f" : "json",
