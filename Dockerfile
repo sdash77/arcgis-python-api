@@ -3,8 +3,8 @@
 FROM jupyter/base-notebook
 
 # Pass in URL to where to get samples ZIP
-ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.4.zip"
-ARG githubfolder="arcgis-python-api-1.4"
+ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.4.1.zip"
+ARG githubfolder="arcgis-python-api-1.4.1"
 
 MAINTAINER Esri Docker <docker_sdk@esri.com>
 LABEL vendor="Esri"
@@ -26,13 +26,12 @@ RUN conda install -y unzip \
 					 keyring \
     && conda clean -y -a
 RUN conda install jupyter_dashboards -c conda-forge -y
-RUN conda install notebook=5.2.1 -y \
-    && conda clean -y -a
 
 # Install latest Python API from Conda
 RUN conda install -c esri arcgis -y \
     && conda clean -y -a
 
+# Fix needed for current jupyter notebook view
 RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js
 RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js.map
 RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/outputarea.js
@@ -45,9 +44,12 @@ RUN wget -O samples.zip $sampleslink \
     && rm -rf $githubfolder/ \
            apidoc/ \
            work/ \
-           talks/
+           talks/ \
+		   static/ \
+		   environment.yml
+		   
 RUN mkdir -p /home/jovyan/.jupyter/custom
-RUN wget -O ~/.jupyter/custom/custom.css https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/custom.css
+COPY --chown=jovyan:users custom.css /home/jovyan/.jupyter/custom/custom.css
 RUN mv /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo_old.png
-RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png https://s3.us-east-2.amazonaws.com/notebooks-esri-com/notebookfiles/logo.png
-#RUN wget -O /opt/conda/lib/python3.6/site-packages/notebook/templates/tree.html https://s3-us-west-1.amazonaws.com/notebooks-esri-com-alb-logs/notebookfiles/tree.html
+COPY --chown=jovyan:users logo.png /opt/conda/lib/python3.6/site-packages/notebook/static/base/images/logo.png
+#COPY --chown=jovyan:users tree_new.html /opt/conda/lib/python3.6/site-packages/notebook/templates/tree.html
