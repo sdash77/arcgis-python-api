@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from arcgis import env
 from arcgis.gis import GIS
 from arcgis.gis import Item
-from _ref import reference
+from ._ref import reference
 
 
 class JournalStoryMap(object):
