@@ -58,6 +58,52 @@ class AGOLAdminManager(object):
         return self._ux
     #----------------------------------------------------------------------
     @property
+    def user_experience_program(self):
+        """
+        ArcGIS Online works continuously to improve our products and one of
+        the best ways to find out what needs improvement is through
+        customer feedback. The Esri User Experience Improvement program
+        (EUEI) allows your organization to contribute to the design and
+        development of ArcGIS Online. The program collects information
+        about the usage of ArcGIS Online including hardware and browser
+        characteristics, without interrupting work. The program is
+        completely optional and anonymous; none of the information
+        collected is used to identify or contact members of your
+        organization.
+        """
+        return self._gis.properties['eueiEnabled']
+    #----------------------------------------------------------------------
+    @user_experience_program.setter
+    def user_experience_program(self, value):
+        """
+        ArcGIS Online works continuously to improve our products and one of
+        the best ways to find out what needs improvement is through
+        customer feedback. The Esri User Experience Improvement program
+        (EUEI) allows your organization to contribute to the design and
+        development of ArcGIS Online. The program collects information
+        about the usage of ArcGIS Online including hardware and browser
+        characteristics, without interrupting work. The program is
+        completely optional and anonymous; none of the information
+        collected is used to identify or contact members of your
+        organization.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required boolean. True means that the organization will be enrolled
+                            in the Esri User Experience Improvement Program. False means the
+                            organization will not be part of the program.
+        ===============     ====================================================================
+
+        """
+        if value != self.user_experience_program:
+            self._gis.update_properties({
+                "clearEmptyFields" : True,
+                "eueiEnabled" : value
+            })
+            self._gis._get_properties(True)
+    #----------------------------------------------------------------------
+    @property
     def collaborations(self):
         """
         The collaborations resource lists all collaborations in which a

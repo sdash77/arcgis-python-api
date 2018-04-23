@@ -1,6 +1,6 @@
 """
 StoryMap Implementation
 """
-from storymap import JournalStoryMap
+from .storymap import JournalStoryMap
 
 __all__ = ['JournalStoryMap']
