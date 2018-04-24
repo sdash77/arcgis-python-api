@@ -215,6 +215,7 @@ class GIS(object):
         """
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
+        self._referer = kwargs.pop('referer', None)
 
         from arcgis._impl.tools import _Tools
 
@@ -297,7 +298,8 @@ class GIS(object):
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
-                                           client_id=self._client_id)
+                                           client_id=self._client_id,
+                                           referer=self._referer)
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -337,7 +339,8 @@ class GIS(object):
                                       verify_cert=self._verify_cert,
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
-                                      proxy_host=self._proxy_host)
+                                      proxy_host=self._proxy_host,
+                                      referer=self._referer)
                 self._portal = pp
         except: pass
 
