@@ -369,7 +369,6 @@ class JournalStoryMap(object):
         """
         Saves an Journal StoryMap to the GIS
 
-        Removes a section by index.
 
         ===============     ====================================================================
         **Argument**        **Description**
