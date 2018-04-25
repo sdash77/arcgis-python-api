@@ -7,6 +7,7 @@ from arcgis.gis import Item
 from ._ref import reference
 
 
+
 class JournalStoryMap(object):
     """
     Represents a Journal StoryMap Template
@@ -26,10 +27,14 @@ class JournalStoryMap(object):
             self._item = gis.content.get(item)
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
-        elif item and isinstance(item, Item):
+        elif item and isinstance(item, Item) and \
+             'MapJournal' in item.typeKeyswords:
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
+        elif item and isinstance(item, Item) and \
+             'MapJournal' not in item.typeKeyswords:
+            raise ValueError("Item is not a Journal Story Map")
         else:
             self._properties = reference['journal']
     #----------------------------------------------------------------------
@@ -366,14 +371,18 @@ class JournalStoryMap(object):
             return self._item.update(item_properties=p)
         else:
             if title is None:
-                title = "Journal Map, %s" % uuid.uuid4().hex[:10]
+                title = "Map Journal, %s" % uuid.uuid4().hex[:10]
             if tags is None:
                 tags = "Story Map,Map Journal"
-
+            typeKeywords = ",".join(['JavaScript', 'layout-side', 'Map', 'MapJournal',
+                                     'Mapping Site', 'Online Map', 'Ready To Use',
+                                     'selfConfigured', 'Story Map', 'Story Maps',
+                                     'Web Map'])
             item = self._gis.content.add(item_properties={
                 'title' : title,
                 'tags' : tags,
                 'text' : json.dumps(self._properties),
+                'typeKeywords' : typeKeywords,
                 'itemType' : 'text',
                 'type' : "Web Mapping Application",
             })
@@ -513,4 +522,8 @@ class JournalStoryMap(object):
             self._properties['values']['settings']['theme'] = value
         elif value is None:
             self._properties['values']['settings']['theme'] = default
+
+
+
+
 
