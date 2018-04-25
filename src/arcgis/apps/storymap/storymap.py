@@ -514,14 +514,3 @@ class JournalStoryMap(object):
         elif value is None:
             self._properties['values']['settings']['theme'] = default
 
-
-
-
-
-if __name__ == "__main__":
-    from arcgis.gis import GIS
-    jsm = JournalStoryMap(item="a9f6a531f4f9466eb79f74771c2aed22",
-                          gis=GIS(username='AndrewSolutions', password='fujiFUJI1'))
-    print(jsm)
-    print(jsm.save())
-    print()
