@@ -58,7 +58,7 @@ class AGOLAdminManager(object):
         return self._ux
     #----------------------------------------------------------------------
     @property
-    def user_experience_program(self):
+    def _user_experience_program(self):
         """
         ArcGIS Online works continuously to improve our products and one of
         the best ways to find out what needs improvement is through
@@ -73,8 +73,8 @@ class AGOLAdminManager(object):
         """
         return self._gis.properties['eueiEnabled']
     #----------------------------------------------------------------------
-    @user_experience_program.setter
-    def user_experience_program(self, value):
+    @_user_experience_program.setter
+    def _user_experience_program(self, value):
         """
         ArcGIS Online works continuously to improve our products and one of
         the best ways to find out what needs improvement is through

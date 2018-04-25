@@ -1,12 +1,11 @@
 import json
 import datetime
+import mimetypes
 from urllib.parse import urlparse
 from arcgis import env
 from arcgis.gis import GIS
 from arcgis.gis import Item
 from ._ref import reference
-
-
 
 class JournalStoryMap(object):
     """
@@ -53,7 +52,35 @@ class JournalStoryMap(object):
         """returns the storymap's JSON"""
         return self._properties
     #----------------------------------------------------------------------
-    def add_webpage(self,
+    def add(self, title,
+            url_or_item, content=None,
+            actions=None, visible=True,
+            alt_text="", display='stretch'):
+        if isinstance(url_or_item, Item):
+            return self._add_webmap(item=url_or_item, title=title, content=content,
+                                    actions=actions, visible=visible, alt_text=alt_text,
+                                    display=display)
+        elif isinstance(url_or_item, str):
+            mt = mimetypes.guess_type(url=url_or_item)
+            if mt[0] is None:
+                return self._add_webpage(title=title, url=url_or_item,
+                                         content=content, actions=actions, visible=visible,
+                                         alt_text=alt_text, display=display)
+            elif mt[0].lower().find('video') > -1:
+                return self._add_video(url=url_or_item,
+                                      title=title,
+                                      content=content,
+                                      actions=actions,
+                                      visible=visible,
+                                      alt_text=alt_text,
+                                      display=display)
+            elif mt[0].lower().find('image') > -1:
+                return self._add_image(title=title, image=url_or_item,
+                                       content=content, actions=actions, visible=visible,
+                                       alt_text=alt_text, display=display)
+        return False
+        #----------------------------------------------------------------------
+    def _add_webpage(self,
                     title,
                     url,
                     content=None,
@@ -116,7 +143,7 @@ class JournalStoryMap(object):
         )
         return True
     #----------------------------------------------------------------------
-    def add_video(self,
+    def _add_video(self,
                   url,
                   title,
                   content,
@@ -177,7 +204,7 @@ class JournalStoryMap(object):
         self._properties['values']['story']['sections'].append(video)
         return True
     #----------------------------------------------------------------------
-    def add_webmap(self,
+    def _add_webmap(self,
                    item,
                    title,
                    content,
@@ -255,7 +282,7 @@ class JournalStoryMap(object):
         self._properties['values']['story']['sections'].append(wm)
         return True
     #----------------------------------------------------------------------
-    def add_image(self,
+    def _add_image(self,
                   title,
                   image,
                   content=None,
