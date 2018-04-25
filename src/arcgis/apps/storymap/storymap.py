@@ -99,11 +99,7 @@ class JournalStoryMap(object):
                                     display=display)
         elif isinstance(url_or_item, str):
             mt = mimetypes.guess_type(url=url_or_item)
-            if mt[0] is None:
-                return self._add_webpage(title=title, url=url_or_item,
-                                         content=content, actions=actions, visible=visible,
-                                         alt_text=alt_text, display=display)
-            elif mt[0].lower().find('video') > -1:
+            if mt[0].lower().find('video') > -1:
                 return self._add_video(url=url_or_item,
                                       title=title,
                                       content=content,
@@ -115,6 +111,10 @@ class JournalStoryMap(object):
                 return self._add_image(title=title, image=url_or_item,
                                        content=content, actions=actions, visible=visible,
                                        alt_text=alt_text, display=display)
+            else:
+                return self._add_webpage(title=title, url=url_or_item,
+                                         content=content, actions=actions, visible=visible,
+                                         alt_text=alt_text, display=display)
         return False
         #----------------------------------------------------------------------
     def _add_webpage(self,
