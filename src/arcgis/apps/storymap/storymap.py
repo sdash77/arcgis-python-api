@@ -9,7 +9,16 @@ from ._ref import reference
 
 class JournalStoryMap(object):
     """
-    Represents a Journal StoryMap Template
+    Represents a Journal Story Map
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Optional Item. The storymap item.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The connection to the Enterprise.
+    ===============     ====================================================================
+
     """
     _properties = None
     _gis = None
@@ -56,6 +65,34 @@ class JournalStoryMap(object):
             url_or_item, content=None,
             actions=None, visible=True,
             alt_text="", display='stretch'):
+        """
+        Adds a new section to the StoryMap
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Required string. The title of the section.
+        ---------------     --------------------------------------------------------------------
+        url_or_item         Required string/Item. The web address to the resource or a Web Map
+                            item.
+        ---------------     --------------------------------------------------------------------
+        content             Optional string. The content of the section.
+        ---------------     --------------------------------------------------------------------
+        actions             Optional list. A collection of actions performed on the section
+        ---------------     --------------------------------------------------------------------
+        visible             Optional boolean. If True, the section is visible on publish. If
+                            False, the section is not displayed.
+        ---------------     --------------------------------------------------------------------
+        alt_text            Optional string. Specifies an alternate text for an image.
+        ---------------     --------------------------------------------------------------------
+        display             Optional string. The image display properties.
+        ===============     ====================================================================
+
+
+        :return: Boolean
+
+
+        """
         if isinstance(url_or_item, Item):
             return self._add_webmap(item=url_or_item, title=title, content=content,
                                     actions=actions, visible=visible, alt_text=alt_text,
