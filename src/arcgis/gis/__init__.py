@@ -5873,6 +5873,8 @@ class Item(dict):
         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
                            Used for searches on items.
         -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
+        -----------------  ---------------------------------------------------------------------
         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------
         extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
