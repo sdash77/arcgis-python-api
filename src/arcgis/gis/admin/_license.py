@@ -253,15 +253,15 @@ class License(object):
                                   "entitlements":entitlements},
 
         }
-        if suppress_email:
-            params["suppressCustomerEmail"] = True
+        if suppress_email is not None:
+            params["suppressCustomerEmail"] = suppress_email
         url = "%scontent/listings/%s/provisionUserEntitlements" % (self._gis._portal.resturl, item_id)
         res = self._con.post(url, params)
         if 'success' in res:
             return res['success'] == True
         return res
     #----------------------------------------------------------------------
-    def revoke(self, username, entitlements, supress_email=True):
+    def revoke(self, username, entitlements, suppress_email=True):
         """
         removes a specific license from a given entitlement
 
@@ -274,7 +274,7 @@ class License(object):
         entitlments         required list, a list of entitlements values,
                             if * is given, all entitlements will be revoked
         ---------------     ----------------------------------------------------
-        supress_email       optional boolean, if True, the org will not notify
+        suppress_email      optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
@@ -286,7 +286,7 @@ class License(object):
         if entitlements == "*":
             return self.assign(username=username,
                                   entitlements=[],
-                                  supress_email=supress_email)
+                                  suppress_email=suppress_email)
         elif isinstance(entitlements, list):
             es = self.user_entitlement(username=username)
 
@@ -301,5 +301,5 @@ class License(object):
                     es2.append(lookup[e])
                 return self.assign(username=username,
                                    entitlements=es2,
-                                   supress_email=supress_email)
+                                   suppress_email=suppress_email)
         return False
