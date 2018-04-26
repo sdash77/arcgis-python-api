@@ -17,6 +17,7 @@ _use_async = True
 
 def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None):
     """
+    Only available at ArcGIS Enterprise 10.6.1 and later.
 
     ================  ===============================================================
     **Argument**      **Description**
@@ -92,6 +93,8 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
 
 def append_data(input_layer, append_layer, field_mapping=None, gis=None):
     """
+    Only available at ArcGIS Enterprise 10.6.1 and later.
+
     The Append Data task appends tabular, point, line, or polygon data to an existing layer.
     The input layer must be a hosted feature layer. The tool will add the appended data as
     rows to the input layer. No new output layer is created.
