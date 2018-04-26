@@ -31,6 +31,8 @@ def build_multivariable_grid(input_layers,
                            output_name=None,
                            gis=None):
     """
+    Only available at ArcGIS Enterprise 10.6.1 and later.
+
     The Build Multi-Variable Grid task works with one or more layers of point, line, or polygon
     features. The task generates a grid of square or hexagonal bins and compiles information about
     each input layer into each bin. For each input layer, this information can include the following
