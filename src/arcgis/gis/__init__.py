@@ -4519,6 +4519,8 @@ class User(dict):
         website, and manage email communications from Esri. The member
         cannot enable or disable their own access to these Esri resources.
 
+        **Trial** accounts cannot modify esri_access property.
+
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
         for more information.
 
@@ -4539,6 +4541,8 @@ class User(dict):
         Community and Forums (GeoNet), access e-Learning on the Training
         website, and manage email communications from Esri. The member
         cannot enable or disable their own access to these Esri resources.
+
+        **Trial** accounts cannot modify esri_access property.
 
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
         for more information.
@@ -5872,6 +5876,8 @@ class Item(dict):
         -----------------  ---------------------------------------------------------------------
         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
                            Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
         -----------------  ---------------------------------------------------------------------
         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------
