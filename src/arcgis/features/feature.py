@@ -816,7 +816,7 @@ class FeatureSet(object):
                 geometry["x"] = geom["coordinates"][0]
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
-                geometry["rings"] = geom["coordinates"][0]
+                geometry["rings"] = geom["coordinates"]
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
