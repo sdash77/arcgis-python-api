@@ -1117,6 +1117,71 @@ class DatastoreManager(object):
 
         return output
 
+    #----------------------------------------------------------------------
+    def add_cloudstore(self, name, conn_str, object_store, provider="amazon", managed=False):
+        """
+        Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
+        Connection information for the data store item is stored within conn_str as a
+        stringified JSON. ArcGIS Server encrypts connection string for storage. Connection
+        strings that are encrypted will include a {crypt} prefix. You can get a data store
+        item with decrypted connection string by passing a decrypt=true parameter in the request
+        for a data store item. Data store with decrypted connection string will be returned only for
+        requests made with https. The examples below show data stores with decrypted conn_str.
+        A valid object_store (S3 bucket or Azure Blob store) is required. Folders within an object
+        store are optional.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The name of the cloud store.
+        ---------------     --------------------------------------------------------------------
+        conn_str            Required string. The connection information for the cloud storage
+                            product.
+        ---------------     --------------------------------------------------------------------
+        object_store        Required string. This is the amazon bucket path or Azuze path.
+        ---------------     --------------------------------------------------------------------
+        provider            Required string. Values must be amazon or azure.
+        ===============     ====================================================================
+
+
+        :return: DataStore
+
+        """
+        path = self._admin_url + "/data/registerItem"
+        cs = {
+            "path": "/cloudStores/%s" % name,
+            "type": "cloudStore",
+            "provider": provider,
+            "info": {
+                "isManaged": managed,
+                "connectionString": conn_str,
+                "objectStore": object_store
+            }
+        }
+        params = {
+        'f' : 'json',
+        'item' : json.dumps(cs)
+        }
+
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
+        res = self._portal.con.post(path, params, verify_cert=False)
+
+        if res['status'] == 'success' or res['status'] == 'exists':
+            output = Datastore(self, "/cloudStores/" + name)
+
+        if res['success']:
+            print("Created Big Data file share for " + name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create Big Data file share: %s" % name)
+        elif res['status'] == 'exists':
+            print("Big Data file share exists for " + name)
+
+
+        return output
+
+
     def add_database(self,
                      name,
                      conn_str,
