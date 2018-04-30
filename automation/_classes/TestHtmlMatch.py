@@ -27,6 +27,8 @@ class TestHtmlMatch(unittest.TestCase, RenameableClass):
         self.base_server = base_server
         url_ending = html_match.url.split("/")[-1]
         url_ending_no_ext = url_ending.split(".")[0]
+
+        #Renames 'runTest' method to the url ending (readability)
         setattr(self, url_ending_no_ext, self.runTest)
         super().__init__(**kwargs, methodName=url_ending_no_ext)
 
