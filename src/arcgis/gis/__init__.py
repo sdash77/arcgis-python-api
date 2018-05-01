@@ -5880,18 +5880,84 @@ class Item(dict):
         else:
             return self._portal.unshare_item(self.itemid, self.owner, folder, group_ids)
 
-    def delete(self):
-        """ Deletes an item.
+    def delete(self, force=False, dry_run=False):
+        """
+        Deletes the item. If unable to delete, raises a RuntimeException. To know if you can safely delete the item,
+        use the optional parameter 'dry_run'
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        force               Optional bool. Available in ArcGIS Enterprise 10.6.1 and higher.
+                            Force deletion is applicable only to items that were orphaned when
+                            a server federated to the ArcGIS Enterprise was removed accidentally
+                            before properly unfederating it. When called on other items, it has
+                            no effect.
+        ---------------     --------------------------------------------------------------------
+        dry_run             Optional bool. Available in ArcGIS Enterprise 10.6.1 and higher.If
+                            True, checks if the item can be safely deleted and gives you back
+                            either a dictionary with details. If dependent items are preventing
+                            deletion, a list of such Item objects are provided.
+        ===============     ====================================================================
 
         :return:
-            A boolean indicating success (True) or failure (False).
+            A bool containing True (for success) or False (for failure). When dry_run is used, a dictionary with
+            details is returned.
 
+        .. code-block:: python
+
+            USAGE EXAMPLE: Successful deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> True
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Failed deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> RuntimeError: Unable to delete item. This service item has a related Service item
+            >> (Error Code: 400)
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Dry run to check deletion of an item
+
+            item1 = gis.content.get('itemId12345abcde')
+            item1.delete(dry_run=True)
+
+            >> {'can_delete': False,
+            >> 'details': {'code': 400,
+            >> 'message': 'Unable to delete item. This service item has a related Service item',
+            >> 'offending_items': [<Item title:"Chicago_accidents_WFS" type:WFS owner:sharing1>]}}
+
+        .. note::
+            During the dry run, if you receive a list of offending items, attempt to delete them first before deleting
+            the current item. You can in turn call 'dry_run' on those items to ensure they can be deleted safely.
         """
+
         try:
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.delete_item(self.itemid, self.owner, folder)
+
+        if dry_run:
+            can_delete_resp = self._portal.can_delete(self.itemid, self.owner, folder)
+            if can_delete_resp[0]:
+                return {'can_delete':True}
+            else:
+                error_dict = {'code': can_delete_resp[1].get('code'),
+                              'message': can_delete_resp[1].get('message'),
+                              'offending_items': [Item(self._gis, e['itemId']) for e in
+                                                  can_delete_resp[1].get('offendingItems')]}
+
+                return {'can_delete':False, 'details': error_dict}
+        else:
+            return self._portal.delete_item(self.itemid, self.owner, folder, force)
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
         """ Updates an item in a Portal.

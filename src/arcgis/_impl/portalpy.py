@@ -566,8 +566,42 @@ class Portal(object):
             return resp.get('success')
 
 
-    def delete_item(self, item_id, owner, folder=None):
+    def delete_item(self, item_id, owner, folder=None, force=False):
         """ Deletes an item.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        item_id           required string, unique identifier for the item
+        ----------------  --------------------------------------------------------
+        owner             required string, owner of the item currently
+        ----------------  --------------------------------------------------------
+        folder            optional string, folder containing the item.  Defaults
+                          to the root folder.
+        ----------------  --------------------------------------------------------
+        force             optional bool. If True, will force delete orphaned items
+        ================  ========================================================
+
+        :return:
+            a boolean, indicating success
+
+        """
+        path = 'content/users/' + owner
+        if folder :
+            path += '/' + folder
+        path += '/items/' + item_id + '/delete'
+        #print(path)
+        if force:
+            post_data = {'f': 'json', 'force': True}
+        else:
+            post_data = self._postdata()
+        resp = self.con.post(path, post_data)
+
+        if resp:
+            return resp.get('success')
+
+    def can_delete(self, item_id, owner, folder=None):
+        """ checks if you can delete the item.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -580,18 +614,19 @@ class Portal(object):
         ================  ========================================================
 
         :return:
-            a boolean, indicating success
-
+            a tuple containing a boolean and a dict with details
         """
         path = 'content/users/' + owner
-        if folder :
+        if folder:
             path += '/' + folder
-        path += '/items/' + item_id + '/delete'
-        #print(path)
-        resp = self.con.post(path, self._postdata())
+        path += '/items/' + item_id + '/canDelete'
+        # print(path)
+        resp1 = self.con.post(path, self._postdata(), try_json=False)
+        resp = json.loads(resp1)
 
         if resp:
-            return resp.get('success')
+            return_tuple = (resp.get('success'), resp.get('error'))
+            return return_tuple
 
     def protect_item(self, item_id, owner, folder=None, enable=True):
         """ Enable or disable delete protection on the item
