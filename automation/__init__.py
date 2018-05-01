@@ -32,4 +32,5 @@ from automation.build_pip_package import build_pip_package
 from automation.publish_to_ftp_site import publish_to_ftp_site
 from automation.run_dev_website_tests import run_dev_website_tests
 from automation.run_source_code_tests import run_source_code_tests
+from automation.run_notebook_tests import run_notebook_tests
 from automation.stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
