@@ -3188,7 +3188,7 @@ class ContentManager(object):
         deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
         return deep_cloner.clone()
 
-    def _bulk_update(self, itemids, properties):
+    def bulk_update(self, itemids, properties):
         """
         Updates a collection of items' properties.
 
