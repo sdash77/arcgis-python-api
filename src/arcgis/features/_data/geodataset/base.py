@@ -909,10 +909,8 @@ class BaseSpatialPandas(object):
         """Return a DataFrame of minx, miny, maxx, maxy values of geometry objects"""
         if HASARCPY:
             x = self.geometry.extent
-            barray = []
-            for geom in x:
-                barray.append([float(x) for x in geom.__str__().split(' ')[:4]])
-            return DataFrame(barray,
+            x = np.array(x.tolist())
+            return DataFrame(x,
                              columns=['xmin', 'ymin', 'xmax', 'ymax'],
                              index=self.index)
     #----------------------------------------------------------------------
